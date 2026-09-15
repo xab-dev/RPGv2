@@ -1,0 +1,21 @@
+[
+  {
+    "id": "scene_salle_test",
+    "width": 12,
+    "height": 9,
+    "tile_size": 32,
+    "spawn": { "x": 2, "y": 2 },
+    "seed": 12345,
+    "layout": [
+      ["tile_mur","tile_mur","tile_mur","tile_mur","tile_mur","tile_mur","tile_mur","tile_mur","tile_mur","tile_mur","tile_mur","tile_mur"],
+      ["tile_mur","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_mur"],
+      ["tile_mur","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_mur"],
+      ["tile_mur","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_mur"],
+      ["tile_mur","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sortie"],
+      ["tile_mur","tile_sol","tile_sol","tile_sol","tile_sol","tile_eau","tile_eau","tile_sol","tile_sol","tile_sol","tile_sol","tile_mur"],
+      ["tile_mur","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_mur"],
+      ["tile_mur","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_mur"],
+      ["tile_mur","tile_mur","tile_mur","tile_mur","tile_mur","tile_mur","tile_mur","tile_mur","tile_mur","tile_mur","tile_mur","tile_mur"]
+    ]
+  }
+]

@@ -1,0 +1,6 @@
+[
+  { "id": "stat_force", "label_key": "stat.force", "base": 5 },
+  { "id": "stat_agilite", "label_key": "stat.agilite", "base": 5 },
+  { "id": "stat_vitalite", "label_key": "stat.vitalite", "base": 5 },
+  { "id": "stat_esprit", "label_key": "stat.esprit", "base": 5 }
+]

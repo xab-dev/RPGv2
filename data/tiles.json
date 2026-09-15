@@ -1,0 +1,8 @@
+[
+  { "id": "tile_sol", "solid": false, "render": { "type": "couleur", "valeur": "#4a7c3c" } },
+  { "id": "tile_sol_2", "solid": false, "render": { "type": "couleur", "valeur": "#3f6c33" } },
+  { "id": "tile_mur", "solid": true, "render": { "type": "couleur", "valeur": "#555555" } },
+  { "id": "tile_eau", "solid": true, "render": { "type": "couleur", "valeur": "#2f6f9f" } },
+  { "id": "tile_sortie", "solid": false, "render": { "type": "couleur", "valeur": "#c2a83e" } },
+  { "id": "tile_vide", "solid": true, "render": { "type": "couleur", "valeur": "#000000" } }
+]

@@ -1,0 +1,7 @@
+[
+  { "id": "slot_attaque", "verb": "attack" },
+  { "id": "slot_skill_1", "verb": "skill_1" },
+  { "id": "slot_skill_2", "verb": "skill_2" },
+  { "id": "slot_skill_3", "verb": "skill_3" },
+  { "id": "slot_consommable", "verb": "consume" }
+]

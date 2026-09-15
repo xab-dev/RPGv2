@@ -1,0 +1,5 @@
+[
+  { "id": "elem_feu", "label_key": "element.feu", "icon": "flame", "shape": "triangle" },
+  { "id": "elem_eau", "label_key": "element.eau", "icon": "droplet", "shape": "cercle" },
+  { "id": "elem_terre", "label_key": "element.terre", "icon": "montagne", "shape": "carre" }
+]

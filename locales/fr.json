@@ -1,0 +1,19 @@
+{
+  "element.feu": "Feu",
+  "element.eau": "Eau",
+  "element.terre": "Terre",
+  "stat.force": "Force",
+  "stat.agilite": "Agilité",
+  "stat.vitalite": "Vitalité",
+  "stat.esprit": "Esprit",
+  "equipment.arme": "Arme",
+  "equipment.armure": "Armure",
+  "equipment.accessoire": "Accessoire",
+  "menu.titre": "Menu",
+  "menu.langue": "Langue",
+  "menu.exporter": "Exporter la sauvegarde",
+  "menu.importer": "Importer une sauvegarde",
+  "menu.fermer": "Fermer",
+  "boot.erreur.titre": "Erreur au démarrage",
+  "boot.chargement": "Chargement..."
+}

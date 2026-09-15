@@ -1,0 +1,11 @@
+{
+  "name": "rpg-v2",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "RPG action-aventure 2D data-driven (HTML5/JS/Canvas) - Phase 0 : socle technique",
+  "scripts": {
+    "start": "node serveur_local.js",
+    "test": "node tools/run_tests.js"
+  }
+}

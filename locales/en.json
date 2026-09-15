@@ -1,0 +1,19 @@
+{
+  "element.feu": "Fire",
+  "element.eau": "Water",
+  "element.terre": "Earth",
+  "stat.force": "Strength",
+  "stat.agilite": "Agility",
+  "stat.vitalite": "Vitality",
+  "stat.esprit": "Spirit",
+  "equipment.arme": "Weapon",
+  "equipment.armure": "Armor",
+  "equipment.accessoire": "Accessory",
+  "menu.titre": "Menu",
+  "menu.langue": "Language",
+  "menu.exporter": "Export save",
+  "menu.importer": "Import save",
+  "menu.fermer": "Close",
+  "boot.erreur.titre": "Startup error",
+  "boot.chargement": "Loading..."
+}

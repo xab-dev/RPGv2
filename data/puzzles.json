@@ -1,1 +1,37 @@
-[]
+[
+  {
+    "id": "puzzle_levier_salle1",
+    "type": "levier",
+    "position": { "x": 10, "y": 6 },
+    "flag_pose": "flag_levier_salle1",
+    "render": { "visuel": "visuel_levier" }
+  },
+  {
+    "id": "puzzle_levier_s2_milieu",
+    "type": "levier",
+    "position": { "x": 10, "y": 3 },
+    "flag_pose": null,
+    "render": { "visuel": "visuel_levier" }
+  },
+  {
+    "id": "puzzle_levier_s2_gauche",
+    "type": "levier",
+    "position": { "x": 6, "y": 3 },
+    "flag_pose": null,
+    "render": { "visuel": "visuel_levier" }
+  },
+  {
+    "id": "puzzle_levier_s2_droite",
+    "type": "levier",
+    "position": { "x": 14, "y": 3 },
+    "flag_pose": null,
+    "render": { "visuel": "visuel_levier" }
+  },
+  {
+    "id": "puzzle_sequence_salle2",
+    "type": "sequence",
+    "ordre": ["puzzle_levier_s2_milieu", "puzzle_levier_s2_gauche", "puzzle_levier_s2_droite"],
+    "reinit_si_erreur": true,
+    "flag_pose": "flag_grotte_sequence"
+  }
+]

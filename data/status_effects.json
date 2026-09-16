@@ -1,1 +1,75 @@
-[]
+[
+  {
+    "id": "buff_force",
+    "label_key": "status.buff_force",
+    "famille": "buff",
+    "cible": "joueur",
+    "stat": "stat_force",
+    "valeur": 1,
+    "mode": "plat",
+    "duree": "permanente",
+    "cumul": false,
+    "icone": "buff_force"
+  },
+  {
+    "id": "buff_agilite",
+    "label_key": "status.buff_agilite",
+    "famille": "buff",
+    "cible": "joueur",
+    "stat": "stat_agilite",
+    "valeur": 1,
+    "mode": "plat",
+    "duree": "permanente",
+    "cumul": false,
+    "icone": "buff_agilite"
+  },
+  {
+    "id": "buff_vitalite",
+    "label_key": "status.buff_vitalite",
+    "famille": "buff",
+    "cible": "joueur",
+    "stat": "stat_vitalite",
+    "valeur": 1,
+    "mode": "plat",
+    "duree": "permanente",
+    "cumul": false,
+    "icone": "buff_vitalite"
+  },
+  {
+    "id": "dot_brulure",
+    "label_key": "status.dot_brulure",
+    "famille": "dot",
+    "cible": "monstre",
+    "param": "pv",
+    "valeur": 1,
+    "mode": "plat",
+    "intervalle_ms": 500,
+    "duree": "aura",
+    "cumul": false,
+    "icone": "dot_brulure"
+  },
+  {
+    "id": "debuff_affaiblissement",
+    "label_key": "status.debuff_affaiblissement",
+    "famille": "debuff",
+    "cible": "monstre",
+    "stat": "stat_force",
+    "valeur": -1,
+    "mode": "plat",
+    "duree": "aura",
+    "cumul": false,
+    "icone": "debuff_affaiblissement"
+  },
+  {
+    "id": "controle_entrave",
+    "label_key": "status.controle_entrave",
+    "famille": "controle",
+    "cible": "monstre",
+    "param": "vitesse_deplacement",
+    "valeur": -0.5,
+    "mode": "pourcent",
+    "duree": "aura",
+    "cumul": false,
+    "icone": "controle_entrave"
+  }
+]

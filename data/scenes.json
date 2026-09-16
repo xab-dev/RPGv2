@@ -1,21 +1,141 @@
 [
   {
-    "id": "scene_salle_test",
-    "width": 12,
-    "height": 9,
+    "id": "scene_grotte_salle_1",
+    "width": 20,
+    "height": 14,
     "tile_size": 32,
-    "spawn": { "x": 2, "y": 2 },
-    "seed": 12345,
+    "seed": 20260915,
+    "spawn": { "x": 2, "y": 6 },
+    "obscurite": { "opacite": 0.72 },
+    "lumieres": [
+      { "x": 80, "y": 208, "rayon": 140 },
+      { "type": "faisceau", "x": 224, "y": 32, "angle": -8, "ouverture": 12, "longueur": 170, "alpha": 0.14 },
+      { "type": "faisceau", "x": 480, "y": 32, "angle": 6, "ouverture": 10, "longueur": 150, "alpha": 0.12 }
+    ],
+    "decor": {
+      "densite": 0.1,
+      "motifs": [
+        { "visuel": "visuel_herbe", "poids": 5 },
+        { "visuel": "visuel_flaque", "poids": 2 },
+        { "visuel": "visuel_rocher_petit", "poids": 2 },
+        { "visuel": "visuel_rocher_grand", "poids": 1 }
+      ]
+    },
+    "intro": {
+      "clignements": { "ouvertures_ms": [600, 900, 1400], "noir_ms": 400 },
+      "convergence_ms": 3500,
+      "depart_ms": 1000,
+      "levitation": { "amplitude_px": 3, "periode_ms": 900 }
+    },
+    "interactifs": ["puzzle_levier_salle1"],
+    "spawns": [],
+    "portails": [
+      {
+        "zone": { "x": 19, "y": 6, "w": 1, "h": 1 },
+        "cible": "scene_grotte_salle_2",
+        "spawn": { "x": 1, "y": 6 },
+        "condition": null
+      }
+    ],
     "layout": [
-      ["tile_mur","tile_mur","tile_mur","tile_mur","tile_mur","tile_mur","tile_mur","tile_mur","tile_mur","tile_mur","tile_mur","tile_mur"],
-      ["tile_mur","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_mur"],
-      ["tile_mur","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_mur"],
-      ["tile_mur","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_mur"],
-      ["tile_mur","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sortie"],
-      ["tile_mur","tile_sol","tile_sol","tile_sol","tile_sol","tile_eau","tile_eau","tile_sol","tile_sol","tile_sol","tile_sol","tile_mur"],
-      ["tile_mur","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_mur"],
-      ["tile_mur","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_sol","tile_mur"],
-      ["tile_mur","tile_mur","tile_mur","tile_mur","tile_mur","tile_mur","tile_mur","tile_mur","tile_mur","tile_mur","tile_mur","tile_mur"]
+      ["tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur"],
+      ["tile_mur", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_mur"],
+      ["tile_mur", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_mur"],
+      ["tile_mur", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_mur"],
+      ["tile_mur", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_mur"],
+      ["tile_mur", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_mur"],
+      ["tile_mur", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sortie"],
+      ["tile_mur", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_mur"],
+      ["tile_mur", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_mur"],
+      ["tile_mur", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_mur"],
+      ["tile_mur", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_mur"],
+      ["tile_mur", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_mur"],
+      ["tile_mur", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_mur"],
+      ["tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur"]
+    ]
+  },
+  {
+    "id": "scene_grotte_salle_2",
+    "width": 20,
+    "height": 14,
+    "tile_size": 32,
+    "seed": 20260916,
+    "spawn": { "x": 1, "y": 6 },
+    "obscurite": { "opacite": 0.72 },
+    "lumieres": [
+      { "type": "faisceau", "x": 160, "y": 32, "angle": 5, "ouverture": 12, "longueur": 160, "alpha": 0.13 },
+      { "type": "faisceau", "x": 352, "y": 32, "angle": -6, "ouverture": 11, "longueur": 175, "alpha": 0.12 },
+      { "type": "faisceau", "x": 544, "y": 32, "angle": 9, "ouverture": 10, "longueur": 150, "alpha": 0.14 }
+    ],
+    "decor": {
+      "densite": 0.1,
+      "motifs": [
+        { "visuel": "visuel_herbe", "poids": 5 },
+        { "visuel": "visuel_flaque", "poids": 2 },
+        { "visuel": "visuel_rocher_petit", "poids": 2 },
+        { "visuel": "visuel_rocher_grand", "poids": 1 }
+      ]
+    },
+    "interactifs": ["puzzle_levier_s2_milieu", "puzzle_levier_s2_gauche", "puzzle_levier_s2_droite"],
+    "spawns": [
+      {
+        "enemy": "enemy_grotte_rampant",
+        "position": { "x": 10, "y": 7 },
+        "condition": { "not": "flag_grotte_monstre_tue" }
+      }
+    ],
+    "portails": [
+      {
+        "zone": { "x": 19, "y": 6, "w": 1, "h": 1 },
+        "cible": "scene_maison_exterieur_placeholder",
+        "spawn": { "x": 1, "y": 1 },
+        "condition": "flag_grotte_sortie"
+      }
+    ],
+    "portes": [
+      {
+        "position": { "x": 19, "y": 6 },
+        "flag": "flag_grotte_sortie",
+        "tile_avant": "tile_mur",
+        "tile_apres": "tile_sortie"
+      }
+    ],
+    "layout": [
+      ["tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur"],
+      ["tile_mur", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_mur"],
+      ["tile_mur", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_mur"],
+      ["tile_mur", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_mur"],
+      ["tile_mur", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_mur"],
+      ["tile_mur", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_mur"],
+      ["tile_mur", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_mur"],
+      ["tile_mur", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_mur"],
+      ["tile_mur", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_mur"],
+      ["tile_mur", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_mur"],
+      ["tile_mur", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_mur"],
+      ["tile_mur", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_mur"],
+      ["tile_mur", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_mur"],
+      ["tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur"]
+    ]
+  },
+  {
+    "id": "scene_maison_exterieur_placeholder",
+    "width": 10,
+    "height": 7,
+    "tile_size": 32,
+    "seed": 20260917,
+    "spawn": { "x": 1, "y": 1 },
+    "lumieres": [],
+    "interactifs": [],
+    "spawns": [],
+    "portails": [],
+    "layout": [
+      ["tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur"],
+      ["tile_mur", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_mur"],
+      ["tile_mur", "tile_sol", "tile_sol_2", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol_2", "tile_sol", "tile_mur"],
+      ["tile_mur", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_mur"],
+      ["tile_mur", "tile_sol", "tile_sol", "tile_sol_2", "tile_sol", "tile_sol", "tile_sol_2", "tile_sol", "tile_sol", "tile_mur"],
+      ["tile_mur", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_sol", "tile_mur"],
+      ["tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur", "tile_mur"]
     ]
   }
 ]

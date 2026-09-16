@@ -1,10 +1,15 @@
-// Décor procédural non-collisionnant : pose des motifs sur les tuiles de
-// sol, de façon déterministe à partir de scene.seed. Un même seed doit
-// produire des appels canvas strictement identiques à chaque rendu.
+// Décor procédural non-collisionnant (D15①) + variantes de tuiles
+// (03_grotte-polish §3.4) : détermine, de façon déterministe à partir de
+// scene.seed, quels motifs poser sur le sol et quelle variante/teinte
+// choisir pour chaque tuile. Un même seed doit toujours produire le même
+// résultat, quel que soit l'ordre d'appel — c'est ce qui permet à render.js
+// de reconstruire le calque statique à l'identique d'une scène à l'autre.
 
 // PRNG déterministe (mulberry32) — indépendant de Math.random, qui n'est pas
-// reproductible d'un appel à l'autre.
-function mulberry32(graine) {
+// reproductible d'un appel à l'autre. Exporté : réutilisé par loot.js (§6 de
+// specs/02_grotte.md) pour rendre le tirage de loot testable à graine fixe,
+// plutôt que de dupliquer l'algorithme.
+export function mulberry32(graine) {
   let a = graine >>> 0;
   return function () {
     a |= 0;
@@ -15,12 +20,21 @@ function mulberry32(graine) {
   };
 }
 
-const MOTIFS = ['brin_herbe', 'caillou', 'fleur'];
-const DENSITE_PROVISOIRE = 0.15; // proportion de tuiles de sol décorées, non validée en jeu
+// Décor (03_grotte-polish §3.4) : scene.decor = { densite, motifs: [{ visuel,
+// poids }] } — un motif de plus dans motifs[] ne demande aucun code (règle
+// d'architecture directrice, §7 carte mentale). Scène sans `decor` -> aucun
+// motif, jamais une erreur (§4 edge case) : contrairement à `layout`/`spawn`,
+// ce champ reste optionnel. `visuel` reste un id (string) ici : c'est
+// l'appelant (main.js, qui a le registre) qui le résout en entrée de
+// visuels.json, jamais decor.js — même séparation que pour les monstres/
+// leviers.
+const ROTATION_MAX_DEG = 10; // provisoire : "légère" variation (§3.4), pas une rotation aléatoire visible
 
-// Retourne la liste des motifs à dessiner : { tileX, tileY, motif, x, y }
-// (x, y en pixels, dans le repère de la scène).
-export function genererDecor(scene, densite = DENSITE_PROVISOIRE) {
+export function genererDecor(scene) {
+  const config = scene.decor;
+  if (!config || !Array.isArray(config.motifs) || config.motifs.length === 0) return [];
+
+  const poidsTotal = config.motifs.reduce((somme, m) => somme + m.poids, 0);
   const alea = mulberry32(scene.seed);
   const positionsSol = [];
   for (let y = 0; y < scene.height; y++) {
@@ -30,20 +44,68 @@ export function genererDecor(scene, densite = DENSITE_PROVISOIRE) {
     }
   }
 
-  const nombreMotifs = Math.floor(positionsSol.length * densite);
+  const nombreMotifs = Math.floor(positionsSol.length * config.densite);
   const decor = [];
   for (let i = 0; i < nombreMotifs; i++) {
     const position = positionsSol[Math.floor(alea() * positionsSol.length)];
-    const motif = MOTIFS[Math.floor(alea() * MOTIFS.length)];
-    const decalageX = alea();
-    const decalageY = alea();
+
+    // Tirage pondéré (poids/poidsTotal) : le dernier motif sert de repli en
+    // cas d'arrondi flottant en bout de tirage, jamais un motif indéfini.
+    let tirage = alea() * poidsTotal;
+    let visuel = config.motifs[config.motifs.length - 1].visuel;
+    for (const motif of config.motifs) {
+      if (tirage < motif.poids) {
+        visuel = motif.visuel;
+        break;
+      }
+      tirage -= motif.poids;
+    }
+
     decor.push({
-      tileX: position.x,
-      tileY: position.y,
-      motif,
-      x: (position.x + decalageX) * scene.tileSize,
-      y: (position.y + decalageY) * scene.tileSize,
+      x: (position.x + alea()) * scene.tileSize,
+      y: (position.y + alea()) * scene.tileSize,
+      visuel,
+      // Légère variation d'inclinaison par graine (§3.4, visuel_herbe) —
+      // appliquée à tout motif via dessinerVisuel#options.rotation plutôt que
+      // conditionnée à un id précis : un rocher/une flaque, symétriques ou
+      // quasi, n'en paraissent pas moins statiques ; un brin d'herbe, si.
+      rotation: (alea() * 2 - 1) * ROTATION_MAX_DEG,
     });
   }
   return decor;
+}
+
+function hexVersRgb(hex) {
+  const n = parseInt(hex.replace('#', ''), 16);
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+}
+
+function assombrirOuEclaircir(hex, facteur) {
+  const { r, g, b } = hexVersRgb(hex);
+  const ajuster = (canal) => Math.max(0, Math.min(255, Math.round(canal * facteur)));
+  const versHex = (canal) => canal.toString(16).padStart(2, '0');
+  return `#${versHex(ajuster(r))}${versHex(ajuster(g))}${versHex(ajuster(b))}`;
+}
+
+// Variante + teinte déterministe d'une tuile (§3.4, tiles.json > render.
+// variantes[]/variation_teinte) : casse la répétition visuelle sans nouvel
+// asset. Hash spatial (seed ^ position) plutôt qu'une avance séquentielle du
+// PRNG comme genererDecor ci-dessus — le calque statique de render.js peut
+// avoir besoin de reconstruire dans un ordre différent d'une reconstruction
+// à l'autre (changement d'échelle), et doit malgré tout retomber sur
+// exactement la même couleur à la même position.
+export function couleurTuile(scene, x, y, estFlagActif) {
+  const tuile = scene.tuileA(x, y, estFlagActif);
+  if (!tuile) return null;
+  const render = tuile.render;
+  const alea = mulberry32((scene.seed ^ (x * 73856093) ^ (y * 19349663)) >>> 0);
+  const palette = [render.valeur, ...(render.variantes || [])];
+  const base = palette[Math.floor(alea() * palette.length)];
+  const variation = render.variation_teinte;
+  if (!variation) return base;
+  // Facteur de luminosité dans [1-variation, 1+variation] : ±4% provisoire
+  // (§2.2 03_grotte-polish) suffit à casser la répétition sans créer de
+  // tuiles visiblement plus claires/sombres que leurs voisines.
+  const facteur = 1 + (alea() * 2 - 1) * variation;
+  return assombrirOuEclaircir(base, facteur);
 }

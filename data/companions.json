@@ -1,1 +1,29 @@
-[]
+[
+  {
+    "id": "comp_follet_feu",
+    "label_key": "companion.follet_feu",
+    "element": "elem_feu",
+    "synergie": "syn_feu",
+    "rayon_aura": 40,
+    "rayon_lumiere": 110,
+    "render": { "visuel": "visuel_follet_feu", "couleur": "#ff6a3d" }
+  },
+  {
+    "id": "comp_follet_eau",
+    "label_key": "companion.follet_eau",
+    "element": "elem_eau",
+    "synergie": "syn_eau",
+    "rayon_aura": 40,
+    "rayon_lumiere": 110,
+    "render": { "visuel": "visuel_follet_eau", "couleur": "#3daaff" }
+  },
+  {
+    "id": "comp_follet_terre",
+    "label_key": "companion.follet_terre",
+    "element": "elem_terre",
+    "synergie": "syn_terre",
+    "rayon_aura": 40,
+    "rayon_lumiere": 110,
+    "render": { "visuel": "visuel_follet_terre", "couleur": "#c2a23a" }
+  }
+]

@@ -1,1 +1,7 @@
-[]
+[
+  {
+    "id": "unlock_porte_salle2",
+    "condition": { "all": ["flag_grotte_sequence"] },
+    "target": "flag_grotte_sortie"
+  }
+]

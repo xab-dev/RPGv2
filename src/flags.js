@@ -2,9 +2,14 @@
 // Un flag doit être déclaré dans flags.json pour pouvoir être posé. Aucun
 // gating ne doit être écrit ailleurs dans le code de jeu.
 
-export function creerRegistreFlags(registre, { mode = 'dev', onUnlock = () => {} } = {}) {
+// `initial` : ids déjà posés à la construction (§3.10 : les flags survivent
+// à la sauvegarde). Ne passe pas par `set()` ni `onUnlock` — au chargement,
+// la sauvegarde reflète déjà l'état final d'une session précédente, la
+// ré-exposer via onUnlock déclencherait à tort ses effets de bord (ex.
+// rouvrir un dialogue) à chaque démarrage.
+export function creerRegistreFlags(registre, { mode = 'dev', onUnlock = () => {}, initial = [] } = {}) {
   const declares = new Set(registre.tous('flags').map((f) => f.id));
-  const poses = new Set();
+  const poses = new Set(initial);
   const unlocksTous = registre.tous('unlocks');
 
   function has(id) {

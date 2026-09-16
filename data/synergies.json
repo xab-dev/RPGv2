@@ -1,1 +1,5 @@
-[]
+[
+  { "id": "syn_feu", "element": "elem_feu", "effet_joueur": "buff_force", "effet_monstre": "dot_brulure" },
+  { "id": "syn_eau", "element": "elem_eau", "effet_joueur": "buff_agilite", "effet_monstre": "debuff_affaiblissement" },
+  { "id": "syn_terre", "element": "elem_terre", "effet_joueur": "buff_vitalite", "effet_monstre": "controle_entrave" }
+]

@@ -7,13 +7,13 @@ import { creerCoucheInput } from '../src/input/input.js';
 // Faux EventTarget minimal : le module clavier ne doit rien connaître de
 // plus qu'addEventListener (cf. contrainte "faux DOM minimal en test").
 function creerFausseCible() {
-  const gestionnaires = { keydown: [], keyup: [] };
+  const gestionnaires = {};
   return {
     addEventListener(type, fn) {
-      gestionnaires[type].push(fn);
+      (gestionnaires[type] ||= []).push(fn);
     },
     emettre(type, code) {
-      for (const fn of gestionnaires[type]) fn({ code });
+      for (const fn of gestionnaires[type] || []) fn({ code });
     },
   };
 }

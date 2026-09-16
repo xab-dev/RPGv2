@@ -1,1 +1,7 @@
-[]
+[
+  { "id": "flag_follet_choisi", "label_key": "flag.follet_choisi" },
+  { "id": "flag_levier_salle1", "label_key": "flag.levier_salle1" },
+  { "id": "flag_grotte_monstre_tue", "label_key": "flag.grotte_monstre_tue" },
+  { "id": "flag_grotte_sequence", "label_key": "flag.grotte_sequence" },
+  { "id": "flag_grotte_sortie", "label_key": "flag.grotte_sortie" }
+]

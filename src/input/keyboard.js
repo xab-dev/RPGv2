@@ -26,10 +26,22 @@ export function creerSourceClavier(cible, mapping = MAPPING_CLAVIER_PROVISOIRE) 
   function surRelache(e) {
     touchesEnfoncees.delete(e.code);
   }
+  // Un `keyup` n'est pas garanti après une perte de focus de la fenêtre
+  // (alt-tab, clic hors fenêtre, notification système) alors qu'une touche
+  // est physiquement tenue (diagnostic SD_grotte-blocage-choix-follet_
+  // 2026-09-15.md) : sans ce filet, le verbe reste "enfoncé" pour toujours
+  // côté clavier, et src/input/input.js#maj (un seul OR par verbe, toutes
+  // sources confondues) ne produit alors plus jamais de front montant sur ce
+  // verbe pour AUCUNE source (manette ou tactile incluses) — un blocage total
+  // et silencieux, sans erreur, jusqu'au rechargement de la page.
+  function surPertefocus() {
+    touchesEnfoncees.clear();
+  }
 
   if (cible && typeof cible.addEventListener === 'function') {
     cible.addEventListener('keydown', surAppui);
     cible.addEventListener('keyup', surRelache);
+    cible.addEventListener('blur', surPertefocus);
   }
 
   function unePresente(codes) {

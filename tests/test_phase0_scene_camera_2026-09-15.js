@@ -20,6 +20,13 @@ function registreDeTest() {
         tile_size: 32,
         seed: 42,
         spawn: { x: 2, y: 2 },
+        // decor (03_grotte-polish §3.4) : depuis ce ticket, genererDecor() ne
+        // pose plus de motif tant qu'une scène ne déclare pas scene.decor —
+        // ce fixture en garde un minimal pour continuer à exercer le
+        // déterminisme du générateur (tests 6/7 ci-dessous), sans dépendre
+        // d'un vrai catalogue visuels (decor.js ne valide pas l'id, seul
+        // schemas.js le fait).
+        decor: { densite: 0.3, motifs: [{ visuel: 'visuel_test', poids: 1 }] },
         layout: [
           ['tile_mur', 'tile_mur', 'tile_mur', 'tile_mur', 'tile_mur'],
           ['tile_mur', 'tile_sol', 'tile_sol', 'tile_sol', 'tile_mur'],

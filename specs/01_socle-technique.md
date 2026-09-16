@@ -1,6 +1,6 @@
 # RPG V2 — SPEC : Phase 0, Socle technique
 
-**Contexte déjà disponible pour Claude Code** : `00_ROADMAP.md` (à lire en entier d'abord — décisions actées et contraintes de méthode), `carte_mentale_RPG_V2_v1_2_0.md` (référence des 30 décisions, §0 et §8). Patrons V1 à consulter pour inspiration seulement, jamais à copier : `docs/CLAUDE_archive.md` (architecture de scènes, tables déclaratives, tests headless) et `monde/rpg_v0_1_0.js` (`calculerCamera`, `saveGame`/`loadGame`, séparation HTML/JS pour `node --check`).
+**Contexte déjà disponible pour Claude Code** : `00_ROADMAP.md` (à lire en entier d'abord — décisions actées et contraintes de méthode), `carte_mentale_RPG_V2_v1_3_0.md` (référence des 30 décisions, §0 et §8). Patrons V1 à consulter pour inspiration seulement, jamais à copier : `docs/CLAUDE_archive.md` (architecture de scènes, tables déclaratives, tests headless) et `monde/rpg_v0_1_0.js` (`calculerCamera`, `saveGame`/`loadGame`, séparation HTML/JS pour `node --check`).
 
 ## 1. Rôle du module
 

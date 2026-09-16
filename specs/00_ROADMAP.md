@@ -2,7 +2,7 @@
 
 **Version : 1.0.0** — document vivant.
 
-**Statut** : vision validée (cadrage clos le 2026-09-15, cf. `carte_mentale_RPG_V2_v1_2_0.md`, 30 décisions verrouillées). Ce document sert de brief autonome — à donner tel quel à Claude Code pour démarrer la phase courante sans aller-retour préalable.
+**Statut** : vision validée (cadrage clos le 2026-09-15, cf. `carte_mentale_RPG_V2_v1_3_0.md`, 30 décisions verrouillées). Ce document sert de brief autonome — à donner tel quel à Claude Code pour démarrer la phase courante sans aller-retour préalable.
 
 ---
 
@@ -23,7 +23,7 @@
 
 ## Décisions déjà tranchées (ne pas rouvrir)
 
-Référence complète : `carte_mentale_RPG_V2_v1_2_0.md` §0 et §8. Résumé opérationnel :
+Référence complète : `carte_mentale_RPG_V2_v1_3_0.md` §0 et §8. Résumé opérationnel :
 
 ### Plateforme & technique
 | Décision | Valeur |
@@ -48,7 +48,7 @@ Référence complète : `carte_mentale_RPG_V2_v1_2_0.md` §0 et §8. Résumé op
 | Progression | **XP → stats** (points de stat par niveau). **Jalons narratifs → capacités.** Deux axes indépendants. Sources d'XP : combat **et craft**. Accès à la 1ère zone de monstres gaté par niveau (~5). |
 | Actions | 5 slots : 1 attaque + 3 compétences + 1 consommable. Nombre de slots en données. |
 | Équipement | 3 slots : arme, armure, accessoire. |
-| Effets d'état | Buffs/débuffs, dégâts sur la durée, contrôles — **chacun dérivé logiquement de son élément**. Table des synergies élémentaires : à écrire (livrable Phase 1). |
+| Effets d'état | Buffs/débuffs, dégâts sur la durée, contrôles — **chacun dérivé logiquement de son élément**. Table des synergies élémentaires : **écrite, `02_grotte.md` §3.4.** |
 | Survie | Faim / soif / santé = pénalités progressives, jamais bloquantes. **Jauges gelées hors session.** Repas = buffs (la cuisine est un système de build). |
 | Jardinage | Croissance **à l'action**, jamais au temps réel. Aucun timer d'attente dans tout le jeu. |
 | Recettes | **Un seul système**, stations et catégories de sortie en données (cuisine, table de craft en M1 ; forge, alchimie, armurerie plus tard = entrées JSON). |
@@ -63,7 +63,7 @@ Référence complète : `carte_mentale_RPG_V2_v1_2_0.md` §0 et §8. Résumé op
 | Modèle | Gratuit + dons externes. Zéro pub, zéro achat, zéro monnaie premium, aucune mécanique de frustration monétisable. |
 
 ### Risques inscrits, à ne pas redécouvrir
-Voir `carte_mentale_RPG_V2_v1_2_0.md` §0bis : cohérence 3 éléments RPG vs 9 haTD (à traiter au contrat de cartouche, M2+) ; tension éclats/paliers de vitalité si un marchand existe ; volume de texte doublé par le bilinguisme ; densité de 5 actions sous le pouce droit en tactile ; conformité Play Store sur la sollicitation de dons.
+Voir `carte_mentale_RPG_V2_v1_3_0.md` §0bis : cohérence 3 éléments RPG vs 9 haTD (à traiter au contrat de cartouche, M2+) ; tension éclats/paliers de vitalité si un marchand existe ; volume de texte doublé par le bilinguisme ; densité de 5 actions sous le pouce droit en tactile ; conformité Play Store sur la sollicitation de dons.
 
 ---
 
@@ -115,8 +115,11 @@ Première scène jouable de bout en bout, et **preuve de tous les systèmes de c
 - Salle 2 : **un monstre apparaît** — tutoriel de l'attaque de base ; le follet délivre son lore et l'explication de la synergie. Puis **trois leviers sans instruction** (code : milieu → gauche → droite), une porte apparaît, sortie vers la Région Maison.
 - Livre : combat de base (`ATTACK`), premier ennemi en JSON, premiers effets d'état élémentaires, follet suiveur avec sa lumière, catalogue d'énigmes (type `levier`, type `séquence`), dialogue/lore localisé, **HUD tactile** validé sur cette scène, **table des synergies élémentaires écrite** (livrable de design).
 - Critère : un joueur qui ne connaît pas le jeu sort de la grotte à la manette **et** au tactile sans qu'on lui explique rien.
+- **Statut : Livrée** (Phase 1 + polish 1b, `02_grotte.md` / `03_grotte-polish.md`) — manette réelle et DA validées le 2026-09-16 ; tactile en dette assumée jusqu'à la Phase 4.
 
 ### Phase 2 — Région Maison, extérieur
+**Phase courante** — spec à venir : `04_maison-exterieur.md`.
+
 Première grande carte de tuiles (≥ ordre de grandeur du monde principal V1, 5400 × 3700). La grotte est au fond du jardin.
 - Forêt (bois à couper), pierre à miner, fruits à cueillir, **champs à semer** (croissance à l'action), animaux sauvages qui réapparaissent (loups → viande, lapins…), **décoration plantable** (arbres, fleurs) devant la maison.
 - Cycle jour/nuit avec le **follet comme seule source de lumière**.

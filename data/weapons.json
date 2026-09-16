@@ -1,1 +1,3 @@
-[]
+[
+  { "id": "weapon_epee_bois", "label_key": "weapon.epee_bois", "portee": { "min": 0, "max": 1 } }
+]

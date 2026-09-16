@@ -1,0 +1,14 @@
+[
+  {
+    "id": "derivee_pv_max",
+    "label_key": "derivee.pv_max",
+    "stat": "stat_vitalite",
+    "formule": { "base": 10, "coefficient": 8, "min": 1 }
+  },
+  {
+    "id": "derivee_cooldown_attaque_ms",
+    "label_key": "derivee.cooldown_attaque_ms",
+    "stat": "stat_agilite",
+    "formule": { "base": 700, "coefficient": -40, "min": 150 }
+  }
+]

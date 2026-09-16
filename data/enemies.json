@@ -1,1 +1,15 @@
-[]
+[
+  {
+    "id": "enemy_grotte_rampant",
+    "label_key": "enemy.grotte_rampant",
+    "pv": 12,
+    "force": 3,
+    "vitesse": 40,
+    "portee_attaque": 18,
+    "cadence_attaque_ms": 900,
+    "comportement": "melee",
+    "element": null,
+    "loot_table": "loot_grotte_rampant",
+    "render": { "visuel": "visuel_monstre_rampant" }
+  }
+]

@@ -1,1 +1,31 @@
-[]
+[
+  {
+    "id": "dlg_grotte_choix_follet",
+    "declencheur": "grotte_salle1_cinematique",
+    "lignes": [
+      { "locuteur": "narrateur", "text_key": "dlg.choix_follet.1" }
+    ]
+  },
+  {
+    "id": "dlg_grotte_follet_enthousiaste",
+    "declencheur": "grotte_salle1_follet_choisi",
+    "lignes": [
+      { "locuteur": "follet", "text_key": "dlg.follet_enthousiaste.1" }
+    ]
+  },
+  {
+    "id": "dlg_grotte_tuto_combat",
+    "declencheur": "grotte_salle2_entree",
+    "lignes": [
+      { "locuteur": "follet", "text_key": "dlg.tuto_combat.1" },
+      { "locuteur": "follet", "text_key": "dlg.tuto_combat.2" }
+    ]
+  },
+  {
+    "id": "dlg_grotte_eclats",
+    "declencheur": "grotte_salle2_monstre_tue",
+    "lignes": [
+      { "locuteur": "follet", "text_key": "dlg.eclats.1" }
+    ]
+  }
+]

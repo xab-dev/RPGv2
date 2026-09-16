@@ -23,24 +23,37 @@ const RACINE = path.join(__dirname, '..');
   assert.equal(avancerHeure(DUREE_CYCLE_MS - 50, 100), 50);
 }
 
+// Début cumulé (ms) de chaque phase — recalculé ici indépendamment de
+// l'implémentation (pas d'import d'un détail interne de daynight.js).
+const DEBUTS_MS = (() => {
+  let cumul = 0;
+  return PHASES_CYCLE.map((phase) => {
+    const debut = cumul;
+    cumul += phase.duree_ms;
+    return debut;
+  });
+})();
+
 // 2. Opacité aux bornes de chaque phase déclarée == exactement la valeur de
 // données (pas d'interpolation au tout début d'une phase).
 {
-  for (const phase of PHASES_CYCLE) {
-    const heure = phase.debut * DUREE_CYCLE_MS;
-    assert.equal(opaciteAHeure(heure), phase.opacite, `phase "${phase.nom}" incohérente à son début`);
-  }
+  PHASES_CYCLE.forEach((phase, i) => {
+    assert.equal(opaciteAHeure(DEBUTS_MS[i]), phase.opacite, `phase "${phase.nom}" incohérente à son début`);
+  });
 }
 
-// 3. Interpolation strictement entre deux valeurs de phases adjacentes,
-// jamais un saut nul (sauf phases de même opacité).
+// 3. Interpolation strictement entre deux phases d'opacité différente
+// (crépuscule -> nuit, la rampe réelle — jour/nuit sont des plateaux et
+// n'ont donc rien à interpoler avec leur voisin immédiat, cf. test 6).
 {
-  const debut = PHASES_CYCLE[0].opacite;
-  const fin = PHASES_CYCLE[1].opacite;
-  const milieu = ((PHASES_CYCLE[0].debut + PHASES_CYCLE[1].debut) / 2) * DUREE_CYCLE_MS;
+  const i = PHASES_CYCLE.findIndex((p, k) => p.opacite !== PHASES_CYCLE[(k + 1) % PHASES_CYCLE.length].opacite);
+  assert.ok(i >= 0, 'aucune transition réelle trouvée entre phases');
+  const phase = PHASES_CYCLE[i];
+  const suivante = PHASES_CYCLE[(i + 1) % PHASES_CYCLE.length];
+  const milieu = DEBUTS_MS[i] + phase.duree_ms / 2;
   const opaciteMilieu = opaciteAHeure(milieu);
-  const [lo, hi] = debut < fin ? [debut, fin] : [fin, debut];
-  assert.ok(opaciteMilieu >= lo && opaciteMilieu <= hi, `interpolation hors bornes : ${opaciteMilieu}`);
+  const [lo, hi] = phase.opacite < suivante.opacite ? [phase.opacite, suivante.opacite] : [suivante.opacite, phase.opacite];
+  assert.ok(opaciteMilieu > lo && opaciteMilieu < hi, `interpolation hors bornes : ${opaciteMilieu}`);
 }
 
 // 4. phaseAHeure renvoie un nom de phase déclaré.
@@ -48,6 +61,45 @@ const RACINE = path.join(__dirname, '..');
   const noms = new Set(PHASES_CYCLE.map((p) => p.nom));
   assert.ok(noms.has(phaseAHeure(0)));
   assert.ok(noms.has(phaseAHeure(DUREE_CYCLE_MS * 0.6)));
+}
+
+// 5. Durées par phase (verdict Xav 2026-09-16 §5) : jour 10 min, crépuscule
+// et aube 1 min 30, nuit 4 min francs — DUREE_CYCLE_MS = leur somme, pas une
+// constante indépendante qui pourrait diverger des phases.
+{
+  const attendu = { jour: 600000, crepuscule: 90000, nuit: 240000, aube: 90000 };
+  for (const phase of PHASES_CYCLE) {
+    assert.equal(phase.duree_ms, attendu[phase.nom], `durée de "${phase.nom}" inattendue`);
+  }
+  assert.equal(DUREE_CYCLE_MS, Object.values(attendu).reduce((a, b) => a + b, 0));
+}
+
+// 6. Jour et nuit sont des plateaux francs (§6) : l'opacité ne bouge pas à
+// l'intérieur de leur propre durée, échantillonnée à plusieurs points, pas
+// seulement à leurs bornes (une nuit "pleine un instant" ne doit plus
+// pouvoir se reproduire).
+{
+  for (const nomPlateau of ['jour', 'nuit']) {
+    const i = PHASES_CYCLE.findIndex((p) => p.nom === nomPlateau);
+    const phase = PHASES_CYCLE[i];
+    for (const fraction of [0, 0.25, 0.5, 0.75, 0.99]) {
+      const heure = DEBUTS_MS[i] + phase.duree_ms * fraction;
+      assert.equal(opaciteAHeure(heure), phase.opacite, `"${nomPlateau}" n'est pas un plateau à ${fraction}`);
+    }
+  }
+}
+
+// 7. Aucune transition ne dépasse le niveau nuit (le plateau nuit reste le
+// maximum du cycle) ni ne descend sous le niveau jour (le plateau jour reste
+// le minimum) — échantillonnage dense sur tout le cycle.
+{
+  const nuitOpacite = PHASES_CYCLE.find((p) => p.nom === 'nuit').opacite;
+  const jourOpacite = PHASES_CYCLE.find((p) => p.nom === 'jour').opacite;
+  for (let t = 0; t < DUREE_CYCLE_MS; t += 1000) {
+    const o = opaciteAHeure(t);
+    assert.ok(o <= nuitOpacite + 1e-9, `opacité ${o} dépasse le niveau nuit à t=${t}`);
+    assert.ok(o >= jourOpacite - 1e-9, `opacité ${o} descend sous le niveau jour à t=${t}`);
+  }
 }
 
 // 5. Sur le vrai orchestrateur (données réelles) : l'heure n'avance pas

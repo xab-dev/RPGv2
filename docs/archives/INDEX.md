@@ -18,5 +18,6 @@ Ménage du 2026-09-17 (`DOC_menage-claude-md_2026-09-17.md`) : `CLAUDE.md` ne ga
 | 2026-09-16 | Phase 1b, palier 4 | [JOURNAL_2026-09-16_phase1b-palier4.md](JOURNAL_2026-09-16_phase1b-palier4.md) | Intro cinématique de la Grotte (`intro.js`, paupières), fin de la Phase 1b |
 | 2026-09-16 | Reports documentaires | [JOURNAL_2026-09-16_reports-documentaires.md](JOURNAL_2026-09-16_reports-documentaires.md) | Mise à jour de la carte mentale et des specs, aucun code touché |
 | 2026-09-16 | Phase 2 : Région Maison, première marche | [JOURNAL_2026-09-16_phase2-premiere-marche.md](JOURNAL_2026-09-16_phase2-premiere-marche.md) | Layout en lignes, forêt procédurale, ressources bloquées, poche/inventaire, toit, cycle jour/nuit, audio |
+| 2026-09-16/17 | Diagnostic accrochage des coins + arbre introuvable | [JOURNAL_2026-09-16_diagnostic-accrochage-arbre.md](JOURNAL_2026-09-16_diagnostic-accrochage-arbre.md) | Correction de coin dans `resoudreDeplacement` (`TOLERANCE_COIN_PX`), repositionnement de l'arbre interactif sur le chemin, clôture du critère de passage Phase 2 |
 
-Le journal le plus récent (Diagnostic accrochage des coins + arbre introuvable, 2026-09-16/17) reste dans `CLAUDE.md` jusqu'à la prochaine session, qui l'archivera ici à son tour (règle de méthode « ménage de journal », voir `CLAUDE.md`).
+Le journal le plus récent (`MT_jour-nuit-contraste_2026-09-16.md`, réglage contraste/durées jour-nuit, 2026-09-17) reste dans `CLAUDE.md` jusqu'à la prochaine session, qui l'archivera ici à son tour (règle de méthode « ménage de journal », voir `CLAUDE.md`).

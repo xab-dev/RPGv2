@@ -158,7 +158,15 @@ function afficherEcran(el, visible) {
   el.style.display = visible ? 'flex' : 'none';
 }
 
-export function initialiserMenu({ document, i18n, exporterSauvegarde, importerSauvegarde }) {
+// 03_maison-exterieur §3.3/§3.6 : deux entrées de plus (Musique, Poche),
+// jamais lues avant que main.js les fournisse — `musiqueActive`/
+// `basculerMusique` et `listerPoche` restent optionnels (défauts inertes) au
+// cas où un futur test construirait le menu sans ces dépendances, comme les
+// tests existants du menu-manette le font déjà pour exporter/importer.
+export function initialiserMenu({
+  document, i18n, exporterSauvegarde, importerSauvegarde,
+  musiqueActive = () => true, basculerMusique = () => {}, listerPoche = () => [],
+}) {
   const conteneur = document.createElement('div');
   conteneur.id = 'menu';
   afficherEcran(conteneur, false);
@@ -171,22 +179,48 @@ export function initialiserMenu({ document, i18n, exporterSauvegarde, importerSa
     </div>
     <div class="menu-item" data-item="1">
       <span class="menu-curseur"></span>
-      <button id="menu-exporter" data-cle="menu.exporter" type="button"></button>
+      <button id="menu-musique" data-cle="menu.musique" type="button"></button>
     </div>
     <div class="menu-item" data-item="2">
       <span class="menu-curseur"></span>
-      <input id="menu-importer" type="file" accept="application/json" />
+      <button id="menu-poche" data-cle="menu.poche" type="button"></button>
     </div>
     <div class="menu-item" data-item="3">
       <span class="menu-curseur"></span>
-      <button id="menu-reset" data-cle="menu.reset_sauvegarde" type="button"></button>
+      <button id="menu-exporter" data-cle="menu.exporter" type="button"></button>
     </div>
     <div class="menu-item" data-item="4">
+      <span class="menu-curseur"></span>
+      <input id="menu-importer" type="file" accept="application/json" />
+    </div>
+    <div class="menu-item" data-item="5">
+      <span class="menu-curseur"></span>
+      <button id="menu-reset" data-cle="menu.reset_sauvegarde" type="button"></button>
+    </div>
+    <div class="menu-item" data-item="6">
       <span class="menu-curseur"></span>
       <button id="menu-fermer" data-cle="menu.fermer" type="button"></button>
     </div>
   `;
   document.body.appendChild(conteneur);
+
+  // Poche (§3.3) : écran plein écran en lecture seule (aucune action dessus
+  // en Phase 2, cf. spec) — même patron DOM que `confirmation` plus bas
+  // (jamais visible en même temps que le menu principal). Le contenu
+  // (`<ul>`) est reconstruit à chaque ouverture depuis `listerPoche()`.
+  const poche = document.createElement('div');
+  poche.id = 'menu-poche';
+  appliquerStylePleinEcran(poche);
+  afficherEcran(poche, false);
+  poche.innerHTML = `
+    <h2 data-cle="menu.poche_titre"></h2>
+    <ul id="menu-poche-liste" style="list-style:none;padding:0;text-align:center;"></ul>
+    <div class="menu-item" data-item="0">
+      <span class="menu-curseur"></span>
+      <button id="menu-poche-fermer" data-cle="menu.fermer" type="button"></button>
+    </div>
+  `;
+  document.body.appendChild(poche);
 
   // Écran de confirmation (§B) : sous-menu à 2 entrées, conteneur DOM séparé
   // plutôt qu'imbriqué dans `conteneur` — masquer l'un affiche l'autre, les
@@ -208,6 +242,10 @@ export function initialiserMenu({ document, i18n, exporterSauvegarde, importerSa
   `;
   document.body.appendChild(confirmation);
 
+  // Boutons Musique/Poche retraduits explicitement (leur texte dépend d'un
+  // état, pas seulement de la langue — cf. actualiserBoutonMusique/
+  // actualiserListePoche) : `[data-cle]` seul suffit pour langue/exporter/
+  // etc., mais écraserait ce texte dynamique s'il tournait après coup.
   function retraduire() {
     conteneur.querySelectorAll('[data-cle]').forEach((el) => {
       el.textContent = i18n.t(el.dataset.cle);
@@ -215,8 +253,11 @@ export function initialiserMenu({ document, i18n, exporterSauvegarde, importerSa
     confirmation.querySelectorAll('[data-cle]').forEach((el) => {
       el.textContent = i18n.t(el.dataset.cle);
     });
+    poche.querySelectorAll('[data-cle]').forEach((el) => {
+      el.textContent = i18n.t(el.dataset.cle);
+    });
+    actualiserBoutonMusique();
   }
-  retraduire();
 
   const selectLangue = conteneur.querySelector('#menu-langue');
   selectLangue.value = i18n.langueCourante();
@@ -234,6 +275,52 @@ export function initialiserMenu({ document, i18n, exporterSauvegarde, importerSa
     i18n.definirLangue(selectLangue.value);
     retraduire();
   }
+
+  // Musique (§3.6) : bouton "Musique : Oui/Non" — même convention que la
+  // langue (ATTACK bascule), l'état réel (save.settings.musique) et l'effet
+  // (audio.js#definirMusiqueActive) vivent tous les deux dans main.js.
+  const boutonMusique = conteneur.querySelector('#menu-musique');
+  function actualiserBoutonMusique() {
+    const suffixe = musiqueActive() ? i18n.t('menu.musique_oui') : i18n.t('menu.musique_non');
+    boutonMusique.textContent = `${i18n.t('menu.musique')} : ${suffixe}`;
+  }
+  function actionBasculerMusique() {
+    basculerMusique();
+    actualiserBoutonMusique();
+  }
+  boutonMusique.addEventListener('click', actionBasculerMusique);
+
+  // Poche (§3.3) : écran en lecture seule, reconstruit à chaque ouverture —
+  // jamais mis à jour en arrière-plan (le menu gèle déjà le gameplay pendant
+  // qu'il est ouvert, point de décision unique de main.js#maj()).
+  const listePoche = poche.querySelector('#menu-poche-liste');
+  function actualiserListePoche() {
+    const entrees = listerPoche();
+    listePoche.innerHTML = entrees.length
+      ? entrees.map((e) => `<li>${e.label} × ${e.quantite}</li>`).join('')
+      : `<li>${i18n.t('menu.poche_vide')}</li>`;
+  }
+
+  function fermerPoche() {
+    controleurPoche.fermer();
+    afficherEcran(poche, false);
+    afficherEcran(conteneur, true);
+    actualiserFocusVisuel();
+  }
+  function actionOuvrirPoche() {
+    afficherEcran(conteneur, false);
+    actualiserListePoche();
+    afficherEcran(poche, true);
+    controleurPoche.ouvrir();
+    actualiserFocusPoche();
+  }
+  // Un seul élément navigable (Fermer) : verbeAnnuler suffit déjà à fermer
+  // par B, le contrôleur reste malgré tout le même patron que les 2 autres
+  // écrans (focus visuel cohérent, pas un cas spécial).
+  const controleurPoche = creerControleurMenu([fermerPoche], { verbeAnnuler: 'skill_3' });
+  poche.querySelector('#menu-poche-fermer').addEventListener('click', fermerPoche);
+
+  retraduire();
 
   conteneur.querySelector('#menu-exporter').addEventListener('click', () => exporterSauvegarde());
 
@@ -295,14 +382,17 @@ export function initialiserMenu({ document, i18n, exporterSauvegarde, importerSa
   confirmation.querySelector('#menu-reset-oui').addEventListener('click', actionConfirmerOui);
   confirmation.querySelector('#menu-reset-non').addEventListener('click', actionConfirmerNon);
 
-  // Ordre = ordre de navigation MOVE (§2 du ticket) : langue, exporter,
-  // importer, réinitialiser, fermer. ATTACK sur un élément déclenche
-  // exactement la même fonction que son équivalent souris (pas une copie).
-  // `verbeAnnuler: 'skill_3'` ajoute B comme raccourci de fermeture
-  // (convention manette "B = retour"), indépendant du focus courant — Start
-  // n'ouvre le menu que dans un sens, voir main.js.
+  // Ordre = ordre de navigation MOVE, aligné sur le HTML ci-dessus : langue,
+  // musique, poche, exporter, importer, réinitialiser, fermer. ATTACK sur un
+  // élément déclenche exactement la même fonction que son équivalent souris
+  // (pas une copie). `verbeAnnuler: 'skill_3'` ajoute B comme raccourci de
+  // fermeture (convention manette "B = retour"), indépendant du focus
+  // courant — Start n'ouvre le menu que dans un sens, voir main.js.
   const controleur = creerControleurMenu(
-    [actionBasculerLangue, () => exporterSauvegarde(), () => inputImporter.click(), actionOuvrirConfirmation, fermerMenu],
+    [
+      actionBasculerLangue, actionBasculerMusique, actionOuvrirPoche,
+      () => exporterSauvegarde(), () => inputImporter.click(), actionOuvrirConfirmation, fermerMenu,
+    ],
     { verbeAnnuler: 'skill_3' }
   );
 
@@ -316,12 +406,16 @@ export function initialiserMenu({ document, i18n, exporterSauvegarde, importerSa
 
   const elementsItems = Array.from(conteneur.querySelectorAll('.menu-item'));
   const elementsConfirmation = Array.from(confirmation.querySelectorAll('.menu-item'));
+  const elementsPoche = Array.from(poche.querySelectorAll('.menu-item'));
 
   function actualiserFocusVisuel() {
     appliquerFocusVisuel(elementsItems, controleur.index());
   }
   function actualiserFocusConfirmation() {
     appliquerFocusVisuel(elementsConfirmation, controleurConfirmation.index());
+  }
+  function actualiserFocusPoche() {
+    appliquerFocusVisuel(elementsPoche, controleurPoche.index());
   }
 
   elementsItems.forEach((el, i) => {
@@ -336,12 +430,20 @@ export function initialiserMenu({ document, i18n, exporterSauvegarde, importerSa
       actualiserFocusConfirmation();
     });
   });
+  elementsPoche.forEach((el, i) => {
+    el.addEventListener('mouseenter', () => {
+      controleurPoche.definirIndex(i);
+      actualiserFocusPoche();
+    });
+  });
 
   return {
     ouvrir() {
       afficherEcran(conteneur, true);
       afficherEcran(confirmation, false);
+      afficherEcran(poche, false);
       controleurConfirmation.fermer();
+      controleurPoche.fermer();
       controleur.ouvrir();
       actualiserFocusVisuel();
       retraduire();
@@ -349,11 +451,13 @@ export function initialiserMenu({ document, i18n, exporterSauvegarde, importerSa
     fermer() {
       controleur.fermer();
       controleurConfirmation.fermer();
+      controleurPoche.fermer();
       afficherEcran(conteneur, false);
       afficherEcran(confirmation, false);
+      afficherEcran(poche, false);
     },
     estOuvert() {
-      return controleur.estOuvert() || controleurConfirmation.estOuvert();
+      return controleur.estOuvert() || controleurConfirmation.estOuvert() || controleurPoche.estOuvert();
     },
     // Fournit l'action réelle de reinitialiserPartie() après la construction
     // de l'orchestrateur (voir commentaire sur `actionReinitialiser`
@@ -364,9 +468,9 @@ export function initialiserMenu({ document, i18n, exporterSauvegarde, importerSa
     },
     // Point d'entrée appelé par main.js tant que le menu est ouvert (voir
     // la priorité UI/gameplay dans main.js#maj). Un seul écran actif à la
-    // fois (confirmation prioritaire sur l'écran principal, jamais les deux
-    // dispatchés la même frame) — la fermeture par focus cache déjà le bon
-    // conteneur ; celle par B (verbeAnnuler) ne fait que fermer le
+    // fois (confirmation/poche prioritaires sur l'écran principal, jamais
+    // deux dispatchés la même frame) — la fermeture par focus cache déjà le
+    // bon conteneur ; celle par B (verbeAnnuler) ne fait que fermer le
     // contrôleur interne, donc on resynchronise l'affichage ici dans tous
     // les cas plutôt que de dupliquer la condition à chaque site d'appel.
     traiterInput(etat) {
@@ -380,6 +484,19 @@ export function initialiserMenu({ document, i18n, exporterSauvegarde, importerSa
           revenirAuMenuPrincipal();
         } else {
           afficherEcran(confirmation, false);
+        }
+        return;
+      }
+      if (controleurPoche.estOuvert()) {
+        controleurPoche.traiterInput(etat);
+        if (controleurPoche.estOuvert()) {
+          actualiserFocusPoche();
+        } else if (controleur.estOuvert()) {
+          afficherEcran(poche, false);
+          afficherEcran(conteneur, true);
+          actualiserFocusVisuel();
+        } else {
+          afficherEcran(poche, false);
         }
         return;
       }

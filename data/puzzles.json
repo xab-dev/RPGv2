@@ -33,5 +33,33 @@
     "ordre": ["puzzle_levier_s2_milieu", "puzzle_levier_s2_gauche", "puzzle_levier_s2_droite"],
     "reinit_si_erreur": true,
     "flag_pose": "flag_grotte_sequence"
+  },
+  {
+    "id": "station_table",
+    "type": "station_placeholder",
+    "position": { "x": 82, "y": 54 },
+    "dialogue": "dlg_station_pas_encore",
+    "render": { "visuel": "visuel_table" }
+  },
+  {
+    "id": "station_coffre",
+    "type": "station_placeholder",
+    "position": { "x": 86, "y": 54 },
+    "dialogue": "dlg_station_pas_encore",
+    "render": { "visuel": "visuel_coffre" }
+  },
+  {
+    "id": "station_atelier",
+    "type": "station_placeholder",
+    "position": { "x": 89, "y": 58 },
+    "dialogue": "dlg_station_pas_encore",
+    "render": { "visuel": "visuel_atelier" }
+  },
+  {
+    "id": "station_puits",
+    "type": "station_placeholder",
+    "position": { "x": 106, "y": 57 },
+    "dialogue": "dlg_puits_pas_encore",
+    "render": { "visuel": "visuel_puits" }
   }
 ]

@@ -24,25 +24,27 @@ import { migrer, VERSION_SCHEMA_COURANTE, creerStoreMemoire, sauvegarder, charge
   assert.equal(migre.settings.lang, 'en', 'les réglages déjà présents ne doivent pas être perdus');
 }
 
-// 2. La version courante du module est bien 2.
+// 2. La version courante du module (03_maison-exterieur §3.7 : migration
+// 2 -> 3 ajoutée cette session, cf. test_phase2_save_migration_2_3).
 {
-  assert.equal(VERSION_SCHEMA_COURANTE, 2);
+  assert.equal(VERSION_SCHEMA_COURANTE, 3);
 }
 
-// 3. Cycle complet écrire/relire d'une sauvegarde v1 migrée automatiquement au chargement.
+// 3. Cycle complet écrire/relire d'une sauvegarde v1 migrée automatiquement
+// au chargement — jusqu'à la version courante (3 : chaîne 1 -> 2 -> 3).
 {
   const store = creerStoreMemoire();
   const payloadV1 = { schema_version: 1, hero: { scene: 'scene_salle_test', x: 5, y: 5 }, flags: {}, settings: { lang: 'fr' } };
   await sauvegarder(store, payloadV1);
   const { payload } = await charger(store);
-  assert.equal(payload.schema_version, 2);
+  assert.equal(payload.schema_version, 3);
   assert.equal(payload.hero.x, 5);
 }
 
-// 4. Version supérieure à celle du jeu (3, future) -> refusée, jamais de migration descendante.
+// 4. Version supérieure à celle du jeu (4, future) -> refusée, jamais de migration descendante.
 {
-  const payloadFutur = { schema_version: 3, hero: { scene: 'x', x: 0, y: 0 }, flags: {}, settings: { lang: 'fr' } };
-  assert.throws(() => migrer(payloadFutur, 2), /supérieure/);
+  const payloadFutur = { schema_version: 4, hero: { scene: 'x', x: 0, y: 0 }, flags: {}, settings: { lang: 'fr' } };
+  assert.throws(() => migrer(payloadFutur, 3), /supérieure/);
 }
 
 console.log('OK test_phase1_save_migration_1_2');

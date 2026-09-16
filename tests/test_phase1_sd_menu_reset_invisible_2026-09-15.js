@@ -170,8 +170,11 @@ function construireMenu() {
 // Amène le focus du menu principal sur l'entrée "Réinitialiser" (index 3 :
 // langue, exporter, importer, réinitialiser, fermer) par 3 crans successifs
 // avant/après relâchement, comme le ferait réellement une manette.
+// "Réinitialiser la sauvegarde" est le 6ᵉ élément (index 5) depuis
+// 03_maison-exterieur (Musique et Poche insérées avant lui, ordre : langue,
+// musique, poche, exporter, importer, réinitialiser, fermer).
 function focaliserReset(menu) {
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 5; i++) {
     menu.traiterInput(etat({ y: 1 }));
     menu.traiterInput(etat({ y: 0 }));
   }

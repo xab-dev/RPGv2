@@ -3,7 +3,7 @@
 // valeur) } — IndexedDB en jeu (src/storage_indexeddb.js), un store en
 // mémoire dans les tests (creerStoreMemoire ci-dessous).
 
-export const VERSION_SCHEMA_COURANTE = 2;
+export const VERSION_SCHEMA_COURANTE = 3;
 const CLE_ACTUELLE = 'save_current';
 const CLE_SUIVANTE = 'save_next';
 
@@ -41,10 +41,14 @@ export function saveNeuve() {
       companion: null,
       equipement: { arme: ARME_DEPART },
     },
-    inventaire: { eclats: 0 },
+    // items : poche (03_maison-exterieur §3.3), { id: quantite }.
+    inventaire: { eclats: 0, items: {} },
+    // monde : état persistant indépendant du héros — items_sol (positions
+    // courantes par scène, §3.3/§3.7) et heure (cycle jour/nuit, §3.5).
+    monde: { items_sol: {}, heure: 0 },
     puzzles: {},
     flags: {},
-    settings: { lang: 'fr' },
+    settings: { lang: 'fr', musique: true },
   };
 }
 
@@ -68,9 +72,44 @@ function migrer_1_vers_2(payload) {
   };
 }
 
+// Position (px) du spawn de scene_maison_exterieur (data/scenes.json,
+// 03_maison-exterieur §3.1) — dupliquée ici en dur car la migration tourne
+// avant que le registre ne soit disponible (elle ne connaît que le payload
+// de sauvegarde, jamais data/). Si ce spawn change un jour, ce seul endroit
+// doit suivre — cf. §4 edge case : ce n'est pas la même classe de problème
+// que le repli générique de main.js (registre.existe), qui ne fait que
+// rattraper un id de scène disparu sans connaître sa bonne position.
+const SPAWN_MAISON_EXTERIEUR_PX = { x: (6 + 0.5) * 32, y: (58 + 0.5) * 32 };
+
+// Migration 2 -> 3 (03_maison-exterieur, §3.7) : ajoute la poche
+// (inventaire.items), l'état du monde (monde.items_sol/heure) et le réglage
+// musique — une sauvegarde v2 arrive avec une poche vide, aucun item au sol
+// (regénéré au premier chargement de chaque scène, cf. main.js) et l'heure
+// au matin (0 = début du cycle, cf. daynight.js#PHASES_CYCLE). §4 edge case
+// explicite de la fiche : une sauvegarde qui pointait encore vers
+// `scene_maison_exterieur_placeholder` (retiré, cf. journal Phase 1 —
+// "renommage de contenu != migration de schéma") est redirigée ICI, pas
+// laissée au repli générique de main.js (qui ramènerait à tort à la grotte).
+function migrer_2_vers_3(payload) {
+  const hero = { ...payload.hero };
+  if (hero.scene === 'scene_maison_exterieur_placeholder') {
+    hero.scene = 'scene_maison_exterieur';
+    hero.x = SPAWN_MAISON_EXTERIEUR_PX.x;
+    hero.y = SPAWN_MAISON_EXTERIEUR_PX.y;
+  }
+  return {
+    ...payload,
+    schema_version: 3,
+    hero,
+    inventaire: { ...payload.inventaire, items: {} },
+    monde: { items_sol: {}, heure: 0 },
+    settings: { ...payload.settings, musique: true },
+  };
+}
+
 // Chaîne de migrations, une fonction par palier. Un paramètre permet aux
 // tests d'injecter une chaîne fictive sans toucher à la table de production.
-const MIGRATIONS_PRODUCTION = { 1: migrer_1_vers_2 };
+const MIGRATIONS_PRODUCTION = { 1: migrer_1_vers_2, 2: migrer_2_vers_3 };
 
 export function migrer(payload, versionCible = VERSION_SCHEMA_COURANTE, migrations = MIGRATIONS_PRODUCTION) {
   let courant = payload;

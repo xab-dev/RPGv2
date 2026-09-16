@@ -47,6 +47,25 @@ function validerTile(entry, catalogs, path) {
   if (render.variation_teinte !== undefined && (typeof render.variation_teinte !== 'number' || render.variation_teinte < 0)) {
     erreurs.push(`${path} > render.variation_teinte doit être un nombre >= 0`);
   }
+  // ressource (03_maison-exterieur §2.1) : une tuile qui porte une ressource
+  // est solide et interactive (resources.js#trouverRessourceProche) — la
+  // validation ne vérifie que la référence croisée, "solid" reste un champ
+  // explicite de la tuile (pas dérivé automatiquement de la présence de
+  // `ressource`, pour rester cohérent avec le style existant du catalogue).
+  if (entry.ressource !== undefined) {
+    const existe = (catalogs.resources || []).some((r) => r.id === entry.ressource);
+    if (!existe) erreurs.push(`${path} > ressource "${entry.ressource}" introuvable dans resources.json`);
+  }
+  // render.visuel (03_maison-exterieur) : optionnel (la plupart des tuiles
+  // restent un simple aplat de couleur, cf. couleurTuile) — une tuile qui en
+  // porte un (arbre, rocher…) est dessinée par-dessus son aplat via
+  // dessinerVisuel, ancrée au bas de la cellule (§3.3 : formes distinctes,
+  // jamais un simple carré plein). Pas erreursRenderVisuel (qui exige le
+  // champ) : optionnel ici, contrairement à companions/enemies/puzzles.
+  if (entry.render && entry.render.visuel !== undefined) {
+    const existe = (catalogs.visuels || []).some((v) => v.id === entry.render.visuel);
+    if (!existe) erreurs.push(`${path} > render.visuel "${entry.render.visuel}" introuvable dans visuels.json`);
+  }
   return erreurs;
 }
 
@@ -54,24 +73,12 @@ function validerTile(entry, catalogs, path) {
 // de tuiles, et Phase 1 y ajoute portails/interactifs/spawns/lumieres/portes,
 // tous optionnels et validés ici plutôt que par le mécanisme générique `refs`
 // (chacun a une forme propre, pas un simple champ->id).
-function validerScene(entry, catalogs, path) {
-  const erreurs = [];
-  const largeur = entry.width;
-  const hauteur = entry.height;
-  const layout = entry.layout;
-
-  if (typeof entry.seed !== 'number' || !Number.isInteger(entry.seed)) {
-    erreurs.push(`${path} > seed manquant ou invalide (entier requis, pas de valeur par défaut)`);
-  }
-  if (!Array.isArray(layout)) {
-    erreurs.push(`${path} > layout doit être un tableau 2D`);
-    return erreurs;
-  }
+// Format tableau-de-tableaux (Phase 0/1, salles de la grotte) : un id de
+// tuile par cellule, aucune légende requise.
+function validerLayoutTableau(layout, largeur, hauteur, tileIds, path, erreurs) {
   if (layout.length !== hauteur) {
     erreurs.push(`${path} > layout a ${layout.length} lignes, height=${hauteur} attendu`);
   }
-  const tiles = catalogs.tiles || [];
-  const tileIds = new Set(tiles.map((t) => t.id));
   layout.forEach((ligne, y) => {
     if (!Array.isArray(ligne) || ligne.length !== largeur) {
       erreurs.push(`${path} > layout[${y}] doit contenir ${largeur} tuiles`);
@@ -83,6 +90,68 @@ function validerScene(entry, catalogs, path) {
       }
     });
   });
+}
+
+// Format lignes de caractères (03_maison-exterieur §3.1, acté Xav
+// 2026-09-16) : un caractère par tuile + `legende` (car -> id de tiles.json).
+// Le tableau-de-tableaux devient inéditable à la taille de la Région Maison
+// (168x115+ tuiles) ; les deux formats restent acceptés indéfiniment (les
+// salles de la grotte gardent le leur) — reconnu par la présence de
+// `legende` sur l'entrée. Une légende incomplète est un échec dur avec le
+// caractère et la ligne fautifs (§7 critère de validation, exigence
+// explicite de la fiche).
+function validerLayoutLignes(layout, legende, largeur, hauteur, tileIds, path, erreurs) {
+  if (!legende || typeof legende !== 'object') {
+    erreurs.push(`${path} > legende manquante (requise quand layout est un tableau de lignes)`);
+    return;
+  }
+  for (const [car, tileId] of Object.entries(legende)) {
+    if (!tileIds.has(tileId)) {
+      erreurs.push(`${path} > legende["${car}"] > "${tileId}" introuvable dans tiles.json`);
+    }
+  }
+  if (layout.length !== hauteur) {
+    erreurs.push(`${path} > layout a ${layout.length} lignes, height=${hauteur} attendu`);
+  }
+  layout.forEach((ligne, y) => {
+    if (typeof ligne !== 'string' || ligne.length !== largeur) {
+      erreurs.push(`${path} > layout[${y}] doit être une chaîne de ${largeur} caractères`);
+      return;
+    }
+    for (let x = 0; x < ligne.length; x++) {
+      const car = ligne[x];
+      if (!Object.prototype.hasOwnProperty.call(legende, car)) {
+        erreurs.push(`${path} > layout[${y}][${x}] > caractère "${car}" absent de legende`);
+      }
+    }
+  });
+}
+
+function validerScene(entry, catalogs, path) {
+  const erreurs = [];
+  const largeur = entry.width;
+  const hauteur = entry.height;
+  const layout = entry.layout;
+
+  if (typeof entry.seed !== 'number' || !Number.isInteger(entry.seed)) {
+    erreurs.push(`${path} > seed manquant ou invalide (entier requis, pas de valeur par défaut)`);
+  }
+  if (!Array.isArray(layout)) {
+    erreurs.push(`${path} > layout doit être un tableau (2D, ou de lignes avec legende)`);
+    return erreurs;
+  }
+  const tiles = catalogs.tiles || [];
+  const tileIds = new Set(tiles.map((t) => t.id));
+  // La présence de `legende` (ou, à défaut, une première ligne qui est une
+  // chaîne plutôt qu'un tableau) distingue le format lignes du format
+  // tableau-de-tableaux — un layout vide (hauteur 0, cas théorique) retombe
+  // sur le format tableau, sans conséquence puisqu'il n'y a alors rien à
+  // décoder dans les deux cas.
+  if (entry.legende !== undefined || (layout.length > 0 && typeof layout[0] === 'string')) {
+    validerLayoutLignes(layout, entry.legende, largeur, hauteur, tileIds, path, erreurs);
+  } else {
+    validerLayoutTableau(layout, largeur, hauteur, tileIds, path, erreurs);
+  }
 
   if (
     !entry.spawn ||
@@ -156,6 +225,56 @@ function validerScene(entry, catalogs, path) {
         }
       });
     }
+  }
+
+  // zones[] (03_maison-exterieur §2.1) : rectangles nommés (foret/maison/
+  // jardin/campagne...) — `type` reste une chaîne libre, jamais un enum fermé
+  // dans le schéma (une région future peut introduire un type de zone sans
+  // toucher ce fichier), utilisés par ground_items.js (spawn/zones_exclues)
+  // et par les déclencheurs d'entrée de zone (main.js).
+  (entry.zones || []).forEach((zone, i) => {
+    const chemin = `${path} > zones[${i}]`;
+    if (typeof zone.type !== 'string' || !zone.type) {
+      erreurs.push(`${chemin} > type manquant (chaîne)`);
+    }
+    const r = zone.rect;
+    if (!r || ['x', 'y', 'w', 'h'].some((c) => typeof r[c] !== 'number')) {
+      erreurs.push(`${chemin} > rect doit être { x, y, w, h } numériques`);
+    }
+  });
+
+  // structures[] (03_maison-exterieur §3.4) : rectangle + murs/sol/portes/
+  // toit générés par scene.js à partir de ces seules données (jamais
+  // encodés à la main dans le layout, cf. journal) — une 2ᵉ structure
+  // ailleurs = une entrée JSON de plus.
+  (entry.structures || []).forEach((structure, i) => {
+    const chemin = `${path} > structures[${i}]`;
+    const r = structure.rect;
+    if (!r || ['x', 'y', 'w', 'h'].some((c) => typeof r[c] !== 'number')) {
+      erreurs.push(`${chemin} > rect doit être { x, y, w, h } numériques`);
+    }
+    for (const champ of ['mur', 'sol', 'toit', 'porte_tile']) {
+      if (!tuilesDeclarees.has(structure[champ])) {
+        erreurs.push(`${chemin} > ${champ} "${structure[champ]}" introuvable dans tiles.json`);
+      }
+    }
+    if (!Array.isArray(structure.portes) || structure.portes.length === 0) {
+      erreurs.push(`${chemin} > portes doit être un tableau non vide de { x, y }`);
+    } else {
+      structure.portes.forEach((p, j) => {
+        if (!p || typeof p.x !== 'number' || typeof p.y !== 'number') {
+          erreurs.push(`${chemin} > portes[${j}] doit être { x, y }`);
+        }
+      });
+    }
+  });
+
+  // cycle_jour_nuit (03_maison-exterieur §2.1/§3.5) : simple interrupteur,
+  // les phases/durées vivent en constantes centralisées dans daynight.js
+  // (pas un catalogue extensible — il n'y a qu'un seul cycle dans tout le
+  // jeu, pas une famille d'entrées interchangeables).
+  if (entry.cycle_jour_nuit !== undefined && typeof entry.cycle_jour_nuit !== 'boolean') {
+    erreurs.push(`${path} > cycle_jour_nuit doit être un booléen`);
   }
 
   // intro (§3.5 03_grotte-polish, palier 4) : uniquement scene_grotte_salle_1
@@ -320,8 +439,22 @@ function validerPuzzle(entry, catalogs, path) {
     if (typeof entry.reinit_si_erreur !== 'boolean') {
       erreurs.push(`${path} > reinit_si_erreur doit être un booléen`);
     }
+  } else if (entry.type === 'station_placeholder') {
+    // 03_maison-exterieur §3.4 : table/coffre/atelier/puits — interactif
+    // stateless (aucune entrée dans puzzles.js#etatInitial), INTERACT à
+    // portée ouvre simplement `dialogue`. En Phase 3, ces instances changent
+    // de `type` en données pour devenir des stations réelles, à la même
+    // position — jamais redessinées.
+    if (!entry.position || typeof entry.position.x !== 'number' || typeof entry.position.y !== 'number') {
+      erreurs.push(`${path} > position doit être { x, y }`);
+    }
+    const dialoguesDeclares = new Set((catalogs.dialogues || []).map((d) => d.id));
+    if (!dialoguesDeclares.has(entry.dialogue)) {
+      erreurs.push(`${path} > dialogue "${entry.dialogue}" introuvable dans dialogues.json`);
+    }
+    erreurs.push(...erreursRenderVisuel(entry, catalogs, path));
   } else {
-    erreurs.push(`${path} > type "${entry.type}" inconnu (levier | sequence)`);
+    erreurs.push(`${path} > type "${entry.type}" inconnu (levier | sequence | station_placeholder)`);
   }
   return erreurs;
 }
@@ -586,6 +719,77 @@ export const SCHEMAS = {
     idField: 'id',
     refs: [],
     custom: validerDialogue,
+  },
+  // 03_maison-exterieur §2.1 : catalogue ouvert, on démarre à 2 (bois,
+  // pierre) — une 3ᵉ ressource est une entrée JSON de plus (tile + entrée
+  // resources.json + item + dialogue + clés de locale), zéro code.
+  resources: {
+    requiredFields: ['id', 'label_key', 'dialogue_bloque', 'outil_requis', 'item_produit'],
+    idField: 'id',
+    refs: [{ field: 'dialogue_bloque', catalog: 'dialogues' }],
+    custom(entry, catalogs, path) {
+      const erreurs = [];
+      // outil_requis : null tant qu'aucun outil n'existe dans le jeu (Phase
+      // 2) — une chaîne (réf. future tools.json, Phase 3) reste acceptée
+      // sans validation croisée ici : le catalogue n'existe pas encore, la
+      // référence ne peut donc pas être vérifiée avant que Phase 3 ajoute
+      // tools.json (elle ajoutera alors sa propre entrée `refs`).
+      if (entry.outil_requis !== null && typeof entry.outil_requis !== 'string') {
+        erreurs.push(`${path} > outil_requis doit être null ou une chaîne (id d'outil)`);
+      }
+      if (!(catalogs.items || []).some((i) => i.id === entry.item_produit)) {
+        erreurs.push(`${path} > item_produit "${entry.item_produit}" introuvable dans items.json`);
+      }
+      return erreurs;
+    },
+  },
+  items: {
+    requiredFields: ['id', 'label_key', 'categorie', 'stack_max', 'render'],
+    idField: 'id',
+    refs: [],
+    custom(entry, catalogs, path) {
+      const erreurs = [];
+      const CATEGORIES_ITEM = ['ressource', 'nourriture', 'valeur'];
+      if (!CATEGORIES_ITEM.includes(entry.categorie)) {
+        erreurs.push(`${path} > categorie doit être l'une de ${CATEGORIES_ITEM.join('/')}`);
+      }
+      if (typeof entry.stack_max !== 'number' || entry.stack_max <= 0) {
+        erreurs.push(`${path} > stack_max doit être un nombre positif`);
+      }
+      erreurs.push(...erreursRenderVisuel(entry, catalogs, path));
+      // spawn optionnel (§2.1 : "spawn optionnel") : un item purement de
+      // craft (Phase 3+) n'a pas besoin d'exister au sol.
+      if (entry.spawn !== undefined) {
+        const s = entry.spawn;
+        if (!s || typeof s.nb_au_sol !== 'number' || s.nb_au_sol <= 0) {
+          erreurs.push(`${path} > spawn.nb_au_sol doit être un nombre positif`);
+        }
+        if (!Array.isArray(s.zones) || s.zones.length === 0 || s.zones.some((z) => typeof z !== 'string')) {
+          erreurs.push(`${path} > spawn.zones doit être un tableau non vide de types de zone`);
+        }
+        if (
+          s.zones_exclues !== undefined &&
+          (!Array.isArray(s.zones_exclues) || s.zones_exclues.some((z) => typeof z !== 'string'))
+        ) {
+          erreurs.push(`${path} > spawn.zones_exclues doit être un tableau de types de zone`);
+        }
+      }
+      return erreurs;
+    },
+  },
+  // §3.6 : une seconde piste future = une entrée JSON de plus, zéro code.
+  music: {
+    requiredFields: ['id', 'fichier', 'boucle', 'volume'],
+    idField: 'id',
+    refs: [],
+    custom(entry, catalogs, path) {
+      const erreurs = [];
+      if (typeof entry.boucle !== 'boolean') erreurs.push(`${path} > boucle doit être un booléen`);
+      if (typeof entry.volume !== 'number' || entry.volume < 0 || entry.volume > 1) {
+        erreurs.push(`${path} > volume doit être entre 0 et 1`);
+      }
+      return erreurs;
+    },
   },
 };
 

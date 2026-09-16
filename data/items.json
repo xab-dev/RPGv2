@@ -1,0 +1,26 @@
+[
+  {
+    "id": "item_branche",
+    "label_key": "item.branche",
+    "categorie": "ressource",
+    "stack_max": 20,
+    "render": { "visuel": "visuel_branche" },
+    "spawn": { "nb_au_sol": 2, "zones": ["foret", "campagne"], "zones_exclues": ["maison", "jardin"] }
+  },
+  {
+    "id": "item_caillou",
+    "label_key": "item.caillou",
+    "categorie": "ressource",
+    "stack_max": 20,
+    "render": { "visuel": "visuel_caillou" },
+    "spawn": { "nb_au_sol": 2, "zones": ["foret", "campagne"], "zones_exclues": ["maison", "jardin"] }
+  },
+  {
+    "id": "item_fruit",
+    "label_key": "item.fruit",
+    "categorie": "nourriture",
+    "stack_max": 10,
+    "render": { "visuel": "visuel_fruit" },
+    "spawn": { "nb_au_sol": 1, "zones": ["jardin"] }
+  }
+]

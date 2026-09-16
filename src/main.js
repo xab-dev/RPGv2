@@ -42,6 +42,12 @@ import {
   creerIntro, avancerIntro, etatRendu as etatRenduIntro,
   creerDepart, avancerDepart, etatRenduDepart, ETAPE_CLIGNEMENTS,
 } from './intro.js';
+import { trouverRessourceProche } from './resources.js';
+import { ajouterItem } from './inventory.js';
+import { remplirItemsSol, trouverItemProche, ramasserEtRegenerer } from './ground_items.js';
+import { calculerOpaciteToit } from './structures.js';
+import { avancerHeure, opaciteAHeure } from './daynight.js';
+import { armerAudio, definirMusiqueActive } from './audio.js';
 import { initialiserMenu } from './ui/menu.js';
 import { dessinerHud } from './ui/hud.js';
 import { dessinerDialogue } from './ui/dialogue_box.js';
@@ -51,6 +57,16 @@ const VITESSE_HERO_PX_S = 120;
 const RAYON_HERO_PX = 10;
 const INTERVALLE_AUTOSAVE_MS = 30000;
 const DISTANCE_INTERACT_PX = 28;
+
+// 03_maison-exterieur §3.4 : RAYON_EFFACEMENT_TOIT = rayon_lumiere du follet
+// actif x ce facteur ("un peu plus grand que le halo", acté Xav 2026-09-16) —
+// le facteur et la marge de fondu restent provisoires, Xav les équilibre au
+// ressenti. `RAYON_TOIT_FOLLET_ABSENT_PX` couvre le cas théorique où la
+// maison serait visitée sans compagnon (jamais possible en jeu réel après la
+// Grotte, gardé par prudence plutôt que par nécessité observée).
+const FACTEUR_EFFACEMENT_TOIT = 1.25;
+const MARGE_FONDU_TOIT_PX = 30;
+const RAYON_TOIT_FOLLET_ABSENT_PX = 90;
 
 // Gauche/milieu/droite de l'écran de choix (§3.1) — arrangement visuel
 // arbitraire, sans effet sur le gameplay (les 3 follets sont équivalents en
@@ -92,8 +108,24 @@ function afficherErreurBoot(erreurs) {
 // seul ne le faisait jamais.
 export function creerOrchestrateurGrotte({
   registre, i18n, save, store, dialogue, menu, input, ctxLogique, ctxVisible, canvasLogique,
+  // §3.6 03_maison-exterieur : callback déclenché UNE fois, au premier verbe
+  // abstrait vu (manette comprise — le clavier/tactile/souris sont couverts
+  // par des écouteurs DOM directs dans demarrerJeu(), cf. journal) ; no-op
+  // par défaut pour que les tests headless n'aient rien à fournir.
+  onPremierGeste = () => {},
 }) {
   let etatModifie = false;
+
+  // Silhouettes de tuiles (03_maison-exterieur §3.3) : résolu UNE fois (pas
+  // par scène, contrairement à `decor` — tiles.json est un catalogue global)
+  // à partir du registre, jamais recalculé par frame. render.js ne connaît
+  // que dessinerVisuel, jamais visuels.json par id (§3.3 grotte-polish).
+  const visuelsTuiles = new Map(
+    registre
+      .tous('tiles')
+      .filter((t) => t.render && t.render.visuel)
+      .map((t) => [t.id, registre.obtenir('visuels', t.render.visuel)])
+  );
 
   // Extrait en fonction (plutôt qu'un simple `const`) : reinitialiserPartie()
   // (diagnostic SD_grotte-blocage-choix-follet_2026-09-15.md, §B) doit
@@ -120,6 +152,14 @@ export function creerOrchestrateurGrotte({
   hero.pv = save.hero.pv; // null tant que les stats dérivées n'ont pas encore tourné une fois
   let scene, decor, monstres, follet;
   let puzzlesEtat = {};
+  // Objets au sol de la scène courante (03_maison-exterieur §3.3) :
+  // { [itemId]: [{x,y}, ...] }, reconstruit/complété à chaque entrée en
+  // scène (ground_items.js#remplirItemsSol), persisté par scène dans
+  // save.monde.items_sol. `compteurRamassages` n'a besoin d'être unique que
+  // DANS la session (les positions elles-mêmes sont ce qui est persisté,
+  // §3.7) — jamais lu depuis la sauvegarde.
+  let itemsSol = {};
+  let compteurRamassages = 0;
   let cooldownAttaqueHerosMs = 0;
   // §3.1 03_grotte-polish : compte à rebours du flash de l'anneau d'attaque,
   // purement visuel (dessiner() le convertit en donut translucide) — tiqué
@@ -210,6 +250,23 @@ export function creerOrchestrateurGrotte({
     }
   }
 
+  // Déclenché en continu (pas seulement à l'entrée en scène) : une zone se
+  // découvre en y marchant, jamais à la traversée d'un portail précis —
+  // mapping explicite type de zone -> flag, même esprit que
+  // declencherEvenementsEntree ci-dessus (script propre à cette carte, pas un
+  // système généralisé de déclencheurs, cf. §6/journal Phase 1).
+  const FLAG_PAR_TYPE_DE_ZONE = { maison: 'flag_maison_decouverte', jardin: 'flag_jardin_decouvert' };
+  function verifierEntreesDeZone() {
+    const tx = Math.floor(hero.x / scene.tileSize);
+    const ty = Math.floor(hero.y / scene.tileSize);
+    for (const zone of scene.zones) {
+      const flagId = FLAG_PAR_TYPE_DE_ZONE[zone.type];
+      if (!flagId || flags.has(flagId)) continue;
+      const { x, y, w, h } = zone.rect;
+      if (tx >= x && tx < x + w && ty >= y && ty < y + h) flags.set(flagId);
+    }
+  }
+
   function entrerDansScene(sceneId, positionInitialePx) {
     scene = chargerScene(registre, sceneId);
     // Décor (§3.4 03_grotte-polish) : genererDecor() reste pur et ne connaît
@@ -238,6 +295,15 @@ export function creerOrchestrateurGrotte({
     follet = save.hero.companion ? creerFollet(save.hero.companion, hero) : null;
     puzzlesEtat = { ...etatInitialPuzzles(registre), ...save.puzzles };
 
+    // Objets au sol (03_maison-exterieur §3.3) : positions déjà persistées
+    // pour cette scène reprises telles quelles (§3.7 : "recharger la page ne
+    // rebat pas les cartes"), complétées si besoin (première visite, ou stock
+    // partiel après une régénération ratée faute de place). Une scène sans
+    // aucune zone de spawn en commun avec un item (la grotte) obtient un
+    // `itemsSol` vide, sans erreur.
+    itemsSol = remplirItemsSol(scene, registre.tous('items'), save.monde.items_sol[sceneId] || {}, compteurRamassages);
+    save.monde.items_sol[sceneId] = itemsSol;
+
     etatModifie = true;
     declencherEvenementsEntree(sceneId);
   }
@@ -246,18 +312,54 @@ export function creerOrchestrateurGrotte({
     return { x: hero.x - hero.rayon, y: hero.y - hero.rayon, largeur: hero.rayon * 2, hauteur: hero.rayon * 2 };
   }
 
+  // 03_maison-exterieur §3.2/§3.3 étend l'interaction à 4 cibles possibles,
+  // essayées dans cet ordre (le premier trouvé à portée gagne, un seul par
+  // appui) : levier/station de scene.interactifs (déjà des entités
+  // positionnées), objet au sol, puis tuile-ressource (scan de grille, donc
+  // en dernier — la moins probable d'être ambiguë avec autre chose).
   function essayerInteraction() {
     for (const puzzleId of scene.interactifs) {
       const puzzle = registre.obtenir('puzzles', puzzleId);
-      if (puzzle.type !== 'levier') continue;
       const px = (puzzle.position.x + 0.5) * scene.tileSize;
       const py = (puzzle.position.y + 0.5) * scene.tileSize;
-      if (Math.hypot(hero.x - px, hero.y - py) <= DISTANCE_INTERACT_PX) {
+      if (Math.hypot(hero.x - px, hero.y - py) > DISTANCE_INTERACT_PX) continue;
+      if (puzzle.type === 'levier') {
         puzzlesEtat = activerLevier(registre, puzzlesEtat, puzzleId, flags);
         save.puzzles = puzzlesEtat;
         etatModifie = true;
         return;
       }
+      if (puzzle.type === 'station_placeholder') {
+        dialogue.ouvrir(resoudreLignes(puzzle.dialogue, registre, i18n, save.hero.companion));
+        return;
+      }
+    }
+
+    const itemProche = trouverItemProche(itemsSol, hero, DISTANCE_INTERACT_PX);
+    if (itemProche) {
+      const itemDef = registre.obtenir('items', itemProche.itemId);
+      const resultat = ajouterItem(save.inventaire.items, itemProche.itemId, 1, itemDef.stack_max);
+      // Poche pleine (§4 edge case) : l'item reste au sol, rien d'autre ne se
+      // passe — pas de toast "poche pleine" en Phase 2 (D4⑤ formalisé plus
+      // tard), un simple non-ramassage silencieux suffit pour cette session.
+      if (resultat.ajoute > 0) {
+        save.inventaire.items = resultat.inventaire;
+        compteurRamassages += 1;
+        itemsSol = ramasserEtRegenerer(scene, registre.tous('items'), itemsSol, itemProche.itemId, itemProche.index, compteurRamassages);
+        save.monde.items_sol[scene.id] = itemsSol;
+        if (!flags.has('flag_premier_ramassage')) {
+          flags.set('flag_premier_ramassage');
+          dialogue.ouvrir(resoudreLignes('dlg_premier_ramassage', registre, i18n, save.hero.companion));
+        }
+        etatModifie = true;
+      }
+      return;
+    }
+
+    const ressourceProche = trouverRessourceProche(scene, hero, DISTANCE_INTERACT_PX);
+    if (ressourceProche) {
+      const donneesRessource = registre.obtenir('resources', ressourceProche.ressourceId);
+      dialogue.ouvrir(resoudreLignes(donneesRessource.dialogue_bloque, registre, i18n, save.hero.companion));
     }
   }
 
@@ -377,8 +479,26 @@ export function creerOrchestrateurGrotte({
     save.hero.pv = hero.pv;
   }
 
+  // §3.6 : premier verbe abstrait vu (manette comprise) déclenche l'audio une
+  // fois — clavier/souris/tactile sont déjà couverts par des écouteurs DOM
+  // directs dans demarrerJeu() (plus réactifs, pas besoin d'attendre une
+  // frame), cette vérification couvre le seul cas qu'ils ratent : un premier
+  // geste fait au stick/à la croix/aux boutons d'une manette.
+  let gesteDeclenche = false;
+  function verifierPremierGeste(etat) {
+    if (gesteDeclenche) return;
+    const unVerbeActif = etat.move.x !== 0 || etat.move.y !== 0 || [
+      'attack', 'skill_1', 'skill_2', 'skill_3', 'consume', 'interact', 'menu',
+    ].some((verbe) => etat[verbe].pressed);
+    if (unVerbeActif) {
+      gesteDeclenche = true;
+      onPremierGeste();
+    }
+  }
+
   function maj(deltaMs) {
     const etatBrut = input.maj();
+    verifierPremierGeste(etatBrut);
 
     // §3.2 03_grotte-polish, mécanisme 1 (frame d'ouverture consommée) :
     // mesuré ICI, avant toute logique de cette frame (combat, choix du
@@ -459,6 +579,17 @@ export function creerOrchestrateurGrotte({
     if (!uiOuverte) {
       if (etatGameplay.interact.pressed) essayerInteraction();
       mettreAJourCombat(deltaMs, etatGameplay, statsPrimaires, statsDerivees);
+      verifierEntreesDeZone();
+
+      // Cycle jour/nuit (§3.5) : "en temps de jeu actif", gelé sous UI comme
+      // le reste (déjà garanti par ce bloc `!uiOuverte`) — save.monde.heure
+      // est LA source de vérité (persistée), l'opacité affichée en est
+      // dérivée à chaque frame de dessiner() (daynight.js#opaciteAHeure),
+      // jamais un second état.
+      if (scene.cycleJourNuit) {
+        save.monde.heure = avancerHeure(save.monde.heure, deltaMs);
+        etatModifie = true;
+      }
 
       const portail = portailFranchi(scene, hitboxHeros(), flags);
       if (portail) {
@@ -575,17 +706,19 @@ export function creerOrchestrateurGrotte({
       };
     });
 
-    // Leviers (§2.1/§3.3) : seules les instances "levier" de scene.interactifs
+    // Leviers + stations placeholder (§2.1/§3.3, §3.4 03_maison-exterieur) :
+    // seules les instances "levier"/"station_placeholder" de scene.interactifs
     // se dessinent (une "sequence" ne référence que des leviers déjà rendus
     // par ailleurs) — même source de vérité que essayerInteraction() pour la
-    // position, puzzlesEtat pour l'état on/off.
+    // position, puzzlesEtat pour l'état on/off. Une station n'a pas d'état
+    // on/off (jamais "actif" → jamais teintée, cf. dessinerScene).
     const puzzlesAffiches = scene.interactifs
       .map((id) => registre.obtenir('puzzles', id))
-      .filter((p) => p.type === 'levier')
+      .filter((p) => p.type === 'levier' || p.type === 'station_placeholder')
       .map((p) => ({
         x: (p.position.x + 0.5) * scene.tileSize,
         y: (p.position.y + 0.5) * scene.tileSize,
-        actif: !!puzzlesEtat[p.id]?.actif,
+        actif: p.type === 'levier' && !!puzzlesEtat[p.id]?.actif,
         visuel: registre.obtenir('visuels', p.render.visuel),
       }));
 
@@ -599,8 +732,41 @@ export function creerOrchestrateurGrotte({
       alpha: anneauAttaqueMs / FLASH_ATTAQUE_MS,
     } : null;
 
+    // Objets au sol (03_maison-exterieur §3.3) : résolus ici (main.js a le
+    // registre), render.js ne connaît que { x, y, visuel } — même patron que
+    // puzzlesAffiches ci-dessus.
+    const objetsSolAffiches = Object.entries(itemsSol).flatMap(([itemId, positions]) => {
+      const itemDef = registre.obtenir('items', itemId);
+      const visuel = registre.obtenir('visuels', itemDef.render.visuel);
+      return positions.map((p) => ({ x: p.x, y: p.y, visuel }));
+    });
+
+    // Toit des structures (§3.4) : opacité calculée ici (structures.js, pure,
+    // testée) à partir du follet actif — RAYON_EFFACEMENT_TOIT = son
+    // rayon_lumiere x FACTEUR_EFFACEMENT_TOIT, "un peu plus grand que le
+    // halo" (acté Xav). `couleur` résolue depuis tiles.json > render.valeur
+    // (render.js ne connaît jamais tiles.json par id).
+    const rayonEffacement = (companionActif ? companionActif.rayon_lumiere : RAYON_TOIT_FOLLET_ABSENT_PX) * FACTEUR_EFFACEMENT_TOIT;
+    const structuresAffichees = scene.structures.map((structure) => ({
+      rect: structure.rect,
+      couleur: registre.obtenir('tiles', structure.toit).render.valeur,
+      opacite: calculerOpaciteToit(hero, structure, scene.tileSize, {
+        rayonEffacement,
+        margeFondu: MARGE_FONDU_TOIT_PX,
+      }),
+    }));
+
+    // Cycle jour/nuit (§3.5) : `scene.obscurite` reste celle de la Phase 1
+    // pour toute scène qui n'a pas `cycleJourNuit` (grotte, inchangée) ;
+    // sinon l'opacité du voile est DÉRIVÉE de l'heure à chaque frame — jamais
+    // un second mécanisme d'assombrissement, dessinerObscurite ne voit
+    // toujours qu'un simple `{ opacite }`.
+    const sceneAffichage = scene.cycleJourNuit
+      ? { ...scene, obscurite: { opacite: opaciteAHeure(save.monde.heure) } }
+      : scene;
+
     dessinerScene(ctxLogique, {
-      scene,
+      scene: sceneAffichage,
       decor,
       camera,
       hero,
@@ -618,9 +784,12 @@ export function creerOrchestrateurGrotte({
       puzzles: puzzlesAffiches,
       estFlagActif: flags.has,
       anneauAttaque,
+      visuelsTuiles,
+      objetsSol: objetsSolAffiches,
+      structures: structuresAffichees,
     });
     dessinerObscurite(ctxLogique, {
-      scene,
+      scene: sceneAffichage,
       camera,
       follet: follet ? { x: follet.x, y: follet.y } : null,
       rayonLumiereFollet: companionActif ? companionActif.rayon_lumiere : 0,
@@ -693,6 +862,11 @@ export function creerOrchestrateurGrotte({
     cooldownAttaqueHerosMs = 0;
     anneauAttaqueMs = 0;
     dialogueOuvertAuDebutFramePrecedente = false;
+    // 03_maison-exterieur : itemsSol repart de zéro, entrerDansScene() plus
+    // bas le régénère depuis save.monde.items_sol (vide après saveNeuve()) —
+    // déterministe, mêmes positions qu'à une toute première partie.
+    itemsSol = {};
+    compteurRamassages = 0;
     hero = creerHeros({ x: 0, y: 0, rayon: RAYON_HERO_PX, pvMax: 1 });
     hero.pv = save.hero.pv; // null : recalculé au premier calculerStatsHeros(), comme au tout premier boot
     etatModifie = false;
@@ -809,12 +983,38 @@ export async function demarrerJeu() {
       await importerSauvegardeDansStore(store, JSON.parse(texte));
       window.location.reload();
     },
+    // §3.6 : l'état réel vit dans save.settings.musique, l'effet dans
+    // audio.js — le menu ne connaît ni l'un ni l'autre directement.
+    musiqueActive: () => save.settings.musique !== false,
+    basculerMusique() {
+      save.settings.musique = !(save.settings.musique !== false);
+      definirMusiqueActive(save.settings.musique);
+    },
+    // §3.3 : liste déjà résolue/traduite (main.js a le registre + i18n) —
+    // ui/menu.js ne connaît jamais items.json par id.
+    listerPoche: () => Object.entries(save.inventaire.items)
+      .filter(([, quantite]) => quantite > 0)
+      .map(([itemId, quantite]) => ({ label: i18n.t(registre.obtenir('items', itemId).label_key), quantite })),
   });
 
   const dialogue = creerDialogue();
 
+  // §3.6 : premier geste utilisateur — clavier/souris/tactile détectés ici
+  // (réactifs dès l'événement DOM lui-même), le geste manette est détecté
+  // par l'orchestrateur (verifierPremierGeste, aucun accès direct à la
+  // Gamepad API en dehors de la couche d'input) via `onPremierGeste` ci-
+  // dessous, qui partage la même fonction — jamais deux chemins d'armement
+  // séparés.
+  function armerAudioUneFois() {
+    armerAudio(registre.obtenir('music', 'music_piano_solo'), save.settings.musique !== false);
+  }
+  window.addEventListener('keydown', armerAudioUneFois, { once: true });
+  window.addEventListener('pointerdown', armerAudioUneFois, { once: true });
+  window.addEventListener('touchstart', armerAudioUneFois, { once: true });
+
   const orchestrateur = creerOrchestrateurGrotte({
     registre, i18n, save, store, dialogue, menu, input, ctxLogique, ctxVisible, canvasLogique,
+    onPremierGeste: armerAudioUneFois,
   });
   // Dépendance circulaire résolue par un point de couture explicite (§B du
   // diagnostic) : le menu (construit avant l'orchestrateur, qui en a besoin

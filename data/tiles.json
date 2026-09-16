@@ -10,5 +10,21 @@
   },
   { "id": "tile_eau", "solid": true, "render": { "type": "couleur", "valeur": "#2f6f9f" } },
   { "id": "tile_sortie", "solid": false, "render": { "type": "couleur", "valeur": "#c2a83e" } },
-  { "id": "tile_vide", "solid": true, "render": { "type": "couleur", "valeur": "#000000" } }
+  { "id": "tile_vide", "solid": true, "render": { "type": "couleur", "valeur": "#000000" } },
+
+  { "id": "tile_herbe", "solid": false,
+    "render": { "type": "couleur", "valeur": "#5a9147", "variantes": ["#5f974c", "#548b41"], "variation_teinte": 0.04 } },
+  { "id": "tile_terre", "solid": false,
+    "render": { "type": "couleur", "valeur": "#8a6a45", "variantes": ["#90704a", "#82633f"], "variation_teinte": 0.04 } },
+  { "id": "tile_chemin", "solid": false,
+    "render": { "type": "couleur", "valeur": "#b7a171", "variantes": ["#bda877", "#b19a6a"], "variation_teinte": 0.04 } },
+  { "id": "tile_arbre", "solid": true, "ressource": "res_bois", "render": { "type": "couleur", "valeur": "#3d5a2c", "visuel": "visuel_arbre" } },
+  { "id": "tile_arbre_fond", "solid": true, "render": { "type": "couleur", "valeur": "#3d5a2c", "visuel": "visuel_arbre" } },
+  { "id": "tile_rocher", "solid": true, "ressource": "res_pierre", "render": { "type": "couleur", "valeur": "#666666", "visuel": "visuel_rocher_grand" } },
+  { "id": "tile_arbre_fruitier", "solid": true, "render": { "type": "couleur", "valeur": "#4a6a34", "visuel": "visuel_arbre_fruitier" } },
+  { "id": "tile_parquet", "solid": false,
+    "render": { "type": "couleur", "valeur": "#a9764f", "variantes": ["#ae7b54", "#a2704a"], "variation_teinte": 0.03 } },
+  { "id": "tile_mur_maison", "solid": true, "render": { "type": "couleur", "valeur": "#7a5c3e" } },
+  { "id": "tile_porte_maison", "solid": false, "render": { "type": "couleur", "valeur": "#c9a869" } },
+  { "id": "tile_toit", "solid": false, "render": { "type": "couleur", "valeur": "#5c4530" } }
 ]

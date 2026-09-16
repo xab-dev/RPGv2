@@ -237,7 +237,10 @@ function etape(nom, ok, detail = '') {
   const okVersPorte = avancerVers(orchestrateur, frames, px(19, 6));
   etape('Salle 2 : atteindre la porte devenue traversable', okVersPorte);
   frames.push(etat()); orchestrateur.maj(16);
-  etape('Transition vers le placeholder Maison', orchestrateur.obtenirScene()?.id === 'scene_maison_exterieur_placeholder',
+  // 03_maison-exterieur (2026-09-16) : la sortie de la grotte mène désormais
+  // à la vraie Région Maison, plus un placeholder — id mis à jour, aucun
+  // changement de comportement du chemin critique lui-même.
+  etape('Transition vers la Région Maison', orchestrateur.obtenirScene()?.id === 'scene_maison_exterieur',
     `scène actuelle : ${orchestrateur.obtenirScene()?.id}`);
 }
 

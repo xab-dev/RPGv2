@@ -1,0 +1,22 @@
+# Index des journaux de session archivés
+
+Ménage du 2026-09-17 (`DOC_menage-claude-md_2026-09-17.md`) : `CLAUDE.md` ne garde plus que le journal de la session la plus récente. Chaque journal précédent, une fois remplacé, est archivé ici **verbatim** (aucune réécriture) — c'est la source de vérité en cas de doute sur le détail d'une décision.
+
+| Date | Session | Fichier | Ce qu'on y trouve |
+|---|---|---|---|
+| 2026-09-15 | Phase 0 : Socle technique | [JOURNAL_2026-09-15_phase0.md](JOURNAL_2026-09-15_phase0.md) | Arborescence initiale, les 6 contrats techniques prouvés, seuils numériques posés (provisoires) |
+| 2026-09-15 | Micro-ticket — navigation du menu à la manette | [JOURNAL_2026-09-15_micro-ticket-menu-manette.md](JOURNAL_2026-09-15_micro-ticket-menu-manette.md) | Mapping manette du menu, `etatNeutre()`, focus/navigation `creerControleurMenu` |
+| 2026-09-15 | Phase 1 : La Grotte | [JOURNAL_2026-09-15_phase1-grotte.md](JOURNAL_2026-09-15_phase1-grotte.md) | 8 systèmes de la Grotte livrés (stats, combat, follet, énigmes, dialogue, portes/portails, loot, tactile) |
+| 2026-09-15 | Diagnostic blocage choix du follet | [JOURNAL_2026-09-15_diagnostic-blocage-choix-follet.md](JOURNAL_2026-09-15_diagnostic-blocage-choix-follet.md) | Refactor `creerOrchestrateurGrotte`, bug du verbe bloqué sur `blur` clavier, reset de sauvegarde depuis le menu |
+| 2026-09-15 | Diagnostic lisibilité de l'UI | [JOURNAL_2026-09-15_diagnostic-lisibilite-ui.md](JOURNAL_2026-09-15_diagnostic-lisibilite-ui.md) | Loquet tactile, résolution 480×270, calque d'obscurité hors-écran, HUD compact |
+| 2026-09-15 | Diagnostic écran de confirmation du reset invisible | [JOURNAL_2026-09-15_diagnostic-reset-invisible.md](JOURNAL_2026-09-15_diagnostic-reset-invisible.md) | Style plein-écran manquant sur le sous-écran de confirmation, `afficherEcran()` unifié |
+| 2026-09-15 | Micro-ticket rendu net à résolution physique | [JOURNAL_2026-09-15_mt-rendu-net.md](JOURNAL_2026-09-15_mt-rendu-net.md) | Canvas hors-écran en pixels physiques, DPR, fin du rendu pixel-art-net |
+| 2026-09-15 | Diagnostic dialogues invisibles après le rendu net | [JOURNAL_2026-09-15_diagnostic-dialogues-invisibles.md](JOURNAL_2026-09-15_diagnostic-dialogues-invisibles.md) | Contrat implicite `ctx.canvas.width/height` cassé par le rendu net, règle de méthode sur la transform du contexte 2D |
+| 2026-09-16 | Phase 1b, palier 1 | [JOURNAL_2026-09-16_phase1b-palier1.md](JOURNAL_2026-09-16_phase1b-palier1.md) | Feedback de combat (anneau, flash, barre de PV), anti-spam dialogue (machine à écrire + armement) |
+| 2026-09-16 | Phase 1b, palier 2 | [JOURNAL_2026-09-16_phase1b-palier2.md](JOURNAL_2026-09-16_phase1b-palier2.md) | Catalogue visuel `visuels.json` + `dessinerVisuel`, migration de toutes les entités vers ce mécanisme |
+| 2026-09-16 | Phase 1b, palier 3 | [JOURNAL_2026-09-16_phase1b-palier3.md](JOURNAL_2026-09-16_phase1b-palier3.md) | Faisceaux, décor procédural, variantes de tuiles, teinte du héros, aura pointillée, calque statique pré-rendu |
+| 2026-09-16 | Phase 1b, palier 4 | [JOURNAL_2026-09-16_phase1b-palier4.md](JOURNAL_2026-09-16_phase1b-palier4.md) | Intro cinématique de la Grotte (`intro.js`, paupières), fin de la Phase 1b |
+| 2026-09-16 | Reports documentaires | [JOURNAL_2026-09-16_reports-documentaires.md](JOURNAL_2026-09-16_reports-documentaires.md) | Mise à jour de la carte mentale et des specs, aucun code touché |
+| 2026-09-16 | Phase 2 : Région Maison, première marche | [JOURNAL_2026-09-16_phase2-premiere-marche.md](JOURNAL_2026-09-16_phase2-premiere-marche.md) | Layout en lignes, forêt procédurale, ressources bloquées, poche/inventaire, toit, cycle jour/nuit, audio |
+
+Le journal le plus récent (Diagnostic accrochage des coins + arbre introuvable, 2026-09-16/17) reste dans `CLAUDE.md` jusqu'à la prochaine session, qui l'archivera ici à son tour (règle de méthode « ménage de journal », voir `CLAUDE.md`).

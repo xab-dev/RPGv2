@@ -1,8 +1,10 @@
 # RPG V2 — Roadmap + prompt d'exécution autonome
 
-**Version : 1.0.0** — document vivant.
+**Version : 1.1.0** — document vivant.
 
-**Statut** : vision validée (cadrage clos le 2026-09-15, cf. `carte_mentale_RPG_V2_v1_3_0.md`, 30 décisions verrouillées). Ce document sert de brief autonome — à donner tel quel à Claude Code pour démarrer la phase courante sans aller-retour préalable.
+**Statut** : vision validée (cadrage clos le 2026-09-15, cf. `carte_mentale_RPG_V2_v1_3_0.md`). **Phases 0 et 1 livrées et validées par Xav (2026-09-15 / 2026-09-16). Phase courante : Phase 2, détaillée dans `03_maison-exterieur.md`.** Ce document sert de brief autonome — à donner tel quel à Claude Code pour démarrer la phase courante sans aller-retour préalable.
+
+**Changelog 1.1.0 (2026-09-16)** : Phase 2 scindée en « première marche » (ce qui est spécifié) et récolte réelle reportée après les outils de la Phase 3 ; champs, animaux, déco plantable et XP de récolte sortent de la Phase 2 (spec ultérieure `03b`, ou fusion Phase 4 — à trancher à la livraison de la Phase 2). Fil de design transversal **Crypte X** inscrit (D14⑥), à concevoir après le Poste avancé. Audio (init + première piste) avancé en Phase 2.
 
 ---
 
@@ -23,7 +25,7 @@
 
 ## Décisions déjà tranchées (ne pas rouvrir)
 
-Référence complète : `carte_mentale_RPG_V2_v1_3_0.md` §0 et §8. Résumé opérationnel :
+Référence complète : `carte_mentale_RPG_V2_v1_2_0.md` §0 et §8. Résumé opérationnel :
 
 ### Plateforme & technique
 | Décision | Valeur |
@@ -48,7 +50,7 @@ Référence complète : `carte_mentale_RPG_V2_v1_3_0.md` §0 et §8. Résumé op
 | Progression | **XP → stats** (points de stat par niveau). **Jalons narratifs → capacités.** Deux axes indépendants. Sources d'XP : combat **et craft**. Accès à la 1ère zone de monstres gaté par niveau (~5). |
 | Actions | 5 slots : 1 attaque + 3 compétences + 1 consommable. Nombre de slots en données. |
 | Équipement | 3 slots : arme, armure, accessoire. |
-| Effets d'état | Buffs/débuffs, dégâts sur la durée, contrôles — **chacun dérivé logiquement de son élément**. Table des synergies élémentaires : **écrite, `02_grotte.md` §3.4.** |
+| Effets d'état | Buffs/débuffs, dégâts sur la durée, contrôles — **chacun dérivé logiquement de son élément**. Table des synergies élémentaires : à écrire (livrable Phase 1). |
 | Survie | Faim / soif / santé = pénalités progressives, jamais bloquantes. **Jauges gelées hors session.** Repas = buffs (la cuisine est un système de build). |
 | Jardinage | Croissance **à l'action**, jamais au temps réel. Aucun timer d'attente dans tout le jeu. |
 | Recettes | **Un seul système**, stations et catégories de sortie en données (cuisine, table de craft en M1 ; forge, alchimie, armurerie plus tard = entrées JSON). |
@@ -63,7 +65,7 @@ Référence complète : `carte_mentale_RPG_V2_v1_3_0.md` §0 et §8. Résumé op
 | Modèle | Gratuit + dons externes. Zéro pub, zéro achat, zéro monnaie premium, aucune mécanique de frustration monétisable. |
 
 ### Risques inscrits, à ne pas redécouvrir
-Voir `carte_mentale_RPG_V2_v1_3_0.md` §0bis : cohérence 3 éléments RPG vs 9 haTD (à traiter au contrat de cartouche, M2+) ; tension éclats/paliers de vitalité si un marchand existe ; volume de texte doublé par le bilinguisme ; densité de 5 actions sous le pouce droit en tactile ; conformité Play Store sur la sollicitation de dons.
+Voir `carte_mentale_RPG_V2_v1_2_0.md` §0bis : cohérence 3 éléments RPG vs 9 haTD (à traiter au contrat de cartouche, M2+) ; tension éclats/paliers de vitalité si un marchand existe ; volume de texte doublé par le bilinguisme ; densité de 5 actions sous le pouce droit en tactile ; conformité Play Store sur la sollicitation de dons.
 
 ---
 
@@ -82,7 +84,7 @@ Voir `carte_mentale_RPG_V2_v1_3_0.md` §0bis : cohérence 3 éléments RPG vs 9 
 ---
 
 ## Phase 0 — Socle technique
-**C'est la phase à exécuter maintenant.** Détail complet : `01_socle-technique.md`.
+**Livrée et validée (2026-09-15).** Détail complet : `01_socle-technique.md`. Conservée ici comme référence du contrat de base.
 
 ### Objectif
 Faire tourner le squelette sur lequel toutes les phases suivantes s'empilent sans jamais le rouvrir : boot + registre JSON validé, couche d'input abstraite manette/clavier, boucle de rendu canvas avec caméra, scène de tuiles chargée depuis JSON, sauvegarde en double tampon versionnée, localisation FR/EN. **Aucun gameplay.**
@@ -107,7 +109,7 @@ Tout gameplay : combat, feux follets, énigmes, récolte, dialogue, HUD de jeu, 
 
 ## Phases suivantes (esquisse — chacune sera détaillée dans son fichier `0N_*.md` quand elle devient courante)
 
-### Phase 1 — La Grotte (vertical slice technique)
+### Phase 1 — La Grotte (vertical slice technique) — **livrée et validée (2026-09-16)**, détail `02_grotte.md`
 Première scène jouable de bout en bout, et **preuve de tous les systèmes de combat et d'énigme** avant qu'ils ne se multiplient.
 - Cinématique d'ouverture courte et non narrée (vécue, pas racontée) : réveil dans une grotte-puits, roche, obscurité, un rayon de lumière, trois feux follets animés en survol.
 - **Choix du feu follet** (Feu/Eau/Terre) : les deux autres s'éloignent, l'élu suit le héros pour toute la partie.
@@ -115,17 +117,14 @@ Première scène jouable de bout en bout, et **preuve de tous les systèmes de c
 - Salle 2 : **un monstre apparaît** — tutoriel de l'attaque de base ; le follet délivre son lore et l'explication de la synergie. Puis **trois leviers sans instruction** (code : milieu → gauche → droite), une porte apparaît, sortie vers la Région Maison.
 - Livre : combat de base (`ATTACK`), premier ennemi en JSON, premiers effets d'état élémentaires, follet suiveur avec sa lumière, catalogue d'énigmes (type `levier`, type `séquence`), dialogue/lore localisé, **HUD tactile** validé sur cette scène, **table des synergies élémentaires écrite** (livrable de design).
 - Critère : un joueur qui ne connaît pas le jeu sort de la grotte à la manette **et** au tactile sans qu'on lui explique rien.
-- **Statut : Livrée** (Phase 1 + polish 1b, `02_grotte.md` / `03_grotte-polish.md`) — manette réelle et DA validées le 2026-09-16 ; tactile en dette assumée jusqu'à la Phase 4.
 
-### Phase 2 — Région Maison, extérieur
-**Phase courante** — spec à venir : `04_maison-exterieur.md`.
-
-Première grande carte de tuiles (≥ ordre de grandeur du monde principal V1, 5400 × 3700). La grotte est au fond du jardin.
-- Forêt (bois à couper), pierre à miner, fruits à cueillir, **champs à semer** (croissance à l'action), animaux sauvages qui réapparaissent (loups → viande, lapins…), **décoration plantable** (arbres, fleurs) devant la maison.
-- Cycle jour/nuit avec le **follet comme seule source de lumière**.
-- Ton : chill, lumineux.
-- Livre : catalogues tuiles/zones/spawn/loot par zone, inventaire poche, XP de récolte.
-- Reporté explicitement : point d'eau et pêche.
+### Phase 2 — Région Maison, extérieur : première marche — **phase courante**, détail `03_maison-exterieur.md`
+Première grande carte de tuiles (5400 × 3700). La grotte débouche en bordure de carte, côté forêt ; la maison est proche, le jardin de l'autre côté, la campagne ensuite. **Scindée le 2026-09-16** (amendement, cf. carte mentale §8) :
+- **Livré en Phase 2** : la région traversable et rendue par fenêtre visible (plancher 30 fps mobile) ; arbres et rochers **bloqués** avec dialogue « reviens avec les bons outils » (catalogue de ressources ouvert) ; branches, cailloux, fruit **au sol** à ramasser (patron V1 : 2 exemplaires, respawn en zone libre) + poche ; maison comme structure dont le **toit s'efface** à l'approche, placeholders intérieurs et puits « pas encore » à leur position définitive ; cycle jour/nuit avec le **follet comme seule source de lumière** ; audio : init sur geste utilisateur + bande son piano en boucle + réglage dans le menu.
+- **Reporté après les outils de la Phase 3** : bois à couper, pierre à miner (la fonction « bloqué / récoltable » est posée dès la Phase 2, en un seul endroit).
+- **Reporté en spec ultérieure** (`03b` ou Phase 4) : champs à semer, animaux sauvages, décoration plantable, XP de récolte. Pêche et point d'eau : toujours reportés.
+- Ton : chill, lumineux. Aucun monstre dans cette région.
+- Réserve dès maintenant, en données, les emplacements du fil Crypte X (voir plus bas), sans rien poser.
 
 ### Phase 3 — Maison, intérieur & systèmes de camp
 - Intérieur avec **stations à placement libre** (atelier de cuisine, table de craft), coffre de base, déco légère.
@@ -148,6 +147,9 @@ Intérieur navigable multi-salles, **mini-boss à tir à distance** (trajectoire
 
 ### Phase 7 — Polish, mobile & packaging
 Wrapper WebView, ergonomie tactile finale (densité des 5 actions), plancher de performance mesuré sur un appareil nommé, accessibilité (formes/icônes des éléments, taille des cibles), relecture de la localisation EN, export/import de sauvegarde, page externe de dons. **Aucun nouveau contenu.**
+
+### Fil transversal — Crypte X (D14⑥, acté le 2026-09-16, conçu **après** le Poste avancé)
+Casse-tête réparti sur tout le monde de la V2 : un bouton dans la Maison, un levier dans le Château, des symboles éparpillés dont un seul est à noter dans un cryptex une fois ouvert, la grotte de départ en fait partie (ses 3 leviers en sont la première pierre). Pensé comme un **circuit imprimé superposé à la carte du monde**, avec des portes logiques à connecter et une combinaison finale. Il exige une vision globale du monde : **aucune conception avant la clôture de M1**. Obligation immédiate pour chaque phase de contenu : réserver en données les emplacements (bouton, levier, symboles) sans poser d'objet, pour ne jamais redessiner une carte pour lui.
 
 ---
 

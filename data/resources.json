@@ -1,0 +1,16 @@
+[
+  {
+    "id": "res_bois",
+    "label_key": "resource.bois",
+    "dialogue_bloque": "dlg_ressource_bloquee_bois",
+    "outil_requis": null,
+    "item_produit": "item_branche"
+  },
+  {
+    "id": "res_pierre",
+    "label_key": "resource.pierre",
+    "dialogue_bloque": "dlg_ressource_bloquee_pierre",
+    "outil_requis": null,
+    "item_produit": "item_caillou"
+  }
+]

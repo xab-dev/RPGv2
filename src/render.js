@@ -141,28 +141,40 @@ const COULEUR_LEVIER_ACTIF = '#ffd94a';
 // visuel, DISTANCE_ENGAGEMENT_PX (companion.js) inchangé. Un seul endroit.
 export const AURA_TRAIT = { largeur: 1, pointilles: [4, 4], alpha: 0.25 };
 
-// --- Calque statique tuiles + décor (§3.4, performance) --------------------
+// --- Calque statique tuiles + décor (§3.4 grotte-polish, fenêtré depuis
+// 03_maison-exterieur §2.2) -------------------------------------------------
 // Une scène ne change jamais tuile par tuile pendant qu'on la visite (sauf
 // une porte qui s'ouvre, cf. signaturePortesScene ci-dessous) : recalculer
 // fillRect×(largeur×hauteur) + dessinerVisuel(décor) à CHAQUE frame est le
-// premier poste de coût sur le plancher 30 fps mobile visé (les dégradés du
-// décor — flaques — sont l'exemple cité par la fiche). Pré-rendu une fois par
-// (scène, échelle, état des portes) sur un canvas hors-écran à la taille
-// PHYSIQUE de la scène ENTIÈRE, puis simplement recadré par drawImage à
-// chaque frame — même patron que canvasVoile plus bas, en plus grand et
-// invalidé sur bien moins de changements (§4 : "changement de facteur
-// d'échelle -> invalidé et reconstruit à la frame suivante", satisfait par
-// construction puisque `echelle` fait partie de la clé de cache).
-let coucheStatique = null; // { sceneId, echelle, signaturePortes, canvas, origineX, origineY }
+// premier poste de coût sur le plancher 30 fps mobile visé. Pré-rendu une
+// fois par (scène, échelle, portes, FENÊTRE de tuiles visible) sur un canvas
+// hors-écran, recadré par drawImage à chaque frame — même patron que
+// canvasVoile plus bas.
+//
+// 03_maison-exterieur §2.2 (contrat de performance de la grande carte) exige
+// que le rendu n'itère JAMAIS la scène entière (168x115+ tuiles) : le calque
+// n'est donc plus construit sur la taille de la scène complète (viable pour
+// les petites salles de la grotte, pas pour la Région Maison — un canvas
+// couvrant 5440x3712px physiques dépasserait vite les limites mémoire/taille
+// de canvas du navigateur) mais sur la seule FENÊTRE de tuiles visible (±1
+// tuile de marge, cf. selectionnerTuilesVisibles). Recalculé seulement quand
+// cette fenêtre change de tuile de départ (à chaque franchissement de tuile
+// pendant un déplacement, pas à chaque frame) — un "cache de secteur" au
+// sens de la fiche, pas un tableau pré-calculé de toute la carte.
+let coucheStatique = null; // { sceneId, echelle, signaturePortes, xDebut, yDebut, canvas }
 
-// Une scène plus petite que le viewport est CENTRÉE, jamais bornée
-// (camera.js) : camera.x/y peuvent alors être négatifs. `origine` décale le
-// contenu pré-rendu dans un canvas assez grand pour couvrir aussi la zone de
-// centrage — calculé avec exactement la même formule que calculerCamera,
-// pour que `camera + origine` reste toujours >= 0 (sinon `drawImage` recevrait
-// une coordonnée source négative).
-function calculerOrigineCouche(tailleScenePx, tailleVue) {
-  return Math.max(0, (tailleVue - tailleScenePx) / 2);
+// Fenêtre de tuiles à dessiner pour couvrir le viewport logique courant, avec
+// une marge (tuiles partiellement visibles au bord). Pure, testée
+// (03_maison-exterieur §2.2 : bornée par le viewport, jamais par la taille de
+// la scène) — indépendante de toute donnée de scène, seule la caméra et la
+// résolution comptent.
+export function selectionnerTuilesVisibles(camera, resolution, tileSize, margeTuiles = 1) {
+  return {
+    xDebut: Math.floor(camera.x / tileSize) - margeTuiles,
+    yDebut: Math.floor(camera.y / tileSize) - margeTuiles,
+    xFin: Math.ceil((camera.x + resolution.largeur) / tileSize) + margeTuiles,
+    yFin: Math.ceil((camera.y + resolution.hauteur) / tileSize) + margeTuiles,
+  };
 }
 
 // Signature de l'état des portes conditionnelles (scene.portes[], scene.js) :
@@ -174,62 +186,85 @@ function signaturePortesScene(scene, estFlagActif) {
   return (scene.portes || []).map((p) => (estFlagActif && estFlagActif(p.flag) ? '1' : '0')).join('');
 }
 
-function construireCoucheStatique(scene, decor, echelle, signaturePortes, estFlagActif) {
-  const largeurScenePx = scene.width * scene.tileSize;
-  const hauteurScenePx = scene.height * scene.tileSize;
-  const origineX = calculerOrigineCouche(largeurScenePx, RESOLUTION_LOGIQUE.largeur);
-  const origineY = calculerOrigineCouche(hauteurScenePx, RESOLUTION_LOGIQUE.hauteur);
-  const largeurCanvas = Math.max(largeurScenePx, RESOLUTION_LOGIQUE.largeur);
-  const hauteurCanvas = Math.max(hauteurScenePx, RESOLUTION_LOGIQUE.hauteur);
+// `visuelsTuiles` : Map(id de tuile -> entrée visuels.json), résolue une fois
+// par main.js à l'entrée en scène (même patron que `decor` déjà résolu) —
+// une tuile qui en porte un (arbre, rocher…) est dessinée par-dessus son
+// aplat de couleur, ancrée au bas de sa cellule (§3.3 : formes distinctes,
+// jamais un simple carré plein).
+function construireCoucheStatique(scene, decor, echelle, signaturePortes, estFlagActif, fenetre, visuelsTuiles) {
+  const { xDebut, yDebut, xFin, yFin } = fenetre;
+  const largeurCanvas = (xFin - xDebut) * scene.tileSize;
+  const hauteurCanvas = (yFin - yDebut) * scene.tileSize;
 
   const canvas = document.createElement('canvas');
-  canvas.width = largeurCanvas * echelle;
-  canvas.height = hauteurCanvas * echelle;
+  canvas.width = Math.max(1, Math.round(largeurCanvas * echelle));
+  canvas.height = Math.max(1, Math.round(hauteurCanvas * echelle));
   const ctxCouche = canvas.getContext('2d');
-  // Repère logique -> physique de CE calque, indépendant de celui de la
-  // scène visible (mais au même facteur f) : un dessin ici sort net à la
-  // résolution physique, jamais ré-échantillonné au moment du recadrage
-  // (MT_rendu-net_2026-09-15) puisque source et destination partagent le
-  // même facteur d'échelle.
+  // Repère logique -> physique de CE calque (MT_rendu-net_2026-09-15) : un
+  // dessin ici sort net à la résolution physique, jamais ré-échantillonné.
   ctxCouche.setTransform(echelle, 0, 0, echelle, 0, 0);
-  ctxCouche.translate(origineX, origineY);
 
-  for (let y = 0; y < scene.height; y++) {
-    for (let x = 0; x < scene.width; x++) {
+  for (let y = yDebut; y < yFin; y++) {
+    for (let x = xDebut; x < xFin; x++) {
       const couleur = couleurTuile(scene, x, y, estFlagActif);
       if (!couleur) continue;
+      const localX = (x - xDebut) * scene.tileSize;
+      const localY = (y - yDebut) * scene.tileSize;
       ctxCouche.fillStyle = couleur;
-      ctxCouche.fillRect(x * scene.tileSize, y * scene.tileSize, scene.tileSize, scene.tileSize);
+      ctxCouche.fillRect(localX, localY, scene.tileSize, scene.tileSize);
+
+      const tuile = scene.tuileA(x, y, estFlagActif);
+      const visuelTuile = tuile && visuelsTuiles.get(tuile.id);
+      if (visuelTuile) {
+        dessinerVisuel(ctxCouche, visuelTuile, localX + scene.tileSize / 2, localY + scene.tileSize, {});
+      }
     }
   }
 
+  // Décor : seuls les motifs dont la tuile tombe dans la fenêtre — filtrer
+  // avant de dessiner plutôt que de parcourir tout `decor` à chaque secteur
+  // (§2.2 : le décor lui-même reste une liste en mémoire, générée une fois à
+  // l'entrée en scène, cf. decor.js ; seul le DESSIN est borné ici).
   for (const motif of decor) {
-    dessinerVisuel(ctxCouche, motif.visuel, motif.x, motif.y, { rotation: motif.rotation });
+    const tx = Math.floor(motif.x / scene.tileSize);
+    const ty = Math.floor(motif.y / scene.tileSize);
+    if (tx < xDebut || tx >= xFin || ty < yDebut || ty >= yFin) continue;
+    dessinerVisuel(ctxCouche, motif.visuel, motif.x - xDebut * scene.tileSize, motif.y - yDebut * scene.tileSize, {
+      rotation: motif.rotation,
+    });
   }
 
-  return { sceneId: scene.id, echelle, signaturePortes, canvas, origineX, origineY };
+  return { sceneId: scene.id, echelle, signaturePortes, xDebut, yDebut, canvas };
 }
 
-// Composite le calque statique (reconstruit si scène/échelle/portes ont
-// changé) sur `ctx`, recadré à la position de la caméra — même technique que
-// la composition du voile plus bas (repère identité le temps de l'appel,
+// Composite le calque statique (reconstruit si scène/échelle/portes/fenêtre
+// ont changé) sur `ctx`, recadré à la position de la caméra — même technique
+// que la composition du voile plus bas (repère identité le temps de l'appel,
 // copie de pixels physiques 1:1, jamais un ré-échantillonnage).
-function dessinerCoucheStatique(ctx, scene, decor, camera, estFlagActif) {
+function dessinerCoucheStatique(ctx, scene, decor, camera, estFlagActif, visuelsTuiles) {
   const echelle = ctx.canvas.width / RESOLUTION_LOGIQUE.largeur;
   const signature = signaturePortesScene(scene, estFlagActif);
+  const fenetre = selectionnerTuilesVisibles(camera, RESOLUTION_LOGIQUE, scene.tileSize);
 
   if (
     !coucheStatique ||
     coucheStatique.sceneId !== scene.id ||
     coucheStatique.echelle !== echelle ||
-    coucheStatique.signaturePortes !== signature
+    coucheStatique.signaturePortes !== signature ||
+    coucheStatique.xDebut !== fenetre.xDebut ||
+    coucheStatique.yDebut !== fenetre.yDebut
   ) {
-    coucheStatique = construireCoucheStatique(scene, decor, echelle, signature, estFlagActif);
+    coucheStatique = construireCoucheStatique(scene, decor, echelle, signature, estFlagActif, fenetre, visuelsTuiles);
   }
 
-  const { canvas, origineX, origineY } = coucheStatique;
-  const sourceX = (camera.x + origineX) * echelle;
-  const sourceY = (camera.y + origineY) * echelle;
+  const { canvas, xDebut, yDebut } = coucheStatique;
+  // Toujours >= 0 par construction (le calque commence à xDebut/yDebut, la
+  // caméra ne peut être plus à gauche/haut que ce que la fenêtre couvre) —
+  // remplace l'ancien mécanisme `calculerOrigineCouche` (scène plus petite
+  // que le viewport, caméra centrée négative) : la fenêtre l'absorbe déjà,
+  // elle n'a jamais besoin d'un décalage séparé.
+  const sourceX = (camera.x - xDebut * scene.tileSize) * echelle;
+  const sourceY = (camera.y - yDebut * scene.tileSize) * echelle;
 
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -251,14 +286,15 @@ function dessinerCoucheStatique(ctx, scene, decor, camera, estFlagActif) {
 // seule fonction de rendu, plus aucune forme d'entité dessinée inline ici).
 export function dessinerScene(ctx, {
   scene, decor, camera, hero, heroVisuel, heroTeinte = null, monstres = [], follet, puzzles = [], estFlagActif, anneauAttaque,
+  visuelsTuiles = new Map(), objetsSol = [], structures = [],
 }) {
   ajusterCanvasLogiquePhysique(ctx);
   ctx.clearRect(0, 0, RESOLUTION_LOGIQUE.largeur, RESOLUTION_LOGIQUE.hauteur);
 
-  // Tuiles + décor (§3.4) : calque statique pré-rendu, recadré par caméra —
-  // remplace les anciennes boucles inline (fillRect par tuile + petit carré
-  // par motif de décor) de la Phase 1/palier 2, cf. dessinerCoucheStatique.
-  dessinerCoucheStatique(ctx, scene, decor, camera, estFlagActif);
+  // Tuiles + décor (§3.4 grotte-polish, fenêtré §2.2 03_maison-exterieur) :
+  // calque statique pré-rendu, recadré par caméra — remplace les anciennes
+  // boucles inline (fillRect par tuile + petit carré par motif de décor).
+  dessinerCoucheStatique(ctx, scene, decor, camera, estFlagActif, visuelsTuiles);
 
   // Leviers (§2.1/§3.3 : première fois qu'un puzzle "levier" a un rendu du
   // tout — Phase 1 posait le flag sans jamais rien afficher). Ancre "bas" :
@@ -267,6 +303,12 @@ export function dessinerScene(ctx, {
     dessinerVisuel(ctx, levier.visuel, levier.x - camera.x, levier.y - camera.y, {
       teinte: levier.actif ? COULEUR_LEVIER_ACTIF : null,
     });
+  }
+
+  // Objets au sol (03_maison-exterieur §3.3) : branche/caillou/fruit — même
+  // patron que les leviers ci-dessus, ancre "centre" (cf. visuel_branche &co).
+  for (const objet of objetsSol) {
+    dessinerVisuel(ctx, objet.visuel, objet.x - camera.x, objet.y - camera.y, {});
   }
 
   for (const monstre of monstres) {
@@ -343,6 +385,26 @@ export function dessinerScene(ctx, {
     }
     ctx.fillStyle = `rgba(255, 255, 255, ${(Math.max(0, Math.min(1, alpha)) * 0.35).toFixed(3)})`;
     ctx.fill('evenodd');
+    ctx.restore();
+  }
+
+  // Toit (03_maison-exterieur §3.4) : dessiné APRÈS les entités (ordre de
+  // calque documenté §4 : "scène -> entités -> toit -> obscurité ->
+  // HUD/dialogue") — un simple rectangle teinté de la couleur de
+  // `structure.render.valeur` (déjà résolue par l'appelant), opacité déjà
+  // calculée par main.js (structures.js#calculerOpaciteToit, fonction pure
+  // testée ailleurs). `opacite <= 0` : rien à peindre, la structure est
+  // "grand ouverte" (intérieur entièrement visible).
+  for (const structure of structures) {
+    if (structure.opacite <= 0) continue;
+    const x = structure.rect.x * scene.tileSize - camera.x;
+    const y = structure.rect.y * scene.tileSize - camera.y;
+    const largeur = structure.rect.w * scene.tileSize;
+    const hauteur = structure.rect.h * scene.tileSize;
+    ctx.save();
+    ctx.globalAlpha = structure.opacite;
+    ctx.fillStyle = structure.couleur;
+    ctx.fillRect(x, y, largeur, hauteur);
     ctx.restore();
   }
 }

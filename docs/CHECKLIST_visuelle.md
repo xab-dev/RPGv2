@@ -107,6 +107,37 @@ HUD (état 1) passent désormais par `dessinerVisuel`, comme la scène — les
 mêmes silhouettes doivent être visuellement identiques (juste à une échelle
 différente) entre les trois emplacements.
 
+19. **Grande carte — forêt/chemin/ressources** (03_maison-exterieur, palier
+    A/B) — Région Maison, loin de toute structure. Vérifier : fond de forêt
+    procédural (silhouettes d'arbre répétées, densité visible mais pas
+    étouffante), chemin manuel bien distinct (teinte tan/beige) serpentant
+    dedans, le premier arbre/rocher interactifs visuellement identiques aux
+    arbres de fond (même silhouette — seule l'interaction les distingue),
+    caméra qui suit sans à-coup en pannant sur une carte bien plus grande que
+    le viewport (calque statique fenêtré, §2.2).
+20. **Toit à mi-fondu** (palier D) — approche progressive de la maison.
+    Vérifier : le toit (aplat brun) devient progressivement transparent à
+    mesure qu'on approche, jamais un saut net ; l'intérieur (sol parquet,
+    murs) apparaît en dessous pendant le fondu, jamais un flash ; le toit
+    redevient opaque en s'éloignant.
+21. **Objets au sol + station placeholder** (palier B/C/D) — une branche/un
+    caillou/un fruit visibles au sol (silhouettes distinctes, ancre centre),
+    un puits/une table/un coffre/un atelier visibles (silhouettes distinctes,
+    ancre bas — **piège trouvé cette session** : ces stations vivent dans
+    `scene.interactifs` comme les leviers, un filtre qui ne gardait que
+    `type === 'levier'` les rendait invisibles bien qu'interactives ; corrigé,
+    à revérifier si ce filtre est retouché).
+22. **Cycle jour/nuit** (palier E) — heure forcée à la nuit. Vérifier : toute
+    la scène s'assombrit (même mécanisme que l'obscurité de la grotte),
+    seules la lumière du follet (et la fenêtre éclairée de la maison, si à
+    portée) restent visibles, transition progressive (jamais un saut net
+    jour/nuit).
+23. **Menu — Musique/Poche** (§3.3/§3.6) — Vérifier : entrée "Musique : Oui/
+    Non" bascule au focus+ATTACK ; entrée "Poche" ouvre un écran plein écran
+    listant `nom × quantité` pour chaque item possédé (ou un message "vide"),
+    jamais visible en même temps que le menu principal ou l'écran de
+    confirmation du reset, B/Fermer y ramène.
+
 ## Méthode
 
 `node serveur_local.js`, ouvrir `http://localhost:8080`, extension Chrome
@@ -218,3 +249,41 @@ fenêtre precise du fondu n'a pas pu être recapturée visuellement après coup
 au vu de la vérification programmatique déjà faite en headless
 (`tests/test_phase1b_intro_2026-09-16.js`, §3-4). Aucune erreur console sur
 toute la session.
+
+2026-09-16 (`03_maison-exterieur`, première marche — grande carte, ressources
+bloquées, ramassage, maison/toit/jardin/puits, cycle jour/nuit) : états 19-23
+ajoutés et capturés en navigateur réel, extension Chrome connectée. Même
+artefact d'outillage que les sessions précédentes (`document.hidden` reste
+vrai) : contournement par un second orchestrateur manuel construit dans la
+page (import dynamique des vrais modules `/src/*.js` servis par
+`serveur_local.js`), `window.requestAnimationFrame` neutralisé, sauvegarde
+écrite directement en IndexedDB pour repartir d'un point précis (sortie de
+grotte, follet déjà choisi) sans rejouer toute la cinématique à chaque essai.
+Conforme : fond de forêt procédural + chemin manuel bien distincts en jeu
+réel (pas seulement en tuiles comptées côté test), caméra fenêtrée qui suit
+sans à-coup sur une carte de 170x116 tuiles ; toit vu de loin (opaque) puis
+fondu progressif à l'approche puis totalement transparent dans l'embrasure de
+la porte, jamais de saut net ; traversée de la maison (porte ouest → sol
+parquet/murs → porte est) confirmée — **piège de collision noté** : une
+porte d'1 seule tuile avec un héros de rayon 10px ne laisse qu'un corridor
+vertical de 12px pour la franchir (32 - 2x10), suffisant en jeu réel (un
+joueur ajuste sa trajectoire à l'oeil) mais a fait échouer un premier essai
+du bot de test qui visait le centre du chemin plutôt que le centre de la
+porte — sans rapport avec un bug du jeu, juste une marge fine à garder à
+l'esprit si Xav rapporte un jour un blocage similaire à l'entrée d'un
+bâtiment ; puits/table/coffre/atelier rendus avec leurs silhouettes propres
+après correctif (voir état 21, le filtre de rendu ne gardait que les
+leviers) ; INTERACT sur le puits ouvre bien son dialogue "pas encore" ;
+cycle jour/nuit forcé à la nuit : toute la scène s'assombrit sauf le halo du
+follet, cohérent avec l'obscurité de la grotte ; menu : Musique/Poche
+vérifiés séparément (Poche affiche `Branche × 2` / `Fruit × 1` pour un
+inventaire de test) — **piège méthodologique noté** : `initialiserMenu()`
+appelé plusieurs fois dans la même page (une fois par tentative de ce
+diagnostic) laisse des éléments DOM dupliqués de même id derrière lui
+(`document.getElementById` ne récupère que le premier), provoquant une
+capture d'écran trompeuse (plusieurs menus superposés) tant qu'ils ne sont
+pas explicitement nettoyés (`querySelectorAll` + `remove()`) — sans rapport
+avec un bug du jeu réel, où `initialiserMenu()` n'est appelé qu'une fois par
+chargement de page. Grotte (salle 1, cinématique + dialogue + choix) rejouée
+sans régression après la réécriture du calque statique fenêtré de
+`render.js`. Aucune erreur console sur toute la session.

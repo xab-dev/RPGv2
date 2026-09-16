@@ -27,5 +27,40 @@
     "lignes": [
       { "locuteur": "follet", "text_key": "dlg.eclats.1" }
     ]
+  },
+  {
+    "id": "dlg_ressource_bloquee_bois",
+    "declencheur": "ressource_bloquee",
+    "lignes": [
+      { "locuteur": "follet", "text_key": "dlg.ressource_bloquee_bois.1" }
+    ]
+  },
+  {
+    "id": "dlg_ressource_bloquee_pierre",
+    "declencheur": "ressource_bloquee",
+    "lignes": [
+      { "locuteur": "follet", "text_key": "dlg.ressource_bloquee_pierre.1" }
+    ]
+  },
+  {
+    "id": "dlg_station_pas_encore",
+    "declencheur": "station_pas_encore",
+    "lignes": [
+      { "locuteur": "follet", "text_key": "dlg.station_pas_encore.1" }
+    ]
+  },
+  {
+    "id": "dlg_puits_pas_encore",
+    "declencheur": "puits_pas_encore",
+    "lignes": [
+      { "locuteur": "follet", "text_key": "dlg.puits_pas_encore.1" }
+    ]
+  },
+  {
+    "id": "dlg_premier_ramassage",
+    "declencheur": "premier_ramassage",
+    "lignes": [
+      { "locuteur": "follet", "text_key": "dlg.premier_ramassage.1" }
+    ]
   }
 ]

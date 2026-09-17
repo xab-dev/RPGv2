@@ -179,11 +179,21 @@ différente) entre les trois emplacements.
     points libres restent, points libres affichés et décomptés après
     allocation, aucun retrait possible.
 
-**Encore dû (session en cours, 2026-09-17)** : les états 25-28 ci-dessus
-n'ont **jamais été capturés en navigateur réel** — code fait et testé
-headless (`tests/test_phase3_*`), mais la contrainte de méthode (rendu
-canvas/DOM jamais exercé headless) s'applique intégralement ici. Voir
-`CLAUDE.md` > Dette.
+**Encore dû (2026-09-17)** : les états 25-28 ci-dessus n'ont **jamais été
+capturés en navigateur réel** — code fait et testé headless
+(`tests/test_phase3_*`), mais la contrainte de méthode (rendu canvas/DOM
+jamais exercé headless) s'applique intégralement ici. Voir `CLAUDE.md` >
+Dette.
+
+Diagnostic `SD_phase3-stations-pv-jauges_2026-09-17.md` (première validation
+en jeu par Xav) : état 21 (stations/puits) était en réalité invisible en jeu
+— cause trouvée et corrigée (filtre de rendu obsolète dans
+`main.js#dessiner()`, cf. journal) ; état 25 (jauges) était figé/gris — cause
+trouvée et corrigée (`ui/hud.js` lisait `survie.faim`/`survie.soif`, la clé
+réelle est `jauge_faim`/`jauge_soif`). Les deux corrections touchent
+`main.js#dessiner()`/`ui/hud.js` : états 21 et 25 restent donc **encore dus**
+malgré le correctif, cette fois avec une cause écrite plutôt qu'un simple
+"jamais capturé".
 
 ## Méthode
 

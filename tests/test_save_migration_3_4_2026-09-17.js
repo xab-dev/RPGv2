@@ -2,7 +2,7 @@
 // migre vers v4 avec jauges pleines, XP à 0, niveau 1, coffre vide, cooldowns
 // vides, rien de l'existant perdu ; une version future (5) reste refusée.
 import assert from 'node:assert/strict';
-import { migrer, VERSION_SCHEMA_COURANTE, creerStoreMemoire, sauvegarder, charger } from '../src/save.js';
+import { migrer, VERSION_SCHEMA_COURANTE, creerStoreMemoire, sauvegarder, charger, saveNeuve } from '../src/save.js';
 
 function payloadV3() {
   return {
@@ -80,6 +80,18 @@ function payloadV3() {
   // de cooldowns pré-remplis qui pourraient déclencher ce cas — cooldowns
   // repart toujours vide.
   assert.deepEqual(migrer(payloadV3(), 4).cooldowns, {});
+}
+
+// 5bis. SD_phase3-stations-pv-jauges_2026-09-17.md, sujet 3 : partie neuve
+// et sauvegarde migrée produisent le MÊME état de survie (une seule
+// source, save.js#etatInitialSurvie) — jamais deux littéraux qui
+// pourraient diverger.
+{
+  assert.deepEqual(saveNeuve().survie, migrer(payloadV3(), 4).survie);
+  // Les clés sont bien celles que survival.json/ui/hud.js attendent
+  // (jauge_faim/jauge_soif, jamais faim/soif) — cause racine du bug
+  // "jauges grises" : ui/hud.js lisait les mauvaises clés.
+  assert.deepEqual(Object.keys(saveNeuve().survie).sort(), ['jauge_faim', 'jauge_soif']);
 }
 
 // 5. Version supérieure à celle du jeu (5, future) -> refusée.

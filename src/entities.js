@@ -56,3 +56,20 @@ export function mourir(hero, { onMort } = {}) {
 export function respawn(hero, spawnPx, pvMax) {
   return { ...hero, x: spawnPx.x, y: spawnPx.y, pv: pvMax, mort: false };
 }
+
+// Réconcilie les PV courants avec un nouveau plafond (SD_phase3-stations-
+// pv-jauges_2026-09-17.md §B) : `pv_max` est recalculé CHAQUE FRAME
+// (buffs/points de stats/modulateur de survie, cf. main.js#calculerStatsHeros)
+// et sans ceci, une hausse de `pv_max` (ex. buff_repas sur Vitalité) ouvre un
+// "headroom" invisible — les PV n'ont pas baissé en absolu, mais la barre
+// RELATIVE (pv/pv_max) descend, donnant l'impression que manger fait perdre
+// des PV. Règle : une hausse de `pv_max` donne réellement les PV qu'elle
+// promet (le buff tient sa promesse) ; une baisse (expiration) clampe sans
+// perte supplémentaire — jamais l'inverse, jamais un 2ᵉ chemin ailleurs
+// (HUD, dialogue) qui recalculerait un ratio différent.
+export function reconcilierPvMax(hero, pvMaxNouveau) {
+  if (hero.pv == null) return { ...hero, pv: pvMaxNouveau, pvMax: pvMaxNouveau };
+  const delta = pvMaxNouveau - hero.pvMax;
+  const pv = delta > 0 ? hero.pv + delta : Math.min(hero.pv, pvMaxNouveau);
+  return { ...hero, pv, pvMax: pvMaxNouveau };
+}

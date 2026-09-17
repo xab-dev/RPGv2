@@ -33,6 +33,17 @@ export const COULEUR_HERO_NEUTRE = '#8f8f8f';
 // point libre — cohérent avec levels.json[0] (niveau_1, xp_cumulee 0).
 const HERO_NIVEAU_DEPART = 1;
 
+// Palier C (§3.3) : une SEULE source pour l'état de survie initial, reprise
+// par saveNeuve() ET par la migration 3 -> 4 ci-dessous — deux littéraux
+// dupliqués avaient dérivé silencieusement sans se contredire pour l'instant,
+// mais c'est exactement la classe de bug que SD_phase3-stations-pv-jauges_
+// 2026-09-17.md demandait d'éliminer avant qu'elle ne se reproduise. Une
+// fonction (pas une constante partagée) : l'appelant en obtient un nouvel
+// objet à chaque fois, jamais une référence mutée en place.
+function etatInitialSurvie() {
+  return { jauge_faim: 1, jauge_soif: 1 };
+}
+
 export function saveNeuve() {
   return {
     schema_version: VERSION_SCHEMA_COURANTE,
@@ -75,7 +86,7 @@ export function saveNeuve() {
     // Palier C (§3.3) : jauges de survival.json, pleines à la création
     // (id de jauge -> valeur dans [0,1]) — jamais un objet figé
     // { faim, soif } en dur, une 3ᵉ jauge future n'a rien à changer ici.
-    survie: { jauge_faim: 1, jauge_soif: 1 },
+    survie: etatInitialSurvie(),
     // Palier E (§3.5) : coffre unique en M1, même forme que l'inventaire.
     coffre: { items: {} },
     // Palier A (§3.1, D16②) : ids des recettes déjà découvertes — journal de
@@ -162,7 +173,7 @@ function migrer_3_vers_4(payload) {
     },
     monde: { ...payload.monde, respawns_en_attente: {} },
     cooldowns: {},
-    survie: { jauge_faim: 1, jauge_soif: 1 },
+    survie: etatInitialSurvie(),
     coffre: { items: {} },
     recettes_decouvertes: [],
   };

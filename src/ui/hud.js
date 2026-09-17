@@ -197,9 +197,15 @@ export function dessinerHud(ctx, {
     ctx.fill();
     let ligne2Y = y2 + CARTOUCHE_PADDING / 2;
     if (survie) {
-      dessinerJauge(ctx, contenuX, ligne2Y, survie.faim, COULEUR_FAIM, dessinerIconeFaim);
+      // Cause racine (SD_phase3-stations-pv-jauges_2026-09-17.md, sujet 3) :
+      // `save.survie` porte les clés de survival.json (`jauge_faim`/
+      // `jauge_soif`, cf. save.js/survival.js), jamais `faim`/`soif` — ce
+      // calque lisait les mauvaises clés (toujours `undefined`, jauge
+      // toujours grise) alors que la décroissance elle-même tournait
+      // correctement (prouvé par test_phase3_survival, déjà vert).
+      dessinerJauge(ctx, contenuX, ligne2Y, survie.jauge_faim, COULEUR_FAIM, dessinerIconeFaim);
       ligne2Y += JAUGE_HAUTEUR + 2;
-      dessinerJauge(ctx, contenuX, ligne2Y, survie.soif, COULEUR_SOIF, dessinerIconeSoif);
+      dessinerJauge(ctx, contenuX, ligne2Y, survie.jauge_soif, COULEUR_SOIF, dessinerIconeSoif);
       ligne2Y += JAUGE_HAUTEUR + 4;
     }
     if (niveau != null) {

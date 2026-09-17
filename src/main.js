@@ -34,7 +34,7 @@ import { calculerStatsPrimaires, calculerStatsDerivees, appliquerModulateurSurvi
 import {
   modificateursHeros, statsEffectivesMonstre, tickBuffsActifs, ajouterBuffActif, modificateursBuffsActifs,
 } from './status.js';
-import { creerHeros, creerMonstre, approcherEnLigneDroite, infligerDegats, mourir, respawn } from './entities.js';
+import { creerHeros, creerMonstre, approcherEnLigneDroite, infligerDegats, mourir, respawn, reconcilierPvMax } from './entities.js';
 import { resoudreAutoAttaque, tickCooldown, estMonstreActif, FLASH_ATTAQUE_MS, FLASH_TOUCHE_MS } from './combat.js';
 import {
   creerFollet, mettreAJourEtat as mettreAJourFollet, avancerPosition as avancerFollet, DISTANCE_ENGAGEMENT_PX,
@@ -715,8 +715,10 @@ export function creerOrchestrateurGrotte({
     const modulateur = calculerModulateurSurvie(registre, save.survie);
     const statsPrimaires = appliquerModulateurSurvie(statsBrutes, modulateur, configSurvie(registre).stats_modulees);
     const statsDerivees = calculerStatsDerivees(registre, statsPrimaires);
-    hero.pvMax = statsDerivees.derivee_pv_max;
-    if (hero.pv == null) hero.pv = hero.pvMax;
+    // SD_phase3-stations-pv-jauges_2026-09-17.md §B : reconcilierPvMax()
+    // fait tenir sa promesse à un buff qui monte pv_max (Vitalité), jamais
+    // un simple `hero.pvMax = ...` qui ouvrirait un headroom invisible.
+    Object.assign(hero, reconcilierPvMax(hero, statsDerivees.derivee_pv_max));
     return { statsPrimaires, statsDerivees };
   }
 
@@ -1106,15 +1108,29 @@ export function creerOrchestrateurGrotte({
       };
     });
 
-    // Leviers + stations placeholder (§2.1/§3.3, §3.4 03_maison-exterieur) :
-    // seules les instances "levier"/"station_placeholder" de scene.interactifs
-    // se dessinent (une "sequence" ne référence que des leviers déjà rendus
-    // par ailleurs) — même source de vérité que essayerInteraction() pour la
-    // position, puzzlesEtat pour l'état on/off. Une station n'a pas d'état
-    // on/off (jamais "actif" → jamais teintée, cf. dessinerScene).
+    // Interactifs positionnés (§2.1/§3.3, §3.4 03_maison-exterieur) : tout
+    // interactif de scene.interactifs qui porte un `render.visuel` se
+    // dessine (une "sequence" n'en porte pas — elle ne référence que des
+    // leviers déjà rendus par ailleurs) — même source de vérité que
+    // essayerInteraction() pour la position, puzzlesEtat pour l'état on/off.
+    //
+    // Cause racine (SD_phase3-stations-pv-jauges_2026-09-17.md, sujet 1) :
+    // ce filtre énumérait les `type` connus (`'levier' || 'station_placeholder'`)
+    // — quand Palier A de la Phase 3 a renommé les 4 stations en
+    // `type: "station"` (données valides, garde-fou "solide sans rendu" au
+    // boot toujours satisfait puisque render.visuel restait déclaré), ce
+    // filtre de RENDU, lui, ne connaissait pas ce nouveau type et les
+    // excluait silencieusement — solides (collision générique par
+    // `empreintesSolides`) et actionnables (essayerInteraction() ne filtre
+    // pas non plus par type), mais jamais dessinées. Le garde-fou de
+    // schemas.js valide la DONNÉE (un `render.visuel` qui se résout), pas
+    // qu'un filtre de CODE la garde à jour — reste sur la donnée seule
+    // (`render.visuel` présent), jamais une liste de `type` à maintenir en
+    // double : un 5ᵉ type d'interactif positionné se dessine sans toucher
+    // cette fonction, ce qui rend la classe de bug irreproductible ici.
     const puzzlesAffiches = scene.interactifs
       .map((id) => registre.obtenir('puzzles', id))
-      .filter((p) => p.type === 'levier' || p.type === 'station_placeholder')
+      .filter((p) => p.render && p.render.visuel)
       .map((p) => ({
         x: (p.position.x + 0.5) * scene.tileSize,
         y: (p.position.y + 0.5) * scene.tileSize,

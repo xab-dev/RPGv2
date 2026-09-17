@@ -3,7 +3,10 @@
 // dans tous les états (aucun code séparé pour "la lumière suit l'engagement").
 
 // Provisoires, non validés en jeu par Xav.
-const DISTANCE_ENGAGEMENT_PX = 48;
+// Exportée (specs/04_indices-commandes.md §3) : l'indice ATTACK se déclenche
+// "à l'entrée dans distance_engagement" — même seuil que l'engagement réel du
+// follet, jamais une 2ᵉ constante qui pourrait diverger.
+export const DISTANCE_ENGAGEMENT_PX = 48;
 const ORBITE_RAYON_PX = 24;
 const ORBITE_VITESSE_RAD_S = 2;
 const ORBITE_LERP = 0.15; // "retard ressort" du suivi

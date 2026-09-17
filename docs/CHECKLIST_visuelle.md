@@ -138,6 +138,16 @@ différente) entre les trois emplacements.
     jamais visible en même temps que le menu principal ou l'écran de
     confirmation du reset, B/Fermer y ramène.
 
+24. **Indice de commande** (specs/04_indices-commandes.md) — nouvelle partie,
+    à la prise de contrôle après l'intro (MOVE), à portée du levier de la
+    salle 1 avant tout appui (INTERACT), au premier monstre engagé en salle 2
+    (ATTACK). Vérifier : bannière glyphe + mot centrée sous le cartouche PV,
+    fondu bref en entrée/sortie (jamais un saut net), disparaît à l'appui du
+    verbe ou après ~2,5s, **jamais deux fois** pour un même verbe sur la même
+    partie, **rien** sur les 3 leviers de la salle 2 (déjà montré) ; passer
+    manette -> clavier pendant qu'un indice est affiché doit changer le
+    glyphe affiché sans le refermer.
+
 ## Méthode
 
 `node serveur_local.js`, ouvrir `http://localhost:8080`, extension Chrome

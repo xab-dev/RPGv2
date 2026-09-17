@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Phases validées : 0 (Socle technique), 1 (La Grotte) et 1b (polish, 4/4 paliers, DA validée) — validées en jeu à la manette réelle le 2026-09-16. Phase 2 (Région Maison, `specs/03_maison-exterieur.md`) : « première marche » (5 paliers + audio) validée à la manette et au clavier réels par Xav le 2026-09-16 ; les deux défauts qu'elle a fait remonter (accrochage des coins en collision, arbre interactif hors du chemin naturel) ont été diagnostiqués et corrigés le jour même (`SD_hitbox-angle-arbre_2026-09-16.md`) puis validés par Xav le 2026-09-17. **Phase 2 close** — prochaine phase à ouvrir. Tactile en dette assumée jusqu'à la Phase 4 (compétences), différé jusqu'à un lien de partage pour test (le neveu de Xav est le testeur mobile de référence).
 
-`MT_jour-nuit-contraste_2026-09-16.md` (v1.1, racine du dépôt) livrée le 2026-09-17 — code fait et testé, validation manuelle manette/navigateur réelle encore due par Xav (`docs/archives/JOURNAL_2026-09-17_micro-ticket-contraste-jour-nuit.md`). `MT_musique-ambiance-synth_2026-09-16.md` (racine du dépôt) livrée le 2026-09-17 — code fait et testé, mais son retour terrain a révélé un freeze du jeu à la bascule "Musique" non→oui, diagnostiqué et corrigé le jour même (`SD_musique-freeze-reprise_2026-09-17.md`, journal courant) ; validation manuelle (navigateur, manette, 5 min d'écoute) encore due par Xav. Prochaines fiches à livrer, dans cet ordre (aucune rédigée à ce jour) : `specs/04_indices-commandes.md` → `specs/04_stations-proportions-collision.md`.
+`MT_jour-nuit-contraste_2026-09-16.md` (v1.1, archivée) livrée le 2026-09-17 — code fait et testé, validation manuelle manette/navigateur réelle encore due par Xav (`docs/archives/JOURNAL_2026-09-17_micro-ticket-contraste-jour-nuit.md`). `MT_musique-ambiance-synth_2026-09-16.md` (archivée) livrée le 2026-09-17 — code fait et testé, freeze diagnostiqué et corrigé le jour même (`docs/archives/JOURNAL_2026-09-17_diagnostic-freeze-musique.md`) ; validation manuelle (navigateur, manette, 5 min d'écoute) encore due par Xav. `specs/04_indices-commandes.md` livrée le 2026-09-17 (journal courant) — code fait, suite verte, **validation visuelle en navigateur encore due par Xav** (`docs/CHECKLIST_visuelle.md`, état 24 nouveau). `specs/04_stations-proportions-collision.md` : à livrer ensuite dans cette même session.
 
 Historique complet des sessions : **`docs/archives/INDEX.md`** — un fichier par session archivée, contenu verbatim (source de vérité en cas de doute sur le détail d'une décision passée). `CLAUDE.md` ne garde que le journal de la session la plus récente (en fin de ce fichier) — voir la règle de méthode correspondante ci-dessous.
 
@@ -68,8 +68,9 @@ rpg_v2/
 │   ├── schemas.js          schéma par catalogue (champs requis, id, refs, validation custom)
 │   ├── io_node.js / io_navigateur.js   adaptateurs disque (tests) / réseau (jeu) pour registry.js
 │   ├── storage_indexeddb.js adaptateur IndexedDB pour save.js
-│   ├── input/              input.js (fusion clavier+manette+tactile en verbes, loquet tactile),
-│   │                       gamepad.js, keyboard.js (reset sur `blur`), touch.js (joystick+boutons)
+│   ├── input/              input.js (fusion clavier+manette+tactile en verbes, loquet tactile,
+│   │                       loquet périphérique actif), gamepad.js, keyboard.js (reset sur `blur`),
+│   │                       touch.js (joystick+boutons)
 │   ├── scene.js            layout (tableau ou lignes+légende) → forêt procédurale → structures ;
 │   │                       collisions 4 coins + glissement + correction de coin (chevauchement
 │   │                       ≤ `TOLERANCE_COIN_PX`, cf. journal courant) ; portes conditionnelles ;
@@ -102,9 +103,13 @@ rpg_v2/
 │   ├── daynight.js         cycle jour/nuit en 4 phases (constantes), avance hors UI seulement
 │   ├── audio.js            musique en boucle, armée au premier verbe abstrait (DOM)
 │   ├── dialogue.js         file de lignes, machine à écrire + armement anti-spam, résolution locuteur
+│   ├── hints.js            indices de commande (specs/04_indices-commandes.md) : un seul affiché
+│   │                       à la fois, montré une fois par partie (flag persisté), fermé dès
+│   │                       l'émission effective du verbe — pur, ignore i18n/DOM
 │   ├── i18n.js
 │   └── ui/                 menu.js (DOM ; Langue/Musique/Poche/Export/Import/Reset/Fermer),
-│                           hud.js + dialogue_box.js + hud_layout.js (canvas, résolution logique)
+│                           hud.js + hud_hints.js + dialogue_box.js + hud_layout.js (canvas,
+│                           résolution logique)
 ├── data/                   catalogues JSON (voir specs/*.md §2.1 de chaque phase)
 ├── locales/fr.json, en.json
 ├── specs/                  00_ROADMAP.md, 0N_*.md par phase, carte_mentale_RPG_V2_v1_3_0.md
@@ -142,13 +147,14 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 | Cycle jour/nuit n'avance qu'en temps de jeu actif (gelé sous UI, même point de décision unique que le reste du gameplay) | 2026-09-16 | même archive |
 | Clignements + orbite pré-choix implémentés en intro cinématique, ≤10s, non-skippable — clôt le manque relevé à la Phase 1 | 2026-09-16 | `docs/archives/JOURNAL_2026-09-16_phase1b-palier4.md` |
 | Couleur neutre du héros : gris moyen désaturé + contour clair — *révise* le gris foncé initialement souhaité par Xav, trop peu visible sur le voile | 2026-09-16 | même archive |
-| Stations placeholder : proportions à corriger (échelle ×2 à ×2,2) **et** collision sur certains items — *révise* la décision initiale « non solides » → `specs/04_stations-proportions-collision.md` (à rédiger) | 2026-09-16 | journal courant, ci-dessous |
-| L'arbre fruitier ne se coupe jamais (fruits, puis jardin/récolte/craft/cuisine seulement) | 2026-09-16 | journal courant |
-| Tactile différé jusqu'à un lien de partage (Phase 4 ou plus) ; testeur de référence = le neveu de Xav | 2026-09-16 | journal courant |
-| Indice de commande au **premier** déclenchement de chaque verbe seulement, jamais répété → `specs/04_indices-commandes.md` (à rédiger) | 2026-09-16 | journal courant |
-| Ambiance musicale continue à base de notes synthé qui bouclent, en attendant `piano_solo.mp3` ; repli automatique déclaré par un id (`repli`) dans `data/music.json`, résolu par `audio.js#resoudrePisteRepli` (pure) → `MT_musique-ambiance-synth_2026-09-16.md` | 2026-09-16 | journal courant |
-| Nuit extérieure autorisée à dépasser le plafond de la grotte (0.72) — nuit = 0.85 ; *révise* la lecture initiale du ticket qui présentait ce plafond comme une limite dure partagée — décision explicite de Xav, soumise en question bloquante avant implémentation | 2026-09-17 | journal courant |
-| Cycle jour/nuit à durées par phase indépendantes (jour 10 min, crépuscule/aube 1 min 30, nuit 4 min francs = 17 min au total) — *révise* le `DUREE_CYCLE_MS` unique découpé en phases égales de la Phase 2 | 2026-09-17 | journal courant |
+| Stations placeholder : proportions à corriger (échelle ×2 à ×2,2) **et** collision sur certains items — *révise* la décision initiale « non solides » → `specs/04_stations-proportions-collision.md` | 2026-09-16 | `docs/archives/JOURNAL_2026-09-16_phase2-premiere-marche.md` |
+| L'arbre fruitier ne se coupe jamais (fruits, puis jardin/récolte/craft/cuisine seulement) | 2026-09-16 | même archive |
+| Tactile différé jusqu'à un lien de partage (Phase 4 ou plus) ; testeur de référence = le neveu de Xav | 2026-09-16 | même archive |
+| Indice de commande au **premier** déclenchement de chaque verbe seulement, jamais répété → `specs/04_indices-commandes.md` | 2026-09-16 | même archive |
+| Ambiance musicale continue à base de notes synthé qui bouclent, en attendant `piano_solo.mp3` ; repli automatique déclaré par un id (`repli`) dans `data/music.json`, résolu par `audio.js#resoudrePisteRepli` (pure) | 2026-09-16 | `docs/archives/JOURNAL_2026-09-17_micro-ticket-ambiance-synthetisee.md` |
+| Nuit extérieure autorisée à dépasser le plafond de la grotte (0.72) — nuit = 0.85 ; *révise* la lecture initiale du ticket qui présentait ce plafond comme une limite dure partagée — décision explicite de Xav, soumise en question bloquante avant implémentation | 2026-09-17 | `docs/archives/JOURNAL_2026-09-17_micro-ticket-contraste-jour-nuit.md` |
+| Cycle jour/nuit à durées par phase indépendantes (jour 10 min, crépuscule/aube 1 min 30, nuit 4 min francs = 17 min au total) — *révise* le `DUREE_CYCLE_MS` unique découpé en phases égales de la Phase 2 | 2026-09-17 | même archive |
+| Fusion `demarrerSynthese`/`reprendreSynthese` en un seul point d'entrée à création paresseuse — corrige le freeze à la bascule Musique non→oui | 2026-09-17 | `docs/archives/JOURNAL_2026-09-17_diagnostic-freeze-musique.md` |
 
 ## Points `[OUVERT]`
 
@@ -164,65 +170,70 @@ Tous les autres `[OUVERT]` historiques (résolution logique, clignements/orbite 
 - **Mesure réelle du temps de frame / fps** (plancher mobile jamais mesuré, seulement borné fonctionnellement par `selectionnerTuilesVisibles`) — 2026-09-16, même archive.
 - **Tactile réel** (manette/clavier seulement testés par toutes les sessions jusqu'ici) — dette assumée depuis la Phase 0, différée jusqu'à un lien de partage (Phase 4+).
 - **Mouvement légèrement téléporté à chaque angle depuis la correction de coin** (2026-09-17, retour Xav) : feeling meilleur, aucune interruption, mais pas très smooth — à lisser dans une phase de polish ultérieure (hypothèse : répartir le repoussement sur plusieurs frames ou l'interpoler plutôt que l'appliquer d'un coup — à diagnostiquer, pas à patcher en silence).
-- **Fiches à rédiger** (nommées par les décisions ci-dessus) : `specs/04_indices-commandes.md`, `specs/04_stations-proportions-collision.md`. (`MT_jour-nuit-contraste_2026-09-16.md` et `MT_musique-ambiance-synth_2026-09-16.md` livrées, cf. `docs/archives/JOURNAL_2026-09-17_micro-ticket-contraste-jour-nuit.md` et journal courant.)
+- **Validation visuelle de `specs/04_indices-commandes.md` encore due par Xav** (état 24 de `docs/CHECKLIST_visuelle.md`) — code fait, suite headless verte, mais `main.js#dessiner()` a été touché (règle de méthode) et le rendu canvas n'est jamais exercé headless. Voir journal courant.
+- **Fiche à rédiger** : `specs/04_stations-proportions-collision.md` reste à livrer dans cette session (après `04_indices-commandes.md`). (`MT_jour-nuit-contraste_2026-09-16.md` et `MT_musique-ambiance-synth_2026-09-16.md` livrées, cf. leurs archives respectives.)
 
 ## Critère de passage courant
 
 Phase 2 (Région Maison, première marche) — verdict détaillé : `docs/NS_critere-passage-phase2_2026-09-16.md`. État au 2026-09-17 : validée à la manette et au clavier réels par Xav sur tout le parcours (grotte → rocher → branche → Poche → toit → stations → jardin/fruit/puits → campagne → persistance) ; les deux défauts remontés (arbre hors chemin, accrochage des coins) ont été corrigés le 2026-09-16 et validés le 2026-09-17 (`SD_hitbox-angle-arbre_2026-09-16.md`). **Phase 2 close.** Reste en dette, non bloquant : tactile réel (Phase 4+), musique (fichier non fourni), mesure de fps réelle.
 
-## Journal de session — Diagnostic freeze bascule Musique non→oui (2026-09-17)
+## Journal de session — Indices de commande (2026-09-17)
 
-Ménage de journal effectué en début de session : le journal précédent (« Micro-ticket ambiance sonore synthétisée ») archivé verbatim dans `docs/archives/JOURNAL_2026-09-17_micro-ticket-ambiance-synthetisee.md`, index mis à jour.
+Ménage de journal effectué en début de session (avant tout code) : le journal précédent (« Diagnostic freeze bascule Musique non→oui ») archivé verbatim dans `docs/archives/JOURNAL_2026-09-17_diagnostic-freeze-musique.md`, `docs/archives/INDEX.md` mis à jour, décisions/dette/`[OUVERT]` déjà consolidés dans les sections dédiées de ce fichier (voir table de décisions et la ligne "Fusion `demarrerSynthese`/`reprendreSynthese`..."). `node tools/run_tests.js` rejoué avant toute modification : 45 fichiers, tous verts (préalable exigé par Xav avant d'ouvrir `specs/04_indices-commandes.md`).
 
-Brief complet : `SD_musique-freeze-reprise_2026-09-17.md` (racine du dépôt). Retour terrain Xav dans la nuit suivant la livraison de `MT_musique-ambiance-synth` : le jeu gèle (manette et clavier morts, souris vivante) à la première bascule "Musique" de non vers oui — que l'ambiance ait déjà joué dans la session ou non ; la transition oui → non, elle, fonctionne. `specs/04_indices-commandes.md`/`specs/04_stations-proportions-collision.md` restent non injectées, ce diagnostic passe avant.
+Brief : `specs/04_indices-commandes.md` v1.0.0. Livre les 3 déclencheurs de la Grotte (MOVE à la prise de contrôle, INTERACT au levier de la salle 1, ATTACK au premier monstre engagé) et l'infrastructure généralisée (catalogues `hints.json`/`glyphes.json`, un ajout futur — SKILL_1 en Phase 4, CONSUME en Phase 3 — n'exige qu'une entrée JSON de plus).
 
-### (a) Cause racine confirmée par lecture — H1
+### Décisions prises pendant l'implémentation
 
-Le tableau clinique (entrées manette/clavier mortes, jeu figé, souris vivante) pointe une exception non rattrapée dans `creerBoucle#frame` (`render.js:58-66`) : `maj(delta)` lève → ni `dessiner()` ni le `requestAnimationFrame(frame)` suivant ne s'exécutent → la boucle ne se replanifie plus. La manette/le clavier sont morts parce que leur lecture est intégralement interne à `maj()` (polling, pas d'évènements DOM) ; la souris reste vivante parce que le bouton "Musique" du menu répond à un `click` DOM (`ui/menu.js:291`) — indépendant du `requestAnimationFrame` — mais le geste manette passe, lui, par le verbe `ATTACK` traité à l'intérieur de `maj()`. **H1 confirmée** : `armerAudio` (le "premier geste") et la reprise depuis le menu n'étaient pas le même chemin. `armerAudio` créait `contexteSynthese`/`gainSynthese` dans `demarrerSynthese`, appelée seulement `si actif` ; le menu appelait une fonction de reprise (`reprendreSynthese`) qui *supposait* ces deux variables déjà non-nulles, sans jamais les créer elle-même.
+- **Périphérique actif exposé par `src/input/input.js`** (§2 de la fiche demandait explicitement "un seul endroit, jamais lu ailleurs que par ce module") : un loquet `peripheriqueActif` (`'clavier' | 'manette' | 'tactile'`), même patron que le loquet `tactileActif` déjà existant. Priorité arbitraire en cas d'égalité sur une même frame (clavier > manette > tactile, documentée en commentaire — jamais observée en jeu réel, deux humains ne bougent pas à la même milliseconde). Défaut au boot = `'manette'` (§0 verrouillé : "PC à la manette" est la plateforme de référence).
+- **Géométrie de déclenchement INTERACT/ATTACK réutilise des constantes déjà existantes** plutôt que d'en introduire de nouvelles : `DISTANCE_INTERACT_PX` (déjà dans `main.js`) et `DISTANCE_ENGAGEMENT_PX` (déjà dans `companion.js`, désormais exportée) — "même seuil que puzzles.js"/"même seuil que l'engagement du follet" pris au pied de la lettre, une seule source de vérité chacun.
+- **Tout texte de glyphe passe par `t()`**, y compris une lettre isolée ("A", "F"...) : la contrainte "zéro chaîne en dur" du projet est absolue ("tout texte visible"), pas limitée aux phrases — `glyphes.json` ne stocke donc que des clés i18n (`clavier_key`/`manette_key`/`tactile_key`), jamais de texte littéral, même pour un glyphe identique FR/EN aujourd'hui.
+- **`glyphes.json` peuplé pour les 8 verbes dès cette livraison** (pas seulement les 3 utilisés par les déclencheurs actuels) : c'est un catalogue de données pur, sans coût de code, et la fiche demande explicitement qu'un futur indice (SKILL_1, CONSUME) n'ajoute qu'une entrée `hints.json` — encore faut-il que le glyphe existe déjà. `hints.json`, lui, reste strictement aux 3 entrées du scope (§8 : hors scope pour cette itération).
+- **Déclenchement en "niveau" plutôt qu'en front montant** : le gameplay rappelle `declencherVerbeUtile(verbe, flags)` à CHAQUE frame où la condition est vraie (hero à portée, monstre engagé...), jamais une seule fois sur un changement d'état. `hints.js` gère lui-même l'idempotence (flag déjà posé, ou un autre indice déjà affiché) — plus simple qu'une détection de front dans `main.js`, et résout naturellement "un seul indice à la fois, le second attend la fin du premier" (§3) : le rappel continu retente automatiquement dès que `actif` redevient `null`.
+- **Edge case "verbe émis avant le déclencheur" (§4)** : `verbeEmis()` pose le flag immédiatement même si aucun indice n'a jamais été affiché — testé explicitement (test (c)).
 
-**La ligne fautive** (`src/audio.js`, version livrée par `MT_musique-ambiance-synth`) :
-```js
-function reprendreSynthese(piste) {
-  gainSynthese.gain.setTargetAtTime(piste.volume, contexteSynthese.currentTime, 0.05); // ← gainSynthese peut être null ici
-  jouerPhraseSynthese(piste);
-}
-```
-`gainSynthese` reste `null` chaque fois que `modeActuel` passe à `'synthese'` sans que `demarrerSynthese` ait tourné — ce qui arrive dans deux scénarios réels, tous deux réunis par la même course : le repli fichier→synthèse (asynchrone, sur l'évènement `error` de l'`<audio>` `piano_solo.mp3`, absent) ne démarre la synthèse que `si actifCourant` **au moment où l'erreur arrive** — pas au moment où le réglage était vrai plus tôt.
-- **Cas 4 du ticket** (réglage persisté "non") : `armerAudio(..., actif=false)` au boot → `actifCourant=false` dès le départ → quand l'erreur de chargement arrive, le repli bascule `modeActuel` sur `'synthese'` sans jamais appeler `demarrerSynthese`.
-- **Cas 3 du ticket** (réglage "oui" au boot, coupé juste après) : `armerAudio(..., actif=true)` → l'erreur n'est pas encore arrivée quand Xav appuie "non" (`definirMusiqueActive(false)` met `actifCourant=false`) → quand l'erreur arrive enfin, `actifCourant` est déjà retombé à `false` → même résultat : `modeActuel='synthese'`, `gainSynthese` toujours `null`.
-
-Dans les deux cas, le bascule suivant vers "oui" appelle `reprendreSynthese` sur un `gainSynthese`/`contexteSynthese` jamais créés → `TypeError: Cannot read properties of null (reading 'gain')`. H2/H3/H4 écartées (aucun nœud redémarré après `stop()`, aucun `close()`/`suspend()` du contexte, aucun planificateur à état persistant entre coupures — le bug est plus en amont : le contexte lui-même n'existe jamais). H5 (le menu) écartée : le bouton lui-même ne fait qu'appeler `basculerMusique()`, aucune logique propre.
-
-### Test rouge → vert (`tests/test_sd_musique_freeze_reprise_2026-09-17.js`, nouveau)
-
-`audio.js` reste importable en Node (aucun accès `AudioContext` au niveau module) mais `demarrerSynthese`/`creerElementFichier` touchent `window.AudioContext`/`Audio` — un `AudioContext`/`Audio` factices minimaux (classes triviales : `createGain`/`createOscillator`/`currentTime`, et un faux `<audio>` qui expose juste de quoi déclencher `error` à la demande) suffisent à reproduire la cause **sans navigateur**, comme demandé par la fiche. Trois blocs : (1) cas 4 — `armerAudio(..., actif=false)` puis bascule "oui" ; (2) cas 3 — reproduction fidèle de la course (`armerAudio(..., actif=true)` → `definirMusiqueActive(false)` → l'échec de chargement arrive seulement *après* → bascule "oui") ; (3) garde-fou (b), un `AudioContext` factice qui lève à `createGain()` sans rapport avec (a). Vérifié rouge avant correctif (`git stash` temporaire de `src/audio.js`, seul fichier touché par le correctif) : le test 1 lève exactement `TypeError: Cannot read properties of null (reading 'gain') at reprendreSynthese`, pile identique à l'analyse ci-dessus. Repassé vert après correctif, stash restauré.
-
-### (a) Correctif (`src/audio.js` uniquement)
-
-Un seul point d'entrée pour démarrer *ou* reprendre la synthèse : `reprendreSynthese` supprimée, fusionnée dans `demarrerSynthese`, qui crée paresseusement `contexteSynthese`/`gainSynthese` s'ils n'existent pas encore (exactement comme au premier geste), sans regarder si c'est un "premier" ou un "n-ième" démarrage. `definirMusiqueActive` appelle désormais cette unique fonction. Effets de bord corrigés au passage, demandés par le §A du ticket : `clearTimeout(minuteurPhraseSynthese)` en tête de `demarrerSynthese` (jamais deux boucles superposées sur un double appel) ; `arreterSynthese` devient un no-op défensif si `gainSynthese` n'existe pas encore (plus de coupure "avant tout démarrage"). Aucun nouvel état global ; le reste du jeu ne connaît toujours que `armerAudio`/`definirMusiqueActive` (noms conservés, cf. journal précédent).
-
-### (b) Garde-fou : l'audio ne fige plus jamais la boucle
-
-`armerAudio` et `definirMusiqueActive` (les deux seuls points d'entrée publics) et le callback de repli fichier→synthèse rattrapent maintenant leurs propres exceptions (`try/catch` local, `console.warn`, le réglage reste appliqué en mémoire même si l'effet audio échoue) — même politique que le fichier absent, déjà dans le contrat. **Pas de `try/catch` global autour de `update()`/`dessiner()`** (aurait aussi masqué de vraies erreurs de gameplay, explicitement écarté par la fiche). Règle documentée dans « Contraintes de méthode non négociables » avec sa provenance ; question de la généraliser à d'autres sous-systèmes meilleur effort posée en `[OUVERT]` pour Xav, pas tranchée ni implémentée au-delà d'`audio.js`.
-
-### Livré
+### Fichiers livrés
 
 ```
-node --check src/audio.js
+src/hints.js                  (nouveau — pur, testé)
+src/ui/hud_hints.js           (nouveau — calque canvas, jamais exercé headless)
+src/input/input.js            (peripheriqueActif(), même patron que tactileActif())
+src/companion.js              (DISTANCE_ENGAGEMENT_PX exportée, aucun changement de valeur)
+src/schemas.js                (SCHEMAS.hints/glyphes + validerHint/validerGlyphe + VERBES_GAMEPLAY)
+src/main.js                   (creerEtatIndices, verifierIndicesNiveau(), verbeEmis aux 3 points
+                               d'émission, dessinerHudHints() dans dessiner(), reconstruction dans
+                               reinitialiserPartie(), accesseur test obtenirIndiceAffiche())
+data/hints.json, data/glyphes.json  (nouveaux catalogues)
+data/flags.json               (flag_hint_move/interact/attack)
+locales/fr.json, en.json      (hint.*, glyphe.*, flag.hint_*)
+docs/CHECKLIST_visuelle.md    (état 24 ajouté — non encore capturé, cf. plus bas)
+tests/test_hints_2026-09-17.js (nouveau)
+```
+
+### Testé (automatisé)
+
+`tests/test_hints_2026-09-17.js` : (a) déclencheur → indice affiché une fois, flag posé ; (b) rechargement (nouvel état `hints.js`, flags déjà posés) → pas de second affichage ; (c) verbe émis avant le déclencheur → jamais affiché, flag posé quand même ; (d) glyphe = celui du périphérique actif, mis à jour à chaque appel (pas figé à l'affichage) ; durée + fermeture anticipée par émission + un seul indice à la fois (le second attend, testé explicitement) ; (e) catalogue invalide refusé au boot (verbe inconnu, hint sans glyphe pour son verbe, glyphe incomplet). Une seconde partie rejoue le chemin critique réel de la Grotte sur `creerOrchestrateurGrotte` (même patron que `test_phase1_sd_audit_chemin_critique`) : confirme sur le VRAI jeu que `flag_hint_move` se pose au tout premier `maj()` hors UI après l'intro, `flag_hint_interact` à portée du levier AVANT tout appui, `flag_hint_attack` à l'entrée en distance d'engagement AVANT toute frappe, et que chaque indice se ferme dès l'émission du verbe.
+
+```
+node --check src/hints.js src/ui/hud_hints.js src/input/input.js src/companion.js src/schemas.js src/main.js
 node tools/run_tests.js
 ```
-→ **45 fichiers, tous verts** (44 précédents + le nouveau test rouge→vert ; seul `src/audio.js` modifié parmi les fichiers de production, conformément à la contrainte stricte du ticket).
+→ **46 fichiers, tous verts** (45 précédents + `test_hints_2026-09-17.js`).
 
-Fichier modifié : `src/audio.js`. Fichier ajouté : `tests/test_sd_musique_freeze_reprise_2026-09-17.js`. `CLAUDE.md` mis à jour (règle (b) + `[OUVERT]`, ce journal). Fichier archive ajouté : `docs/archives/JOURNAL_2026-09-17_micro-ticket-ambiance-synthetisee.md`, `docs/archives/INDEX.md` mis à jour.
+### Non vérifié — reste dû à Xav (rendu canvas jamais exercé headless)
 
-### Point `[OUVERT]`
+Cette session n'a **aucun accès navigateur** : tout ce qui suit est fait et testé côté logique, mais **non validé visuellement**, à ne pas présenter comme acquis avant que Xav l'ait rejoué :
+- **`docs/CHECKLIST_visuelle.md`, état 24 (nouveau)** : bannière glyphe+mot, position sous le cartouche PV, fondu en entrée/sortie, disparition à l'appui/expiration — jamais capturée en navigateur réel.
+- **`main.js#dessiner()` a été touché** (ajout de `dessinerHudHints()`) : par la règle de méthode du projet, **les états 1-23 de la checklist doivent aussi être rejoués**, pas seulement le nouveau, même si ce ticket ne "devrait" toucher que l'affichage des indices.
+- **Durée d'affichage (2500ms) et position de la bannière** : valeurs provisoires, jamais ressenties en jeu.
+- **Glyphes clavier "ZQSD/WASD"** : `keyboard.js` mappe en réalité `KeyW/KeyA/KeyS/KeyD` (codes physiques, disposition réelle du clavier de Xav inconnue) — la fiche autorise explicitement ce flou (§6 : "ne pas décider de la disposition clavier si le socle ne l'expose pas"), Xav juge si le texte affiché lui convient tel quel.
+- **Hot-swap manette → clavier pendant qu'un indice est affiché** : le glyphe doit changer sans fermer l'indice (logique testée headless via `indiceAffiche()`, jamais vu à l'écran).
 
-Nouveau : généraliser le patron "sous-système meilleur effort rattrape ses propres erreurs" au-delà d'`audio.js` (cf. « Contraintes de méthode non négociables » et section `[OUVERT]` consolidée ci-dessus) — remonté à Xav, pas tranché.
+### Points `[OUVERT]`
 
-### Critère de passage — reste à faire par Xav
-
-Rejouer exactement le parcours qui gelait : boot avec réglage "non" → "oui" à la souris puis à la manette ; "oui" → "non" → "oui" plusieurs fois de suite ; recharger entre deux essais ; laisser tourner 5 min après une reprise (pas d'accumulation de nœuds/oscillateurs). Seulement ensuite, injection de `specs/04_indices-commandes.md`.
+Aucun nouveau. La détection de disposition clavier (ZQSD vs WASD) reste explicitement hors scope par la fiche elle-même (§8), pas un point que cette session tranche en silence.
 
 ### Hors scope pour cette session
 
-Le piano (asset), la qualité des notes, le volume, les indices de commande, les stations — tous explicitement exclus par la fiche.
+Page "Commandes" dans le menu (§8, alternative écartée par Xav), remappage des touches, indices pour SKILL_*/CONSUME (leurs phases respectives), détection de la disposition clavier, vérification réelle des glyphes tactiles (dette tactile jusqu'à la Phase 4).
+

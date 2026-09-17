@@ -1,0 +1,26 @@
+[
+  {
+    "id": "hint_move",
+    "verbe": "move",
+    "declencheur": "fin de la cinématique de la salle 1, à la prise de contrôle",
+    "label_key": "hint.move",
+    "duree_ms": 2500,
+    "flag": "flag_hint_move"
+  },
+  {
+    "id": "hint_interact",
+    "verbe": "interact",
+    "declencheur": "héros à portée d'interaction du premier interactif rencontré",
+    "label_key": "hint.interact",
+    "duree_ms": 2500,
+    "flag": "flag_hint_interact"
+  },
+  {
+    "id": "hint_attack",
+    "verbe": "attack",
+    "declencheur": "premier monstre engagé, à l'entrée dans la distance d'engagement",
+    "label_key": "hint.attack",
+    "duree_ms": 2500,
+    "flag": "flag_hint_attack"
+  }
+]

@@ -34,7 +34,9 @@ import { calculerStatsPrimaires, calculerStatsDerivees } from './stats.js';
 import { modificateursHeros, statsEffectivesMonstre } from './status.js';
 import { creerHeros, creerMonstre, approcherEnLigneDroite, infligerDegats, mourir, respawn } from './entities.js';
 import { resoudreAutoAttaque, tickCooldown, estMonstreActif, FLASH_ATTAQUE_MS, FLASH_TOUCHE_MS } from './combat.js';
-import { creerFollet, mettreAJourEtat as mettreAJourFollet, avancerPosition as avancerFollet } from './companion.js';
+import {
+  creerFollet, mettreAJourEtat as mettreAJourFollet, avancerPosition as avancerFollet, DISTANCE_ENGAGEMENT_PX,
+} from './companion.js';
 import { creerGenerateur, resoudreLoot } from './loot.js';
 import { etatInitial as etatInitialPuzzles, activerLevier } from './puzzles.js';
 import { creerDialogue, resoudreLignes } from './dialogue.js';
@@ -48,8 +50,10 @@ import { remplirItemsSol, trouverItemProche, ramasserEtRegenerer } from './groun
 import { calculerOpaciteToit } from './structures.js';
 import { avancerHeure, opaciteAHeure } from './daynight.js';
 import { armerAudio, definirMusiqueActive } from './audio.js';
+import { creerEtatIndices } from './hints.js';
 import { initialiserMenu } from './ui/menu.js';
 import { dessinerHud } from './ui/hud.js';
+import { dessinerHudHints } from './ui/hud_hints.js';
 import { dessinerDialogue } from './ui/dialogue_box.js';
 
 // Provisoires, non validés en jeu par Xav — seuils uniques, commentés ici.
@@ -145,6 +149,15 @@ export function creerOrchestrateurGrotte({
   }
   let flags = construireFlags();
 
+  // Indices de commande (specs/04_indices-commandes.md) : les flags qu'il
+  // pose vivent dans le même registre de flags que le reste (§3.10 :
+  // persistés, "un reset le remontre, c'est voulu"), mais `indices` porte
+  // aussi un état transitoire à lui (l'indice actuellement affiché) —
+  // `reinitialiserPartie()` le reconstruit donc au même titre que `flags`,
+  // sinon un indice affiché au moment du reset resterait figé "actif" alors
+  // que son flag vient d'être effacé.
+  let indices = creerEtatIndices(registre);
+
   // --- État de jeu, mis à jour par entrerDansScene() à chaque transition ---
   // `hero` reste réaffectable pour la même raison que `flags` ci-dessus :
   // reinitialiserPartie() doit pouvoir repartir d'un héros neuf.
@@ -196,6 +209,16 @@ export function creerOrchestrateurGrotte({
 
   function choixFolletActif() {
     return choixFollet !== null;
+  }
+
+  // Même condition que `uiOuverte` dans maj() (§3.7), relue ici en dehors de
+  // maj() : dessiner() est appelée séparément de maj() (creerBoucle, cf.
+  // render.js) et n'a donc pas accès à la variable locale `uiOuverte` de la
+  // frame en cours — recalculer depuis l'état courant est équivalent pour un
+  // simple choix d'affichage (contrairement à `dialogueVientDeSOuvrir`, qui,
+  // lui, a une sémantique de frame précise réservée au routage des inputs).
+  function uiOuverteMaintenant() {
+    return menu.estOuvert() || dialogue.estOuvert() || choixFolletActif() || intro !== null || depart !== null;
   }
 
   function demarrerChoixFollet() {
@@ -496,6 +519,42 @@ export function creerOrchestrateurGrotte({
     }
   }
 
+  // Indices de commande (specs/04_indices-commandes.md §3) : le gameplay
+  // "annonce" chaque frame les 3 déclencheurs livrés avec cette fiche, sans
+  // savoir qu'un indice existe derrière — hints.js décide seul s'il y a
+  // quelque chose à montrer (flag déjà posé, un indice déjà à l'écran, verbe
+  // sans entrée déclarée...). Appelé seulement hors UI (§4 : "masqué, reprend
+  // au retour", même point de décision unique que le reste du gameplay).
+  function verifierIndicesNiveau() {
+    // MOVE : "fin de la cinématique de la salle 1, à la prise de contrôle" —
+    // ce bloc n'est atteint QUE hors UI (menu/dialogue/choix/intro/départ),
+    // donc la toute première frame où cette fonction tourne dans cette salle
+    // EST cette prise de contrôle, qu'un input soit déjà tenu ou non.
+    if (scene.id === 'scene_grotte_salle_1') indices.declencherVerbeUtile('move', flags);
+
+    // INTERACT : héros à portée de n'importe quel interactif positionné
+    // (levier/station) — même seuil que essayerInteraction() ; la Grotte n'a
+    // que des leviers, donc "le premier interactif rencontré" (§3) est de
+    // fait le levier de la salle 1, sans qu'il faille le nommer ici.
+    for (const puzzleId of scene.interactifs) {
+      const puzzle = registre.obtenir('puzzles', puzzleId);
+      if (puzzle.type !== 'levier' && puzzle.type !== 'station_placeholder') continue;
+      const px = (puzzle.position.x + 0.5) * scene.tileSize;
+      const py = (puzzle.position.y + 0.5) * scene.tileSize;
+      if (Math.hypot(hero.x - px, hero.y - py) <= DISTANCE_INTERACT_PX) {
+        indices.declencherVerbeUtile('interact', flags);
+        break;
+      }
+    }
+
+    // ATTACK : "premier monstre engagé, à l'entrée dans distance_engagement"
+    // — même constante que l'engagement réel du follet (companion.js), pas
+    // une 2ᵉ portée qui pourrait diverger.
+    if (monstres.some((m) => !m.mort && Math.hypot(hero.x - m.x, hero.y - m.y) <= DISTANCE_ENGAGEMENT_PX)) {
+      indices.declencherVerbeUtile('attack', flags);
+    }
+  }
+
   function maj(deltaMs) {
     const etatBrut = input.maj();
     verifierPremierGeste(etatBrut);
@@ -560,6 +619,14 @@ export function creerOrchestrateurGrotte({
     else if (choixFolletActif()) traiterChoixFollet(etatBrut);
 
     const etatGameplay = uiOuverte ? etatNeutre(etatBrut) : etatBrut;
+    // Indices de commande, §4 edge case : "verbe émis avant le déclencheur"
+    // pose le flag immédiatement, sans jamais avoir montré l'indice — utilise
+    // etatGameplay (déjà neutralisé sous UI), donc rien ne se déclenche tant
+    // qu'une UI capte les verbes.
+    if (etatGameplay.move.x !== 0 || etatGameplay.move.y !== 0) indices.verbeEmis('move', flags);
+    if (etatGameplay.interact.pressed) indices.verbeEmis('interact', flags);
+    if (etatGameplay.attack.pressed) indices.verbeEmis('attack', flags);
+
     const { statsPrimaires, statsDerivees } = calculerStatsHeros();
 
     const deltaS = deltaMs / 1000;
@@ -580,6 +647,8 @@ export function creerOrchestrateurGrotte({
       if (etatGameplay.interact.pressed) essayerInteraction();
       mettreAJourCombat(deltaMs, etatGameplay, statsPrimaires, statsDerivees);
       verifierEntreesDeZone();
+      indices.maj(deltaMs);
+      verifierIndicesNiveau();
 
       // Cycle jour/nuit (§3.5) : "en temps de jeu actif", gelé sous UI comme
       // le reste (déjà garanti par ce bloc `!uiOuverte`) — save.monde.heure
@@ -820,6 +889,15 @@ export function creerOrchestrateurGrotte({
       visuelFollet: companionActif ? registre.obtenir('visuels', companionActif.render.visuel) : null,
       tactileActif: input.tactileActif(),
     });
+    // Indices de commande (§2 : "masqué" sous UI) — résolution i18n ici (même
+    // patron que les autres calques : hud_hints.js ne connaît jamais i18n).
+    const donneesIndice = uiOuverteMaintenant() ? null : indices.indiceAffiche(input.peripheriqueActif());
+    dessinerHudHints(ctxLogique, donneesIndice ? {
+      texte: donneesIndice.label_key ? i18n.t(donneesIndice.label_key) : null,
+      glyphe: donneesIndice.glyphe_key ? i18n.t(donneesIndice.glyphe_key) : '',
+      resteMs: donneesIndice.resteMs,
+      dureeMs: donneesIndice.dureeMs,
+    } : null);
     dessinerEcranChoixFollet();
     const renduIntro = dessinerIntroConvergence();
     dessinerDepart();
@@ -854,6 +932,7 @@ export function creerOrchestrateurGrotte({
     // place plutôt que de la réaffecter, jamais un nouvel objet.
     Object.assign(save, saveNeuve());
     flags = construireFlags();
+    indices = creerEtatIndices(registre);
     dialogue.fermer();
     choixFollet = null;
     pousseeChoixPrecedente = 0;
@@ -897,6 +976,10 @@ export function creerOrchestrateurGrotte({
     dialogueOuvert: () => dialogue.estOuvert(),
     dialogueLigneCourante: () => dialogue.ligneCourante(),
     obtenirAnneauAttaqueMs: () => anneauAttaqueMs,
+    // Indices de commande (specs/04_indices-commandes.md) : observe l'indice
+    // affiché sans passer par dessiner() (canvas jamais exercé headless,
+    // contrainte de méthode) — même patron que les accesseurs ci-dessus.
+    obtenirIndiceAffiche: () => (uiOuverteMaintenant() ? null : indices.indiceAffiche(input.peripheriqueActif ? input.peripheriqueActif() : 'manette')),
   };
 }
 

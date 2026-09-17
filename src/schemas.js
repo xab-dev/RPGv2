@@ -33,6 +33,50 @@ function erreursCondition(condition, chemin, declares) {
 
 const TYPES_LUMIERE = ['halo', 'faisceau'];
 
+// Verbes de gameplay (§2.4 socle technique) : liste de référence partagée par
+// hints.json/glyphes.json — jamais une 2ᵉ énumération qui pourrait diverger
+// de src/input/input.js#VERBES_BOUTON (+ 'move', qui n'est pas un bouton).
+const VERBES_GAMEPLAY = ['move', 'attack', 'skill_1', 'skill_2', 'skill_3', 'consume', 'interact', 'menu'];
+
+// specs/04_indices-commandes.md : un indice n'a de sens que si son verbe a un
+// glyphe déclaré pour les 3 périphériques (clavier/manette/tactile) — sinon
+// hints.js afficherait un indice sans rien à montrer sur un périphérique
+// donné, silencieusement. `glyphes.json` est validé indépendamment (chaque
+// glyphe reste utilisable même sans indice pointant vers lui, catalogue
+// ouvert par verbe).
+function validerHint(entry, catalogs, path) {
+  const erreurs = [];
+  if (!VERBES_GAMEPLAY.includes(entry.verbe)) {
+    erreurs.push(`${path} > verbe doit être l'un de ${VERBES_GAMEPLAY.join('/')}`);
+  }
+  if (typeof entry.declencheur !== 'string' || entry.declencheur.length === 0) {
+    erreurs.push(`${path} > declencheur doit être une chaîne non vide (description du déclencheur)`);
+  }
+  if (entry.label_key !== undefined && typeof entry.label_key !== 'string') {
+    erreurs.push(`${path} > label_key doit être une chaîne si présent`);
+  }
+  if (typeof entry.duree_ms !== 'number' || entry.duree_ms <= 0) {
+    erreurs.push(`${path} > duree_ms doit être un nombre positif`);
+  }
+  if (!(catalogs.glyphes || []).some((g) => g.verbe === entry.verbe)) {
+    erreurs.push(`${path} > aucune entrée glyphes.json pour le verbe "${entry.verbe}"`);
+  }
+  return erreurs;
+}
+
+function validerGlyphe(entry, catalogs, path) {
+  const erreurs = [];
+  if (!VERBES_GAMEPLAY.includes(entry.verbe)) {
+    erreurs.push(`${path} > verbe doit être l'un de ${VERBES_GAMEPLAY.join('/')}`);
+  }
+  for (const champ of ['clavier_key', 'manette_key', 'tactile_key']) {
+    if (typeof entry[champ] !== 'string' || entry[champ].length === 0) {
+      erreurs.push(`${path} > ${champ} doit être une chaîne non vide (clé i18n)`);
+    }
+  }
+  return erreurs;
+}
+
 // tiles.json > render.variantes[]/variation_teinte (§3.4 03_grotte-polish) :
 // optionnels, une tuile sans variante garde exactement son comportement
 // Phase 0/1 (une seule couleur, jamais de teinte aléatoire).
@@ -824,6 +868,21 @@ export const SCHEMAS = {
       }
       return erreurs;
     },
+  },
+  // specs/04_indices-commandes.md : catalogue ouvert — un futur indice
+  // (SKILL_1 en Phase 4, CONSUME en Phase 3) est une entrée de plus ici,
+  // zéro code (§3 de la fiche).
+  hints: {
+    requiredFields: ['id', 'verbe', 'declencheur', 'duree_ms', 'flag'],
+    idField: 'id',
+    refs: [{ field: 'flag', catalog: 'flags' }],
+    custom: validerHint,
+  },
+  glyphes: {
+    requiredFields: ['id', 'verbe', 'clavier_key', 'manette_key', 'tactile_key'],
+    idField: 'id',
+    refs: [],
+    custom: validerGlyphe,
   },
 };
 

@@ -32,6 +32,16 @@ export function creerCoucheInput({ sourceClavier, sourceManette, sourceTactile }
   let tactileActif = false;
   let dernierCompteurContactsTactile = sourceTactile ? sourceTactile.compteurContacts() : 0;
 
+  // Périphérique actif (specs/04_indices-commandes.md §2) : le dernier à
+  // avoir produit un geste, dans cet ORDRE de priorité en cas d'égalité sur
+  // une même frame (cas rare, jamais observé en jeu réel — deux vrais
+  // périphériques humains ne bougent pas à la même milliseconde) : clavier >
+  // manette > tactile, arbitraire mais documenté ici plutôt que laissé au
+  // hasard de l'ordre d'évaluation. Défaut au boot = 'manette' (§0 verrouillé :
+  // "PC à la manette" est la plateforme de référence), jamais recalculé tant
+  // qu'aucun geste n'a été vu sur aucune source.
+  let peripheriqueActif = 'manette';
+
   function maj() {
     const clavier = sourceClavier ? sourceClavier.instantane() : null;
     const manette = sourceManette ? sourceManette.instantane() : null;
@@ -44,8 +54,8 @@ export function creerCoucheInput({ sourceClavier, sourceManette, sourceTactile }
 
     const etat = { move };
 
-    let clavierOuManetteActifs = !!(clavier && (clavier.move.x !== 0 || clavier.move.y !== 0));
-    clavierOuManetteActifs = clavierOuManetteActifs || !!(manette && (manette.move.x !== 0 || manette.move.y !== 0));
+    let clavierActifFrame = !!(clavier && (clavier.move.x !== 0 || clavier.move.y !== 0));
+    let manetteActifFrame = !!(manette && (manette.move.x !== 0 || manette.move.y !== 0));
 
     for (const verbe of VERBES_BOUTON) {
       // Recalculé à zéro chaque frame à partir des trois sources : une
@@ -55,8 +65,10 @@ export function creerCoucheInput({ sourceClavier, sourceManette, sourceTactile }
       etat[verbe] = { pressed: brut && !held[verbe], held: brut };
       held[verbe] = brut;
 
-      if ((clavier && clavier[verbe]) || (manette && manette[verbe])) clavierOuManetteActifs = true;
+      if (clavier && clavier[verbe]) clavierActifFrame = true;
+      if (manette && manette[verbe]) manetteActifFrame = true;
     }
+    const clavierOuManetteActifs = clavierActifFrame || manetteActifFrame;
 
     const compteurContactsCourant = sourceTactile ? sourceTactile.compteurContacts() : 0;
     const nouveauContactTactile = compteurContactsCourant !== dernierCompteurContactsTactile;
@@ -67,10 +79,16 @@ export function creerCoucheInput({ sourceClavier, sourceManette, sourceTactile }
     // sinon : ni l'un ni l'autre ne s'est manifesté cette frame -> on garde
     // l'état précédent tel quel (c'est la nature d'un loquet).
 
+    if (clavierActifFrame) peripheriqueActif = 'clavier';
+    else if (manetteActifFrame) peripheriqueActif = 'manette';
+    else if (nouveauContactTactile) peripheriqueActif = 'tactile';
+    // sinon : aucune source ne s'est manifestée cette frame -> inchangé,
+    // même loquet que tactileActif ci-dessus.
+
     return etat;
   }
 
-  return { maj, tactileActif: () => tactileActif };
+  return { maj, tactileActif: () => tactileActif, peripheriqueActif: () => peripheriqueActif };
 }
 
 // État neutre : dérivé de la forme réelle de `etat` (pas d'une liste de

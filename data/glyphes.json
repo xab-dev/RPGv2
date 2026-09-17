@@ -1,0 +1,58 @@
+[
+  {
+    "id": "glyphe_move",
+    "verbe": "move",
+    "clavier_key": "glyphe.clavier.move",
+    "manette_key": "glyphe.manette.move",
+    "tactile_key": "glyphe.tactile.move"
+  },
+  {
+    "id": "glyphe_attack",
+    "verbe": "attack",
+    "clavier_key": "glyphe.clavier.attack",
+    "manette_key": "glyphe.manette.attack",
+    "tactile_key": "glyphe.tactile.attack"
+  },
+  {
+    "id": "glyphe_skill_1",
+    "verbe": "skill_1",
+    "clavier_key": "glyphe.clavier.skill_1",
+    "manette_key": "glyphe.manette.skill_1",
+    "tactile_key": "glyphe.tactile.skill_1"
+  },
+  {
+    "id": "glyphe_skill_2",
+    "verbe": "skill_2",
+    "clavier_key": "glyphe.clavier.skill_2",
+    "manette_key": "glyphe.manette.skill_2",
+    "tactile_key": "glyphe.tactile.skill_2"
+  },
+  {
+    "id": "glyphe_skill_3",
+    "verbe": "skill_3",
+    "clavier_key": "glyphe.clavier.skill_3",
+    "manette_key": "glyphe.manette.skill_3",
+    "tactile_key": "glyphe.tactile.skill_3"
+  },
+  {
+    "id": "glyphe_consume",
+    "verbe": "consume",
+    "clavier_key": "glyphe.clavier.consume",
+    "manette_key": "glyphe.manette.consume",
+    "tactile_key": "glyphe.tactile.consume"
+  },
+  {
+    "id": "glyphe_interact",
+    "verbe": "interact",
+    "clavier_key": "glyphe.clavier.interact",
+    "manette_key": "glyphe.manette.interact",
+    "tactile_key": "glyphe.tactile.interact"
+  },
+  {
+    "id": "glyphe_menu",
+    "verbe": "menu",
+    "clavier_key": "glyphe.clavier.menu",
+    "manette_key": "glyphe.manette.menu",
+    "tactile_key": "glyphe.tactile.menu"
+  }
+]

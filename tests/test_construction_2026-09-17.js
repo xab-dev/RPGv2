@@ -472,12 +472,15 @@ function estVisibleEffectif(el) {
 
 // --- C3bis : le VRAI menu Pause (contrôleur de premier niveau inclus) doit
 // se fermer ENTIÈREMENT à l'entrée en placement — SD_construction-menu-
-// ouvert-placement_2026-09-17.md. Ce test échoue avant correctif : `menu.
-// estOuvert()` restait vrai (le contrôleur parent, jamais fermé par
-// `ouvrirPlacementConstruction`, continuait de consommer le stick), donc le
-// premier MOVE après `A` ne bougeait pas le fantôme (routage de main.js
-// §1190 : `if (menu.estOuvert()) menu.traiterInput(...)` gagnait sur la
-// machine construction).
+// ouvert-placement_2026-09-17.md, puis SD_construction-ecrans-orphelins_2026-
+// 09-17.md (le correctif initial de cette fiche, `controleur.fermer()` dans
+// `ouvrirPlacementConstruction`, cassait le sens RETOUR — voir C3ter plus bas
+// et le journal courant). Ce test échoue sans PASSER RÉELLEMENT par l'écran-
+// liste Construction (précondition indispensable depuis le contrat unifié de
+// `menu.estOuvert()`, carte §1.2 : `conteneur` doit avoir été effectivement
+// caché par `actionOuvrirConstruction`, pas seulement "on suppose que
+// Construction a été choisie") — un simple `menu.ouvrir()` suivi directement
+// de l'action de la station ne suffit plus à lui seul.
 {
   const save = saveDansLaMaison();
   const store = creerStoreMemoire();
@@ -490,13 +493,19 @@ function estVisibleEffectif(el) {
   const orchestrateur = creerOrchestrateurGrotte({
     registre, i18n, save, store, dialogue, menu, input, ctxLogique: null, ctxVisible: null, canvasLogique: null,
   });
+  menu.definirDisponibiliteConstruction(orchestrateur.disponibiliteConstruction);
+  menu.definirEntreesConstruction(orchestrateur.entreesConstruction);
 
-  // MENU (ouvre le menu Pause réel, précondition indispensable : sans elle,
-  // le contrôleur parent est déjà fermé par défaut et le bug ne se
-  // reproduit pas) -> Construction -> A sur "atelier" (choix simulé, même
-  // patron que C3 : `entreeAtelier.action()` est exactement l'action que
-  // l'écran-liste réel invoquerait).
+  // MENU (ouvre le menu Pause réel) -> clic RÉEL sur "Construction"
+  // (équivalent souris d'ATTACK sur l'entrée focalisée, exerce
+  // `actionOuvrirConstruction()` — sans lui, `conteneur` ne serait jamais
+  // caché et le test suivant ne prouverait plus rien depuis le contrat
+  // unifié) -> A sur "atelier" (choix simulé, même patron que C3 :
+  // `entreeAtelier.action()` est exactement l'action que l'écran-liste réel
+  // invoquerait).
   menu.ouvrir();
+  const boutonConstruction = document.body.querySelector('#menu-construction');
+  (boutonConstruction._listeners.click || []).forEach((fn) => fn());
   const entreeAtelier = orchestrateur.entreesConstruction().find((e) => e.texte === i18n.t('station.atelier'));
   entreeAtelier.action();
 

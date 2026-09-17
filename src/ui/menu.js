@@ -74,9 +74,28 @@ export function creerNavigationMenu(nbElements) {
 // que les futurs écrans d'UI décident eux-mêmes s'ils veulent ce
 // raccourci. Fermer par le focus reste toujours possible via une action
 // dédiée dans `actions` (ex. le bouton "Fermer").
+//
+// `options.element` (SD_construction-ecrans-orphelins_2026-09-17 §2, carte
+// §1.2) : contrat UNIQUE de « ouvert » pour tout contrôleur de ce module —
+// booléen interne ET DOM réellement visible, jamais l'un sans l'autre.
+// Avant cette fiche, `creerEcranListeGenerique` (Poche/Craft/Coffre/Stats/
+// Construction) recalculait ce ET à l'extérieur (`controleur.estOuvert() &&
+// !el.hidden`), tandis que le contrôleur de premier niveau du menu Pause et
+// celui de la confirmation de reset n'avaient qu'un booléen pur — deux
+// contrats sous le même `menu.estOuvert()`. Cause racine du menu Pause resté
+// « ouvert » de façon invisible en Construction : un appelant peut cacher le
+// DOM sans fermer le contrôleur (patron déjà utilisé par Poche/Stats/
+// Construction pour masquer `conteneur` sans perdre le focus à restaurer),
+// et un autre peut fermer le contrôleur sans que le DOM associé n'ait
+// jamais bougé — les deux sont valides séparément, mais rendent le booléen
+// brut inutilisable comme unique source de vérité. `element` reste
+// optionnel : un contrôleur sans DOM propre (aucun appelant actuel, gardé
+// pour ne pas complexifier un futur test purement logique) garde l'ancien
+// comportement.
 export function creerControleurMenu(actions, options = {}) {
   const navigation = creerNavigationMenu(actions.length);
   const verbeAnnuler = options.verbeAnnuler;
+  const element = options.element || null;
   let ouvert = false;
 
   function fermer() {
@@ -90,6 +109,20 @@ export function creerControleurMenu(actions, options = {}) {
     },
     fermer,
     estOuvert() {
+      return ouvert && (element ? !element.hidden : true);
+    },
+    // Intention brute (SD_construction-ecrans-orphelins_2026-09-17 §2) :
+    // `ouvert` seul, sans le ET DOM de `estOuvert()` ci-dessus — nécessaire
+    // au SEUL endroit qui doit distinguer « ce contrôleur a été fermé
+    // délibérément » (ex. "Oui" du reset, `actionConfirmerOui`) de « son
+    // écran est simplement masqué en ce moment » (ex. `conteneur` caché
+    // pendant que la confirmation de reset s'affiche par-dessus, alors que
+    // `controleur` du menu Pause reste volontairement ouvert dessous).
+    // `estOuvert()` seul ne peut pas trancher ce cas : au moment où on se
+    // pose la question, `element` est TOUJOURS caché (c'est justement
+    // pourquoi un autre écran est visible) — jamais utilisé ailleurs que
+    // `ui/menu.js#traiterInput` (retour de la confirmation par B/skill_3).
+    ouvertIntentionnellement() {
       return ouvert;
     },
     index() {
@@ -188,7 +221,13 @@ function creerEcranListeGenerique(document, i18n, { onFermer } = {}) {
   el.appendChild(liste);
   document.body.appendChild(el);
 
-  let controleur = creerControleurMenu([], { verbeAnnuler: 'skill_3' });
+  // `element: el` (SD_construction-ecrans-orphelins_2026-09-17 §2) : ce
+  // contrôleur portait déjà le ET avec le DOM, mais à l'EXTÉRIEUR
+  // (`estOuvert()` plus bas faisait `controleur.estOuvert() && !el.hidden`)
+  // — désormais porté par `creerControleurMenu` lui-même, comme les
+  // contrôleurs du menu Pause. Ne JAMAIS refaire le `&&` ici en plus (voir
+  // `estOuvert()` de l'objet retourné, plus bas).
+  let controleur = creerControleurMenu([], { verbeAnnuler: 'skill_3', element: el });
   let elements = [];
   let fournisseurEntrees = () => [];
 
@@ -223,7 +262,7 @@ function creerEcranListeGenerique(document, i18n, { onFermer } = {}) {
     elements = Array.from(liste.querySelectorAll('.menu-item'));
     const boutons = Array.from(liste.querySelectorAll('button'));
     const indexPrecedent = controleur.index();
-    controleur = creerControleurMenu(toutes.map((e) => e.action), { verbeAnnuler: 'skill_3' });
+    controleur = creerControleurMenu(toutes.map((e) => e.action), { verbeAnnuler: 'skill_3', element: el });
     controleur.ouvrir();
     controleur.definirIndex(indexPrecedent);
     elements.forEach((elItem, i) => {
@@ -248,7 +287,10 @@ function creerEcranListeGenerique(document, i18n, { onFermer } = {}) {
     },
     fermer,
     fermerSansCallback,
-    estOuvert: () => controleur.estOuvert() && !el.hidden,
+    // Le `&& !el.hidden` vivait ici avant SD_construction-ecrans-orphelins
+    // §2 — désormais porté par `controleur` lui-même (`element: el` passé à
+    // `creerControleurMenu` ci-dessus), jamais les deux à la fois.
+    estOuvert: () => controleur.estOuvert(),
     rafraichir: reconstruire,
     traiterInput(etat) {
       controleur.traiterInput(etat);
@@ -458,30 +500,28 @@ export function initialiserMenu({
   }
 
   // Transition ATOMIQUE liste -> placement (§3 invariant) : retrait de
-  // l'écran-liste (sans callback, `conteneur` reste caché) et levée du
-  // bandeau dans la même fonction synchrone — aucun état intermédiaire où
-  // ni l'un ni l'autre ne serait affiché.
+  // l'écran-liste et levée du bandeau, dans la même fonction synchrone —
+  // aucun état intermédiaire où ni l'un ni l'autre ne serait affiché.
   //
-  // SD_construction-menu-ouvert-placement_2026-09-17.md (cause racine H1
-  // confirmée) : `actionOuvrirConstruction` ne fait que MASQUER `conteneur`
-  // (afficherEcran(conteneur,false)) pour laisser place à `ecranConstruction`
-  // — le contrôleur de premier niveau du menu Pause (`controleur`, plus bas
-  // dans ce module), lui, reste ouvert. `ecranConstruction.fermerSansCallback()`
-  // ne fermait QUE l'écran-liste, jamais ce contrôleur parent : `menu.
-  // estOuvert()` restait donc vrai après l'entrée en placement, si bien que
-  // le routage de main.js (`if (menu.estOuvert()) menu.traiterInput(...)`)
-  // continuait d'envoyer le stick au menu Pause — invisible mais toujours
-  // actif — au lieu de la machine construction, jusqu'à ce qu'un `B` de trop
-  // referme ce contrôleur fantôme. Le point de sortie complet est donc ici,
-  // dans la même transition atomique (jamais un `menu.fermer()` global, qui
-  // rappellerait le `onFermer` de `ecranConstruction` et réafficherait
-  // `conteneur` par-dessus le placement) : fermer EXPLICITEMENT `controleur`
-  // en plus de `ecranConstruction`, aucun état intermédiaire où le contrôleur
-  // parent resterait ouvert pendant que le placement capte déjà les verbes.
+  // Historique (à ne pas reproduire) : `a70a089` ajoutait ici un
+  // `controleur.fermer()` explicite pour que `menu.estOuvert()` retombe à
+  // `false` pendant le placement — ça réparait le sens ALLER, mais cassait
+  // le RETOUR (`reouvrirListeConstruction` ne rouvre jamais `controleur`,
+  // donc `onFermerVersMenuPrincipal` réaffichait `conteneur` sur un
+  // contrôleur resté fermé pour toujours — SD_construction-ecrans-
+  // orphelins_2026-09-17.md, symptôme 3). Cause racine RÉELLE (carte §1.2) :
+  // `menu.estOuvert()` OR-combinait deux CONTRATS différents pour « ouvert »
+  // (booléen pur ici, booléen ET DOM pour les écrans génériques) — un mode
+  // qui sort de la pile du menu Pause et y revient ne peut satisfaire les
+  // deux en manipulant seulement `controleur.fermer()/.ouvrir()`. Avec le
+  // contrat UNIFIÉ (`creerControleurMenu#element`, ce fichier), cacher
+  // `conteneur` suffit : `controleur.estOuvert()` retombe automatiquement à
+  // `false` (booléen interne toujours vrai, DOM caché), et réafficher
+  // `conteneur` plus tard (`onFermerVersMenuPrincipal`, déjà utilisé par
+  // Poche/Stats) le fait redevenir vrai SANS jamais rappeler `.ouvrir()` —
+  // plus besoin de fermer/rouvrir ce contrôleur explicitement ici.
   function ouvrirPlacementConstruction(nomStation) {
     ecranConstruction.fermerSansCallback();
-    controleur.fermer();
-    afficherEcran(conteneur, false);
     bandeauConstruction.textContent = texteBandeauConstruction(nomStation);
     afficherEcran(bandeauConstruction, true);
   }
@@ -646,7 +686,14 @@ export function initialiserMenu({
     { el: conteneur.querySelector('#menu-fermer').parentNode, action: fermerMenu },
   ];
 
-  let controleur = creerControleurMenu([], { verbeAnnuler: 'skill_3' });
+  // `element: conteneur` (SD_construction-ecrans-orphelins_2026-09-17 §2) :
+  // c'est PRÉCISÉMENT ce contrôleur qui restait « ouvert » de façon invisible
+  // en Construction — `actionOuvrirConstruction`/`actionOuvrirStats`/
+  // `actionOuvrirPoche` cachent `conteneur` SANS jamais fermer `controleur`
+  // (patron voulu, pour que `onFermerVersMenuPrincipal` retrouve le focus
+  // sans le reconstruire) ; sans `element`, `.estOuvert()` restait vrai tant
+  // que rien ne rappelait explicitement `.fermer()`.
+  let controleur = creerControleurMenu([], { verbeAnnuler: 'skill_3', element: conteneur });
   let elementsItems = [];
 
   function actualiserFocusVisuel() {
@@ -668,7 +715,7 @@ export function initialiserMenu({
       ...ENTREES_FIXES_FIN,
     ];
     elementsItems = entrees.map((e) => e.el);
-    controleur = creerControleurMenu(entrees.map((e) => e.action), { verbeAnnuler: 'skill_3' });
+    controleur = creerControleurMenu(entrees.map((e) => e.action), { verbeAnnuler: 'skill_3', element: conteneur });
     controleur.ouvrir();
     elementsItems.forEach((el, i) => {
       el.onmouseenter = () => {
@@ -683,8 +730,13 @@ export function initialiserMenu({
   // ne doit jamais réinitialiser par erreur. `traiterInput()` plus bas gère
   // le retour à l'écran principal, y compris quand B a fermé ce contrôleur
   // sans passer par `actions[]`.
+  // `element: confirmation` — même raisonnement que `controleur` ci-dessus :
+  // rien ne fermait ce contrôleur quand `actionOuvrirConfirmation` cachait
+  // `conteneur` (cas symétrique, jamais observé en bug faute d'un mode qui en
+  // sorte et y revienne comme Construction, mais même contrat partout,
+  // §2 point 1).
   const controleurConfirmation = creerControleurMenu([actionConfirmerOui, actionConfirmerNon], {
-    verbeAnnuler: 'skill_3',
+    verbeAnnuler: 'skill_3', element: confirmation,
   });
 
   const elementsConfirmation = Array.from(confirmation.querySelectorAll('.menu-item'));
@@ -731,7 +783,27 @@ export function initialiserMenu({
     ouvrirPlacementConstruction,
     reouvrirListeConstruction,
     fermerPlacementConstruction,
+    // SD_construction-ecrans-orphelins_2026-09-17 §2 (piste 2 de la carte,
+    // version PARTIELLE — voir le journal pour pourquoi ce n'est PAS OR-
+    // combiné dans estOuvert() ci-dessous) : le bandeau était le seul écran
+    // sans aucun accesseur (carte §1.3), rendant son état invisible à tout
+    // test/invariant externe. Ne rien déduire d'autre ici : ce booléen reflète
+    // la visibilité DOM du bandeau, rien de plus — le fait qu'il coïncide
+    // avec `constructionActif()` (main.js) reste un appariement PAR
+    // CONVENTION entre les 4 fonctions qui touchent les deux à la fois,
+    // désormais vérifiable plutôt qu'implicite.
+    bandeauEstOuvert() {
+      return !bandeauConstruction.hidden;
+    },
     estOuvert() {
+      // Le bandeau n'entre PAS dans cet OR : carte §1.2/§4, SD_construction-
+      // ecrans-orphelins §2 point 3 — main.js#maj() donne la priorité à
+      // `menu.estOuvert()` sur la machine `construction` dans son dispatch
+      // (jamais modifié par cette fiche, point 4) ; l'y inclure ferait gagner
+      // le (faux) routage menu pendant tout le placement, pile le bug que ce
+      // module vient de corriger. Le gel du jeu pendant le placement reste
+      // couvert par `constructionActif()`, lu séparément par
+      // `uiOuverteMaintenant()`/`uiOuverte` côté main.js.
       return (
         controleur.estOuvert() || controleurConfirmation.estOuvert() ||
         ecranPoche.estOuvert() || ecranCraft.estOuvert() || ecranCoffre.estOuvert() || ecranStats.estOuvert() ||
@@ -793,9 +865,17 @@ export function initialiserMenu({
         controleurConfirmation.traiterInput(etat);
         if (controleurConfirmation.estOuvert()) {
           actualiserFocusConfirmation();
-        } else if (controleur.estOuvert()) {
+        } else if (controleur.ouvertIntentionnellement()) {
           // Fermé par B ou par "Non" : retour à l'écran principal. Si
           // "Oui" a entre-temps fermé aussi `controleur`, rien à rouvrir.
+          // `ouvertIntentionnellement()` (jamais `estOuvert()` ici) : à cet
+          // instant `conteneur` est TOUJOURS caché (masqué par
+          // `actionOuvrirConfirmation`, pas encore réaffiché) — `estOuvert()`
+          // y serait donc systématiquement faux et ne distinguerait plus
+          // "Oui a fermé `controleur` pour de vrai" de "cancel normal",
+          // cassant CE retour précis (SD_construction-ecrans-
+          // orphelins_2026-09-17, régression détectée par
+          // test_phase1_sd_menu_reset_invisible_2026-09-15.js).
           revenirAuMenuPrincipal();
         } else {
           afficherEcran(confirmation, false);
@@ -808,9 +888,11 @@ export function initialiserMenu({
       // ouverts DEPUIS le menu principal — leur `onFermer` (cf. construction
       // ci-dessus) réaffiche `conteneur` quel que soit le chemin de
       // fermeture, rien à faire de plus ici. Choisir une station dans
-      // Construction ferme tout le menu elle-même (main.js#
-      // demarrerConstruction -> menu.fermer()), ce chemin-ci ne gère donc que
-      // l'annulation (skill_3 -> retour au menu principal, comme Poche/Stats).
+      // Construction quitte la liste SANS ce callback
+      // (`ecranConstruction.fermerSansCallback()`, main.js#demarrerConstruction
+      // -> `ouvrirPlacementConstruction`, jamais `menu.fermer()`), ce
+      // chemin-ci ne gère donc que l'annulation (skill_3 -> retour au menu
+      // principal, comme Poche/Stats).
       if (ecranStats.estOuvert()) { ecranStats.traiterInput(etat); return; }
       if (ecranPoche.estOuvert()) { ecranPoche.traiterInput(etat); return; }
       if (ecranConstruction.estOuvert()) { ecranConstruction.traiterInput(etat); return; }

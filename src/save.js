@@ -3,7 +3,7 @@
 // valeur) } — IndexedDB en jeu (src/storage_indexeddb.js), un store en
 // mémoire dans les tests (creerStoreMemoire ci-dessous).
 
-export const VERSION_SCHEMA_COURANTE = 3;
+export const VERSION_SCHEMA_COURANTE = 4;
 const CLE_ACTUELLE = 'save_current';
 const CLE_SUIVANTE = 'save_next';
 
@@ -29,6 +29,10 @@ export const VISUEL_HEROS_ID = 'visuel_heros';
 // teinte est remplacée par companions.render.couleur (jamais combinée).
 export const COULEUR_HERO_NEUTRE = '#8f8f8f';
 
+// Palier D (specs/04_maison-interieur.md §3.4) : niveau 1, aucune XP, aucun
+// point libre — cohérent avec levels.json[0] (niveau_1, xp_cumulee 0).
+const HERO_NIVEAU_DEPART = 1;
+
 export function saveNeuve() {
   return {
     schema_version: VERSION_SCHEMA_COURANTE,
@@ -39,16 +43,44 @@ export function saveNeuve() {
       y: 0,
       pv: null, // renseigné au premier calcul des stats dérivées (pv_max inconnu ici)
       companion: null,
-      equipement: { arme: ARME_DEPART },
+      equipement: { arme: ARME_DEPART, consommable: null },
+      // xp/niveau/points_stats_libres (Palier D §3.4) ; stats.points = points
+      // alloués par le joueur, { statId: n }, distinct de status_effects
+      // (buffs) — combiné aux autres modificateurs par
+      // main.js#resoudreModificateursHeros, un seul chemin de calcul.
+      xp: 0,
+      niveau: HERO_NIVEAU_DEPART,
+      points_stats_libres: 0,
+      stats: { points: {} },
+      // buffs_actifs (Palier C §3.3) : { statusEffectId: msRestant }, table
+      // des effets temporaires en cours (ex. le fruit cuit) — status.js#
+      // tickBuffsActifs/ajouterBuffActif.
+      buffs_actifs: {},
     },
     // items : poche (03_maison-exterieur §3.3), { id: quantite }.
     inventaire: { eclats: 0, items: {} },
     // monde : état persistant indépendant du héros — items_sol (positions
-    // courantes par scène, §3.3/§3.7) et heure (cycle jour/nuit, §3.5).
-    monde: { items_sol: {}, heure: 0 },
+    // courantes par scène, §3.3/§3.7), respawns_en_attente (délais de
+    // réapparition en cours par scène, Palier B §3.2) et heure (cycle
+    // jour/nuit ET horloge "temps actif" partagée par cooldowns/survie,
+    // §3.5/§6).
+    monde: { items_sol: {}, respawns_en_attente: {}, heure: 0 },
     puzzles: {},
     flags: {},
     settings: { lang: 'fr', musique: true },
+    // Palier A/B/C (§2.2) : cooldowns { cle: horodatage_temps_actif } —
+    // recettes (id de recette), ressources (`res:<scene>:<x>:<y>`), puits
+    // (`eau:<id>`) partagent la même table, une clé par usage.
+    cooldowns: {},
+    // Palier C (§3.3) : jauges de survival.json, pleines à la création
+    // (id de jauge -> valeur dans [0,1]) — jamais un objet figé
+    // { faim, soif } en dur, une 3ᵉ jauge future n'a rien à changer ici.
+    survie: { jauge_faim: 1, jauge_soif: 1 },
+    // Palier E (§3.5) : coffre unique en M1, même forme que l'inventaire.
+    coffre: { items: {} },
+    // Palier A (§3.1, D16②) : ids des recettes déjà découvertes — journal de
+    // découvertes futur, données seulement pour l'instant.
+    recettes_decouvertes: [],
   };
 }
 
@@ -107,9 +139,38 @@ function migrer_2_vers_3(payload) {
   };
 }
 
+// Migration 3 -> 4 (Palier A-E, specs/04_maison-interieur.md §2.2) : ajoute
+// XP/niveau/points de stats, buffs actifs, cooldowns, survie (jauges
+// pleines — §4 edge case de la fiche : une migration démarre "propre",
+// jamais affamée), coffre, recettes découvertes, respawns en attente et le
+// slot consommable. §4 : un `type` de station disparu (l'ancien
+// "station_placeholder") n'est PAS traité ici — c'est un renommage de
+// contenu, jamais une migration de schéma (règle de méthode, CLAUDE.md) ;
+// les positions de puzzles.json font foi telles quelles.
+function migrer_3_vers_4(payload) {
+  return {
+    ...payload,
+    schema_version: 4,
+    hero: {
+      ...payload.hero,
+      equipement: { ...payload.hero.equipement, consommable: null },
+      xp: 0,
+      niveau: HERO_NIVEAU_DEPART,
+      points_stats_libres: 0,
+      stats: { points: {} },
+      buffs_actifs: {},
+    },
+    monde: { ...payload.monde, respawns_en_attente: {} },
+    cooldowns: {},
+    survie: { jauge_faim: 1, jauge_soif: 1 },
+    coffre: { items: {} },
+    recettes_decouvertes: [],
+  };
+}
+
 // Chaîne de migrations, une fonction par palier. Un paramètre permet aux
 // tests d'injecter une chaîne fictive sans toucher à la table de production.
-const MIGRATIONS_PRODUCTION = { 1: migrer_1_vers_2, 2: migrer_2_vers_3 };
+const MIGRATIONS_PRODUCTION = { 1: migrer_1_vers_2, 2: migrer_2_vers_3, 3: migrer_3_vers_4 };
 
 export function migrer(payload, versionCible = VERSION_SCHEMA_COURANTE, migrations = MIGRATIONS_PRODUCTION) {
   let courant = payload;

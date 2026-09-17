@@ -34,10 +34,10 @@ function catalogueDeTest() {
     { id: 'tile_argile', solid: true, ressource: 'res_argile', render: { type: 'couleur', valeur: '#222' } },
   ];
   donnees.resources = [
-    { id: 'res_bois', label_key: 'resource.bois', dialogue_bloque: 'dlg_bloque_bois', outil_requis: null, item_produit: 'item_branche' },
+    { id: 'res_bois', label_key: 'resource.bois', dialogue_bloque: 'dlg_bloque_bois', outil_requis: null, item_produit: 'item_branche', cooldown_ms: 60000 },
     // 3ᵉ ressource ajoutée pour ce test — preuve data-driven (§7 : "zéro
     // code de système"), jamais référencée ailleurs dans /src.
-    { id: 'res_argile', label_key: 'resource.argile', dialogue_bloque: 'dlg_bloque_argile', outil_requis: null, item_produit: 'item_argile' },
+    { id: 'res_argile', label_key: 'resource.argile', dialogue_bloque: 'dlg_bloque_argile', outil_requis: null, item_produit: 'item_argile', cooldown_ms: 60000 },
   ];
   donnees.scenes = [
     {

@@ -21,6 +21,43 @@
     "categorie": "nourriture",
     "stack_max": 10,
     "render": { "visuel": "visuel_fruit" },
-    "spawn": { "nb_au_sol": 1, "zones": ["jardin"] }
+    "spawn": { "nb_au_sol": 1, "zones": ["jardin"], "respawn_ms": 60000 },
+    "consommation": { "faim": 0.15, "soif": 0.05 }
+  },
+  {
+    "id": "item_hache",
+    "label_key": "item.hache",
+    "categorie": "outil",
+    "stack_max": 1,
+    "render": { "visuel": "visuel_hache" }
+  },
+  {
+    "id": "item_pioche",
+    "label_key": "item.pioche",
+    "categorie": "outil",
+    "stack_max": 1,
+    "render": { "visuel": "visuel_pioche" }
+  },
+  {
+    "id": "item_fruit_cuit",
+    "label_key": "item.fruit_cuit",
+    "categorie": "nourriture",
+    "stack_max": 10,
+    "render": { "visuel": "visuel_fruit_cuit" },
+    "consommation": { "faim": 0.35, "soif": 0.1, "effets": ["buff_repas"] }
+  },
+  {
+    "id": "item_bois",
+    "label_key": "item.bois",
+    "categorie": "ressource",
+    "stack_max": 20,
+    "render": { "visuel": "visuel_bois" }
+  },
+  {
+    "id": "item_pierre",
+    "label_key": "item.pierre",
+    "categorie": "ressource",
+    "stack_max": 20,
+    "render": { "visuel": "visuel_pierre" }
   }
 ]

@@ -85,16 +85,53 @@ export function trouverItemProche(itemsSol, hero, distanceMax) {
   return meilleur;
 }
 
-// Retire l'exemplaire ramassé puis en tire immédiatement un autre ailleurs
-// (§3.3 : "le compte reste à nb_au_sol") — jamais un trou dans itemsSol tant
-// qu'une position libre existe encore quelque part.
-export function ramasserEtRegenerer(scene, items, itemsSol, itemId, index, compteur) {
-  const item = items.find((i) => i.id === itemId);
-  const positions = itemsSol[itemId].filter((_, i) => i !== index);
-  const zonesAutorisees = zonesDuType(scene, item.spawn.zones);
-  const zonesExclues = zonesDuType(scene, item.spawn.zones_exclues);
-  const nouvelle = tirerPositionLibre(scene, zonesAutorisees, zonesExclues, positions, compteur);
-  if (nouvelle) positions.push(nouvelle);
-  else console.warn(`ground_items.js : impossible de régénérer "${itemId}" (zones saturées)`);
-  return { ...itemsSol, [itemId]: positions };
+// Retire l'exemplaire ramassé (Palier B, specs/04_maison-interieur.md §3.2 :
+// le nouvel exemplaire n'est plus tiré immédiatement — cf. planifierRespawn/
+// tickRespawns ci-dessous — mais le compte cible reste `nb_au_sol`, tiré
+// depuis le même PRNG déterministe une fois le délai écoulé).
+export function ramasser(itemsSol, itemId, index) {
+  return { ...itemsSol, [itemId]: itemsSol[itemId].filter((_, i) => i !== index) };
+}
+
+// Enfile un délai de respawn (temps de jeu actif) pour un item ramassé —
+// plusieurs délais peuvent courir en parallèle pour un même itemId (deux
+// ramassages rapprochés), chacun tiqué indépendamment par tickRespawns.
+export function planifierRespawn(enAttente, itemId, respawnMs) {
+  const liste = enAttente[itemId] ? [...enAttente[itemId]] : [];
+  liste.push(respawnMs);
+  return { ...enAttente, [itemId]: liste };
+}
+
+// Fait avancer les délais en attente ; à échéance, tire une nouvelle
+// position (même PRNG déterministe que remplirItemsSol, `compteur` fourni
+// par l'appelant pour rester unique dans toute la session) et l'ajoute à
+// itemsSol. Zones saturées au moment précis de l'échéance (rare, carte
+// pleine) : le délai est réessayé à la frame suivante plutôt que perdu.
+export function tickRespawns(scene, items, itemsSol, enAttente, deltaMs, compteurDepart) {
+  let compteur = compteurDepart;
+  const itemsSolSuivant = { ...itemsSol };
+  const enAttenteSuivant = {};
+  for (const [itemId, delais] of Object.entries(enAttente)) {
+    const restants = [];
+    for (const delaiMs of delais) {
+      const suivant = delaiMs - deltaMs;
+      if (suivant > 0) {
+        restants.push(suivant);
+        continue;
+      }
+      const item = items.find((i) => i.id === itemId);
+      const zonesAutorisees = zonesDuType(scene, item.spawn.zones);
+      const zonesExclues = zonesDuType(scene, item.spawn.zones_exclues);
+      compteur += 1;
+      const position = tirerPositionLibre(scene, zonesAutorisees, zonesExclues, itemsSolSuivant[itemId] || [], compteur);
+      if (position) {
+        itemsSolSuivant[itemId] = [...(itemsSolSuivant[itemId] || []), position];
+      } else {
+        console.warn(`ground_items.js : respawn de "${itemId}" reporté (zones saturées)`);
+        restants.push(1);
+      }
+    }
+    if (restants.length > 0) enAttenteSuivant[itemId] = restants;
+  }
+  return { itemsSol: itemsSolSuivant, enAttente: enAttenteSuivant, compteur };
 }

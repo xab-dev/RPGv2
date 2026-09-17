@@ -22,5 +22,13 @@
     "label_key": "hint.attack",
     "duree_ms": 2500,
     "flag": "flag_hint_attack"
+  },
+  {
+    "id": "hint_consume",
+    "verbe": "consume",
+    "declencheur": "premier item de nourriture équipé au slot consommable",
+    "label_key": "hint.consume",
+    "duree_ms": 2500,
+    "flag": "flag_hint_consume"
   }
 ]

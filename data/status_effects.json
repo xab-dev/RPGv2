@@ -36,6 +36,18 @@
     "icone": "buff_vitalite"
   },
   {
+    "id": "buff_repas",
+    "label_key": "status.buff_repas",
+    "famille": "buff",
+    "cible": "joueur",
+    "stat": "stat_vitalite",
+    "valeur": 2,
+    "mode": "plat",
+    "duree": 180000,
+    "cumul": false,
+    "icone": "buff_repas"
+  },
+  {
     "id": "dot_brulure",
     "label_key": "status.dot_brulure",
     "famille": "dot",

@@ -1,0 +1,117 @@
+// Contrat (Palier A, specs/04_maison-interieur.md §3.1/§7) : peutFabriquer()/
+// fabriquer() — découverte, cooldown, ingrédients, poche pleine (refus AVANT
+// consommation) — et preuve data-driven : une 4ᵉ recette en JSON de test
+// fonctionne sans modification de /src.
+import assert from 'node:assert/strict';
+import { peutFabriquer, fabriquer, recettesDeStation, recetteDecouverte } from '../src/recipes.js';
+import { poserCooldown } from '../src/cooldowns.js';
+import { SCHEMAS } from '../src/schemas.js';
+import { validerCatalogues } from '../src/registry.js';
+
+const itemHache = { id: 'item_hache', label_key: 'x', categorie: 'outil', stack_max: 1, render: { visuel: 'v' } };
+const recetteHache = {
+  id: 'rec_hache', label_key: 'x', station: 'station_type_atelier',
+  entrees: [{ item: 'item_branche', qte: 2 }, { item: 'item_caillou', qte: 1 }],
+  sortie: { item: 'item_hache', qte: 1 }, categorie: 'outil', xp: 15,
+  cooldown_ms: 60000, connue_au_depart: true, deblocage: null,
+};
+
+const flagsFactice = { evaluate: () => false };
+const flagsQuiDebloquentTout = { evaluate: () => true };
+
+// 1. Ingrédients insuffisants -> refus, raison "ingredients".
+{
+  const verdict = peutFabriquer(recetteHache, { item_branche: 1, item_caillou: 1 }, flagsFactice, {}, 0);
+  assert.equal(verdict.ok, false);
+  assert.equal(verdict.raison, 'ingredients');
+}
+
+// 2. Ingrédients suffisants, recette connue au départ -> ok.
+{
+  const verdict = peutFabriquer(recetteHache, { item_branche: 2, item_caillou: 1 }, flagsFactice, {}, 0);
+  assert.deepEqual(verdict, { ok: true, raison: null });
+}
+
+// 3. Recette verrouillée (non connue au départ, deblocage jamais vrai).
+{
+  const recetteVerrouillee = { ...recetteHache, connue_au_depart: false, deblocage: { all: ['flag_niveau_10'] } };
+  assert.equal(recetteDecouverte(recetteVerrouillee, flagsFactice), false);
+  const verdict = peutFabriquer(recetteVerrouillee, { item_branche: 2, item_caillou: 1 }, flagsFactice, {}, 0);
+  assert.equal(verdict.raison, 'verrouillee');
+  assert.equal(recetteDecouverte(recetteVerrouillee, flagsQuiDebloquentTout), true);
+}
+
+// 4. Cooldown actif (posé à heureMs=0, durée 60000) -> refus à heureMs=1000.
+{
+  const cooldowns = poserCooldown({}, 'rec_hache', 0);
+  const verdict = peutFabriquer(recetteHache, { item_branche: 2, item_caillou: 1 }, flagsFactice, cooldowns, 1000);
+  assert.equal(verdict.raison, 'cooldown');
+  // Expiré après 60000 ms.
+  const verdictExpire = peutFabriquer(recetteHache, { item_branche: 2, item_caillou: 1 }, flagsFactice, cooldowns, 61000);
+  assert.equal(verdictExpire.ok, true);
+}
+
+// 5. fabriquer() : retire les entrées, ajoute la sortie, pose le cooldown,
+// renvoie l'xp.
+{
+  const poche = { item_branche: 3, item_caillou: 2 };
+  const resultat = fabriquer(recetteHache, { poche, flags: flagsFactice, cooldowns: {}, heureMs: 500, itemDefSortie: itemHache });
+  assert.equal(resultat.ok, true);
+  assert.equal(resultat.poche.item_branche, 1);
+  assert.equal(resultat.poche.item_caillou, 1);
+  assert.equal(resultat.poche.item_hache, 1);
+  assert.equal(resultat.xp, 15);
+  assert.equal(resultat.cooldowns.rec_hache, 500);
+}
+
+// 6. §4 edge case : sortie ne rentrant pas dans la poche (stack_max) -> refus
+// AVANT toute consommation, rien n'est modifié.
+{
+  const poche = { item_branche: 3, item_caillou: 2, item_hache: 1 }; // déjà au stack_max (1)
+  const resultat = fabriquer(recetteHache, { poche, flags: flagsFactice, cooldowns: {}, heureMs: 0, itemDefSortie: itemHache });
+  assert.equal(resultat.ok, false);
+  assert.equal(resultat.raison, 'poche_pleine');
+  assert.deepEqual(resultat.poche, poche, 'aucune entrée ne doit avoir été retirée');
+}
+
+// 7. recettesDeStation filtre par type de station.
+{
+  const recettes = [recetteHache, { ...recetteHache, id: 'rec_pioche', station: 'station_type_atelier' }, { ...recetteHache, id: 'rec_fruit_cuit', station: 'station_type_cuisine' }];
+  const registreFactice = { tous: (cat) => (cat === 'recipes' ? recettes : []) };
+  assert.equal(recettesDeStation(registreFactice, 'station_type_atelier').length, 2);
+  assert.equal(recettesDeStation(registreFactice, 'station_type_cuisine').length, 1);
+}
+
+// 8. Data-driven : une 4ᵉ recette (corde, débloquée par flag_niveau_3) dans
+// un catalogue de test complet valide sans modification de /src.
+{
+  const donnees = {};
+  for (const nom of Object.keys(SCHEMAS)) donnees[nom] = [];
+  donnees.elements = [{ id: 'elem_feu', label_key: 'x', icon: 'x', shape: 'x' }];
+  donnees.stats = [{ id: 'stat_force', label_key: 'x', base: 5 }];
+  donnees.action_slots = [{ id: 'slot_attaque', verb: 'attack' }];
+  donnees.equipment_slots = [{ id: 'equip_arme', label_key: 'x' }];
+  donnees.flags = [{ id: 'flag_niveau_3', label_key: 'x' }];
+  donnees.unlocks = [];
+  donnees.visuels = [{ id: 'v', ancre: 'centre', primitives: [{ forme: 'cercle', dx: 0, dy: 0, w: 4, couleur: '#fff' }] }];
+  donnees.items = [
+    { id: 'item_branche', label_key: 'x', categorie: 'ressource', stack_max: 20, render: { visuel: 'v' } },
+    { id: 'item_corde', label_key: 'x', categorie: 'materiau', stack_max: 20, render: { visuel: 'v' } },
+  ];
+  donnees.items[1].categorie = 'valeur'; // catégorie libre existante, la corde n'a pas besoin d'une nouvelle catégorie
+  donnees.stations = [{ id: 'station_type_atelier', label_key: 'x', role: 'craft' }];
+  donnees.recipes = [{
+    id: 'rec_corde', label_key: 'x', station: 'station_type_atelier',
+    entrees: [{ item: 'item_branche', qte: 2 }], sortie: { item: 'item_corde', qte: 1 },
+    categorie: 'materiau', xp: 5, cooldown_ms: 30000, connue_au_depart: false,
+    deblocage: { all: ['flag_niveau_3'] },
+  }];
+  const erreurs = validerCatalogues(donnees);
+  assert.deepEqual(erreurs, [], `4ᵉ recette rejetée :\n${erreurs.join('\n')}`);
+
+  const recette = donnees.recipes[0];
+  assert.equal(recetteDecouverte(recette, flagsFactice), false);
+  assert.equal(recetteDecouverte(recette, flagsQuiDebloquentTout), true);
+}
+
+console.log('OK test_phase3_recipes');

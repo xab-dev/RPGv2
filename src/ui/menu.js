@@ -1,12 +1,14 @@
 // Menu minimal (§3.6) : bascule de langue FR/EN, export/import de
-// sauvegarde. Ouvert par le verbe MENU. Rien ici ne touche le DOM au
-// chargement du module : tout se passe dans initialiserMenu(), appelée par
-// main.js une fois le document prêt.
+// sauvegarde, Poche, Stats (Palier D) — et les écrans contextuels Craft/
+// Coffre (Palier A/E, ouverts directement par INTERACT sur une station,
+// hors du menu Pause). Rien ici ne touche le DOM au chargement du module :
+// tout se passe dans initialiserMenu(), appelée par main.js une fois le
+// document prêt.
 //
 // creerNavigationMenu() et creerControleurMenu() sont pures (aucune
 // référence DOM, actions passées en callbacks) : c'est le patron de focus
-// que reprendront tous les écrans d'UI futurs (inventaire, journal,
-// réglages) — écrit une fois ici, testé depuis Node sans faux DOM.
+// que reprennent tous les écrans d'UI — écrit une fois ici, testé depuis
+// Node sans faux DOM.
 
 // Provisoire, comme les autres mappings de gamepad.js : au-delà de ce
 // seuil, le stick/la flèche est considéré "poussé" dans une direction ;
@@ -112,9 +114,7 @@ export function creerControleurMenu(actions, options = {}) {
 
 // Marque l'élément focalisé (bordure + curseur `›`), qu'il soit sélectionné
 // au clavier/manette/tactile ou survolé à la souris (P4② : jamais la couleur
-// seule) — factorisé une fois, réutilisé par l'écran principal ET l'écran de
-// confirmation de réinitialisation (§B du diagnostic
-// SD_grotte-blocage-choix-follet_2026-09-15.md) plutôt que dupliqué.
+// seule) — factorisé une fois, réutilisé par tous les écrans à liste.
 function appliquerFocusVisuel(elements, indexFocalise) {
   elements.forEach((el, i) => {
     const curseur = el.querySelector('.menu-curseur');
@@ -126,15 +126,14 @@ function appliquerFocusVisuel(elements, indexFocalise) {
 
 // Cause racine du reset invisible (SD_menu-reset-invisible_2026-09-15.md) :
 // `index.html` ne stylise que `#menu` (position plein écran + fond +
-// centrage flex) ; le sous-écran de confirmation n'a ni règle CSS dédiée
-// (index.html doit rester sans logique de nommage d'éléments créés
-// dynamiquement) ni style inline — `hidden=false` retirait bien
-// l'attribut, mais sans position ni display l'élément restait en flux
+// centrage flex) ; un sous-écran plein écran construit dynamiquement n'a ni
+// règle CSS dédiée (index.html doit rester sans logique de nommage
+// d'éléments créés dynamiquement) ni style inline — `hidden=false` retirait
+// bien l'attribut, mais sans position ni display l'élément restait en flux
 // normal statique, hors du viewport visible (`body{overflow:hidden}`) :
-// invisible bien que fonctionnellement ouvert. Corrigé en donnant à la
-// confirmation le même habillage plein écran que `#menu`, posé en inline
-// depuis ce module — même principe que le style de focus ci-dessus, jamais
-// une classe CSS qu'index.html devrait définir.
+// invisible bien que fonctionnellement ouvert. Corrigé en donnant à CHAQUE
+// écran plein écran (confirmation, poche, craft, coffre, stats) le même
+// habillage, posé en inline depuis ce module.
 function appliquerStylePleinEcran(el) {
   el.style.position = 'fixed';
   el.style.inset = '0';
@@ -147,25 +146,120 @@ function appliquerStylePleinEcran(el) {
   el.style.gap = '1rem';
 }
 
-// Point d'affichage/masquage unique pour les deux écrans (menu principal ET
-// confirmation) : `hidden` seul seul ne suffit pas à garantir la visibilité
-// effective (cf. ci-dessus), et un `display` inline qui resterait figé sur
-// "flex" annulerait l'effet de `hidden` (une valeur inline bat la règle
-// UA `[hidden]{display:none}`). Les deux doivent donc toujours changer
+// Point d'affichage/masquage unique pour tous les écrans plein écran :
+// `hidden` seul ne suffit pas à garantir la visibilité effective (cf.
+// ci-dessus), et un `display` inline qui resterait figé sur "flex"
+// annulerait l'effet de `hidden` (une valeur inline bat la règle UA
+// `[hidden]{display:none}`). Les deux doivent donc toujours changer
 // ensemble, ici et nulle part ailleurs.
 function afficherEcran(el, visible) {
   el.hidden = !visible;
   el.style.display = visible ? 'flex' : 'none';
 }
 
-// 03_maison-exterieur §3.3/§3.6 : deux entrées de plus (Musique, Poche),
-// jamais lues avant que main.js les fournisse — `musiqueActive`/
-// `basculerMusique` et `listerPoche` restent optionnels (défauts inertes) au
-// cas où un futur test construirait le menu sans ces dépendances, comme les
-// tests existants du menu-manette le font déjà pour exporter/importer.
+// Écran générique à liste focalisable + titre + "Fermer" toujours en
+// dernier (Palier A/D/E, specs/04_maison-interieur.md §3.1/§3.4/§3.5) —
+// réutilise creerControleurMenu (§3.1 : "jamais un 2e mécanisme de focus"),
+// jamais dupliqué pour Craft/Coffre/Stats/Poche : chacun ne fournit que son
+// propre contenu (`obtenirEntrees(): [{ texte, grisee?, action }]`),
+// reconstruit à l'ouverture ET à la demande (`rafraichir()`, appelé par
+// main.js après une action qui change l'état affiché — ex. un craft qui
+// grise la recette suivante, cf. edge case §4 de la fiche).
+// `onFermer` (optionnel) : rappelé à CHAQUE fermeture, quel que soit le
+// chemin (clic sur "Fermer", B/skill_3, ou fermeture programmatique) — Poche
+// et Stats s'en servent pour réafficher le menu principal qu'ils masquent
+// sans jamais le fermer lui-même (§3.4/§3.6) ; Craft/Coffre (ouverts
+// directement par INTERACT, hors du menu Pause) n'en ont pas besoin.
+function creerEcranListeGenerique(document, i18n, { onFermer } = {}) {
+  const el = document.createElement('div');
+  appliquerStylePleinEcran(el);
+  afficherEcran(el, false);
+  const titre = document.createElement('h2');
+  const liste = document.createElement('div');
+  el.appendChild(titre);
+  el.appendChild(liste);
+  document.body.appendChild(el);
+
+  let controleur = creerControleurMenu([], { verbeAnnuler: 'skill_3' });
+  let elements = [];
+  let fournisseurEntrees = () => [];
+
+  function actualiserFocus() {
+    appliquerFocusVisuel(elements, controleur.index());
+  }
+
+  function fermer() {
+    controleur.fermer();
+    afficherEcran(el, false);
+    if (onFermer) onFermer();
+  }
+
+  function reconstruire() {
+    const toutes = [...fournisseurEntrees(), { texte: i18n.t('menu.fermer'), action: fermer }];
+    liste.innerHTML = toutes.map((e, i) => `
+      <div class="menu-item" data-item="${i}">
+        <span class="menu-curseur"></span>
+        <button type="button" ${e.grisee ? 'disabled' : ''}>${e.texte}</button>
+      </div>
+    `).join('');
+    elements = Array.from(liste.querySelectorAll('.menu-item'));
+    const boutons = Array.from(liste.querySelectorAll('button'));
+    const indexPrecedent = controleur.index();
+    controleur = creerControleurMenu(toutes.map((e) => e.action), { verbeAnnuler: 'skill_3' });
+    controleur.ouvrir();
+    controleur.definirIndex(indexPrecedent);
+    elements.forEach((elItem, i) => {
+      elItem.addEventListener('mouseenter', () => {
+        controleur.definirIndex(i);
+        actualiserFocus();
+      });
+    });
+    boutons.forEach((btn, i) => {
+      btn.addEventListener('click', () => toutes[i].action());
+    });
+    actualiserFocus();
+  }
+
+  return {
+    ouvrir(obtenirEntrees, texteTitre) {
+      fournisseurEntrees = obtenirEntrees;
+      titre.textContent = texteTitre;
+      afficherEcran(el, true);
+      reconstruire();
+    },
+    fermer,
+    estOuvert: () => controleur.estOuvert() && !el.hidden,
+    rafraichir: reconstruire,
+    traiterInput(etat) {
+      controleur.traiterInput(etat);
+      if (controleur.estOuvert()) {
+        actualiserFocus();
+      } else {
+        // Fermé via B/skill_3 (creerControleurMenu#verbeAnnuler) : ce chemin
+        // ne passe jamais par l'action "Fermer" ci-dessus (reconstruire()),
+        // donc `onFermer` doit être rappelé ici explicitement — sinon Poche/
+        // Stats resteraient invisibles SANS que le menu principal ne
+        // réapparaisse dessous (cf. actionOuvrirPoche/actionOuvrirStats).
+        afficherEcran(el, false);
+        if (onFermer) onFermer();
+      }
+    },
+  };
+}
+
+// 03_maison-exterieur §3.3/§3.6 + Palier A/C/D/E de 04_maison-interieur :
+// - `listerPoche()` renvoie désormais `{ id, label, quantite, categorie }[]`
+//   (le module a besoin de `categorie`/`id` pour proposer "Équiper" sur la
+//   nourriture, pas seulement afficher un texte).
+// - `equipementConsommable()`/`equiperConsommable(id)` : slot consommable
+//   (§3.3, hint CONSUME).
+// Tous optionnels (défauts inertes), comme le reste des callbacks
+// facultatifs déjà présents ici, au cas où un futur test construirait le
+// menu sans ces dépendances.
 export function initialiserMenu({
   document, i18n, exporterSauvegarde, importerSauvegarde,
   musiqueActive = () => true, basculerMusique = () => {}, listerPoche = () => [],
+  equipementConsommable = () => null, equiperConsommable = () => {},
 }) {
   const conteneur = document.createElement('div');
   conteneur.id = 'menu';
@@ -187,40 +281,26 @@ export function initialiserMenu({
     </div>
     <div class="menu-item" data-item="3">
       <span class="menu-curseur"></span>
-      <button id="menu-exporter" data-cle="menu.exporter" type="button"></button>
+      <button id="menu-stats" data-cle="menu.stats" type="button"></button>
     </div>
     <div class="menu-item" data-item="4">
       <span class="menu-curseur"></span>
-      <input id="menu-importer" type="file" accept="application/json" />
+      <button id="menu-exporter" data-cle="menu.exporter" type="button"></button>
     </div>
     <div class="menu-item" data-item="5">
       <span class="menu-curseur"></span>
-      <button id="menu-reset" data-cle="menu.reset_sauvegarde" type="button"></button>
+      <input id="menu-importer" type="file" accept="application/json" />
     </div>
     <div class="menu-item" data-item="6">
+      <span class="menu-curseur"></span>
+      <button id="menu-reset" data-cle="menu.reset_sauvegarde" type="button"></button>
+    </div>
+    <div class="menu-item" data-item="7">
       <span class="menu-curseur"></span>
       <button id="menu-fermer" data-cle="menu.fermer" type="button"></button>
     </div>
   `;
   document.body.appendChild(conteneur);
-
-  // Poche (§3.3) : écran plein écran en lecture seule (aucune action dessus
-  // en Phase 2, cf. spec) — même patron DOM que `confirmation` plus bas
-  // (jamais visible en même temps que le menu principal). Le contenu
-  // (`<ul>`) est reconstruit à chaque ouverture depuis `listerPoche()`.
-  const poche = document.createElement('div');
-  poche.id = 'menu-poche';
-  appliquerStylePleinEcran(poche);
-  afficherEcran(poche, false);
-  poche.innerHTML = `
-    <h2 data-cle="menu.poche_titre"></h2>
-    <ul id="menu-poche-liste" style="list-style:none;padding:0;text-align:center;"></ul>
-    <div class="menu-item" data-item="0">
-      <span class="menu-curseur"></span>
-      <button id="menu-poche-fermer" data-cle="menu.fermer" type="button"></button>
-    </div>
-  `;
-  document.body.appendChild(poche);
 
   // Écran de confirmation (§B) : sous-menu à 2 entrées, conteneur DOM séparé
   // plutôt qu'imbriqué dans `conteneur` — masquer l'un affiche l'autre, les
@@ -242,28 +322,66 @@ export function initialiserMenu({
   `;
   document.body.appendChild(confirmation);
 
-  // Boutons Musique/Poche retraduits explicitement (leur texte dépend d'un
-  // état, pas seulement de la langue — cf. actualiserBoutonMusique/
-  // actualiserListePoche) : `[data-cle]` seul suffit pour langue/exporter/
-  // etc., mais écraserait ce texte dynamique s'il tournait après coup.
-  function retraduire() {
-    conteneur.querySelectorAll('[data-cle]').forEach((el) => {
-      el.textContent = i18n.t(el.dataset.cle);
-    });
-    confirmation.querySelectorAll('[data-cle]').forEach((el) => {
-      el.textContent = i18n.t(el.dataset.cle);
-    });
-    poche.querySelectorAll('[data-cle]').forEach((el) => {
-      el.textContent = i18n.t(el.dataset.cle);
-    });
-    actualiserBoutonMusique();
+  // Poche (§3.3), Craft/Coffre (Palier A/E), Stats (Palier D) : même écran
+  // générique (creerEcranListeGenerique) — Poche affiche TOUS les items
+  // (quantité en texte), "Équiper" n'étant une action réelle que sur la
+  // nourriture (les autres lignes ont une action vide, focalisables sans
+  // effet — plus simple qu'un 2e type de ligne non focalisable).
+  // Poche/Stats masquent `conteneur` sans le fermer (§3.4/§3.6) : `onFermer`
+  // le réaffiche, quel que soit le chemin de fermeture (clic "Fermer" ou B/
+  // skill_3) — `actualiserFocusVisuel` référencée ici est une déclaration de
+  // fonction plus bas dans ce même scope (hoisted), jamais appelée avant que
+  // le menu principal soit entièrement construit.
+  function onFermerVersMenuPrincipal() {
+    afficherEcran(conteneur, true);
+    actualiserFocusVisuel();
   }
+  const ecranPoche = creerEcranListeGenerique(document, i18n, { onFermer: onFermerVersMenuPrincipal });
+  const ecranCraft = creerEcranListeGenerique(document, i18n);
+  const ecranCoffre = creerEcranListeGenerique(document, i18n);
+  const ecranStats = creerEcranListeGenerique(document, i18n, { onFermer: onFermerVersMenuPrincipal });
+
+  function entreesPoche() {
+    const entrees = listerPoche();
+    if (entrees.length === 0) return [{ texte: i18n.t('menu.poche_vide'), action: () => {} }];
+    return entrees.map((e) => {
+      const equipe = e.categorie === 'nourriture' && equipementConsommable() === e.id;
+      const suffixe = equipe ? ' ✓' : '';
+      const texte = `${e.label} × ${e.quantite}${e.categorie === 'nourriture' ? ` — ${i18n.t('menu.poche_equiper')}` : ''}${suffixe}`;
+      return {
+        texte,
+        action: e.categorie === 'nourriture' ? () => { equiperConsommable(e.id); ecranPoche.rafraichir(); } : () => {},
+      };
+    });
+  }
+
+  function actionOuvrirPoche() {
+    // §3.6 : la poche est un écran séparé du menu principal (creerEcranListeGenerique,
+    // fixed/inset:0) — sans ce masquage explicite, `conteneur` resterait
+    // affiché EN DESSOUS (jamais fermé lui-même), superposant deux menus
+    // focalisables en même temps (même piège que Stats ci-dessous).
+    afficherEcran(conteneur, false);
+    ecranPoche.ouvrir(entreesPoche, i18n.t('menu.poche_titre'));
+  }
+
+  function actionOuvrirStats() {
+    afficherEcran(conteneur, false);
+    ecranStats.ouvrir(fournisseurEntreesStats, i18n.t('menu.stats_titre'));
+  }
+
+  conteneur.querySelector('#menu-exporter').addEventListener('click', () => exporterSauvegarde());
+
+  const inputImporter = conteneur.querySelector('#menu-importer');
+  inputImporter.addEventListener('change', (e) => {
+    const fichier = e.target.files[0];
+    if (fichier) importerSauvegarde(fichier);
+  });
 
   const selectLangue = conteneur.querySelector('#menu-langue');
   selectLangue.value = i18n.langueCourante();
   selectLangue.addEventListener('change', () => {
     i18n.definirLangue(selectLangue.value);
-    retraduire();
+    retraduireBase();
   });
 
   function actionBasculerLangue() {
@@ -273,7 +391,7 @@ export function initialiserMenu({
     // le parcours manuel du ticket.
     selectLangue.value = selectLangue.value === 'fr' ? 'en' : 'fr';
     i18n.definirLangue(selectLangue.value);
-    retraduire();
+    retraduireBase();
   }
 
   // Musique (§3.6) : bouton "Musique : Oui/Non" — même convention que la
@@ -290,45 +408,17 @@ export function initialiserMenu({
   }
   boutonMusique.addEventListener('click', actionBasculerMusique);
 
-  // Poche (§3.3) : écran en lecture seule, reconstruit à chaque ouverture —
-  // jamais mis à jour en arrière-plan (le menu gèle déjà le gameplay pendant
-  // qu'il est ouvert, point de décision unique de main.js#maj()).
-  const listePoche = poche.querySelector('#menu-poche-liste');
-  function actualiserListePoche() {
-    const entrees = listerPoche();
-    listePoche.innerHTML = entrees.length
-      ? entrees.map((e) => `<li>${e.label} × ${e.quantite}</li>`).join('')
-      : `<li>${i18n.t('menu.poche_vide')}</li>`;
+  retraduireBase();
+
+  function retraduireBase() {
+    conteneur.querySelectorAll('[data-cle]').forEach((el) => {
+      el.textContent = i18n.t(el.dataset.cle);
+    });
+    confirmation.querySelectorAll('[data-cle]').forEach((el) => {
+      el.textContent = i18n.t(el.dataset.cle);
+    });
+    actualiserBoutonMusique();
   }
-
-  function fermerPoche() {
-    controleurPoche.fermer();
-    afficherEcran(poche, false);
-    afficherEcran(conteneur, true);
-    actualiserFocusVisuel();
-  }
-  function actionOuvrirPoche() {
-    afficherEcran(conteneur, false);
-    actualiserListePoche();
-    afficherEcran(poche, true);
-    controleurPoche.ouvrir();
-    actualiserFocusPoche();
-  }
-  // Un seul élément navigable (Fermer) : verbeAnnuler suffit déjà à fermer
-  // par B, le contrôleur reste malgré tout le même patron que les 2 autres
-  // écrans (focus visuel cohérent, pas un cas spécial).
-  const controleurPoche = creerControleurMenu([fermerPoche], { verbeAnnuler: 'skill_3' });
-  poche.querySelector('#menu-poche-fermer').addEventListener('click', fermerPoche);
-
-  retraduire();
-
-  conteneur.querySelector('#menu-exporter').addEventListener('click', () => exporterSauvegarde());
-
-  const inputImporter = conteneur.querySelector('#menu-importer');
-  inputImporter.addEventListener('change', (e) => {
-    const fichier = e.target.files[0];
-    if (fichier) importerSauvegarde(fichier);
-  });
 
   function fermerMenu() {
     controleur.fermer();
@@ -342,6 +432,9 @@ export function initialiserMenu({
   // construction — point de couture explicite plutôt qu'un import circulaire
   // vers main.js.
   let actionReinitialiser = () => {};
+  // Fournie après coup de la même façon (§3.4) : le menu Stats a besoin de
+  // resoudre les stats/points depuis main.js, qui construit le menu.
+  let fournisseurEntreesStats = () => [];
 
   function revenirAuMenuPrincipal() {
     afficherEcran(confirmation, false);
@@ -379,18 +472,20 @@ export function initialiserMenu({
 
   conteneur.querySelector('#menu-reset').addEventListener('click', actionOuvrirConfirmation);
   conteneur.querySelector('#menu-fermer').addEventListener('click', fermerMenu);
+  conteneur.querySelector('#menu-poche').addEventListener('click', actionOuvrirPoche);
+  conteneur.querySelector('#menu-stats').addEventListener('click', actionOuvrirStats);
   confirmation.querySelector('#menu-reset-oui').addEventListener('click', actionConfirmerOui);
   confirmation.querySelector('#menu-reset-non').addEventListener('click', actionConfirmerNon);
 
   // Ordre = ordre de navigation MOVE, aligné sur le HTML ci-dessus : langue,
-  // musique, poche, exporter, importer, réinitialiser, fermer. ATTACK sur un
-  // élément déclenche exactement la même fonction que son équivalent souris
-  // (pas une copie). `verbeAnnuler: 'skill_3'` ajoute B comme raccourci de
-  // fermeture (convention manette "B = retour"), indépendant du focus
-  // courant — Start n'ouvre le menu que dans un sens, voir main.js.
+  // musique, poche, stats, exporter, importer, réinitialiser, fermer. ATTACK
+  // sur un élément déclenche exactement la même fonction que son équivalent
+  // souris (pas une copie). `verbeAnnuler: 'skill_3'` ajoute B comme
+  // raccourci de fermeture (convention manette "B = retour"), indépendant du
+  // focus courant — Start n'ouvre le menu que dans un sens, voir main.js.
   const controleur = creerControleurMenu(
     [
-      actionBasculerLangue, actionBasculerMusique, actionOuvrirPoche,
+      actionBasculerLangue, actionBasculerMusique, actionOuvrirPoche, actionOuvrirStats,
       () => exporterSauvegarde(), () => inputImporter.click(), actionOuvrirConfirmation, fermerMenu,
     ],
     { verbeAnnuler: 'skill_3' }
@@ -406,16 +501,12 @@ export function initialiserMenu({
 
   const elementsItems = Array.from(conteneur.querySelectorAll('.menu-item'));
   const elementsConfirmation = Array.from(confirmation.querySelectorAll('.menu-item'));
-  const elementsPoche = Array.from(poche.querySelectorAll('.menu-item'));
 
   function actualiserFocusVisuel() {
     appliquerFocusVisuel(elementsItems, controleur.index());
   }
   function actualiserFocusConfirmation() {
     appliquerFocusVisuel(elementsConfirmation, controleurConfirmation.index());
-  }
-  function actualiserFocusPoche() {
-    appliquerFocusVisuel(elementsPoche, controleurPoche.index());
   }
 
   elementsItems.forEach((el, i) => {
@@ -430,34 +521,33 @@ export function initialiserMenu({
       actualiserFocusConfirmation();
     });
   });
-  elementsPoche.forEach((el, i) => {
-    el.addEventListener('mouseenter', () => {
-      controleurPoche.definirIndex(i);
-      actualiserFocusPoche();
-    });
-  });
 
   return {
     ouvrir() {
       afficherEcran(conteneur, true);
       afficherEcran(confirmation, false);
-      afficherEcran(poche, false);
       controleurConfirmation.fermer();
-      controleurPoche.fermer();
+      ecranPoche.fermer();
+      ecranStats.fermer();
       controleur.ouvrir();
       actualiserFocusVisuel();
-      retraduire();
+      retraduireBase();
     },
     fermer() {
       controleur.fermer();
       controleurConfirmation.fermer();
-      controleurPoche.fermer();
+      ecranPoche.fermer();
+      ecranCraft.fermer();
+      ecranCoffre.fermer();
+      ecranStats.fermer();
       afficherEcran(conteneur, false);
       afficherEcran(confirmation, false);
-      afficherEcran(poche, false);
     },
     estOuvert() {
-      return controleur.estOuvert() || controleurConfirmation.estOuvert() || controleurPoche.estOuvert();
+      return (
+        controleur.estOuvert() || controleurConfirmation.estOuvert() ||
+        ecranPoche.estOuvert() || ecranCraft.estOuvert() || ecranCoffre.estOuvert() || ecranStats.estOuvert()
+      );
     },
     // Fournit l'action réelle de reinitialiserPartie() après la construction
     // de l'orchestrateur (voir commentaire sur `actionReinitialiser`
@@ -466,13 +556,37 @@ export function initialiserMenu({
     definirActionReinitialiser(fn) {
       actionReinitialiser = fn;
     },
+    // Palier D : main.js fournit un obtenirEntrees() propre au menu Stats
+    // (résout registre/i18n/save, que ce module ne connaît pas) une fois
+    // l'orchestrateur construit — même patron que reinitialiserPartie.
+    definirEntreesStats(fn) {
+      fournisseurEntreesStats = fn;
+    },
+    // Écrans contextuels ouverts directement par INTERACT sur une station
+    // (Palier A/E, hors du menu Pause) — `obtenirEntrees` est fourni à
+    // l'ouverture par main.js (dépend de la station visée, donc pas fixé à
+    // la construction du menu comme `fournisseurEntreesStats`).
+    ouvrirCraft(obtenirEntrees, titre) {
+      ecranCraft.ouvrir(obtenirEntrees, titre);
+    },
+    rafraichirCraft() {
+      ecranCraft.rafraichir();
+    },
+    ouvrirCoffre(obtenirEntrees, titre) {
+      ecranCoffre.ouvrir(obtenirEntrees, titre);
+    },
+    rafraichirCoffre() {
+      ecranCoffre.rafraichir();
+    },
+    rafraichirStats() {
+      ecranStats.rafraichir();
+    },
     // Point d'entrée appelé par main.js tant que le menu est ouvert (voir
     // la priorité UI/gameplay dans main.js#maj). Un seul écran actif à la
-    // fois (confirmation/poche prioritaires sur l'écran principal, jamais
-    // deux dispatchés la même frame) — la fermeture par focus cache déjà le
-    // bon conteneur ; celle par B (verbeAnnuler) ne fait que fermer le
-    // contrôleur interne, donc on resynchronise l'affichage ici dans tous
-    // les cas plutôt que de dupliquer la condition à chaque site d'appel.
+    // fois — la fermeture par focus cache déjà le bon conteneur ; celle par
+    // B (verbeAnnuler) ne fait que fermer le contrôleur interne, donc on
+    // resynchronise l'affichage ici dans tous les cas plutôt que de
+    // dupliquer la condition à chaque site d'appel.
     traiterInput(etat) {
       if (controleurConfirmation.estOuvert()) {
         controleurConfirmation.traiterInput(etat);
@@ -487,19 +601,13 @@ export function initialiserMenu({
         }
         return;
       }
-      if (controleurPoche.estOuvert()) {
-        controleurPoche.traiterInput(etat);
-        if (controleurPoche.estOuvert()) {
-          actualiserFocusPoche();
-        } else if (controleur.estOuvert()) {
-          afficherEcran(poche, false);
-          afficherEcran(conteneur, true);
-          actualiserFocusVisuel();
-        } else {
-          afficherEcran(poche, false);
-        }
-        return;
-      }
+      if (ecranCraft.estOuvert()) { ecranCraft.traiterInput(etat); return; }
+      if (ecranCoffre.estOuvert()) { ecranCoffre.traiterInput(etat); return; }
+      // Stats/Poche (§3.4/§3.6) : ouverts DEPUIS le menu principal — leur
+      // `onFermer` (cf. construction ci-dessus) réaffiche `conteneur` quel
+      // que soit le chemin de fermeture, rien à faire de plus ici.
+      if (ecranStats.estOuvert()) { ecranStats.traiterInput(etat); return; }
+      if (ecranPoche.estOuvert()) { ecranPoche.traiterInput(etat); return; }
       controleur.traiterInput(etat);
       if (controleur.estOuvert()) {
         actualiserFocusVisuel();

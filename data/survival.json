@@ -1,0 +1,11 @@
+[
+  { "id": "jauge_faim", "label_key": "survie.faim", "decroissance_ms_plein_a_vide": 1200000 },
+  { "id": "jauge_soif", "label_key": "survie.soif", "decroissance_ms_plein_a_vide": 900000 },
+  {
+    "id": "survie_config",
+    "plancher": 0.5,
+    "pente": 0.5,
+    "malus_respawn": 0.25,
+    "stats_modulees": ["stat_force", "stat_agilite"]
+  }
+]

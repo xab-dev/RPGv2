@@ -187,11 +187,22 @@ function nouvelOrchestrateur(positionInitiale) {
   save.flags = { flag_follet_choisi: true, flag_grotte_sortie: true, flag_grotte_sequence: true, flag_grotte_monstre_tue: true, flag_levier_salle1: true };
   const store = creerStoreMemoire();
   const dialogue = creerDialogue();
-  const menu = { estOuvert: () => false, traiterInput: () => {}, ouvrir: () => {} };
+  // station_table est désormais une station "craft" (Palier A,
+  // specs/04_maison-interieur.md §3.1) : INTERACT appelle menu.ouvrirCraft()
+  // plutôt que d'ouvrir un dialogue — la fausse implémentation enregistre
+  // l'appel pour que le test ci-dessous puisse le vérifier.
+  let craftOuvert = false;
+  const menu = {
+    estOuvert: () => false,
+    traiterInput: () => {},
+    ouvrir: () => {},
+    ouvrirCraft: () => { craftOuvert = true; },
+    ouvrirCoffre: () => {},
+  };
   const frames = [];
   const input = creerInputScripte(frames);
   const orchestrateur = creerOrchestrateurGrotte({ registre, i18n, save, store, dialogue, menu, input, ctxLogique: null, ctxVisible: null, canvasLogique: null });
-  return { orchestrateur, frames, save };
+  return { orchestrateur, frames, save, craftOuvert: () => craftOuvert };
 }
 
 {
@@ -207,10 +218,10 @@ function nouvelOrchestrateur(positionInitiale) {
     sud: { x: cx, y: table.y + table.h + marge },
   };
   for (const [cote, point] of Object.entries(points)) {
-    const { orchestrateur, frames } = nouvelOrchestrateur(point);
+    const { orchestrateur, frames, craftOuvert } = nouvelOrchestrateur(point);
     frames.push(etat({ interact: true }));
     orchestrateur.maj(16);
-    assert.ok(orchestrateur.dialogueOuvert(), `INTERACT depuis le côté ${cote} doit ouvrir le dialogue de la station`);
+    assert.ok(craftOuvert(), `INTERACT depuis le côté ${cote} doit ouvrir le menu Craft de la station`);
   }
   console.log('OK INTERACT fonctionne depuis chaque côté de l\'empreinte, à portée');
 }

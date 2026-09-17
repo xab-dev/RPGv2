@@ -10,6 +10,7 @@
     "comportement": "melee",
     "element": null,
     "loot_table": "loot_grotte_rampant",
-    "render": { "visuel": "visuel_monstre_rampant" }
+    "render": { "visuel": "visuel_monstre_rampant" },
+    "xp": 20
   }
 ]

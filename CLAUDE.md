@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## État actuel du dépôt
 
-Phases validées : 0 (Socle technique), 1 (La Grotte), 1b (polish, DA validée) et 2 (Région Maison, première marche, `specs/03_maison-exterieur.md`) — **Phase 2 close le 2026-09-17**, détail complet : `docs/archives/INDEX.md`. Phase courante : voir « Critère de passage courant » ci-dessous.
+Phases validées : 0 (Socle technique), 1 (La Grotte), 1b (polish, DA validée) et 2 (Région Maison, première marche, `specs/03_maison-exterieur.md`) — **Phase 2 close le 2026-09-17**, détail complet : `docs/archives/INDEX.md`. Phase 3 (`specs/04_maison-interieur.md`) : paliers A-E (recettes/craft, récolte réelle, survie, XP/niveaux, coffre) codés et testés headless le 2026-09-17 — **validation manuelle en jeu encore due par Xav**, voir « Critère de passage courant ».
 
 Historique complet des sessions : **`docs/archives/INDEX.md`** — un fichier par session archivée, contenu verbatim (source de vérité en cas de doute sur le détail d'une décision passée). `CLAUDE.md` ne garde que le journal de la session la plus récente (en fin de ce fichier) — voir la règle de méthode correspondante ci-dessous.
 
@@ -84,30 +84,41 @@ rpg_v2/
 │   ├── intro.js            2 machines à états pures : intro (clignements+orbite, ≤8s) et départ
 │   │                       (follets non élus qui repartent) — propre à la Grotte, pas un moteur
 │   │                       de cinématiques généralisé
-│   ├── save.js             double tampon, versions + migrations (v3), reinitialiserSauvegarde()
+│   ├── save.js             double tampon, versions + migrations (v4), reinitialiserSauvegarde()
 │   ├── flags.js            registre de flags + conditions all/any/not + `initial` (persistance)
-│   ├── stats.js            stats primaires + dérivées (formule linéaire en données)
-│   ├── status.js           effets d'état (buff/dot/debuff/contrôle), un seul chemin de calcul
+│   ├── stats.js            stats primaires + dérivées (formule linéaire) + modulateur de survie
+│   │                       (`appliquerModulateurSurvie`, Phase 3)
+│   ├── status.js           effets d'état (buff/dot/debuff/contrôle) + buffs temporaires du héros
+│   │                       (`tickBuffsActifs`/`ajouterBuffActif`, Phase 3), un seul chemin de calcul
 │   ├── entities.js         héros/monstres : PV, position, mort/respawn
 │   ├── combat.js           auto-attaque annulaire, cooldown, feedback (anneau/flash/barre de PV)
 │   ├── companion.js        follet : suivre/engager, position (+ lumière collée)
 │   ├── loot.js             résolution de loot table (PRNG injectable)
-│   ├── puzzles.js          types `levier`/`sequence`/`station_placeholder` (instances en données)
-│   ├── resources.js        tuiles-ressources bloquées (`peutRecolter` toujours faux en Phase 2 —
-│   │                       point d'accroche Phase 3)
-│   ├── inventory.js        poche du héros (items comptés)
-│   ├── ground_items.js     objets au sol par scène (spawn, ramassage)
+│   ├── puzzles.js          types `levier`/`sequence`/`station_placeholder`/`station` (instances en
+│   │                       données) — `station` référence un TYPE de `stations.json` (rôle/capacité)
+│   ├── resources.js        tuiles-ressources bloquées, `peutRecolter` branché sur la poche réelle
+│   │                       depuis Phase 3 (outil requis)
+│   ├── inventory.js        poche du héros (items comptés) : `ajouterItem`/`retirerItem`
+│   ├── cooldowns.js        Phase 3 : cooldowns en temps actif, réutilise l'horloge de daynight.js
+│   │                       (`save.monde.heure`, désormais avancée dans toutes les scènes)
+│   ├── recipes.js          Phase 3, Palier A : `peutFabriquer`/`fabriquer`, catalogue `recipes.json`
+│   ├── survival.js         Phase 3, Palier C : jauges faim/soif, modulateur, malus de respawn
+│   ├── xp.js               Phase 3, Palier D : XP → niveaux (`levels.json`) → points de stats
+│   ├── ground_items.js     objets au sol par scène (spawn, ramassage, respawn différé Phase 3)
 │   ├── structures.js       toit (opacité dégressive selon la distance du héros)
-│   ├── daynight.js         cycle jour/nuit en 4 phases (constantes), avance hors UI seulement
+│   ├── daynight.js         cycle jour/nuit en 4 phases (constantes) ; `save.monde.heure` sert aussi
+│   │                       d'horloge "temps actif" partagée (cooldowns/survie), gelée sous UI
 │   ├── audio.js            musique en boucle, armée au premier verbe abstrait (DOM)
 │   ├── dialogue.js         file de lignes, machine à écrire + armement anti-spam, résolution locuteur
 │   ├── hints.js            indices de commande (specs/04_indices-commandes.md) : un seul affiché
 │   │                       à la fois, montré une fois par partie (flag persisté), fermé dès
 │   │                       l'émission effective du verbe — pur, ignore i18n/DOM
 │   ├── i18n.js
-│   └── ui/                 menu.js (DOM ; Langue/Musique/Poche/Export/Import/Reset/Fermer),
-│                           hud.js + hud_hints.js + dialogue_box.js + hud_layout.js (canvas,
-│                           résolution logique)
+│   └── ui/                 menu.js (DOM ; Langue/Musique/Poche/Stats/Export/Import/Reset/Fermer,
+│                           + écrans contextuels Craft/Coffre ouverts par INTERACT, patron générique
+│                           `creerEcranListeGenerique` factorisé Phase 3), hud.js (+ jauges survie/
+│                           niveau-XP Phase 3) + hud_hints.js + dialogue_box.js + hud_layout.js
+│                           (canvas, résolution logique)
 ├── data/                   catalogues JSON (voir specs/*.md §2.1 de chaque phase)
 ├── locales/fr.json, en.json
 ├── specs/                  00_ROADMAP.md, 0N_*.md par phase
@@ -157,6 +168,10 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 | Indices de commande : périphérique actif exposé par `input.js` (loquet, défaut `'manette'`), glyphes toujours résolus via `t()` (même une lettre isolée) | 2026-09-17 | `docs/archives/JOURNAL_2026-09-17_indices-commande.md` |
 | Échelle des 4 stations fixée à **2,1** (milieu de la fourchette ×2 à ×2,2 demandée) ; empreinte solide = boîte englobante des primitives de rendu, calculée une fois (jamais dupliquée), sauf override explicite `empreinte` en données ; seuil d'interaction unifié (mesuré au bord de l'empreinte pour tous les interactifs, y compris les leviers dont l'empreinte est nulle) | 2026-09-17 | journal courant |
 | Station `station_atelier` déplacée de `(89,58)` à `(89,61)` en données — son empreinte agrandie chevauchait légèrement le couloir intérieur (rangée y=57 entre les deux portes) | 2026-09-17 | journal courant |
+| Horloge "temps de jeu actif" (cooldowns/survie) = `save.monde.heure` (celle de `daynight.js`), avancée désormais dans **toutes** les scènes (pas seulement `cycleJourNuit`) — jamais une 2ᵉ horloge ; un cooldown qui chevauche le bouclage du cycle (~17 min) expire un peu tôt plutôt que de bloquer (§4 edge case de `04_maison-interieur.md`) | 2026-09-17 | journal courant |
+| Vitesse de déplacement du héros devient une stat dérivée (`derivee_vitesse_deplacement_px_s`, stat_agilite) au lieu d'une constante — nécessaire pour que le modulateur de survie la ralentisse sans code dédié (même mécanisme que dégâts/cadence) | 2026-09-17 | journal courant |
+| `item_branche`/`item_caillou` (ramassage libre, Phase 2) restent distincts de `item_bois`/`item_pierre` (récolte réelle à l'outil, Phase 3) — les premiers servent à crafter les tout premiers outils, les seconds sont le produit de `res_bois`/`res_pierre` une fois l'outil en poche | 2026-09-17 | journal courant |
+| Menu Craft/Coffre/Stats : écrans DOM plein écran génériques (`creerEcranListeGenerique`), Craft/Coffre ouverts directement par INTERACT (hors du menu Pause), Stats accessible depuis le menu Pause ; une entrée grisée retente quand même l'action réelle au confirmer plutôt qu'un no-op factice — le résultat fait foi, jamais une divergence affichage/état | 2026-09-17 | journal courant |
 
 ## Points `[OUVERT]`
 
@@ -176,28 +191,34 @@ Tous les autres `[OUVERT]` historiques (résolution logique, clignements/orbite 
 - **Validation manuelle de l'ambiance synthétisée encore due par Xav** (`MT_musique-ambiance-synth_2026-09-16.md`, archivée) — code fait et testé, freeze diagnostiqué et corrigé le 2026-09-17 ; reste la validation navigateur/manette (5 min d'écoute). `docs/archives/JOURNAL_2026-09-17_diagnostic-freeze-musique.md`.
 - **Validation visuelle de `specs/04_indices-commandes.md` encore due par Xav** (état 24 de `docs/CHECKLIST_visuelle.md`, + états 1-23 rejoués) — code fait, suite headless verte, mais `main.js#dessiner()` a été touché (règle de méthode) et le rendu canvas n'est jamais exercé headless. `docs/archives/JOURNAL_2026-09-17_indices-commande.md`.
 - **`station_puits` : silhouette dégradée à l'échelle ×2,1** (retour Xav en jeu, 2026-09-17, journal courant) — proportions des stations par ailleurs validées et meilleures qu'avant ; cause à diagnostiquer (probablement `visuel_puits` dans `data/visuels.json`) avant tout correctif, explicitement reporté à une prochaine session (consigne de Xav : ne rien coder dans l'immédiat).
+- **Coffre : transfert « par pile » (maintien)** non implémenté (Palier E, §3.5 de `04_maison-interieur.md`) — seul le transfert par unité (confirmer = 1) est livré ; la couche d'input n'expose pas encore de geste de maintien générique pour les menus contextuels. 2026-09-17, journal courant.
+- **Poche : action "Consommer" directe** (§3.3, "à défaut, l'action Consommer depuis le menu Poche") non implémentée — seul le chemin "Équiper au slot consommable" + verbe CONSUME en jeu est livré, qui couvre le hint et le critère de la boucle. 2026-09-17, journal courant.
+- **`dlg_recette_indisponible`** déclaré au catalogue (§2.1) mais jamais déclenché en jeu — une entrée grisée du menu Craft retente silencieusement `fabriquer()` (résultat inchangé) plutôt que d'ouvrir un dialogue par-dessus un menu déjà ouvert (aurait cassé le routage input menu/dialogue). 2026-09-17, journal courant.
+- **Validation manuelle du Palier A-E de la Phase 3 encore due par Xav** — code fait, suite headless verte (53 fichiers, dont 6 nouveaux/étendus pour cette session), mais `ui/hud.js` et `main.js#dessiner()` ont été touchés (règle de méthode) : états 25-28 ajoutés à `docs/CHECKLIST_visuelle.md`, jamais rejoués en navigateur réel. 2026-09-17, journal courant.
 
 ## Critère de passage courant
 
-**Phase 3 — Maison, intérieur & systèmes de camp** (spec `specs/04_maison-interieur.md`, à venir). Critère (ROADMAP) : la boucle 5 minutes tourne — sortir → récolter → revenir → cuisiner/crafter → repartir — et le joueur atteint le niveau ~5 qui ouvre la zone suivante. **Spec non écrite : ne pas commencer sans elle.**
+**Phase 3 — Maison, intérieur & systèmes de camp** (spec `specs/04_maison-interieur.md` v1.1.0). Code livré et testé headless pour les 5 paliers (A recettes/craft, B récolte réelle, C survie, D XP/niveaux, E coffre) le 2026-09-17. Critère ROADMAP (boucle 5 minutes : sortir → récolter → revenir → cuisiner/crafter → repartir, niveau ~5 qui ouvre la zone suivante) **prouvé par bot headless** (`tests/test_phase3_boucle_2026-09-17.js` : craft hache/pioche → récolte bois/pierre → craft fruit cuit → manger → niveau 3 atteint) mais **pas encore validé par Xav en jeu** (manette/navigateur réel, §7 de la spec : ressenti des seuils 60s/décroissances/courbe de niveaux, cf. Dette). Placement libre des stations hors scope (`specs/05_construction-stations.md`, session future).
 
-## Journal de session — Clôture formelle de la Phase 2 (2026-09-17)
+## Journal de session — Phase 3, Palier A-E (2026-09-17)
 
-Session de tri/documentation, ordonnée par `NS_cloture-phase2_2026-09-17.md`. **Aucun code, aucun test modifié.** Ménage de journal effectué en début de session : le journal précédent (« Stations : proportions et collision ») archivé verbatim dans `docs/archives/JOURNAL_2026-09-17_stations-proportions-collision.md`, `docs/archives/INDEX.md` mis à jour.
-
-Contexte : Phase 2 « Région Maison, première marche » validée en jeu (manette + clavier) sur tout le parcours, défauts corrigés et re-validés (2026-09-17). `CLAUDE.md` le disait déjà mais gardait encore le critère de passage de la Phase 2 en section courante, et la carte mentale n'avait pas absorbé les décisions des 16-17/09. Cette session range ce qui est déjà acté ailleurs (journaux archivés, retours de Xav) — elle ne tranche rien de nouveau.
+Session de code (précédée du ménage de journal habituel, archivé dans `docs/archives/JOURNAL_2026-09-17_cloture-phase2.md`). Implémente les 5 paliers de `specs/04_maison-interieur.md` dans l'ordre prescrit (A→B→C→D→E), aucun n'a débordé au point de s'arrêter en cours — les 5 sont livrés et testés.
 
 ### Fait
 
-- **`CLAUDE.md`** : « État actuel du dépôt » réduit à une ligne pour la Phase 2 (le détail des micro-tickets vit dans `docs/archives/INDEX.md` et dans la Dette ci-dessus, notamment les deux validations manuelles encore dues — contraste jour/nuit, ambiance synthé — désormais explicites dans la Dette plutôt que noyées dans ce paragraphe) ; « Critère de passage courant » remplacé par le bloc Phase 3 (spec à écrire) ; références à la carte mentale mises à jour vers `docs/carte_mentale_RPG_V2_v1_4_0.md`.
-- **Carte mentale → v1.4.0** (`docs/carte_mentale_RPG_V2_v1_4_0.md`, renommée depuis v1.3.0) : changelog de version, 5 lignes ajoutées à son §8 (arbre fruitier increvable, indice de commande au premier déclenchement, stations solides ×2,1, durées/contraste jour-nuit, clôture de la Phase 2), point `[OUVERT]` ⑦ ajouté en §5 (mobs nocturnes dans la Région Maison — contredit le ton « chill, aucun monstre » de `03_maison-exterieur.md` §5, à trancher seulement quand le jardin existera), référence Throne and Liberty rattachée à D20 (housing) en §9, ligne « Maison — extérieur » ajoutée en §3bis (statut livré/validé).
-- **`specs/00_ROADMAP.md` → v1.2.0** : statut mis à jour (Phases 0/1/1b/2 livrées et validées, Phase courante = Phase 3 détaillée dans `04_maison-interieur.md`, à écrire), section Phase 2 réduite à un renvoi, ligne ajoutée à l'esquisse de Phase 3 sur le point d'accroche `resources.js#peutRecolter`.
+- **4 nouveaux modules purs, testés** : `cooldowns.js` (table en temps actif, réutilise l'horloge de `daynight.js`), `recipes.js` (`peutFabriquer`/`fabriquer`), `survival.js` (décroissance/modulateur/malus de respawn, catalogue ouvert), `xp.js` (`crediter` franchit plusieurs niveaux d'un coup).
+- **Catalogues** : `recipes.json` (3 recettes), `stations.json` (4 types), `survival.json` (2 jauges + `survie_config`), `levels.json` (10 niveaux) — nouveaux ; `items.json` (+5 items, +`consommation`/`respawn_ms`/catégorie `outil`), `resources.json` (outil réel + `item_produit` changé vers bois/pierre + `cooldown_ms`), `puzzles.json` (les 4 stations passent de `station_placeholder` à `station` + `station_type`, même position), `status_effects.json` (+`buff_repas`), `enemies.json` (+`xp`), `stats_derivees.json` (+`derivee_vitesse_deplacement_px_s`), `dialogues.json`/`flags.json`/`hints.json` (+entrées Palier A-C) — `schemas.js` étendu en conséquence (validation réelle pour recipes/stations/survival/levels, plus plusieurs champs optionnels sur des schémas existants).
+- **`main.js`** : `essayerStation()` route une station réelle selon son rôle (craft → menu, stockage → menu, eau → boire direct + cooldown) ; récolte réelle avec cooldown par tuile ; respawn différé des items au sol (`ground_items.js#ramasser`/`planifierRespawn`/`tickRespawns`, remplace l'ancien `ramasserEtRegenerer` immédiat) ; décroissance de survie + première faim + malus de respawn + buffs temporaires, tous gelés sous UI au même point de décision unique que le reste ; `save.monde.heure` avancée dans toutes les scènes désormais (pas seulement `cycleJourNuit`) ; vitesse de déplacement passée en stat dérivée pour que le modulateur de survie s'applique sans code dédié ; XP créditée au combat et au craft par un seul chemin (`crediterXpHeros`).
+- **`ui/menu.js`** : refactor — `creerEcranListeGenerique` factorise Poche/Stats/Craft/Coffre (un seul patron de liste focalisable + titre + Fermer, reconstruit à la demande via `rafraichir()`). Craft/Coffre ouverts directement par INTERACT ; Stats ajouté au menu Pause. **Bug trouvé et corrigé en revue** (pas par les tests automatiques, ajoutés après coup) : Poche/Stats masquaient le menu principal sans jamais le réafficher si la fermeture passait par B/skill_3 plutôt que par le clic "Fermer" — corrigé via un callback `onFermer` appelé sur tout chemin de fermeture, régression verrouillée par 2 nouveaux cas dans `test_phase1_sd_menu_reset_invisible`.
+- **`ui/hud.js`** : jauges faim/soif (icônes triangle/goutte, formes distinctes P4②) + niveau/XP, panneau séparé sous le cartouche PV/éclats.
+- **`save.js`** : schéma v4 + migration 3→4 (xp/niveau/points de stats/buffs actifs/consommable équipé, cooldowns, survie pleine, coffre, recettes découvertes, respawns en attente).
+- **`docs/CHECKLIST_visuelle.md`** : états 25-28 ajoutés (jauges/niveau, menu Craft, menu Coffre, menu Stats) — jamais rejoués en navigateur réel cette session (voir Dette).
 
 ### Testé
 
-`node tools/run_tests.js` rejoué après tous les changements documentaires (aucun fichier `src/`/`tests/`/`data/` touché) : **47 fichiers, tous verts, inchangé.**
+`node tools/run_tests.js` : **53 fichiers, tous verts** (47 hérités + `test_phase3_recipes`, `test_phase3_survival`, `test_phase3_xp`, `test_phase3_recolte`, `test_phase3_boucle`, `test_save_migration_3_4`). Tests hérités mis à jour pour refléter des changements de comportement intentionnels de cette session (jamais une régression silencieuse) : `test_phase2_ground_items`/`test_phase2_chemin_critique` (respawn différé au lieu d'immédiat, puits qui boit au lieu d'un dialogue "pas encore"), `test_phase2_resources` (`cooldown_ms` requis), `test_phase1_save_migration_1_2`/`test_phase2_save_migration_2_3` (`VERSION_SCHEMA_COURANTE` = 4), `test_phase1_sd_menu_reset_invisible` (focus décalé par l'entrée Stats + 2 cas de régression Poche/Stats), `test_stations_collision` (station_table ouvre le menu Craft, plus un dialogue).
 
-### Hors scope
+### Hors scope (documenté, pas silencieux — voir Dette)
 
-Tout code. La spec `04_maison-interieur.md` (dépend de trois décisions de Xav, non encore prises). Le micro-ticket `station_puits` (reste en Dette, consigne explicite de Xav de ne rien coder dans l'immédiat).
+Placement libre des stations (`05_construction-stations.md`). Gourde/sac (Phase 4). Coffre "par pile" (maintien). Action "Consommer" directe depuis le menu Poche. `dlg_recette_indisponible` resté sans déclencheur réel (choix méthodologique, cf. Dette). Validation manuelle complète en jeu (manette/navigateur, checklist visuelle 25-28, ressenti des seuils).
 

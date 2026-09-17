@@ -216,8 +216,10 @@ const DISTANCE_INTERACT_PX = 28; // même seuil que main.js — dupliqué ici, n
   etape('flag_premier_ramassage posé', save.flags.flag_premier_ramassage === true);
   etape('Dialogue de premier ramassage ouvert', orchestrateur.dialogueOuvert());
   fermerDialogue(orchestrateur, frames);
+  // Palier B (§3.2) : le compte baisse immédiatement, la régénération est
+  // désormais différée de respawn_ms (jamais plus un tirage immédiat).
   const itemsSolApres = save.monde.items_sol['scene_maison_exterieur'];
-  etape('Le compte au sol reste à nb_au_sol après ramassage', itemsSolApres.item_branche.length === branches.length);
+  etape('Le compte au sol baisse immédiatement (régénération différée)', itemsSolApres.item_branche.length === branches.length - 1);
 }
 
 // --- Entrée dans la maison (via le chemin, qui traverse la porte ouest) ---
@@ -234,18 +236,27 @@ const DISTANCE_INTERACT_PX = 28; // même seuil que main.js — dupliqué ici, n
   etape('flag_jardin_decouvert posé en entrant', save.flags.flag_jardin_decouvert === true);
 }
 
-// --- Puits (station_placeholder, dlg_puits_pas_encore) — désormais SOLIDE et
-// agrandi (specs/04_stations-proportions-collision.md, 2026-09-17) : viser sa
-// position exacte ne fonctionne plus (le héros bute sur son empreinte avant
-// d'atteindre le centre) — `seuil` généreux pour tolérer l'arrêt sur le bord
-// (rayon du héros + demi-largeur de l'empreinte, approché de l'ouest ici,
-// cf. journal 2026-09-17), le seuil d'interaction réel (mesuré au bord,
-// DISTANCE_INTERACT_PX) reste, lui, largement atteint à cette distance.
+// --- Puits (station réelle depuis Palier A/C, specs/04_maison-interieur.md
+// §3.3) — SOLIDE et agrandi (specs/04_stations-proportions-collision.md,
+// 2026-09-17) : viser sa position exacte ne fonctionne plus (le héros bute
+// sur son empreinte avant d'atteindre le centre) — `seuil` généreux pour
+// tolérer l'arrêt sur le bord (rayon du héros + demi-largeur de l'empreinte,
+// approché de l'ouest ici, cf. journal 2026-09-17), le seuil d'interaction
+// réel (mesuré au bord, DISTANCE_INTERACT_PX) reste, lui, largement atteint
+// à cette distance. Boire remplit la soif silencieusement (aucun dialogue) ;
+// un second INTERACT immédiat, en cooldown, ouvre dlg_puits_cooldown.
 {
   const arrivePuits = avancerVers(orchestrateur, frames, px(106, 57), { seuil: 36, maxFrames: 900 });
   etape('Marche vers le puits (jusqu\'à son empreinte solide)', arrivePuits);
   frames.push(etat({ interact: true })); orchestrateur.maj(16);
-  etape('INTERACT sur le puits ouvre son dialogue "pas encore"', orchestrateur.dialogueOuvert());
+  // Tolérance : la même frame fait aussi avancer la décroissance de survie
+  // (§3.3, même point de décision unique) après avoir bu — l'écart est de
+  // l'ordre d'une frame (~16 ms / decroissance_ms_plein_a_vide), pas une
+  // vraie divergence.
+  etape('INTERACT sur le puits remplit la soif à 1', save.survie.jauge_soif > 0.999, JSON.stringify(save.survie));
+  etape('Aucun dialogue à la première utilisation du puits', !orchestrateur.dialogueOuvert());
+  frames.push(etat({ interact: true })); orchestrateur.maj(16);
+  etape('INTERACT immédiat suivant (cooldown) ouvre un dialogue', orchestrateur.dialogueOuvert());
   fermerDialogue(orchestrateur, frames);
 }
 

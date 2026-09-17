@@ -30,8 +30,10 @@ import {
 } from './save.js';
 import { dessinerVisuel, TAILLE_REFERENCE_FOLLET_PX } from './visuels.js';
 import { creerRegistreFlags } from './flags.js';
-import { calculerStatsPrimaires, calculerStatsDerivees } from './stats.js';
-import { modificateursHeros, statsEffectivesMonstre } from './status.js';
+import { calculerStatsPrimaires, calculerStatsDerivees, appliquerModulateurSurvie } from './stats.js';
+import {
+  modificateursHeros, statsEffectivesMonstre, tickBuffsActifs, ajouterBuffActif, modificateursBuffsActifs,
+} from './status.js';
 import { creerHeros, creerMonstre, approcherEnLigneDroite, infligerDegats, mourir, respawn } from './entities.js';
 import { resoudreAutoAttaque, tickCooldown, estMonstreActif, FLASH_ATTAQUE_MS, FLASH_TOUCHE_MS } from './combat.js';
 import {
@@ -44,23 +46,42 @@ import {
   creerIntro, avancerIntro, etatRendu as etatRenduIntro,
   creerDepart, avancerDepart, etatRenduDepart, ETAPE_CLIGNEMENTS,
 } from './intro.js';
-import { trouverRessourceProche } from './resources.js';
-import { ajouterItem } from './inventory.js';
-import { remplirItemsSol, trouverItemProche, ramasserEtRegenerer } from './ground_items.js';
+import { peutRecolter, trouverRessourceProche } from './resources.js';
+import { ajouterItem, retirerItem } from './inventory.js';
+import { remplirItemsSol, trouverItemProche, ramasser, planifierRespawn, tickRespawns } from './ground_items.js';
 import { calculerOpaciteToit, distanceAuRectangle, resoudreEmpreinteInteractif } from './structures.js';
 import { avancerHeure, opaciteAHeure } from './daynight.js';
 import { armerAudio, definirMusiqueActive } from './audio.js';
 import { creerEtatIndices } from './hints.js';
+import { estExpire, poserCooldown, tempsRestantMs } from './cooldowns.js';
+import { peutFabriquer, fabriquer, recettesDeStation, recetteDecouverte } from './recipes.js';
+import {
+  decroitre as decroitreSurvie, consommer as consommerSurvie, appliquerMalusRespawn,
+  calculerModulateur as calculerModulateurSurvie, configSurvie, jaugeSousLeSeuil,
+} from './survival.js';
+import { crediter as crediterXp } from './xp.js';
 import { initialiserMenu } from './ui/menu.js';
 import { dessinerHud } from './ui/hud.js';
 import { dessinerHudHints } from './ui/hud_hints.js';
 import { dessinerDialogue } from './ui/dialogue_box.js';
 
 // Provisoires, non validés en jeu par Xav — seuils uniques, commentés ici.
-const VITESSE_HERO_PX_S = 120;
+// VITESSE_HERO_PX_S est retirée en Palier C (specs/04_maison-interieur.md
+// §3.3) : la vitesse de déplacement vient désormais de
+// derivee_vitesse_deplacement_px_s (stats_derivees.json, stat_agilite) — un
+// seul chemin de calcul, donc le modulateur de survie la ralentit sans code
+// dédié, comme les dégâts et la cadence d'attaque.
 const RAYON_HERO_PX = 10;
 const INTERVALLE_AUTOSAVE_MS = 30000;
 const DISTANCE_INTERACT_PX = 28;
+// Respawn différé des items au sol (Palier B §3.2) : défaut appliqué quand
+// l'item ne surcharge pas `spawn.respawn_ms` — même esprit que
+// cooldown_ms par défaut de recipes.js.
+const RESPAWN_ITEM_DEFAUT_MS = 60000;
+// Cooldown du puits (Palier C §3.3, §10 "règle anti-spam") : pas de champ
+// dédié dans stations.json (un seul rôle "eau" existe), donc un seuil
+// unique ici plutôt qu'un catalogue à une seule entrée.
+const COOLDOWN_PUITS_MS = 60000;
 
 // 03_maison-exterieur §3.4 : RAYON_EFFACEMENT_TOIT = rayon_lumiere du follet
 // actif x ce facteur ("un peu plus grand que le halo", acté Xav 2026-09-16) —
@@ -173,6 +194,10 @@ export function creerOrchestrateurGrotte({
   // §3.7) — jamais lu depuis la sauvegarde.
   let itemsSol = {};
   let compteurRamassages = 0;
+  // Respawns différés (Palier B §3.2) : { [itemId]: [msRestant, ...] },
+  // persisté par scène dans save.monde.respawns_en_attente — même patron
+  // que itemsSol ci-dessus.
+  let respawnsEnAttente = {};
   let cooldownAttaqueHerosMs = 0;
   // §3.1 03_grotte-polish : compte à rebours du flash de l'anneau d'attaque,
   // purement visuel (dessiner() le convertit en donut translucide) — tiqué
@@ -339,6 +364,10 @@ export function creerOrchestrateurGrotte({
     // `itemsSol` vide, sans erreur.
     itemsSol = remplirItemsSol(scene, registre.tous('items'), save.monde.items_sol[sceneId] || {}, compteurRamassages);
     save.monde.items_sol[sceneId] = itemsSol;
+    // Respawns différés (Palier B §3.2) : repris tels quels (continuent de
+    // courir en temps actif même après un rechargement de page).
+    respawnsEnAttente = save.monde.respawns_en_attente[sceneId] || {};
+    save.monde.respawns_en_attente[sceneId] = respawnsEnAttente;
 
     etatModifie = true;
     declencherEvenementsEntree(sceneId);
@@ -386,6 +415,10 @@ export function creerOrchestrateurGrotte({
         dialogue.ouvrir(resoudreLignes(puzzle.dialogue, registre, i18n, save.hero.companion));
         return;
       }
+      if (puzzle.type === 'station') {
+        essayerStation(puzzle);
+        return;
+      }
     }
 
     const itemProche = trouverItemProche(itemsSol, hero, DISTANCE_INTERACT_PX);
@@ -398,8 +431,14 @@ export function creerOrchestrateurGrotte({
       if (resultat.ajoute > 0) {
         save.inventaire.items = resultat.inventaire;
         compteurRamassages += 1;
-        itemsSol = ramasserEtRegenerer(scene, registre.tous('items'), itemsSol, itemProche.itemId, itemProche.index, compteurRamassages);
+        // Palier B (§3.2) : retrait immédiat, régénération DIFFÉRÉE (jamais
+        // plus un tirage immédiat comme en Phase 2) — respawn_ms de l'item,
+        // ou le défaut de catalogue.
+        itemsSol = ramasser(itemsSol, itemProche.itemId, itemProche.index);
         save.monde.items_sol[scene.id] = itemsSol;
+        const respawnMs = (itemDef.spawn && itemDef.spawn.respawn_ms) || RESPAWN_ITEM_DEFAUT_MS;
+        respawnsEnAttente = planifierRespawn(respawnsEnAttente, itemProche.itemId, respawnMs);
+        save.monde.respawns_en_attente[scene.id] = respawnsEnAttente;
         if (!flags.has('flag_premier_ramassage')) {
           flags.set('flag_premier_ramassage');
           dialogue.ouvrir(resoudreLignes('dlg_premier_ramassage', registre, i18n, save.hero.companion));
@@ -412,8 +451,230 @@ export function creerOrchestrateurGrotte({
     const ressourceProche = trouverRessourceProche(scene, hero, DISTANCE_INTERACT_PX);
     if (ressourceProche) {
       const donneesRessource = registre.obtenir('resources', ressourceProche.ressourceId);
-      dialogue.ouvrir(resoudreLignes(donneesRessource.dialogue_bloque, registre, i18n, save.hero.companion));
+      // Palier B (§3.2) : peutRecolter() enfin branché sur la poche réelle —
+      // sans l'outil, comportement Phase 2 inchangé (dialogue "pas encore").
+      if (!peutRecolter(donneesRessource, save.inventaire.items)) {
+        dialogue.ouvrir(resoudreLignes(donneesRessource.dialogue_bloque, registre, i18n, save.hero.companion));
+        return;
+      }
+      // Cooldown PAR TUILE (§9 point ouvert : "par tuile", deux arbres = deux
+      // cooldowns) — clé stable tant que la tuile ne bouge pas.
+      const cleCooldown = `res:${scene.id}:${ressourceProche.tx}:${ressourceProche.ty}`;
+      if (!estExpire(save.cooldowns, cleCooldown, donneesRessource.cooldown_ms, save.monde.heure)) {
+        dialogue.ouvrir(resoudreLignes('dlg_ressource_cooldown', registre, i18n, save.hero.companion));
+        return;
+      }
+      const itemDefProduit = registre.obtenir('items', donneesRessource.item_produit);
+      const resultatRecolte = ajouterItem(save.inventaire.items, donneesRessource.item_produit, 1, itemDefProduit.stack_max);
+      save.inventaire.items = resultatRecolte.inventaire;
+      save.cooldowns = poserCooldown(save.cooldowns, cleCooldown, save.monde.heure);
+      etatModifie = true;
     }
+  }
+
+  // Palier A/C (§3.1/§3.3) : une station réelle se comporte selon le rôle de
+  // son TYPE (stations.json), jamais selon son id d'instance — ajouter un
+  // 5ᵉ type de station avec un rôle déjà existant ne demande aucun code ici.
+  function essayerStation(puzzle) {
+    const station = registre.obtenir('stations', puzzle.station_type);
+    if (station.role === 'craft') {
+      menu.ouvrirCraft(() => entreesCraft(station), i18n.t(station.label_key));
+      return;
+    }
+    if (station.role === 'stockage') {
+      menu.ouvrirCoffre(() => entreesCoffre(station), i18n.t(station.label_key));
+      return;
+    }
+    // role === 'eau' (puits, §3.3) : boit directement, jamais un menu —
+    // cooldown anti-spam identique au reste (§10), une clé par instance de
+    // puits (une seule en M1, mais §6 : ne jamais supposer sa position/id).
+    const cleCooldown = `eau:${puzzle.id}`;
+    if (!estExpire(save.cooldowns, cleCooldown, COOLDOWN_PUITS_MS, save.monde.heure)) {
+      dialogue.ouvrir(resoudreLignes('dlg_puits_cooldown', registre, i18n, save.hero.companion));
+      return;
+    }
+    save.survie = consommerSurvie(save.survie, { jauge_soif: 1 });
+    save.cooldowns = poserCooldown(save.cooldowns, cleCooldown, save.monde.heure);
+    etatModifie = true;
+  }
+
+  // Craft (Palier A §3.1) : une entrée par recette DÉCOUVERTE de cette
+  // station — une recette verrouillée n'est même pas listée (narration
+  // diffuse). L'action retente toujours fabriquer() (jamais un simple
+  // no-op) : le résultat fait foi, `grisee` n'est qu'un indice visuel — évite
+  // toute divergence entre ce qui est affiché et ce qui se passe réellement
+  // au clic/à la manette.
+  function entreesCraft(station) {
+    const heureMs = save.monde.heure;
+    return recettesDeStation(registre, station.id)
+      .filter((r) => recetteDecouverte(r, flags))
+      .map((r) => {
+        const verdict = peutFabriquer(r, save.inventaire.items, flags, save.cooldowns, heureMs);
+        let suffixe = '';
+        if (verdict.raison === 'cooldown') {
+          const resteS = Math.ceil(tempsRestantMs(save.cooldowns, r.id, r.cooldown_ms ?? 60000, heureMs) / 1000);
+          suffixe = ` (${resteS}${i18n.t('menu.unite_secondes')})`;
+        } else if (verdict.raison === 'ingredients') {
+          suffixe = ` (${i18n.t('menu.craft_manque')})`;
+        } else if (verdict.raison === 'poche_pleine') {
+          suffixe = ` (${i18n.t('menu.poche_pleine')})`;
+        }
+        return {
+          texte: `${i18n.t(r.label_key)}${suffixe}`,
+          grisee: !verdict.ok,
+          action: () => {
+            const itemDefSortie = registre.obtenir('items', r.sortie.item);
+            const resultat = fabriquer(r, {
+              poche: save.inventaire.items, flags, cooldowns: save.cooldowns, heureMs: save.monde.heure, itemDefSortie,
+            });
+            if (resultat.ok) {
+              save.inventaire.items = resultat.poche;
+              save.cooldowns = resultat.cooldowns;
+              crediterXpHeros(resultat.xp);
+              flags.set('flag_premier_craft');
+              etatModifie = true;
+            }
+            menu.rafraichirCraft();
+          },
+        };
+      });
+  }
+
+  // Coffre (Palier E §3.5) : une liste plate (poche à déposer + coffre à
+  // retirer) plutôt qu'une navigation 2D — la spec ne demande que 2
+  // colonnes visuelles, pas une grille navigable. Transfert par unité
+  // seulement (confirmer = 1) : le transfert "par pile" (maintien) est un
+  // geste que la couche d'input n'expose pas encore de façon générique,
+  // hors scope de cette session (cf. journal, à reprendre si Xav le
+  // redemande).
+  function entreesCoffre(station) {
+    const nbPilesCoffre = () => Object.values(save.coffre.items).filter((qte) => qte > 0).length;
+    const entreesDepot = Object.entries(save.inventaire.items)
+      .filter(([, qte]) => qte > 0)
+      .map(([itemId, qte]) => {
+        const itemDef = registre.obtenir('items', itemId);
+        return {
+          texte: `${i18n.t('menu.coffre_deposer')} : ${i18n.t(itemDef.label_key)} × ${qte}`,
+          action: () => {
+            const dejaPresent = (save.coffre.items[itemId] || 0) > 0;
+            if (!dejaPresent && nbPilesCoffre() >= station.capacite) {
+              menu.rafraichirCoffre();
+              return;
+            }
+            save.inventaire.items = retirerItem(save.inventaire.items, itemId, 1);
+            save.coffre.items = ajouterItem(save.coffre.items, itemId, 1, itemDef.stack_max).inventaire;
+            etatModifie = true;
+            menu.rafraichirCoffre();
+          },
+        };
+      });
+    const entreesRetrait = Object.entries(save.coffre.items)
+      .filter(([, qte]) => qte > 0)
+      .map(([itemId, qte]) => {
+        const itemDef = registre.obtenir('items', itemId);
+        return {
+          texte: `${i18n.t('menu.coffre_retirer')} : ${i18n.t(itemDef.label_key)} × ${qte}`,
+          action: () => {
+            save.coffre.items = retirerItem(save.coffre.items, itemId, 1);
+            save.inventaire.items = ajouterItem(save.inventaire.items, itemId, 1, itemDef.stack_max).inventaire;
+            etatModifie = true;
+            menu.rafraichirCoffre();
+          },
+        };
+      });
+    return [...entreesDepot, ...entreesRetrait];
+  }
+
+  // Modificateurs de stats primaires du héros — SEUL endroit qui les combine
+  // (synergie du follet + buffs temporaires + points de stats libres, §3.4) :
+  // calculerStatsHeros() (gameplay) et obtenirEntreesStats() (menu Stats)
+  // partagent ce même calcul, jamais deux sources qui pourraient diverger.
+  function resoudreModificateursHeros() {
+    const modificateurs = {};
+    for (const source of [modificateursHeros(registre, save.hero.companion), modificateursBuffsActifs(registre, save.hero.buffs_actifs)]) {
+      for (const [statId, delta] of Object.entries(source)) {
+        modificateurs[statId] = (modificateurs[statId] || 0) + delta;
+      }
+    }
+    for (const s of registre.tous('stats')) {
+      modificateurs[s.id] = (modificateurs[s.id] || 0) + (save.hero.stats.points[s.id] || 0);
+    }
+    return modificateurs;
+  }
+
+  // Menu Stats (Palier D §3.4) : +1 par confirmation, aucun retrait (respec
+  // = après Boss 1, hors scope). Fournie à ui/menu.js via
+  // menu.definirEntreesStats() une fois l'orchestrateur construit (même
+  // patron que reinitialiserPartie).
+  function obtenirEntreesStats() {
+    const statsPrimaires = calculerStatsPrimaires(registre, resoudreModificateursHeros());
+    const entrees = registre.tous('stats').map((s) => {
+      const peutAjouter = save.hero.points_stats_libres > 0;
+      const suffixe = peutAjouter ? ` (${i18n.t('menu.stats_ajouter')})` : '';
+      return {
+        texte: `${i18n.t(s.label_key)} : ${statsPrimaires[s.id]}${suffixe}`,
+        grisee: !peutAjouter,
+        action: () => {
+          if (save.hero.points_stats_libres <= 0) return;
+          save.hero.stats.points[s.id] = (save.hero.stats.points[s.id] || 0) + 1;
+          save.hero.points_stats_libres -= 1;
+          etatModifie = true;
+          menu.rafraichirStats();
+        },
+      };
+    });
+    entrees.push({
+      texte: `${i18n.t('menu.points_libres')} : ${save.hero.points_stats_libres}`,
+      grisee: true,
+      action: () => {},
+    });
+    return entrees;
+  }
+
+  // Manger (Palier C §3.3) : consomme l'item équipé au slot consommable
+  // (verbe CONSUME) — à défaut d'équipement ou de stock, ne fait rien
+  // silencieusement (rien à manger, rien ne se passe).
+  function essayerConsommer() {
+    const itemId = save.hero.equipement.consommable;
+    if (!itemId || (save.inventaire.items[itemId] || 0) <= 0) return;
+    const itemDef = registre.obtenir('items', itemId);
+    const c = itemDef.consommation;
+    if (!c) return;
+    save.survie = consommerSurvie(save.survie, { jauge_faim: c.faim || 0, jauge_soif: c.soif || 0 });
+    save.inventaire.items = retirerItem(save.inventaire.items, itemId, 1);
+    for (const effetId of c.effets || []) {
+      save.hero.buffs_actifs = ajouterBuffActif(registre, save.hero.buffs_actifs, effetId);
+    }
+    etatModifie = true;
+  }
+
+  // Progression vers le niveau suivant (HUD §3.9, discret) : 1 si le
+  // dernier niveau de la table est atteint (rien à afficher au-delà).
+  function ratioProgressionXp() {
+    const niveaux = [...registre.tous('levels')].sort((a, b) => a.niveau - b.niveau);
+    const index = niveaux.findIndex((n) => n.niveau === save.hero.niveau);
+    const suivant = niveaux[index + 1];
+    if (!suivant) return 1;
+    const courant = niveaux[index];
+    const ecart = suivant.xp_cumulee - courant.xp_cumulee;
+    return ecart > 0 ? (save.hero.xp - courant.xp_cumulee) / ecart : 1;
+  }
+
+  // XP -> niveaux -> flags (Palier D §3.4) : seul point qui touche
+  // save.hero.{xp,niveau,points_stats_libres} — combat (onMonstreMort) et
+  // craft (entreesCraft) partagent ce même chemin, jamais deux compteurs.
+  function crediterXpHeros(xpGagne) {
+    if (!xpGagne) return;
+    const resultat = crediterXp(
+      { xp: save.hero.xp, niveau: save.hero.niveau, pointsStatsLibres: save.hero.points_stats_libres },
+      xpGagne,
+      registre.tous('levels')
+    );
+    save.hero.xp = resultat.xp;
+    save.hero.niveau = resultat.niveau;
+    save.hero.points_stats_libres = resultat.pointsStatsLibres;
+    for (const n of resultat.niveauxFranchis) flags.set(`flag_niveau_${n}`);
+    etatModifie = true;
   }
 
   function onMonstreMort(donneesEnnemi) {
@@ -421,6 +682,7 @@ export function creerOrchestrateurGrotte({
     const alea = creerGenerateur((Date.now() ^ Math.floor(Math.random() * 0x7fffffff)) >>> 0);
     const { item, quantite } = resoudreLoot(table, alea);
     if (item === 'eclats') save.inventaire.eclats += quantite;
+    crediterXpHeros(donneesEnnemi.xp);
     etatModifie = true;
 
     if (donneesEnnemi.id === 'enemy_grotte_rampant' && !flags.has('flag_grotte_monstre_tue')) {
@@ -445,8 +707,13 @@ export function creerOrchestrateurGrotte({
   // cinématique d'ouverture, avant même le choix du follet) — seule la
   // progression du combat lui-même est gelée sous UI, pas ce calcul.
   function calculerStatsHeros() {
-    const modificateurs = modificateursHeros(registre, save.hero.companion);
-    const statsPrimaires = calculerStatsPrimaires(registre, modificateurs);
+    const statsBrutes = calculerStatsPrimaires(registre, resoudreModificateursHeros());
+    // Modulateur de survie (Palier C §3.3) : appliqué ICI, avant les
+    // dérivées — un seul chemin de calcul, donc dégâts (stat_force),
+    // cadence d'attaque et vitesse de déplacement (stat_agilite, toutes
+    // deux dérivées) suivent sans code dédié.
+    const modulateur = calculerModulateurSurvie(registre, save.survie);
+    const statsPrimaires = appliquerModulateurSurvie(statsBrutes, modulateur, configSurvie(registre).stats_modulees);
     const statsDerivees = calculerStatsDerivees(registre, statsPrimaires);
     hero.pvMax = statsDerivees.derivee_pv_max;
     if (hero.pv == null) hero.pv = hero.pvMax;
@@ -522,8 +789,10 @@ export function creerOrchestrateurGrotte({
     if (hero.pv <= 0 && !hero.mort) {
       Object.assign(hero, mourir(hero, {
         onMort: () => {
-          // Malus faim/soif [à brancher en Phase 3] : la survie n'existe pas
-          // encore, cf. §3.5 — le point d'accroche est ici, pas dans le combat.
+          // Malus faim/soif (Palier C §3.3) : jauges ramenées à
+          // malus_respawn si elles étaient au-dessus — la punition est le
+          // trajet et la mollesse, jamais la progression.
+          save.survie = appliquerMalusRespawn(registre, save.survie);
         },
       }));
       respawnDansLaGrotte();
@@ -580,6 +849,14 @@ export function creerOrchestrateurGrotte({
     // une 2ᵉ portée qui pourrait diverger.
     if (monstres.some((m) => !m.mort && Math.hypot(hero.x - m.x, hero.y - m.y) <= DISTANCE_ENGAGEMENT_PX)) {
       indices.declencherVerbeUtile('attack', flags);
+    }
+
+    // CONSUME (Palier C, §3.7 de 04_maison-interieur) : "premier item de
+    // nourriture équipé au slot consommable" — le stock peut retomber à 0
+    // entre deux frames (mangé), auquel cas ce n'est plus "utile maintenant".
+    const idConsommable = save.hero.equipement.consommable;
+    if (idConsommable && (save.inventaire.items[idConsommable] || 0) > 0) {
+      indices.declencherVerbeUtile('consume', flags);
     }
   }
 
@@ -654,12 +931,13 @@ export function creerOrchestrateurGrotte({
     if (etatGameplay.move.x !== 0 || etatGameplay.move.y !== 0) indices.verbeEmis('move', flags);
     if (etatGameplay.interact.pressed) indices.verbeEmis('interact', flags);
     if (etatGameplay.attack.pressed) indices.verbeEmis('attack', flags);
+    if (etatGameplay.consume.pressed) indices.verbeEmis('consume', flags);
 
     const { statsPrimaires, statsDerivees } = calculerStatsHeros();
 
     const deltaS = deltaMs / 1000;
-    const dx = etatGameplay.move.x * VITESSE_HERO_PX_S * deltaS;
-    const dy = etatGameplay.move.y * VITESSE_HERO_PX_S * deltaS;
+    const dx = etatGameplay.move.x * statsDerivees.derivee_vitesse_deplacement_px_s * deltaS;
+    const dy = etatGameplay.move.y * statsDerivees.derivee_vitesse_deplacement_px_s * deltaS;
     if (dx !== 0 || dy !== 0) {
       const resultat = resoudreDeplacement(scene, hitboxHeros(), dx, dy, flags.has);
       hero.x = resultat.x + hero.rayon;
@@ -673,20 +951,45 @@ export function creerOrchestrateurGrotte({
     // portail ne doit progresser pendant qu'une UI est ouverte.
     if (!uiOuverte) {
       if (etatGameplay.interact.pressed) essayerInteraction();
+      if (etatGameplay.consume.pressed) essayerConsommer();
       mettreAJourCombat(deltaMs, etatGameplay, statsPrimaires, statsDerivees);
       verifierEntreesDeZone();
       indices.maj(deltaMs);
       verifierIndicesNiveau();
 
-      // Cycle jour/nuit (§3.5) : "en temps de jeu actif", gelé sous UI comme
-      // le reste (déjà garanti par ce bloc `!uiOuverte`) — save.monde.heure
-      // est LA source de vérité (persistée), l'opacité affichée en est
-      // dérivée à chaque frame de dessiner() (daynight.js#opaciteAHeure),
-      // jamais un second état.
-      if (scene.cycleJourNuit) {
-        save.monde.heure = avancerHeure(save.monde.heure, deltaMs);
-        etatModifie = true;
+      // Horloge "temps de jeu actif" (daynight.js#avancerHeure) : avancée
+      // dans TOUTES les scènes désormais (Palier A/C, specs/04_maison-
+      // interieur.md §6 : "en extraire une fonction partagée, jamais une
+      // seconde horloge") — cooldowns.js et survival.js la réutilisent telle
+      // quelle pour les recettes/ressources/puits/jauges, y compris dans la
+      // Grotte (survie et cooldowns s'y appliquent aussi). Le rendu du voile
+      // jour/nuit, lui, reste conditionné à `scene.cycleJourNuit` (dessiner()
+      // plus bas) — seule l'avance de l'horloge devient inconditionnelle.
+      save.monde.heure = avancerHeure(save.monde.heure, deltaMs);
+      etatModifie = true;
+
+      // Survie (Palier C §3.3) : décroissance en temps actif, jamais hors
+      // session ni sous UI (déjà garanti par ce bloc). Détection du premier
+      // franchissement sous 0,5 AVANT/APRÈS pour ne déclencher
+      // dlg_premiere_faim qu'une fois (§3.3 : "un signal, jamais un tuto").
+      const etaitAuDessusDuSeuil = !jaugeSousLeSeuil(save.survie);
+      save.survie = decroitreSurvie(registre, save.survie, deltaMs);
+      if (etaitAuDessusDuSeuil && jaugeSousLeSeuil(save.survie) && !flags.has('flag_premiere_faim')) {
+        flags.set('flag_premiere_faim');
+        dialogue.ouvrir(resoudreLignes('dlg_premiere_faim', registre, i18n, save.hero.companion));
       }
+
+      // Buffs temporaires (Palier C §3.3, ex. le fruit cuit) : tiqués comme
+      // les cooldowns de combat, purgés à expiration (status.js#tickBuffsActifs).
+      save.hero.buffs_actifs = tickBuffsActifs(save.hero.buffs_actifs, deltaMs);
+
+      // Respawn différé des items au sol (Palier B §3.2).
+      const resultatRespawn = tickRespawns(scene, registre.tous('items'), itemsSol, respawnsEnAttente, deltaMs, compteurRamassages);
+      itemsSol = resultatRespawn.itemsSol;
+      respawnsEnAttente = resultatRespawn.enAttente;
+      compteurRamassages = resultatRespawn.compteur;
+      save.monde.items_sol[scene.id] = itemsSol;
+      save.monde.respawns_en_attente[scene.id] = respawnsEnAttente;
 
       const portail = portailFranchi(scene, hitboxHeros(), flags);
       if (portail) {
@@ -920,6 +1223,11 @@ export function creerOrchestrateurGrotte({
       companion: companionActif,
       visuelFollet: companionActif ? registre.obtenir('visuels', companionActif.render.visuel) : null,
       tactileActif: input.tactileActif(),
+      // Palier C/D (§3.9) : discret, un chiffre — jamais affiché avant le
+      // premier calcul des jauges/XP (cinématique d'ouverture).
+      survie: save.survie,
+      niveau: save.hero.niveau,
+      ratioXp: ratioProgressionXp(),
     });
     // Indices de commande (§2 : "masqué" sous UI) — résolution i18n ici (même
     // patron que les autres calques : hud_hints.js ne connaît jamais i18n).
@@ -978,6 +1286,7 @@ export function creerOrchestrateurGrotte({
     // déterministe, mêmes positions qu'à une toute première partie.
     itemsSol = {};
     compteurRamassages = 0;
+    respawnsEnAttente = {};
     hero = creerHeros({ x: 0, y: 0, rayon: RAYON_HERO_PX, pvMax: 1 });
     hero.pv = save.hero.pv; // null : recalculé au premier calculerStatsHeros(), comme au tout premier boot
     etatModifie = false;
@@ -1012,6 +1321,11 @@ export function creerOrchestrateurGrotte({
     // affiché sans passer par dessiner() (canvas jamais exercé headless,
     // contrainte de méthode) — même patron que les accesseurs ci-dessus.
     obtenirIndiceAffiche: () => (uiOuverteMaintenant() ? null : indices.indiceAffiche(input.peripheriqueActif ? input.peripheriqueActif() : 'manette')),
+    // Palier D (§3.4) : fourni à ui/menu.js via menu.definirEntreesStats()
+    // une fois l'orchestrateur construit (même patron que
+    // reinitialiserPartie ci-dessus) — le menu Stats n'a besoin d'appeler
+    // que cette seule fonction, jamais de connaître registre/save/i18n.
+    obtenirEntreesStats: () => obtenirEntreesStats(),
   };
 }
 
@@ -1106,10 +1420,23 @@ export async function demarrerJeu() {
       definirMusiqueActive(save.settings.musique);
     },
     // §3.3 : liste déjà résolue/traduite (main.js a le registre + i18n) —
-    // ui/menu.js ne connaît jamais items.json par id.
+    // ui/menu.js ne connaît jamais items.json par id. `id`/`categorie`
+    // ajoutés au Palier C (§3.3) : nécessaires pour proposer "Équiper" sur
+    // la nourriture (ui/menu.js#entreesPoche).
     listerPoche: () => Object.entries(save.inventaire.items)
       .filter(([, quantite]) => quantite > 0)
-      .map(([itemId, quantite]) => ({ label: i18n.t(registre.obtenir('items', itemId).label_key), quantite })),
+      .map(([itemId, quantite]) => {
+        const itemDef = registre.obtenir('items', itemId);
+        return { id: itemId, label: i18n.t(itemDef.label_key), quantite, categorie: itemDef.categorie };
+      }),
+    // Palier C (§3.3) : slot consommable — mutation directe de `save` (même
+    // patron que basculerMusique ci-dessus, hors du chemin etatModifie de
+    // l'orchestrateur, cf. journal : persistance au prochain autosave/
+    // visibilitychange, comme les réglages).
+    equipementConsommable: () => save.hero.equipement.consommable,
+    equiperConsommable: (itemId) => {
+      save.hero.equipement.consommable = itemId;
+    },
   });
 
   const dialogue = creerDialogue();
@@ -1139,6 +1466,9 @@ export async function demarrerJeu() {
   // pour maj()) ne connaît reinitialiserPartie() qu'après coup, via ce
   // setter — jamais en important main.js depuis ui/menu.js.
   menu.definirActionReinitialiser(orchestrateur.reinitialiserPartie);
+  // Même patron (§3.4) : le menu Stats a besoin de l'orchestrateur pour
+  // résoudre les stats/points courants.
+  menu.definirEntreesStats(orchestrateur.obtenirEntreesStats);
 
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) sauvegarder(store, save);

@@ -321,6 +321,19 @@ function validerScene(entry, catalogs, path) {
     erreurs.push(`${path} > cycle_jour_nuit doit être un booléen`);
   }
 
+  // survie (Palier C §3.3) : surcharge optionnelle de plancher/pente par
+  // scène (zone plus dangereuse, Phase 4+) — aucune scène n'en déclare en
+  // Phase 3, juste la capacité de validation posée à l'avance.
+  if (entry.survie !== undefined) {
+    const sv = entry.survie;
+    if (sv.plancher !== undefined && (typeof sv.plancher !== 'number' || sv.plancher < 0 || sv.plancher > 1)) {
+      erreurs.push(`${path} > survie.plancher doit être un nombre entre 0 et 1`);
+    }
+    if (sv.pente !== undefined && (typeof sv.pente !== 'number' || sv.pente < 0)) {
+      erreurs.push(`${path} > survie.pente doit être un nombre >= 0`);
+    }
+  }
+
   // intro (§3.5 03_grotte-polish, palier 4) : uniquement scene_grotte_salle_1
   // en pratique, mais validé génériquement comme le reste (aucune règle
   // spécifique à un id de scène dans schemas.js) — durées + paramètres de
@@ -514,9 +527,10 @@ function validerPuzzle(entry, catalogs, path) {
   } else if (entry.type === 'station_placeholder') {
     // 03_maison-exterieur §3.4 : table/coffre/atelier/puits — interactif
     // stateless (aucune entrée dans puzzles.js#etatInitial), INTERACT à
-    // portée ouvre simplement `dialogue`. En Phase 3, ces instances changent
-    // de `type` en données pour devenir des stations réelles, à la même
-    // position — jamais redessinées.
+    // portée ouvre simplement `dialogue`. Conservé au schéma pour un futur
+    // placeholder (ex. une station pas encore prête), mais plus aucune
+    // entrée réelle n'utilise ce type depuis Palier A de 04_maison-interieur
+    // (changées en "station").
     if (!entry.position || typeof entry.position.x !== 'number' || typeof entry.position.y !== 'number') {
       erreurs.push(`${path} > position doit être { x, y }`);
     }
@@ -526,8 +540,23 @@ function validerPuzzle(entry, catalogs, path) {
     }
     erreurs.push(...erreursRenderVisuel(entry, catalogs, path));
     erreurs.push(...erreursGeometrieInteractif(entry, catalogs, path));
+  } else if (entry.type === 'station') {
+    // Palier A (specs/04_maison-interieur.md §3.1) : station réelle — une
+    // instance positionnée référence un TYPE de stations.json (rôle, rendu
+    // par défaut, capacité éventuelle), à la même position que l'ancien
+    // placeholder (jamais redessinée, cf. journal). Pas de `dialogue` ici :
+    // l'interaction dépend du rôle de la station (craft/stockage/eau),
+    // résolue par main.js, jamais par un texte statique.
+    if (!entry.position || typeof entry.position.x !== 'number' || typeof entry.position.y !== 'number') {
+      erreurs.push(`${path} > position doit être { x, y }`);
+    }
+    if (!(catalogs.stations || []).some((s) => s.id === entry.station_type)) {
+      erreurs.push(`${path} > station_type "${entry.station_type}" introuvable dans stations.json`);
+    }
+    erreurs.push(...erreursRenderVisuel(entry, catalogs, path));
+    erreurs.push(...erreursGeometrieInteractif(entry, catalogs, path));
   } else {
-    erreurs.push(`${path} > type "${entry.type}" inconnu (levier | sequence | station_placeholder)`);
+    erreurs.push(`${path} > type "${entry.type}" inconnu (levier | sequence | station_placeholder | station)`);
   }
   return erreurs;
 }
@@ -768,7 +797,7 @@ export const SCHEMAS = {
   enemies: {
     requiredFields: [
       'id', 'label_key', 'pv', 'force', 'vitesse', 'portee_attaque',
-      'cadence_attaque_ms', 'comportement', 'loot_table', 'render',
+      'cadence_attaque_ms', 'comportement', 'loot_table', 'render', 'xp',
     ],
     idField: 'id',
     refs: [{ field: 'loot_table', catalog: 'loot_tables' }],
@@ -776,6 +805,11 @@ export const SCHEMAS = {
       const erreurs = [];
       if (entry.element != null && !(catalogs.elements || []).some((e) => e.id === entry.element)) {
         erreurs.push(`${path} > element "${entry.element}" introuvable dans elements.json`);
+      }
+      // xp (Palier D §3.4) : source de crédit au combat, au même titre que
+      // recipe.xp au craft — jamais un multiplicateur caché, une valeur plate.
+      if (typeof entry.xp !== 'number' || entry.xp < 0) {
+        erreurs.push(`${path} > xp doit être un nombre >= 0`);
       }
       erreurs.push(...erreursRenderVisuel(entry, catalogs, path));
       return erreurs;
@@ -797,21 +831,27 @@ export const SCHEMAS = {
   // pierre) — une 3ᵉ ressource est une entrée JSON de plus (tile + entrée
   // resources.json + item + dialogue + clés de locale), zéro code.
   resources: {
-    requiredFields: ['id', 'label_key', 'dialogue_bloque', 'outil_requis', 'item_produit'],
+    requiredFields: ['id', 'label_key', 'dialogue_bloque', 'outil_requis', 'item_produit', 'cooldown_ms'],
     idField: 'id',
     refs: [{ field: 'dialogue_bloque', catalog: 'dialogues' }],
     custom(entry, catalogs, path) {
       const erreurs = [];
-      // outil_requis : null tant qu'aucun outil n'existe dans le jeu (Phase
-      // 2) — une chaîne (réf. future tools.json, Phase 3) reste acceptée
-      // sans validation croisée ici : le catalogue n'existe pas encore, la
-      // référence ne peut donc pas être vérifiée avant que Phase 3 ajoute
-      // tools.json (elle ajoutera alors sa propre entrée `refs`).
-      if (entry.outil_requis !== null && typeof entry.outil_requis !== 'string') {
-        erreurs.push(`${path} > outil_requis doit être null ou une chaîne (id d'outil)`);
+      // outil_requis : null = récoltable à mains nues (aucun cas réel en
+      // Phase 3, gardé pour une ressource future) ; sinon une référence vers
+      // items.json (Palier B, specs/04_maison-interieur.md §3.2 : la hache/
+      // pioche existent désormais).
+      if (entry.outil_requis !== null) {
+        if (typeof entry.outil_requis !== 'string') {
+          erreurs.push(`${path} > outil_requis doit être null ou une chaîne (id d'item)`);
+        } else if (!(catalogs.items || []).some((i) => i.id === entry.outil_requis)) {
+          erreurs.push(`${path} > outil_requis "${entry.outil_requis}" introuvable dans items.json`);
+        }
       }
       if (!(catalogs.items || []).some((i) => i.id === entry.item_produit)) {
         erreurs.push(`${path} > item_produit "${entry.item_produit}" introuvable dans items.json`);
+      }
+      if (typeof entry.cooldown_ms !== 'number' || entry.cooldown_ms <= 0) {
+        erreurs.push(`${path} > cooldown_ms doit être un nombre positif`);
       }
       return erreurs;
     },
@@ -822,7 +862,11 @@ export const SCHEMAS = {
     refs: [],
     custom(entry, catalogs, path) {
       const erreurs = [];
-      const CATEGORIES_ITEM = ['ressource', 'nourriture', 'valeur'];
+      // "outil" (Palier A) : hache/pioche — non consommé par le craft qui
+      // les produit (ce sont des SORTIES), mais bien consommable comme
+      // n'importe quel item par un futur système (perte, casse...) —
+      // aucune règle spéciale ici, juste une catégorie de plus.
+      const CATEGORIES_ITEM = ['ressource', 'nourriture', 'valeur', 'outil'];
       if (!CATEGORIES_ITEM.includes(entry.categorie)) {
         erreurs.push(`${path} > categorie doit être l'une de ${CATEGORIES_ITEM.join('/')}`);
       }
@@ -831,7 +875,7 @@ export const SCHEMAS = {
       }
       erreurs.push(...erreursRenderVisuel(entry, catalogs, path));
       // spawn optionnel (§2.1 : "spawn optionnel") : un item purement de
-      // craft (Phase 3+) n'a pas besoin d'exister au sol.
+      // craft n'a pas besoin d'exister au sol.
       if (entry.spawn !== undefined) {
         const s = entry.spawn;
         if (!s || typeof s.nb_au_sol !== 'number' || s.nb_au_sol <= 0) {
@@ -846,6 +890,103 @@ export const SCHEMAS = {
         ) {
           erreurs.push(`${path} > spawn.zones_exclues doit être un tableau de types de zone`);
         }
+        // respawn_ms (Palier B §3.2) : défaut 60 s appliqué par
+        // ground_items.js si absent — validé ici seulement quand présent,
+        // n'a de sens que sur un item qui existe au sol (`spawn`).
+        if (s.respawn_ms !== undefined && (typeof s.respawn_ms !== 'number' || s.respawn_ms <= 0)) {
+          erreurs.push(`${path} > spawn.respawn_ms doit être un nombre positif si présent`);
+        }
+      }
+      // consommation (Palier C §3.3) : optionnel — seul un item "nourriture"
+      // a vocation à en porter un, mais rien n'empêche techniquement un
+      // autre catégorie de le faire un jour (pas de couplage dur ici).
+      if (entry.consommation !== undefined) {
+        const c = entry.consommation;
+        if (!c || typeof c !== 'object') {
+          erreurs.push(`${path} > consommation doit être un objet { faim?, soif?, effets? }`);
+        } else {
+          if (c.faim !== undefined && typeof c.faim !== 'number') {
+            erreurs.push(`${path} > consommation.faim doit être numérique si présent`);
+          }
+          if (c.soif !== undefined && typeof c.soif !== 'number') {
+            erreurs.push(`${path} > consommation.soif doit être numérique si présent`);
+          }
+          if (c.effets !== undefined) {
+            if (!Array.isArray(c.effets)) {
+              erreurs.push(`${path} > consommation.effets doit être un tableau d'id de status_effects`);
+            } else {
+              const effetsDeclares = new Set((catalogs.status_effects || []).map((e) => e.id));
+              c.effets.forEach((id) => {
+                if (!effetsDeclares.has(id)) {
+                  erreurs.push(`${path} > consommation.effets[] > "${id}" introuvable dans status_effects.json`);
+                }
+              });
+            }
+          }
+        }
+      }
+      return erreurs;
+    },
+  },
+  // Palier A (specs/04_maison-interieur.md §2.1) : catalogue ouvert — une
+  // 4ᵉ recette (ex. la corde citée par la fiche) est une entrée JSON de
+  // plus, zéro code. `station` référence un TYPE de stations.json (pas une
+  // instance positionnée) : plusieurs stations du même type partagent les
+  // mêmes recettes, sans duplication.
+  recipes: {
+    requiredFields: ['id', 'label_key', 'station', 'entrees', 'sortie', 'categorie', 'connue_au_depart'],
+    idField: 'id',
+    refs: [{ field: 'station', catalog: 'stations' }],
+    custom(entry, catalogs, path) {
+      const erreurs = [];
+      const itemsDeclares = new Set((catalogs.items || []).map((i) => i.id));
+      if (!Array.isArray(entry.entrees) || entry.entrees.length === 0) {
+        erreurs.push(`${path} > entrees doit être un tableau non vide de { item, qte }`);
+      } else {
+        entry.entrees.forEach((e, i) => {
+          if (!itemsDeclares.has(e.item)) {
+            erreurs.push(`${path} > entrees[${i}] > item "${e.item}" introuvable dans items.json`);
+          }
+          if (typeof e.qte !== 'number' || e.qte <= 0) {
+            erreurs.push(`${path} > entrees[${i}] > qte doit être un nombre positif`);
+          }
+        });
+      }
+      const s = entry.sortie;
+      if (!s || !itemsDeclares.has(s.item)) {
+        erreurs.push(`${path} > sortie.item "${s && s.item}" introuvable dans items.json`);
+      }
+      if (!s || typeof s.qte !== 'number' || s.qte <= 0) {
+        erreurs.push(`${path} > sortie.qte doit être un nombre positif`);
+      }
+      if (entry.xp !== undefined && (typeof entry.xp !== 'number' || entry.xp < 0)) {
+        erreurs.push(`${path} > xp doit être un nombre >= 0 si présent`);
+      }
+      if (entry.cooldown_ms !== undefined && (typeof entry.cooldown_ms !== 'number' || entry.cooldown_ms <= 0)) {
+        erreurs.push(`${path} > cooldown_ms doit être un nombre positif si présent`);
+      }
+      if (typeof entry.connue_au_depart !== 'boolean') {
+        erreurs.push(`${path} > connue_au_depart doit être un booléen`);
+      }
+      erreurs.push(...erreursCondition(entry.deblocage, path, new Set((catalogs.flags || []).map((f) => f.id))));
+      return erreurs;
+    },
+  },
+  // Palier A §2.1 : types de station (rôle/rendu par défaut/capacité) — pas
+  // les instances positionnées (celles-ci vivent dans puzzles.json, type
+  // "station", référençant un id d'ici via `station_type`).
+  stations: {
+    requiredFields: ['id', 'label_key', 'role'],
+    idField: 'id',
+    refs: [],
+    custom(entry, catalogs, path) {
+      const erreurs = [];
+      const ROLES_STATION = ['craft', 'stockage', 'eau'];
+      if (!ROLES_STATION.includes(entry.role)) {
+        erreurs.push(`${path} > role doit être l'un de ${ROLES_STATION.join('/')}`);
+      }
+      if (entry.role === 'stockage' && (typeof entry.capacite !== 'number' || entry.capacite <= 0)) {
+        erreurs.push(`${path} > role "stockage" exige capacite (nombre positif)`);
       }
       return erreurs;
     },
@@ -913,12 +1054,71 @@ export const SCHEMAS = {
     refs: [],
     custom: validerGlyphe,
   },
+  // Palier C (specs/04_maison-interieur.md §2.1/§3.3) : catalogue ouvert —
+  // une jauge porte `decroissance_ms_plein_a_vide` ; l'entrée unique
+  // `survie_config` porte les paramètres globaux (plancher/pente/
+  // malus_respawn/stats_modulees), jamais recopiés sur chaque jauge (cf.
+  // survival.js). Distinguer les deux formes par la présence du champ
+  // pivot, comme tiles.json distingue déjà une tuile-ressource par la
+  // présence de `ressource`.
+  survival: {
+    requiredFields: ['id'],
+    idField: 'id',
+    refs: [],
+    custom(entry, catalogs, path) {
+      const erreurs = [];
+      if (entry.id === 'survie_config') {
+        if (typeof entry.plancher !== 'number' || entry.plancher < 0 || entry.plancher > 1) {
+          erreurs.push(`${path} > plancher doit être un nombre entre 0 et 1`);
+        }
+        if (typeof entry.pente !== 'number' || entry.pente < 0) {
+          erreurs.push(`${path} > pente doit être un nombre >= 0`);
+        }
+        if (typeof entry.malus_respawn !== 'number' || entry.malus_respawn < 0 || entry.malus_respawn > 1) {
+          erreurs.push(`${path} > malus_respawn doit être un nombre entre 0 et 1`);
+        }
+        const statsDeclarees = new Set((catalogs.stats || []).map((s) => s.id));
+        if (!Array.isArray(entry.stats_modulees) || entry.stats_modulees.length === 0) {
+          erreurs.push(`${path} > stats_modulees doit être un tableau non vide d'id de stats.json`);
+        } else {
+          entry.stats_modulees.forEach((id) => {
+            if (!statsDeclarees.has(id)) erreurs.push(`${path} > stats_modulees[] > "${id}" introuvable dans stats.json`);
+          });
+        }
+        return erreurs;
+      }
+      if (typeof entry.label_key !== 'string') erreurs.push(`${path} > label_key manquant`);
+      if (typeof entry.decroissance_ms_plein_a_vide !== 'number' || entry.decroissance_ms_plein_a_vide <= 0) {
+        erreurs.push(`${path} > decroissance_ms_plein_a_vide doit être un nombre positif`);
+      }
+      return erreurs;
+    },
+  },
+  // Palier D §2.1 : table de niveaux, triée croissante par convention (non
+  // imposée par le schéma, xp.js trie lui-même) — une entrée de plus
+  // (niveau 11+) ne demande aucun code.
+  levels: {
+    requiredFields: ['id', 'niveau', 'xp_cumulee', 'points_stats'],
+    idField: 'id',
+    refs: [],
+    custom(entry, catalogs, path) {
+      const erreurs = [];
+      if (typeof entry.niveau !== 'number' || entry.niveau <= 0) {
+        erreurs.push(`${path} > niveau doit être un nombre positif`);
+      }
+      if (typeof entry.xp_cumulee !== 'number' || entry.xp_cumulee < 0) {
+        erreurs.push(`${path} > xp_cumulee doit être un nombre >= 0`);
+      }
+      if (typeof entry.points_stats !== 'number' || entry.points_stats < 0) {
+        erreurs.push(`${path} > points_stats doit être un nombre >= 0`);
+      }
+      return erreurs;
+    },
+  },
 };
 
 // Catalogues déclarés mais non figés (contenu réel figé phase après phase).
-const CATALOGUES_MINIMAUX = [
-  'armors', 'accessories', 'skills', 'recipes', 'stations', 'crops', 'journal_entries',
-];
+const CATALOGUES_MINIMAUX = ['armors', 'accessories', 'skills', 'crops', 'journal_entries'];
 
 for (const nom of CATALOGUES_MINIMAUX) {
   SCHEMAS[nom] = schemaMinimal();

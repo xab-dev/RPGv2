@@ -155,6 +155,36 @@ différente) entre les trois emplacements.
     manette -> clavier pendant qu'un indice est affiché doit changer le
     glyphe affiché sans le refermer.
 
+25. **Jauges faim/soif + niveau/XP** (Palier C/D, specs/04_maison-interieur.md
+    §3.9) — panneau séparé sous le cartouche PV/éclats, laisser le temps de
+    jeu actif s'écouler. Vérifier : icône triangle (faim) et icône goutte
+    (soif) distinctes par FORME (jamais la couleur seule, P4②), barres qui
+    baissent avec le temps ; `Nv.N` + barre XP discrète sous les jauges,
+    jamais une injonction. Le panneau ne s'affiche qu'une fois les stats
+    calculées au moins une fois (absent pendant la toute première frame de
+    la cinématique d'ouverture).
+26. **Menu Craft** (Palier A §3.1) — INTERACT sur l'atelier ou la table.
+    Vérifier : liste des recettes de CETTE station seulement, entrées
+    grisées avec le motif attendu (cooldown en secondes, "ingrédients
+    manquants", "poche pleine"), jamais une recette verrouillée listée ;
+    fabriquer une recette met immédiatement à jour la liste (ingrédients
+    consommés, recette suivante qui se grise si elle partageait un
+    ingrédient) sans fermer/rouvrir l'écran.
+27. **Menu Coffre** (Palier E §3.5) — INTERACT sur le coffre. Vérifier :
+    poche à déposer et coffre à retirer bien distincts visuellement, un
+    transfert met à jour les deux listes immédiatement, capacité (20 piles)
+    respectée (dépôt refusé au-delà, sans planter).
+28. **Menu Stats** (Palier D §3.4) — ouvert depuis le menu Pause. Vérifier :
+    les 4 stats primaires + valeur courante, "+1" actif seulement si des
+    points libres restent, points libres affichés et décomptés après
+    allocation, aucun retrait possible.
+
+**Encore dû (session en cours, 2026-09-17)** : les états 25-28 ci-dessus
+n'ont **jamais été capturés en navigateur réel** — code fait et testé
+headless (`tests/test_phase3_*`), mais la contrainte de méthode (rendu
+canvas/DOM jamais exercé headless) s'applique intégralement ici. Voir
+`CLAUDE.md` > Dette.
+
 ## Méthode
 
 `node serveur_local.js`, ouvrir `http://localhost:8080`, extension Chrome

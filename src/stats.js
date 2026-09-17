@@ -17,6 +17,20 @@ export function calculerStatsPrimaires(registre, modificateurs = {}) {
   return stats;
 }
 
+// Modulateur de survie (Palier C, specs/04_maison-interieur.md §3.3) :
+// applique un multiplicateur uniquement aux stats listées (survival.json >
+// survie_config.stats_modulees), AVANT calculerStatsDerivees — un seul
+// chemin de calcul, donc les dérivées qui en dépendent (dégâts via
+// stat_force, cadence d'attaque via stat_agilite, vitesse de déplacement via
+// stat_agilite) suivent sans code dédié.
+export function appliquerModulateurSurvie(statsPrimaires, modulateur, statsModulees) {
+  const resultat = { ...statsPrimaires };
+  for (const id of statsModulees || []) {
+    if (resultat[id] !== undefined) resultat[id] *= modulateur;
+  }
+  return resultat;
+}
+
 export function calculerStatsDerivees(registre, statsPrimaires) {
   const derivees = {};
   for (const d of registre.tous('stats_derivees')) {

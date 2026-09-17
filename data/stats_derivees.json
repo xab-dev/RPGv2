@@ -10,5 +10,11 @@
     "label_key": "derivee.cooldown_attaque_ms",
     "stat": "stat_agilite",
     "formule": { "base": 700, "coefficient": -40, "min": 150 }
+  },
+  {
+    "id": "derivee_vitesse_deplacement_px_s",
+    "label_key": "derivee.vitesse_deplacement",
+    "stat": "stat_agilite",
+    "formule": { "base": 100, "coefficient": 4, "min": 20 }
   }
 ]

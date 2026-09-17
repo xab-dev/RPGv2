@@ -26,6 +26,44 @@ export function modificateursHeros(registre, companionId) {
   return modificateurs;
 }
 
+// Buffs temporaires du héros (Palier C, §3.3 : "la cuisine est un système de
+// build") — table { statusEffectId: msRestant }, tiquée comme les cooldowns
+// de combat.js (Math.max(0, reste - deltaMs)) mais purgeant les entrées
+// venues à expiration plutôt que de les garder à 0 (une table de taille
+// bornée par le nombre d'effets réellement actifs, jamais un id fantôme).
+export function tickBuffsActifs(buffs, deltaMs) {
+  const suivant = {};
+  for (const [id, resteMs] of Object.entries(buffs)) {
+    const nouveauReste = resteMs - deltaMs;
+    if (nouveauReste > 0) suivant[id] = nouveauReste;
+  }
+  return suivant;
+}
+
+// N'accepte qu'un effet à durée numérique (ms) — un effet "permanente" ou
+// "aura" n'a pas sa place dans cette table (déjà couverts par
+// modificateursHeros/statsEffectivesMonstre ci-dessus, chacun sa propre
+// source de vérité).
+export function ajouterBuffActif(registre, buffs, effetId) {
+  const effet = registre.obtenir('status_effects', effetId);
+  if (typeof effet.duree !== 'number') return buffs;
+  return { ...buffs, [effetId]: effet.duree };
+}
+
+// Modificateurs de stats primaires dérivés des buffs temporaires actifs —
+// même mécanisme que modificateursHeros (appliquerModificateur), sommé par
+// stat pour accueillir plusieurs buffs simultanés sans code dédié.
+export function modificateursBuffsActifs(registre, buffs) {
+  const modificateurs = {};
+  for (const id of Object.keys(buffs)) {
+    const effet = registre.obtenir('status_effects', id);
+    if (effet.cible === 'joueur' && effet.stat) {
+      modificateurs[effet.stat] = appliquerModificateur(modificateurs[effet.stat] || 0, effet);
+    }
+  }
+  return modificateurs;
+}
+
 // Stats/paramètres effectifs d'un monstre, selon qu'il est "dans l'aura" du
 // follet ou non. "Dans l'aura" est approximé par l'état d'engagement du
 // follet (§3.6 : le follet se colle au monstre engagé) plutôt que par un

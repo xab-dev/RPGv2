@@ -167,14 +167,13 @@ function construireMenu() {
   return { menu, conteneur, confirmation };
 }
 
-// Amène le focus du menu principal sur l'entrée "Réinitialiser" (index 3 :
-// langue, exporter, importer, réinitialiser, fermer) par 3 crans successifs
-// avant/après relâchement, comme le ferait réellement une manette.
-// "Réinitialiser la sauvegarde" est le 6ᵉ élément (index 5) depuis
-// 03_maison-exterieur (Musique et Poche insérées avant lui, ordre : langue,
-// musique, poche, exporter, importer, réinitialiser, fermer).
+// Amène le focus du menu principal sur l'entrée "Réinitialiser" par crans
+// successifs avant/après relâchement, comme le ferait réellement une
+// manette. "Réinitialiser la sauvegarde" est le 7ᵉ élément (index 6) depuis
+// Palier D de 04_maison-interieur.md (Stats insérée avant lui, ordre :
+// langue, musique, poche, stats, exporter, importer, réinitialiser, fermer).
 function focaliserReset(menu) {
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 6; i++) {
     menu.traiterInput(etat({ y: 1 }));
     menu.traiterInput(etat({ y: 0 }));
   }
@@ -235,6 +234,44 @@ function focaliserReset(menu) {
   const curseurs = confirmation.querySelectorAll('.menu-curseur');
   assert.equal(curseurs[0].textContent, '', '"Oui" (index 0) ne doit pas être focalisé par défaut');
   assert.equal(curseurs[1].textContent, '›', '"Non" (index 1) doit être focalisé par défaut');
+}
+
+// 6. Palier D/C de 04_maison-interieur.md — Poche/Stats masquent le menu
+// principal SANS jamais le fermer (creerEcranListeGenerique) : régression
+// trouvée en revue (§ journal) — le menu principal restait superposé
+// derrière l'écran ouvert (jamais masqué) puis restait masqué APRÈS
+// fermeture (jamais réaffiché) si la fermeture passait par B (skill_3)
+// plutôt que par le clic sur "Fermer". Vérifié ici via B, le chemin qui
+// avait été oublié.
+function focaliserCran(menu, n) {
+  for (let i = 0; i < n; i++) {
+    menu.traiterInput(etat({ y: 1 }));
+    menu.traiterInput(etat({ y: 0 }));
+  }
+}
+{
+  const { menu, conteneur } = construireMenu();
+  menu.ouvrir();
+  focaliserCran(menu, 2); // langue, musique, poche (index 2)
+  menu.traiterInput(etat({ attack: true })); // ouvre Poche
+
+  assert.equal(estVisibleEffectif(conteneur), false, 'le menu principal doit être masqué pendant que Poche est ouverte');
+
+  menu.traiterInput(etat({ skill3: true })); // ferme Poche via B
+
+  assert.equal(estVisibleEffectif(conteneur), true, 'le menu principal doit réapparaître après fermeture de Poche par B');
+}
+{
+  const { menu, conteneur } = construireMenu();
+  menu.ouvrir();
+  focaliserCran(menu, 3); // langue, musique, poche, stats (index 3)
+  menu.traiterInput(etat({ attack: true })); // ouvre Stats
+
+  assert.equal(estVisibleEffectif(conteneur), false, 'le menu principal doit être masqué pendant que Stats est ouvert');
+
+  menu.traiterInput(etat({ skill3: true })); // ferme Stats via B
+
+  assert.equal(estVisibleEffectif(conteneur), true, 'le menu principal doit réapparaître après fermeture de Stats par B');
 }
 
 console.log('OK test_phase1_sd_menu_reset_invisible');

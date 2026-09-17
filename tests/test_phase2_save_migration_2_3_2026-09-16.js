@@ -56,24 +56,30 @@ function payloadV2(scene = 'scene_grotte_salle_1') {
   assert.equal(migre.hero.x, 100);
 }
 
-// 4. La version courante du module est bien 3.
+// 4. La version courante du module a bien avancé depuis la Phase 2 (Palier
+// A-E de la Phase 3 a introduit sa propre migration 3 -> 4, cf.
+// test_save_migration_3_4) — cette fiche ne couvre que 2 -> 3, qui reste
+// valide telle quelle en appelant migrer(..., 3) explicitement partout
+// ci-dessus.
 {
-  assert.equal(VERSION_SCHEMA_COURANTE, 3);
+  assert.equal(VERSION_SCHEMA_COURANTE, 4);
 }
 
 // 5. Cycle complet écrire/relire d'une v2 migrée automatiquement au
-// chargement, placeholder redirigé y compris via ce chemin.
+// chargement, placeholder redirigé y compris via ce chemin — charger()
+// migre désormais jusqu'à la version courante (4), en cascade par les deux
+// paliers (2->3 puis 3->4), jamais en s'arrêtant à 3.
 {
   const store = creerStoreMemoire();
   await sauvegarder(store, payloadV2('scene_maison_exterieur_placeholder'));
   const { payload } = await charger(store);
-  assert.equal(payload.schema_version, 3);
+  assert.equal(payload.schema_version, VERSION_SCHEMA_COURANTE);
   assert.equal(payload.hero.scene, 'scene_maison_exterieur');
 }
 
-// 6. Version supérieure à celle du jeu (4, future) -> refusée.
+// 6. Version supérieure à celle du jeu (5, future) -> refusée.
 {
-  const payloadFutur = { schema_version: 4, hero: { scene: 'x', x: 0, y: 0 }, flags: {}, settings: { lang: 'fr' } };
+  const payloadFutur = { schema_version: 5, hero: { scene: 'x', x: 0, y: 0 }, flags: {}, settings: { lang: 'fr' } };
   assert.throws(() => migrer(payloadFutur, 3), /supérieure/);
 }
 

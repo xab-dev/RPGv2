@@ -188,5 +188,47 @@
       { "forme": "rect", "dx": 9, "dy": -18, "w": 3, "h": 14, "couleur": "#5a4530" },
       { "forme": "rect", "dx": 0, "dy": -24, "w": 22, "h": 3, "couleur": "#5a4530" }
     ]
+  },
+  {
+    "id": "visuel_hache",
+    "ancre": "centre",
+    "primitives": [
+      { "forme": "ligne", "dx": 0, "dy": 0, "points": [[0, 6], [0, -6]], "couleur": "#7a5c3e", "epaisseur": 2 },
+      { "forme": "polygone", "dx": 0, "dy": -6, "points": [[0, -3], [5, -5], [5, 2], [0, 3]], "couleur": "#a8a8a8" }
+    ]
+  },
+  {
+    "id": "visuel_pioche",
+    "ancre": "centre",
+    "primitives": [
+      { "forme": "ligne", "dx": 0, "dy": 0, "points": [[0, 6], [0, -6]], "couleur": "#7a5c3e", "epaisseur": 2 },
+      { "forme": "polygone", "dx": 0, "dy": -6, "points": [[-6, -3], [0, -6], [6, -3], [0, 0]], "couleur": "#8a8a8a" }
+    ]
+  },
+  {
+    "id": "visuel_fruit_cuit",
+    "ancre": "centre",
+    "primitives": [
+      { "forme": "cercle", "dx": 0, "dy": 0, "w": 8, "h": 8, "couleur": "#9a4a2a" },
+      { "forme": "cercle", "dx": -2, "dy": -2, "w": 3, "h": 3, "couleur": "#c97a4a", "alpha": 0.6 },
+      { "forme": "ligne", "dx": 0, "dy": -4, "points": [[0, 0], [1, -2]], "couleur": "#4a7d3a", "epaisseur": 1 }
+    ]
+  },
+  {
+    "id": "visuel_bois",
+    "ancre": "centre",
+    "primitives": [
+      { "forme": "rect", "dx": 0, "dy": 0, "w": 12, "h": 6, "couleur": "#7a5c3e" },
+      { "forme": "ellipse", "dx": -5, "dy": 0, "w": 3, "h": 5, "couleur": "#5a4530" },
+      { "forme": "ellipse", "dx": 5, "dy": 0, "w": 3, "h": 5, "couleur": "#5a4530" }
+    ]
+  },
+  {
+    "id": "visuel_pierre",
+    "ancre": "centre",
+    "primitives": [
+      { "forme": "polygone", "dx": 0, "dy": 0, "points": [[-6, 3], [-3, -5], [3, -5], [6, 2], [2, 5], [-2, 4]], "couleur": "#8a8a8a" },
+      { "forme": "polygone", "dx": -2, "dy": -2, "points": [[-3, 0], [-1, -3], [2, -1], [0, 1]], "couleur": "#a8a8a8", "alpha": 0.5 }
+    ]
   }
 ]

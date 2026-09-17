@@ -9,5 +9,18 @@
   { "id": "flag_jardin_decouvert", "label_key": "flag.jardin_decouvert" },
   { "id": "flag_hint_move", "label_key": "flag.hint_move" },
   { "id": "flag_hint_interact", "label_key": "flag.hint_interact" },
-  { "id": "flag_hint_attack", "label_key": "flag.hint_attack" }
+  { "id": "flag_hint_attack", "label_key": "flag.hint_attack" },
+  { "id": "flag_hint_consume", "label_key": "flag.hint_consume" },
+  { "id": "flag_premier_craft", "label_key": "flag.premier_craft" },
+  { "id": "flag_premiere_faim", "label_key": "flag.premiere_faim" },
+  { "id": "flag_niveau_1", "label_key": "flag.niveau_1" },
+  { "id": "flag_niveau_2", "label_key": "flag.niveau_2" },
+  { "id": "flag_niveau_3", "label_key": "flag.niveau_3" },
+  { "id": "flag_niveau_4", "label_key": "flag.niveau_4" },
+  { "id": "flag_niveau_5", "label_key": "flag.niveau_5" },
+  { "id": "flag_niveau_6", "label_key": "flag.niveau_6" },
+  { "id": "flag_niveau_7", "label_key": "flag.niveau_7" },
+  { "id": "flag_niveau_8", "label_key": "flag.niveau_8" },
+  { "id": "flag_niveau_9", "label_key": "flag.niveau_9" },
+  { "id": "flag_niveau_10", "label_key": "flag.niveau_10" }
 ]

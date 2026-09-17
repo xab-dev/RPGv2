@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { SCHEMAS } from '../src/schemas.js';
 import { validerCatalogues, construireRegistre } from '../src/registry.js';
 import { chargerScene } from '../src/scene.js';
-import { remplirItemsSol, trouverItemProche, ramasserEtRegenerer } from '../src/ground_items.js';
+import { remplirItemsSol, trouverItemProche, ramasser, planifierRespawn, tickRespawns } from '../src/ground_items.js';
 
 const NOMS = Object.keys(SCHEMAS);
 
@@ -85,15 +85,28 @@ function construire() {
   assert.deepEqual(a, b);
 }
 
-// 3. Après un ramassage, le compte reste à nb_au_sol (régénération
-// immédiate ailleurs).
+// 3. Après un ramassage, le compte baisse immédiatement — la régénération
+// est différée (Palier B, specs/04_maison-interieur.md §3.2 : "anti-spam",
+// le nouvel exemplaire n'apparaît qu'après respawn_ms de temps actif, plus
+// un simple retrait suivi d'un tirage immédiat comme en Phase 2).
 {
   const { scene, items } = construire();
   let itemsSol = remplirItemsSol(scene, items, {});
   const proche = trouverItemProche(itemsSol, itemsSol.item_branche[0], 1);
   assert.ok(proche);
-  itemsSol = ramasserEtRegenerer(scene, items, itemsSol, proche.itemId, proche.index, 999);
-  assert.equal(itemsSol.item_branche.length, 3);
+  itemsSol = ramasser(itemsSol, proche.itemId, proche.index);
+  assert.equal(itemsSol.item_branche.length, 2);
+
+  let enAttente = planifierRespawn({}, proche.itemId, 60000);
+  // Avant échéance : toujours 2, le délai n'est pas encore écoulé.
+  let resultat = tickRespawns(scene, items, itemsSol, enAttente, 59000, 999);
+  assert.equal(resultat.itemsSol.item_branche.length, 2);
+  assert.equal(resultat.enAttente.item_branche.length, 1);
+
+  // Après échéance : le compte revient à nb_au_sol.
+  resultat = tickRespawns(scene, items, resultat.itemsSol, resultat.enAttente, 2000, resultat.compteur);
+  assert.equal(resultat.itemsSol.item_branche.length, 3);
+  assert.deepEqual(resultat.enAttente, {});
 }
 
 // 4. trouverItemProche : rien à portée -> null.

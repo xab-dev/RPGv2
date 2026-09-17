@@ -62,5 +62,33 @@
     "lignes": [
       { "locuteur": "follet", "text_key": "dlg.premier_ramassage.1" }
     ]
+  },
+  {
+    "id": "dlg_puits_cooldown",
+    "declencheur": "puits_cooldown",
+    "lignes": [
+      { "locuteur": "follet", "text_key": "dlg.puits_cooldown.1" }
+    ]
+  },
+  {
+    "id": "dlg_ressource_cooldown",
+    "declencheur": "ressource_cooldown",
+    "lignes": [
+      { "locuteur": "follet", "text_key": "dlg.ressource_cooldown.1" }
+    ]
+  },
+  {
+    "id": "dlg_recette_indisponible",
+    "declencheur": "recette_indisponible",
+    "lignes": [
+      { "locuteur": "follet", "text_key": "dlg.recette_indisponible.1" }
+    ]
+  },
+  {
+    "id": "dlg_premiere_faim",
+    "declencheur": "premiere_faim",
+    "lignes": [
+      { "locuteur": "follet", "text_key": "dlg.premiere_faim.1" }
+    ]
   }
 ]

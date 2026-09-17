@@ -20,6 +20,18 @@ const COULEUR_PV = '#c23a3a';
 const COULEUR_SLOT_ACTIF = '#c2a83e';
 const COULEUR_SLOT_GRISE = 'rgba(255,255,255,0.15)';
 
+// Jauges faim/soif (Palier C, specs/04_maison-interieur.md §3.3/hud_layout) :
+// icônes distinctes PAR FORME (P4② — jamais la couleur seule), un triangle
+// (faim, pain/blé stylisé) et une goutte (soif), jamais deux disques
+// identiques repeints d'une autre couleur.
+const COULEUR_JAUGE_FOND = '#1a1a1a';
+const COULEUR_FAIM = '#c2a83e';
+const COULEUR_SOIF = '#3a7dc2';
+const JAUGE_LARGEUR = 40;
+const JAUGE_HAUTEUR = 6;
+const JAUGE_ICONE_TAILLE = 6;
+const COULEUR_XP = '#4a9d5f';
+
 // Cartouche haut-gauche (§4, valeurs V1) : un seul endroit pour ses
 // dimensions, jamais dispersées ailleurs dans ce fichier.
 const CARTOUCHE_X = 6;
@@ -79,7 +91,48 @@ function dessinerSlotsBas(ctx, resolution) {
   });
 }
 
-export function dessinerHud(ctx, { pv, pvMax, eclats, companion, visuelFollet, tactileActif }) {
+// Triangle (faim, forme distincte du disque PV/de la goutte soif) — pointe
+// vers le haut, centré sur (x, y).
+function dessinerIconeFaim(ctx, x, y, taille) {
+  ctx.beginPath();
+  ctx.moveTo(x, y - taille / 2);
+  ctx.lineTo(x + taille / 2, y + taille / 2);
+  ctx.lineTo(x - taille / 2, y + taille / 2);
+  ctx.closePath();
+  ctx.fillStyle = COULEUR_FAIM;
+  ctx.fill();
+}
+
+// Goutte (soif) — cercle + pointe, forme distincte du triangle ci-dessus.
+function dessinerIconeSoif(ctx, x, y, taille) {
+  const r = taille / 2;
+  ctx.beginPath();
+  ctx.moveTo(x, y - r * 1.4);
+  ctx.quadraticCurveTo(x + r, y, x, y + r);
+  ctx.quadraticCurveTo(x - r, y, x, y - r * 1.4);
+  ctx.closePath();
+  ctx.fillStyle = COULEUR_SOIF;
+  ctx.fill();
+}
+
+// Une jauge = icône (forme) + barre de fond/remplissage — même patron que la
+// barre de PV (fond sombre, remplissage proportionnel, contour), réutilisé
+// pour faim ET soif plutôt que dupliqué.
+function dessinerJauge(ctx, x, y, ratio, couleur, dessinerIcone) {
+  dessinerIcone(ctx, x + JAUGE_ICONE_TAILLE / 2, y + JAUGE_HAUTEUR / 2, JAUGE_ICONE_TAILLE);
+  const barreX = x + JAUGE_ICONE_TAILLE + 4;
+  ctx.fillStyle = COULEUR_JAUGE_FOND;
+  ctx.fillRect(barreX, y, JAUGE_LARGEUR, JAUGE_HAUTEUR);
+  ctx.fillStyle = couleur;
+  ctx.fillRect(barreX, y, JAUGE_LARGEUR * Math.max(0, Math.min(1, ratio)), JAUGE_HAUTEUR);
+  ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+  ctx.strokeRect(barreX, y, JAUGE_LARGEUR, JAUGE_HAUTEUR);
+}
+
+export function dessinerHud(ctx, {
+  i18n, pv, pvMax, eclats, companion, visuelFollet, tactileActif,
+  survie = null, niveau = null, ratioXp = 0,
+}) {
   ctx.save();
 
   dessinerRectangleArrondi(ctx, CARTOUCHE_X, CARTOUCHE_Y, CARTOUCHE_LARGEUR, CARTOUCHE_HAUTEUR, CARTOUCHE_RAYON);
@@ -128,6 +181,42 @@ export function dessinerHud(ctx, { pv, pvMax, eclats, companion, visuelFollet, t
   ctx.fillText(`◆ ${eclats}`, contenuX, ligneY);
 
   ctx.restore();
+
+  // Cartouche survie/niveau (Palier C/D, specs/04_maison-interieur.md
+  // §3.9/hud_layout) : panneau SÉPARÉ sous le cartouche PV/éclats plutôt
+  // qu'agrandi à l'intérieur (§4 : discret, jamais une injonction) — évite
+  // de retoucher les dimensions déjà validées du premier cartouche.
+  // `survie`/`niveau` restent optionnels : avant le premier calcul de
+  // stats (cinématique d'ouverture), rien à afficher.
+  if (survie || niveau != null) {
+    const y2 = CARTOUCHE_Y + CARTOUCHE_HAUTEUR + 4;
+    const hauteur2 = (survie ? JAUGE_HAUTEUR * 2 + 4 : 0) + (niveau != null ? 14 : 0) + CARTOUCHE_PADDING;
+    ctx.save();
+    dessinerRectangleArrondi(ctx, CARTOUCHE_X, y2, CARTOUCHE_LARGEUR, hauteur2, CARTOUCHE_RAYON);
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.fill();
+    let ligne2Y = y2 + CARTOUCHE_PADDING / 2;
+    if (survie) {
+      dessinerJauge(ctx, contenuX, ligne2Y, survie.faim, COULEUR_FAIM, dessinerIconeFaim);
+      ligne2Y += JAUGE_HAUTEUR + 2;
+      dessinerJauge(ctx, contenuX, ligne2Y, survie.soif, COULEUR_SOIF, dessinerIconeSoif);
+      ligne2Y += JAUGE_HAUTEUR + 4;
+    }
+    if (niveau != null) {
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.font = '9px monospace';
+      ctx.fillStyle = '#fff';
+      ctx.fillText(`${i18n.t('hud.niveau_prefixe')}${niveau}`, contenuX, ligne2Y);
+      const barreXpX = contenuX + 26;
+      const barreXpLargeur = CARTOUCHE_X + CARTOUCHE_LARGEUR - CARTOUCHE_PADDING - barreXpX;
+      ctx.fillStyle = COULEUR_JAUGE_FOND;
+      ctx.fillRect(barreXpX, ligne2Y + 2, barreXpLargeur, 4);
+      ctx.fillStyle = COULEUR_XP;
+      ctx.fillRect(barreXpX, ligne2Y + 2, barreXpLargeur * Math.max(0, Math.min(1, ratioXp)), 4);
+    }
+    ctx.restore();
+  }
 
   // §4 : jamais les deux à la fois. Sur tactile, les boutons SONT les slots.
   if (tactileActif) {

@@ -1,0 +1,12 @@
+[
+  { "id": "niveau_1", "niveau": 1, "xp_cumulee": 0, "points_stats": 0 },
+  { "id": "niveau_2", "niveau": 2, "xp_cumulee": 20, "points_stats": 1 },
+  { "id": "niveau_3", "niveau": 3, "xp_cumulee": 40, "points_stats": 1 },
+  { "id": "niveau_4", "niveau": 4, "xp_cumulee": 65, "points_stats": 1 },
+  { "id": "niveau_5", "niveau": 5, "xp_cumulee": 90, "points_stats": 1 },
+  { "id": "niveau_6", "niveau": 6, "xp_cumulee": 120, "points_stats": 1 },
+  { "id": "niveau_7", "niveau": 7, "xp_cumulee": 155, "points_stats": 1 },
+  { "id": "niveau_8", "niveau": 8, "xp_cumulee": 195, "points_stats": 1 },
+  { "id": "niveau_9", "niveau": 9, "xp_cumulee": 240, "points_stats": 1 },
+  { "id": "niveau_10", "niveau": 10, "xp_cumulee": 290, "points_stats": 1 }
+]

@@ -39,27 +39,35 @@
     "type": "station_placeholder",
     "position": { "x": 82, "y": 54 },
     "dialogue": "dlg_station_pas_encore",
-    "render": { "visuel": "visuel_table" }
+    "render": { "visuel": "visuel_table" },
+    "echelle": 2.1,
+    "solide": true
   },
   {
     "id": "station_coffre",
     "type": "station_placeholder",
     "position": { "x": 86, "y": 54 },
     "dialogue": "dlg_station_pas_encore",
-    "render": { "visuel": "visuel_coffre" }
+    "render": { "visuel": "visuel_coffre" },
+    "echelle": 2.1,
+    "solide": true
   },
   {
     "id": "station_atelier",
     "type": "station_placeholder",
-    "position": { "x": 89, "y": 58 },
+    "position": { "x": 89, "y": 61 },
     "dialogue": "dlg_station_pas_encore",
-    "render": { "visuel": "visuel_atelier" }
+    "render": { "visuel": "visuel_atelier" },
+    "echelle": 2.1,
+    "solide": true
   },
   {
     "id": "station_puits",
     "type": "station_placeholder",
     "position": { "x": 106, "y": 57 },
     "dialogue": "dlg_puits_pas_encore",
-    "render": { "visuel": "visuel_puits" }
+    "render": { "visuel": "visuel_puits" },
+    "echelle": 2.1,
+    "solide": true
   }
 ]

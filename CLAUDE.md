@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Phases validées : 0 (Socle technique), 1 (La Grotte) et 1b (polish, 4/4 paliers, DA validée) — validées en jeu à la manette réelle le 2026-09-16. Phase 2 (Région Maison, `specs/03_maison-exterieur.md`) : « première marche » (5 paliers + audio) validée à la manette et au clavier réels par Xav le 2026-09-16 ; les deux défauts qu'elle a fait remonter (accrochage des coins en collision, arbre interactif hors du chemin naturel) ont été diagnostiqués et corrigés le jour même (`SD_hitbox-angle-arbre_2026-09-16.md`) puis validés par Xav le 2026-09-17. **Phase 2 close** — prochaine phase à ouvrir. Tactile en dette assumée jusqu'à la Phase 4 (compétences), différé jusqu'à un lien de partage pour test (le neveu de Xav est le testeur mobile de référence).
 
-`MT_jour-nuit-contraste_2026-09-16.md` (v1.1, archivée) livrée le 2026-09-17 — code fait et testé, validation manuelle manette/navigateur réelle encore due par Xav (`docs/archives/JOURNAL_2026-09-17_micro-ticket-contraste-jour-nuit.md`). `MT_musique-ambiance-synth_2026-09-16.md` (archivée) livrée le 2026-09-17 — code fait et testé, freeze diagnostiqué et corrigé le jour même (`docs/archives/JOURNAL_2026-09-17_diagnostic-freeze-musique.md`) ; validation manuelle (navigateur, manette, 5 min d'écoute) encore due par Xav. `specs/04_indices-commandes.md` livrée le 2026-09-17 (journal courant) — code fait, suite verte, **validation visuelle en navigateur encore due par Xav** (`docs/CHECKLIST_visuelle.md`, état 24 nouveau). `specs/04_stations-proportions-collision.md` : à livrer ensuite dans cette même session.
+`MT_jour-nuit-contraste_2026-09-16.md` (v1.1, archivée) livrée le 2026-09-17 — code fait et testé, validation manuelle manette/navigateur réelle encore due par Xav (`docs/archives/JOURNAL_2026-09-17_micro-ticket-contraste-jour-nuit.md`). `MT_musique-ambiance-synth_2026-09-16.md` (archivée) livrée le 2026-09-17 — code fait et testé, freeze diagnostiqué et corrigé le jour même (`docs/archives/JOURNAL_2026-09-17_diagnostic-freeze-musique.md`) ; validation manuelle (navigateur, manette, 5 min d'écoute) encore due par Xav. `specs/04_indices-commandes.md` livrée le 2026-09-17 (`docs/archives/JOURNAL_2026-09-17_indices-commande.md`) — code fait, suite verte, **validation visuelle en navigateur encore due par Xav** (`docs/CHECKLIST_visuelle.md`, état 24 nouveau). `specs/04_stations-proportions-collision.md` livrée le 2026-09-17 (journal courant) — code fait, suite verte, **validation visuelle et ressenti d'échelle encore dus par Xav** (`docs/CHECKLIST_visuelle.md`, état 21 mis à jour).
 
 Historique complet des sessions : **`docs/archives/INDEX.md`** — un fichier par session archivée, contenu verbatim (source de vérité en cas de doute sur le détail d'une décision passée). `CLAUDE.md` ne garde que le journal de la session la plus récente (en fin de ce fichier) — voir la règle de méthode correspondante ci-dessous.
 
@@ -155,6 +155,9 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 | Nuit extérieure autorisée à dépasser le plafond de la grotte (0.72) — nuit = 0.85 ; *révise* la lecture initiale du ticket qui présentait ce plafond comme une limite dure partagée — décision explicite de Xav, soumise en question bloquante avant implémentation | 2026-09-17 | `docs/archives/JOURNAL_2026-09-17_micro-ticket-contraste-jour-nuit.md` |
 | Cycle jour/nuit à durées par phase indépendantes (jour 10 min, crépuscule/aube 1 min 30, nuit 4 min francs = 17 min au total) — *révise* le `DUREE_CYCLE_MS` unique découpé en phases égales de la Phase 2 | 2026-09-17 | même archive |
 | Fusion `demarrerSynthese`/`reprendreSynthese` en un seul point d'entrée à création paresseuse — corrige le freeze à la bascule Musique non→oui | 2026-09-17 | `docs/archives/JOURNAL_2026-09-17_diagnostic-freeze-musique.md` |
+| Indices de commande : périphérique actif exposé par `input.js` (loquet, défaut `'manette'`), glyphes toujours résolus via `t()` (même une lettre isolée) | 2026-09-17 | `docs/archives/JOURNAL_2026-09-17_indices-commande.md` |
+| Échelle des 4 stations fixée à **2,1** (milieu de la fourchette ×2 à ×2,2 demandée) ; empreinte solide = boîte englobante des primitives de rendu, calculée une fois (jamais dupliquée), sauf override explicite `empreinte` en données ; seuil d'interaction unifié (mesuré au bord de l'empreinte pour tous les interactifs, y compris les leviers dont l'empreinte est nulle) | 2026-09-17 | journal courant |
+| Station `station_atelier` déplacée de `(89,58)` à `(89,61)` en données — son empreinte agrandie chevauchait légèrement le couloir intérieur (rangée y=57 entre les deux portes) | 2026-09-17 | journal courant |
 
 ## Points `[OUVERT]`
 
@@ -170,70 +173,72 @@ Tous les autres `[OUVERT]` historiques (résolution logique, clignements/orbite 
 - **Mesure réelle du temps de frame / fps** (plancher mobile jamais mesuré, seulement borné fonctionnellement par `selectionnerTuilesVisibles`) — 2026-09-16, même archive.
 - **Tactile réel** (manette/clavier seulement testés par toutes les sessions jusqu'ici) — dette assumée depuis la Phase 0, différée jusqu'à un lien de partage (Phase 4+).
 - **Mouvement légèrement téléporté à chaque angle depuis la correction de coin** (2026-09-17, retour Xav) : feeling meilleur, aucune interruption, mais pas très smooth — à lisser dans une phase de polish ultérieure (hypothèse : répartir le repoussement sur plusieurs frames ou l'interpoler plutôt que l'appliquer d'un coup — à diagnostiquer, pas à patcher en silence).
-- **Validation visuelle de `specs/04_indices-commandes.md` encore due par Xav** (état 24 de `docs/CHECKLIST_visuelle.md`) — code fait, suite headless verte, mais `main.js#dessiner()` a été touché (règle de méthode) et le rendu canvas n'est jamais exercé headless. Voir journal courant.
-- **Fiche à rédiger** : `specs/04_stations-proportions-collision.md` reste à livrer dans cette session (après `04_indices-commandes.md`). (`MT_jour-nuit-contraste_2026-09-16.md` et `MT_musique-ambiance-synth_2026-09-16.md` livrées, cf. leurs archives respectives.)
+- **Validation visuelle de `specs/04_indices-commandes.md` encore due par Xav** (état 24 de `docs/CHECKLIST_visuelle.md`, + états 1-23 rejoués) — code fait, suite headless verte, mais `main.js#dessiner()` a été touché (règle de méthode) et le rendu canvas n'est jamais exercé headless. `docs/archives/JOURNAL_2026-09-17_indices-commande.md`.
+- **Validation visuelle + ressenti d'échelle de `specs/04_stations-proportions-collision.md` encore dus par Xav** (état 21 mis à jour de `docs/CHECKLIST_visuelle.md`, + états 1-23 rejoués, `render.js` et `main.js#dessiner()` retouchés) — code fait, suite headless verte, échelle 2,1 jamais vue en jeu. Voir journal courant.
 
 ## Critère de passage courant
 
 Phase 2 (Région Maison, première marche) — verdict détaillé : `docs/NS_critere-passage-phase2_2026-09-16.md`. État au 2026-09-17 : validée à la manette et au clavier réels par Xav sur tout le parcours (grotte → rocher → branche → Poche → toit → stations → jardin/fruit/puits → campagne → persistance) ; les deux défauts remontés (arbre hors chemin, accrochage des coins) ont été corrigés le 2026-09-16 et validés le 2026-09-17 (`SD_hitbox-angle-arbre_2026-09-16.md`). **Phase 2 close.** Reste en dette, non bloquant : tactile réel (Phase 4+), musique (fichier non fourni), mesure de fps réelle.
 
-## Journal de session — Indices de commande (2026-09-17)
+## Journal de session — Stations : proportions et collision (2026-09-17)
 
-Ménage de journal effectué en début de session (avant tout code) : le journal précédent (« Diagnostic freeze bascule Musique non→oui ») archivé verbatim dans `docs/archives/JOURNAL_2026-09-17_diagnostic-freeze-musique.md`, `docs/archives/INDEX.md` mis à jour, décisions/dette/`[OUVERT]` déjà consolidés dans les sections dédiées de ce fichier (voir table de décisions et la ligne "Fusion `demarrerSynthese`/`reprendreSynthese`..."). `node tools/run_tests.js` rejoué avant toute modification : 45 fichiers, tous verts (préalable exigé par Xav avant d'ouvrir `specs/04_indices-commandes.md`).
+Ménage de journal effectué en début de session (avant tout code) : le journal précédent (« Indices de commande ») archivé verbatim dans `docs/archives/JOURNAL_2026-09-17_indices-commande.md`, `docs/archives/INDEX.md` mis à jour, décisions/dette déjà consolidées dans les sections dédiées de ce fichier. `node tools/run_tests.js` rejoué avant d'ouvrir `specs/04_stations-proportions-collision.md` : 46 fichiers, tous verts.
 
-Brief : `specs/04_indices-commandes.md` v1.0.0. Livre les 3 déclencheurs de la Grotte (MOVE à la prise de contrôle, INTERACT au levier de la salle 1, ATTACK au premier monstre engagé) et l'infrastructure généralisée (catalogues `hints.json`/`glyphes.json`, un ajout futur — SKILL_1 en Phase 4, CONSUME en Phase 3 — n'exige qu'une entrée JSON de plus).
+Brief : `specs/04_stations-proportions-collision.md` v1.0.0. Ferme le point `[OUVERT]` « stations placeholder non solides » : les 4 stations (table, coffre, atelier, puits) passent à l'échelle ×2,1 et deviennent solides, avec seuil d'interaction mesuré au bord de leur empreinte plutôt qu'à leur centre.
 
 ### Décisions prises pendant l'implémentation
 
-- **Périphérique actif exposé par `src/input/input.js`** (§2 de la fiche demandait explicitement "un seul endroit, jamais lu ailleurs que par ce module") : un loquet `peripheriqueActif` (`'clavier' | 'manette' | 'tactile'`), même patron que le loquet `tactileActif` déjà existant. Priorité arbitraire en cas d'égalité sur une même frame (clavier > manette > tactile, documentée en commentaire — jamais observée en jeu réel, deux humains ne bougent pas à la même milliseconde). Défaut au boot = `'manette'` (§0 verrouillé : "PC à la manette" est la plateforme de référence).
-- **Géométrie de déclenchement INTERACT/ATTACK réutilise des constantes déjà existantes** plutôt que d'en introduire de nouvelles : `DISTANCE_INTERACT_PX` (déjà dans `main.js`) et `DISTANCE_ENGAGEMENT_PX` (déjà dans `companion.js`, désormais exportée) — "même seuil que puzzles.js"/"même seuil que l'engagement du follet" pris au pied de la lettre, une seule source de vérité chacun.
-- **Tout texte de glyphe passe par `t()`**, y compris une lettre isolée ("A", "F"...) : la contrainte "zéro chaîne en dur" du projet est absolue ("tout texte visible"), pas limitée aux phrases — `glyphes.json` ne stocke donc que des clés i18n (`clavier_key`/`manette_key`/`tactile_key`), jamais de texte littéral, même pour un glyphe identique FR/EN aujourd'hui.
-- **`glyphes.json` peuplé pour les 8 verbes dès cette livraison** (pas seulement les 3 utilisés par les déclencheurs actuels) : c'est un catalogue de données pur, sans coût de code, et la fiche demande explicitement qu'un futur indice (SKILL_1, CONSUME) n'ajoute qu'une entrée `hints.json` — encore faut-il que le glyphe existe déjà. `hints.json`, lui, reste strictement aux 3 entrées du scope (§8 : hors scope pour cette itération).
-- **Déclenchement en "niveau" plutôt qu'en front montant** : le gameplay rappelle `declencherVerbeUtile(verbe, flags)` à CHAQUE frame où la condition est vraie (hero à portée, monstre engagé...), jamais une seule fois sur un changement d'état. `hints.js` gère lui-même l'idempotence (flag déjà posé, ou un autre indice déjà affiché) — plus simple qu'une détection de front dans `main.js`, et résout naturellement "un seul indice à la fois, le second attend la fin du premier" (§3) : le rappel continu retente automatiquement dès que `actif` redevient `null`.
-- **Edge case "verbe émis avant le déclencheur" (§4)** : `verbeEmis()` pose le flag immédiatement même si aucun indice n'a jamais été affiché — testé explicitement (test (c)).
+- **Une seule fonction de collision, confirmée plutôt que réinventée** : les empreintes solides s'ajoutent à `scene.js#estSolideAuPoint` (déjà lue par `resoudreDeplacement`, qui gère glissement + correction de coin) — `resoudreDeplacement` lui-même n'a pas eu besoin d'être touché, tout son mécanisme (test des 4 coins de la hitbox) fonctionne tel quel sur un rectangle non aligné à la grille.
+- **Empreinte par défaut = boîte englobante des primitives du visuel**, jamais l'ombre (purement décorative) — nouvelle fonction pure `structures.js#empreinteParDefaut`, réutilisable pour n'importe quel futur interactif solide sans code supplémentaire (juste `solide: true` en données).
+- **"Une seule règle pour tous les interactifs" (§3 de la fiche) prise au pied de la lettre** : `resoudreEmpreinteInteractif` renvoie un rectangle **nul** pour tout interactif ni `solide` ni doté d'une `empreinte` explicite (tous les leviers aujourd'hui) — `structures.js#distanceAuRectangle` sur un rectangle nul redonne exactement `Math.hypot` au centre, donc le seuil d'interaction des leviers est mathématiquement identique à avant cette fiche, pas juste "à peu près pareil". `essayerInteraction()` (le vrai INTERACT) et `verifierIndicesNiveau()` (l'indice de commande, `specs/04_indices-commandes.md`) partagent désormais la même fonction `rectangleInteractif()` — jamais deux calculs de portée qui pourraient diverger.
+- **Échelle par défaut du catalogue = 1 (comportement Phase 2 inchangé) plutôt qu'un défaut à 2,1 avec override par les leviers** : plus sûr (aucun interactif existant non retouché par cette fiche ne change de comportement) et plus simple à raisonner que l'inverse ; les 4 stations déclarent explicitement `"echelle": 2.1` dans `puzzles.json`.
+- **`station_atelier` déplacée de `(89,58)` à `(89,61)`** : son empreinte agrandie (boîte englobante calculée, pas mesurée à l'oeil) empiétait de quelques pixels sur la rangée y=57, le couloir intérieur reliant les deux portes de la maison — vérifié en rejouant `tests/test_phase2_chemin_critique_2026-09-16.js` (chemin critique réel, pas une inspection de coordonnées). Table et coffre n'ont pas eu besoin d'être déplacés (déjà assez loin du couloir).
+- **`station_puits` reste solide malgré un léger chevauchement de la rangée y=57 côté jardin** : contrairement au couloir intérieur de la maison (un vrai corridor à 1 tuile de large entre deux murs), le jardin est un terrain ouvert — le héros peut simplement contourner par le nord ou le sud, ce n'est pas un goulot d'étranglement. Confirmé par le même test de chemin critique (mis à jour pour approcher le puits jusqu'à son empreinte plutôt que son centre, désormais inatteignable).
 
 ### Fichiers livrés
 
 ```
-src/hints.js                  (nouveau — pur, testé)
-src/ui/hud_hints.js           (nouveau — calque canvas, jamais exercé headless)
-src/input/input.js            (peripheriqueActif(), même patron que tactileActif())
-src/companion.js              (DISTANCE_ENGAGEMENT_PX exportée, aucun changement de valeur)
-src/schemas.js                (SCHEMAS.hints/glyphes + validerHint/validerGlyphe + VERBES_GAMEPLAY)
-src/main.js                   (creerEtatIndices, verifierIndicesNiveau(), verbeEmis aux 3 points
-                               d'émission, dessinerHudHints() dans dessiner(), reconstruction dans
-                               reinitialiserPartie(), accesseur test obtenirIndiceAffiche())
-data/hints.json, data/glyphes.json  (nouveaux catalogues)
-data/flags.json               (flag_hint_move/interact/attack)
-locales/fr.json, en.json      (hint.*, glyphe.*, flag.hint_*)
-docs/CHECKLIST_visuelle.md    (état 24 ajouté — non encore capturé, cf. plus bas)
-tests/test_hints_2026-09-17.js (nouveau)
+src/structures.js   (ECHELLE_INTERACTIF_DEFAUT, ECHELLE_STATION_PROVISOIRE, empreinteParDefaut,
+                     resoudreEmpreinteInteractif — tout pur, testé)
+src/scene.js        (empreintesSolides calculées à l'entrée en scène, fusionnées dans
+                     estSolideAuPoint ; trouverPositionLibrePlusProche, nouvelle fonction)
+src/schemas.js       (erreursGeometrieInteractif : echelle/solide/empreinte, solide sans
+                     render.visuel refusé)
+src/render.js        (echelle par entrée transmise à dessinerVisuel pour les leviers/stations)
+src/main.js          (rectangleInteractif() partagé par essayerInteraction()/
+                     verifierIndicesNiveau(), repositionnement dans entrerDansScene(),
+                     puzzlesAffiches transmet `echelle`)
+data/puzzles.json    (echelle:2.1 + solide:true sur les 4 stations, station_atelier déplacée)
+docs/CHECKLIST_visuelle.md  (état 21 mis à jour avec le nouveau critère d'échelle/collision)
+tests/test_stations_collision_2026-09-17.js  (nouveau)
+tests/test_phase2_chemin_critique_2026-09-16.js  (étendu : approche du puits mise à jour pour
+                     son empreinte solide, plus sa position exacte)
 ```
 
 ### Testé (automatisé)
 
-`tests/test_hints_2026-09-17.js` : (a) déclencheur → indice affiché une fois, flag posé ; (b) rechargement (nouvel état `hints.js`, flags déjà posés) → pas de second affichage ; (c) verbe émis avant le déclencheur → jamais affiché, flag posé quand même ; (d) glyphe = celui du périphérique actif, mis à jour à chaque appel (pas figé à l'affichage) ; durée + fermeture anticipée par émission + un seul indice à la fois (le second attend, testé explicitement) ; (e) catalogue invalide refusé au boot (verbe inconnu, hint sans glyphe pour son verbe, glyphe incomplet). Une seconde partie rejoue le chemin critique réel de la Grotte sur `creerOrchestrateurGrotte` (même patron que `test_phase1_sd_audit_chemin_critique`) : confirme sur le VRAI jeu que `flag_hint_move` se pose au tout premier `maj()` hors UI après l'intro, `flag_hint_interact` à portée du levier AVANT tout appui, `flag_hint_attack` à l'entrée en distance d'engagement AVANT toute frappe, et que chaque indice se ferme dès l'émission du verbe.
+`tests/test_stations_collision_2026-09-17.js` : boîte englobante mise à l'échelle (pure) ; résolution d'empreinte (nulle / explicite / défaut) ; catalogue refusé au boot (solide sans render, echelle négative, empreinte malformée) ; héros bloqué par l'empreinte solide de `station_table` sur son bord ouest sans jamais la traverser, et glisse sur l'axe libre lors d'une poussée diagonale contre son coin ; `trouverPositionLibrePlusProche` sort effectivement le héros d'une empreinte solide vers une position libre ; un levier sans `solide` ne produit toujours aucune empreinte (régression) ; `INTERACT` ouvre le dialogue de la station depuis chacun de ses 4 côtés, à portée du bord (pas du centre) ; une sauvegarde avec le héros positionné au centre d'une station est repoussée au chargement (`entrerDansScene`), logué. `tests/test_phase2_chemin_critique_2026-09-16.js` (rejoué, mis à jour) : confirme que le chemin critique complet — porte ouest → intérieur (table/coffre/atelier désormais solides) → porte est → jardin → puits (désormais solide) → fruit — reste praticable avec les 4 stations solides.
 
 ```
-node --check src/hints.js src/ui/hud_hints.js src/input/input.js src/companion.js src/schemas.js src/main.js
+node --check src/structures.js src/scene.js src/schemas.js src/render.js src/main.js
 node tools/run_tests.js
 ```
-→ **46 fichiers, tous verts** (45 précédents + `test_hints_2026-09-17.js`).
+→ **47 fichiers, tous verts** (46 précédents + `test_stations_collision_2026-09-17.js` ; `test_phase2_chemin_critique_2026-09-16.js` mis à jour, toujours vert).
 
 ### Non vérifié — reste dû à Xav (rendu canvas jamais exercé headless)
 
-Cette session n'a **aucun accès navigateur** : tout ce qui suit est fait et testé côté logique, mais **non validé visuellement**, à ne pas présenter comme acquis avant que Xav l'ait rejoué :
-- **`docs/CHECKLIST_visuelle.md`, état 24 (nouveau)** : bannière glyphe+mot, position sous le cartouche PV, fondu en entrée/sortie, disparition à l'appui/expiration — jamais capturée en navigateur réel.
-- **`main.js#dessiner()` a été touché** (ajout de `dessinerHudHints()`) : par la règle de méthode du projet, **les états 1-23 de la checklist doivent aussi être rejoués**, pas seulement le nouveau, même si ce ticket ne "devrait" toucher que l'affichage des indices.
-- **Durée d'affichage (2500ms) et position de la bannière** : valeurs provisoires, jamais ressenties en jeu.
-- **Glyphes clavier "ZQSD/WASD"** : `keyboard.js` mappe en réalité `KeyW/KeyA/KeyS/KeyD` (codes physiques, disposition réelle du clavier de Xav inconnue) — la fiche autorise explicitement ce flou (§6 : "ne pas décider de la disposition clavier si le socle ne l'expose pas"), Xav juge si le texte affiché lui convient tel quel.
-- **Hot-swap manette → clavier pendant qu'un indice est affiché** : le glyphe doit changer sans fermer l'indice (logique testée headless via `indiceAffiche()`, jamais vu à l'écran).
+Cette session n'a **aucun accès navigateur** : tout ce qui suit est fait et testé côté logique, mais **non validé visuellement ni au ressenti**, à ne pas présenter comme acquis avant que Xav l'ait rejoué :
+- **Échelle ×2,1** : jamais vue en jeu — la fourchette demandée était ×2 à ×2,2, valeur médiane choisie arbitrairement, "Xav ajuste au ressenti" (§6 de la fiche). Un seul endroit à changer si besoin : `ECHELLE_STATION_PROVISOIRE` (`structures.js`) **et** les 4 valeurs `"echelle": 2.1` de `puzzles.json` (non reliées automatiquement — la fiche demande un override par entrée, pas un défaut global, cf. décision ci-dessus).
+- **`docs/CHECKLIST_visuelle.md`, état 21 (mis à jour)** : proportions des 4 stations face au héros, collision (glissement le long), `INTERACT` depuis chaque côté, traversée de la maison sans accrochage — jamais capturé en navigateur réel.
+- **`render.js` et `main.js#dessiner()` ont été touchés** (passage de `echelle` par entrée) : par la règle de méthode du projet, **les états 1-23 (dont le 24 des indices de commande, lui aussi jamais confirmé) doivent être rejoués**, pas seulement le 21.
+- **Déplacement de `station_atelier`** : vérifié uniquement par un bot de test en ligne droite (headless), jamais à l'oeil — Xav peut juger que la nouvelle position (89,61) casse une composition visuelle voulue de la pièce, auquel cas c'est un `[OUVERT]` à rouvrir, pas une régression du code.
+- **Repositionnement au chargement (`trouverPositionLibrePlusProche`)** : la recherche par anneaux carrés peut renvoyer une case libre "moche" (par ex. de l'autre côté d'un mur fin) dans un cas de bord extrême — jamais rencontré dans les tests (les positions de secours observées sont toutes raisonnables), mais la fonction ne connaît que "libre", pas "esthétiquement cohérent".
 
 ### Points `[OUVERT]`
 
-Aucun nouveau. La détection de disposition clavier (ZQSD vs WASD) reste explicitement hors scope par la fiche elle-même (§8), pas un point que cette session tranche en silence.
+Aucun nouveau. Le point historique « stations placeholder non solides » que cette fiche fermait est refermé — reste seulement le ressenti de l'échelle (pas un point de design non tranché, juste un seuil numérique non encore validé en jeu, comme les autres seuils "provisoires" du projet).
 
 ### Hors scope pour cette session
 
-Page "Commandes" dans le menu (§8, alternative écartée par Xav), remappage des touches, indices pour SKILL_*/CONSUME (leurs phases respectives), détection de la disposition clavier, vérification réelle des glyphes tactiles (dette tactile jusqu'à la Phase 4).
+Stations réelles (recettes, coffre fonctionnel), placement libre des stations (Phase 3, D20③), collision des ennemis entre eux ou avec les stations (Phase 4), sprites (§8 de la fiche).
 

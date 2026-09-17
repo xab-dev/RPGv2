@@ -16,7 +16,7 @@ import { creerSourceClavier } from './input/keyboard.js';
 import { creerSourceManette } from './input/gamepad.js';
 import { creerSourceTactile } from './input/touch.js';
 import { creerCoucheInput, etatNeutre } from './input/input.js';
-import { chargerScene, resoudreDeplacement, portailFranchi } from './scene.js';
+import { chargerScene, resoudreDeplacement, portailFranchi, trouverPositionLibrePlusProche } from './scene.js';
 import { calculerCamera } from './camera.js';
 import { genererDecor } from './decor.js';
 import {
@@ -47,7 +47,7 @@ import {
 import { trouverRessourceProche } from './resources.js';
 import { ajouterItem } from './inventory.js';
 import { remplirItemsSol, trouverItemProche, ramasserEtRegenerer } from './ground_items.js';
-import { calculerOpaciteToit } from './structures.js';
+import { calculerOpaciteToit, distanceAuRectangle, resoudreEmpreinteInteractif } from './structures.js';
 import { avancerHeure, opaciteAHeure } from './daynight.js';
 import { armerAudio, definirMusiqueActive } from './audio.js';
 import { creerEtatIndices } from './hints.js';
@@ -302,8 +302,21 @@ export function creerOrchestrateurGrotte({
       x: (scene.spawn.x + 0.5) * scene.tileSize,
       y: (scene.spawn.y + 0.5) * scene.tileSize,
     };
-    hero.x = pos.x;
-    hero.y = pos.y;
+    // specs/04_stations-proportions-collision.md §4 : une sauvegarde
+    // antérieure peut pointer vers une position devenue solide (station
+    // agrandie depuis) — repousse vers la case libre la plus proche, une
+    // fois, en le loguant ; ne bloque jamais le joueur au boot. Coût
+    // négligeable même quand rien n'est solide (premier test sort
+    // immédiatement, cf. trouverPositionLibrePlusProche).
+    const positionLibre = trouverPositionLibrePlusProche(scene, pos.x, pos.y, flags.has);
+    if (positionLibre.x !== pos.x || positionLibre.y !== pos.y) {
+      console.warn(
+        `main.js#entrerDansScene : héros repoussé hors d'une empreinte solide en scène "${sceneId}" `
+        + `(${pos.x},${pos.y}) -> (${positionLibre.x},${positionLibre.y})`
+      );
+    }
+    hero.x = positionLibre.x;
+    hero.y = positionLibre.y;
     save.hero.scene = sceneId;
     save.hero.x = hero.x;
     save.hero.y = hero.y;
@@ -335,6 +348,21 @@ export function creerOrchestrateurGrotte({
     return { x: hero.x - hero.rayon, y: hero.y - hero.rayon, largeur: hero.rayon * 2, hauteur: hero.rayon * 2 };
   }
 
+  // specs/04_stations-proportions-collision.md §3 : rectangle ABSOLU (px
+  // logiques) d'un interactif positionné (levier/station), pour mesurer le
+  // seuil d'interaction au bord plutôt qu'au centre — même fonction pour
+  // essayerInteraction() et verifierIndicesNiveau() (INTERACT), jamais deux
+  // calculs qui pourraient diverger. Un levier (empreinte nulle par défaut,
+  // cf. structures.js) redonne un rectangle ponctuel, comportement identique
+  // à avant cette fiche.
+  function rectangleInteractif(puzzle) {
+    const visuel = registre.obtenir('visuels', puzzle.render.visuel);
+    const rel = resoudreEmpreinteInteractif(puzzle, visuel);
+    const cx = (puzzle.position.x + 0.5) * scene.tileSize;
+    const cy = (puzzle.position.y + 0.5) * scene.tileSize;
+    return { x: cx + rel.x, y: cy + rel.y, w: rel.w, h: rel.h };
+  }
+
   // 03_maison-exterieur §3.2/§3.3 étend l'interaction à 4 cibles possibles,
   // essayées dans cet ordre (le premier trouvé à portée gagne, un seul par
   // appui) : levier/station de scene.interactifs (déjà des entités
@@ -343,9 +371,11 @@ export function creerOrchestrateurGrotte({
   function essayerInteraction() {
     for (const puzzleId of scene.interactifs) {
       const puzzle = registre.obtenir('puzzles', puzzleId);
-      const px = (puzzle.position.x + 0.5) * scene.tileSize;
-      const py = (puzzle.position.y + 0.5) * scene.tileSize;
-      if (Math.hypot(hero.x - px, hero.y - py) > DISTANCE_INTERACT_PX) continue;
+      // §3 : seuil mesuré au bord de l'empreinte, pas au centre (une station
+      // ×2,1 solide dépasserait sinon DISTANCE_INTERACT_PX depuis l'extérieur
+      // de son propre bord) — un levier (empreinte nulle) redonne exactement
+      // la distance au centre d'avant cette fiche.
+      if (distanceAuRectangle(hero.x, hero.y, rectangleInteractif(puzzle)) > DISTANCE_INTERACT_PX) continue;
       if (puzzle.type === 'levier') {
         puzzlesEtat = activerLevier(registre, puzzlesEtat, puzzleId, flags);
         save.puzzles = puzzlesEtat;
@@ -533,15 +563,13 @@ export function creerOrchestrateurGrotte({
     if (scene.id === 'scene_grotte_salle_1') indices.declencherVerbeUtile('move', flags);
 
     // INTERACT : héros à portée de n'importe quel interactif positionné
-    // (levier/station) — même seuil que essayerInteraction() ; la Grotte n'a
-    // que des leviers, donc "le premier interactif rencontré" (§3) est de
-    // fait le levier de la salle 1, sans qu'il faille le nommer ici.
+    // (levier/station) — même seuil ET même géométrie que essayerInteraction()
+    // (rectangleInteractif, §3 04_stations-proportions-collision) ; la Grotte
+    // n'a que des leviers, donc "le premier interactif rencontré" (§3 de
+    // 04_indices-commandes) est de fait le levier de la salle 1.
     for (const puzzleId of scene.interactifs) {
       const puzzle = registre.obtenir('puzzles', puzzleId);
-      if (puzzle.type !== 'levier' && puzzle.type !== 'station_placeholder') continue;
-      const px = (puzzle.position.x + 0.5) * scene.tileSize;
-      const py = (puzzle.position.y + 0.5) * scene.tileSize;
-      if (Math.hypot(hero.x - px, hero.y - py) <= DISTANCE_INTERACT_PX) {
+      if (distanceAuRectangle(hero.x, hero.y, rectangleInteractif(puzzle)) <= DISTANCE_INTERACT_PX) {
         indices.declencherVerbeUtile('interact', flags);
         break;
       }
@@ -789,6 +817,10 @@ export function creerOrchestrateurGrotte({
         y: (p.position.y + 0.5) * scene.tileSize,
         actif: p.type === 'levier' && !!puzzlesEtat[p.id]?.actif,
         visuel: registre.obtenir('visuels', p.render.visuel),
+        // specs/04_stations-proportions-collision.md : échelle par entrée
+        // (`undefined` pour un levier -> dessinerVisuel applique son propre
+        // défaut 1, jamais un second défaut dupliqué ici).
+        echelle: p.echelle,
       }));
 
     // Anneau d'attaque (§3.1) : converti en px logiques ici (main.js a le

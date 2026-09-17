@@ -31,3 +31,61 @@ export function calculerOpaciteToit(hero, structure, tileSize, { rayonEffacement
   if (distance <= seuilBas) return 0;
   return (distance - seuilBas) / margeFondu;
 }
+
+// specs/04_stations-proportions-collision.md — échelle/empreinte des
+// interactifs (leviers, stations placeholder). Provisoire (Xav ajuste au
+// ressenti) : un seul endroit pour la valeur par défaut, surchargeable par
+// entrée puzzles.json (`echelle`). Les 4 stations concernées (table, coffre,
+// atelier, puits) déclarent explicitement leur propre `echelle` dans
+// puzzles.json — ce défaut ne s'applique qu'aux interactifs qui ne déclarent
+// rien (tous les leviers aujourd'hui), donc AUCUN changement de rendu pour
+// eux (§3 : "leviers : 1, inchangés").
+export const ECHELLE_INTERACTIF_DEFAUT = 1;
+export const ECHELLE_STATION_PROVISOIRE = 2.1;
+
+// Boîte englobante des primitives d'un visuel (jamais l'ombre, purement
+// visuelle) à l'échelle donnée, relative au point (0,0) où dessinerVisuel()
+// place la silhouette — c'est-à-dire relative à la MÊME position que celle
+// utilisée pour le rendu (position.x/y du puzzle), jamais un second repère.
+// Rotation de primitive ignorée (aucun interactif n'en utilise à ce jour) :
+// approximation documentée, pas un bug si elle réapparaît un jour.
+export function empreinteParDefaut(visuel, echelle) {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+
+  for (const p of visuel.primitives) {
+    const dx = p.dx || 0;
+    const dy = p.dy || 0;
+    if (p.forme === 'polygone' || p.forme === 'ligne') {
+      for (const [px, py] of p.points) {
+        minX = Math.min(minX, dx + px);
+        maxX = Math.max(maxX, dx + px);
+        minY = Math.min(minY, dy + py);
+        maxY = Math.max(maxY, dy + py);
+      }
+      continue;
+    }
+    const demiW = (p.w || 0) / 2;
+    const demiH = (p.h || 0) / 2;
+    minX = Math.min(minX, dx - demiW);
+    maxX = Math.max(maxX, dx + demiW);
+    minY = Math.min(minY, dy - demiH);
+    maxY = Math.max(maxY, dy + demiH);
+  }
+
+  return { x: minX * echelle, y: minY * echelle, w: (maxX - minX) * echelle, h: (maxY - minY) * echelle };
+}
+
+// Empreinte effective d'un interactif (rectangle en px logiques, relatif à sa
+// position) — §3 : "une seule règle pour tous les interactifs". Un levier
+// (ni `solide`, ni `empreinte` explicite) obtient un rectangle de taille
+// nulle : le seuil d'interaction mesuré à son "bord" (structures.js#
+// distanceAuRectangle sur un rectangle nul) redonne exactement la distance au
+// centre d'avant cette fiche — comportement identique, pas une coïncidence.
+export function resoudreEmpreinteInteractif(puzzle, visuel) {
+  if (puzzle.empreinte) return puzzle.empreinte;
+  if (!puzzle.solide) return { x: 0, y: 0, w: 0, h: 0 };
+  return empreinteParDefaut(visuel, puzzle.echelle ?? ECHELLE_INTERACTIF_DEFAUT);
+}

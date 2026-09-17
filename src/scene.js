@@ -20,6 +20,7 @@
 // structures (`structures[]` : murs/sol/portes générés depuis un simple
 // rectangle, jamais encodés à la main dans le layout).
 import { mulberry32 } from './decor.js';
+import { resoudreEmpreinteInteractif } from './structures.js';
 
 function decoderLayout(donnees) {
   if (donnees.legende) {
@@ -90,6 +91,28 @@ export function chargerScene(registre, sceneId) {
   appliquerForetProcedurale(grille, donnees);
   appliquerStructures(grille, donnees);
 
+  // specs/04_stations-proportions-collision.md §3 : empreintes des
+  // interactifs `solide: true`, en px logiques absolus, résolues UNE fois à
+  // l'entrée en scène (statiques, comme la grille de tuiles) — jamais
+  // recalculées par frame. Un interactif non solide n'y contribue pas
+  // (`resoudreEmpreinteInteractif` renvoie un rectangle nul dans ce cas, mais
+  // filtrer ici évite de tester des rectangles nuls pour rien à chaque appel
+  // de resoudreDeplacement).
+  const empreintesSolides = (donnees.interactifs || [])
+    .map((id) => registre.obtenir('puzzles', id))
+    .filter((p) => p && p.solide)
+    .map((p) => {
+      const visuel = registre.obtenir('visuels', p.render.visuel);
+      const rel = resoudreEmpreinteInteractif(p, visuel);
+      const cx = (p.position.x + 0.5) * donnees.tile_size;
+      const cy = (p.position.y + 0.5) * donnees.tile_size;
+      return { id: p.id, x: cx + rel.x, y: cy + rel.y, w: rel.w, h: rel.h };
+    });
+
+  function dansRectangle(px, py, rect) {
+    return px >= rect.x && px <= rect.x + rect.w && py >= rect.y && py <= rect.y + rect.h;
+  }
+
   function idTuileBrut(x, y) {
     return grille[y][x];
   }
@@ -107,12 +130,16 @@ export function chargerScene(registre, sceneId) {
   }
 
   // Hors des limites de la scène = solide (mur invisible), pour ne jamais
-  // laisser le héros sortir du monde.
+  // laisser le héros sortir du monde. Une empreinte d'interactif solide
+  // (§3 04_stations-proportions-collision) s'ajoute à la même fonction —
+  // "une seule fonction de collision" testée par resoudreDeplacement ci-
+  // dessous, jamais une 2ᵉ passe séparée.
   function estSolideAuPoint(px, py, estFlagActif) {
     const tx = Math.floor(px / donnees.tile_size);
     const ty = Math.floor(py / donnees.tile_size);
     const tuile = tuileA(tx, ty, estFlagActif);
-    return !tuile || tuile.solid;
+    if (!tuile || tuile.solid) return true;
+    return empreintesSolides.some((rect) => dansRectangle(px, py, rect));
   }
 
   return {
@@ -145,7 +172,42 @@ export function chargerScene(registre, sceneId) {
     portes,
     tuileA,
     estSolideAuPoint,
+    // Exposé pour les tests (headless, jamais le rendu) et pour
+    // trouverPositionLibrePlusProche ci-dessous — la géométrie brute, jamais
+    // recalculée ailleurs (§3 : "une seule fonction de collision").
+    empreintesSolides,
   };
+}
+
+// specs/04_stations-proportions-collision.md §4 : héros à l'intérieur d'une
+// empreinte solide au chargement (sauvegarde antérieure, position désormais
+// bloquée par une station agrandie) — repousse vers la case libre la plus
+// proche, jamais ne bloque le joueur au boot. Recherche par anneaux carrés
+// croissants (distance de Tchebychev, pas la distance euclidienne exacte :
+// approximation suffisante pour un cas de secours qui ne devrait presque
+// jamais se produire en pratique).
+export function trouverPositionLibrePlusProche(scene, x, y, estFlagActif) {
+  if (!scene.estSolideAuPoint(x, y, estFlagActif)) return { x, y };
+
+  const { tileSize, width, height } = scene;
+  const tx0 = Math.floor(x / tileSize);
+  const ty0 = Math.floor(y / tileSize);
+  const rayonMax = Math.max(width, height);
+
+  for (let rayon = 1; rayon <= rayonMax; rayon++) {
+    for (let dy = -rayon; dy <= rayon; dy++) {
+      for (let dx = -rayon; dx <= rayon; dx++) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) !== rayon) continue; // anneau seulement
+        const tx = tx0 + dx;
+        const ty = ty0 + dy;
+        if (tx < 0 || ty < 0 || tx >= width || ty >= height) continue;
+        const px = (tx + 0.5) * tileSize;
+        const py = (ty + 0.5) * tileSize;
+        if (!scene.estSolideAuPoint(px, py, estFlagActif)) return { x: px, y: py };
+      }
+    }
+  }
+  return { x, y }; // filet de sécurité, jamais atteint en pratique
 }
 
 // Résout un déplacement (dx, dy) contre les collisions, axe par axe, en

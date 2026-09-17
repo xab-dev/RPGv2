@@ -302,6 +302,10 @@ export function dessinerScene(ctx, {
   for (const levier of puzzles) {
     dessinerVisuel(ctx, levier.visuel, levier.x - camera.x, levier.y - camera.y, {
       teinte: levier.actif ? COULEUR_LEVIER_ACTIF : null,
+      // specs/04_stations-proportions-collision.md : échelle par entrée
+      // (stations ×2,1, leviers 1 par défaut) — dessinerVisuel() default déjà
+      // 1 si absent, jamais un second défaut ici.
+      echelle: levier.echelle,
     });
   }
 

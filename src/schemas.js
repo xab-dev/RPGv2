@@ -457,6 +457,33 @@ function erreursRenderVisuel(entry, catalogs, path) {
   return [];
 }
 
+// specs/04_stations-proportions-collision.md §2 : `echelle`/`solide`/
+// `empreinte`, communs aux types "levier" et "station_placeholder" (les seuls
+// à avoir une position). Un défaut absent = comportement Phase 2 inchangé
+// (`echelle` 1, `solide` false) — un catalogue existant sans ces champs reste
+// valide tel quel.
+function erreursGeometrieInteractif(entry, catalogs, path) {
+  const erreurs = [];
+  if (entry.echelle !== undefined && (typeof entry.echelle !== 'number' || entry.echelle <= 0)) {
+    erreurs.push(`${path} > echelle doit être un nombre positif si présent`);
+  }
+  if (entry.solide !== undefined && typeof entry.solide !== 'boolean') {
+    erreurs.push(`${path} > solide doit être un booléen si présent`);
+  }
+  if (entry.empreinte !== undefined) {
+    const e = entry.empreinte;
+    const champsValides = e && ['x', 'y', 'w', 'h'].every((c) => typeof e[c] === 'number');
+    if (!champsValides || e.w <= 0 || e.h <= 0) {
+      erreurs.push(`${path} > empreinte doit être { x, y, w, h } en nombres, w/h > 0`);
+    }
+  }
+  // §4 : une collision invisible est un bug garanti — refusé au boot.
+  if (entry.solide === true && !(entry.render && typeof entry.render.visuel === 'string')) {
+    erreurs.push(`${path} > solide: true exige un render.visuel (une collision invisible est refusée)`);
+  }
+  return erreurs;
+}
+
 function validerPuzzle(entry, catalogs, path) {
   const erreurs = [];
   const flagsDeclares = new Set((catalogs.flags || []).map((f) => f.id));
@@ -471,6 +498,7 @@ function validerPuzzle(entry, catalogs, path) {
     // "sequence" ne fait que référencer des leviers déjà rendus) — §2.1 de
     // 03_grotte-polish.md.
     erreurs.push(...erreursRenderVisuel(entry, catalogs, path));
+    erreurs.push(...erreursGeometrieInteractif(entry, catalogs, path));
   } else if (entry.type === 'sequence') {
     const puzzlesDeclares = new Set((catalogs.puzzles || []).map((p) => p.id));
     if (!Array.isArray(entry.ordre) || entry.ordre.length === 0) {
@@ -497,6 +525,7 @@ function validerPuzzle(entry, catalogs, path) {
       erreurs.push(`${path} > dialogue "${entry.dialogue}" introuvable dans dialogues.json`);
     }
     erreurs.push(...erreursRenderVisuel(entry, catalogs, path));
+    erreurs.push(...erreursGeometrieInteractif(entry, catalogs, path));
   } else {
     erreurs.push(`${path} > type "${entry.type}" inconnu (levier | sequence | station_placeholder)`);
   }

@@ -120,13 +120,20 @@ différente) entre les trois emplacements.
     mesure qu'on approche, jamais un saut net ; l'intérieur (sol parquet,
     murs) apparaît en dessous pendant le fondu, jamais un flash ; le toit
     redevient opaque en s'éloignant.
-21. **Objets au sol + station placeholder** (palier B/C/D) — une branche/un
-    caillou/un fruit visibles au sol (silhouettes distinctes, ancre centre),
-    un puits/une table/un coffre/un atelier visibles (silhouettes distinctes,
-    ancre bas — **piège trouvé cette session** : ces stations vivent dans
-    `scene.interactifs` comme les leviers, un filtre qui ne gardait que
-    `type === 'levier'` les rendait invisibles bien qu'interactives ; corrigé,
-    à revérifier si ce filtre est retouché).
+21. **Objets au sol + station placeholder** (palier B/C/D ; échelle/collision
+    ajoutées le 2026-09-17, `specs/04_stations-proportions-collision.md`) —
+    une branche/un caillou/un fruit visibles au sol (silhouettes distinctes,
+    ancre centre), un puits/une table/un coffre/un atelier visibles
+    (silhouettes distinctes, ancre bas — **piège trouvé en 2026-09-16** : ces
+    stations vivent dans `scene.interactifs` comme les leviers, un filtre qui
+    ne gardait que `type === 'levier'` les rendait invisibles bien
+    qu'interactives ; corrigé, à revérifier si ce filtre est retouché).
+    **Nouveau critère (2026-09-17)** : les 4 stations doivent apparaître
+    nettement plus grandes que le héros (échelle ×2,1, provisoire — verdict
+    de Xav sur le ressenti), on ne les traverse plus (on glisse le long comme
+    un mur), `INTERACT` ("pas encore") s'ouvre en s'approchant de n'importe
+    quel côté de chacune, la traversée de la maison (porte ouest → table/
+    coffre/atelier → porte est) reste possible sans accrochage.
 22. **Cycle jour/nuit** (palier E) — heure forcée à la nuit. Vérifier : toute
     la scène s'assombrit (même mécanisme que l'obscurité de la grotte),
     seules la lumière du follet (et la fenêtre éclairée de la maison, si à

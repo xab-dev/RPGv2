@@ -234,12 +234,16 @@ const DISTANCE_INTERACT_PX = 28; // même seuil que main.js — dupliqué ici, n
   etape('flag_jardin_decouvert posé en entrant', save.flags.flag_jardin_decouvert === true);
 }
 
-// --- Puits (station_placeholder, dlg_puits_pas_encore) — pas de collision
-// d'entité pour ce type en Phase 2 (même limite que les leviers, cf. journal
-// CLAUDE.md) : approche directe sur sa position exacte.
+// --- Puits (station_placeholder, dlg_puits_pas_encore) — désormais SOLIDE et
+// agrandi (specs/04_stations-proportions-collision.md, 2026-09-17) : viser sa
+// position exacte ne fonctionne plus (le héros bute sur son empreinte avant
+// d'atteindre le centre) — `seuil` généreux pour tolérer l'arrêt sur le bord
+// (rayon du héros + demi-largeur de l'empreinte, approché de l'ouest ici,
+// cf. journal 2026-09-17), le seuil d'interaction réel (mesuré au bord,
+// DISTANCE_INTERACT_PX) reste, lui, largement atteint à cette distance.
 {
-  const arrivePuits = avancerVers(orchestrateur, frames, px(106, 57), { maxFrames: 600 });
-  etape('Marche vers le puits', arrivePuits);
+  const arrivePuits = avancerVers(orchestrateur, frames, px(106, 57), { seuil: 36, maxFrames: 900 });
+  etape('Marche vers le puits (jusqu\'à son empreinte solide)', arrivePuits);
   frames.push(etat({ interact: true })); orchestrateur.maj(16);
   etape('INTERACT sur le puits ouvre son dialogue "pas encore"', orchestrateur.dialogueOuvert());
   fermerDialogue(orchestrateur, frames);

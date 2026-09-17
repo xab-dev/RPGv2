@@ -461,8 +461,27 @@ export function initialiserMenu({
   // l'écran-liste (sans callback, `conteneur` reste caché) et levée du
   // bandeau dans la même fonction synchrone — aucun état intermédiaire où
   // ni l'un ni l'autre ne serait affiché.
+  //
+  // SD_construction-menu-ouvert-placement_2026-09-17.md (cause racine H1
+  // confirmée) : `actionOuvrirConstruction` ne fait que MASQUER `conteneur`
+  // (afficherEcran(conteneur,false)) pour laisser place à `ecranConstruction`
+  // — le contrôleur de premier niveau du menu Pause (`controleur`, plus bas
+  // dans ce module), lui, reste ouvert. `ecranConstruction.fermerSansCallback()`
+  // ne fermait QUE l'écran-liste, jamais ce contrôleur parent : `menu.
+  // estOuvert()` restait donc vrai après l'entrée en placement, si bien que
+  // le routage de main.js (`if (menu.estOuvert()) menu.traiterInput(...)`)
+  // continuait d'envoyer le stick au menu Pause — invisible mais toujours
+  // actif — au lieu de la machine construction, jusqu'à ce qu'un `B` de trop
+  // referme ce contrôleur fantôme. Le point de sortie complet est donc ici,
+  // dans la même transition atomique (jamais un `menu.fermer()` global, qui
+  // rappellerait le `onFermer` de `ecranConstruction` et réafficherait
+  // `conteneur` par-dessus le placement) : fermer EXPLICITEMENT `controleur`
+  // en plus de `ecranConstruction`, aucun état intermédiaire où le contrôleur
+  // parent resterait ouvert pendant que le placement capte déjà les verbes.
   function ouvrirPlacementConstruction(nomStation) {
     ecranConstruction.fermerSansCallback();
+    controleur.fermer();
+    afficherEcran(conteneur, false);
     bandeauConstruction.textContent = texteBandeauConstruction(nomStation);
     afficherEcran(bandeauConstruction, true);
   }

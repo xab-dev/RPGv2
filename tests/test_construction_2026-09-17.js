@@ -14,6 +14,7 @@ import { creerI18n } from '../src/i18n.js';
 import { creerDialogue, DELAI_ARMEMENT_DIALOGUE_MS } from '../src/dialogue.js';
 import { saveNeuve, creerStoreMemoire } from '../src/save.js';
 import { creerOrchestrateurGrotte } from '../src/main.js';
+import { initialiserMenu } from '../src/ui/menu.js';
 import { tournerEmpreinte, empreinteAbsoluePuzzle, resoudreEmpreinteInteractif } from '../src/structures.js';
 import { dansRectangleTuile, rectanglesChevauchent, couloirPraticable, poseValide } from '../src/placement.js';
 
@@ -350,6 +351,167 @@ function saveDansLaMaison() {
   // dialogue — vérifié indirectement (aucun dialogue bloqué ouvert).
   assert.equal(orchestrateur.dialogueOuvert(), false, 'INTERACT sur l\'atelier déplacé ouvre Craft, pas un dialogue');
   console.log('OK grille / rotation 4 quarts / confirmation / INTERACT à la nouvelle position');
+}
+
+// --- Faux DOM minimal pour exercer le VRAI ui/menu.js (pas le stub à 3 états
+// ci-dessus, qui modélise le contrat observable par main.js mais jamais le
+// contrôleur interne de premier niveau du menu Pause — c'est précisément ce
+// que SD_construction-menu-ouvert-placement_2026-09-17.md reprochait : le
+// stub ne pouvait pas attraper cette classe de bug). Même esprit et mêmes
+// gabarits que test_phase1_sd_menu_reset_invisible_2026-09-15.js — copié ici
+// plutôt que partagé, chaque fichier de test restant autonome (convention du
+// dépôt, CLAUDE.md#Architecture : « un fichier par contrat/diagnostic »).
+class ElementFactice {
+  constructor(tag) {
+    this.tagName = String(tag).toUpperCase();
+    this.id = '';
+    this.dataset = {};
+    this.style = {};
+    this.children = [];
+    this.parentNode = null;
+    this._classes = [];
+    this._listeners = {};
+    this._texte = '';
+    this.hidden = false;
+    this.value = '';
+  }
+  setAttribut(nom, val) {
+    if (nom === 'id') this.id = val;
+    else if (nom === 'class') this._classes = (val || '').split(/\s+/).filter(Boolean);
+    else if (nom.startsWith('data-')) {
+      const cle = nom.slice(5).replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+      this.dataset[cle] = val;
+    } else if (nom === 'value') this.value = val;
+  }
+  appendChild(enfant) {
+    enfant.parentNode = this;
+    this.children.push(enfant);
+    return enfant;
+  }
+  addEventListener(type, fn) {
+    (this._listeners[type] ||= []).push(fn);
+  }
+  get textContent() {
+    return this._texte;
+  }
+  set textContent(v) {
+    this._texte = v;
+    this.children = [];
+  }
+  set innerHTML(html) {
+    this.children = analyserHTMLFactice(html);
+    this.children.forEach((c) => (c.parentNode = this));
+  }
+  querySelectorAll(selecteur) {
+    const resultats = [];
+    const visiter = (el) => {
+      for (const enfant of el.children) {
+        if (correspondFactice(enfant, selecteur)) resultats.push(enfant);
+        visiter(enfant);
+      }
+    };
+    visiter(this);
+    return resultats;
+  }
+  querySelector(selecteur) {
+    return this.querySelectorAll(selecteur)[0] || null;
+  }
+}
+
+function correspondFactice(el, selecteur) {
+  if (selecteur.startsWith('#')) return el.id === selecteur.slice(1);
+  if (selecteur.startsWith('.')) return el._classes.includes(selecteur.slice(1));
+  if (selecteur.startsWith('[') && selecteur.endsWith(']')) {
+    const nomAttr = selecteur.slice(1, -1);
+    if (nomAttr.startsWith('data-')) {
+      const cle = nomAttr.slice(5).replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+      return Object.prototype.hasOwnProperty.call(el.dataset, cle);
+    }
+  }
+  return false;
+}
+
+function analyserHTMLFactice(html) {
+  const racine = new ElementFactice('root');
+  const pile = [racine];
+  const regexTag = /<(\/)?([a-zA-Z0-9-]+)([^>]*?)(\/)?>|([^<]+)/g;
+  let m;
+  while ((m = regexTag.exec(html))) {
+    const [, fermante, nomTag, attrsStr, autoFerme, texte] = m;
+    if (texte !== undefined) continue;
+    if (fermante) {
+      pile.pop();
+      continue;
+    }
+    const el = new ElementFactice(nomTag);
+    const regexAttr = /([a-zA-Z0-9-]+)(?:="([^"]*)")?/g;
+    let a;
+    while ((a = regexAttr.exec(attrsStr || ''))) {
+      if (!a[1]) continue;
+      el.setAttribut(a[1], a[2] !== undefined ? a[2] : true);
+    }
+    pile[pile.length - 1].appendChild(el);
+    if (!autoFerme) pile.push(el);
+  }
+  return racine.children;
+}
+
+function creerFauxDocument() {
+  return {
+    createElement: (tag) => new ElementFactice(tag),
+    body: new ElementFactice('body'),
+  };
+}
+
+// Même critère que test_phase1_sd_menu_reset_invisible : `hidden` seul ne
+// suffit pas (leçon du diagnostic reset invisible), il faut aussi le style
+// calculé.
+function estVisibleEffectif(el) {
+  return el.hidden === false && el.style.display !== 'none' && el.style.display !== undefined;
+}
+
+// --- C3bis : le VRAI menu Pause (contrôleur de premier niveau inclus) doit
+// se fermer ENTIÈREMENT à l'entrée en placement — SD_construction-menu-
+// ouvert-placement_2026-09-17.md. Ce test échoue avant correctif : `menu.
+// estOuvert()` restait vrai (le contrôleur parent, jamais fermé par
+// `ouvrirPlacementConstruction`, continuait de consommer le stick), donc le
+// premier MOVE après `A` ne bougeait pas le fantôme (routage de main.js
+// §1190 : `if (menu.estOuvert()) menu.traiterInput(...)` gagnait sur la
+// machine construction).
+{
+  const save = saveDansLaMaison();
+  const store = creerStoreMemoire();
+  const dialogue = creerDialogue();
+  const document = creerFauxDocument();
+  const menu = initialiserMenu({ document, i18n, exporterSauvegarde: () => {}, importerSauvegarde: () => {} });
+  const conteneur = document.body.querySelector('#menu');
+  const frames = [];
+  const input = creerInputScripte(frames);
+  const orchestrateur = creerOrchestrateurGrotte({
+    registre, i18n, save, store, dialogue, menu, input, ctxLogique: null, ctxVisible: null, canvasLogique: null,
+  });
+
+  // MENU (ouvre le menu Pause réel, précondition indispensable : sans elle,
+  // le contrôleur parent est déjà fermé par défaut et le bug ne se
+  // reproduit pas) -> Construction -> A sur "atelier" (choix simulé, même
+  // patron que C3 : `entreeAtelier.action()` est exactement l'action que
+  // l'écran-liste réel invoquerait).
+  menu.ouvrir();
+  const entreeAtelier = orchestrateur.entreesConstruction().find((e) => e.texte === i18n.t('station.atelier'));
+  entreeAtelier.action();
+
+  assert.equal(orchestrateur.constructionActif(), true, 'le mode Construction démarre');
+  assert.equal(menu.estOuvert(), false, 'le menu Pause (contrôleur de premier niveau inclus) doit être entièrement fermé à l\'entrée en placement');
+  assert.equal(estVisibleEffectif(conteneur), false, 'aucun écran DOM du menu Pause ne doit rester monté pendant le placement');
+
+  const poseDepart = { ...orchestrateur.obtenirConstruction().pose };
+  pousserAxe(orchestrateur, frames, { moveX: -1 });
+  const poseApres = orchestrateur.obtenirConstruction().pose;
+  assert.deepEqual(
+    { x: poseApres.x, y: poseApres.y }, { x: poseDepart.x - 1, y: poseDepart.y },
+    'le premier MOVE après A doit déjà déplacer le fantôme, pas naviguer un menu Pause fantôme'
+  );
+  console.log('OK menu Pause réel entièrement fermé à l\'entrée en placement (contrôleur de premier niveau inclus)');
 }
 
 // --- C4 : refus (chevauchement), dialogue localisé, annulation (skill_3 -> LISTE, sans persister) ---

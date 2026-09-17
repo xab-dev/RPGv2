@@ -1,8 +1,10 @@
 # RPG V2 — Roadmap + prompt d'exécution autonome
 
-**Version : 1.1.0** — document vivant.
+**Version : 1.2.0** — document vivant.
 
-**Statut** : vision validée (cadrage clos le 2026-09-15, cf. `carte_mentale_RPG_V2_v1_3_0.md`). **Phases 0 et 1 livrées et validées par Xav (2026-09-15 / 2026-09-16). Phase courante : Phase 2, détaillée dans `03_maison-exterieur.md`.** Ce document sert de brief autonome — à donner tel quel à Claude Code pour démarrer la phase courante sans aller-retour préalable.
+**Statut** : Phases 0, 1, 1b et 2 livrées et validées. Phase courante : Phase 3, détaillée dans `04_maison-interieur.md` (à écrire). Ce document sert de brief autonome — à donner tel quel à Claude Code pour démarrer la phase courante sans aller-retour préalable.
+
+**Changelog 1.2.0 (2026-09-17)** : session de tri/documentation, aucun code touché. Phase 2 actée comme livrée et validée (verdict Xav manette/clavier, 2026-09-17 — détail `docs/archives/INDEX.md`). Statut avancé à Phase 3 (spec `04_maison-interieur.md` à écrire).
 
 **Changelog 1.1.0 (2026-09-16)** : Phase 2 scindée en « première marche » (ce qui est spécifié) et récolte réelle reportée après les outils de la Phase 3 ; champs, animaux, déco plantable et XP de récolte sortent de la Phase 2 (spec ultérieure `03b`, ou fusion Phase 4 — à trancher à la livraison de la Phase 2). Fil de design transversal **Crypte X** inscrit (D14⑥), à concevoir après le Poste avancé. Audio (init + première piste) avancé en Phase 2.
 
@@ -118,17 +120,13 @@ Première scène jouable de bout en bout, et **preuve de tous les systèmes de c
 - Livre : combat de base (`ATTACK`), premier ennemi en JSON, premiers effets d'état élémentaires, follet suiveur avec sa lumière, catalogue d'énigmes (type `levier`, type `séquence`), dialogue/lore localisé, **HUD tactile** validé sur cette scène, **table des synergies élémentaires écrite** (livrable de design).
 - Critère : un joueur qui ne connaît pas le jeu sort de la grotte à la manette **et** au tactile sans qu'on lui explique rien.
 
-### Phase 2 — Région Maison, extérieur : première marche — **phase courante**, détail `03_maison-exterieur.md`
-Première grande carte de tuiles (5400 × 3700). La grotte débouche en bordure de carte, côté forêt ; la maison est proche, le jardin de l'autre côté, la campagne ensuite. **Scindée le 2026-09-16** (amendement, cf. carte mentale §8) :
-- **Livré en Phase 2** : la région traversable et rendue par fenêtre visible (plancher 30 fps mobile) ; arbres et rochers **bloqués** avec dialogue « reviens avec les bons outils » (catalogue de ressources ouvert) ; branches, cailloux, fruit **au sol** à ramasser (patron V1 : 2 exemplaires, respawn en zone libre) + poche ; maison comme structure dont le **toit s'efface** à l'approche, placeholders intérieurs et puits « pas encore » à leur position définitive ; cycle jour/nuit avec le **follet comme seule source de lumière** ; audio : init sur geste utilisateur + bande son piano en boucle + réglage dans le menu.
-- **Reporté après les outils de la Phase 3** : bois à couper, pierre à miner (la fonction « bloqué / récoltable » est posée dès la Phase 2, en un seul endroit).
-- **Reporté en spec ultérieure** (`03b` ou Phase 4) : champs à semer, animaux sauvages, décoration plantable, XP de récolte. Pêche et point d'eau : toujours reportés.
-- Ton : chill, lumineux. Aucun monstre dans cette région.
-- Réserve dès maintenant, en données, les emplacements du fil Crypte X (voir plus bas), sans rien poser.
+### Phase 2 — Région Maison, extérieur : première marche — **livrée et validée (2026-09-17)**, détail `03_maison-exterieur.md`
+Première marche de la Région Maison (carte, ressources bloquées, items au sol, maison-structure, jour/nuit, audio), scindée le 2026-09-16 de la récolte réelle (reportée après les outils de la Phase 3). Verdict complet (parcours rejoué, défauts corrigés et re-validés) : `docs/archives/INDEX.md`.
 
 ### Phase 3 — Maison, intérieur & systèmes de camp
 - Intérieur avec **stations à placement libre** (atelier de cuisine, table de craft), coffre de base, déco légère.
 - **Système de recettes unique** (cuisine + craft), survie (faim/soif/santé + repas-buffs), inventaire poche → sac de craft, **XP par craft**, niveaux et attribution de stats.
+- Rouvre bois à couper / pierre à miner via le premier outil crafté (branche + caillou) — point d'accroche `resources.js#peutRecolter`.
 - Critère : la boucle 5 minutes tourne (sortir → récolter → revenir → cuisiner/crafter → repartir), et le joueur atteint le niveau ~5 qui ouvre la zone suivante.
 
 ### Phase 4 — 1ère zone de monstres

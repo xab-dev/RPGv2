@@ -4,15 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## État actuel du dépôt
 
-Phases validées : 0 (Socle technique), 1 (La Grotte) et 1b (polish, 4/4 paliers, DA validée) — validées en jeu à la manette réelle le 2026-09-16. Phase 2 (Région Maison, `specs/03_maison-exterieur.md`) : « première marche » (5 paliers + audio) validée à la manette et au clavier réels par Xav le 2026-09-16 ; les deux défauts qu'elle a fait remonter (accrochage des coins en collision, arbre interactif hors du chemin naturel) ont été diagnostiqués et corrigés le jour même (`SD_hitbox-angle-arbre_2026-09-16.md`) puis validés par Xav le 2026-09-17. **Phase 2 close** — prochaine phase à ouvrir. Tactile en dette assumée jusqu'à la Phase 4 (compétences), différé jusqu'à un lien de partage pour test (le neveu de Xav est le testeur mobile de référence).
-
-`MT_jour-nuit-contraste_2026-09-16.md` (v1.1, archivée) livrée le 2026-09-17 — code fait et testé, validation manuelle manette/navigateur réelle encore due par Xav (`docs/archives/JOURNAL_2026-09-17_micro-ticket-contraste-jour-nuit.md`). `MT_musique-ambiance-synth_2026-09-16.md` (archivée) livrée le 2026-09-17 — code fait et testé, freeze diagnostiqué et corrigé le jour même (`docs/archives/JOURNAL_2026-09-17_diagnostic-freeze-musique.md`) ; validation manuelle (navigateur, manette, 5 min d'écoute) encore due par Xav. `specs/04_indices-commandes.md` et `specs/04_stations-proportions-collision.md` livrées le 2026-09-17 (journal courant + `docs/archives/JOURNAL_2026-09-17_indices-commande.md`) — **validées en jeu (manette/navigateur réel) par Xav le jour même** : tests automatisés tous verts, proportions des stations (échelle ×2,1) meilleures qu'avant. Un seul défaut visuel non bloquant, reporté à une prochaine session sur consigne explicite de Xav (« ne rien coder tout de suite ») : `station_puits` perd la lisibilité de sa silhouette à cette échelle — voir « Retour Xav en jeu » dans le journal courant et la dette ci-dessous.
+Phases validées : 0 (Socle technique), 1 (La Grotte), 1b (polish, DA validée) et 2 (Région Maison, première marche, `specs/03_maison-exterieur.md`) — **Phase 2 close le 2026-09-17**, détail complet : `docs/archives/INDEX.md`. Phase courante : voir « Critère de passage courant » ci-dessous.
 
 Historique complet des sessions : **`docs/archives/INDEX.md`** — un fichier par session archivée, contenu verbatim (source de vérité en cas de doute sur le détail d'une décision passée). `CLAUDE.md` ne garde que le journal de la session la plus récente (en fin de ce fichier) — voir la règle de méthode correspondante ci-dessous.
 
 - `specs/00_ROADMAP.md` — brief autonome à lire en entier en premier. Contexte projet, décisions déjà tranchées (à ne jamais rouvrir), contraintes de méthode, détail de la phase en cours.
 - `specs/01_socle-technique.md`, `specs/02_grotte.md`, `specs/03_grotte-polish.md`, `specs/03_maison-exterieur.md` — specs détaillées des phases livrées.
-- `specs/carte_mentale_RPG_V2_v1_3_0.md` — décisions produit/techniques verrouillées (§0, §8) et règle d'architecture directrice (§7).
+- `docs/carte_mentale_RPG_V2_v1_4_0.md` — décisions produit/techniques verrouillées (§0, §8) et règle d'architecture directrice (§7).
 
 **Avant toute action de code**, lire `specs/00_ROADMAP.md` en entier, puis le fichier `0N_*.md` de la phase courante. Ne pas rouvrir une décision déjà actée dans ces documents — un point de design non tranché se marque `[OUVERT]` et remonte à l'utilisateur (dev = Xav), il ne se tranche jamais en silence.
 
@@ -112,9 +110,10 @@ rpg_v2/
 │                           résolution logique)
 ├── data/                   catalogues JSON (voir specs/*.md §2.1 de chaque phase)
 ├── locales/fr.json, en.json
-├── specs/                  00_ROADMAP.md, 0N_*.md par phase, carte_mentale_RPG_V2_v1_3_0.md
-├── docs/                   fiches de diagnostic/ticket actives (SD_*.md, MT_*.md, NS_*.md,
-│                           CHECKLIST_visuelle.md) + archives/ (journaux de session clos)
+├── specs/                  00_ROADMAP.md, 0N_*.md par phase
+├── docs/                   carte_mentale_RPG_V2_v1_4_0.md + fiches de diagnostic/ticket actives
+│                           (SD_*.md, MT_*.md, NS_*.md, CHECKLIST_visuelle.md) + archives/
+│                           (journaux de session clos)
 ├── tests/                  un fichier par contrat/diagnostic, headless, `node:assert/strict`
 └── tools/run_tests.js      lance tous les tests/*.js en séquence (confort de `npm test`)
 ```
@@ -123,7 +122,7 @@ rpg_v2/
 
 ## Décisions produit verrouillées (ne pas rouvrir)
 
-Détail complet dans `carte_mentale_RPG_V2_v1_3_0.md` §0 et §8. Points structurants pour le code :
+Détail complet dans `docs/carte_mentale_RPG_V2_v1_4_0.md` §0 et §8. Points structurants pour le code :
 
 - 3 éléments (Feu/Eau/Terre), extensibles en données uniquement.
 - 4 stats primaires : Force, Agilité, Vitalité, Esprit. Esprit = réserve de skills uniquement ; tout le scaling de dégâts converge sur Force, l'élément porte le type/les interactions, jamais la puissance brute.
@@ -173,78 +172,32 @@ Tous les autres `[OUVERT]` historiques (résolution logique, clignements/orbite 
 - **Mesure réelle du temps de frame / fps** (plancher mobile jamais mesuré, seulement borné fonctionnellement par `selectionnerTuilesVisibles`) — 2026-09-16, même archive.
 - **Tactile réel** (manette/clavier seulement testés par toutes les sessions jusqu'ici) — dette assumée depuis la Phase 0, différée jusqu'à un lien de partage (Phase 4+).
 - **Mouvement légèrement téléporté à chaque angle depuis la correction de coin** (2026-09-17, retour Xav) : feeling meilleur, aucune interruption, mais pas très smooth — à lisser dans une phase de polish ultérieure (hypothèse : répartir le repoussement sur plusieurs frames ou l'interpoler plutôt que l'appliquer d'un coup — à diagnostiquer, pas à patcher en silence).
+- **Validation manuelle du contraste jour/nuit encore due par Xav** (`MT_jour-nuit-contraste_2026-09-16.md` v1.1, archivée) — code fait et testé le 2026-09-17, reste la validation manette/navigateur réelle. `docs/archives/JOURNAL_2026-09-17_micro-ticket-contraste-jour-nuit.md`.
+- **Validation manuelle de l'ambiance synthétisée encore due par Xav** (`MT_musique-ambiance-synth_2026-09-16.md`, archivée) — code fait et testé, freeze diagnostiqué et corrigé le 2026-09-17 ; reste la validation navigateur/manette (5 min d'écoute). `docs/archives/JOURNAL_2026-09-17_diagnostic-freeze-musique.md`.
 - **Validation visuelle de `specs/04_indices-commandes.md` encore due par Xav** (état 24 de `docs/CHECKLIST_visuelle.md`, + états 1-23 rejoués) — code fait, suite headless verte, mais `main.js#dessiner()` a été touché (règle de méthode) et le rendu canvas n'est jamais exercé headless. `docs/archives/JOURNAL_2026-09-17_indices-commande.md`.
 - **`station_puits` : silhouette dégradée à l'échelle ×2,1** (retour Xav en jeu, 2026-09-17, journal courant) — proportions des stations par ailleurs validées et meilleures qu'avant ; cause à diagnostiquer (probablement `visuel_puits` dans `data/visuels.json`) avant tout correctif, explicitement reporté à une prochaine session (consigne de Xav : ne rien coder dans l'immédiat).
 
 ## Critère de passage courant
 
-Phase 2 (Région Maison, première marche) — verdict détaillé : `docs/NS_critere-passage-phase2_2026-09-16.md`. État au 2026-09-17 : validée à la manette et au clavier réels par Xav sur tout le parcours (grotte → rocher → branche → Poche → toit → stations → jardin/fruit/puits → campagne → persistance) ; les deux défauts remontés (arbre hors chemin, accrochage des coins) ont été corrigés le 2026-09-16 et validés le 2026-09-17 (`SD_hitbox-angle-arbre_2026-09-16.md`). **Phase 2 close.** Reste en dette, non bloquant : tactile réel (Phase 4+), musique (fichier non fourni), mesure de fps réelle.
+**Phase 3 — Maison, intérieur & systèmes de camp** (spec `specs/04_maison-interieur.md`, à venir). Critère (ROADMAP) : la boucle 5 minutes tourne — sortir → récolter → revenir → cuisiner/crafter → repartir — et le joueur atteint le niveau ~5 qui ouvre la zone suivante. **Spec non écrite : ne pas commencer sans elle.**
 
-## Journal de session — Stations : proportions et collision (2026-09-17)
+## Journal de session — Clôture formelle de la Phase 2 (2026-09-17)
 
-Ménage de journal effectué en début de session (avant tout code) : le journal précédent (« Indices de commande ») archivé verbatim dans `docs/archives/JOURNAL_2026-09-17_indices-commande.md`, `docs/archives/INDEX.md` mis à jour, décisions/dette déjà consolidées dans les sections dédiées de ce fichier. `node tools/run_tests.js` rejoué avant d'ouvrir `specs/04_stations-proportions-collision.md` : 46 fichiers, tous verts.
+Session de tri/documentation, ordonnée par `NS_cloture-phase2_2026-09-17.md`. **Aucun code, aucun test modifié.** Ménage de journal effectué en début de session : le journal précédent (« Stations : proportions et collision ») archivé verbatim dans `docs/archives/JOURNAL_2026-09-17_stations-proportions-collision.md`, `docs/archives/INDEX.md` mis à jour.
 
-Brief : `specs/04_stations-proportions-collision.md` v1.0.0. Ferme le point `[OUVERT]` « stations placeholder non solides » : les 4 stations (table, coffre, atelier, puits) passent à l'échelle ×2,1 et deviennent solides, avec seuil d'interaction mesuré au bord de leur empreinte plutôt qu'à leur centre.
+Contexte : Phase 2 « Région Maison, première marche » validée en jeu (manette + clavier) sur tout le parcours, défauts corrigés et re-validés (2026-09-17). `CLAUDE.md` le disait déjà mais gardait encore le critère de passage de la Phase 2 en section courante, et la carte mentale n'avait pas absorbé les décisions des 16-17/09. Cette session range ce qui est déjà acté ailleurs (journaux archivés, retours de Xav) — elle ne tranche rien de nouveau.
 
-### Décisions prises pendant l'implémentation
+### Fait
 
-- **Une seule fonction de collision, confirmée plutôt que réinventée** : les empreintes solides s'ajoutent à `scene.js#estSolideAuPoint` (déjà lue par `resoudreDeplacement`, qui gère glissement + correction de coin) — `resoudreDeplacement` lui-même n'a pas eu besoin d'être touché, tout son mécanisme (test des 4 coins de la hitbox) fonctionne tel quel sur un rectangle non aligné à la grille.
-- **Empreinte par défaut = boîte englobante des primitives du visuel**, jamais l'ombre (purement décorative) — nouvelle fonction pure `structures.js#empreinteParDefaut`, réutilisable pour n'importe quel futur interactif solide sans code supplémentaire (juste `solide: true` en données).
-- **"Une seule règle pour tous les interactifs" (§3 de la fiche) prise au pied de la lettre** : `resoudreEmpreinteInteractif` renvoie un rectangle **nul** pour tout interactif ni `solide` ni doté d'une `empreinte` explicite (tous les leviers aujourd'hui) — `structures.js#distanceAuRectangle` sur un rectangle nul redonne exactement `Math.hypot` au centre, donc le seuil d'interaction des leviers est mathématiquement identique à avant cette fiche, pas juste "à peu près pareil". `essayerInteraction()` (le vrai INTERACT) et `verifierIndicesNiveau()` (l'indice de commande, `specs/04_indices-commandes.md`) partagent désormais la même fonction `rectangleInteractif()` — jamais deux calculs de portée qui pourraient diverger.
-- **Échelle par défaut du catalogue = 1 (comportement Phase 2 inchangé) plutôt qu'un défaut à 2,1 avec override par les leviers** : plus sûr (aucun interactif existant non retouché par cette fiche ne change de comportement) et plus simple à raisonner que l'inverse ; les 4 stations déclarent explicitement `"echelle": 2.1` dans `puzzles.json`.
-- **`station_atelier` déplacée de `(89,58)` à `(89,61)`** : son empreinte agrandie (boîte englobante calculée, pas mesurée à l'oeil) empiétait de quelques pixels sur la rangée y=57, le couloir intérieur reliant les deux portes de la maison — vérifié en rejouant `tests/test_phase2_chemin_critique_2026-09-16.js` (chemin critique réel, pas une inspection de coordonnées). Table et coffre n'ont pas eu besoin d'être déplacés (déjà assez loin du couloir).
-- **`station_puits` reste solide malgré un léger chevauchement de la rangée y=57 côté jardin** : contrairement au couloir intérieur de la maison (un vrai corridor à 1 tuile de large entre deux murs), le jardin est un terrain ouvert — le héros peut simplement contourner par le nord ou le sud, ce n'est pas un goulot d'étranglement. Confirmé par le même test de chemin critique (mis à jour pour approcher le puits jusqu'à son empreinte plutôt que son centre, désormais inatteignable).
+- **`CLAUDE.md`** : « État actuel du dépôt » réduit à une ligne pour la Phase 2 (le détail des micro-tickets vit dans `docs/archives/INDEX.md` et dans la Dette ci-dessus, notamment les deux validations manuelles encore dues — contraste jour/nuit, ambiance synthé — désormais explicites dans la Dette plutôt que noyées dans ce paragraphe) ; « Critère de passage courant » remplacé par le bloc Phase 3 (spec à écrire) ; références à la carte mentale mises à jour vers `docs/carte_mentale_RPG_V2_v1_4_0.md`.
+- **Carte mentale → v1.4.0** (`docs/carte_mentale_RPG_V2_v1_4_0.md`, renommée depuis v1.3.0) : changelog de version, 5 lignes ajoutées à son §8 (arbre fruitier increvable, indice de commande au premier déclenchement, stations solides ×2,1, durées/contraste jour-nuit, clôture de la Phase 2), point `[OUVERT]` ⑦ ajouté en §5 (mobs nocturnes dans la Région Maison — contredit le ton « chill, aucun monstre » de `03_maison-exterieur.md` §5, à trancher seulement quand le jardin existera), référence Throne and Liberty rattachée à D20 (housing) en §9, ligne « Maison — extérieur » ajoutée en §3bis (statut livré/validé).
+- **`specs/00_ROADMAP.md` → v1.2.0** : statut mis à jour (Phases 0/1/1b/2 livrées et validées, Phase courante = Phase 3 détaillée dans `04_maison-interieur.md`, à écrire), section Phase 2 réduite à un renvoi, ligne ajoutée à l'esquisse de Phase 3 sur le point d'accroche `resources.js#peutRecolter`.
 
-### Fichiers livrés
+### Testé
 
-```
-src/structures.js   (ECHELLE_INTERACTIF_DEFAUT, ECHELLE_STATION_PROVISOIRE, empreinteParDefaut,
-                     resoudreEmpreinteInteractif — tout pur, testé)
-src/scene.js        (empreintesSolides calculées à l'entrée en scène, fusionnées dans
-                     estSolideAuPoint ; trouverPositionLibrePlusProche, nouvelle fonction)
-src/schemas.js       (erreursGeometrieInteractif : echelle/solide/empreinte, solide sans
-                     render.visuel refusé)
-src/render.js        (echelle par entrée transmise à dessinerVisuel pour les leviers/stations)
-src/main.js          (rectangleInteractif() partagé par essayerInteraction()/
-                     verifierIndicesNiveau(), repositionnement dans entrerDansScene(),
-                     puzzlesAffiches transmet `echelle`)
-data/puzzles.json    (echelle:2.1 + solide:true sur les 4 stations, station_atelier déplacée)
-docs/CHECKLIST_visuelle.md  (état 21 mis à jour avec le nouveau critère d'échelle/collision)
-tests/test_stations_collision_2026-09-17.js  (nouveau)
-tests/test_phase2_chemin_critique_2026-09-16.js  (étendu : approche du puits mise à jour pour
-                     son empreinte solide, plus sa position exacte)
-```
+`node tools/run_tests.js` rejoué après tous les changements documentaires (aucun fichier `src/`/`tests/`/`data/` touché) : **47 fichiers, tous verts, inchangé.**
 
-### Testé (automatisé)
+### Hors scope
 
-`tests/test_stations_collision_2026-09-17.js` : boîte englobante mise à l'échelle (pure) ; résolution d'empreinte (nulle / explicite / défaut) ; catalogue refusé au boot (solide sans render, echelle négative, empreinte malformée) ; héros bloqué par l'empreinte solide de `station_table` sur son bord ouest sans jamais la traverser, et glisse sur l'axe libre lors d'une poussée diagonale contre son coin ; `trouverPositionLibrePlusProche` sort effectivement le héros d'une empreinte solide vers une position libre ; un levier sans `solide` ne produit toujours aucune empreinte (régression) ; `INTERACT` ouvre le dialogue de la station depuis chacun de ses 4 côtés, à portée du bord (pas du centre) ; une sauvegarde avec le héros positionné au centre d'une station est repoussée au chargement (`entrerDansScene`), logué. `tests/test_phase2_chemin_critique_2026-09-16.js` (rejoué, mis à jour) : confirme que le chemin critique complet — porte ouest → intérieur (table/coffre/atelier désormais solides) → porte est → jardin → puits (désormais solide) → fruit — reste praticable avec les 4 stations solides.
-
-```
-node --check src/structures.js src/scene.js src/schemas.js src/render.js src/main.js
-node tools/run_tests.js
-```
-→ **47 fichiers, tous verts** (46 précédents + `test_stations_collision_2026-09-17.js` ; `test_phase2_chemin_critique_2026-09-16.js` mis à jour, toujours vert).
-
-### Non vérifié — reste dû à Xav (rendu canvas jamais exercé headless)
-
-Cette session n'a **aucun accès navigateur** : tout ce qui suit est fait et testé côté logique, mais **non validé visuellement ni au ressenti**, à ne pas présenter comme acquis avant que Xav l'ait rejoué :
-- **Échelle ×2,1** : jamais vue en jeu — la fourchette demandée était ×2 à ×2,2, valeur médiane choisie arbitrairement, "Xav ajuste au ressenti" (§6 de la fiche). Un seul endroit à changer si besoin : `ECHELLE_STATION_PROVISOIRE` (`structures.js`) **et** les 4 valeurs `"echelle": 2.1` de `puzzles.json` (non reliées automatiquement — la fiche demande un override par entrée, pas un défaut global, cf. décision ci-dessus).
-- **`docs/CHECKLIST_visuelle.md`, état 21 (mis à jour)** : proportions des 4 stations face au héros, collision (glissement le long), `INTERACT` depuis chaque côté, traversée de la maison sans accrochage — jamais capturé en navigateur réel.
-- **`render.js` et `main.js#dessiner()` ont été touchés** (passage de `echelle` par entrée) : par la règle de méthode du projet, **les états 1-23 (dont le 24 des indices de commande, lui aussi jamais confirmé) doivent être rejoués**, pas seulement le 21.
-- **Déplacement de `station_atelier`** : vérifié uniquement par un bot de test en ligne droite (headless), jamais à l'oeil — Xav peut juger que la nouvelle position (89,61) casse une composition visuelle voulue de la pièce, auquel cas c'est un `[OUVERT]` à rouvrir, pas une régression du code.
-- **Repositionnement au chargement (`trouverPositionLibrePlusProche`)** : la recherche par anneaux carrés peut renvoyer une case libre "moche" (par ex. de l'autre côté d'un mur fin) dans un cas de bord extrême — jamais rencontré dans les tests (les positions de secours observées sont toutes raisonnables), mais la fonction ne connaît que "libre", pas "esthétiquement cohérent".
-
-### Points `[OUVERT]`
-
-Aucun nouveau. Le point historique « stations placeholder non solides » que cette fiche fermait est refermé — reste seulement le ressenti de l'échelle (pas un point de design non tranché, juste un seuil numérique non encore validé en jeu, comme les autres seuils "provisoires" du projet).
-
-### Hors scope pour cette session
-
-Stations réelles (recettes, coffre fonctionnel), placement libre des stations (Phase 3, D20③), collision des ennemis entre eux ou avec les stations (Phase 4), sprites (§8 de la fiche).
-
-### Retour Xav en jeu (2026-09-17, même jour)
-
-Verdict manette/navigateur réel sur les deux fiches de cette session : **tests automatisés tous verts**, proportions des stations (échelle ×2,1) **validées, meilleures qu'avant**. Un seul défaut visuel relevé, non bloquant : **`station_puits` a perdu la lisibilité de sa silhouette** à cette échelle (probablement `visuel_puits` — combinaison cercle/ellipse/poteau, cf. `data/visuels.json` — qui ne tient pas bien le grossissement ×2,1 ; à diagnostiquer, pas à corriger à l'oeil sans avoir vu le rendu réel). Le reste (indices de commande, collision, glissement le long des stations) n'a pas été signalé comme défectueux — considérer néanmoins `docs/CHECKLIST_visuelle.md` (états 1-24) comme **rejoué avec succès sauf état 21/puits** plutôt que formellement recapturé état par état.
-
-**Consigne explicite de Xav : ne rien coder tout de suite** — cette session se clôt sur ce constat, le polish du visuel du puits est reporté à une prochaine session (probablement un micro-ticket dédié, cause racine avant tout patch — ne pas juste grossir/réduire des primitives au hasard sans comprendre pourquoi la silhouette se dégrade à l'échelle).
+Tout code. La spec `04_maison-interieur.md` (dépend de trois décisions de Xav, non encore prises). Le micro-ticket `station_puits` (reste en Dette, consigne explicite de Xav de ne rien coder dans l'immédiat).
 

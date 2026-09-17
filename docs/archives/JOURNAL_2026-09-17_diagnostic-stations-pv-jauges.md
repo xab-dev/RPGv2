@@ -1,0 +1,33 @@
+## Journal de session — Diagnostic stations/PV/jauges (2026-09-17)
+
+Ordonnée par `SD_phase3-stations-pv-jauges_2026-09-17.md`, suite à la première validation en jeu du Palier A-E par Xav (13h45, manette, partie neuve après reset). Trois symptômes, traités dans l'ordre imposé par la fiche (survie d'abord — bloquant —, PV ensuite, rendu en dernier pour ne rejouer la checklist visuelle qu'une fois).
+
+### Sujet 3 — Jauges faim/soif figées et grises
+
+**Cause** : `ui/hud.js#dessinerHud` lisait `survie.faim`/`survie.soif` pour dessiner les barres, mais la clé réelle écrite par `survival.js`/`save.js` (et déclarée par `data/survival.json`) est `jauge_faim`/`jauge_soif` — jamais `faim`/`soif`. Le ratio passé à `dessinerJauge` valait donc toujours `undefined`, la barre de remplissage ne se dessinait jamais (seul le fond gris, statique, restait visible) — quelle que soit la vraie valeur de la jauge. La décroissance elle-même n'était **pas** cassée : `tests/test_phase3_survival_2026-09-17.js` (déjà vert avant cette session) prouvait déjà le tick sur le vrai orchestrateur. H3a/H3b/H3d (tick pas appelé, gel permanent, partie neuve sans bloc survie) sont donc écartées — seul H3c était en cause.
+**Correction** : `ui/hud.js` lit désormais `survie.jauge_faim`/`survie.jauge_soif`. En même temps, `save.js` dupliquait `{ jauge_faim: 1, jauge_soif: 1 }` dans `saveNeuve()` ET dans `migrer_3_vers_4()` (deux littéraux qui n'avaient pas encore divergé, mais exactement la classe de bug que la fiche demandait d'éliminer) — extraits dans une seule fonction `etatInitialSurvie()`.
+**Testé** : `node tests/test_save_migration_3_4_2026-09-17.js` (nouveau cas : partie neuve et sauvegarde migrée produisent le même `survie`, clés vérifiées) ; `node tools/run_tests.js` entier.
+**Reste ouvert** : le rendu réel (barre qui bouge à l'écran) n'a pas pu être revérifié en navigateur — état 25 de `docs/CHECKLIST_visuelle.md`, encore dû.
+
+### Sujet 2 — PV qui semblent baisser en mangeant
+
+**Cause** : confirmée H2a. `main.js#calculerStatsHeros()` recalculait `hero.pvMax` à chaque frame (`hero.pvMax = statsDerivees.derivee_pv_max`) sans jamais toucher `hero.pv` en conséquence. Le buff `buff_repas` (+2 Vitalité, 3 min) fait monter `pv_max` (formule `derivee_pv_max`, +16 à Vitalité de base) : les PV absolus n'ont pas baissé, mais la barre RELATIVE (`pv/pv_max`) affichée par le HUD, elle, se réduit d'un coup — exactement le constat de Xav ("la barre de PV descend"). Un second problème latent, jamais rencontré en jeu mais réel dans le code : à l'expiration du buff, rien ne clampait `pv` si le joueur avait au-dessus du nouveau plafond plus bas.
+**Correction** : nouvelle fonction pure `entities.js#reconcilierPvMax(hero, pvMaxNouveau)` — une hausse de `pv_max` fait monter `pv` du même delta absolu (le buff donne réellement les PV qu'il promet, jamais un headroom invisible) ; une baisse clampe `pv` au nouveau plafond sans perte supplémentaire. Câblée dans `main.js#calculerStatsHeros()` à la place de l'affectation directe — un seul chemin, jamais dans le HUD.
+**Testé** : `node tests/test_sd_phase3-stations-pv-jauges_2026-09-17.js` (5 cas : premier calcul, hausse, baisse sous le nouveau plafond, baisse au-dessus — clamp, delta nul — no-op) ; `node tools/run_tests.js` entier.
+**Reste ouvert** : aucun — corrigé, testé headless, le ressenti manette reste à confirmer par Xav (mais le mécanisme numérique est désormais correct par construction, testé).
+
+### Sujet 1 — Stations et puits invisibles
+
+**Cause** : `main.js#dessiner()` construit `puzzlesAffiches` (la liste envoyée au rendu) en filtrant `scene.interactifs` sur `p.type === 'levier' || p.type === 'station_placeholder'`. Palier A de la Phase 3 a renommé les 4 instances de stations (table/coffre/atelier/puits) de `type: "station_placeholder"` vers `type: "station"` — mais ce filtre de RENDU, codé en dur avec l'ancienne énumération de types, n'a jamais été mis à jour en même temps. Résultat : les 4 stations restent solides (la collision, dans `scene.js#empreintesSolides`, ne filtre jamais par type) et actionnables (`essayerInteraction()` non plus), mais disparaissent silencieusement de la liste dessinée — exactement le constat de Xav ("collision et INTERACT fonctionnent, rien n'est dessiné").
+**Pourquoi le garde-fou « solide sans rendu » n'a pas tiré** — c'est la question la plus importante de cette session : ce garde-fou (`schemas.js#erreursGeometrieInteractif` + `erreursRenderVisuel`, appelé par `validerPuzzle` pour le type `"station"`) valide que la **donnée** déclare un `render.visuel` qui se résout dans `visuels.json`. C'était le cas : `puzzles.json` portait toujours `render: { visuel: "visuel_table" }` etc., inchangé depuis la Phase 2, et `visuel_table` existe bel et bien dans `visuels.json`. La donnée était donc valide de bout en bout — le bug n'était **pas** une donnée invalide mais un **filtre de code** qui ignorait un `type` pourtant valide. Le garde-fou protège contre « solide + aucun visuel déclaré en données », pas contre « le code de rendu a sa propre liste de types qu'il a oublié de mettre à jour » : deux classes de bug distinctes, la seconde hors du périmètre que ce garde-fou a jamais eu.
+**Ce qui empêche que ça se reproduise** : le filtre de `puzzlesAffiches` n'énumère plus de `type` du tout — il ne garde que `p.render && p.render.visuel`, structurel plutôt que nominatif. Un 5ᵉ type d'interactif positionné (qui déclarera nécessairement `render.visuel`, sinon le vrai garde-fou le refuse au boot) se dessine sans toucher cette fonction — conforme à la règle d'architecture directrice (« une entrée JSON de plus, zéro code de système »).
+**Testé** : `node tests/test_sd_phase3-stations-pv-jauges_2026-09-17.js` (garde-fou : un `type: "station"` sans `render.visuel` reproduisant exactement le cas de la Phase 3 est refusé au boot, message nommant l'interactif fautif ; les 4 vraies stations + le puits résolvent un visuel non nul ; les 4 passent le nouveau filtre structurel) ; `node tools/run_tests.js` entier (54 fichiers verts).
+**Reste ouvert** : preuve visuelle en navigateur réel encore due (état 21 de `docs/CHECKLIST_visuelle.md`, contrainte de méthode : canvas jamais exercé headless).
+
+### Testé (ensemble de la session)
+
+`node tools/run_tests.js` : **54 fichiers, tous verts** (53 hérités + `test_sd_phase3-stations-pv-jauges`, plus un cas ajouté à `test_save_migration_3_4`).
+
+### Hors scope (explicite, cf. fiche)
+
+`05_construction-stations.md`. Équilibrage des seuils (60 s, décroissances, courbe de niveaux — Xav n'a pas encore pu juger, les jauges étant mortes jusqu'ici). Micro-ticket `station_puits` (silhouette). Migration `3 → 4` sur une vraie sauvegarde Phase 2 (à exercer par Xav séparément, cf. Dette).

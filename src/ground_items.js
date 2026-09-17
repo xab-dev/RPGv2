@@ -11,13 +11,16 @@ function dansRect(tx, ty, rect) {
   return tx >= rect.x && tx < rect.x + rect.w && ty >= rect.y && ty < rect.y + rect.h;
 }
 
-// Tire une position libre (tuile non solide, dans une zone autorisée, hors
-// zones exclues, pas déjà occupée) via un hash déterministe (seed scène ^
-// graine passée par l'appelant) — jamais Math.random(), pour rester
-// reproductible en test. Renvoie null si aucune position trouvée après un
-// nombre borné d'essais (§4 edge case : carte saturée, jamais de boucle
-// infinie).
-function tirerPositionLibre(scene, zonesAutorisees, zonesExclues, dejaOccupees, graine) {
+// Tire une position libre (tuile non solide, ATTEIGNABLE depuis le héros,
+// dans une zone autorisée, hors zones exclues, pas déjà occupée) via un hash
+// déterministe (seed scène ^ graine passée par l'appelant) — jamais
+// Math.random(), pour rester reproductible en test. Renvoie null si aucune
+// position trouvée après un nombre borné d'essais (§4 edge case : carte
+// saturée, jamais de boucle infinie). `tuilesAtteignables` optionnel (null =
+// aucun filtre, cf. tests existants sur scènes entièrement connectées) —
+// SD_respawn-items-au-sol_2026-09-17 : une tuile non solide mais isolée par
+// la forêt procédurale est retirée et redemandée, jamais acceptée.
+function tirerPositionLibre(scene, zonesAutorisees, zonesExclues, dejaOccupees, graine, tuilesAtteignables = null) {
   if (zonesAutorisees.length === 0) return null;
   const alea = mulberry32((scene.seed ^ graine) >>> 0);
   for (let essai = 0; essai < 60; essai++) {
@@ -27,6 +30,7 @@ function tirerPositionLibre(scene, zonesAutorisees, zonesExclues, dejaOccupees, 
     if (zonesExclues.some((z) => dansRect(tx, ty, z.rect))) continue;
     const tuile = scene.tuileA(tx, ty);
     if (!tuile || tuile.solid) continue;
+    if (tuilesAtteignables && !tuilesAtteignables.has(`${tx},${ty}`)) continue;
     const occupee = dejaOccupees.some(
       (p) => Math.floor(p.x / scene.tileSize) === tx && Math.floor(p.y / scene.tileSize) === ty
     );
@@ -40,11 +44,42 @@ function zonesDuType(scene, types) {
   return (scene.zones || []).filter((z) => (types || []).includes(z.type));
 }
 
+// Ensemble des tuiles non solides connectées (4-adjacence) à un point de
+// départ garanti franchissable (le héros, à l'entrée en scène) — SD_respawn-
+// items-au-sol_2026-09-17 : la forêt procédurale (densité fixe, decor.js)
+// isole parfois une poignée de tuiles libres au milieu d'arbres solides ;
+// `tuile.solid` seul ne dit rien de leur accessibilité réelle. Calculé une
+// fois par entrée en scène (jamais par frame, cf. main.js), réutilisé tel
+// quel par remplirItemsSol/tickRespawns ci-dessous.
+export function calculerTuilesAtteignables(scene, txDepart, tyDepart) {
+  const vues = new Set();
+  const cle = (x, y) => `${x},${y}`;
+  const depart = scene.tuileA(txDepart, tyDepart);
+  if (!depart || depart.solid) return vues; // départ solide (ne devrait pas arriver) : aucune tuile garantie
+  const pile = [[txDepart, tyDepart]];
+  vues.add(cle(txDepart, tyDepart));
+  while (pile.length > 0) {
+    const [tx, ty] = pile.pop();
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nx = tx + dx;
+      const ny = ty + dy;
+      if (nx < 0 || ny < 0 || nx >= scene.width || ny >= scene.height) continue;
+      const k = cle(nx, ny);
+      if (vues.has(k)) continue;
+      const tuile = scene.tuileA(nx, ny);
+      if (!tuile || tuile.solid) continue;
+      vues.add(k);
+      pile.push([nx, ny]);
+    }
+  }
+  return vues;
+}
+
 // Complète le stock d'items au sol de la scène jusqu'à `nb_au_sol` pour
 // chaque item catalogue dont au moins une zone de spawn existe sur cette
 // scène — un item sans zone en commun (ex. item de craft futur, Phase 3+)
 // n'apparaît simplement jamais au sol ici, sans erreur.
-export function remplirItemsSol(scene, items, existant, compteurDepart = 0) {
+export function remplirItemsSol(scene, items, existant, compteurDepart = 0, tuilesAtteignables = null) {
   const resultat = { ...existant };
   let compteur = compteurDepart;
   for (const item of items) {
@@ -56,7 +91,7 @@ export function remplirItemsSol(scene, items, existant, compteurDepart = 0) {
     let positions = resultat[item.id] ? [...resultat[item.id]] : [];
     while (positions.length < item.spawn.nb_au_sol) {
       compteur += 1;
-      const position = tirerPositionLibre(scene, zonesAutorisees, zonesExclues, positions, compteur);
+      const position = tirerPositionLibre(scene, zonesAutorisees, zonesExclues, positions, compteur, tuilesAtteignables);
       if (!position) {
         console.warn(`ground_items.js : impossible de placer tous les "${item.id}" (zones saturées)`);
         break;
@@ -107,7 +142,7 @@ export function planifierRespawn(enAttente, itemId, respawnMs) {
 // par l'appelant pour rester unique dans toute la session) et l'ajoute à
 // itemsSol. Zones saturées au moment précis de l'échéance (rare, carte
 // pleine) : le délai est réessayé à la frame suivante plutôt que perdu.
-export function tickRespawns(scene, items, itemsSol, enAttente, deltaMs, compteurDepart) {
+export function tickRespawns(scene, items, itemsSol, enAttente, deltaMs, compteurDepart, tuilesAtteignables = null) {
   let compteur = compteurDepart;
   const itemsSolSuivant = { ...itemsSol };
   const enAttenteSuivant = {};
@@ -123,7 +158,7 @@ export function tickRespawns(scene, items, itemsSol, enAttente, deltaMs, compteu
       const zonesAutorisees = zonesDuType(scene, item.spawn.zones);
       const zonesExclues = zonesDuType(scene, item.spawn.zones_exclues);
       compteur += 1;
-      const position = tirerPositionLibre(scene, zonesAutorisees, zonesExclues, itemsSolSuivant[itemId] || [], compteur);
+      const position = tirerPositionLibre(scene, zonesAutorisees, zonesExclues, itemsSolSuivant[itemId] || [], compteur, tuilesAtteignables);
       if (position) {
         itemsSolSuivant[itemId] = [...(itemsSolSuivant[itemId] || []), position];
       } else {

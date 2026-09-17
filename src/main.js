@@ -48,7 +48,7 @@ import {
 } from './intro.js';
 import { peutRecolter, trouverRessourceProche } from './resources.js';
 import { ajouterItem, retirerItem } from './inventory.js';
-import { remplirItemsSol, trouverItemProche, ramasser, planifierRespawn, tickRespawns } from './ground_items.js';
+import { remplirItemsSol, trouverItemProche, ramasser, planifierRespawn, tickRespawns, calculerTuilesAtteignables } from './ground_items.js';
 import { calculerOpaciteToit, distanceAuRectangle, resoudreEmpreinteInteractif } from './structures.js';
 import { avancerHeure, opaciteAHeure } from './daynight.js';
 import { armerAudio, definirMusiqueActive } from './audio.js';
@@ -194,6 +194,11 @@ export function creerOrchestrateurGrotte({
   // §3.7) — jamais lu depuis la sauvegarde.
   let itemsSol = {};
   let compteurRamassages = 0;
+  // Tuiles non solides atteignables depuis le héros à l'entrée en scène
+  // (ground_items.js#calculerTuilesAtteignables) — recalculé une fois par
+  // entrerDansScene, jamais par frame (coût BFS non négligeable sur une
+  // grande scène), réutilisé tel quel par tickRespawns ci-dessous.
+  let tuilesAtteignables = new Set();
   // Respawns différés (Palier B §3.2) : { [itemId]: [msRestant, ...] },
   // persisté par scène dans save.monde.respawns_en_attente — même patron
   // que itemsSol ci-dessus.
@@ -356,13 +361,18 @@ export function creerOrchestrateurGrotte({
     follet = save.hero.companion ? creerFollet(save.hero.companion, hero) : null;
     puzzlesEtat = { ...etatInitialPuzzles(registre), ...save.puzzles };
 
+    // Tuiles atteignables (SD_respawn-items-au-sol_2026-09-17) : calculées
+    // depuis la position d'entrée (déjà repoussée hors solide ci-dessus,
+    // donc garantie franchissable) — AVANT remplirItemsSol, qui en a besoin.
+    tuilesAtteignables = calculerTuilesAtteignables(scene, Math.floor(hero.x / scene.tileSize), Math.floor(hero.y / scene.tileSize));
+
     // Objets au sol (03_maison-exterieur §3.3) : positions déjà persistées
     // pour cette scène reprises telles quelles (§3.7 : "recharger la page ne
     // rebat pas les cartes"), complétées si besoin (première visite, ou stock
     // partiel après une régénération ratée faute de place). Une scène sans
     // aucune zone de spawn en commun avec un item (la grotte) obtient un
     // `itemsSol` vide, sans erreur.
-    itemsSol = remplirItemsSol(scene, registre.tous('items'), save.monde.items_sol[sceneId] || {}, compteurRamassages);
+    itemsSol = remplirItemsSol(scene, registre.tous('items'), save.monde.items_sol[sceneId] || {}, compteurRamassages, tuilesAtteignables);
     save.monde.items_sol[sceneId] = itemsSol;
     // Respawns différés (Palier B §3.2) : repris tels quels (continuent de
     // courir en temps actif même après un rechargement de page).
@@ -986,7 +996,7 @@ export function creerOrchestrateurGrotte({
       save.hero.buffs_actifs = tickBuffsActifs(save.hero.buffs_actifs, deltaMs);
 
       // Respawn différé des items au sol (Palier B §3.2).
-      const resultatRespawn = tickRespawns(scene, registre.tous('items'), itemsSol, respawnsEnAttente, deltaMs, compteurRamassages);
+      const resultatRespawn = tickRespawns(scene, registre.tous('items'), itemsSol, respawnsEnAttente, deltaMs, compteurRamassages, tuilesAtteignables);
       itemsSol = resultatRespawn.itemsSol;
       respawnsEnAttente = resultatRespawn.enAttente;
       compteurRamassages = resultatRespawn.compteur;

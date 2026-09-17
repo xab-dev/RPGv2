@@ -37,11 +37,10 @@ const save = saveNeuve();
 save.hero.scene = 'scene_maison_exterieur';
 save.hero.companion = 'comp_follet_eau';
 save.hero.pv = 40;
-save.flags = { flag_follet_choisi: true, flag_grotte_sortie: true, flag_grotte_sequence: true, flag_grotte_monstre_tue: true, flag_levier_salle1: true };
-// Départ direct avec de quoi crafter hache + pioche (le ramassage au sol est
-// déjà couvert par test_phase2_chemin_critique) — la boucle réelle prouvée
-// ici est craft -> outil -> récolte -> XP -> niveau -> manger.
-save.inventaire.items = { item_branche: 3, item_caillou: 3, item_fruit: 1 };
+// flag_premier_ramassage posé d'avance : le dialogue de premier ramassage
+// (couvert par test_phase2_chemin_critique) ouvrirait une UI qui gèlerait le
+// temps actif pendant tout ce bot, sans rapport avec ce qui est prouvé ici.
+save.flags = { flag_follet_choisi: true, flag_grotte_sortie: true, flag_grotte_sequence: true, flag_grotte_monstre_tue: true, flag_levier_salle1: true, flag_premier_ramassage: true };
 
 let dernieresEntreesCraft = null;
 let dernieresEntreesCoffre = null;
@@ -84,6 +83,31 @@ function interagir() {
   orch.maj(16);
 }
 
+// Ramasse le premier exemplaire au sol de `itemId` (SD_respawn-items-au-sol
+// §"trou du bot" : ce test doit exercer le VRAI chemin de ramassage, pas
+// seulement une poche pré-remplie).
+function ramasserItem(itemId) {
+  const positions = save.monde.items_sol[scene.id][itemId];
+  assert.ok(positions && positions.length > 0, `aucun "${itemId}" au sol`);
+  const hero = orch.obtenirHero();
+  const avant = save.inventaire.items[itemId] || 0;
+  hero.x = positions[0].x;
+  hero.y = positions[0].y;
+  interagir();
+  assert.equal(save.inventaire.items[itemId], avant + 1, `"${itemId}" pas ramassé`);
+}
+
+// Fait avancer le temps de jeu actif de `ms` en pas de 16ms (même patron que
+// le reste du bot), pour laisser courir un respawn différé (Palier B §3.2).
+function avancerTempsActif(ms) {
+  let t = 0;
+  while (t < ms) {
+    frames.push(etat());
+    orch.maj(16);
+    t += 16;
+  }
+}
+
 function fabriquerViaMenu(labelKey) {
   dernieresEntreesCraft = null;
   interagir();
@@ -96,18 +120,48 @@ function fabriquerViaMenu(labelKey) {
   entree.action();
 }
 
+// --- Ramassage réel (SD_respawn-items-au-sol §"trou du bot") : le stock
+// initial de la scène (2 branches + 2 cailloux, cf. data/items.json) suffit
+// pile pour la hache (2 branches + 1 caillou), pas pour la pioche (1 branche
+// + 2 cailloux) — il faut un respawn entre les deux, exactement le chemin
+// que Xav a signalé cassé. ---
+ramasserItem('item_branche');
+ramasserItem('item_branche');
+ramasserItem('item_caillou');
+ramasserItem('item_caillou');
+assert.equal(save.inventaire.items.item_branche, 2, '2 branches ramassées au sol');
+assert.equal(save.inventaire.items.item_caillou, 2, '2 cailloux ramassés au sol');
+
 // --- Atelier : hache puis pioche ---
 allerA('station_atelier');
 fabriquerViaMenu('recipe.hache');
 assert.equal(save.inventaire.items.item_hache, 1, 'hache fabriquée');
-assert.equal(save.inventaire.items.item_branche, 1, '2 branches consommées sur 3');
-assert.equal(save.inventaire.items.item_caillou, 2, '1 caillou consommé sur 3');
+assert.equal(save.inventaire.items.item_branche, 0, '2 branches consommées sur 2');
+assert.equal(save.inventaire.items.item_caillou, 1, '1 caillou consommé sur 2');
 assert.equal(save.flags.flag_premier_craft, true);
 
+// La pioche demande 1 branche + 2 cailloux : il n'y a plus de branche du
+// tout, et 1 seul caillou — la boucle 5 minutes de la spec attend ici un
+// respawn (Palier B §3.2, `respawn_ms` de l'item, ici le défaut catalogue).
+assert.equal((save.monde.items_sol[scene.id].item_branche || []).length, 0, 'plus de branche au sol juste après le ramassage initial');
+assert.equal((save.monde.items_sol[scene.id].item_caillou || []).length, 0, 'plus de caillou au sol juste après le ramassage initial');
+const respawnMsBranche = registre.obtenir('items', 'item_branche').spawn.respawn_ms || 60000;
+const respawnMsCaillou = registre.obtenir('items', 'item_caillou').spawn.respawn_ms || 60000;
+avancerTempsActif(Math.max(respawnMsBranche, respawnMsCaillou) + 1000);
+assert.equal((save.monde.items_sol[scene.id].item_branche || []).length, 2, 'les 2 branches ont respawné (SD_respawn-items-au-sol, correction appliquée)');
+assert.equal((save.monde.items_sol[scene.id].item_caillou || []).length, 2, 'les 2 cailloux ont respawné (SD_respawn-items-au-sol, correction appliquée)');
+
+ramasserItem('item_branche');
+ramasserItem('item_caillou');
+ramasserItem('item_caillou');
+assert.equal(save.inventaire.items.item_branche, 1, '1 branche ramassée après respawn');
+assert.equal(save.inventaire.items.item_caillou, 3, '2 cailloux ramassés après respawn, + 1 déjà en poche');
+
+allerA('station_atelier');
 fabriquerViaMenu('recipe.pioche');
 assert.equal(save.inventaire.items.item_pioche, 1, 'pioche fabriquée');
 assert.equal(save.inventaire.items.item_branche, 0);
-assert.equal(save.inventaire.items.item_caillou, 0);
+assert.equal(save.inventaire.items.item_caillou, 1);
 
 // XP créditée par les 2 crafts (rec_hache.xp + rec_pioche.xp, cf.
 // data/recipes.json) : niveau doit avoir progressé.
@@ -140,6 +194,7 @@ interagir();
 assert.equal(save.inventaire.items.item_pierre, 1, 'pierre récoltée avec la pioche');
 
 // --- Cuisine : fruit cuit, mangé au champ (CONSUME) ---
+ramasserItem('item_fruit');
 allerA('station_table');
 fabriquerViaMenu('recipe.fruit_cuit');
 assert.equal(save.inventaire.items.item_fruit_cuit, 1, 'fruit cuit fabriqué');

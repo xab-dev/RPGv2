@@ -1006,7 +1006,10 @@ export async function demarrerJeu() {
   // dessous, qui partage la même fonction — jamais deux chemins d'armement
   // séparés.
   function armerAudioUneFois() {
-    armerAudio(registre.obtenir('music', 'music_piano_solo'), save.settings.musique !== false);
+    // MT_musique-ambiance-synth : armerAudio résout lui-même la piste par
+    // défaut et son repli synthétisé dans le catalogue complet — main.js ne
+    // connaît qu'un id, jamais la logique de repli (cf. audio.js).
+    armerAudio(registre.tous('music'), 'music_piano_solo', save.settings.musique !== false);
   }
   window.addEventListener('keydown', armerAudioUneFois, { once: true });
   window.addEventListener('pointerdown', armerAudioUneFois, { once: true });

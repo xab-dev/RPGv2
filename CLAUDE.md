@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Phases validées : 0 (Socle technique), 1 (La Grotte) et 1b (polish, 4/4 paliers, DA validée) — validées en jeu à la manette réelle le 2026-09-16. Phase 2 (Région Maison, `specs/03_maison-exterieur.md`) : « première marche » (5 paliers + audio) validée à la manette et au clavier réels par Xav le 2026-09-16 ; les deux défauts qu'elle a fait remonter (accrochage des coins en collision, arbre interactif hors du chemin naturel) ont été diagnostiqués et corrigés le jour même (`SD_hitbox-angle-arbre_2026-09-16.md`) puis validés par Xav le 2026-09-17. **Phase 2 close** — prochaine phase à ouvrir. Tactile en dette assumée jusqu'à la Phase 4 (compétences), différé jusqu'à un lien de partage pour test (le neveu de Xav est le testeur mobile de référence).
 
-`MT_jour-nuit-contraste_2026-09-16.md` (v1.1, racine du dépôt) livrée le 2026-09-17 — code fait et testé, validation manuelle manette/navigateur réelle encore due par Xav (voir journal courant). Prochaines fiches à livrer, dans cet ordre (aucune rédigée à ce jour) : `specs/04_indices-commandes.md` → `specs/04_stations-proportions-collision.md` → `docs/MT_musique-ambiance-synth_2026-09-16.md`.
+`MT_jour-nuit-contraste_2026-09-16.md` (v1.1, racine du dépôt) livrée le 2026-09-17 — code fait et testé, validation manuelle manette/navigateur réelle encore due par Xav (`docs/archives/JOURNAL_2026-09-17_micro-ticket-contraste-jour-nuit.md`). `MT_musique-ambiance-synth_2026-09-16.md` (racine du dépôt) livrée le 2026-09-17 — code fait et testé, mais son retour terrain a révélé un freeze du jeu à la bascule "Musique" non→oui, diagnostiqué et corrigé le jour même (`SD_musique-freeze-reprise_2026-09-17.md`, journal courant) ; validation manuelle (navigateur, manette, 5 min d'écoute) encore due par Xav. Prochaines fiches à livrer, dans cet ordre (aucune rédigée à ce jour) : `specs/04_indices-commandes.md` → `specs/04_stations-proportions-collision.md`.
 
 Historique complet des sessions : **`docs/archives/INDEX.md`** — un fichier par session archivée, contenu verbatim (source de vérité en cas de doute sur le détail d'une décision passée). `CLAUDE.md` ne garde que le journal de la session la plus récente (en fin de ce fichier) — voir la règle de méthode correspondante ci-dessous.
 
@@ -41,6 +41,7 @@ Test à appliquer à chaque catalogue de données : ajouter une entrée (arme, e
 - **Toute composition de calque qui touche la transform du contexte 2D passe par une fonction unique qui la restaure** (`save`/`restore` ou re-`setTransform` en fin de fonction, commenté pourquoi) — jamais de `setTransform` inline dans `main.js#dessiner()`. Née du diagnostic dialogues invisibles (`docs/archives/JOURNAL_2026-09-15_diagnostic-dialogues-invisibles.md`) : un calque qui lit `ctx.canvas.width/height` pour se positionner alors qu'une transform logique→physique est active double la mise à l'échelle, sans qu'aucun test headless ne puisse l'attraper. **Tout ticket touchant `render.js`, `ui/hud.js`, `ui/dialogue_box.js` ou `main.js#dessiner()` rejoue `docs/CHECKLIST_visuelle.md` (capture par état) avant de conclure** — même quand le ticket prétend ne toucher qu'un seul de ces fichiers en isolation.
 - **Un renommage/retrait de contenu de catalogue (ex. id de scène) n'est jamais couvert par la migration de *schéma*** (`save.js#migrer`) — c'est une classe de bug distincte (données valides mais obsolètes) à traiter explicitement à chaque retrait. Née du repli sur `scene_grotte_salle_1` (`docs/archives/JOURNAL_2026-09-15_phase1-grotte.md`), reproduite ensuite par la migration 2→3 de la Région Maison (`docs/archives/JOURNAL_2026-09-16_phase2-premiere-marche.md`).
 - **Ménage de journal en début de session, avant tout code** : archiver le journal présent dans `docs/archives/`, mettre à jour `docs/archives/INDEX.md`, reporter dans les sections consolidées de ce fichier ce qui en relève (décision, règle, `[OUVERT]`, dette), puis seulement travailler. `CLAUDE.md` ne contient jamais plus d'un journal de session. Plafond indicatif : 300 lignes. Née du ménage du 2026-09-17 (`DOC_menage-claude-md_2026-09-17.md`) : le fichier avait atteint ~22 000 mots / 920 lignes, coûtant plus de contexte qu'il n'apportait d'utilité.
+- **Un sous-système explicitement "meilleur effort" (le contrat dit déjà : fichier absent → le jeu tourne sans son) rattrape ses propres erreurs à la frontière de son API publique, jamais au niveau de la boucle de jeu.** Née de `SD_musique-freeze-reprise_2026-09-17.md` (journal courant) : une exception dans `audio.js` (contexte/gain `null` à la reprise depuis le menu) est remontée non rattrapée jusqu'à `creerBoucle#frame` (`render.js`), qui ne se replanifie plus après une exception — jeu figé, manette/clavier morts (polling interne à `maj()`), souris vivante (DOM indépendant du `requestAnimationFrame`). Le remède reste local au sous-système fautif (`try/catch` dans `audio.js`, jamais un `try/catch` global autour de `update()`/`dessiner()`, qui masquerait aussi de vraies erreurs de gameplay) — voir `[OUVERT]` ci-dessous pour la question de généraliser ce patron à d'autres sous-systèmes.
 - Pas de framework de jeu, pas de bundler obligatoire. Une dépendance de **dev** (ex. validateur de schéma type `ajv`) est acceptable tant qu'elle reste hors du jeu servi.
 - Servi en `http://` (jamais `file://`) ; modules ES natifs. Chaque fichier de `/src` doit rester importable depuis Node pour les tests headless — aucun accès DOM au niveau module.
 
@@ -145,13 +146,14 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 | L'arbre fruitier ne se coupe jamais (fruits, puis jardin/récolte/craft/cuisine seulement) | 2026-09-16 | journal courant |
 | Tactile différé jusqu'à un lien de partage (Phase 4 ou plus) ; testeur de référence = le neveu de Xav | 2026-09-16 | journal courant |
 | Indice de commande au **premier** déclenchement de chaque verbe seulement, jamais répété → `specs/04_indices-commandes.md` (à rédiger) | 2026-09-16 | journal courant |
-| Ambiance musicale continue à base de notes synthé qui bouclent, en attendant `piano_solo.mp3` → `docs/MT_musique-ambiance-synth_2026-09-16.md` (à rédiger) | 2026-09-16 | journal précédent |
+| Ambiance musicale continue à base de notes synthé qui bouclent, en attendant `piano_solo.mp3` ; repli automatique déclaré par un id (`repli`) dans `data/music.json`, résolu par `audio.js#resoudrePisteRepli` (pure) → `MT_musique-ambiance-synth_2026-09-16.md` | 2026-09-16 | journal courant |
 | Nuit extérieure autorisée à dépasser le plafond de la grotte (0.72) — nuit = 0.85 ; *révise* la lecture initiale du ticket qui présentait ce plafond comme une limite dure partagée — décision explicite de Xav, soumise en question bloquante avant implémentation | 2026-09-17 | journal courant |
 | Cycle jour/nuit à durées par phase indépendantes (jour 10 min, crépuscule/aube 1 min 30, nuit 4 min francs = 17 min au total) — *révise* le `DUREE_CYCLE_MS` unique découpé en phases égales de la Phase 2 | 2026-09-17 | journal courant |
 
 ## Points `[OUVERT]`
 
 - **Durées de l'intro cinématique** (`specs/03_grotte-polish.md` §9, palier 4) : budget ≤8s appliqué (mesuré ~7,2s sur les données réelles), valeurs de référence déjà données par la fiche — reste à ajuster sur ressenti manette réel. Pas un point de design non tranché en soi, juste un seuil numérique non encore validé en jeu.
+- **Généraliser le patron « sous-système meilleur effort rattrape ses propres erreurs » au-delà d'`audio.js`** (ex. persistance IndexedDB, résolution de loot) ? `SD_musique-freeze-reprise_2026-09-17.md` demandait explicitement de ne pas trancher ça en silence ni de l'implémenter sans validation : une règle architecturale (pas seulement le correctif ponctuel déjà livré) reste à décider par Xav.
 
 Tous les autres `[OUVERT]` historiques (résolution logique, clignements/orbite pré-choix, couleur du héros, stations placeholder non solides) ont été tranchés — voir la table de décisions ci-dessus et `docs/archives/INDEX.md`.
 
@@ -162,53 +164,65 @@ Tous les autres `[OUVERT]` historiques (résolution logique, clignements/orbite 
 - **Mesure réelle du temps de frame / fps** (plancher mobile jamais mesuré, seulement borné fonctionnellement par `selectionnerTuilesVisibles`) — 2026-09-16, même archive.
 - **Tactile réel** (manette/clavier seulement testés par toutes les sessions jusqu'ici) — dette assumée depuis la Phase 0, différée jusqu'à un lien de partage (Phase 4+).
 - **Mouvement légèrement téléporté à chaque angle depuis la correction de coin** (2026-09-17, retour Xav) : feeling meilleur, aucune interruption, mais pas très smooth — à lisser dans une phase de polish ultérieure (hypothèse : répartir le repoussement sur plusieurs frames ou l'interpoler plutôt que l'appliquer d'un coup — à diagnostiquer, pas à patcher en silence).
-- **Fiches à rédiger** (nommées par les décisions ci-dessus) : `specs/04_indices-commandes.md`, `specs/04_stations-proportions-collision.md`, `docs/MT_musique-ambiance-synth_2026-09-16.md`. (`MT_jour-nuit-contraste_2026-09-16.md` livrée, cf. journal courant.)
+- **Fiches à rédiger** (nommées par les décisions ci-dessus) : `specs/04_indices-commandes.md`, `specs/04_stations-proportions-collision.md`. (`MT_jour-nuit-contraste_2026-09-16.md` et `MT_musique-ambiance-synth_2026-09-16.md` livrées, cf. `docs/archives/JOURNAL_2026-09-17_micro-ticket-contraste-jour-nuit.md` et journal courant.)
 
 ## Critère de passage courant
 
 Phase 2 (Région Maison, première marche) — verdict détaillé : `docs/NS_critere-passage-phase2_2026-09-16.md`. État au 2026-09-17 : validée à la manette et au clavier réels par Xav sur tout le parcours (grotte → rocher → branche → Poche → toit → stations → jardin/fruit/puits → campagne → persistance) ; les deux défauts remontés (arbre hors chemin, accrochage des coins) ont été corrigés le 2026-09-16 et validés le 2026-09-17 (`SD_hitbox-angle-arbre_2026-09-16.md`). **Phase 2 close.** Reste en dette, non bloquant : tactile réel (Phase 4+), musique (fichier non fourni), mesure de fps réelle.
 
-## Journal de session — Micro-ticket contraste et durées jour/nuit (2026-09-17)
+## Journal de session — Diagnostic freeze bascule Musique non→oui (2026-09-17)
 
-Ménage de journal effectué en début de session : le journal précédent (« Diagnostic accrochage des coins + arbre introuvable ») archivé verbatim dans `docs/archives/JOURNAL_2026-09-16_diagnostic-accrochage-arbre.md`, index mis à jour.
+Ménage de journal effectué en début de session : le journal précédent (« Micro-ticket ambiance sonore synthétisée ») archivé verbatim dans `docs/archives/JOURNAL_2026-09-17_micro-ticket-ambiance-synthetisee.md`, index mis à jour.
 
-Brief complet : `MT_jour-nuit-contraste_2026-09-16.md` v1.1 (racine du dépôt). Suite du verdict Xav sur le critère de passage Phase 2 : sources de lumière bonnes, contraste jour/nuit insuffisant + cycle à durées égales pas assez lisible (nuit trop courte, « pas franche »).
+Brief complet : `SD_musique-freeze-reprise_2026-09-17.md` (racine du dépôt). Retour terrain Xav dans la nuit suivant la livraison de `MT_musique-ambiance-synth` : le jeu gèle (manette et clavier morts, souris vivante) à la première bascule "Musique" de non vers oui — que l'ambiance ait déjà joué dans la session ou non ; la transition oui → non, elle, fonctionne. `specs/04_indices-commandes.md`/`specs/04_stations-proportions-collision.md` restent non injectées, ce diagnostic passe avant.
 
-### Conflit du ticket remonté à Xav avant code
+### (a) Cause racine confirmée par lecture — H1
 
-Le ticket demandait à la fois « monter la nuit de +0,10 à +0,15 » et « sans dépasser `OPACITE_OBSCURITE_MAX` (le plafond de la grotte, référence unique) » — or `PHASES_CYCLE.nuit.opacite` valait déjà exactement 0.72, la même valeur que l'obscurité de la grotte (`data/scenes.json`, les deux scènes grotte). Impossible d'appliquer les deux consignes ensemble, et impossible de relever le plafond de la grotte elle-même (la fiche interdit de toucher aux données JSON). Point de design non tranché → question bloquante posée à Xav plutôt que résolu en silence (règle de méthode du projet). **Réponse de Xav : la nuit extérieure peut dépasser le plafond de la grotte** — ce 0.72 n'était qu'une valeur de référence de départ, pas une limite dure partagée entre intérieur et extérieur.
+Le tableau clinique (entrées manette/clavier mortes, jeu figé, souris vivante) pointe une exception non rattrapée dans `creerBoucle#frame` (`render.js:58-66`) : `maj(delta)` lève → ni `dessiner()` ni le `requestAnimationFrame(frame)` suivant ne s'exécutent → la boucle ne se replanifie plus. La manette/le clavier sont morts parce que leur lecture est intégralement interne à `maj()` (polling, pas d'évènements DOM) ; la souris reste vivante parce que le bouton "Musique" du menu répond à un `click` DOM (`ui/menu.js:291`) — indépendant du `requestAnimationFrame` — mais le geste manette passe, lui, par le verbe `ATTACK` traité à l'intérieur de `maj()`. **H1 confirmée** : `armerAudio` (le "premier geste") et la reprise depuis le menu n'étaient pas le même chemin. `armerAudio` créait `contexteSynthese`/`gainSynthese` dans `demarrerSynthese`, appelée seulement `si actif` ; le menu appelait une fonction de reprise (`reprendreSynthese`) qui *supposait* ces deux variables déjà non-nulles, sans jamais les créer elle-même.
 
-### Implémentation (`src/daynight.js`)
+**La ligne fautive** (`src/audio.js`, version livrée par `MT_musique-ambiance-synth`) :
+```js
+function reprendreSynthese(piste) {
+  gainSynthese.gain.setTargetAtTime(piste.volume, contexteSynthese.currentTime, 0.05); // ← gainSynthese peut être null ici
+  jouerPhraseSynthese(piste);
+}
+```
+`gainSynthese` reste `null` chaque fois que `modeActuel` passe à `'synthese'` sans que `demarrerSynthese` ait tourné — ce qui arrive dans deux scénarios réels, tous deux réunis par la même course : le repli fichier→synthèse (asynchrone, sur l'évènement `error` de l'`<audio>` `piano_solo.mp3`, absent) ne démarre la synthèse que `si actifCourant` **au moment où l'erreur arrive** — pas au moment où le réglage était vrai plus tôt.
+- **Cas 4 du ticket** (réglage persisté "non") : `armerAudio(..., actif=false)` au boot → `actifCourant=false` dès le départ → quand l'erreur de chargement arrive, le repli bascule `modeActuel` sur `'synthese'` sans jamais appeler `demarrerSynthese`.
+- **Cas 3 du ticket** (réglage "oui" au boot, coupé juste après) : `armerAudio(..., actif=true)` → l'erreur n'est pas encore arrivée quand Xav appuie "non" (`definirMusiqueActive(false)` met `actifCourant=false`) → quand l'erreur arrive enfin, `actifCourant` est déjà retombé à `false` → même résultat : `modeActuel='synthese'`, `gainSynthese` toujours `null`.
 
-- **Jour = 0 exactement** (était 0.05) : de jour, `dessinerObscurite` ne produit plus aucun voile.
-- **Nuit = 0.85** (était 0.72, +0.13 — au milieu de la fourchette +0,10/+0,15 demandée et de la fourchette ~0.82-0.87 validée par Xav), au-delà du plafond de la grotte par décision explicite ci-dessus.
-- **Crépuscule et aube calés exactement sur leur voisin de plateau** (crépuscule = opacité du jour, aube = opacité de la nuit) plutôt que sur l'indication initiale du ticket (« un tiers/deux tiers du niveau nuit ») : cette indication supposait un jour non nul et devient inapplicable une fois jour=0 fixé — la seule façon de garder jour et nuit réellement plats (§6 du ticket, « une nuit franche, pas un pic isolé ») tout en gardant une transition continue (aucun saut, contrainte de continuité déjà actée en Phase 2) est que la phase de transition démarre exactement à la valeur du plateau qu'elle quitte. Conséquence appréciable : ce calage produit les plateaux **gratuitement**, par le mécanisme d'interpolation existant (deux phases voisines de même opacité n'ont rien à interpoler) — aucune restructuration de l'algorithme d'interpolation, seulement des données et son unité (ms au lieu de fraction, point suivant).
-- **Durées par phase** (remplace `DUREE_CYCLE_MS` unique découpé en fractions égales) : jour 600000 ms (10 min), crépuscule 90000 ms, nuit 240000 ms (4 min francs), aube 90000 ms — `DUREE_CYCLE_MS` est maintenant la somme calculée des `duree_ms`, jamais une constante indépendante qui pourrait diverger. `PHASES_CYCLE[].debut` (fraction [0,1)) remplacé par `duree_ms` (ms) ; `opaciteAHeure`/`phaseAHeure` retravaillées pour indexer par ms cumulés au lieu de fraction — même forme d'algorithme (interpolation vers la phase suivante), signatures publiques inchangées (`avancerHeure(heureMs, deltaMs)`, `opaciteAHeure(heureMs)`, `phaseAHeure(heureMs)`), donc `main.js` n'a pas eu à bouger. `save.monde.heure` reste une position en ms dans le cycle (c'était déjà le cas, pas une fraction 0-1) : aucune migration de sauvegarde nécessaire, la sémantique du champ ne change pas, seule la longueur du cycle qu'il indexe change.
+Dans les deux cas, le bascule suivant vers "oui" appelle `reprendreSynthese` sur un `gainSynthese`/`contexteSynthese` jamais créés → `TypeError: Cannot read properties of null (reading 'gain')`. H2/H3/H4 écartées (aucun nœud redémarré après `stop()`, aucun `close()`/`suspend()` du contexte, aucun planificateur à état persistant entre coupures — le bug est plus en amont : le contexte lui-même n'existe jamais). H5 (le menu) écartée : le bouton lui-même ne fait qu'appeler `basculerMusique()`, aucune logique propre.
 
-### Test (`tests/test_phase2_daynight_2026-09-16.js`)
+### Test rouge → vert (`tests/test_sd_musique_freeze_reprise_2026-09-17.js`, nouveau)
 
-Les blocs qui référençaient `phase.debut` (fraction) adaptés pour calculer les débuts cumulés en ms depuis `duree_ms`, indépendamment du détail interne de `daynight.js`. Bloc d'interpolation (test 3) déplacé sur la transition crépuscule→nuit (la seule rampe réelle, puisque jour/nuit sont maintenant des plateaux et n'ont plus de saut à interpoler avec leur voisin immédiat). Trois blocs ajoutés, tels que demandés par le ticket : durées exactes par phase + somme (test 5), plateaux jour/nuit échantillonnés à plusieurs points internes, pas seulement aux bornes (test 6), et transition qui ne dépasse jamais le niveau nuit ni ne descend sous le niveau jour, échantillonnage dense sur tout le cycle (test 7).
+`audio.js` reste importable en Node (aucun accès `AudioContext` au niveau module) mais `demarrerSynthese`/`creerElementFichier` touchent `window.AudioContext`/`Audio` — un `AudioContext`/`Audio` factices minimaux (classes triviales : `createGain`/`createOscillator`/`currentTime`, et un faux `<audio>` qui expose juste de quoi déclencher `error` à la demande) suffisent à reproduire la cause **sans navigateur**, comme demandé par la fiche. Trois blocs : (1) cas 4 — `armerAudio(..., actif=false)` puis bascule "oui" ; (2) cas 3 — reproduction fidèle de la course (`armerAudio(..., actif=true)` → `definirMusiqueActive(false)` → l'échec de chargement arrive seulement *après* → bascule "oui") ; (3) garde-fou (b), un `AudioContext` factice qui lève à `createGain()` sans rapport avec (a). Vérifié rouge avant correctif (`git stash` temporaire de `src/audio.js`, seul fichier touché par le correctif) : le test 1 lève exactement `TypeError: Cannot read properties of null (reading 'gain') at reprendreSynthese`, pile identique à l'analyse ci-dessus. Repassé vert après correctif, stash restauré.
 
-### Livré et validé
+### (a) Correctif (`src/audio.js` uniquement)
+
+Un seul point d'entrée pour démarrer *ou* reprendre la synthèse : `reprendreSynthese` supprimée, fusionnée dans `demarrerSynthese`, qui crée paresseusement `contexteSynthese`/`gainSynthese` s'ils n'existent pas encore (exactement comme au premier geste), sans regarder si c'est un "premier" ou un "n-ième" démarrage. `definirMusiqueActive` appelle désormais cette unique fonction. Effets de bord corrigés au passage, demandés par le §A du ticket : `clearTimeout(minuteurPhraseSynthese)` en tête de `demarrerSynthese` (jamais deux boucles superposées sur un double appel) ; `arreterSynthese` devient un no-op défensif si `gainSynthese` n'existe pas encore (plus de coupure "avant tout démarrage"). Aucun nouvel état global ; le reste du jeu ne connaît toujours que `armerAudio`/`definirMusiqueActive` (noms conservés, cf. journal précédent).
+
+### (b) Garde-fou : l'audio ne fige plus jamais la boucle
+
+`armerAudio` et `definirMusiqueActive` (les deux seuls points d'entrée publics) et le callback de repli fichier→synthèse rattrapent maintenant leurs propres exceptions (`try/catch` local, `console.warn`, le réglage reste appliqué en mémoire même si l'effet audio échoue) — même politique que le fichier absent, déjà dans le contrat. **Pas de `try/catch` global autour de `update()`/`dessiner()`** (aurait aussi masqué de vraies erreurs de gameplay, explicitement écarté par la fiche). Règle documentée dans « Contraintes de méthode non négociables » avec sa provenance ; question de la généraliser à d'autres sous-systèmes meilleur effort posée en `[OUVERT]` pour Xav, pas tranchée ni implémentée au-delà d'`audio.js`.
+
+### Livré
 
 ```
-node --check src/daynight.js tests/test_phase2_daynight_2026-09-16.js
+node --check src/audio.js
 node tools/run_tests.js
 ```
-→ **43 fichiers, tous verts** (aucun fichier ajouté ni retiré, seuls `src/daynight.js` et le test du même nom modifiés — contrainte stricte de la fiche respectée, confirmé par `git status`).
+→ **45 fichiers, tous verts** (44 précédents + le nouveau test rouge→vert ; seul `src/audio.js` modifié parmi les fichiers de production, conformément à la contrainte stricte du ticket).
 
-Validation manuelle (navigateur réel, manette) **non faite par l'agent cette session** — la fiche la réserve explicitement à Xav (forcer l'heure aux 4 phases, comparer au rendu actuel).
-
-Fichiers modifiés : `src/daynight.js`, `tests/test_phase2_daynight_2026-09-16.js`, `CLAUDE.md` (ce journal). Fichiers archive ajoutés : `docs/archives/JOURNAL_2026-09-16_diagnostic-accrochage-arbre.md`, `docs/archives/INDEX.md` mis à jour.
+Fichier modifié : `src/audio.js`. Fichier ajouté : `tests/test_sd_musique_freeze_reprise_2026-09-17.js`. `CLAUDE.md` mis à jour (règle (b) + `[OUVERT]`, ce journal). Fichier archive ajouté : `docs/archives/JOURNAL_2026-09-17_micro-ticket-ambiance-synthetisee.md`, `docs/archives/INDEX.md` mis à jour.
 
 ### Point `[OUVERT]`
 
-Aucun nouveau. Hérité, inchangé : durées de l'intro cinématique (`03_grotte-polish.md` §9).
+Nouveau : généraliser le patron "sous-système meilleur effort rattrape ses propres erreurs" au-delà d'`audio.js` (cf. « Contraintes de méthode non négociables » et section `[OUVERT]` consolidée ci-dessus) — remonté à Xav, pas tranché.
 
 ### Critère de passage — reste à faire par Xav
 
-Forcer l'heure aux 4 phases dans un vrai navigateur, à la manette (méthode : `docs/CHECKLIST_visuelle.md`, état nuit). Attendu : de jour, aucune différence perceptible avec le rendu actuel hors cycle ; de nuit, scène nettement plus sombre qu'avant, halo du follet et fenêtre de la maison toujours lisibles ; jour → crépuscule → nuit → aube → jour progressif, sans à-coup perceptible malgré le saut de plafond (0.72 → 0.85) par rapport à la grotte. Verdict de Xav sur les nouvelles valeurs (nuit à 0.85 : assez sombre ? trop ? durées de 17 min au ressenti ?) à recueillir avant de considérer ce réglage définitif.
+Rejouer exactement le parcours qui gelait : boot avec réglage "non" → "oui" à la souris puis à la manette ; "oui" → "non" → "oui" plusieurs fois de suite ; recharger entre deux essais ; laisser tourner 5 min après une reprise (pas d'accumulation de nœuds/oscillateurs). Seulement ensuite, injection de `specs/04_indices-commandes.md`.
 
 ### Hors scope pour cette session
 
-Indicateur jour/nuit au HUD, palette des tuiles de jour, lumières statiques supplémentaires, obscurité de la grotte (`data/scenes.json` non touché) — tous explicitement exclus par la fiche.
+Le piano (asset), la qualité des notes, le volume, les indices de commande, les stations — tous explicitement exclus par la fiche.

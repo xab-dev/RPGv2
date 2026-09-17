@@ -777,13 +777,47 @@ export const SCHEMAS = {
       return erreurs;
     },
   },
-  // §3.6 : une seconde piste future = une entrée JSON de plus, zéro code.
+  // §3.6 + MT_musique-ambiance-synth : une seconde piste future = une entrée
+  // JSON de plus, zéro code. `type` distingue une source `fichier` (élément
+  // <audio>) d'une source `synthese` (notes jouées par oscillateurs, le temps
+  // que le fichier définitif soit livré) — même contrat de lecture pour les
+  // deux côté src/audio.js. `repli` (optionnel, id du même catalogue) déclare
+  // la piste de secours si la piste `fichier` échoue à charger ; résolu par
+  // audio.js#resoudrePisteRepli, pure et testable headless.
   music: {
-    requiredFields: ['id', 'fichier', 'boucle', 'volume'],
+    requiredFields: ['id', 'type', 'boucle', 'volume'],
     idField: 'id',
-    refs: [],
+    refs: [{ field: 'repli', catalog: 'music' }],
     custom(entry, catalogs, path) {
       const erreurs = [];
+      if (entry.type !== 'fichier' && entry.type !== 'synthese') {
+        erreurs.push(`${path} > type doit être "fichier" ou "synthese"`);
+      }
+      if (entry.type === 'fichier' && typeof entry.fichier !== 'string') {
+        erreurs.push(`${path} > type "fichier" exige un champ fichier (chaîne)`);
+      }
+      if (entry.type === 'synthese') {
+        if (typeof entry.tempo_bpm !== 'number' || entry.tempo_bpm <= 0) {
+          erreurs.push(`${path} > type "synthese" exige tempo_bpm (nombre > 0)`);
+        }
+        if (!Array.isArray(entry.notes) || entry.notes.length === 0) {
+          erreurs.push(`${path} > type "synthese" exige un tableau notes non vide`);
+        } else {
+          entry.notes.forEach((n, i) => {
+            if (n === null || typeof n !== 'object') {
+              erreurs.push(`${path} > notes[${i}] doit être un objet`);
+              return;
+            }
+            if (typeof n.duree_beats !== 'number' || n.duree_beats <= 0) {
+              erreurs.push(`${path} > notes[${i}].duree_beats doit être un nombre > 0`);
+            }
+            // `note` omis = silence (pause dans la phrase) — accepté.
+            if (n.note !== undefined && typeof n.note !== 'string') {
+              erreurs.push(`${path} > notes[${i}].note doit être une chaîne, ou omis pour un silence`);
+            }
+          });
+        }
+      }
       if (typeof entry.boucle !== 'boolean') erreurs.push(`${path} > boucle doit être un booléen`);
       if (typeof entry.volume !== 'number' || entry.volume < 0 || entry.volume > 1) {
         erreurs.push(`${path} > volume doit être entre 0 et 1`);

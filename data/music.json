@@ -1,3 +1,25 @@
 [
-  { "id": "music_piano_solo", "fichier": "piano_solo.mp3", "boucle": true, "volume": 0.5 }
+  {
+    "id": "music_piano_solo",
+    "type": "fichier",
+    "fichier": "piano_solo.mp3",
+    "boucle": true,
+    "volume": 0.5,
+    "repli": "mus_ambiance_provisoire"
+  },
+  {
+    "id": "mus_ambiance_provisoire",
+    "type": "synthese",
+    "tempo_bpm": 50,
+    "boucle": true,
+    "volume": 0.25,
+    "notes": [
+      { "note": "A3", "duree_beats": 2 },
+      { "note": "G3", "duree_beats": 2 },
+      { "note": "E3", "duree_beats": 2 },
+      { "note": "D3", "duree_beats": 2 },
+      { "note": "C3", "duree_beats": 2 },
+      { "duree_beats": 2 }
+    ]
+  }
 ]

@@ -138,5 +138,15 @@
   "menu.coffre_retirer": "Retirer",
   "menu.stats_ajouter": "+1",
   "menu.points_libres": "Points libres",
-  "hud.niveau_prefixe": "Nv."
+  "hud.niveau_prefixe": "Nv.",
+  "menu.construction": "Construction",
+  "menu.construction_titre": "Construction",
+  "menu.construction_aide_deplacer": "Déplacer :",
+  "menu.construction_aide_tourner": "Tourner :",
+  "menu.construction_aide_confirmer": "Poser :",
+  "menu.construction_aide_annuler": "Annuler :",
+  "menu.construction_aide_quitter": "Quitter :",
+  "dlg.construction_refus_interieur.1": "Ça dépasserait des murs de la maison.",
+  "dlg.construction_refus_chevauchement.1": "Une autre installation occupe déjà cet endroit.",
+  "dlg.construction_refus_couloir.1": "Le passage entre les deux portes doit rester libre."
 }

@@ -57,12 +57,13 @@ function payloadV2(scene = 'scene_grotte_salle_1') {
 }
 
 // 4. La version courante du module a bien avancé depuis la Phase 2 (Palier
-// A-E de la Phase 3 a introduit sa propre migration 3 -> 4, cf.
-// test_save_migration_3_4) — cette fiche ne couvre que 2 -> 3, qui reste
-// valide telle quelle en appelant migrer(..., 3) explicitement partout
-// ci-dessus.
+// A-E de la Phase 3 a introduit sa propre migration 3 -> 4, puis
+// specs/05_construction-stations.md la migration 4 -> 5, cf.
+// test_save_migration_3_4/test_save_migration_4_5) — cette fiche ne couvre
+// que 2 -> 3, qui reste valide telle quelle en appelant migrer(..., 3)
+// explicitement partout ci-dessus.
 {
-  assert.equal(VERSION_SCHEMA_COURANTE, 4);
+  assert.equal(VERSION_SCHEMA_COURANTE, 5);
 }
 
 // 5. Cycle complet écrire/relire d'une v2 migrée automatiquement au

@@ -3,7 +3,7 @@
 // valeur) } — IndexedDB en jeu (src/storage_indexeddb.js), un store en
 // mémoire dans les tests (creerStoreMemoire ci-dessous).
 
-export const VERSION_SCHEMA_COURANTE = 4;
+export const VERSION_SCHEMA_COURANTE = 5;
 const CLE_ACTUELLE = 'save_current';
 const CLE_SUIVANTE = 'save_next';
 
@@ -92,6 +92,13 @@ export function saveNeuve() {
     // Palier A (§3.1, D16②) : ids des recettes déjà découvertes — journal de
     // découvertes futur, données seulement pour l'instant.
     recettes_decouvertes: [],
+    // specs/05_construction-stations.md §2 : poses des stations PLACABLES
+    // déplacées par le joueur, { id_instance_puzzle: { x, y, rotation } } en
+    // coordonnées tuile — vide = toutes les stations restent à leur position
+    // par défaut de puzzles.json. `maison` reste un objet dédié (pas fourré
+    // dans `monde`) : le patron vise "toute pièce future" (Poste avancé),
+    // jamais une seule structure en dur.
+    maison: { stations: {} },
   };
 }
 
@@ -179,9 +186,24 @@ function migrer_3_vers_4(payload) {
   };
 }
 
+// Migration 4 -> 5 (specs/05_construction-stations.md §2) : ajoute
+// `maison.stations`, vide — une sauvegarde v4 n'a jamais posé de station
+// ailleurs qu'à sa position par défaut de puzzles.json, donc rien à
+// transporter (§4 edge case implicite : absence == positions par défaut,
+// jamais une erreur).
+function migrer_4_vers_5(payload) {
+  return {
+    ...payload,
+    schema_version: 5,
+    maison: { stations: {} },
+  };
+}
+
 // Chaîne de migrations, une fonction par palier. Un paramètre permet aux
 // tests d'injecter une chaîne fictive sans toucher à la table de production.
-const MIGRATIONS_PRODUCTION = { 1: migrer_1_vers_2, 2: migrer_2_vers_3, 3: migrer_3_vers_4 };
+const MIGRATIONS_PRODUCTION = {
+  1: migrer_1_vers_2, 2: migrer_2_vers_3, 3: migrer_3_vers_4, 4: migrer_4_vers_5,
+};
 
 export function migrer(payload, versionCible = VERSION_SCHEMA_COURANTE, migrations = MIGRATIONS_PRODUCTION) {
   let courant = payload;

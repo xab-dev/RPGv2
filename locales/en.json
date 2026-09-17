@@ -138,5 +138,15 @@
   "menu.coffre_retirer": "Take",
   "menu.stats_ajouter": "+1",
   "menu.points_libres": "Free points",
-  "hud.niveau_prefixe": "Lv."
+  "hud.niveau_prefixe": "Lv.",
+  "menu.construction": "Building",
+  "menu.construction_titre": "Building",
+  "menu.construction_aide_deplacer": "Move:",
+  "menu.construction_aide_tourner": "Rotate:",
+  "menu.construction_aide_confirmer": "Place:",
+  "menu.construction_aide_annuler": "Cancel:",
+  "menu.construction_aide_quitter": "Quit:",
+  "dlg.construction_refus_interieur.1": "That would stick out past the house walls.",
+  "dlg.construction_refus_chevauchement.1": "Something else is already there.",
+  "dlg.construction_refus_couloir.1": "The path between the two doors has to stay clear."
 }

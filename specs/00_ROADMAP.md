@@ -1,8 +1,10 @@
 # RPG V2 — Roadmap + prompt d'exécution autonome
 
-**Version : 1.2.0** — document vivant.
+**Version : 1.3.0** — document vivant.
 
-**Statut** : Phases 0, 1, 1b et 2 livrées et validées. Phase courante : Phase 3, détaillée dans `04_maison-interieur.md` (à écrire). Ce document sert de brief autonome — à donner tel quel à Claude Code pour démarrer la phase courante sans aller-retour préalable.
+**Statut** : Phases 0, 1, 1b, 2 et 3 (Palier A-E, boucle 5 minutes) livrées et validées. Chantier courant : `05_construction-stations.md` (placement libre des stations dans la Maison), code livré le 2026-09-17, validation manette encore due par Xav. Ce document sert de brief autonome — à donner tel quel à Claude Code pour démarrer la phase/le chantier courant sans aller-retour préalable.
+
+**Changelog 1.3.0 (2026-09-17)** : Phase 3 actée comme livrée et validée (verdict Xav en jeu, tous les points testés, bon — détail `docs/archives/INDEX.md`). `05_construction-stations.md` livrée en code le jour même (extraite de `04_maison-interieur.md`, ex-palier F) : `placement.js`, sauvegarde v5, menu Construction contextuel, fantôme de pose.
 
 **Changelog 1.2.0 (2026-09-17)** : session de tri/documentation, aucun code touché. Phase 2 actée comme livrée et validée (verdict Xav manette/clavier, 2026-09-17 — détail `docs/archives/INDEX.md`). Statut avancé à Phase 3 (spec `04_maison-interieur.md` à écrire).
 
@@ -123,11 +125,11 @@ Première scène jouable de bout en bout, et **preuve de tous les systèmes de c
 ### Phase 2 — Région Maison, extérieur : première marche — **livrée et validée (2026-09-17)**, détail `03_maison-exterieur.md`
 Première marche de la Région Maison (carte, ressources bloquées, items au sol, maison-structure, jour/nuit, audio), scindée le 2026-09-16 de la récolte réelle (reportée après les outils de la Phase 3). Verdict complet (parcours rejoué, défauts corrigés et re-validés) : `docs/archives/INDEX.md`.
 
-### Phase 3 — Maison, intérieur & systèmes de camp
-- Intérieur avec **stations à placement libre** (atelier de cuisine, table de craft), coffre de base, déco légère.
+### Phase 3 — Maison, intérieur & systèmes de camp — **livrée et validée (2026-09-17)**, détail `04_maison-interieur.md`
+- Intérieur avec **stations à placement libre** (atelier de cuisine, table de craft), coffre de base, déco légère — placement libre extrait en fiche autonome livrée le jour même, `05_construction-stations.md`.
 - **Système de recettes unique** (cuisine + craft), survie (faim/soif/santé + repas-buffs), inventaire poche → sac de craft, **XP par craft**, niveaux et attribution de stats.
 - Rouvre bois à couper / pierre à miner via le premier outil crafté (branche + caillou) — point d'accroche `resources.js#peutRecolter`.
-- Critère : la boucle 5 minutes tourne (sortir → récolter → revenir → cuisiner/crafter → repartir), et le joueur atteint le niveau ~5 qui ouvre la zone suivante.
+- Critère : la boucle 5 minutes tourne (sortir → récolter → revenir → cuisiner/crafter → repartir), et le joueur atteint le niveau ~5 qui ouvre la zone suivante — **prouvé par bot headless et validé par Xav en jeu**, détail `docs/archives/INDEX.md`.
 
 ### Phase 4 — 1ère zone de monstres
 Seconde région (≥ V1_M1), dans l'esprit chaos : plus sombre, plusieurs salles et passages, **mini-boss et boss farmables**.

@@ -1,6 +1,6 @@
 [
-  { "id": "station_type_cuisine", "label_key": "station.cuisine", "role": "craft" },
-  { "id": "station_type_atelier", "label_key": "station.atelier", "role": "craft" },
-  { "id": "station_type_coffre", "label_key": "station.coffre", "role": "stockage", "capacite": 20 },
-  { "id": "station_type_puits", "label_key": "station.puits", "role": "eau" }
+  { "id": "station_type_cuisine", "label_key": "station.cuisine", "role": "craft", "placable": true },
+  { "id": "station_type_atelier", "label_key": "station.atelier", "role": "craft", "placable": true },
+  { "id": "station_type_coffre", "label_key": "station.coffre", "role": "stockage", "capacite": 20, "placable": true },
+  { "id": "station_type_puits", "label_key": "station.puits", "role": "eau", "placable": false }
 ]

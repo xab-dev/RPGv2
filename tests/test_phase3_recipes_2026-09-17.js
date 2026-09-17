@@ -99,7 +99,7 @@ const flagsQuiDebloquentTout = { evaluate: () => true };
     { id: 'item_corde', label_key: 'x', categorie: 'materiau', stack_max: 20, render: { visuel: 'v' } },
   ];
   donnees.items[1].categorie = 'valeur'; // catégorie libre existante, la corde n'a pas besoin d'une nouvelle catégorie
-  donnees.stations = [{ id: 'station_type_atelier', label_key: 'x', role: 'craft' }];
+  donnees.stations = [{ id: 'station_type_atelier', label_key: 'x', role: 'craft', placable: true }];
   donnees.recipes = [{
     id: 'rec_corde', label_key: 'x', station: 'station_type_atelier',
     entrees: [{ item: 'item_branche', qte: 2 }], sortie: { item: 'item_corde', qte: 1 },

@@ -20,7 +20,7 @@
 // structures (`structures[]` : murs/sol/portes générés depuis un simple
 // rectangle, jamais encodés à la main dans le layout).
 import { mulberry32 } from './decor.js';
-import { resoudreEmpreinteInteractif } from './structures.js';
+import { resoudreEmpreinteInteractif, empreinteAbsoluePuzzle } from './structures.js';
 
 function decoderLayout(donnees) {
   if (donnees.legende) {
@@ -80,7 +80,14 @@ function appliquerStructures(grille, donnees) {
   }
 }
 
-export function chargerScene(registre, sceneId) {
+// specs/05_construction-stations.md §3 : une station placable peut avoir été
+// déplacée/tournée par le joueur (save.maison.stations, résolu et VALIDÉ par
+// main.js#resoudreOverridesStations avant l'appel à chargerScene — ce module
+// reste pur, il ne connaît jamais save.js). `overridesInteractifs` ({ id: {
+// x, y, rotation } }) est optionnel : absent ou vide, chaque interactif garde
+// exactement sa position/rotation de puzzles.json, comportement identique à
+// avant cette fiche (aucune régression sur les scènes sans station placable).
+export function chargerScene(registre, sceneId, overridesInteractifs = {}) {
   const donnees = registre.obtenir('scenes', sceneId);
   if (!donnees) throw new Error(`scene "${sceneId}" introuvable dans le registre`);
 
@@ -90,6 +97,24 @@ export function chargerScene(registre, sceneId) {
   const grille = decoderLayout(donnees);
   appliquerForetProcedurale(grille, donnees);
   appliquerStructures(grille, donnees);
+
+  // Pose effective d'un interactif positionné : l'override validé (pose du
+  // joueur) prime, sinon la position/rotation déclarée dans puzzles.json
+  // (rotation absente = 0, aucune station de M1 n'en déclare une en dur).
+  // Résolue UNE fois par id ici (Map), réutilisée telle quelle par
+  // empreintesSolides ci-dessous ET exposée pour main.js (rendu, seuil
+  // d'interaction) — jamais un second calcul de "quelle est sa vraie
+  // position" (spec §3/§6 : une seule source de vérité).
+  const posesEffectives = new Map();
+  function poseEffective(puzzle) {
+    if (posesEffectives.has(puzzle.id)) return posesEffectives.get(puzzle.id);
+    const o = overridesInteractifs[puzzle.id];
+    const pose = o
+      ? { x: o.x, y: o.y, rotation: o.rotation || 0 }
+      : { x: puzzle.position.x, y: puzzle.position.y, rotation: puzzle.rotation || 0 };
+    posesEffectives.set(puzzle.id, pose);
+    return pose;
+  }
 
   // specs/04_stations-proportions-collision.md §3 : empreintes des
   // interactifs `solide: true`, en px logiques absolus, résolues UNE fois à
@@ -103,10 +128,8 @@ export function chargerScene(registre, sceneId) {
     .filter((p) => p && p.solide)
     .map((p) => {
       const visuel = registre.obtenir('visuels', p.render.visuel);
-      const rel = resoudreEmpreinteInteractif(p, visuel);
-      const cx = (p.position.x + 0.5) * donnees.tile_size;
-      const cy = (p.position.y + 0.5) * donnees.tile_size;
-      return { id: p.id, x: cx + rel.x, y: cy + rel.y, w: rel.w, h: rel.h };
+      const abs = empreinteAbsoluePuzzle(p, visuel, poseEffective(p), donnees.tile_size);
+      return { id: p.id, ...abs };
     });
 
   function dansRectangle(px, py, rect) {
@@ -176,6 +199,13 @@ export function chargerScene(registre, sceneId) {
     // trouverPositionLibrePlusProche ci-dessous — la géométrie brute, jamais
     // recalculée ailleurs (§3 : "une seule fonction de collision").
     empreintesSolides,
+    // specs/05_construction-stations.md §3 : position/rotation EFFECTIVE
+    // (override validé ou défaut de puzzles.json) d'un interactif positionné
+    // — main.js#rectangleInteractif (seuil d'INTERACT) et le rendu
+    // (puzzlesAffiches) l'utilisent tous les deux, jamais `puzzle.position`
+    // brut, pour qu'une station déplacée soit actionnable/dessinée à sa
+    // VRAIE position.
+    poseEffectiveInteractif: (puzzleId) => poseEffective(registre.obtenir('puzzles', puzzleId)),
   };
 }
 

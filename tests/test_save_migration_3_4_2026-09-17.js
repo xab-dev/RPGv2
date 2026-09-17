@@ -53,18 +53,23 @@ function payloadV3() {
   assert.equal(migre.settings.musique, false, 'réglage déjà présent conservé, jamais réécrasé par la migration');
 }
 
-// 2. La version courante du module est bien 4.
+// 2. La version courante du module a avancé depuis (specs/05_construction-
+// stations.md a introduit sa propre migration 4 -> 5, cf.
+// test_save_migration_4_5) — cette fiche ne couvre que 3 -> 4, qui reste
+// valide telle quelle en appelant migrer(..., 4) explicitement partout
+// ci-dessus.
 {
-  assert.equal(VERSION_SCHEMA_COURANTE, 4);
+  assert.equal(VERSION_SCHEMA_COURANTE, 5);
 }
 
 // 3. Cycle complet écrire/relire d'une v3 migrée automatiquement au
-// chargement.
+// chargement — charger() migre désormais jusqu'à la version courante (5), en
+// cascade par tous les paliers, jamais en s'arrêtant à 4.
 {
   const store = creerStoreMemoire();
   await sauvegarder(store, payloadV3());
   const { payload } = await charger(store);
-  assert.equal(payload.schema_version, 4);
+  assert.equal(payload.schema_version, VERSION_SCHEMA_COURANTE);
   assert.equal(payload.hero.x, 300);
   assert.deepEqual(payload.survie, { jauge_faim: 1, jauge_soif: 1 });
 }

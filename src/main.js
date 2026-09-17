@@ -49,7 +49,8 @@ import {
 import { peutRecolter, trouverRessourceProche } from './resources.js';
 import { ajouterItem, retirerItem } from './inventory.js';
 import { remplirItemsSol, trouverItemProche, ramasser, planifierRespawn, tickRespawns, calculerTuilesAtteignables } from './ground_items.js';
-import { calculerOpaciteToit, distanceAuRectangle, resoudreEmpreinteInteractif } from './structures.js';
+import { calculerOpaciteToit, distanceAuRectangle, empreinteAbsoluePuzzle } from './structures.js';
+import { dansRectangleTuile, poseValide } from './placement.js';
 import { avancerHeure, opaciteAHeure } from './daynight.js';
 import { armerAudio, definirMusiqueActive } from './audio.js';
 import { creerEtatIndices } from './hints.js';
@@ -226,6 +227,17 @@ export function creerOrchestrateurGrotte({
   let choixFollet = null;
   let pousseeChoixPrecedente = 0;
 
+  // Mode Construction (specs/05_construction-stations.md §3) : `null` =
+  // inactif, sinon { puzzle, structure, pose: {x,y,rotation}, pousseeX,
+  // pousseeY, verdict }. `verdict` (poseValide()) est recalculé à CHAQUE
+  // frame active (traiterConstruction) et réutilisé tel quel par dessiner()
+  // (fantôme vert/rouge) ET par la confirmation — jamais deux calculs.
+  let construction = null;
+
+  function constructionActif() {
+    return construction !== null;
+  }
+
   // Intro cinématique (§3.5 03_grotte-polish, palier 4) : `intro` couvre les
   // étapes 1 (clignements) + 2 (convergence), pilotées par temps seul
   // (aucun input lu, "non skippable") ; `depart` couvre l'étape 4 (les 2
@@ -248,7 +260,10 @@ export function creerOrchestrateurGrotte({
   // simple choix d'affichage (contrairement à `dialogueVientDeSOuvrir`, qui,
   // lui, a une sémantique de frame précise réservée au routage des inputs).
   function uiOuverteMaintenant() {
-    return menu.estOuvert() || dialogue.estOuvert() || choixFolletActif() || intro !== null || depart !== null;
+    return (
+      menu.estOuvert() || dialogue.estOuvert() || choixFolletActif() || intro !== null || depart !== null ||
+      constructionActif()
+    );
   }
 
   function demarrerChoixFollet() {
@@ -320,8 +335,57 @@ export function creerOrchestrateurGrotte({
     }
   }
 
+  // specs/05_construction-stations.md §3/§4 : résout les poses sauvegardées
+  // (save.maison.stations) en overrides VALIDÉS, dans l'ordre de
+  // scene.interactifs — une pose devenue invalide (données de scène
+  // changées, ou 2 stations sur la même tuile après une sauvegarde altérée)
+  // retombe sur la position par défaut de puzzles.json, loguée (classe
+  // "données valides mais obsolètes", jamais une migration de schéma).
+  // Opère sur les données BRUTES du registre (jamais sur `scene`, qui n'est
+  // pas encore chargée à cet instant) : chargerScene() reçoit le résultat en
+  // 3ᵉ paramètre pour construire ses empreintesSolides avec les VRAIES
+  // positions dès le premier calcul, jamais un second chargement.
+  function resoudreOverridesStations(sceneId) {
+    const donneesScene = registre.obtenir('scenes', sceneId);
+    const overrides = {};
+    for (const structure of donneesScene.structures || []) {
+      if (!structure.interieur) continue; // aucune station placable possible ici (§4 : pas d'"interieur" déclaré)
+      const puzzlesStructure = (donneesScene.interactifs || [])
+        .map((id) => registre.obtenir('puzzles', id))
+        .filter((p) => p && p.type === 'station' && dansRectangleTuile(p.position.x, p.position.y, structure.rect));
+
+      const empreintesAcceptees = [];
+      for (const puzzle of puzzlesStructure) {
+        const stationType = registre.obtenir('stations', puzzle.station_type);
+        const visuel = registre.obtenir('visuels', puzzle.render.visuel);
+        const poseParDefaut = { x: puzzle.position.x, y: puzzle.position.y, rotation: puzzle.rotation || 0 };
+        const poseSauvegardee = stationType.placable ? save.maison.stations[puzzle.id] : null;
+
+        if (!poseSauvegardee) {
+          empreintesAcceptees.push(empreinteAbsoluePuzzle(puzzle, visuel, poseParDefaut, donneesScene.tile_size));
+          continue;
+        }
+        const empreinteCandidate = empreinteAbsoluePuzzle(puzzle, visuel, poseSauvegardee, donneesScene.tile_size);
+        const verdict = poseValide({
+          empreinte: empreinteCandidate, structure, autresEmpreintes: empreintesAcceptees, tileSize: donneesScene.tile_size,
+        });
+        if (verdict.ok) {
+          overrides[puzzle.id] = poseSauvegardee;
+          empreintesAcceptees.push(empreinteCandidate);
+        } else {
+          console.warn(
+            `main.js#resoudreOverridesStations : pose sauvegardée invalide pour "${puzzle.id}" (${verdict.raison}), `
+            + 'position par défaut restaurée'
+          );
+          empreintesAcceptees.push(empreinteAbsoluePuzzle(puzzle, visuel, poseParDefaut, donneesScene.tile_size));
+        }
+      }
+    }
+    return overrides;
+  }
+
   function entrerDansScene(sceneId, positionInitialePx) {
-    scene = chargerScene(registre, sceneId);
+    scene = chargerScene(registre, sceneId, resoudreOverridesStations(sceneId));
     // Décor (§3.4 03_grotte-polish) : genererDecor() reste pur et ne connaît
     // que des id (visuel: string) — résolus ici une seule fois, à l'entrée en
     // scène (le décor est statique, jamais recalculé par frame), même
@@ -396,10 +460,11 @@ export function creerOrchestrateurGrotte({
   // à avant cette fiche.
   function rectangleInteractif(puzzle) {
     const visuel = registre.obtenir('visuels', puzzle.render.visuel);
-    const rel = resoudreEmpreinteInteractif(puzzle, visuel);
-    const cx = (puzzle.position.x + 0.5) * scene.tileSize;
-    const cy = (puzzle.position.y + 0.5) * scene.tileSize;
-    return { x: cx + rel.x, y: cy + rel.y, w: rel.w, h: rel.h };
+    // specs/05_construction-stations.md §3 : position/rotation EFFECTIVE
+    // (scene.js#poseEffectiveInteractif, override validé ou défaut) — jamais
+    // `puzzle.position` brut, sinon une station déplacée resterait
+    // actionnable à sa VIEILLE position.
+    return empreinteAbsoluePuzzle(puzzle, visuel, scene.poseEffectiveInteractif(puzzle.id), scene.tileSize);
   }
 
   // 03_maison-exterieur §3.2/§3.3 étend l'interaction à 4 cibles possibles,
@@ -593,6 +658,188 @@ export function creerOrchestrateurGrotte({
         };
       });
     return [...entreesDepot, ...entreesRetrait];
+  }
+
+  // --- Construction (specs/05_construction-stations.md) : placement libre
+  // des stations placable d'une structure, depuis le menu Pause. ---
+
+  // Structure dans laquelle se trouve le héros, STRICTEMENT (portes exclues,
+  // §4 edge case : dans l'embrasure ne compte pas) — `structure.interieur`
+  // (scenes.json) est déjà ce rectangle "portes exclues", donc un simple test
+  // d'appartenance suffit, jamais un second rectangle "réduit" calculé ici.
+  function structureHeros() {
+    const tx = Math.floor(hero.x / scene.tileSize);
+    const ty = Math.floor(hero.y / scene.tileSize);
+    return (scene.structures || []).find((s) => s.interieur && dansRectangleTuile(tx, ty, s.interieur)) || null;
+  }
+
+  // Stations PLACABLE de `structure` (§2) : appartenance déterminée par la
+  // position PAR DÉFAUT (puzzles.json) dans le rectangle de la structure —
+  // jamais un lien id->structure en dur, qui casserait dès une 2ᵉ pièce
+  // (Poste avancé, même patron déclaré par la spec §1).
+  function stationsPlacablesDeStructure(structure) {
+    return scene.interactifs
+      .map((id) => registre.obtenir('puzzles', id))
+      .filter((p) => p && p.type === 'station' && dansRectangleTuile(p.position.x, p.position.y, structure.rect))
+      .filter((p) => registre.obtenir('stations', p.station_type).placable);
+  }
+
+  // §3 : "disponible depuis MENU seulement quand le héros est dans la
+  // structure maison (sinon l'entrée n'apparaît pas)" — fourni à ui/menu.js
+  // via menu.definirDisponibiliteConstruction(), relu à CHAQUE ouverture du
+  // menu (jamais figé), même patron que obtenirEntreesStats.
+  function disponibiliteConstruction() {
+    return structureHeros() !== null;
+  }
+
+  // Liste des stations placable de la structure courante — fournie à
+  // ui/menu.js via menu.definirEntreesConstruction(). Vide (jamais une
+  // erreur) si le héros n'est dans aucune structure : le menu n'aurait de
+  // toute façon pas dû montrer l'entrée (disponibiliteConstruction), mais un
+  // appel isolé (test) reste sans danger.
+  function entreesConstruction() {
+    const structure = structureHeros();
+    if (!structure) return [];
+    return stationsPlacablesDeStructure(structure).map((p) => {
+      const stationType = registre.obtenir('stations', p.station_type);
+      return { texte: i18n.t(stationType.label_key), action: () => demarrerConstruction(p, structure) };
+    });
+  }
+
+  // Verdict de la pose CANDIDATE (§3, recalculé à chaque frame active) : les
+  // AUTRES interactifs solides de la structure sont déjà résolus à leur
+  // position effective dans scene.empreintesSolides (celle qu'on déplace en
+  // est exclue) — jamais un second calcul d'empreintes ici. Réutilisé tel
+  // quel par le rendu (fantôme vert/rouge) ET par la confirmation.
+  function recalculerVerdictConstruction() {
+    const visuel = registre.obtenir('visuels', construction.puzzle.render.visuel);
+    const empreinteCandidate = empreinteAbsoluePuzzle(construction.puzzle, visuel, construction.pose, scene.tileSize);
+    const autresEmpreintes = scene.empreintesSolides.filter((e) => e.id !== construction.puzzle.id);
+    construction.verdict = poseValide({
+      empreinte: empreinteCandidate, structure: construction.structure, autresEmpreintes, tileSize: scene.tileSize,
+    });
+  }
+
+  function demarrerConstruction(puzzle, structure) {
+    const poseActuelle = save.maison.stations[puzzle.id] || {
+      x: puzzle.position.x, y: puzzle.position.y, rotation: puzzle.rotation || 0,
+    };
+    construction = {
+      puzzle,
+      structure,
+      pose: { x: poseActuelle.x, y: poseActuelle.y, rotation: poseActuelle.rotation || 0 },
+      pousseeX: 0,
+      pousseeY: 0,
+      verdict: null,
+    };
+    recalculerVerdictConstruction();
+    // MT_construction-bandeau-placement_2026-09-17 : retire l'écran-liste et
+    // lève le bandeau en une seule transition (menu.js#ouvrirPlacementConstruction)
+    // — jamais `menu.fermer()` seul, qui laissait l'écran-liste affiché par-
+    // dessus la pièce (cause du micro-ticket : placement à l'aveugle).
+    const stationType = registre.obtenir('stations', puzzle.station_type);
+    menu.ouvrirPlacementConstruction(i18n.t(stationType.label_key));
+  }
+
+  // `B` pendant le placement (§4, MT_construction-bandeau-placement) :
+  // annule la pose en cours, jamais persistée, retour à la LISTE (on enchaîne
+  // le rangement de la maison sans repasser par le menu Pause).
+  function annulerConstruction() {
+    construction = null;
+    menu.reouvrirListeConstruction();
+  }
+
+  // `MENU` pendant le placement (§4, même fiche) : annule la pose en cours et
+  // revient PROPREMENT au menu Pause (jamais superposé au placement) — seul
+  // chemin de sortie complète du mode Construction.
+  function quitterConstructionVersMenuPause() {
+    construction = null;
+    menu.fermerPlacementConstruction();
+    menu.ouvrir();
+  }
+
+  // Recharge la scène après une pose confirmée (§3 : "la station devient
+  // solide à sa nouvelle place ; le héros est repoussé s'il s'y trouve") —
+  // rechargement CIBLÉ (pas entrerDansScene(), qui régénérerait décor/
+  // monstres/items au sol pour rien) : réutilise chargerScene +
+  // trouverPositionLibrePlusProche, exactement comme une entrée en scène
+  // normale, jamais un second mécanisme de repoussement (consignes §6).
+  function rechargerSceneApresConstruction() {
+    scene = chargerScene(registre, scene.id, resoudreOverridesStations(scene.id));
+    const positionLibre = trouverPositionLibrePlusProche(scene, hero.x, hero.y, flags.has);
+    if (positionLibre.x !== hero.x || positionLibre.y !== hero.y) {
+      console.warn(
+        'main.js#rechargerSceneApresConstruction : héros repoussé par la nouvelle pose d\'une station '
+        + `(${hero.x},${hero.y}) -> (${positionLibre.x},${positionLibre.y})`
+      );
+    }
+    hero.x = positionLibre.x;
+    hero.y = positionLibre.y;
+    save.hero.x = hero.x;
+    save.hero.y = hero.y;
+    tuilesAtteignables = calculerTuilesAtteignables(
+      scene, Math.floor(hero.x / scene.tileSize), Math.floor(hero.y / scene.tileSize)
+    );
+  }
+
+  // `A` pose valide (§4) : persiste, recharge la scène ciblée, puis retour à
+  // la LISTE (jamais un simple retour au jeu nu) — "on enchaîne et on range
+  // toute la maison sans repasser par MENU" (décision Xav).
+  function confirmerConstruction() {
+    save.maison.stations[construction.puzzle.id] = { ...construction.pose };
+    etatModifie = true;
+    construction = null;
+    rechargerSceneApresConstruction();
+    menu.reouvrirListeConstruction();
+  }
+
+  // Clé de dialogue de refus par raison (poseValide()) — §3 : "message
+  // localisé avec la raison", jamais un texte en dur ici (3 entrées de
+  // dialogues.json, une par raison possible retournée par placement.js).
+  const DIALOGUE_REFUS_CONSTRUCTION = {
+    hors_interieur: 'dlg_construction_refus_interieur',
+    chevauchement: 'dlg_construction_refus_chevauchement',
+    couloir_bloque: 'dlg_construction_refus_couloir',
+  };
+
+  // Déplacement d'une tuile par front montant (§3, jamais en px) — même
+  // seuil que le choix du follet (SEUIL_POUSSEE_CHOIX), 2 axes indépendants
+  // via 2 loquets distincts (pousseeX/pousseeY, même principe que
+  // pousseeChoixPrecedente). Bornée au rectangle de la structure (garde-fou
+  // contre un compteur qui dérive à l'infini si on martèle MOVE hors de
+  // l'intérieur) — la validité RÉELLE (intérieur/chevauchement/couloir) reste
+  // décidée par poseValide, jamais ce clamp.
+  function traiterConstruction(etat) {
+    const signe = (v) => (v > SEUIL_POUSSEE_CHOIX ? 1 : v < -SEUIL_POUSSEE_CHOIX ? -1 : 0);
+    const sx = signe(etat.move.x);
+    const sy = signe(etat.move.y);
+    const { rect } = construction.structure;
+    if (sx !== 0 && construction.pousseeX === 0) {
+      construction.pose.x = Math.max(rect.x, Math.min(rect.x + rect.w - 1, construction.pose.x + sx));
+    }
+    if (sy !== 0 && construction.pousseeY === 0) {
+      construction.pose.y = Math.max(rect.y, Math.min(rect.y + rect.h - 1, construction.pose.y + sy));
+    }
+    construction.pousseeX = sx;
+    construction.pousseeY = sy;
+
+    // Rotation (§9 [OUVERT], provisoire appliqué : SKILL_1, contextuel au
+    // mode qui est une UI) — 90° horaires par appui, jamais en continu.
+    if (etat.skill_1.pressed) construction.pose.rotation = (construction.pose.rotation + 1) % 4;
+
+    recalculerVerdictConstruction();
+
+    if (etat.attack.pressed) {
+      if (construction.verdict.ok) {
+        confirmerConstruction();
+      } else {
+        dialogue.ouvrir(
+          resoudreLignes(DIALOGUE_REFUS_CONSTRUCTION[construction.verdict.raison], registre, i18n, save.hero.companion)
+        );
+      }
+      return;
+    }
+    if (etat.skill_3.pressed) annulerConstruction();
   }
 
   // Modificateurs de stats primaires du héros — SEUL endroit qui les combine
@@ -919,21 +1166,31 @@ export function creerOrchestrateurGrotte({
       if (depart.terminee) depart = null;
     }
 
-    if (
-      etatBrut.menu.pressed && !menu.estOuvert() && !dialogueOuvertMaintenant &&
-      !choixFolletActif() && !introEtaitActive && !departEtaitActif
-    ) {
-      menu.ouvrir();
+    // MT_construction-bandeau-placement_2026-09-17 §4 : `MENU` pendant le
+    // placement a désormais un effet (annule + revient au menu Pause,
+    // jamais superposé) — cas à part du reste, qui n'ouvre le menu QUE s'il
+    // n'y a encore aucune UI ouverte.
+    if (etatBrut.menu.pressed && !dialogueOuvertMaintenant && !choixFolletActif() && !introEtaitActive && !departEtaitActif) {
+      if (constructionActif()) {
+        quitterConstructionVersMenuPause();
+      } else if (!menu.estOuvert()) {
+        menu.ouvrir();
+      }
     }
 
     // Point unique de priorité UI/gameplay (patron du menu, §3.7 : étendu à
     // "une UI est ouverte" = menu OU dialogue OU choix du follet OU intro OU
-    // départ) : le gameplay ne voit jamais les verbes bruts pendant qu'une UI
-    // les capte.
-    const uiOuverte = menu.estOuvert() || dialogueOuvertMaintenant || choixFolletActif() || introEtaitActive || departEtaitActif;
+    // départ OU construction, specs/05_construction-stations.md §3 : "le jeu
+    // reste gelé comme sous UI") : le gameplay ne voit jamais les verbes
+    // bruts pendant qu'une UI les capte.
+    const uiOuverte = (
+      menu.estOuvert() || dialogueOuvertMaintenant || choixFolletActif() || introEtaitActive || departEtaitActif ||
+      constructionActif()
+    );
     if (menu.estOuvert()) menu.traiterInput(etatBrut);
     else if (dialogueOuvertMaintenant) dialogue.traiterInput(dialogueVientDeSOuvrir ? etatNeutre(etatBrut) : etatBrut);
     else if (choixFolletActif()) traiterChoixFollet(etatBrut);
+    else if (constructionActif()) traiterConstruction(etatBrut);
 
     const etatGameplay = uiOuverte ? etatNeutre(etatBrut) : etatBrut;
     // Indices de commande, §4 edge case : "verbe émis avant le déclencheur"
@@ -1141,16 +1398,23 @@ export function creerOrchestrateurGrotte({
     const puzzlesAffiches = scene.interactifs
       .map((id) => registre.obtenir('puzzles', id))
       .filter((p) => p.render && p.render.visuel)
-      .map((p) => ({
-        x: (p.position.x + 0.5) * scene.tileSize,
-        y: (p.position.y + 0.5) * scene.tileSize,
-        actif: p.type === 'levier' && !!puzzlesEtat[p.id]?.actif,
-        visuel: registre.obtenir('visuels', p.render.visuel),
-        // specs/04_stations-proportions-collision.md : échelle par entrée
-        // (`undefined` pour un levier -> dessinerVisuel applique son propre
-        // défaut 1, jamais un second défaut dupliqué ici).
-        echelle: p.echelle,
-      }));
+      .map((p) => {
+        // specs/05_construction-stations.md §3 : position/rotation EFFECTIVE
+        // (override validé ou défaut) — une station déplacée se dessine à sa
+        // VRAIE position, jamais celle de puzzles.json.
+        const pose = scene.poseEffectiveInteractif(p.id);
+        return {
+          x: (pose.x + 0.5) * scene.tileSize,
+          y: (pose.y + 0.5) * scene.tileSize,
+          actif: p.type === 'levier' && !!puzzlesEtat[p.id]?.actif,
+          visuel: registre.obtenir('visuels', p.render.visuel),
+          // specs/04_stations-proportions-collision.md : échelle par entrée
+          // (`undefined` pour un levier -> dessinerVisuel applique son propre
+          // défaut 1, jamais un second défaut dupliqué ici).
+          echelle: p.echelle,
+          rotation: pose.rotation * 90,
+        };
+      });
 
     // Anneau d'attaque (§3.1) : converti en px logiques ici (main.js a le
     // registre pour résoudre l'arme équipée) — render.js ne connaît que
@@ -1195,6 +1459,20 @@ export function creerOrchestrateurGrotte({
       ? { ...scene, obscurite: { opacite: opaciteAHeure(save.monde.heure) } }
       : scene;
 
+    // Fantôme de pose (specs/05_construction-stations.md §3) : résolu ici
+    // (main.js a le registre) à partir de `construction.pose`/`.verdict` déjà
+    // tenus à jour par traiterConstruction() — render.js ne connaît que
+    // { x, y, visuel, echelle, rotation, valide }, jamais construction.js par
+    // id (même patron que puzzlesAffiches/objetsSolAffiches ci-dessus).
+    const fantomeAffiche = construction ? {
+      x: (construction.pose.x + 0.5) * scene.tileSize,
+      y: (construction.pose.y + 0.5) * scene.tileSize,
+      visuel: registre.obtenir('visuels', construction.puzzle.render.visuel),
+      echelle: construction.puzzle.echelle,
+      rotation: construction.pose.rotation * 90,
+      valide: !!(construction.verdict && construction.verdict.ok),
+    } : null;
+
     dessinerScene(ctxLogique, {
       scene: sceneAffichage,
       decor,
@@ -1217,6 +1495,7 @@ export function creerOrchestrateurGrotte({
       visuelsTuiles,
       objetsSol: objetsSolAffiches,
       structures: structuresAffichees,
+      fantome: fantomeAffiche,
     });
     dessinerObscurite(ctxLogique, {
       scene: sceneAffichage,
@@ -1352,6 +1631,19 @@ export function creerOrchestrateurGrotte({
     // reinitialiserPartie ci-dessus) — le menu Stats n'a besoin d'appeler
     // que cette seule fonction, jamais de connaître registre/save/i18n.
     obtenirEntreesStats: () => obtenirEntreesStats(),
+    // specs/05_construction-stations.md §3 : fournis à ui/menu.js via
+    // menu.definirDisponibiliteConstruction()/definirEntreesConstruction()
+    // (même patron que obtenirEntreesStats ci-dessus) — et exposés ici pour
+    // les tests headless (état du mode Construction, jamais le rendu).
+    // MT_construction-bandeau-placement_2026-09-17 : invariant à prouver en
+    // test headless ("construction active ⇒ UI ouverte") — expose la même
+    // fonction que celle qui gèle réellement le gameplay dans maj(), jamais
+    // une redérivation séparée côté test qui pourrait diverger.
+    uiOuverteMaintenant: () => uiOuverteMaintenant(),
+    disponibiliteConstruction: () => disponibiliteConstruction(),
+    entreesConstruction: () => entreesConstruction(),
+    constructionActif,
+    obtenirConstruction: () => construction,
   };
 }
 
@@ -1463,6 +1755,9 @@ export async function demarrerJeu() {
     equiperConsommable: (itemId) => {
       save.hero.equipement.consommable = itemId;
     },
+    // MT_construction-bandeau-placement_2026-09-17 : glyphes du bandeau
+    // résolus sur le périphérique réellement actif, jamais manette en dur.
+    peripheriqueActif: () => input.peripheriqueActif(),
   });
 
   const dialogue = creerDialogue();
@@ -1495,6 +1790,10 @@ export async function demarrerJeu() {
   // Même patron (§3.4) : le menu Stats a besoin de l'orchestrateur pour
   // résoudre les stats/points courants.
   menu.definirEntreesStats(orchestrateur.obtenirEntreesStats);
+  // specs/05_construction-stations.md §3 : même patron de couture différée
+  // (le menu ne connaît ni la scène ni la position du héros).
+  menu.definirDisponibiliteConstruction(orchestrateur.disponibiliteConstruction);
+  menu.definirEntreesConstruction(orchestrateur.entreesConstruction);
 
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) sauvegarder(store, save);

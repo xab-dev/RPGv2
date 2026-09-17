@@ -85,6 +85,27 @@
     ]
   },
   {
+    "id": "dlg_construction_refus_interieur",
+    "declencheur": "construction_refus_interieur",
+    "lignes": [
+      { "locuteur": "follet", "text_key": "dlg.construction_refus_interieur.1" }
+    ]
+  },
+  {
+    "id": "dlg_construction_refus_chevauchement",
+    "declencheur": "construction_refus_chevauchement",
+    "lignes": [
+      { "locuteur": "follet", "text_key": "dlg.construction_refus_chevauchement.1" }
+    ]
+  },
+  {
+    "id": "dlg_construction_refus_couloir",
+    "declencheur": "construction_refus_couloir",
+    "lignes": [
+      { "locuteur": "follet", "text_key": "dlg.construction_refus_couloir.1" }
+    ]
+  },
+  {
     "id": "dlg_premiere_faim",
     "declencheur": "premiere_faim",
     "lignes": [

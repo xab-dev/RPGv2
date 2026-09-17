@@ -179,11 +179,47 @@ différente) entre les trois emplacements.
     points libres restent, points libres affichés et décomptés après
     allocation, aucun retrait possible.
 
-**Encore dû (2026-09-17)** : les états 25-28 ci-dessus n'ont **jamais été
-capturés en navigateur réel** — code fait et testé headless
-(`tests/test_phase3_*`), mais la contrainte de méthode (rendu canvas/DOM
-jamais exercé headless) s'applique intégralement ici. Voir `CLAUDE.md` >
-Dette.
+29. **Menu Construction** (specs/05_construction-stations.md §3) — ouvert
+    depuis le menu Pause dans la maison. Vérifier : entrée "Construction"
+    présente seulement quand le héros est strictement à l'intérieur (absente
+    dehors, absente dans l'embrasure d'une porte), liste des 3 stations
+    placable (jamais le puits), touches du mode affichées en sous-titre de
+    l'écran.
+30. **Fantôme de pose — valide** (idem, mode Construction) — station choisie,
+    déplacée vers une case libre. Vérifier : silhouette translucide verte,
+    coche pleine au-dessus (jamais la couleur seule, P4②), suit la grille
+    (un cran par impulsion), aucune collision réelle tant que non confirmée.
+31. **Fantôme de pose — invalide** (idem) — poussé hors de l'intérieur, sur
+    une autre station, ou sur l'unique accès à une porte. Vérifier :
+    silhouette translucide rouge, croix au-dessus (forme distincte de la
+    coche), `ATTACK` ne confirme pas, ouvre un dialogue expliquant la raison
+    (hors intérieur / chevauchement / couloir bloqué).
+31bis. **Bandeau de placement** (`MT_construction-bandeau-placement_2026-09-17.md`,
+    v1.0.1) — choisir une station dans la liste. Vérifier : l'écran-liste
+    disparaît, la pièce redevient visible avec le fantôme, un bandeau compact
+    en bas d'écran (filigrane, jamais au premier plan) affiche le nom de la
+    station + les 5 verbes (déplacer/tourner/poser/annuler/quitter) — jamais
+    l'écran-liste ET le bandeau affichés en même temps. `SKILL_3`/`ATTACK`
+    (pose valide) ramènent à la LISTE (jamais au jeu nu) ; `MENU` ramène
+    proprement au menu Pause (jamais superposé), sans écran orphelin visible.
+32. **Station tournée** (idem) — 4 appuis de rotation sur une station posée.
+    Vérifier : les 4 orientations sont visuellement distinctes, l'empreinte
+    suit la rotation (on ne traverse plus le nouveau côté large, on peut
+    traverser l'ancien), `INTERACT` fonctionne sur les 4 côtés après la pose.
+
+**États 21/25-28 validés (2026-09-17)** : Xav a rejoué la Phase 3 en jeu et
+confirmé « tous les points testés, bon » (clôture du critère de passage
+ROADMAP, voir `CLAUDE.md`) — cette validation couvre fonctionnellement les
+états 21 (stations/puits dessinés) et 25-28 (jauges, menus Craft/Coffre/
+Stats), sans qu'un compte-rendu capture-par-capture n'ait été retranscrit ici
+(verdict global de session, pas un protocole rejoué état par état). Pas de
+détail supplémentaire à consigner tant qu'aucun défaut n'a été rapporté.
+
+**Encore dû (2026-09-17)** : les états 29-32 et 31bis (specs/05_construction-stations.md,
+ajoutés le jour même) n'ont **jamais été capturés en navigateur réel** — code
+fait et testé headless (`tests/test_construction_2026-09-17.js`), mais la
+contrainte de méthode (rendu canvas/DOM jamais exercé headless) s'applique
+intégralement ici. Voir `CLAUDE.md` > Dette.
 
 Diagnostic `SD_phase3-stations-pv-jauges_2026-09-17.md` (première validation
 en jeu par Xav) : état 21 (stations/puits) était en réalité invisible en jeu

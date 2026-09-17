@@ -84,8 +84,49 @@ export function empreinteParDefaut(visuel, echelle) {
 // nulle : le seuil d'interaction mesuré à son "bord" (structures.js#
 // distanceAuRectangle sur un rectangle nul) redonne exactement la distance au
 // centre d'avant cette fiche — comportement identique, pas une coïncidence.
-export function resoudreEmpreinteInteractif(puzzle, visuel) {
-  if (puzzle.empreinte) return puzzle.empreinte;
-  if (!puzzle.solide) return { x: 0, y: 0, w: 0, h: 0 };
-  return empreinteParDefaut(visuel, puzzle.echelle ?? ECHELLE_INTERACTIF_DEFAUT);
+//
+// `rotation` (specs/05_construction-stations.md §3, quarts de tour horaires
+// 0..3) tourne ce rectangle de base — jamais un second calcul d'empreinte : la
+// même fonction sert la collision statique (scene.js) et la validation de
+// pose en temps réel (placement.js#poseValide).
+export function resoudreEmpreinteInteractif(puzzle, visuel, rotation = 0) {
+  const base = puzzle.empreinte
+    ? puzzle.empreinte
+    : !puzzle.solide
+      ? { x: 0, y: 0, w: 0, h: 0 }
+      : empreinteParDefaut(visuel, puzzle.echelle ?? ECHELLE_INTERACTIF_DEFAUT);
+  const r = ((rotation % 4) + 4) % 4;
+  return r === 0 ? base : tournerEmpreinte(base, r);
+}
+
+// Tourne un rectangle relatif (x,y = coin, PAS le centre) de `rotation` quarts
+// de tour HORAIRES autour de l'origine (0,0) — c'est-à-dire le même repère que
+// dessinerVisuel(), qui pivote ses primitives via ctx.rotate((rotation*90) *
+// Math.PI/180) : un point local (px,py) y devient (-py,px) après un quart de
+// tour horaire (canvas 2D, axe Y vers le bas). Composer ce même pas 4x calcule
+// la boîte englobante d'un rectangle tourné SANS jamais énumérer les 4 cas à
+// la main (dérivation vérifiée : k fois cette étape ≡ la formule fermée pour
+// une rotation de k×90°). Rendu (rotation en degrés, dessinerVisuel) et
+// collision (ce module) restent ainsi rigoureusement synchronisés — spec §3 :
+// "jamais deux calculs".
+export function tournerEmpreinte(rect, rotation) {
+  let r = rect;
+  const fois = ((rotation % 4) + 4) % 4;
+  for (let i = 0; i < fois; i++) {
+    r = { x: -(r.y + r.h), y: r.x, w: r.h, h: r.w };
+  }
+  return r;
+}
+
+// Empreinte ABSOLUE (px logiques, repère de la scène) d'un puzzle positionné
+// à `pose` ({ x, y, rotation } en coordonnées TUILE) — factorise le calcul
+// "centre de la tuile + empreinte relative tournée" jusqu'ici dupliqué entre
+// scene.js (empreintesSolides statiques) et main.js (rectangleInteractif) ;
+// specs/05_construction-stations.md en a besoin une 3ᵉ fois (fantôme de
+// pose), d'où l'extraction ici plutôt qu'une nouvelle duplication.
+export function empreinteAbsoluePuzzle(puzzle, visuel, pose, tileSize) {
+  const rel = resoudreEmpreinteInteractif(puzzle, visuel, pose.rotation || 0);
+  const cx = (pose.x + 0.5) * tileSize;
+  const cy = (pose.y + 0.5) * tileSize;
+  return { x: cx + rel.x, y: cy + rel.y, w: rel.w, h: rel.h };
 }

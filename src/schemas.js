@@ -311,6 +311,25 @@ function validerScene(entry, catalogs, path) {
         }
       });
     }
+
+    // specs/05_construction-stations.md §2 : `interieur` (rectangle tuile
+    // plaçable, portes exclues) et `couloir` (les 2 points de départ/arrivée
+    // du test de praticabilité) — optionnels : une structure qui ne déclare
+    // aucune station placable (aucune en M1 hors la Maison) n'a besoin ni de
+    // l'un ni de l'autre.
+    if (structure.interieur !== undefined) {
+      const ri = structure.interieur;
+      if (!ri || ['x', 'y', 'w', 'h'].some((c) => typeof ri[c] !== 'number')) {
+        erreurs.push(`${chemin} > interieur doit être { x, y, w, h } numériques`);
+      }
+    }
+    if (structure.couloir !== undefined) {
+      const valide = Array.isArray(structure.couloir) && structure.couloir.length === 2
+        && structure.couloir.every((p) => p && typeof p.x === 'number' && typeof p.y === 'number');
+      if (!valide) {
+        erreurs.push(`${chemin} > couloir doit être un tableau de 2 { x, y }`);
+      }
+    }
   });
 
   // cycle_jour_nuit (03_maison-exterieur §2.1/§3.5) : simple interrupteur,
@@ -976,7 +995,11 @@ export const SCHEMAS = {
   // les instances positionnées (celles-ci vivent dans puzzles.json, type
   // "station", référençant un id d'ici via `station_type`).
   stations: {
-    requiredFields: ['id', 'label_key', 'role'],
+    // `placable` (specs/05_construction-stations.md §2) : le puits n'y
+    // figure jamais, table/atelier/coffre s'y déplacent tous — champ requis
+    // plutôt qu'optionnel-avec-défaut, pour qu'un 5ᵉ type de station ne
+    // puisse jamais "oublier" de trancher la question en silence.
+    requiredFields: ['id', 'label_key', 'role', 'placable'],
     idField: 'id',
     refs: [],
     custom(entry, catalogs, path) {
@@ -987,6 +1010,9 @@ export const SCHEMAS = {
       }
       if (entry.role === 'stockage' && (typeof entry.capacite !== 'number' || entry.capacite <= 0)) {
         erreurs.push(`${path} > role "stockage" exige capacite (nombre positif)`);
+      }
+      if (typeof entry.placable !== 'boolean') {
+        erreurs.push(`${path} > placable doit être un booléen`);
       }
       return erreurs;
     },

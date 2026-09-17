@@ -141,6 +141,15 @@ const COULEUR_LEVIER_ACTIF = '#ffd94a';
 // visuel, DISTANCE_ENGAGEMENT_PX (companion.js) inchangé. Un seul endroit.
 export const AURA_TRAIT = { largeur: 1, pointilles: [4, 4], alpha: 0.25 };
 
+// Fantôme de pose (specs/05_construction-stations.md §3) : vert/rouge selon
+// verdict.ok (main.js#poseValide), MAIS jamais la couleur seule (P4② carte
+// mentale) — un marqueur de FORME distincte (coche pleine / croix) au-dessus
+// de la silhouette translucide fait la différence pour un joueur qui ne
+// distingue pas le vert du rouge.
+const COULEUR_FANTOME_VALIDE = '#4ade80';
+const COULEUR_FANTOME_INVALIDE = '#f87171';
+const ALPHA_FANTOME = 0.6;
+
 // --- Calque statique tuiles + décor (§3.4 grotte-polish, fenêtré depuis
 // 03_maison-exterieur §2.2) -------------------------------------------------
 // Une scène ne change jamais tuile par tuile pendant qu'on la visite (sauf
@@ -286,7 +295,7 @@ function dessinerCoucheStatique(ctx, scene, decor, camera, estFlagActif, visuels
 // seule fonction de rendu, plus aucune forme d'entité dessinée inline ici).
 export function dessinerScene(ctx, {
   scene, decor, camera, hero, heroVisuel, heroTeinte = null, monstres = [], follet, puzzles = [], estFlagActif, anneauAttaque,
-  visuelsTuiles = new Map(), objetsSol = [], structures = [],
+  visuelsTuiles = new Map(), objetsSol = [], structures = [], fantome = null,
 }) {
   ajusterCanvasLogiquePhysique(ctx);
   ctx.clearRect(0, 0, RESOLUTION_LOGIQUE.largeur, RESOLUTION_LOGIQUE.hauteur);
@@ -306,7 +315,43 @@ export function dessinerScene(ctx, {
       // (stations ×2,1, leviers 1 par défaut) — dessinerVisuel() default déjà
       // 1 si absent, jamais un second défaut ici.
       echelle: levier.echelle,
+      // specs/05_construction-stations.md §3 : rotation par quart de tour
+      // (0 pour tout interactif jamais tourné, levier compris) — même champ
+      // `options.rotation` (degrés) que dessinerVisuel() expose déjà.
+      rotation: levier.rotation || 0,
     });
+  }
+
+  // Fantôme de pose (§3, mode Construction) : dessiné après les stations
+  // réelles pour rester lisible par-dessus, jamais solide (aucune interaction
+  // ni collision tant que la pose n'est pas confirmée).
+  if (fantome) {
+    const gx = fantome.x - camera.x;
+    const gy = fantome.y - camera.y;
+    const couleur = fantome.valide ? COULEUR_FANTOME_VALIDE : COULEUR_FANTOME_INVALIDE;
+    dessinerVisuel(ctx, fantome.visuel, gx, gy, {
+      teinte: couleur, alpha: ALPHA_FANTOME, echelle: fantome.echelle, rotation: fantome.rotation,
+    });
+    // Marqueur de forme (P4② : jamais la couleur seule) : coche pleine si
+    // valide, croix si refusée — au-dessus de la silhouette.
+    ctx.save();
+    ctx.translate(gx, gy);
+    ctx.strokeStyle = couleur;
+    ctx.fillStyle = couleur;
+    ctx.lineWidth = 2;
+    if (fantome.valide) {
+      ctx.beginPath();
+      ctx.arc(0, -20, 5, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.beginPath();
+      ctx.moveTo(-5, -25);
+      ctx.lineTo(5, -15);
+      ctx.moveTo(5, -25);
+      ctx.lineTo(-5, -15);
+      ctx.stroke();
+    }
+    ctx.restore();
   }
 
   // Objets au sol (03_maison-exterieur §3.3) : branche/caillou/fruit — même

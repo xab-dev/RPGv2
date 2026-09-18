@@ -1,0 +1,463 @@
+// Contrat SD_construction-parite-clic-verbe_2026-09-19.md : cause racine
+// DISTINCTE de SD_construction-ecrans-orphelins_2026-09-17.md, bien que le
+// symptôme se ressemble (le menu Pause réapparaît en Construction). Cette
+// fois le bug n'est PAS dans quel CONTRAT « ouvert » est vrai (déjà unifié,
+// journal du 17/09 soir) mais dans `creerEcranListeGenerique#traiterInput` :
+// sa branche `else` DÉDUIT « fermé par B/skill_3 » du seul fait que
+// `controleur.estOuvert()` est faux après `controleur.traiterInput(etat)` —
+// or une ACTION choisie par ATTACK (ex. sélectionner une station, qui appelle
+// `ecranConstruction.fermerSansCallback()` via `demarrerConstruction`) peut
+// AUSSI fermer ce contrôleur dans le même appel, sans jamais vouloir
+// déclencher `onFermer`. Le clic, lui, appelle `toutes[i].action()`
+// directement (`menu.js#reconstruire`), sans jamais passer par cette
+// déduction — d'où la divergence : souris/tactile sains, manette ET clavier
+// cassés identiquement (retour Xav, 2026-09-19).
+//
+// Méthode imposée (§3 de la fiche) : la séquence S1->S4 est jouée DEUX FOIS
+// sur le VRAI `ui/menu.js` — (a) par clics DOM, (b) UNIQUEMENT par
+// `menu.traiterInput(etat)` avec de vrais `attack.pressed`/`skill_3.pressed`/
+// `move`, JAMAIS un appel direct à `entree.action()` (c'est précisément ce
+// raccourci qui rendait test_sd_menu_ecrans_orphelins_2026-09-17.js vert sans
+// voir ce bug — cf. son propre §2). Rouge attendu sur HEAD, chemin (b), dès la
+// sélection de la première station.
+import assert from 'node:assert/strict';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { chargerCataloguesDepuisDisque, chargerLocalesDepuisDisque } from '../src/io_node.js';
+import { SCHEMAS } from '../src/schemas.js';
+import { validerCatalogues, construireRegistre } from '../src/registry.js';
+import { creerI18n } from '../src/i18n.js';
+import { creerDialogue } from '../src/dialogue.js';
+import { saveNeuve, creerStoreMemoire } from '../src/save.js';
+import { creerOrchestrateurGrotte } from '../src/main.js';
+import { initialiserMenu } from '../src/ui/menu.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const RACINE = path.join(__dirname, '..');
+const TILE = 32;
+const px = (x, y) => ({ x: (x + 0.5) * TILE, y: (y + 0.5) * TILE });
+
+const noms = Object.keys(SCHEMAS);
+const [dictionnaires, { donnees, erreurs: erreursChargement }] = await Promise.all([
+  chargerLocalesDepuisDisque(path.join(RACINE, 'locales')),
+  chargerCataloguesDepuisDisque(path.join(RACINE, 'data'), noms),
+]);
+assert.deepEqual(erreursChargement, []);
+assert.deepEqual(validerCatalogues(donnees), []);
+const registre = construireRegistre(donnees);
+const i18n = creerI18n(dictionnaires, 'fr');
+
+function etat({ moveX = 0, moveY = 0, attack = false, interact = false, skill1 = false, skill3 = false, menu = false } = {}) {
+  return {
+    move: { x: moveX, y: moveY },
+    attack: { pressed: attack, held: attack },
+    skill_1: { pressed: skill1, held: skill1 },
+    skill_2: { pressed: false, held: false },
+    skill_3: { pressed: skill3, held: skill3 },
+    consume: { pressed: false, held: false },
+    interact: { pressed: interact, held: interact },
+    menu: { pressed: menu, held: menu },
+  };
+}
+function creerInputScripte(frames) {
+  let i = 0;
+  return { maj: () => frames[Math.min(i++, frames.length - 1)] };
+}
+
+function saveDansLaMaison() {
+  const save = saveNeuve();
+  save.hero.scene = 'scene_maison_exterieur';
+  // Même position calme que test_construction_2026-09-17.js/
+  // test_sd_menu_ecrans_orphelins_2026-09-17.js : loin du couloir (y=57) et
+  // des 3 stations par défaut (table/cuisine 82,54 / coffre 86,54 / atelier
+  // 89,61).
+  save.hero.x = px(85, 52).x;
+  save.hero.y = px(85, 52).y;
+  save.hero.companion = 'comp_follet_eau';
+  save.hero.pv = 40;
+  save.flags = {
+    flag_follet_choisi: true, flag_grotte_sortie: true, flag_grotte_sequence: true,
+    flag_grotte_monstre_tue: true, flag_levier_salle1: true, flag_maison_decouverte: true,
+  };
+  return save;
+}
+
+// --- Faux DOM minimal pour exercer le VRAI ui/menu.js — même gabarit que
+// test_construction_2026-09-17.js et test_sd_menu_ecrans_orphelins_2026-09-17.js
+// (copié, pas partagé, convention du dépôt : un fichier par contrat).
+class ElementFactice {
+  constructor(tag) {
+    this.tagName = String(tag).toUpperCase();
+    this.id = '';
+    this.dataset = {};
+    this.style = {};
+    this.children = [];
+    this.parentNode = null;
+    this._classes = [];
+    this._listeners = {};
+    this._texte = '';
+    this.hidden = false;
+    this.value = '';
+  }
+  setAttribut(nom, val) {
+    if (nom === 'id') this.id = val;
+    else if (nom === 'class') this._classes = (val || '').split(/\s+/).filter(Boolean);
+    else if (nom.startsWith('data-')) {
+      const cle = nom.slice(5).replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+      this.dataset[cle] = val;
+    } else if (nom === 'value') this.value = val;
+  }
+  appendChild(enfant) {
+    enfant.parentNode = this;
+    this.children.push(enfant);
+    return enfant;
+  }
+  addEventListener(type, fn) {
+    (this._listeners[type] ||= []).push(fn);
+  }
+  get textContent() {
+    return this._texte;
+  }
+  set textContent(v) {
+    this._texte = v;
+    this.children = [];
+  }
+  set innerHTML(html) {
+    this.children = analyserHTMLFactice(html);
+    this.children.forEach((c) => (c.parentNode = this));
+  }
+  querySelectorAll(selecteur) {
+    const resultats = [];
+    const visiter = (el) => {
+      for (const enfant of el.children) {
+        if (correspondFactice(enfant, selecteur)) resultats.push(enfant);
+        visiter(enfant);
+      }
+    };
+    visiter(this);
+    return resultats;
+  }
+  querySelector(selecteur) {
+    return this.querySelectorAll(selecteur)[0] || null;
+  }
+}
+
+function correspondFactice(el, selecteur) {
+  if (selecteur.startsWith('#')) return el.id === selecteur.slice(1);
+  if (selecteur.startsWith('.')) return el._classes.includes(selecteur.slice(1));
+  if (selecteur.startsWith('[') && selecteur.endsWith(']')) {
+    const nomAttr = selecteur.slice(1, -1);
+    if (nomAttr.startsWith('data-')) {
+      const cle = nomAttr.slice(5).replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+      return Object.prototype.hasOwnProperty.call(el.dataset, cle);
+    }
+  }
+  return selecteur === 'button' && el.tagName === 'BUTTON';
+}
+
+function analyserHTMLFactice(html) {
+  const racine = new ElementFactice('root');
+  const pile = [racine];
+  const regexTag = /<(\/)?([a-zA-Z0-9-]+)([^>]*?)(\/)?>|([^<]+)/g;
+  let m;
+  while ((m = regexTag.exec(html))) {
+    const [, fermante, nomTag, attrsStr, autoFerme, texte] = m;
+    if (texte !== undefined) continue;
+    if (fermante) {
+      pile.pop();
+      continue;
+    }
+    const el = new ElementFactice(nomTag);
+    const regexAttr = /([a-zA-Z0-9-]+)(?:="([^"]*)")?/g;
+    let a;
+    while ((a = regexAttr.exec(attrsStr || ''))) {
+      if (!a[1]) continue;
+      el.setAttribut(a[1], a[2] !== undefined ? a[2] : true);
+    }
+    pile[pile.length - 1].appendChild(el);
+    if (!autoFerme) pile.push(el);
+  }
+  return racine.children;
+}
+
+function creerFauxDocument() {
+  return {
+    createElement: (tag) => new ElementFactice(tag),
+    body: new ElementFactice('body'),
+  };
+}
+
+// Même critère que les autres tests de ce chantier (leçon du diagnostic reset
+// invisible) : `hidden` seul ne suffit pas.
+function estVisibleEffectif(el) {
+  return el.hidden === false && el.style.display !== 'none' && el.style.display !== undefined;
+}
+
+function estLeBandeau(el) {
+  return el.style.pointerEvents === 'none';
+}
+
+function declencherClic(el) {
+  (el._listeners.click || []).forEach((fn) => fn());
+}
+
+// Le seul écran (bandeau exclu) actuellement visible sous document.body —
+// vrai par construction du module (un seul écran plein/partiel focalisable à
+// la fois, cf. carte §5).
+function ecranVisible(document) {
+  return document.body.children.find((el) => estVisibleEffectif(el) && !estLeBandeau(el)) || null;
+}
+
+function boutonsDe(ecran) {
+  return ecran.querySelectorAll('button');
+}
+
+function construireBanc() {
+  const save = saveDansLaMaison();
+  const store = creerStoreMemoire();
+  const dialogue = creerDialogue();
+  const document = creerFauxDocument();
+  const menu = initialiserMenu({ document, i18n, exporterSauvegarde: () => {}, importerSauvegarde: () => {} });
+  const frames = [];
+  const input = creerInputScripte(frames);
+  const orchestrateur = creerOrchestrateurGrotte({
+    registre, i18n, save, store, dialogue, menu, input, ctxLogique: null, ctxVisible: null, canvasLogique: null,
+  });
+  // Câblage réel (main.js#demarrerJeu) : sans lui, `#menu-construction`
+  // n'aurait aucune entrée à afficher.
+  menu.definirDisponibiliteConstruction(orchestrateur.disponibiliteConstruction);
+  menu.definirEntreesConstruction(orchestrateur.entreesConstruction);
+  const conteneur = document.body.querySelector('#menu');
+  return { save, orchestrateur, frames, menu, document, conteneur };
+}
+
+// Une frame verbe + une frame neutre (front montant), même patron que les 2
+// autres fichiers de ce chantier.
+function jouerVerbe(banc, etatVerbe) {
+  banc.frames.push(etatVerbe);
+  banc.orchestrateur.maj(16);
+  banc.frames.push(etat());
+  banc.orchestrateur.maj(16);
+}
+
+// Navigue jusqu'à l'index `cible` d'un écran déjà ouvert, uniquement par MOVE
+// réel (front montant par cran, `creerNavigationMenu`) — jamais
+// `definirIndex()`, réservé au survol souris.
+function focaliserIndex(banc, cible) {
+  for (let i = 0; i < cible; i++) {
+    jouerVerbe(banc, etat({ moveY: 1 }));
+  }
+}
+
+function nomEcran(el, conteneur, confirmation) {
+  if (el === conteneur) return 'conteneur';
+  if (el === confirmation) return 'confirmation';
+  if (estLeBandeau(el)) return 'bandeau';
+  const h2 = el.querySelector('h2');
+  return h2 ? `ecran:${h2.textContent}` : 'ecran-inconnu';
+}
+
+// Quadruplet du §3 de la fiche, traduit en assertions comparables : écrans
+// visibles (bandeau exclu de rien ici, on veut TOUT voir), `menu.estOuvert()`,
+// `constructionActif()`. « Qui reçoit MOVE » (fantôme/focus) se déduit de ces
+// trois-là (main.js#maj : `constructionActif()` prioritaire sur le gameplay,
+// `menu.estOuvert()` prioritaire sur `constructionActif()`) — pas une 4e
+// mesure indépendante, donc pas dupliqué ici.
+function instantane(banc) {
+  const { document, orchestrateur, menu, conteneur } = banc;
+  const confirmation = document.body.querySelector('#menu-confirmation-reset');
+  return {
+    ecransVisibles: document.body.children
+      .filter((el) => estVisibleEffectif(el))
+      .map((el) => nomEcran(el, conteneur, confirmation))
+      .sort(),
+    menuOuvert: menu.estOuvert(),
+    constructionActif: orchestrateur.constructionActif(),
+  };
+}
+
+// =========================================================================
+// Partie 1 (§3.1) : séquence composée S1->S4, jouée deux fois sur deux bancs
+// INDÉPENDANTS — (a) uniquement des clics DOM, (b) uniquement des verbes
+// réels (`menu.traiterInput`, jamais `entree.action()` direct). Les deux
+// séquences doivent produire exactement les mêmes instantanés, étape par
+// étape.
+// =========================================================================
+
+function sequenceParClics() {
+  const banc = construireBanc();
+  const { document } = banc;
+  const snaps = [];
+
+  // Start : aucun équivalent clic (verbe des deux côtés, hors du champ de
+  // parité — ouvre juste le menu Pause).
+  jouerVerbe(banc, etat({ menu: true }));
+  snaps.push(instantane(banc));
+
+  declencherClic(document.body.querySelector('#menu-construction'));
+  snaps.push(instantane(banc));
+
+  const listeA = ecranVisible(document);
+  declencherClic(boutonsDe(listeA)[0]); // 1ère station
+  snaps.push(instantane(banc));
+
+  // MOVE (déplace le fantôme) : aucun équivalent clic, verbe des deux côtés.
+  jouerVerbe(banc, etat({ moveX: -1 }));
+  snaps.push(instantane(banc));
+
+  // B (annule le placement) : le bandeau n'a ni focus ni bouton (carte §1.3),
+  // verbe des deux côtés.
+  jouerVerbe(banc, etat({ skill3: true }));
+  snaps.push(instantane(banc));
+
+  const listeB = ecranVisible(document);
+  declencherClic(boutonsDe(listeB)[1]); // 2e station
+  snaps.push(instantane(banc));
+
+  // Pose confirmée : verbe des deux côtés (pas de bouton "poser" pendant le
+  // placement).
+  jouerVerbe(banc, etat({ attack: true }));
+  snaps.push(instantane(banc));
+
+  const listeC = ecranVisible(document);
+  const boutonsC = boutonsDe(listeC);
+  declencherClic(boutonsC[boutonsC.length - 1]); // "Fermer" toujours en dernier
+  snaps.push(instantane(banc));
+
+  declencherClic(document.body.querySelector('#menu-fermer'));
+  snaps.push(instantane(banc));
+
+  return snaps;
+}
+
+function sequenceParVerbes() {
+  const banc = construireBanc();
+
+  jouerVerbe(banc, etat({ menu: true }));
+  const snaps = [instantane(banc)];
+
+  // Focus par défaut = index 0 après ouverture ; #menu-construction est
+  // l'entrée juste après langue/musique/poche/stats (ordre de
+  // ENTREES_FIXES_DEBUT, ui/menu.js) — lu depuis le markup réel plutôt que
+  // codé en dur, au cas où l'ordre bougerait un jour.
+  const idxConstruction = Number(banc.document.body.querySelector('#menu-construction').parentNode.dataset.item);
+  focaliserIndex(banc, idxConstruction);
+  jouerVerbe(banc, etat({ attack: true }));
+  snaps.push(instantane(banc));
+
+  // A sur la 1ère station (index 0, focus par défaut à l'ouverture de la
+  // liste) — AUCUN appel direct à `entree.action()` : uniquement l'ATTACK
+  // réel routé par `menu.traiterInput` -> `ecranConstruction.traiterInput`.
+  jouerVerbe(banc, etat({ attack: true }));
+  snaps.push(instantane(banc));
+
+  jouerVerbe(banc, etat({ moveX: -1 }));
+  snaps.push(instantane(banc));
+
+  jouerVerbe(banc, etat({ skill3: true }));
+  snaps.push(instantane(banc));
+
+  // A sur la 2e station (index 1) : navigation réelle avant l'ATTACK.
+  focaliserIndex(banc, 1);
+  jouerVerbe(banc, etat({ attack: true }));
+  snaps.push(instantane(banc));
+
+  jouerVerbe(banc, etat({ attack: true })); // pose confirmée
+  snaps.push(instantane(banc));
+
+  // "Fermer" de la liste : toujours la dernière entrée. Le nombre de stations
+  // n'est pas figé ici — on le lit sur le banc lui-même via l'écran visible.
+  const listeC = ecranVisible(banc.document);
+  const nbEntreesListe = boutonsDe(listeC).length;
+  focaliserIndex(banc, nbEntreesListe - 1);
+  jouerVerbe(banc, etat({ attack: true }));
+  snaps.push(instantane(banc));
+
+  // Fermer le menu Pause (dernière entrée du menu principal).
+  const idxFermerMenu = Number(banc.document.body.querySelector('#menu-fermer').parentNode.dataset.item);
+  focaliserIndex(banc, idxFermerMenu);
+  jouerVerbe(banc, etat({ attack: true }));
+  snaps.push(instantane(banc));
+
+  return snaps;
+}
+
+{
+  const snapsClics = sequenceParClics();
+  const snapsVerbes = sequenceParVerbes();
+  assert.equal(snapsClics.length, snapsVerbes.length, 'les deux séquences doivent avoir le même nombre d\'étapes');
+
+  const LIBELLES = [
+    'Start', 'Construction (ouverture liste)', 'A sur la 1ère station',
+    'MOVE (fantôme)', 'B (annule, retour liste)', 'A sur la 2e station',
+    'A (pose confirmée)', 'Fermer la liste (B logique)', 'Fermer le menu Pause',
+  ];
+  snapsClics.forEach((snapClic, i) => {
+    assert.deepEqual(
+      snapsVerbes[i], snapClic,
+      `étape "${LIBELLES[i]}" : verbe (${JSON.stringify(snapsVerbes[i])}) doit produire le même état que clic (${JSON.stringify(snapClic)})`
+    );
+  });
+  console.log('OK parité clic/verbe sur la séquence composée S1->S4 (Construction)');
+}
+
+// =========================================================================
+// Partie 2 (§3.4, invariant permanent) : pour CHAQUE entrée de CHAQUE écran
+// générique (Poche/Craft/Coffre/Stats/Construction), clic et verbe doivent
+// produire le même quadruplet. Liste d'entrées TOUJOURS lue depuis le DOM
+// réel, jamais codée en dur — un futur écran ou une future entrée est
+// couvert(e) sans toucher ce fichier.
+// =========================================================================
+
+function ouvrirPoche(banc) {
+  jouerVerbe(banc, etat({ menu: true }));
+  declencherClic(banc.document.body.querySelector('#menu-poche'));
+}
+function ouvrirStats(banc) {
+  jouerVerbe(banc, etat({ menu: true }));
+  declencherClic(banc.document.body.querySelector('#menu-stats'));
+}
+function ouvrirConstructionListe(banc) {
+  jouerVerbe(banc, etat({ menu: true }));
+  declencherClic(banc.document.body.querySelector('#menu-construction'));
+}
+function ouvrirCraft(banc) {
+  banc.menu.ouvrirCraft(() => [{ texte: 'Fabriquer (test)', action: () => {} }], 'Craft (test)');
+}
+function ouvrirCoffre(banc) {
+  banc.menu.ouvrirCoffre(() => [{ texte: 'Transférer (test)', action: () => {} }], 'Coffre (test)');
+}
+
+function testerCliqueVsVerbePourEcran(nomDeLEcran, ouvrir) {
+  const bancSonde = construireBanc();
+  ouvrir(bancSonde);
+  const ecranSonde = ecranVisible(bancSonde.document);
+  assert.ok(ecranSonde, `${nomDeLEcran} : un écran doit être visible après ouverture`);
+  const nbEntrees = boutonsDe(ecranSonde).length;
+  assert.ok(nbEntrees >= 1, `${nomDeLEcran} : au moins l'entrée "Fermer"`);
+
+  for (let idx = 0; idx < nbEntrees; idx++) {
+    const bancClic = construireBanc();
+    ouvrir(bancClic);
+    declencherClic(boutonsDe(ecranVisible(bancClic.document))[idx]);
+    const snapClic = instantane(bancClic);
+
+    const bancVerbe = construireBanc();
+    ouvrir(bancVerbe);
+    focaliserIndex(bancVerbe, idx);
+    jouerVerbe(bancVerbe, etat({ attack: true }));
+    const snapVerbe = instantane(bancVerbe);
+
+    assert.deepEqual(
+      snapVerbe, snapClic,
+      `${nomDeLEcran}, entrée ${idx} : clic (${JSON.stringify(snapClic)}) et verbe (${JSON.stringify(snapVerbe)}) doivent produire le même quadruplet`
+    );
+  }
+  console.log(`OK parité clic/verbe : ${nomDeLEcran} (${nbEntrees} entrée(s))`);
+}
+
+testerCliqueVsVerbePourEcran('Poche', ouvrirPoche);
+testerCliqueVsVerbePourEcran('Stats', ouvrirStats);
+testerCliqueVsVerbePourEcran('Construction (liste)', ouvrirConstructionListe);
+testerCliqueVsVerbePourEcran('Craft', ouvrirCraft);
+testerCliqueVsVerbePourEcran('Coffre', ouvrirCoffre);

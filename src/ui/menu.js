@@ -92,10 +92,26 @@ export function creerNavigationMenu(nbElements) {
 // optionnel : un contrôleur sans DOM propre (aucun appelant actuel, gardé
 // pour ne pas complexifier un futur test purement logique) garde l'ancien
 // comportement.
+//
+// `options.onAnnuler` (SD_construction-parite-clic-verbe_2026-09-19 §3.2) :
+// rappelé UNIQUEMENT quand `verbeAnnuler` (B/skill_3) ferme ce contrôleur —
+// jamais quand une action de `actions[]` le ferme elle-même (ex.
+// `fermerSansCallback`, appelée par `demarrerConstruction` via une action
+// choisie par ATTACK). Avant cette fiche, l'appelant (`creerEcranListeGenerique
+// #traiterInput`) DÉDUISAIT « fermé par B » du seul fait que `estOuvert()`
+// était devenu faux après `traiterInput(etat)` — or une action peut fermer ce
+// contrôleur pour une tout autre raison dans le même appel. Le clic, qui
+// appelle `toutes[i].action()` directement sans jamais passer par
+// `traiterInput`, ne pouvait pas se tromper — d'où la divergence clic/verbe
+// (souris/tactile sains, manette ET clavier cassés identiquement). La
+// fermeture n'a plus qu'une origine PAR ÉVÉNEMENT explicite : `onAnnuler`
+// pour B/skill_3, le code de l'action elle-même pour tout le reste — jamais
+// plus une déduction après coup.
 export function creerControleurMenu(actions, options = {}) {
   const navigation = creerNavigationMenu(actions.length);
   const verbeAnnuler = options.verbeAnnuler;
   const element = options.element || null;
+  const onAnnuler = options.onAnnuler;
   let ouvert = false;
 
   function fermer() {
@@ -137,6 +153,7 @@ export function creerControleurMenu(actions, options = {}) {
       if (!ouvert) return;
       if (verbeAnnuler && etat[verbeAnnuler] && etat[verbeAnnuler].pressed) {
         fermer();
+        if (onAnnuler) onAnnuler();
         return;
       }
       navigation.traiterMove(etat.move.y);
@@ -227,7 +244,18 @@ function creerEcranListeGenerique(document, i18n, { onFermer } = {}) {
   // — désormais porté par `creerControleurMenu` lui-même, comme les
   // contrôleurs du menu Pause. Ne JAMAIS refaire le `&&` ici en plus (voir
   // `estOuvert()` de l'objet retourné, plus bas).
-  let controleur = creerControleurMenu([], { verbeAnnuler: 'skill_3', element: el });
+  //
+  // `onAnnuler: onAnnulerEcran` (SD_construction-parite-clic-verbe_2026-09-19
+  // §3.2) : SEUL déclencheur de « B/skill_3 a fermé cet écran » — remplace la
+  // déduction après coup que faisait l'ancien `traiterInput` (plus bas), qui
+  // se trompait quand une ACTION (ex. choisir une station) fermait ce même
+  // contrôleur pour une autre raison (`fermerSansCallback`, qui ne doit
+  // JAMAIS rappeler `onFermer`).
+  function onAnnulerEcran() {
+    afficherEcran(el, false);
+    if (onFermer) onFermer();
+  }
+  let controleur = creerControleurMenu([], { verbeAnnuler: 'skill_3', element: el, onAnnuler: onAnnulerEcran });
   let elements = [];
   let fournisseurEntrees = () => [];
 
@@ -262,7 +290,7 @@ function creerEcranListeGenerique(document, i18n, { onFermer } = {}) {
     elements = Array.from(liste.querySelectorAll('.menu-item'));
     const boutons = Array.from(liste.querySelectorAll('button'));
     const indexPrecedent = controleur.index();
-    controleur = creerControleurMenu(toutes.map((e) => e.action), { verbeAnnuler: 'skill_3', element: el });
+    controleur = creerControleurMenu(toutes.map((e) => e.action), { verbeAnnuler: 'skill_3', element: el, onAnnuler: onAnnulerEcran });
     controleur.ouvrir();
     controleur.definirIndex(indexPrecedent);
     elements.forEach((elItem, i) => {
@@ -292,18 +320,19 @@ function creerEcranListeGenerique(document, i18n, { onFermer } = {}) {
     // `creerControleurMenu` ci-dessus), jamais les deux à la fois.
     estOuvert: () => controleur.estOuvert(),
     rafraichir: reconstruire,
+    // SD_construction-parite-clic-verbe_2026-09-19 §3.2 : plus de branche
+    // `else` ici. Avant cette fiche, elle DÉDUISAIT « fermé par B/skill_3 » du
+    // seul fait que `controleur.estOuvert()` valait faux après
+    // `traiterInput(etat)` — or une action choisie par ATTACK peut fermer ce
+    // même contrôleur pour une tout autre raison (`fermerSansCallback`) sans
+    // jamais vouloir rappeler `onFermer`. La fermeture par B/skill_3 est
+    // désormais un événement déclaré (`onAnnuler`, câblé ci-dessus), pas une
+    // inférence : plus rien à faire ici que rafraîchir le focus si l'écran
+    // est resté ouvert.
     traiterInput(etat) {
       controleur.traiterInput(etat);
       if (controleur.estOuvert()) {
         actualiserFocus();
-      } else {
-        // Fermé via B/skill_3 (creerControleurMenu#verbeAnnuler) : ce chemin
-        // ne passe jamais par l'action "Fermer" ci-dessus (reconstruire()),
-        // donc `onFermer` doit être rappelé ici explicitement — sinon Poche/
-        // Stats resteraient invisibles SANS que le menu principal ne
-        // réapparaisse dessous (cf. actionOuvrirPoche/actionOuvrirStats).
-        afficherEcran(el, false);
-        if (onFermer) onFermer();
       }
     },
   };

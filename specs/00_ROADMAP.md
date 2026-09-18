@@ -1,8 +1,10 @@
 # RPG V2 — Roadmap + prompt d'exécution autonome
 
-**Version : 1.3.0** — document vivant.
+**Version : 1.4.0** — document vivant.
 
-**Statut** : Phases 0, 1, 1b, 2 et 3 (Palier A-E, boucle 5 minutes) livrées et validées. Chantier courant : `05_construction-stations.md` (placement libre des stations dans la Maison), code livré le 2026-09-17, validation manette encore due par Xav. Ce document sert de brief autonome — à donner tel quel à Claude Code pour démarrer la phase/le chantier courant sans aller-retour préalable.
+**Statut** : Phases 0, 1, 1b, 2 et 3 (Palier A-E, boucle 5 minutes) et le chantier `05_construction-stations.md` (placement libre des stations dans la Maison) livrés et validés en jeu par Xav (manette **et** clavier, 2026-09-19). Chantier courant : polish post-Construction, session de documentation `NS_decisions-playtest_2026-09-19.md`, ordre d'injection ci-dessous. Ce document sert de brief autonome — à donner tel quel à Claude Code pour démarrer la phase/le chantier courant sans aller-retour préalable.
+
+**Changelog 1.4.0 (2026-09-19)** : session de tri/documentation, aucun code touché. Construction actée comme livrée et validée (verdict Xav manette + clavier, après le correctif de parité clic/verbe — détail `docs/archives/INDEX.md`). Décisions du playtest consignées : vocabulaire de la Région Maison figé, héros à l'échelle 0,88, HUD une ligne, follets visibles pendant l'intro, intrusion nocturne du Chaos dans la Région Maison cadrée (spec à écrire : `07_chaos-nocturne.md`). Ordre d'injection des prochains chantiers acté par Xav (§ « Ordre d'injection » ci-dessous).
 
 **Changelog 1.3.0 (2026-09-17)** : Phase 3 actée comme livrée et validée (verdict Xav en jeu, tous les points testés, bon — détail `docs/archives/INDEX.md`). `05_construction-stations.md` livrée en code le jour même (extraite de `04_maison-interieur.md`, ex-palier F) : `placement.js`, sauvegarde v5, menu Construction contextuel, fantôme de pose.
 
@@ -29,7 +31,7 @@
 
 ## Décisions déjà tranchées (ne pas rouvrir)
 
-Référence complète : `carte_mentale_RPG_V2_v1_2_0.md` §0 et §8. Résumé opérationnel :
+Référence complète : `docs/carte_mentale_RPG_V2_v1_5_0.md` §0 et §8. Résumé opérationnel :
 
 ### Plateforme & technique
 | Décision | Valeur |
@@ -69,7 +71,7 @@ Référence complète : `carte_mentale_RPG_V2_v1_2_0.md` §0 et §8. Résumé op
 | Modèle | Gratuit + dons externes. Zéro pub, zéro achat, zéro monnaie premium, aucune mécanique de frustration monétisable. |
 
 ### Risques inscrits, à ne pas redécouvrir
-Voir `carte_mentale_RPG_V2_v1_2_0.md` §0bis : cohérence 3 éléments RPG vs 9 haTD (à traiter au contrat de cartouche, M2+) ; tension éclats/paliers de vitalité si un marchand existe ; volume de texte doublé par le bilinguisme ; densité de 5 actions sous le pouce droit en tactile ; conformité Play Store sur la sollicitation de dons.
+Voir `docs/carte_mentale_RPG_V2_v1_5_0.md` §0bis : cohérence 3 éléments RPG vs 9 haTD (à traiter au contrat de cartouche, M2+) ; tension éclats/paliers de vitalité si un marchand existe ; volume de texte doublé par le bilinguisme ; densité de 5 actions sous le pouce droit en tactile ; conformité Play Store sur la sollicitation de dons.
 
 ---
 
@@ -130,6 +132,24 @@ Première marche de la Région Maison (carte, ressources bloquées, items au sol
 - **Système de recettes unique** (cuisine + craft), survie (faim/soif/santé + repas-buffs), inventaire poche → sac de craft, **XP par craft**, niveaux et attribution de stats.
 - Rouvre bois à couper / pierre à miner via le premier outil crafté (branche + caillou) — point d'accroche `resources.js#peutRecolter`.
 - Critère : la boucle 5 minutes tourne (sortir → récolter → revenir → cuisiner/crafter → repartir), et le joueur atteint le niveau ~5 qui ouvre la zone suivante — **prouvé par bot headless et validé par Xav en jeu**, détail `docs/archives/INDEX.md`.
+
+### Chantier Construction (`05_construction-stations.md`) — **close le 2026-09-19**
+Placement libre des stations dans la Maison (grille, rotation, fantôme de pose). Code livré le 2026-09-17, quatre diagnostics successifs (écran-liste, menu Pause invisible, contrat « ouvert », parité clic/verbe), tous corrigés et testés headless le jour même de leur découverte — détail `docs/archives/INDEX.md`. Validé par Xav en jeu au clic/tactile **puis** à la manette et au clavier seul.
+
+### Polish post-Construction — ordre d'injection acté par Xav (2026-09-19, `NS_decisions-playtest_2026-09-19.md`)
+Aucune de ces specs n'est encore écrite — ne pas commencer sans elle (même règle que pour une phase) :
+
+1. **Mesure des saccades** (`MT_mesure-saccades`, à écrire) — précise la dette « petites saccades régulières en traversant la carte en ligne droite, tous périphériques » avant tout correctif de perf.
+2. **Héros à l'échelle 0,88** (visuel et hitbox dérivés d'une seule échelle) ; pas de roulement (règle : aucun effet ne dépend de la forme du héros) — traînée de poussière au déplacement (étape 5).
+3. **Follets visibles pendant le texte de l'intro.**
+4. **`station_puits`** : silhouette dégradée à l'échelle ×2,1 (dette notée depuis le 2026-09-17), à diagnostiquer puis corriger.
+5. **Traînée de poussière** au déplacement (remplace l'idée de roulement, écartée).
+6. **HUD sur une ligne** en haut, pleine largeur ; XP retirée du HUD (conservée dans Stats).
+7. **Correction des saccades**, écrite d'après les chiffres mesurés à l'étape 1.
+8. **`07_chaos-nocturne.md`** — intrusion nocturne du Chaos dans la Région Maison : *révise* « aucun monstre, ton chill » de `03_maison-exterieur.md` §5. Cadre déjà acté par Xav : nuit seulement, zone de Chaos dans les Champs (vocabulaire figé en carte mentale §3bis : Forêt/Jardin/Zone sûre/Champs/Campagne), quelques monstres épars en Forêt, **un monstre qui entre en zone sûre (Maison+Jardin) fait demi-tour** (condition sur sa position, jamais sur celle du joueur). `[OUVERT]` retenu par défaut dans cette spec, à confirmer par Xav : un second rayon sûr autour de la sortie de la Grotte (point de retour après une mort).
+9. **Barre d'action du bas** — Xav veut qu'elle serve dès maintenant (premier slot en bas à gauche, jaune, pour l'arme, principe de la barre Minecraft) ; à faire cohabiter avec D5⑤ (5 slots) et le tactile (bas-gauche = joystick virtuel). **Spec à écrire par Xav lui-même**, en attente.
+
+`[OUVERT]` inscrit en parallèle, non ordonnancé : construction en zone Champs (contredit la grille intérieure de `05_construction-stations.md`, piste `zonesConstructibles` en JSON de scène).
 
 ### Phase 4 — 1ère zone de monstres
 Seconde région (≥ V1_M1), dans l'esprit chaos : plus sombre, plusieurs salles et passages, **mini-boss et boss farmables**.

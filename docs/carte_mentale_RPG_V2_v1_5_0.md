@@ -1,6 +1,8 @@
 # Carte mentale — RPG V2
 
-**Version : 1.4.0** — **cadrage clos. Roadmap rédigée : `specs/00_ROADMAP.md`. Phases 0, 1, 1b et 2 livrées et validées (Phase 2 close le 2026-09-17). Phase courante : Phase 3, à détailler dans `specs/04_maison-interieur.md` (à écrire).**
+**Version : 1.5.0** — **cadrage clos. Roadmap rédigée : `specs/00_ROADMAP.md`. Phases 0, 1, 1b, 2 et 3 livrées et validées, chantier Construction (`05_construction-stations.md`) clos le 2026-09-19. Chantier courant : polish post-Construction, ordre détaillé dans `specs/00_ROADMAP.md`.**
+
+**Changelog depuis 1.4.0 (2026-09-19)** : session de tri/documentation (`NS_decisions-playtest_2026-09-19.md`), aucun code touché. Construction close (validée par Xav manette + clavier, §8). **Vocabulaire de la Région Maison figé** (§3bis) : Forêt / Jardin / Zone sûre / Champs / Campagne — sert de référence à toutes les specs suivantes. Décisions du playtest du 19/09 consignées en §8 : héros à l'échelle 0,88 (visuel + hitbox), pas de roulement (règle : aucun effet ne dépend de la forme du héros), HUD sur une ligne pleine largeur (XP retirée du HUD, conservée dans Stats), follets visibles pendant le texte d'intro. **Intrusion nocturne du Chaos dans la Région Maison** actée en cadre général (§5, point ⑦ partiellement tranché) — *révise* le ton « aucun monstre » de `03_maison-exterieur.md` §5, spec à écrire : `07_chaos-nocturne.md`. Nouveaux points `[OUVERT]` : construction en zone Champs (contredit la grille intérieure), barre d'action du bas (à écrire par Xav), second rayon sûr autour de la sortie de la Grotte (proposé par Claude, retenu par défaut dans 07, à confirmer).
 
 **Changelog depuis 1.3.0 (2026-09-17)** : session de tri/documentation (`NS_cloture-phase2_2026-09-17.md`), aucun code touché. Phase 2 close absorbée. Décisions de validation du 16-17/09 consignées en §8 (arbre fruitier increvable, indice de commande au premier déclenchement, stations solides à l'échelle ×2,1, durées et contraste du cycle jour/nuit). Référence Throne and Liberty rattachée à D20 (Maison & pièces) en §9, avec son pourquoi. Idée de mobs nocturnes dans la Région Maison inscrite en §5 comme point non tranché (⑦), sans être décidée — contredit explicitement le ton « aucun monstre » de `03_maison-exterieur.md` §5.
 
@@ -204,6 +206,18 @@ flowchart TD
 
 **Grande modularité (grandes pièces, agencement) : réservée au Château / Poste avancé, pas à la première Maison.**
 
+### Vocabulaire de la Région Maison (figé le 2026-09-19, sert à toutes les specs suivantes)
+
+| Mot | Sens |
+|---|---|
+| **Forêt** | Le côté de la carte où débouche la Grotte. |
+| **Jardin** | Ce qui est proche de la maison : le puits, l'arbre fruitier, l'endroit où le fruit réapparaît. **Le Jardin est la zone sûre.** |
+| **Zone sûre** | Maison + Jardin. Aucun monstre n'y apparaît, aucun n'y entre. |
+| **Champs** | Les angles de la carte **à l'opposé de la Forêt**, hors d'un rayon extérieur autour de la maison et du Jardin. C'est là que le Chaos s'installe la nuit. |
+| **Campagne** | Le reste. |
+
+Note de lecture (Xav) : « fluidité » désigne le **ressenti des mouvements** (stick + follet en orbite), validé. La régularité de l'affichage (saccades) est un sujet distinct — voir Dette dans `CLAUDE.md`.
+
 ---
 
 ## 4. CORE — sous-branches
@@ -246,9 +260,9 @@ flowchart TD
 | D20 | **Maison & pièces** | 🟡 | ✅① M1 : cuisine, table de craft, coffre · ✅③ **placement libre des stations** dans la Maison ; grande modularité réservée au Château/Poste avancé · ✅⑥ la Maison est le point d'arrivée après la Grotte (pas à débloquer) · ② stations futures (armurerie, alchimie…) · ④ coût d'amélioration · ⑤ effets mécaniques de chaque station |
 | D21 | **Progression & déblocages** | 🟡 | ✅① double axe XP→stats / jalons→capacités · ✅ **sources d'XP : combat et craft** · ✅ accès 1ère zone gaté par niveau ~5 · ② courbe d'XP · ③ points de stat par niveau : attribution libre ou automatique · ④ liste des jalons de M1 · ⑥ rythme des boss |
 
-**D19 / D10 (jardin)** — point non tranché, à ne pas trancher avant que le jardin existe :
+**D19 / D10 (jardin)** — cadre général tranché le 2026-09-19, détail encore ouvert :
 
-> ⑦ `[OUVERT]` **Mobs nocturnes dans la Région Maison** (idée 2026-09-16) : spawn la nuit, gênent les récoltes / détruisent les plantations. Lie jour/nuit → jardin → combat (Phase 4). **Contredit** « aucun monstre, ton chill » de `03_maison-exterieur.md` §5. À trancher quand le jardin existe (03b / Phase 4), pas avant.
+> ⑦ **Intrusion nocturne du Chaos dans la Région Maison — tranchée en partie le 2026-09-19** (`NS_decisions-playtest_2026-09-19.md`) : *révise* « aucun monstre, ton chill » de `03_maison-exterieur.md` §5. Motif : la carte s'est révélée bien plus grande que prévu, et la nuit au seul follet est l'ambiance la plus forte du jeu à ce stade. Cadre acté : la nuit seulement ; une zone de Chaos dans les **Champs** (vocabulaire ci-dessus) ; monstres présents jusqu'à la fin de la nuit ; quelques-uns épars en **Forêt** ; **un monstre qui entre en zone sûre (Maison + Jardin) fait demi-tour** — condition sur la position du monstre, jamais sur celle du joueur. Spec à écrire : `07_chaos-nocturne.md`. `[OUVERT]` restant : **la destruction des plantations par les monstres n'est pas tranchée** — le jardinage n'existe pas encore, donc rien à détruire pour l'instant ; à retrancher quand D10 (jardinage) sera écrit.
 
 ---
 
@@ -342,6 +356,11 @@ Ajouter une entrée (arme, ennemi, recette, cartouche, compagnon…)
 | 2026-09-16 → 17 | D20 | **Stations solides**, échelle ×2,1, empreinte = boîte englobante du visuel, seuil d'interaction au bord — *révise* « placeholders non solides » | La table était plus petite que le héros ; la collision ne gênait pas, les proportions si |
 | 2026-09-17 | Jour/nuit | Durées par phase indépendantes (jour 10 min, aube/crépuscule 1 min 30, nuit 4 min) ; nuit extérieure 0,85 > plafond grotte 0,72 | Contraste jugé trop faible en jeu ; ordre de grandeur, non figé |
 | 2026-09-16 | Phase 2 | **Close** : carte, ressources bloquées, items au sol, maison-structure, jour/nuit, audio validés ; taille de carte validée ; jouabilité > V1 | Verdict Xav manette/clavier ; tactile en dette jusqu'à un lien de partage (Phase 4+) |
+| 2026-09-19 | Construction | **Close** : validée par Xav en jeu à la manette puis au clavier seul, après le correctif de parité clic/verbe | Clôt le chantier `05_construction-stations.md` ; captures d'écran (checklist visuelle) restent dues |
+| 2026-09-19 | Héros | Échelle **0,88** (visuel et hitbox dérivés d'une seule échelle), pas de roulement — règle : aucun effet ne dépend de la forme du héros (reste un visuel remplaçable), effet de déplacement = traînée de poussière | Cohérence visuelle après retour Xav en jeu ; le héros doit rester substituable sans casser d'effet dépendant de sa forme |
+| 2026-09-19 | UI | HUD sur une ligne en haut, pleine largeur ; barre d'XP retirée du HUD (niveau seul affiché), conservée dans l'écran Stats | Simplification demandée par Xav après ressenti en jeu |
+| 2026-09-19 | Intro | Les follets non élus restent visibles pendant le texte de l'intro (au lieu de disparaître avant) | Retour Xav, cohérence de la scène |
+| 2026-09-19 | D10/D19 (⑦) | **Intrusion nocturne du Chaos dans la Région Maison** — *révise* « aucun monstre, ton chill » de `03_maison-exterieur.md` §5 ; cadre : nuit seulement, zone de Chaos dans les Champs, quelques monstres épars en Forêt, demi-tour à l'entrée en zone sûre (Maison+Jardin) | Carte bien plus grande que prévu ; la nuit au seul follet est l'ambiance la plus forte du jeu à ce stade — spec à écrire, `07_chaos-nocturne.md` |
 
 ---
 

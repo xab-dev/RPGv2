@@ -6,7 +6,12 @@ import { distanceAuRectangle, calculerOpaciteToit } from '../src/structures.js';
 
 const TILE = 32;
 const STRUCTURE = { rect: { x: 10, y: 10, w: 5, h: 4 } }; // px : [320,480] x [320,448]
-const CONFIG = { rayonEffacement: 110 * 1.25, margeFondu: 30 };
+// Config réaliste (rayon_lumiere d'un follet x le facteur d'effacement de
+// main.js#FACTEUR_EFFACEMENT_TOIT, D-21 : 1,25 -> 1,125 le 2026-09-19) : ce
+// test porte sur la FORME de la courbe (bornes, monotonie, distance au bord),
+// pas sur la valeur du facteur, qui reste provisoire et n'est lue qu'au
+// moment du rendu. La recopier ici la garde plausible, elle ne la fige pas.
+const CONFIG = { rayonEffacement: 110 * 1.125, margeFondu: 30 };
 
 // 1. Distance à un rectangle : 0 à l'intérieur, > 0 dehors, mesurée au bord
 // (pas au centre).

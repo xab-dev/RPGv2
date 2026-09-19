@@ -177,7 +177,7 @@ Source : `NS_decisions-fondations_2026-09-19.md` §5, qui **remplace** le §7 de
 
 1. Session de documentation « fondations » (doc seule) — **faite**.
 2. `D-22` — clavier : `E` = interagir, `F` = consommer (`MT_clavier-e-f_2026-09-19.md`) — **livré le 2026-09-19** (échange dans `input/keyboard.js` seul ; glyphes des locales mis d'accord à la main, double source ouverte en `D-25`). Validation clavier de Xav due.
-3. `D-21` — rayon d'effacement du toit −10 % (`MT_toit-rayon_2026-09-19.md`).
+3. `D-21` — rayon d'effacement du toit −10 % (`MT_toit-rayon_2026-09-19.md`) — **livré le 2026-09-19, validation en jeu de Xav due**.
 4. `D-20` palier A — « mains nues », portée de l'auto-attaque (`MT_mains-nues_2026-09-19.md`). **Validation dans la Grotte, sur le premier monstre.**
 5. `D-20` palier B — icône de l'arme équipée dans la case d'attaque.
 6. `D-05` — texte flottant « +1 bois » à la récolte et au ramassage (`MT_texte-flottant_2026-09-19.md`).

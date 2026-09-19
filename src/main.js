@@ -94,11 +94,16 @@ const COOLDOWN_PUITS_MS = 60000;
 
 // 03_maison-exterieur §3.4 : RAYON_EFFACEMENT_TOIT = rayon_lumiere du follet
 // actif x ce facteur ("un peu plus grand que le halo", acté Xav 2026-09-16) —
-// le facteur et la marge de fondu restent provisoires, Xav les équilibre au
+// le facteur et la marge de fondu restent PROVISOIRES, Xav les équilibre au
 // ressenti. `RAYON_TOIT_FOLLET_ABSENT_PX` couvre le cas théorique où la
 // maison serait visitée sans compagnon (jamais possible en jeu réel après la
 // Grotte, gardé par prudence plutôt que par nécessité observée).
-const FACTEUR_EFFACEMENT_TOIT = 1.25;
+//
+// 1,25 -> 1,125 (-10 %) le 2026-09-19 (D-21) : au playtest, la maison se
+// "déshabillait" avant qu'on y soit. Seule la DISTANCE d'entrée en fondu
+// change ; la courbe reste la même (dégressive sur MARGE_FONDU_TOIT_PX,
+// jamais un on/off — décision verrouillée du 2026-09-16).
+const FACTEUR_EFFACEMENT_TOIT = 1.125;
 const MARGE_FONDU_TOIT_PX = 30;
 const RAYON_TOIT_FOLLET_ABSENT_PX = 90;
 

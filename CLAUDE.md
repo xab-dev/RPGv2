@@ -262,7 +262,7 @@ la session précédente a révélées, clos celles qu'elle a livrées.
 
 1. Cette session de documentation (doc seule) — faite.
 2. `D-22` — clavier : `E` = interagir, `F` = consommer (`MT_clavier-e-f_2026-09-19.md`) — **livré le 2026-09-19, validation clavier de Xav due**.
-3. `D-21` — rayon d'effacement du toit −10 % (`MT_toit-rayon_2026-09-19.md`).
+3. `D-21` — rayon d'effacement du toit −10 % (`MT_toit-rayon_2026-09-19.md`) — **livré le 2026-09-19, validation en jeu de Xav due**.
 4. `D-20` palier A — « mains nues », portée (`MT_mains-nues_2026-09-19.md`). **Validation dans la Grotte.**
 5. `D-20` palier B — icône de la case d'attaque.
 6. `D-05` — texte flottant « +1 bois » (`MT_texte-flottant_2026-09-19.md`).
@@ -278,41 +278,37 @@ Les captures de la V1 (`docs/captures/v1/`) sont une **inspiration, jamais un ca
 
 `Q-10`, `Q-11` et `Q-12` restent à trancher avec Xav ; `Q-07` et `Q-19` sont gelées. La spec de la barre d'action du bas (`E-01`) est écrite par Xav lui-même et attend le chiffrage `Q-11`. **Une spec non écrite ne se commence pas** (même règle que pour une phase).
 
-## Journal de session — `D-22` : clavier, `E` = INTERACT, `F` = CONSUME (2026-09-19)
+## Journal de session — `D-21` : toit, rayon d'effacement −10 % (2026-09-19)
 
-Ticket `MT_clavier-e-f_2026-09-19.md`, **une seule ligne du suivi touchée : `D-22`** (close). Une ligne ouverte au passage : **`D-25`**. Suite headless verte, **67 fichiers** (66 + le nouveau). Un commit, pas de `push`.
+Ticket `MT_toit-rayon_2026-09-19.md`, **une seule ligne du suivi touchée : `D-21`** (close). Aucune ligne ouverte au passage. Suite headless verte, **67 fichiers**. Un commit, pas de `push`.
 
-**Ménage de journal** : journal précédent (« Les fondations d'abord ») archivé verbatim dans `docs/archives/JOURNAL_2026-09-19_fondations-doc.md`, ligne d'INDEX ajoutée. La NS des fondations reste dans `docs/` : son §6 est la procédure `A-04`, et ses quatre autres fiches `MT_*` sont des tickets encore à jouer.
+**Ménage de journal** : journal précédent (`D-22`, clavier `E`/`F`) archivé verbatim dans `docs/archives/JOURNAL_2026-09-19_clavier-e-f.md`, ligne d'INDEX ajoutée. La validation clavier de `D-22` par Xav reste due — elle est écrite dans le verdict de `D-22` au suivi, pas perdue par l'archivage.
 
-### Étape 1 du ticket : la table touche → verbe, avant le changement
+### Le changement
 
-| Verbe | Touches (avant) | Touches (après) |
+`main.js#FACTEUR_EFFACEMENT_TOIT` : **1,25 → 1,125**. C'est le seul endroit où la valeur vit (`structures.js` ne connaît que la géométrie, le rayon lui est passé par l'appelant). Commentaire *pourquoi* mis à jour, marque **provisoire** conservée.
+
+Ce que ça donne, pour un follet à `rayon_lumiere` 110 :
+
+| | Avant | Après |
 |---|---|---|
-| `MOVE` gauche / droite / haut / bas | `KeyA`/`←` · `KeyD`/`→` · `KeyW`/`↑` · `KeyS`/`↓` | inchangé |
-| `ATTACK` | `Space` | inchangé |
-| `SKILL_1` / `SKILL_2` / `SKILL_3` | `Digit1` / `Digit2` / `Digit3` | inchangé |
-| `CONSUME` | **`KeyE`** | **`KeyF`** |
-| `INTERACT` | **`KeyF`** | **`KeyE`** |
-| `MENU` | `Escape` | inchangé |
+| Le toit commence à s'effacer à | 137,5 px du bord de la maison | **123,75 px** |
+| Toit complètement transparent à | 107,5 px | **93,75 px** |
+| Largeur du fondu | 30 px | 30 px, **inchangée** |
 
-Les deux touches portaient **exactement les verbes inverses** : rien d'autre n'écoutait `E` ni `F`, il n'y avait donc pas de question bloquante à poser. Le changement est un échange, pas une réaffectation.
+La courbe garde donc exactement la même forme — elle recule de 13,75 px. L'opacité reste dégressive, la décision verrouillée du 16/09 (« jamais un on/off ») n'est pas touchée.
 
-### Ce qui a changé
+### Pourquoi il n'y a pas eu de test rouge
 
-| Fichier | Changement |
-|---|---|
-| `src/input/keyboard.js` | `interact: ['KeyE']` / `consume: ['KeyF']` dans `MAPPING_CLAVIER_PROVISOIRE`, avec le *pourquoi* en commentaire (la main gauche posée sur les touches de déplacement tombe seule sur `E`, qui prend l'action la plus fréquente) |
-| `locales/fr.json`, `locales/en.json` | `glyphe.clavier.interact` : `F` → **`E`** ; `glyphe.clavier.consume` : `E` → **`F`** (mêmes valeurs dans les deux langues : une lettre isolée ne se traduit pas) |
-| `tests/test_d22_clavier_e_f_2026-09-19.js` | Nouveau. Rouge d'abord (`KeyE doit produire INTERACT`), vert après |
+Il n'y en avait pas à obtenir : `FACTEUR_EFFACEMENT_TOIT` n'est lu que dans `main.js#dessiner()`, qui n'est jamais exercé en headless (contrainte de méthode). Le `110 * 1.25` de `tests/test_phase2_toit_opacite_2026-09-16.js` n'était pas un garde-fou mais une **config plausible** pour éprouver la forme de la courbe (bornes 0–1, monotonie, distance mesurée au bord et non au centre) — vérifié plutôt que supposé : le test passe au vert avec `1.125` alors que `main.js` était encore à `1.25`. Il est mis à jour volontairement (demande du ticket), avec un commentaire qui dit désormais ce qu'il fige et ce qu'il ne fige pas.
 
-**Aucun autre fichier.** Recherche de `KeyE`/`KeyF`/`MAPPING_CLAVIER` sur tout le dépôt : les seules occurrences sont dans `input/keyboard.js`. **Aucun module de gameplay ne connaît une touche** — la contrainte « zéro dépendance du gameplay à un périphérique » tient, il n'y avait rien à signaler de ce côté. Manette et tactile non touchés.
+Conséquence à connaître pour les prochains réglages au ressenti : **une valeur de feel de ce genre n'est protégée par rien**, et c'est probablement le bon compromis — un test qui la recopierait ne protégerait aucun contrat et rendrait chaque réglage plus coûteux. Aucune dette ouverte pour ça, c'est un choix, pas un oubli.
 
-### Étape 3 du ticket : les glyphes ne sont **pas** dérivés du mapping → `D-25`
+### Deux endroits qui citaient encore « 1,25 »
 
-La chaîne d'affichage est `hints.js` → `glyphes.json#clavier_key` → `t("glyphe.clavier.interact")` → `locales/*.json`. Elle est propre côté périphérique (le glyphe suit bien `input.peripheriqueActif()`), mais **la lettre elle-même est recopiée** dans les locales : rien ne la relie à `MAPPING_CLAVIER_PROVISOIRE`. Changer le mapping sans toucher les locales afficherait la mauvaise touche, sans erreur au boot ni test rouge. Conformément au ticket, je n'ai **pas** refondu : les deux sources sont mises d'accord à la main, et la dette est ouverte en **`D-25`**.
+- `src/structures.js`, commentaire d'en-tête : corrigé — il renvoie maintenant à `main.js#FACTEUR_EFFACEMENT_TOIT` au lieu de recopier le nombre.
+- `specs/03_maison-exterieur.md` §3.4 et `docs/carte_mentale_RPG_V2_v1_6_0.md` : **laissés tels quels**. Ce sont des états historiques du 16/09, et la spec annonçait elle-même la valeur comme provisoire — même convention que la revue des dettes du 19/09 (« specs déjà livrées volontairement laissées intactes »). La valeur en vigueur se lit dans le code et dans le suivi.
 
-Garde-fou en attendant : le bloc 4 du nouveau test compare les deux sources dans les deux langues. Ce n'est pas la correction — c'est ce qui rend la divergence bruyante. `D-25` est apparentée à `D-10` (l'aide de la Construction ignore le périphérique actif) et touche la matière de `E-01` (filigrane de la touche dans les cases de la barre du bas) : à traiter avec l'un des deux.
+### Validation due par Xav
 
-### Validation due par Xav (clavier seul, partie neuve)
-
-L'indice d'`INTERACT` doit montrer `E`, celui de `CONSUME` doit montrer `F` ; récolter un arbre avec `E`, ouvrir le Craft avec `E`, manger le fruit avec `F`. Tant que ce passage n'est pas fait, `D-22` est **livrée**, pas confirmée en jeu — c'est écrit dans son verdict au suivi.
+Approcher la maison **par l'ouest puis par le sud, de jour et de nuit** : le toit doit commencer à s'effacer plus tard qu'avant, sans saut ni clignotement à l'entrée du fondu. Dire « bon », ou donner une autre valeur (rejoint `V-11`). Tant que ce passage n'est pas fait, `D-21` est **livrée**, pas confirmée en jeu.

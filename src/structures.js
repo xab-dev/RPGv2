@@ -2,10 +2,12 @@
 // distance -> opacité, testée headless — le dessin lui-même (fillRect teinté)
 // vit dans render.js, jamais exercé en headless (contrainte de méthode).
 //
-// RAYON_EFFACEMENT_TOIT = rayon_lumiere du follet actif x 1,25 ("un peu plus
-// grand que le halo", acté Xav 2026-09-16) et MARGE_FONDU sont fournis par
-// l'appelant (main.js, qui a le follet actif) plutôt que codés ici — ce
-// module ne connaît que la géométrie, jamais companions.json.
+// RAYON_EFFACEMENT_TOIT = rayon_lumiere du follet actif x un facteur ("un peu
+// plus grand que le halo", acté Xav 2026-09-16 ; valeur provisoire, déclarée
+// une seule fois dans main.js#FACTEUR_EFFACEMENT_TOIT — pas recopiée ici, un
+// commentaire qui cite un nombre finit toujours par mentir) et MARGE_FONDU
+// sont fournis par l'appelant (main.js, qui a le follet actif) plutôt que
+// codés ici — ce module ne connaît que la géométrie, jamais companions.json.
 
 // Distance du point (px,py) au RECTANGLE (pas à son centre, §3.4) — 0 si le
 // point est à l'intérieur ou sur le bord.

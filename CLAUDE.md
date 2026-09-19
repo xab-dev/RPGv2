@@ -192,6 +192,10 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 | Héros à l'échelle **0,88** (visuel et hitbox dérivés d'une seule échelle) ; pas de roulement — règle : aucun effet ne dépend de la forme du héros (reste un visuel remplaçable), effet de déplacement = traînée de poussière | 2026-09-19 | même NS |
 | HUD sur une ligne en haut, pleine largeur ; barre d'XP retirée du HUD (niveau seul affiché), conservée dans l'écran Stats | 2026-09-19 | même NS |
 | Intro : les follets non élus restent visibles pendant le texte (au lieu de disparaître avant) | 2026-09-19 | même NS |
+| Échelle propre d'une silhouette déclarée en données (`echelle` sur une entrée de `visuels.json`, composée avec l'échelle d'instance par `visuels.js#dessinerVisuel`) — le rendu ET la hitbox du héros en dérivent, jamais deux nombres indépendants | 2026-09-19 | journal courant, `MT_heros-echelle_2026-09-19.md` |
+| L'intro reste vivante (étape `ETAPE_ATTENTE`) pendant le dialogue de choix, jusqu'à `confirmerChoixFollet()` — *révise* la mise à `null` à la fin de la convergence, qui laissait les follets sans personne pour les dessiner | 2026-09-19 | journal courant, `MT_intro-follets-visibles_2026-09-19.md` |
+| Un effet purement visuel du monde (poussière) est un module pur + une entrée de `data/effets.json` ; il ne connaît jamais la forme du héros, et il est gelé par le point de décision unique existant (`uiOuverte`), jamais par une condition propre | 2026-09-19 | journal courant, `MT_trainee-poussiere_2026-09-19.md` |
+| HUD = un bandeau d'une seule ligne en haut, pleine largeur ; tout son placement vit dans `ui/hud_layout.js` (pur, testable), jamais en dur dans `ui/hud.js` | 2026-09-19 | journal courant, `MT_hud-ligne-haute_2026-09-19.md` |
 | **Intrusion nocturne du Chaos dans la Région Maison** — *révise* « aucun monstre, ton chill » de `03_maison-exterieur.md` §5 ; cadre : nuit seulement, zone de Chaos dans les Champs, quelques monstres épars en Forêt, **un monstre qui entre en zone sûre fait demi-tour** (condition sur sa position, jamais sur celle du joueur) — spec à écrire, `07_chaos-nocturne.md` ; destruction des plantations non tranchée (le jardinage n'existe pas encore) | 2026-09-19 | même NS |
 
 (Les décisions de `05_construction-stations.md` étaient déjà actées par Xav **dans la spec elle-même** avant tout code, v1.0.0 §9 — les lignes ci-dessus n'y renvoient que pour mémoire, elles ne tranchent rien de nouveau.)
@@ -216,11 +220,13 @@ Tous les autres `[OUVERT]` historiques (résolution logique, clignements/orbite 
 - **Indicateur jour/nuit au HUD** (optionnel selon la spec, non posé) — 2026-09-16, même archive.
 - **Mesure réelle du temps de frame / fps** (plancher mobile jamais mesuré, seulement borné fonctionnellement par `selectionnerTuilesVisibles`) — 2026-09-16, même archive. Reformulé le 2026-09-19 (`NS_decisions-playtest_2026-09-19.md`) : petites saccades régulières en traversant la carte en ligne droite, tous périphériques, perceptibles par un joueur confirmé. **Instrument livré le 2026-09-19** (`MT_mesure-saccades_2026-09-19.md`, journal courant) : `src/debug_perf.js`/`src/ui/hud_debug.js`, surcouche sous `?debug=fps` seulement — **zéro chiffre réel recueilli**, le protocole (traversée en ligne droite ~20s jour/nuit, bouton « copier ») reste entièrement dû par Xav en jeu ; le ticket de correction (étape 7 de l'ordre d'injection) s'écrira sur ces chiffres, pas avant.
 - **Tactile réel** — **partiellement levée le 2026-09-19** : première validation tactile réelle du jeu par Xav (jouable), Construction validée au clic/tactile ; le test du neveu de Xav (testeur de référence) reste dû.
-- **Mouvement légèrement téléporté à chaque angle depuis la correction de coin** (2026-09-17, retour Xav) : feeling meilleur, aucune interruption, mais pas très smooth — à lisser dans une phase de polish ultérieure (hypothèse : répartir le repoussement sur plusieurs frames ou l'interpoler plutôt que l'appliquer d'un coup — à diagnostiquer, pas à patcher en silence).
+- **Mouvement légèrement téléporté à chaque angle depuis la correction de coin** (2026-09-17, retour Xav) : feeling meilleur, aucune interruption, mais pas très smooth — à lisser dans une phase de polish ultérieure (hypothèse : répartir le repoussement sur plusieurs frames ou l'interpoler plutôt que l'appliquer d'un coup — à diagnostiquer, pas à patcher en silence). **Réévalué le 2026-09-19** (ticket héros 0,88) : inchangé en nature, mais son amplitude maximale baisse mécaniquement de 3,33 à 2,93 px, la correction de coin étant bornée par `largeur/6` de la hitbox.
+- **Aucun buff actif n'est affiché au HUD** (2026-09-19, inventaire du ticket `MT_hud-ligne-haute`) : `status.js` tient bien des buffs temporaires, mais rien ne les dessine. La zone leur est réservée et testée dans `hud_layout.js#elementsBandeauHaut`, rien n'y est dessiné — un affichage aurait débordé du ticket. Question posée à Xav dans le journal courant.
+- **Validation visuelle des 5 tickets de polish du 2026-09-19 entièrement due par Xav** : `docs/CHECKLIST_visuelle.md` **en entier** (`ui/hud.js` touché → règle de méthode), avec les états réécrits (1, 25) et les nouveaux (17bis, 25bis, 32bis, 32ter). Aucune capture n'a pu être prise : ni l'extension Chrome ni le démon browser-use ne répondaient. Détail et ordre de validation : rapport en tête du journal courant.
 - **Validation manuelle du contraste jour/nuit encore due par Xav** (`MT_jour-nuit-contraste_2026-09-16.md` v1.1, archivée) — code fait et testé le 2026-09-17, reste la validation manette/navigateur réelle. `docs/archives/JOURNAL_2026-09-17_micro-ticket-contraste-jour-nuit.md`.
 - **Validation manuelle de l'ambiance synthétisée encore due par Xav** (`MT_musique-ambiance-synth_2026-09-16.md`, archivée) — code fait et testé, freeze diagnostiqué et corrigé le 2026-09-17 ; reste la validation navigateur/manette (5 min d'écoute). `docs/archives/JOURNAL_2026-09-17_diagnostic-freeze-musique.md`.
 - **Validation visuelle de `specs/04_indices-commandes.md` encore due par Xav** (état 24 de `docs/CHECKLIST_visuelle.md`, + états 1-23 rejoués) — code fait, suite headless verte, mais `main.js#dessiner()` a été touché (règle de méthode) et le rendu canvas n'est jamais exercé headless. `docs/archives/JOURNAL_2026-09-17_indices-commande.md`.
-- **`station_puits` : silhouette dégradée à l'échelle ×2,1** (retour Xav en jeu, 2026-09-17, `docs/archives/JOURNAL_2026-09-17_stations-proportions-collision.md`) — proportions des stations par ailleurs validées et meilleures qu'avant ; cause à diagnostiquer (probablement `visuel_puits` dans `data/visuels.json`) avant tout correctif, explicitement reporté à une prochaine session (consigne de Xav : ne rien coder dans l'immédiat).
+- **`station_puits` : silhouette dégradée à l'échelle ×2,1** — **corrigée en code le 2026-09-19** (`SD_puits-silhouette_2026-09-19.md`, journal courant) : cause racine = les données (pied des mâts en porte-à-faux, défaut déjà présent à l'échelle 1), pas l'interprète ; empreinte solide inchangée. **Reste dû : la validation visuelle de Xav** (état 32bis de `docs/CHECKLIST_visuelle.md`).
 - **Coffre : transfert « par pile » (maintien)** non implémenté (Palier E, §3.5 de `04_maison-interieur.md`) — seul le transfert par unité (confirmer = 1) est livré ; la couche d'input n'expose pas encore de geste de maintien générique pour les menus contextuels. 2026-09-17, `docs/archives/JOURNAL_2026-09-17_phase3-palier-a-e.md`.
 - **Poche : action "Consommer" directe** (§3.3, "à défaut, l'action Consommer depuis le menu Poche") non implémentée — seul le chemin "Équiper au slot consommable" + verbe CONSUME en jeu est livré, qui couvre le hint et le critère de la boucle. 2026-09-17, même archive.
 - **`dlg_recette_indisponible`** déclaré au catalogue (§2.1) mais jamais déclenché en jeu — une entrée grisée du menu Craft retente silencieusement `fabriquer()` (résultat inchangé) plutôt que d'ouvrir un dialogue par-dessus un menu déjà ouvert (aurait cassé le routage input menu/dialogue). 2026-09-17, même archive.
@@ -236,21 +242,81 @@ Tous les autres `[OUVERT]` historiques (résolution logique, clignements/orbite 
 
 **Phase 3** (`04_maison-interieur.md`) et **chantier Construction** (`05_construction-stations.md`) : **tous deux close, tous deux validés en jeu par Xav.** Détail complet des diagnostics successifs (stations invisibles, jauges figées, respawn cassé, écrans orphelins, parité clic/verbe) : `docs/archives/INDEX.md`. Construction close le 2026-09-19 après validation au clic/tactile **puis** à la manette et au clavier seul, post-correctif de parité clic/verbe.
 
-**Chantier courant : polish post-Construction** (ordre d'injection acté par Xav dans `NS_decisions-playtest_2026-09-19.md`). Étape 1 en cours (instrument livré, mesure en jeu due) — étapes 2 à 9 pas commencées, chacune attend sa propre spec (même règle que pour une phase) :
+**Chantier courant : polish post-Construction** (ordre d'injection acté par Xav dans `NS_decisions-playtest_2026-09-19.md`). **Étapes 2 à 6 livrées en code le 2026-09-19** sur la branche `polish-2026-09-19` (non fusionnée — la fusion revient à Xav), chacune d'après sa propre fiche ; **toutes les validations en jeu restent dues**. Étape 1 : instrument livré, mesure en jeu toujours due. Étapes 7 à 9 pas commencées, chacune attend sa propre spec (même règle que pour une phase) :
 
 1. Mesure des saccades (`MT_mesure-saccades_2026-09-19.md`) — **instrument livré en code le 2026-09-19** (`?debug=fps`), protocole en jeu (traversée ligne droite jour/nuit, bouton « copier ») encore dû par Xav avant que l'étape 7 (correction) ne puisse s'écrire.
-2. Héros à l'échelle 0,88 (visuel + hitbox).
-3. Follets visibles pendant le texte de l'intro.
-4. `station_puits` (silhouette dégradée à ×2,1, dette déjà notée).
-5. Traînée de poussière au déplacement (remplace le roulement, jamais implémenté).
-6. HUD sur une ligne pleine largeur, XP retirée du HUD.
+2. Héros à l'échelle 0,88 (visuel + hitbox) — **livré en code le 2026-09-19** (branche `polish-2026-09-19`), validation manette due.
+3. Follets visibles pendant le texte de l'intro — **livré en code le 2026-09-19**, validation manette due.
+4. `station_puits` (silhouette dégradée à ×2,1) — **livré en code le 2026-09-19**, validation visuelle due.
+5. Traînée de poussière au déplacement (remplace le roulement) — **livré en code le 2026-09-19**, validation manette due.
+6. HUD sur une ligne pleine largeur, XP retirée du HUD — **livré en code le 2026-09-19**, validation manette **puis tactile** due.
 7. Correction des saccades, écrite d'après les chiffres mesurés à l'étape 1.
 8. `07_chaos-nocturne.md` (intrusion nocturne du Chaos dans la Région Maison — spec à écrire, cadrage déjà acté ci-dessus).
 9. Barre d'action du bas — après écriture de la spec par Xav lui-même.
 
-**Aucune spec n'est encore écrite pour ces chantiers : ne pas commencer sans elle** (même règle que pour une phase).
+**Aucune spec n'est encore écrite pour les étapes 7 à 9 : ne pas les commencer sans elle** (même règle que pour une phase).
 
 ## Journal de session — Polish post-Construction, tickets 1-5 (2026-09-19)
+
+### Rapport de fin de session (à lire en premier)
+
+Branche **`polish-2026-09-19`**, jamais fusionnée dans `main` : la fusion revient à Xav. Suite headless **verte à chaque commit** ; **66 fichiers de test** en fin de session (61 au départ, 5 nouveaux). **Aucun ticket bloqué** — les 5 sont livrés.
+
+| # | Ticket | Statut | Commit | Fichiers touchés |
+|---|---|---|---|---|
+| — | Ménage de journal + fiches de la session | livré | `80d45d7` | archive du journal précédent, `docs/archives/INDEX.md`, les 5 fiches |
+| 1 | `MT_heros-echelle` (héros à 0,88) | **livré** | `230e442` | `data/visuels.json`, `src/visuels.js`, `src/main.js`, `src/schemas.js`, + test |
+| 2 | `MT_intro-follets-visibles` | **livré** | `e288d1a` | `src/intro.js`, `src/main.js`, `docs/CHECKLIST_visuelle.md`, + test, + 3 assertions de tests existants |
+| 3 | `SD_puits-silhouette` | **livré** | `52a6a2e` | `data/visuels.json`, `src/structures.js`, `docs/CHECKLIST_visuelle.md`, + test |
+| 4 | `MT_trainee-poussiere` | **livré** | `ecae6bb` | `src/poussiere.js` (nouveau), `data/effets.json` (nouveau), `data/visuels.json`, `src/render.js`, `src/main.js`, `src/schemas.js`, `docs/CHECKLIST_visuelle.md`, + test |
+| 5 | `MT_hud-ligne-haute` | **livré** | `df0ef20` | `src/ui/hud_layout.js`, `src/ui/hud.js`, `src/ui/hud_hints.js`, `src/main.js`, `locales/fr.json`, `locales/en.json`, `docs/CHECKLIST_visuelle.md`, + test |
+
+**Aucune capture, aucun relevé `?debug=fps`.** Ni l'extension Chrome (« Browser extension is not connected ») ni le démon browser-use (« daemon default didn't come up ») ne répondent dans cette session. `docs/captures/polish-2026-09-19/` est donc resté vide, et les relevés avant/après demandés par le brief supposent de toute façon une traversée jouée à la main : **entièrement dus par Xav**, comme l'étape 1 du polish.
+
+#### À valider à la manette, dans l'ordre d'une seule boucle Grotte → Maison
+
+1. **Intro, paupières puis convergence** — inchangées (budget ≤ 8 s, non-skippable).
+2. **Intro, texte de choix** *(ticket 2, état 17bis)* — les 3 follets **restent visibles derrière le texte**, leur lévitation se pose doucement ; à l'appui sur `A`, l'écran de choix apparaît **sans que les follets sautent**.
+3. **Départ des follets non élus** — inchangé, vérifier qu'aucun follet n'est dessiné en double.
+4. **Héros dans la Grotte** *(ticket 1)* — silhouette à 0,88 : proportion, lisibilité sur le voile sombre.
+5. **HUD** *(ticket 5, états 1, 25, 25bis)* — bandeau d'une seule ligne en haut : follet · PV · éclats · faim · soif · `Nv. N`. Rien dans la colonne de gauche, **aucune barre d'XP**. Vérifier que la bannière d'indice de commande ne chevauche pas le bandeau.
+6. **Traînée de poussière** *(ticket 4, état 32ter)* — en marchant : 2-3 bouffées, sous le héros ; **rien à l'arrêt**, rien contre un mur, rien sous le menu/dialogue.
+7. **Passages étroits de la Forêt** *(ticket 1)* — plus de jeu qu'avant (12 px → 14,4 px dans une ouverture d'1 tuile).
+8. **Puits, de jour, dans le Jardin** *(ticket 3, état 32bis)* — margelle, mâts plantés dessus, treuil, corde, seau, toit : **un seul objet**. Vérifier qu'il ne mord ni le chemin ni la zone du fruit.
+9. **Table / coffre / atelier** — ne devaient **pas** changer.
+10. **Couloir intérieur de la maison** *(ticket 1)* — circulation entre les stations.
+11. **Nuit** — la traînée de poussière doit s'assombrir avec la scène, jamais rester blanc vif.
+12. **Écran Stats** *(ticket 5)* — nouvelle entrée « Expérience : Nv.N — NN % ».
+13. **Montée de niveau** *(ticket 5, état 25bis)* — bref éclat doré sur `Nv. N`, aucun son.
+14. **Un passage au tactile** *(ticket 5)* — le bandeau ne doit recouvrir aucun bouton tactile.
+
+#### Valeurs provisoires introduites, à régler au ressenti
+
+| Valeur | Fichier | Posée à |
+|---|---|---|
+| Échelle du héros (visuel **et** hitbox) | `data/visuels.json` > `visuel_heros` > `echelle` | **0,88** (décision Xav) |
+| Silhouette du puits : mâts, treuil, corde, seau | `data/visuels.json` > `visuel_puits` | mâts 3×18 en x=±7 ; treuil 15×2,5 ; corde 1×5 ; seau 5,5×4,5 |
+| Poussière : durée de vie | `data/effets.json` > `effet_poussiere` > `duree_ms` | 350 |
+| Poussière : distance entre deux bouffées | idem > `intervalle_px` | 14 |
+| Poussière : opacité de départ | idem > `alpha_depart` | 0,35 |
+| Poussière : échelle début → fin | idem > `echelle_depart` / `echelle_fin` | 0,8 → 1,6 |
+| Poussière : décalage latéral, décalage vertical | idem > `decalage_lateral_px` / `offset_y_px` | 3 / 6 |
+| Hauteur du bandeau HUD | `src/ui/hud_layout.js` > `BANDEAU_HAUT.hauteur` | 20 px (7,4 % de 270) |
+| Fin du contenu du bandeau | `src/ui/hud_layout.js` > `BANDEAU_CONTENU_FIN_X` | 430 px |
+| Durée de l'éclat de montée de niveau | `src/main.js` > `ECLAT_NIVEAU_MS` | 700 ms |
+| Position de la bannière d'indice | `src/ui/hud_hints.js` > `Y_BANNIERE` | 26 px (était 8) |
+
+*Aucune valeur provisoire pour le ticket 2* : l'amortissement de la lévitation dure `levitation.periode_ms`, déjà en données.
+
+#### Questions ouvertes
+
+1. **Zone de buffs du HUD** (ticket 5) : l'inventaire a montré qu'**aucun buff n'est affiché au HUD** aujourd'hui, alors que `status.js` en tient. La zone est réservée et testée dans `elementsBandeauHaut`, mais rien n'y est dessiné — inventer un affichage aurait débordé du ticket. **Veux-tu un affichage des buffs actifs dans cette zone ?** (ticket à part).
+2. **Bannière d'indice descendue à y=26** (ticket 5) : conséquence mécanique du bandeau, pas une décision de design que j'aie prise à ta place — mais c'est un choix visible. **L'indice sous le bandeau te convient-il**, ou préfères-tu qu'il passe en bas de l'écran ?
+3. **Seau du puits** (ticket 3) : la fiche listait « seau » dans l'attendu, il n'existait pas dans les données. Je l'ai ajouté (avec treuil et corde) pour satisfaire le §Attendu. **À confirmer que c'est bien ce que tu voulais**, ou à retirer si le puits te paraît chargé.
+4. **`?debug=fps` avant/après** : impossible cette session (aucun navigateur). L'étape 7 du polish (correction des saccades) attend toujours tes chiffres, et la traînée de poussière ajoute un calque qu'il vaut mieux mesurer.
+
+---
+
 
 Ménage de journal effectué en début de session : le journal précédent (« Diagnostic saccades : le calque statique n'était pas en cause ») archivé verbatim dans `docs/archives/JOURNAL_2026-09-19_diagnostic-saccades-calque.md`, `docs/archives/INDEX.md` mis à jour (lien de la dernière ligne corrigé, la fiche `SD_saccades-calque-statique_2026-09-19.md` était déjà déplacée dans `docs/archives/`). Travail sur la branche `polish-2026-09-19`, jamais fusionnée : c'est Xav qui fusionne.
 

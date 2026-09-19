@@ -353,3 +353,52 @@ livré avec**) et le **follet équipable** (un emplacement, amulette *ou* talism
 **Une précision de méthode, dite ici pour ne pas la découvrir au matin** : ce journal grandit d'une section à chaque
 ticket, dans le commit de ce ticket. Ce n'est pas revenir sur un ticket précédent — c'est le journal qui avance.
 Aucun fichier de `src/`, `data/` ou `tests/` n'a été touché par ce ticket-ci.
+
+### Ticket 2 — `D-32` : le héros à 9 px
+
+**Une ligne de données.** `data/visuels.json#visuel_heros.echelle` : **0,88 → 0,643**. Le ticket de polish du matin
+avait fait le travail difficile — depuis lui, le rendu (`visuels.js#dessinerVisuel`) et la hitbox
+(`main.js#rayonHeros`) dérivent du **même champ**. Changer la taille du héros, aujourd'hui, c'est toucher ce nombre
+et rien d'autre. La décision verrouillée (une seule échelle en données, visuel **et** hitbox) n'est pas touchée ;
+seul le 0,88 du matin est *révisé*.
+
+**La mesure de base n'est pas 14** — le brief prévoyait le cas. Aucun nombre du dépôt ne vaut 14 à l'échelle 1 :
+la silhouette est un cercle de **Ø 22 px**, la hitbox un carré de **Ø 20 px** (rayon de référence 10). J'ai donc
+appliqué le rapport de repli du brief, **9 / 12,32 = 0,7305**, à l'échelle actuelle : 0,88 × 0,7305 = **0,643**
+(qui tombe aussi sur 9/14, les deux chemins donnent le même nombre).
+
+| | échelle 1 | 0,88 (ce matin) | **0,643 (ce ticket)** |
+|---|---|---|---|
+| Silhouette (Ø logique) | 22,0 px | 19,4 px | **14,2 px** |
+| Hitbox (Ø logique) | 20,0 px | 17,6 px | **12,9 px** |
+| Jeu par côté dans un couloir d'1 tuile | 6,0 px | 7,2 px | **9,6 px** |
+
+**À l'œil de Xav, donc** : si « 9 px » désignait la **silhouette visible**, il faudrait 0,41 et non 0,643. Je n'ai
+pas tranché — c'est noté dans `V-14`, à régler en jouant, la valeur étant *provisoire* et tenant en un nombre.
+
+**Ce que j'ai vérifié sans rien corriger** (liste du ticket, une ligne chacun) :
+
+- **`TOLERANCE_COIN_PX` n'est pas en pixels absolus.** `scene.js` la calcule `largeur / 6` — elle **suit** la hitbox :
+  3,33 px avant le polish, 2,93 à 0,88, **2,14** maintenant. Le rapport tolérance/héros ne bouge pas d'un iota, et la
+  crainte du brief tombe. (Le saut de coin qu'elle produit, `D-04`, rétrécit donc dans la même proportion.)
+- **Seuil d'interaction** : `DISTANCE_INTERACT_PX` = 28 px, mesuré du **centre** du héros au **bord de l'empreinte** de
+  l'interactif (`distanceAuRectangle`). Indépendant de sa taille — mais comme son corps rétrécit, son bras
+  *apparent* s'allonge : 19,2 px au-delà de la silhouette ce matin, **21,6 px** ce soir.
+- **Contact des monstres** : `enemies.json#portee_attaque` (18 px) est une distance **de centre à centre**, en pixels.
+  Elle ne change pas — mais le monstre touchera désormais sans paraître le toucher : 18 px de centre à centre laissent
+  maintenant **11,6 px de vide** entre les deux silhouettes, contre 9,2 ce matin. À regarder de nuit.
+- **Portée de « mains nues »** : 0,5 tuile = 16 px, **en tuiles**, inchangée — mais l'anneau d'attaque déborde
+  désormais de **9,6 px** autour du héros au lieu de 7,2 : il *paraîtra* plus long sans l'être.
+- **Anneau, ombre, poussière** : l'anneau se calcule sur la portée de l'arme (`weapons.json`), jamais sur le héros.
+  L'ombre est **dans** l'entrée du visuel, donc elle rétrécit avec lui — c'est voulu, elle fait partie de la
+  silhouette. `poussiere.js` « ne connaît ni le héros ni son rayon » (son propre commentaire) : la règle tient.
+  **Un point à l'œil quand même** : `effet_poussiere.offset_y_px` vaut 6 px, une valeur absolue, choisie quand le
+  héros avait un rayon de 8,8 — la poussière naîtra maintenant *au bord* de ses pieds plutôt que dessous. Valeur
+  déjà *provisoire* en données, à régler au ressenti (`V-11`), pas une dépendance à la forme du héros.
+- **Portails et réapparition** : le point d'arrivée est le **centre d'une tuile**, puis le héros est repoussé hors
+  d'une empreinte solide (`trouverPositionLibrePlusProche`). Une boîte plus petite ne peut qu'y gagner — le test qui
+  balaie 2 535 positions sauvegardées le prouve : aucune position jouable avant ne devient coincée après.
+
+**Tests.** `test_mt_heros_echelle_2026-09-19.js` figeait 0,88 : mis à jour **volontairement** (c'est la valeur que le
+ticket révise), commentaire d'en-tête compris. Ses trois preuves tiennent telles quelles à la nouvelle échelle.
+Suite complète verte, **71 fichiers**.

@@ -1,4 +1,7 @@
-// MT_heros-echelle_2026-09-19 : le héros passe à 0,88 de sa taille, VISUEL ET
+// MT_heros-echelle_2026-09-19, révisé par `D-32` (nuit du 19 au 20/09) : le
+// héros passe à 0,643 de sa taille de référence — 9 px là où il en faisait 14
+// avant le polish et ≈ 12,3 depuis (0,88). C'est le même mécanisme, une seule
+// valeur en données ; seul le nombre attendu change ici. Le héros est VISUEL ET
 // HITBOX, et ces deux-là doivent désormais dériver du MÊME nombre en données
 // (`echelle` sur visuel_heros, data/visuels.json) — avant cette fiche c'étaient
 // deux valeurs indépendantes (rayon visuel 11 px dans le catalogue, rayon de
@@ -33,7 +36,13 @@ async function cataloguesDuJeu() {
   return donnees;
 }
 
-const ECHELLE_ATTENDUE = 0.88; // décision Xav, NS_decisions-playtest_2026-09-19
+// `D-32` (Xav, playtest du 19/09 au soir) : 9/14 ≈ 0,643 — *révise* le 0,88 du
+// matin (NS_decisions-playtest_2026-09-19), sans toucher à la décision verrouillée
+// qui l'accompagne : UNE seule échelle en données pour le visuel et la hitbox.
+// Intention : des proportions plus justes, et **la hitbox qui rétrécit est
+// voulue** — pouvoir se déplacer librement dans les petits endroits.
+// *Provisoire* : réglée au ressenti par Xav.
+const ECHELLE_ATTENDUE = 0.643;
 const RAYON_BASE_PX = 10; // RAYON_HERO_BASE_PX (main.js) — dupliqué ici, scene.js ignore la notion de "héros"
 
 // --- 1. Une seule échelle en données, lue par le visuel ET par la hitbox ---
@@ -47,7 +56,7 @@ const RAYON_BASE_PX = 10; // RAYON_HERO_BASE_PX (main.js) — dupliqué ici, sce
     "l'échelle du héros est déclarée UNE fois, en données, sur visuel_heros",
   );
   assert.equal(echelleVisuel(heros), ECHELLE_ATTENDUE, 'echelleVisuel() lit bien ce champ');
-  console.log('OK échelle du héros déclarée une seule fois en données (0,88)');
+  console.log('OK échelle du héros déclarée une seule fois en données (0,643)');
 }
 
 // Le rendu applique cette échelle propre sans que l'appelant ait à la connaître
@@ -173,7 +182,7 @@ function boite(rayon, cx, cy) {
 
 // --- 3. Une position sauvegardée valide avec l'ANCIENNE boîte le reste avec la nouvelle ---
 // Balayage exhaustif : pour chaque position du couloir où l'ancienne boîte
-// (rayon 10) pouvait avancer, la nouvelle (rayon 8,8), centrée au même point,
+// (rayon 10) pouvait avancer, la nouvelle (rayon 6,43), centrée au même point,
 // doit le pouvoir aussi. Une boîte plus petite ne peut pas être coincée là où
 // une plus grande tenait.
 {

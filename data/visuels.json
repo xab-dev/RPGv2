@@ -2,7 +2,7 @@
   {
     "id": "visuel_heros",
     "ancre": "centre",
-    "echelle": 0.88,
+    "echelle": 0.643,
     "teintable": true,
     "ombre": { "dy": 8, "w": 16, "h": 6, "alpha": 0.35 },
     "primitives": [

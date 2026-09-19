@@ -527,3 +527,52 @@ plutôt que de nuit en jeu, et qu'une scène de plus déclare le sien sans une l
 **Rien d'autre n'a bougé** : ni les lumières de scène, ni les faisceaux de la Grotte, ni la fenêtre de la maison, ni
 les opacités jour/nuit, ni le décor, ni les leviers. Les lumières **statiques** gardent le profil historique dans
 tous les cas : seul le follet a désormais un profil à lui. Suite verte, **73 fichiers**.
+
+### Ticket 5 — `07` palier A : zones et tirage (pur)
+
+**La carte gagne ses zones**, au format `zones` déjà présent, enrichi d'un `id` (optionnel, non vide) pour être
+référençable. Rectangles du croquis de Xav, tous *provisoires*, à ajuster à la main sur la carte 170 × 116 :
+
+| Zone | Rectangle(s) | Vérifié par test |
+|---|---|---|
+| `zone_sure_maison` | (72, 42, 52, 30) | contient la maison, le jardin, **le puits** (106,57) et le point de réapparition du fruit |
+| `zone_sure_grotte` | (0, 46, 16, 24) | contient **l'arrivée du portail** (6,58), relue depuis `scene_grotte_salle_2` |
+| `champ_nord` | (76,0,94,29) + (125,29,45,10) | un **L** = deux rectangles de même id (choix du §3 documenté ici) |
+| `champ_sud` | (125,77,45,10) + (76,87,94,29) | idem, symétrique |
+| `chaos_nord_est` | (140, 6, 26, 22) | entièrement dans le Champ nord, à l'est |
+
+**`data/spawns.json`**, catalogue neuf, validé au boot. Une entrée : Chaos nord-est, `enemy_chaos_rodeur`, nuit,
+niveau ≥ 5, plafond 6, un toutes les 8 s, à 10 tuiles du joueur minimum, domaine = Champ nord, poursuite 20 tuiles,
+désintérêt 6 s, anti-blocage 1 s, errance (pause 0,8–2,5 s, mi-vitesse). **`intervalle_ms` = 8 000 est une valeur
+que la spec ne donnait pas** : à ce rythme, le plafond de 6 se remplit en 48 s sur une nuit de 4 min. C'est
+exactement ce que le §6 demande d'observer — je ne l'ouvre pas en `Q-`, la spec le prévoit déjà.
+
+**Le monstre** : `enemy_chaos_rodeur`, dérivé du rampant de la Grotte, **données seules** — 28 PV, force 6,
+vitesse 45 px/s, portée de contact 20 px, cadence 1 s, 35 XP, même table de butin et même silhouette
+(le signal visuel, c'est le palier D). Équilibrage *provisoire* visé par la spec : « un héros de niveau 5 en gère
+un, pas trois » — un héros de départ a 50 PV et frappe à 5 toutes les 0,5 s, donc un rôdeur lui coûte ~3 s et
+une douzaine de PV ; trois à la fois lui en coûtent 18 par seconde.
+
+**Le seuil de niveau est une condition en données, comme exigé.** Le registre de conditions ne savait évaluer que
+des flags (`all`/`any`/`not`). Plutôt qu'une condition « niveau » en dur, je lui ai appris **un type de condition de
+plus, générique** : `{ valeur: 'niveau', min: 5 }`, où les valeurs nommées sont **fournies à la création** du
+registre (`valeurs: () => ({ niveau })`). `flags.js` reste pur : il ne va chercher le niveau nulle part. Conséquence
+voulue — le palier Nv. 10, et demain une condition sur l'heure ou sur les PV, sont des **données**. Une valeur
+inconnue suit la discipline existante d'un flag non déclaré : exception en dev, **faux** en prod (une condition
+qu'on ne sait pas évaluer ne doit pas débloquer).
+
+**`src/spawns.js`**, pur : `tirerPositionApparition` (tuile de la zone, non solide, **atteignable**, hors de toute
+zone sûre, à distance minimale du joueur, non occupée), `estEnZoneSure` (en tuiles, sur la position **du
+monstre** — le palier C en aura besoin pour le demi-tour), `tablesDeScene`, `tableActive`. `calculerTuilesAtteignables`
+est **importé** de `ground_items.js`, pas recopié : la spec l'exige, et un 2ᵉ BFS finirait par diverger de celui qui
+filtre déjà les items au sol. PRNG injecté, essais bornés à 60 : zone saturée → `null`, jamais de boucle infinie.
+
+**Les validations de boot sont des échecs durs**, et le test les provoque une par une : zone d'apparition qui
+chevauche une zone sûre · `zone_apparition` inconnue · `domaine` qui nomme une zone inexistante · **phase
+inventée** (« crépuscule » accentué au lieu de « crepuscule » donnerait sinon une nuit vide sans un mot — les noms
+de phase sont lus depuis `daynight.js`, jamais recopiés) · monstre inconnu.
+
+**Aucun monstre n'apparaît en jeu à ce palier**, c'est le contrat du palier A : `main.js` n'est pas touché. Le test
+vérifie aussi, en relisant le **source** du module, qu'aucun « niveau » n'y est écrit, et qu'une 2ᵉ table (zone
+sud, seuil 10 — exactement le palier Nv. 10) fonctionne sans une ligne de code. 300 tirages sur 300 respectent les
+cinq règles. Suite verte, **74 fichiers**.

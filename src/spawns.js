@@ -1,0 +1,116 @@
+// Apparitions (specs/07_chaos-nocturne.md, palier A) : où un monstre a le
+// droit de naître, et quelle position exacte on lui tire. Pur, testé, aucun
+// accès DOM, aucun monstre en jeu à ce palier — c'est la géométrie et le
+// tirage seuls.
+//
+// Discipline reprise de ground_items.js, volontairement à l'identique : PRNG
+// injectable (jamais Math.random(), pour qu'un test rejoue la même nuit), et
+// nombre d'essais BORNÉ (§4 edge case : carte saturée, jamais de boucle
+// infinie). `calculerTuilesAtteignables` est IMPORTÉ de ground_items.js et
+// non recopié — la spec l'exige, et une 2ᵉ implémentation du BFS finirait par
+// diverger de celle qui filtre déjà les items au sol.
+
+import { mulberry32 } from './decor.js';
+import { calculerTuilesAtteignables } from './ground_items.js';
+
+export { calculerTuilesAtteignables };
+
+const ESSAIS_MAX = 60;
+
+function dansRect(tx, ty, rect) {
+  return tx >= rect.x && tx < rect.x + rect.w && ty >= rect.y && ty < rect.y + rect.h;
+}
+
+// Les rectangles d'une zone, par id OU par type — un `domaine` de spawns.json
+// peut nommer les deux (« champ_nord » ou « champs »), et un Champ en L est
+// justement deux rectangles qui partagent un id de groupe.
+export function rectanglesDeZone(scene, nom) {
+  return (scene.zones || []).filter((z) => z.id === nom || z.type === nom).map((z) => z.rect);
+}
+
+export function rectanglesZonesSures(scene) {
+  return (scene.zones || []).filter((z) => z.type === 'zone_sure').map((z) => z.rect);
+}
+
+// « Le monstre est-il (ou serait-il) en zone sûre ? » — en TUILES, et sur la
+// position du MONSTRE, jamais sur celle du joueur (§2.3 règle 4 : c'est la
+// prochaine position du monstre qui déclenche le demi-tour). Le palier C s'en
+// sert pour faire demi-tour ; le palier A, pour ne jamais y faire naître
+// personne.
+export function estEnZoneSure(scene, tx, ty) {
+  return rectanglesZonesSures(scene).some((rect) => dansRect(tx, ty, rect));
+}
+
+export function estEnZoneSurePx(scene, x, y) {
+  return estEnZoneSure(scene, Math.floor(x / scene.tileSize), Math.floor(y / scene.tileSize));
+}
+
+// Tire une position d'apparition dans `zoneId`, en pixels monde (centre de
+// tuile), ou `null` si aucune ne convient après ESSAIS_MAX essais.
+//
+// Une position convient si elle est : dans un rectangle de la zone · sur une
+// tuile non solide · ATTEIGNABLE depuis le héros (même raison qu'au respawn
+// des items : la forêt procédurale isole des poches de tuiles libres, et un
+// monstre né dans l'une d'elles ne rencontrerait jamais personne) · hors de
+// TOUTE zone sûre · à au moins `distanceMinTuiles` du joueur (on ne surgit
+// pas dans son dos) · pas déjà occupée par un autre monstre.
+//
+// `tuilesAtteignables` optionnel (null = pas de filtre) : calculé une fois
+// par entrée en scène par l'appelant, jamais par frame.
+export function tirerPositionApparition(scene, {
+  zoneId,
+  hero,
+  distanceMinTuiles = 0,
+  dejaOccupees = [],
+  graine = 1,
+  tuilesAtteignables = null,
+}) {
+  const rects = rectanglesDeZone(scene, zoneId);
+  if (rects.length === 0) return null;
+
+  const alea = mulberry32((scene.seed ^ graine) >>> 0);
+  const distanceMinPx = distanceMinTuiles * scene.tileSize;
+
+  for (let essai = 0; essai < ESSAIS_MAX; essai += 1) {
+    const rect = rects[Math.floor(alea() * rects.length)];
+    const tx = rect.x + Math.floor(alea() * rect.w);
+    const ty = rect.y + Math.floor(alea() * rect.h);
+
+    if (estEnZoneSure(scene, tx, ty)) continue;
+    const tuile = scene.tuileA(tx, ty);
+    if (!tuile || tuile.solid) continue;
+    if (tuilesAtteignables && !tuilesAtteignables.has(`${tx},${ty}`)) continue;
+
+    const x = (tx + 0.5) * scene.tileSize;
+    const y = (ty + 0.5) * scene.tileSize;
+
+    if (hero && distanceMinPx > 0 && Math.hypot(hero.x - x, hero.y - y) < distanceMinPx) continue;
+    const occupee = dejaOccupees.some(
+      (p) => Math.floor(p.x / scene.tileSize) === tx && Math.floor(p.y / scene.tileSize) === ty,
+    );
+    if (occupee) continue;
+
+    return { x, y };
+  }
+  return null;
+}
+
+// Tables d'apparition qui concernent cette scène. Rien d'autre : le palier A
+// ne fait naître personne, il dit seulement « voici ce qui s'appliquerait
+// ici ». Le tri par id garde un ordre stable d'une exécution à l'autre.
+export function tablesDeScene(spawns, sceneId) {
+  return spawns.filter((s) => s.scene === sceneId).sort((a, b) => (a.id < b.id ? -1 : 1));
+}
+
+// « Cette table a-t-elle le droit de faire naître quelqu'un, là, maintenant ? »
+// Deux questions distinctes, volontairement séparées :
+//   - la PHASE du cycle (la nuit, et elle seule, au palier 1) ;
+//   - la CONDITION, évaluée par le registre de conditions existant
+//     (`flags.js#evaluate`), jamais par un test de niveau écrit ici — la spec
+//     l'interdit, et c'est ce qui rendra le palier Nv. 10 purement data.
+// Une table sans `condition` est toujours ouverte.
+export function tableActive(table, { phase, evaluerCondition }) {
+  if (!table.phases.includes(phase)) return false;
+  if (table.condition === undefined || table.condition === null) return true;
+  return !!evaluerCondition(table.condition);
+}

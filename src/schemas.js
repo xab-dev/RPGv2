@@ -1,3 +1,12 @@
+import { PHASES_CYCLE } from './daynight.js';
+
+// Noms des phases du cycle, pour que `spawns.json` ne puisse pas déclarer
+// une phase qui n'existe pas (« crépuscule » au lieu de « crepuscule » se
+// traduirait sinon par une nuit sans le moindre monstre, sans un mot).
+// Lu depuis daynight.js, jamais recopié : une phase de plus un jour ne
+// demandera rien ici.
+const NOMS_PHASES_CYCLE = PHASES_CYCLE.map((p) => p.nom);
+
 // Schémas de validation par catalogue de données.
 //
 // Chaque schéma décrit : les champs obligatoires (requiredFields), le champ
@@ -171,6 +180,83 @@ function validerLayoutLignes(layout, legende, largeur, hauteur, tileIds, path, e
   });
 }
 
+// Rectangles de la scène portant cet id (un Champ en L en a deux).
+function rectanglesDeZone(scene, id) {
+  return (scene.zones || []).filter((z) => z.id === id).map((z) => z.rect);
+}
+
+function rectsSeChevauchent(a, b) {
+  return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+}
+
+// specs/07_chaos-nocturne.md §3 « Validation au boot, échec dur ».
+function validerSpawn(entry, catalogs, path) {
+  const erreurs = [];
+  const scene = (catalogs.scenes || []).find((s) => s.id === entry.scene);
+  if (!scene) return erreurs; // déjà signalé par `refs`
+
+  const rectsApparition = rectanglesDeZone(scene, entry.zone_apparition);
+  if (rectsApparition.length === 0) {
+    erreurs.push(`${path} > zone_apparition "${entry.zone_apparition}" introuvable dans les zones de ${entry.scene}`);
+  }
+
+  // Un monstre ne doit jamais **apparaître** en zone sûre. La règle est
+  // vérifiée ici sur la géométrie, pas seulement au tirage : une zone
+  // d'apparition qui mord sur le Jardin est une erreur de carte, pas un
+  // tirage malheureux à filtrer 200 fois par nuit.
+  const zonesSures = (scene.zones || []).filter((z) => z.type === 'zone_sure');
+  for (const rectApparition of rectsApparition) {
+    for (const sure of zonesSures) {
+      if (rectsSeChevauchent(rectApparition, sure.rect)) {
+        erreurs.push(
+          `${path} > zone_apparition "${entry.zone_apparition}" chevauche la zone sûre "${sure.id || sure.type}"`,
+        );
+      }
+    }
+  }
+
+  if (!Array.isArray(entry.domaine) || entry.domaine.length === 0) {
+    erreurs.push(`${path} > domaine doit être un tableau non vide d'ids ou de types de zone`);
+  } else {
+    for (const nom of entry.domaine) {
+      const connu = (scene.zones || []).some((z) => z.id === nom || z.type === nom);
+      if (!connu) erreurs.push(`${path} > domaine > "${nom}" ne désigne aucune zone de ${entry.scene}`);
+    }
+  }
+
+  if (!Array.isArray(entry.phases) || entry.phases.length === 0) {
+    erreurs.push(`${path} > phases doit être un tableau non vide de noms de phase`);
+  } else {
+    for (const phase of entry.phases) {
+      if (!NOMS_PHASES_CYCLE.includes(phase)) {
+        erreurs.push(`${path} > phases > "${phase}" n'est pas une phase du cycle (${NOMS_PHASES_CYCLE.join(', ')})`);
+      }
+    }
+  }
+
+  for (const champ of ['max_simultanes', 'intervalle_ms', 'distance_min_joueur_tuiles', 'poursuite_max_tuiles', 'desinteret_ms', 'blocage_ms']) {
+    if (typeof entry[champ] !== 'number' || entry[champ] < 0) {
+      erreurs.push(`${path} > ${champ} doit être un nombre positif`);
+    }
+  }
+
+  if (entry.errance !== undefined) {
+    const e = entry.errance;
+    if (!e || typeof e !== 'object') {
+      erreurs.push(`${path} > errance doit être un objet { pause_ms_min, pause_ms_max, facteur_vitesse }`);
+    } else {
+      if (typeof e.pause_ms_min !== 'number' || typeof e.pause_ms_max !== 'number' || e.pause_ms_min > e.pause_ms_max) {
+        erreurs.push(`${path} > errance > pause_ms_min/pause_ms_max invalides (min <= max attendu)`);
+      }
+      if (typeof e.facteur_vitesse !== 'number' || e.facteur_vitesse <= 0) {
+        erreurs.push(`${path} > errance > facteur_vitesse doit être un nombre strictement positif`);
+      }
+    }
+  }
+
+  return erreurs;
+}
+
 function validerScene(entry, catalogs, path) {
   const erreurs = [];
   // `D-35` : une scène peut déclarer le profil de lumière du follet qui lui
@@ -284,6 +370,13 @@ function validerScene(entry, catalogs, path) {
     const chemin = `${path} > zones[${i}]`;
     if (typeof zone.type !== 'string' || !zone.type) {
       erreurs.push(`${chemin} > type manquant (chaîne)`);
+    }
+    // `id` (specs/07 §3) : optionnel, mais **non vide** s'il est là — c'est
+    // par lui que `spawns.json` désigne une zone d'apparition ou un domaine.
+    // Plusieurs rectangles peuvent partager un id : c'est ainsi qu'un Champ
+    // en L s'écrit (deux entrées, même id de groupe).
+    if (zone.id !== undefined && (typeof zone.id !== 'string' || !zone.id)) {
+      erreurs.push(`${chemin} > id doit être une chaîne non vide`);
     }
     const r = zone.rect;
     if (!r || ['x', 'y', 'w', 'h'].some((c) => typeof r[c] !== 'number')) {
@@ -944,6 +1037,24 @@ export const SCHEMAS = {
     idField: 'id',
     refs: [{ field: 'icone', catalog: 'visuels' }],
     custom: validerWeapon,
+  },
+  // specs/07_chaos-nocturne.md §3 : table d'apparition. C'est la **première**
+  // du jeu, et elle doit resservir telle quelle pour les paliers suivants et
+  // les cartes futures — d'où la validation croisée ci-dessous, qui refuse au
+  // boot ce qui ne se verrait sinon qu'en jouant, de nuit, au bon niveau :
+  // une zone d'apparition qui chevauche une zone sûre, un id de zone inconnu,
+  // une phase qui n'existe pas dans le cycle.
+  spawns: {
+    requiredFields: [
+      'id', 'scene', 'zone_apparition', 'enemy', 'phases', 'max_simultanes', 'intervalle_ms',
+      'distance_min_joueur_tuiles', 'domaine', 'poursuite_max_tuiles', 'desinteret_ms', 'blocage_ms',
+    ],
+    idField: 'id',
+    refs: [
+      { field: 'scene', catalog: 'scenes' },
+      { field: 'enemy', catalog: 'enemies' },
+    ],
+    custom: validerSpawn,
   },
   enemies: {
     requiredFields: [

@@ -12,5 +12,19 @@
     "loot_table": "loot_grotte_rampant",
     "render": { "visuel": "visuel_monstre_rampant" },
     "xp": 20
+  },
+  {
+    "id": "enemy_chaos_rodeur",
+    "label_key": "enemy.chaos_rodeur",
+    "pv": 28,
+    "force": 6,
+    "vitesse": 45,
+    "portee_attaque": 20,
+    "cadence_attaque_ms": 1000,
+    "comportement": "melee",
+    "element": null,
+    "loot_table": "loot_grotte_rampant",
+    "render": { "visuel": "visuel_monstre_rampant" },
+    "xp": 35
   }
 ]

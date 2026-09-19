@@ -51,17 +51,38 @@ export function calculerRectanglePresentation(largeurEcran, hauteurEcran, resolu
   };
 }
 
-export function creerBoucle({ maj, dessiner }) {
+// `surFrame` (MT_mesure-saccades_2026-09-19) : hook de mesure optionnel,
+// jamais appelé (donc jamais un seul `performance.now()` supplémentaire) si
+// l'appelant ne le fournit pas — la boucle réelle du jeu ne le passe que sous
+// `?debug=fps` (cf. ui/hud_debug.js), zéro coût sinon. Reçoit
+// { tMs, deltaBrut, delta, plafonne, dureeMajMs, dureeDessinerMs } : la
+// distinction deltaBrut/delta et le flag `plafonne` répondent à la piste 2 du
+// ticket (irrégularité du delta-time / frames plafonnées), dureeMajMs/
+// dureeDessinerMs à la piste 4 (part maj()/dessiner() dans une frame lente).
+export function creerBoucle({ maj, dessiner, surFrame }) {
   let dernierT = null;
   let enCours = false;
 
   function frame(tMs) {
     if (!enCours) return;
     if (dernierT === null) dernierT = tMs;
-    const delta = plafonnerDelta(tMs - dernierT);
+    const deltaBrut = tMs - dernierT;
+    const delta = plafonnerDelta(deltaBrut);
     dernierT = tMs;
+    const t0 = surFrame ? performance.now() : 0;
     maj(delta);
+    const t1 = surFrame ? performance.now() : 0;
     dessiner();
+    if (surFrame) {
+      surFrame({
+        tMs,
+        deltaBrut,
+        delta,
+        plafonne: deltaBrut > delta,
+        dureeMajMs: t1 - t0,
+        dureeDessinerMs: performance.now() - t1,
+      });
+    }
     requestAnimationFrame(frame);
   }
 
@@ -100,6 +121,14 @@ function dimensionsEcranPhysiques() {
     largeurPhysique: Math.round(largeurCss * dpr),
     hauteurPhysique: Math.round(hauteurCss * dpr),
   };
+}
+
+// Alias exporté (MT_mesure-saccades_2026-09-19, piste 5 : "coût par pixel" —
+// afficher DPR + résolution physique) — même fonction, jamais un second
+// calcul : ui/hud_debug.js n'a pas d'autre moyen de lire ces chiffres, qui
+// restent internes au module partout ailleurs.
+export function dimensionsEcranPhysiquesActuelles() {
+  return dimensionsEcranPhysiques();
 }
 
 // Redimensionne le canvas hors-écran de la scène en pixels PHYSIQUES
@@ -171,6 +200,14 @@ const ALPHA_FANTOME = 0.6;
 // pendant un déplacement, pas à chaque frame) — un "cache de secteur" au
 // sens de la fiche, pas un tableau pré-calculé de toute la carte.
 let coucheStatique = null; // { sceneId, echelle, signaturePortes, xDebut, yDebut, canvas }
+
+// Accesseur de lecture seule (MT_mesure-saccades_2026-09-19, piste 5 : "coût
+// par pixel" du calque statique) — jamais appelé par le rendu lui-même,
+// seulement par ui/hud_debug.js sous `?debug=fps`. `null` avant la première
+// construction (aucune scène encore dessinée).
+export function statsCoucheStatique() {
+  return coucheStatique ? { largeur: coucheStatique.canvas.width, hauteur: coucheStatique.canvas.height } : null;
+}
 
 // Fenêtre de tuiles à dessiner pour couvrir le viewport logique courant, avec
 // une marge (tuiles partiellement visibles au bord). Pure, testée
@@ -250,7 +287,13 @@ function construireCoucheStatique(scene, decor, echelle, signaturePortes, estFla
 // ont changé) sur `ctx`, recadré à la position de la caméra — même technique
 // que la composition du voile plus bas (repère identité le temps de l'appel,
 // copie de pixels physiques 1:1, jamais un ré-échantillonnage).
-function dessinerCoucheStatique(ctx, scene, decor, camera, estFlagActif, visuelsTuiles) {
+//
+// `surRecalcul` (MT_mesure-saccades_2026-09-19, piste 1 : "re-rendu du calque
+// statique fenêtré au franchissement du bord") — optionnel, jamais appelé
+// (donc jamais de `performance.now()`) hors `?debug=fps`, cf. creerBoucle
+// ci-dessus pour le même patron. Reçoit { dureeMs } exactement quand le
+// calque est effectivement reconstruit, jamais sur un simple recadrage.
+function dessinerCoucheStatique(ctx, scene, decor, camera, estFlagActif, visuelsTuiles, surRecalcul) {
   const echelle = ctx.canvas.width / RESOLUTION_LOGIQUE.largeur;
   const signature = signaturePortesScene(scene, estFlagActif);
   const fenetre = selectionnerTuilesVisibles(camera, RESOLUTION_LOGIQUE, scene.tileSize);
@@ -263,7 +306,9 @@ function dessinerCoucheStatique(ctx, scene, decor, camera, estFlagActif, visuels
     coucheStatique.xDebut !== fenetre.xDebut ||
     coucheStatique.yDebut !== fenetre.yDebut
   ) {
+    const debut = surRecalcul ? performance.now() : 0;
     coucheStatique = construireCoucheStatique(scene, decor, echelle, signature, estFlagActif, fenetre, visuelsTuiles);
+    if (surRecalcul) surRecalcul({ dureeMs: performance.now() - debut });
   }
 
   const { canvas, xDebut, yDebut } = coucheStatique;
@@ -296,6 +341,10 @@ function dessinerCoucheStatique(ctx, scene, decor, camera, estFlagActif, visuels
 export function dessinerScene(ctx, {
   scene, decor, camera, hero, heroVisuel, heroTeinte = null, monstres = [], follet, puzzles = [], estFlagActif, anneauAttaque,
   visuelsTuiles = new Map(), objetsSol = [], structures = [], fantome = null,
+  // MT_mesure-saccades_2026-09-19, piste 1 : cf. dessinerCoucheStatique plus
+  // haut — `undefined` par défaut, jamais fourni par le jeu réel hors
+  // `?debug=fps` (ui/hud_debug.js).
+  surRecalculCoucheStatique,
 }) {
   ajusterCanvasLogiquePhysique(ctx);
   ctx.clearRect(0, 0, RESOLUTION_LOGIQUE.largeur, RESOLUTION_LOGIQUE.hauteur);
@@ -303,7 +352,7 @@ export function dessinerScene(ctx, {
   // Tuiles + décor (§3.4 grotte-polish, fenêtré §2.2 03_maison-exterieur) :
   // calque statique pré-rendu, recadré par caméra — remplace les anciennes
   // boucles inline (fillRect par tuile + petit carré par motif de décor).
-  dessinerCoucheStatique(ctx, scene, decor, camera, estFlagActif, visuelsTuiles);
+  dessinerCoucheStatique(ctx, scene, decor, camera, estFlagActif, visuelsTuiles, surRecalculCoucheStatique);
 
   // Leviers (§2.1/§3.3 : première fois qu'un puzzle "levier" a un rendu du
   // tout — Phase 1 posait le flag sans jamais rien afficher). Ancre "bas" :
@@ -522,6 +571,11 @@ function obtenirCanvasVoile(largeur, hauteur) {
     canvasVoile.height = hauteur;
   }
   return canvasVoile;
+}
+
+// Même patron que statsCoucheStatique() plus haut — MT_mesure-saccades_2026-09-19.
+export function statsCanvasVoile() {
+  return canvasVoile ? { largeur: canvasVoile.width, hauteur: canvasVoile.height } : null;
 }
 
 // Calque d'obscurité (§3.1/§3.6) : la scène est noire hors des sources de

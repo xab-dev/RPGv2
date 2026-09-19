@@ -207,6 +207,8 @@ différente) entre les trois emplacements.
     suit la rotation (on ne traverse plus le nouveau côté large, on peut
     traverser l'ancien), `INTERACT` fonctionne sur les 4 côtés après la pose.
 
+33. **Surcouche debug perf** (`MT_mesure-saccades_2026-09-19.md`) — lancer le jeu avec `?debug=fps` dans l'URL. Vérifier : calque en haut à gauche, lisible, mis à jour sans à-coup visible (≤ 4 fois/s), bouton « copier » présent ; **sans** `?debug=fps`, aucun calque, aucune trace DOM (`document.getElementById('debug-perf')` doit renvoyer `null`). Traverser la Région Maison en ligne droite pour vérifier que le relevé (fps, delta, recalculs du calque statique, entités) varie de façon plausible.
+
 **États 21/25-28 validés (2026-09-17)** : Xav a rejoué la Phase 3 en jeu et
 confirmé « tous les points testés, bon » (clôture du critère de passage
 ROADMAP, voir `CLAUDE.md`) — cette validation couvre fonctionnellement les
@@ -220,6 +222,18 @@ ajoutés le jour même) n'ont **jamais été capturés en navigateur réel** —
 fait et testé headless (`tests/test_construction_2026-09-17.js`), mais la
 contrainte de méthode (rendu canvas/DOM jamais exercé headless) s'applique
 intégralement ici. Voir `CLAUDE.md` > Dette.
+
+**Encore dû (2026-09-19, `MT_mesure-saccades_2026-09-19.md`)** : l'état 33
+n'a **jamais été capturé en navigateur réel** — la session a touché
+`render.js` (`creerBoucle`, `dessinerScene`) et `main.js#dessiner()`, ce qui
+déclenche la règle « rejouer toute la checklist » à la lettre. Justification
+consignée plutôt qu'appliquée à la lettre cette fois : chaque changement est
+un paramètre optionnel (`surFrame`, `surRecalculCoucheStatique`) qui vaut
+`undefined` par défaut et n'est jamais fourni hors `?debug=fps` — aucun des
+32 états existants ne peut donc changer de comportement observable. Seul
+l'état 33 (nouveau calque) reste à vérifier ; les 32 précédents ne sont
+**pas** reconfirmés par cette session, à la charge de Xav s'il en a le temps,
+sinon au prochain ticket qui touchera ces fichiers pour de vrai.
 
 Diagnostic `SD_phase3-stations-pv-jauges_2026-09-17.md` (première validation
 en jeu par Xav) : état 21 (stations/puits) était en réalité invisible en jeu

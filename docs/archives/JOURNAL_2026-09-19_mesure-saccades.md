@@ -1,0 +1,27 @@
+## Journal de session — Instrument de mesure des saccades (2026-09-19)
+
+Ménage de journal effectué en début de session : le journal précédent (« Décisions du playtest, consignation ») archivé verbatim dans `docs/archives/JOURNAL_2026-09-19_decisions-playtest.md`, `docs/archives/INDEX.md` mis à jour.
+
+Ordonnée par `MT_mesure-saccades_2026-09-19.md` v1.0.0 — **zéro correction**, interdit explicite du ticket respecté : ni le déplacement, ni la caméra, ni l'orbite du follet n'ont été touchés. Livrable : surcouche de debug perf activée STRICTEMENT par `?debug=fps` dans l'URL, absente sinon (aucun élément DOM créé, aucune mesure prise).
+
+**Livré** :
+- `src/debug_perf.js` (nouveau, pur) : `estDebugFpsActif` (seule porte d'entrée), tampon circulaire pré-alloué (`creerTamponCirculaire`/`ajouterAuTampon`/`valeursTampon` — aucune allocation par frame), agrégats (`moyenne`/`maximum`/`percentile`/`compterAuDessus`), `ecartsSuccessifs` (piste 3 : arrondi caméra/héros), `creerCompteurBascules` (bascules de périphérique/s), `formaterReleve` (texte copié par le bouton, protocole du ticket).
+- `src/ui/hud_debug.js` (nouveau, DOM, jamais exercé headless) : `creerMoniteurPerf({ document, search })` — renvoie des callbacks no-op sans toucher au DOM si `!estDebugFpsActif(search)` ; sinon calque `position: fixed` en haut à gauche, mis à jour ≤ 4 fois/s (throttle interne indépendant du remplissage des tampons, qui reste par frame), bouton « copier » → presse-papiers.
+- `src/render.js`, hooks OPTIONNELS branchés aux 2 points de mesure demandés par la fiche :
+  - `creerBoucle({ maj, dessiner, surFrame })` : `surFrame({ tMs, deltaBrut, delta, plafonne, dureeMajMs, dureeDessinerMs })` après chaque frame, jamais appelé (donc jamais un `performance.now()` de plus) si `surFrame` est `undefined` — pistes 2 (irrégularité delta-time/frames plafonnées) et 4 (pics isolés, part maj()/dessiner()).
+  - `dessinerScene(ctx, { ..., surRecalculCoucheStatique })` → `dessinerCoucheStatique` : `surRecalculCoucheStatique({ dureeMs })` exactement quand le calque statique fenêtré est reconstruit (jamais sur un simple recadrage par caméra) — piste 1.
+  - Accesseurs de lecture seule `statsCoucheStatique()`, `statsCanvasVoile()`, `dimensionsEcranPhysiquesActuelles()` — piste 5 (coût par pixel : tailles physiques + DPR).
+- `src/main.js` : `creerOrchestrateurGrotte` accepte `moniteurPerf` (défaut `creerMoniteurInactif()`, même patron qu'`onPremierGeste` — les tests headless existants n'ont rien à fournir) ; `maj()` enregistre le périphérique actif ; `dessiner()` enregistre la position écran du héros (piste 3, calculée AVANT la transform logique→physique de `render.js`, comme `dessinerScene`) et le nombre d'entités dessinées (piste 4, monstres/interactifs/objets au sol) ; `demarrerJeu()` instancie `creerMoniteurPerf({ document, search: window.location.search })` et le branche sur `creerBoucle`/`dessinerScene`.
+
+**Bug latent trouvé et corrigé au passage** (indépendant du symptôme des saccades lui-même) : passer les callbacks de `moniteurPerf` bruts à `creerBoucle`/`dessinerScene` même quand le moniteur est inactif aurait quand même déclenché leurs `performance.now()` internes — un `if (surFrame)` voit une fonction no-op comme "fournie" au même titre qu'une vraie. Corrigé en passant explicitement `undefined` (jamais `moniteurPerf.surFrame`/`.surRecalculCoucheStatique` directement) tant que `!moniteurPerf.actif`, à chaque site d'appel dans `main.js`. Un second correctif du même ordre a été nécessaire dans `maj()` : `moniteurPerf.enregistrerPeripherique(input.peripheriqueActif())` cassait plusieurs tests headless dont l'`input` factice n'implémente pas `peripheriqueActif()` (jamais lu par `maj()` avant ce ticket) — gardé sur `if (moniteurPerf.actif)`.
+
+### Testé
+
+- `node --check` sur `src/render.js`, `src/main.js`, `src/debug_perf.js`, `src/ui/hud_debug.js`, `tests/test_mesure_saccades_2026-09-19.js`.
+- `tests/test_mesure_saccades_2026-09-19.js` (nouveau, pur) : `estDebugFpsActif` (query string bien/mal formée), tampon circulaire (ordre chronologique avant/après plusieurs tours de boucle), agrégats, `ecartsSuccessifs`, `creerCompteurBascules` (fenêtre glissante), `formaterReleve` (avec/sans recalcul de calque, `canvasVoile` null géré sans planter).
+- `node tools/run_tests.js` : **60 fichiers, tous verts** (1 nouveau fichier de test, 2 régressions découvertes et corrigées avant conclusion — voir "bug latent" ci-dessus).
+- `docs/CHECKLIST_visuelle.md` **pas rejouée en entier** cette session (règle de méthode déclenchée par `render.js`/`main.js#dessiner()` touchés) : justification consignée dans la checklist elle-même (état 33 ajouté, encore dû) — tous les changements sont des paramètres optionnels par défaut `undefined`, jamais fournis hors `?debug=fps`, donc aucun des 32 états existants ne peut changer de comportement observable ; seul le nouvel état 33 reste à vérifier par Xav en navigateur réel.
+
+### Reste ouvert
+
+Le protocole du ticket (§Protocole) reste entièrement à jouer par Xav : lancer `?debug=fps`, traverser la Région Maison en ligne droite ~20s de jour puis de nuit, coller le relevé du bouton « copier » pour qu'un ticket de correction en soit écrit dessus — **zéro chiffre réel recueilli dans cette session**, tout ce qui précède n'est que l'instrument. État 33 de `docs/CHECKLIST_visuelle.md` à capturer. `MT_mesure-saccades_2026-09-19.md` déplacée vers `docs/archives/` en fin de session.

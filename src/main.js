@@ -65,6 +65,7 @@ import { initialiserMenu } from './ui/menu.js';
 import { dessinerHud } from './ui/hud.js';
 import { dessinerHudHints } from './ui/hud_hints.js';
 import { dessinerDialogue } from './ui/dialogue_box.js';
+import { creerMoniteurPerf, creerMoniteurInactif } from './ui/hud_debug.js';
 
 // Provisoires, non validés en jeu par Xav — seuils uniques, commentés ici.
 // VITESSE_HERO_PX_S est retirée en Palier C (specs/04_maison-interieur.md
@@ -139,6 +140,10 @@ export function creerOrchestrateurGrotte({
   // par des écouteurs DOM directs dans demarrerJeu(), cf. journal) ; no-op
   // par défaut pour que les tests headless n'aient rien à fournir.
   onPremierGeste = () => {},
+  // MT_mesure-saccades_2026-09-19 : instrument de debug perf, inactif par
+  // défaut (mêmes callbacks no-op que sous `?debug=fps` absent) — les tests
+  // headless existants n'ont rien à fournir, même patron qu'onPremierGeste.
+  moniteurPerf = creerMoniteurInactif(),
 }) {
   let etatModifie = false;
 
@@ -1122,6 +1127,12 @@ export function creerOrchestrateurGrotte({
   function maj(deltaMs) {
     const etatBrut = input.maj();
     verifierPremierGeste(etatBrut);
+    // MT_mesure-saccades_2026-09-19 : rien hors `?debug=fps` — gardé sur
+    // `moniteurPerf.actif` (jamais juste le no-op par défaut) pour que les
+    // tests headless existants, qui fournissent un `input` sans
+    // `peripheriqueActif()` (jamais lu par maj() avant ce ticket), continuent
+    // de passer sans connaître ce nouvel instrument.
+    if (moniteurPerf.actif) moniteurPerf.enregistrerPeripherique(input.peripheriqueActif());
 
     // §3.2 03_grotte-polish, mécanisme 1 (frame d'ouverture consommée) :
     // mesuré ICI, avant toute logique de cette frame (combat, choix du
@@ -1354,6 +1365,11 @@ export function creerOrchestrateurGrotte({
       largeurVue: RESOLUTION_LOGIQUE.largeur,
       hauteurVue: RESOLUTION_LOGIQUE.hauteur,
     });
+    // MT_mesure-saccades_2026-09-19, piste 3 (arrondi caméra/héros) : no-op
+    // hors `?debug=fps`. Position écran EN LOGIQUE (avant la transform
+    // logique->physique de render.js), lue au même endroit que dessinerScene
+    // plus bas pour comparer d'une frame à l'autre.
+    moniteurPerf.enregistrerPositionHero(hero.x - camera.x, hero.y - camera.y);
 
     const companionActif = follet ? registre.obtenir('companions', follet.companionId) : null;
     const heroVisuel = registre.obtenir('visuels', VISUEL_HEROS_ID);
@@ -1435,6 +1451,14 @@ export function creerOrchestrateurGrotte({
       return positions.map((p) => ({ x: p.x, y: p.y, visuel }));
     });
 
+    // MT_mesure-saccades_2026-09-19, piste 4 ("entités dessinées") : no-op
+    // hors `?debug=fps`.
+    moniteurPerf.enregistrerEntites({
+      monstres: monstresAffiches.length,
+      puzzles: puzzlesAffiches.length,
+      objetsSol: objetsSolAffiches.length,
+    });
+
     // Toit des structures (§3.4) : opacité calculée ici (structures.js, pure,
     // testée) à partir du follet actif — RAYON_EFFACEMENT_TOIT = son
     // rayon_lumiere x FACTEUR_EFFACEMENT_TOIT, "un peu plus grand que le
@@ -1496,6 +1520,10 @@ export function creerOrchestrateurGrotte({
       objetsSol: objetsSolAffiches,
       structures: structuresAffichees,
       fantome: fantomeAffiche,
+      // `undefined` (jamais un no-op) hors `?debug=fps` — même raison que
+      // `surFrame` ci-dessous : render.js ne lit `performance.now()` que si
+      // ce callback est fourni.
+      surRecalculCoucheStatique: moniteurPerf.actif ? moniteurPerf.surRecalculCoucheStatique : undefined,
     });
     dessinerObscurite(ctxLogique, {
       scene: sceneAffichage,
@@ -1778,9 +1806,15 @@ export async function demarrerJeu() {
   window.addEventListener('pointerdown', armerAudioUneFois, { once: true });
   window.addEventListener('touchstart', armerAudioUneFois, { once: true });
 
+  // MT_mesure-saccades_2026-09-19 : instrument de debug perf, actif SEULEMENT
+  // sous `?debug=fps` (estDebugFpsActif dans debug_perf.js) — inactif sinon,
+  // aucun élément DOM créé, aucune mesure prise (cf. ui/hud_debug.js).
+  const moniteurPerf = creerMoniteurPerf({ document, search: window.location.search });
+
   const orchestrateur = creerOrchestrateurGrotte({
     registre, i18n, save, store, dialogue, menu, input, ctxLogique, ctxVisible, canvasLogique,
     onPremierGeste: armerAudioUneFois,
+    moniteurPerf,
   });
   // Dépendance circulaire résolue par un point de couture explicite (§B du
   // diagnostic) : le menu (construit avant l'orchestrateur, qui en a besoin
@@ -1799,7 +1833,15 @@ export async function demarrerJeu() {
     if (document.hidden) sauvegarder(store, save);
   });
 
-  creerBoucle({ maj: orchestrateur.maj, dessiner: orchestrateur.dessiner }).demarrer();
+  // `undefined` (jamais la fonction no-op) quand le moniteur est inactif :
+  // creerBoucle() ne lit `performance.now()` que si `surFrame` est fourni,
+  // donc passer un no-op quand même coûterait 3 lectures d'horloge par frame
+  // pour rien (§ livrable : "aucun coût" hors `?debug=fps`).
+  creerBoucle({
+    maj: orchestrateur.maj,
+    dessiner: orchestrateur.dessiner,
+    surFrame: moniteurPerf.actif ? moniteurPerf.surFrame : undefined,
+  }).demarrer();
 }
 
 if (typeof window !== 'undefined') {

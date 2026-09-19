@@ -6,7 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Phases validées : 0 (Socle technique), 1 (La Grotte), 1b (polish, DA validée), 2 (Région Maison, première marche, `specs/03_maison-exterieur.md`) et 3 (Maison, intérieur & systèmes de camp, `specs/04_maison-interieur.md`, close le 2026-09-17). **Chantier `specs/05_construction-stations.md` (placement libre des stations) close le 2026-09-19** : validé par Xav en jeu à la manette puis au clavier seul, après le correctif de parité clic/verbe (détail complet des 4 diagnostics successifs : `docs/archives/INDEX.md`). **Polish post-Construction : étapes 1 à 6 livrées et validées en jeu à la manette par Xav le 2026-09-19** (« ça fonctionne, le jeu est fluide ») — instrument de mesure sous `?debug=fps`, héros à l'échelle 0,88, follets visibles pendant l'intro, silhouette du puits, traînée de poussière, HUD sur un bandeau d'une ligne. La branche `polish-2026-09-19` est **fusionnée dans `main`** (`e5b6d44`) : on travaille sur `main`.
 
-**Trois relevés `?debug=fps` réels existent** (`R-01`, `R-02`, `R-04` du registre de performance, §6 de `docs/DOC_suivi-dettes.md`). `R-04` a été pris **sous l'émulation F12** (vue adaptative, « Regular 3G ») : c'est le **PC** qui dessine, pas un téléphone — il ne dit donc rien d'un vrai appareil (`A-04`), mais il établit un fait utile, **le coût de rendu suit le nombre de pixels** (échelle 4 → 5 : `dessiner()` ×1,67, recalcul du calque ×1,63, `maj()` inchangé). La mesure **de nuit** (`A-03`) et la mesure sur téléphone réel (`A-04`) restent dues. Étape 7 (correction des saccades) : **diagnostic fait le 2026-09-19** — le fenêtrage du calque statique est sain (test rouge d'abord, vert sur HEAD) et le compteur cumulatif de `ui/hud_debug.js` a été corrigé ; **aucune correction de rendu n'a encore été faite**, elle est portée par `D-01` et `D-02` du suivi.
+**Le volet rendu des fondations est clos sur PC, sous Chrome.** Treize relevés `?debug=fps` réels existent (§6 de `docs/DOC_suivi-dettes.md`). Le relevé qui tranche est `R-11` : **Chrome, plein écran, échelle forcée 8 — 59,9 fps, aucune frame sautée**, GPU à 14 %, aucune saccade vue par Xav en traversée. **Chrome est le navigateur de développement, de jeu et de référence** ; sous Firefox, le même PC exécute le dessin sur le fil principal et devient injouable à l'échelle 5 — ce n'était pas le jeu, c'était le navigateur (registre `docs/DOC_navigateurs.md`). Conséquences : `Q-19` close **sans plafond d'échelle** (la décision « rendu net à résolution physique » est confirmée, cette fois sur mesure), `D-01` déclassée en P2, `D-02` et `D-03` en P3.
+
+**Côté mobile, rien n'est clos.** Le Galaxy A04 rend ~37 fps à l'échelle naturelle et ~40 à l'échelle 1 (`R-12`, `R-13`) : diviser les pixels par 9 ne rend que 3,6 fps, donc **l'échelle n'y est pour rien**. `maj()` + `dessiner()` ≈ 7 ms pour 27 ms de delta — **≈ 18 ms par frame que l'instrument ne voit pas** (`D-31`, gelée jusqu'au profil USB `A-07` : aucune correction ne se tente sans profil). L'A04 n'est donc **pas** déclaré appareil plancher (`Q-20`, part mobile). Restent dus avant tout contenu : les **deux relevés de base sous Chrome**, un de jour et un de nuit (`A-03`, `R-14`/`R-03`) — c'est le point de comparaison de `specs/07_chaos-nocturne.md`.
 
 **Ce qui reste dû (dettes, questions, validations) vit dans `docs/DOC_suivi-dettes.md`, et nulle part ailleurs.**
 
@@ -46,6 +48,7 @@ Test à appliquer à chaque catalogue de données : ajouter une entrée (arme, e
 - **Un renommage/retrait de contenu de catalogue (ex. id de scène) n'est jamais couvert par la migration de *schéma*** (`save.js#migrer`) — c'est une classe de bug distincte (données valides mais obsolètes) à traiter explicitement à chaque retrait. Née du repli sur `scene_grotte_salle_1` (`docs/archives/JOURNAL_2026-09-15_phase1-grotte.md`), reproduite ensuite par la migration 2→3 de la Région Maison (`docs/archives/JOURNAL_2026-09-16_phase2-premiere-marche.md`).
 - **Ménage de journal en début de session, avant tout code** : archiver le journal présent dans `docs/archives/`, mettre à jour `docs/archives/INDEX.md`, reporter dans les sections consolidées de ce fichier ce qui en relève (décision, règle, `[OUVERT]`, dette), puis seulement travailler. `CLAUDE.md` ne contient jamais plus d'un journal de session. Plafond indicatif : 300 lignes. Née du ménage du 2026-09-17 (`DOC_menage-claude-md_2026-09-17.md`) : le fichier avait atteint ~22 000 mots / 920 lignes, coûtant plus de contexte qu'il n'apportait d'utilité.
 - **Un sous-système explicitement "meilleur effort" (le contrat dit déjà : fichier absent → le jeu tourne sans son) rattrape ses propres erreurs à la frontière de son API publique, jamais au niveau de la boucle de jeu.** Née de `docs/archives/JOURNAL_2026-09-17_diagnostic-freeze-musique.md` : une exception dans `audio.js` (contexte/gain `null` à la reprise depuis le menu) est remontée non rattrapée jusqu'à `creerBoucle#frame` (`render.js`), qui ne se replanifie plus après une exception — jeu figé, manette/clavier morts (polling interne à `maj()`), souris vivante (DOM indépendant du `requestAnimationFrame`). Le remède reste local au sous-système fautif (`try/catch` dans `audio.js`, jamais un `try/catch` global autour de `update()`/`dessiner()`, qui masquerait aussi de vraies erreurs de gameplay) — la question de généraliser ce patron à d'autres sous-systèmes est ouverte sous `Q-12` dans `docs/DOC_suivi-dettes.md`.
+- **Un relevé de performance cite son navigateur, et deux relevés pris sous des navigateurs différents ne se comparent pas.** La référence est **Chrome** (Xav y développe, y joue et y valide). Sous Chrome le dessin part au GPU : `dessiner()` n'y mesure que l'**émission** des ordres, et le seul signal de fluidité est **« frames sautées »**. Sous Firefox le dessin s'exécute sur le fil principal : `dessiner()` y mesure le dessin réel, ce qui en fait un bon **banc de mesure du coût par calque**, jamais un verdict de fluidité. Née des relevés du 2026-09-19 au soir (`R-05` à `R-11`), où la même build passait d'injouable à 60 fps sans qu'une ligne de code change. Registre : `docs/DOC_navigateurs.md`.
 - Pas de framework de jeu, pas de bundler obligatoire. Une dépendance de **dev** (ex. validateur de schéma type `ajv`) est acceptable tant qu'elle reste hors du jeu servi.
 - Servi en `http://` (jamais `file://`) ; modules ES natifs. Chaque fichier de `/src` doit rester importable depuis Node pour les tests headless — aucun accès DOM au niveau module.
 
@@ -224,6 +227,9 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 | **Déplacement du fantôme de Construction : impulsion puis répétition au maintien**, via une **brique d'input générique** (« maintien puis répétition ») exposée aux menus et au mode Construction, jamais recodée par écran — corrige aussi le tapotement du joystick tactile | 2026-09-19 | même NS §6 (`D-18`) |
 | **« Mains nues » est la première arme du jeu** : la portée de l'auto-attaque de base (actuelle / 2, *provisoire*) et l'icône (une main) vivent dans une **entrée d'arme**, jamais dans une stat ni une constante de `combat.js` ; la case d'attaque de la barre du bas dessine l'icône de l'**arme équipée**, sans cas particulier. *Applique* la décision verrouillée « la portée vient de l'arme » — schéma minimal, à étendre par la spec des armes (`E-02`) | 2026-09-19 | `NS_decisions-fondations_2026-09-19.md` §3 (`Q-21` → `D-20`) |
 
+| **Pas de plafond d'échelle de rendu** : la décision « rendu net à résolution physique (DPR) » du 15/09 est **maintenue et confirmée, cette fois sur mesure** (`Q-19` close). Motif : sous Chrome, 59,9 fps sans une frame sautée jusqu'à l'échelle forcée 8 (`R-11`) ; sur le Galaxy A04, diviser les pixels par 9 ne rend que 3,6 fps (`R-12` → `R-13`). Ni le PC ni le téléphone n'y gagnent : **l'échelle par calque est abandonnée comme chantier**, et pas d'échelle au-dessus de la naturelle non plus (aucun gain de netteté). `?echelle=N` reste un outil de debug | 2026-09-19 | `NS_decisions-rendu-navigateurs_2026-09-19.md` §2 |
+| **Chrome est le navigateur de développement, de jeu et de référence.** Les autres : « on verra plus tard », en conseillant gentiment Chrome aux joueurs (politique d'engagement envers Firefox/Safari non tranchée, `Q-24`). Deux mises en garde qui ne se retournent jamais contre le joueur : **jamais de navigation privée** dans un conseil (la sauvegarde IndexedDB y est effacée à la fermeture), et **« hors connexion » n'existe pas** tant que le jeu n'est pas mis en ligne avec une mise en cache applicative | 2026-09-19 | même NS §2, registre `docs/DOC_navigateurs.md` |
+
 (Les décisions de `05_construction-stations.md` étaient déjà actées par Xav **dans la spec elle-même** avant tout code, v1.0.0 §9 — les lignes ci-dessus n'y renvoient que pour mémoire, elles ne tranchent rien de nouveau.)
 
 ## Ce qui est dû : dettes, questions, validations
@@ -260,147 +266,125 @@ la session précédente a révélées, clos celles qu'elle a livrées.
 
 **Phase 3** (`04_maison-interieur.md`) et **chantier Construction** (`05_construction-stations.md`) : **tous deux close, tous deux validés en jeu par Xav.** Détail complet des diagnostics successifs (stations invisibles, jauges figées, respawn cassé, écrans orphelins, parité clic/verbe) : `docs/archives/INDEX.md`.
 
-**Polish post-Construction — étapes 1 à 6 livrées et validées en jeu à la manette** (Xav, 2026-09-19 : « ça fonctionne, le jeu est fluide ») : instrument `?debug=fps`, héros à 0,88, follets visibles pendant l'intro, silhouette du puits, traînée de poussière, HUD sur un bandeau d'une ligne. Le tactile et les valeurs provisoires restent à valider (`V-02` a déjà rendu un « non » : le bouton MENU tactile chevauche le bandeau → ticket `D-17`). Étape 7 : **diagnostic fait, aucune correction de rendu encore faite** — elle est portée par `D-01` (les frames de recalcul du calque statique sortent du budget) et `D-02` (`dessiner()` coûte 12 ms sans aucun monstre).
+**Polish post-Construction — étapes 1 à 6 livrées et validées en jeu à la manette** (Xav, 2026-09-19 : « ça fonctionne, le jeu est fluide ») : instrument `?debug=fps`, héros à 0,88, follets visibles pendant l'intro, silhouette du puits, traînée de poussière, HUD sur un bandeau d'une ligne. Le tactile et les valeurs provisoires restent à valider (`V-02` a déjà rendu un « non » : le bouton MENU tactile chevauche le bandeau → ticket `D-17`). **Étape 7 (correction des saccades) : sans objet sur PC** — sous Chrome, aucune frame sautée jusqu'à l'échelle forcée 8 (`R-11`) ; `D-01` passe en P2 (pertinente sur appareil faible seulement), `D-02` et `D-03` en P3, gelées.
+
+**Le volet rendu des fondations est clos sur PC, sous Chrome ; il ne l'est pas sur mobile.** L'A04 n'est pas jouable (~37 fps) et la cause est inconnue (`D-31`, gelée jusqu'au profil `A-07`) : il n'est donc **pas** déclaré appareil plancher. `Q-20` est reformulée en conséquence — part PC acquise, part mobile ouverte. **Chrome est le navigateur de développement, de jeu et de référence** ; le tableau des moteurs et leur statut vivent dans `docs/DOC_navigateurs.md` (registre vivant), et la politique d'engagement envers Firefox/Safari est `Q-24`, non tranchée.
 
 **La carte Maison n'est pas finie, et la Phase 4 n'est plus la prochaine étape.** Les systèmes prévus en Phase 4 (armes, équipement, compétences, tables d'apparition) arrivent d'abord **sur la carte Maison** ; la carte suivante s'ouvre quand la Maison est épuisée (Nv. 40-50, provisoire). Critère de clôture de la Région Maison : **la boucle de 2 heures** (sauvegarde neuve → 2 h de jeu → Nv. 30 → l'envie de changer d'endroit).
 
-**Décision de méthode (Xav, 2026-09-19, 17 h 18) : on ne rajoute pas de contenu sur des bases non confirmées.** Avant `specs/07_chaos-nocturne.md` et avant de rouvrir `Q-07` (passée à **gelée**) : la **performance** et les **retours du playtest du 19/09**. On repart de la base et on remonte, **un ticket par session**, validation en jeu entre deux. Le critère qui dira « les fondations sont closes » n'est pas encore tranché : `Q-20` (proposition : PC sans aucune frame sautée, appareil plancher à 30 fps stables ; candidat = le Galaxy A04 de Xav), qui attend le relevé `A-04`.
+**Décision de méthode (Xav, 2026-09-19, 17 h 18) : on ne rajoute pas de contenu sur des bases non confirmées.** Avant `specs/07_chaos-nocturne.md` et avant de rouvrir `Q-07` (passée à **gelée**) : la **performance** et les **retours du playtest du 19/09**. On repart de la base et on remonte, **un ticket par session**, validation en jeu entre deux.
 
-**Ordre d'injection** (`NS_decisions-fondations_2026-09-19.md` §5 — *remplace* le §7 de `NS_decisions-revue-dettes_2026-09-19.md`) : les légers et sûrs d'abord, **un ticket par session, un commit par ticket**, chacun citant les identifiants du suivi qu'il touche.
+**Ordre d'injection** (`NS_decisions-rendu-navigateurs_2026-09-19.md` §5 — *remplace* le §5 de `NS_decisions-fondations_2026-09-19.md`, archivée) : **un ticket par session, un commit par ticket**, chacun citant les identifiants du suivi qu'il touche.
 
 1. Cette session de documentation (doc seule) — faite.
-2. `D-22` — clavier : `E` = interagir, `F` = consommer — **livré et validé au clavier par Xav le 2026-09-19**.
-3. `D-21` — rayon d'effacement du toit −10 % — **livré et validé en jeu par Xav le 2026-09-19**.
-4. `D-20` palier A — « mains nues », portée (`MT_mains-nues_2026-09-19.md`) — **livré et validé en jeu par Xav le 2026-09-19**.
-5. `D-20` palier B — icône de la case d'attaque — **livré le 2026-09-19, validation en jeu de Xav due** (`CHECKLIST_visuelle.md`, HUD état 1).
-6. `D-05` — texte flottant « +1 bois » (`MT_texte-flottant_2026-09-19.md`) — **livré le 2026-09-19, validation en jeu de Xav due** (`V-12`, `CHECKLIST_visuelle.md` état 34, de jour **et** de nuit).
-7. `D-23` — paramètre debug `?echelle=N` (`MT_echelle-debug_2026-09-19.md`) — **livré le 2026-09-19, validation de non-régression de Xav due** (`V-13`) → puis relevés `A-05` par Xav, qui trancheront `Q-19`.
-8. `D-02` + `D-03` — ventilation de `dessiner()` par calque et explication du delta (même instrument, **mesure seule**).
-9. Xav tranche `Q-19` et `Q-20` → ticket de correction d'échelle, à écrire d'après les chiffres.
-10. `D-01` — défilement incrémental du calque.
-11. `D-17`, `D-13`, puis `07_chaos-nocturne.md` palier par palier ; `Q-07` reprend ici.
+2. **Relevés de base avant contenu** (`A-03`) — Xav, Chrome, plein écran, manette, protocole de traversée : un de **jour** (`R-14`), un de **nuit** (`R-03`). C'est le point de comparaison de `07` : sans lui, on accusera les monstres à tort, ou on les innocentera à tort.
+3. `D-17` — bouton MENU tactile sous le bandeau.
+4. `D-30` — plein écran demandé au premier appui tactile (même périphérique que `D-17`, à traiter avec lui).
+5. `D-13` — buffs dans le bandeau HUD.
+6. `specs/07_chaos-nocturne.md`, **un palier par session**. Après chaque palier : le même relevé de nuit, comparé à celui de l'étape 2.
+7. `D-01` (défilement incrémental du calque), `D-16` (puits), puis reprise de `Q-07`.
 
-`A-04` (relevé `?debug=fps` sur le Galaxy A04 réel, par le Wi-Fi local — procédure au §6 de la NS) est une action de Xav, faisable dès maintenant, en parallèle. `D-24` (serveur local joignable depuis le téléphone, repli du bouton « copier ») ne s'ouvre que si cette procédure échoue.
+Les sept tickets de code du 19/09 (`D-22`, `D-21`, `D-20` A et B, `D-05`, `D-23`) sont livrés — détail et validations restantes dans `docs/DOC_suivi-dettes.md`. En parallèle, côté Xav : `A-06` (Firefox `about:support`, 2 min) et `A-07` (profil Chrome de l'A04 par USB, sans urgence, débloque `D-31`).
 
 Les captures de la V1 (`docs/captures/v1/`) sont une **inspiration, jamais un cahier des charges** : aucun ticket ne les lit tant que `E-03` (une ligne d'intention par capture) n'est pas rempli.
 
-`Q-10`, `Q-11` et `Q-12` restent à trancher avec Xav ; `Q-07` et `Q-19` sont gelées. La spec de la barre d'action du bas (`E-01`) est écrite par Xav lui-même et attend le chiffrage `Q-11`. **Une spec non écrite ne se commence pas** (même règle que pour une phase).
+`Q-10`, `Q-11`, `Q-12`, `Q-24` et `Q-25` restent à trancher avec Xav ; `Q-07` est gelée. La spec de la barre d'action du bas (`E-01`) est écrite par Xav lui-même et attend le chiffrage `Q-11`. **Une spec non écrite ne se commence pas** (même règle que pour une phase).
 
 
+## Journal de session — NS « rendu, navigateurs, téléphone » (2026-09-19, doc seule)
 
-## Journal de session — `D-23` : le paramètre debug `?echelle=N` (2026-09-19)
+Application de `docs/NS_decisions-rendu-navigateurs_2026-09-19.md`, même patron que
+la NS « fondations ». **Aucun fichier de `src/`, `data/`, `tests/` n'est touché** —
+la suite headless n'a pas été relancée, rien de ce qui l'exerce n'a bougé.
+Un commit, pas de `push`.
 
-Ticket `MT_echelle-debug_2026-09-19.md`, qui clôt `D-23`. Lignes touchées :
-`D-23` (close), `A-05` (dégelée), plus deux ouvertes — `D-29` (reste trouvé
-dans le périmètre de lecture) et `V-13` (validation de non-régression).
-`Q-19` **n'est pas touchée** : ce ticket livre l'instrument, pas la décision.
-Ni `D-01`, ni `D-02`, ni `D-03` n'ont été lues. Suite headless verte,
-**71 fichiers**. Un commit, pas de `push`.
+### Identifiants : quatre des six proposés étaient déjà pris
 
-**Ménage de journal** : journal de `D-05` archivé dans
-`docs/archives/JOURNAL_2026-09-19_texte-flottant.md` + ligne d'INDEX ; la
-fiche `MT_texte-flottant_2026-09-19.md` descend dans `docs/archives/`. Cinq
-renvois « journal courant » de la table des décisions, devenus faux depuis
-l'archivage des sessions précédentes, pointent désormais leur archive.
+La NS avertissait que ses identifiants *(nouveau)* étaient tirés du suivi **v1.7.0**,
+et que les sessions de code de la soirée avaient pu les prendre entre-temps. C'est le
+cas : `Q-22`, `Q-23`, `D-25` et `D-26` sont tous occupés depuis (icône de la case
+d'attaque, doublon texte/réplique, double source de la touche clavier, sauvegardes
+portant encore l'épée). Renumérotation, suivant la règle du §0 (« un identifiant n'est
+jamais réutilisé ») :
 
-### Le changement
+| NS | Suivi | Sujet |
+|---|---|---|
+| `Q-22` | **`Q-24`** | Politique navigateurs |
+| `Q-23` | **`Q-25`** | Conseiller sur le symptôme, pas sur le navigateur |
+| `D-25` | **`D-30`** | Plein écran au tactile |
+| `D-26` | **`D-31`** | A04 : ≈ 18 ms par frame hors du code du jeu |
+| `A-06`, `A-07` | inchangés | Firefox `about:support` · profil USB de l'A04 |
 
-- **`debug_perf.js#lireEchelleForcee`** — pure, même patron que
-  `estDebugFpsActif` : `location` n'est lu qu'une fois, au boot, par
-  `main.js`. Rend toujours `{ echelle, avertissement }`. Une valeur invalide
-  rend `echelle: null` **et** un avertissement, jamais une valeur de repli
-  plausible : mesurer à 4 en croyant mesurer à 9 fausserait `A-05` en
-  silence. L'avertissement est *rendu*, pas écrit — ce module ne connaît pas
-  la console.
-- **`render.js#calculerEchelleRendu`** — l'échelle naturelle, sauf si une
-  échelle forcée la remplace. Délègue à `calculerEchelleEntiere` plutôt que
-  de refaire le calcul.
-- **`render.js#echelleDepuisCanvas`** — LA dérivation de l'échelle à partir
-  d'un canvas déjà dimensionné. Les trois calques (statique, obscurité,
-  paupières) l'écrivaient chacun de leur côté (`largeur / RESOLUTION_LOGIQUE.
-  largeur`, trois fois) ; ils l'appellent maintenant. C'est ce qui rend vraie
-  la phrase du ticket « aucun calque ne recalcule sa taille de son côté »,
-  et ce qui la rend *vérifiable*.
-- **`render.js#dimensionnerCanvasRendu`** — pure, donc testable, alors que
-  `ajusterCanvasLogiquePhysique` (qui l'appelle) ne l'est pas. Elle porte le
-  contrat de non-régression.
-- **`definirEchelleForcee` / `etatEchelleRendu`** — une variable de module,
-  posée une fois au boot. `render.js` ne lit toujours pas `location` : il
-  doit rester importable depuis Node.
-- **Relevé `?debug=fps`** : une ligne de plus, `échelle : 3 (forcée) —
-  naturelle : 5`, ou `échelle : 5 (naturelle)` sans paramètre.
+Les relevés `R-05` à `R-13` étaient libres et gardent leurs numéros.
 
-### Ce que le ticket ne dit pas et qu'il a fallu trancher
+### Ménage de journal
 
-**Deux fonctions, pas un paramètre de plus sur `calculerEchelleEntiere`.**
-La fiche dit « l'échelle forcée remplace l'échelle naturelle dans la
-fonction pure de résolution (paramètre optionnel) ». Ajouter le paramètre à
-`calculerEchelleEntiere` elle-même l'aurait fait remonter dans
-`calculerRectanglePresentation`, qui l'appelle — et la boîte affichée aurait
-rétréci avec le canvas, au lieu que le navigateur agrandisse. Le hit-test
-tactile serait parti avec elle. `calculerEchelleRendu` est donc une seconde
-porte, qui délègue ; la présentation garde la première. Accessoirement, une
-échelle forcée a le droit d'être décimale, ce que le nom « entière »
-démentirait.
+Journal de `D-23` archivé (`docs/archives/JOURNAL_2026-09-19_echelle-debug.md`) avec sa
+ligne d'INDEX ; `MT_echelle-debug_2026-09-19.md` descend à côté. **`NS_decisions-fondations_2026-09-19.md`
+est archivée aussi** : son §5 est remplacé par celui de la NS du soir, son §6 était la
+procédure `A-04`, désormais close, et ses cinq fiches `MT_*` sont toutes livrées et
+archivées — il ne restait rien d'actif dedans. La NS du soir, elle, reste dans `docs/` :
+c'est la source du journal ci-dessus, la prochaine session l'archivera avec lui.
+`docs/DOC_navigateurs.md` est rangé tel quel — c'est un registre **vivant**, comme le suivi.
 
-**L'échelle qui fait foi est celle du canvas réel, pas celle demandée.**
-`?echelle=3.3` donne une largeur de 1584 px (arrondie) ; c'est `1584 / 480`
-que tous les calques liront ensuite, et c'est donc cette valeur-là qui est
-posée sur le contexte et qui dérive la hauteur. Sinon l'image serait étirée
-dans un sens et pas dans l'autre — et personne ne l'aurait vu venir avant
-l'œil de Xav.
+### Le fond : ce n'était pas le jeu, c'était le navigateur
 
-### Ce que les tests peuvent et ne peuvent pas dire
+La soirée renverse la lecture des trois semaines précédentes. `R-02` → `R-04` avait
+établi que **le coût de rendu suit le nombre de pixels**, et tout le plan de bataille en
+découlait : plafonner l'échelle (`Q-19`), ventiler `dessiner()` (`D-02`), amortir le
+calque (`D-01`). Ce fait reste vrai — mais il décrivait **qui dessine** autant que ce qui
+est dessiné. Sous Chrome, à l'échelle forcée **8**, le même PC tient 59,9 fps **sans une
+frame sautée**, GPU à 14 % (`R-11`). Les 12 ms de `dessiner()` étaient des millisecondes
+de Firefox.
 
-`tests/test_d23_echelle_debug_2026-09-19.js` (6 blocs), écrit avant le code,
-rouge à l'import. Le bloc central est **négatif** : sur la table d'écrans du
-ticket (1920×1080 dpr 1 → 4 ; 2961×1449 dpr 3,5 → 5 ; 720×1600 dpr 2 → 3),
-sans paramètre, l'échelle et les dimensions du canvas sont **exactement**
-celles d'avant, au pixel près. Le reste : lecture du paramètre (bornes,
-décimales, cumul avec `?debug=fps`, les sept valeurs invalides et leur
-avertissement) · échelle 3 sur l'écran de `R-04`, calques cohérents entre
-eux, ~2,78× moins de pixels · échelles décimales · **tactile** — le
-rectangle de présentation est identique avec et sans forçage, donc un appui
-tombe au même endroit logique, vérifié plutôt que déduit.
+D'où les requalifications, toutes inscrites au suivi : `Q-19` close **sans plafond**
+(la décision verrouillée du 15/09 est confirmée sur mesure, et l'échelle par calque est
+abandonnée comme chantier) · `D-01` **P1 → P2** · `D-02` et `D-03` **P1 → P3, gelées**.
 
-Le contrat de `formaterReleve` dans `test_mesure_saccades_2026-09-19.js` a
-été mis à jour **volontairement** (un champ optionnel à valeur de repli
-aurait masqué un jour un branchement oublié entre `render.js` et
-l'instrument — exactement le défaut que `D-03` traque).
+Et la règle de méthode qui manquait : **un relevé cite son navigateur**, deux relevés pris
+sous des navigateurs différents ne se comparent pas. Firefox garde une utilité — c'est un
+banc de mesure du coût par calque, puisqu'il dessine sur le fil principal. Ce n'est
+simplement jamais un verdict de fluidité.
 
-**Le dessin n'est jamais exercé** (contrainte de méthode). Une passe unique
-hors suite de tests, contre un contexte 2D factice et l'écran de `R-04`, a
-confirmé qu'aucun calque ne lève sous échelle forcée et que le voile suit le
-canvas (`null` → 2400×1350, `3` → 1440×810, `3.3` → 1584×891) — dont la
-valeur non forcée **retrouve exactement** le « obscurité 2400×1350 (échelle
-5) » inscrit dans `R-04`. Ça ne dit rien de ce que ça donne à l'œil. Le
-contrôle au navigateur réel n'a pas pu être fait : l'extension Chrome n'est
-pas connectée.
+### Le téléphone, lui, n'est pas expliqué
+
+`R-12`/`R-13` : ~37 fps à l'échelle naturelle, ~40 à l'échelle 1. Diviser les pixels par
+neuf rend **3,6 fps**. `maj()` + `dessiner()` ≈ 7 ms pour 27 ms de delta : **≈ 18 ms par
+frame que l'instrument ne voit pas**, avec le même ressenti sans `?debug=fps`. Écartés par
+la mesure : l'échelle, l'instrument, un canvas logiciel. Restent le coût de la page autour
+du canvas et la composition par un GPU faible — c'est `D-31`, **gelée** jusqu'au profil USB
+`A-07`, parce que corriger sans profil serait deviner. Conséquence directe : l'A04 n'est
+**pas** déclaré appareil plancher, et `Q-20` est reformulée en deux moitiés (PC acquis,
+mobile ouvert).
+
+Le relevé de l'A04 fait au passage un constat non-mesuré mais net : hors plein écran, le
+jeu occupe 1440×810 sur un écran de 2340×1080, barre d'adresse comprise — 46 %. C'est
+`D-30`, à traiter avec `D-17` puisque c'est le même périphérique et la même validation.
 
 ### Ce que j'ai vu et n'ai pas corrigé
 
-**Point de vigilance du ticket : levé.** Aucun calque ne se positionne sur
-`ctx.canvas.width/height` — `ui/hud.js`, `ui/dialogue_box.js`,
-`ui/hud_hints.js` et `visuels.js` portent tous un commentaire qui dit
-explicitement qu'ils écrivent en unités logiques, hérité du diagnostic
-« dialogues invisibles ». Les seules lectures de ces dimensions sont celles
-des trois calques, et elles passent maintenant par une fonction commune.
+**`DOC-08` (nouvelle)** : `MT_ventilation-dessiner_2026-09-19.md` v1.1.0 **n'est pas au
+dépôt**. Le registre §6 y renvoie pour le détail chiffré de `R-05` à `R-10`, les six
+relevés Firefox — ces nombres ne vivent donc nulle part dans le dépôt, alors que le
+registre est censé être la seule liste. Je n'ai inscrit au §6 que ce que la NS donne en
+toutes lettres (la loi `≈ 6,8 ms + 0,55 ms × échelle²`, les échelles couvertes) plutôt
+que d'inventer des colonnes. Deux issues proposées : ranger la fiche dans `docs/`, ou
+recopier les six relevés au §6 et l'archiver.
 
-`D-29` : **`image-rendering: pixelated` est toujours dans `index.html`**,
-alors que la décision verrouillée du 15/09 l'interdit et que le commentaire
-de `render.js#presenter` le décrit déjà au passé. Sans effet observable
-aujourd'hui — `presenter()` dimensionne le canvas visible en pixels
-physiques et sa boîte en pixels CSS, donc le mappage vers la grille de
-l'appareil est 1:1 et il n'y a rien à ré-échantillonner ; l'agrandissement
-de `?echelle=N`, lui, est fait par `drawImage` (lissage de contexte), pas
-par le CSS. La fiche n'autorisait à corriger que si ça empêchait la mesure :
-ce n'est pas le cas, y compris sur l'émulation de `R-04`.
+**`DOC-04` close.** Sa part restante était « y reporter le budget de rendu mesuré
+(`D-02`) » : il n'y a plus de budget de rendu à défendre sur PC. Elle est remplacée par ce
+qui protège vraiment la spec — le relevé de nuit après chaque palier, inscrit dans la
+méthode de `specs/07_chaos-nocturne.md`, comparé aux deux relevés de base de `A-03`.
 
-### Validation due par Xav — puis `A-05`
+**`docs/DOC_navigateurs.md` §4** reste en place, avec un renvoi ajouté en tête : il portait
+les identifiants d'avant renumérotation, et la NS dit elle-même que son §4 est remplacé.
+Plutôt que de réécrire un document fourni « tel quel », je l'ai laissé et j'ai pointé le
+suivi, qui fait foi.
 
-`render.js` est touché : clôture par une validation en jeu guidée par
-`docs/CHECKLIST_visuelle.md`, **sans aucun paramètre d'URL** (`V-13`) — la
-seule chose que ce ticket peut casser est la non-régression. Ensuite
-seulement les relevés `A-05` (`echelle=5, 4, 3` sur l'émulation de `R-04` ;
-`4, 3, 2` sur PC plein écran), avec à chaque fois le relevé **et** un
-verdict à l'œil. Ce sont eux qui trancheront `Q-19`, pas ce ticket.
+### Ce qui bloque la suite
+
+Rien, côté code : l'étape 2 de l'ordre d'injection est une **action de Xav** — les deux
+relevés de base sous Chrome, un de jour, un de nuit (`A-03`). Tant qu'ils n'existent pas,
+`07_chaos-nocturne.md` n'a pas de point de comparaison, et un palier qui ferait chuter les
+fps ne serait imputable à rien. Les tickets `D-17` + `D-30` (tactile) et `D-13` (buffs)
+sont, eux, prêts à être pris sans attendre.

@@ -2,7 +2,7 @@
 projet: RPG V2
 episode/session: Région Maison — intrusion nocturne du Chaos
 type: spec par paliers
-version: 1.1.0
+version: 1.2.0
 statut: brouillon
 catégorie: Spec
 date: 2026-09-19
@@ -12,9 +12,13 @@ verifie_par: xav
 
 # RPG V2 — 07 : Chaos nocturne dans la Région Maison
 
+**Changelog 1.2.0 (2026-09-19, soir)** — un **relevé de nuit après chaque palier**, comparé au relevé de base `R-03`, inscrit dans la méthode ci-dessous (clôt `DOC-04`). Le renvoi à `D-02` (« budget de rendu à mesurer ») est retiré : cette ligne est déclassée en P3 depuis que les relevés Chrome ont montré que les 12 ms de `dessiner()` étaient des millisecondes de Firefox. Sous Chrome, le signal de fluidité est **« frames sautées »**. Voir `docs/DOC_navigateurs.md`.
+
 **Changelog 1.1.0 (2026-09-19, revue des dettes)** — décisions `Q-04`, `Q-05`, `Q-06`, `Q-17` de `docs/DOC_suivi-dettes.md` : zones décrites en **rectangles** (format `zones` de `scenes.json`) et non plus en centre + rayon ; Champs redéfinis (deux grandes zones en L), bande centrale = **Campagne neutre** ; zone sûre de la Grotte confirmée, en rectangle ; apparitions **débloquées par paliers de niveau**, en données ; « quelques monstres en Forêt » retiré de cette spec (reporté au palier Nv. 15) ; la « laisse » est remplacée par le comportement **« un domaine, pas un piquet »** ; périmètre réduit au **palier 1** ; méthode : **un palier par session**.
 
-**Méthode.** Branche git dédiée (`chaos-nocturne`), **un palier par session, un commit par palier**, validation de Xav en jeu entre deux paliers. Ce n'est plus une session longue sans surveillance. Identifiants du suivi touchés par cette spec : `Q-04`, `Q-05`, `Q-06` (closes, appliquées ici), `D-02` (budget de rendu, à mesurer, ne pas corriger ici). Ne toucher à aucune autre ligne du suivi.
+**Méthode.** Branche git dédiée (`chaos-nocturne`), **un palier par session, un commit par palier**, validation de Xav en jeu entre deux paliers. Ce n'est plus une session longue sans surveillance. Identifiants du suivi touchés par cette spec : `Q-04`, `Q-05`, `Q-06` (closes, appliquées ici). Ne toucher à aucune autre ligne du suivi.
+
+**Mesure — obligatoire à chaque palier** (*ajout 1.2.0, clôt `DOC-04`*). Cette spec est la première à faire apparaître des entités qui bougent, se cherchent et meurent : c'est elle qui peut coûter des images par seconde. Donc, **après chaque palier**, Xav prend le **relevé de nuit** du protocole de traversée (§6 de `docs/DOC_suivi-dettes.md`), sous **Chrome**, plein écran, manette, et le compare à `R-03` — le relevé de nuit **de base**, pris avant que le premier monstre n'existe (`A-03`). Sans ce point de comparaison, un palier qui ferait chuter les fps ne serait imputable à rien, et un palier innocent serait accusé à tort. Le relevé se note au registre §6, avec son navigateur et son plein écran oui/non. **Pas de budget de rendu à défendre ici** : la version précédente de cette ligne renvoyait à `D-02`, déclassée le 19/09 au soir (elle mesurait des millisecondes de Firefox). Le signal à lire sous Chrome est **« frames sautées »**, pas `dessiner()`.
 
 ## 1. Intention
 

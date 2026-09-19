@@ -1,0 +1,25 @@
+{
+  "schema_version": 2,
+  "saved_at": "2026-09-15T16:29:29.171Z",
+  "hero": {
+    "scene": "scene_grotte_salle_2",
+    "x": 117.48346697184584,
+    "y": 133.65641162737035,
+    "pv": 46,
+    "companion": "comp_follet_eau",
+    "equipement": {
+      "arme": "weapon_epee_bois"
+    }
+  },
+  "inventaire": {
+    "eclats": 3
+  },
+  "puzzles": {},
+  "flags": {
+    "flag_follet_choisi": true,
+    "flag_grotte_monstre_tue": true
+  },
+  "settings": {
+    "lang": "fr"
+  }
+}

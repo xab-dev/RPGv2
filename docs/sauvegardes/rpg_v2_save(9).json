@@ -1,0 +1,151 @@
+{
+  "schema_version": 5,
+  "saved_at": "2026-09-17T12:27:00.900Z",
+  "hero": {
+    "scene": "scene_maison_exterieur",
+    "x": 2806.3467530696007,
+    "y": 1808.2697545658757,
+    "pv": 58,
+    "companion": "comp_follet_terre",
+    "equipement": {
+      "arme": "weapon_epee_bois",
+      "consommable": "item_fruit_cuit"
+    },
+    "xp": 160,
+    "niveau": 7,
+    "points_stats_libres": 0,
+    "stats": {
+      "points": {
+        "stat_force": 4,
+        "stat_agilite": 2
+      }
+    },
+    "buffs_actifs": {}
+  },
+  "inventaire": {
+    "eclats": 1,
+    "items": {
+      "item_fruit": 0,
+      "item_branche": 0,
+      "item_fruit_cuit": 4,
+      "item_caillou": 0,
+      "item_hache": 1,
+      "item_bois": 0,
+      "item_pioche": 1,
+      "item_pierre": 0
+    }
+  },
+  "monde": {
+    "items_sol": {
+      "scene_grotte_salle_1": {},
+      "scene_grotte_salle_2": {},
+      "scene_maison_exterieur": {
+        "item_branche": [
+          {
+            "x": 1168,
+            "y": 304
+          },
+          {
+            "x": 3824,
+            "y": 1104
+          }
+        ],
+        "item_caillou": [
+          {
+            "x": 4336,
+            "y": 3056
+          },
+          {
+            "x": 1232,
+            "y": 720
+          }
+        ],
+        "item_fruit": [
+          {
+            "x": 3376,
+            "y": 1552
+          }
+        ]
+      }
+    },
+    "respawns_en_attente": {
+      "scene_grotte_salle_1": {},
+      "scene_grotte_salle_2": {},
+      "scene_maison_exterieur": {}
+    },
+    "heure": 753830.5199999665
+  },
+  "puzzles": {
+    "puzzle_levier_salle1": {
+      "actif": true
+    },
+    "puzzle_levier_s2_milieu": {
+      "actif": true
+    },
+    "puzzle_levier_s2_gauche": {
+      "actif": true
+    },
+    "puzzle_levier_s2_droite": {
+      "actif": true
+    },
+    "puzzle_sequence_salle2": {
+      "progression": 3,
+      "resolu": true
+    }
+  },
+  "flags": {
+    "flag_follet_choisi": true,
+    "flag_hint_move": true,
+    "flag_hint_interact": true,
+    "flag_levier_salle1": true,
+    "flag_hint_attack": true,
+    "flag_niveau_2": true,
+    "flag_grotte_monstre_tue": true,
+    "flag_grotte_sequence": true,
+    "flag_grotte_sortie": true,
+    "flag_maison_decouverte": true,
+    "flag_jardin_decouvert": true,
+    "flag_premier_ramassage": true,
+    "flag_hint_consume": true,
+    "flag_premier_craft": true,
+    "flag_niveau_3": true,
+    "flag_niveau_4": true,
+    "flag_niveau_5": true,
+    "flag_niveau_6": true,
+    "flag_niveau_7": true
+  },
+  "settings": {
+    "lang": "fr",
+    "musique": false
+  },
+  "cooldowns": {
+    "eau:station_puits": 636064.7000001749,
+    "rec_fruit_cuit": 751161.1999999727,
+    "rec_hache": 192384.66000012236,
+    "res:scene_maison_exterieur:20:57": 666427.9000001422,
+    "rec_pioche": 646541.6600001641,
+    "res:scene_maison_exterieur:34:61": 660672.2200001483
+  },
+  "survie": {
+    "jauge_faim": 0.5831560499999572,
+    "jauge_soif": 0.8691490888888469
+  },
+  "coffre": {
+    "items": {
+      "item_branche": 2,
+      "item_fruit_cuit": 0,
+      "item_bois": 7,
+      "item_pierre": 1
+    }
+  },
+  "recettes_decouvertes": [],
+  "maison": {
+    "stations": {
+      "station_atelier": {
+        "x": 84,
+        "y": 54,
+        "rotation": 0
+      }
+    }
+  }
+}

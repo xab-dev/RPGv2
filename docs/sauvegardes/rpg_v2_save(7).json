@@ -1,0 +1,111 @@
+{
+  "schema_version": 4,
+  "saved_at": "2026-09-17T14:15:25.701Z",
+  "hero": {
+    "scene": "scene_maison_exterieur",
+    "x": 4130.745035826319,
+    "y": 1801.940278697619,
+    "pv": 41,
+    "companion": "comp_follet_feu",
+    "equipement": {
+      "arme": "weapon_epee_bois",
+      "consommable": null
+    },
+    "xp": 20,
+    "niveau": 2,
+    "points_stats_libres": 1,
+    "stats": {
+      "points": {}
+    },
+    "buffs_actifs": {}
+  },
+  "inventaire": {
+    "eclats": 3,
+    "items": {
+      "item_caillou": 2,
+      "item_branche": 1
+    }
+  },
+  "monde": {
+    "items_sol": {
+      "scene_grotte_salle_1": {},
+      "scene_grotte_salle_2": {},
+      "scene_maison_exterieur": {
+        "item_branche": [
+          {
+            "x": 3952,
+            "y": 2192
+          }
+        ],
+        "item_caillou": [
+          {
+            "x": 3824,
+            "y": 1104
+          }
+        ],
+        "item_fruit": [
+          {
+            "x": 3472,
+            "y": 1648
+          }
+        ]
+      }
+    },
+    "respawns_en_attente": {
+      "scene_grotte_salle_1": {},
+      "scene_grotte_salle_2": {},
+      "scene_maison_exterieur": {
+        "item_branche": [
+          30221.02000000002
+        ],
+        "item_caillou": [
+          31138.580000000016
+        ]
+      }
+    },
+    "heure": 299644.68
+  },
+  "puzzles": {
+    "puzzle_levier_salle1": {
+      "actif": true
+    },
+    "puzzle_levier_s2_milieu": {
+      "actif": true
+    },
+    "puzzle_levier_s2_gauche": {
+      "actif": true
+    },
+    "puzzle_levier_s2_droite": {
+      "actif": true
+    },
+    "puzzle_sequence_salle2": {
+      "progression": 3,
+      "resolu": true
+    }
+  },
+  "flags": {
+    "flag_follet_choisi": true,
+    "flag_hint_move": true,
+    "flag_hint_interact": true,
+    "flag_hint_attack": true,
+    "flag_levier_salle1": true,
+    "flag_niveau_2": true,
+    "flag_grotte_monstre_tue": true,
+    "flag_grotte_sequence": true,
+    "flag_grotte_sortie": true,
+    "flag_premier_ramassage": true
+  },
+  "settings": {
+    "lang": "fr",
+    "musique": true
+  },
+  "cooldowns": {},
+  "survie": {
+    "jauge_faim": 0.7502960999998163,
+    "jauge_soif": 0.6670614666665272
+  },
+  "coffre": {
+    "items": {}
+  },
+  "recettes_decouvertes": []
+}

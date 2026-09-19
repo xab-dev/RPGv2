@@ -250,27 +250,48 @@ Tous les autres `[OUVERT]` historiques (résolution logique, clignements/orbite 
 
 **Aucune spec n'est encore écrite pour ces chantiers : ne pas commencer sans elle** (même règle que pour une phase).
 
-## Journal de session — Diagnostic saccades : le calque statique n'était pas en cause (2026-09-19)
+## Journal de session — Polish post-Construction, tickets 1-5 (2026-09-19)
 
-Ménage de journal effectué en début de session : le journal précédent (« Instrument de mesure des saccades ») archivé verbatim dans `docs/archives/JOURNAL_2026-09-19_mesure-saccades.md`, `docs/archives/INDEX.md` mis à jour.
+Ménage de journal effectué en début de session : le journal précédent (« Diagnostic saccades : le calque statique n'était pas en cause ») archivé verbatim dans `docs/archives/JOURNAL_2026-09-19_diagnostic-saccades-calque.md`, `docs/archives/INDEX.md` mis à jour (lien de la dernière ligne corrigé, la fiche `SD_saccades-calque-statique_2026-09-19.md` était déjà déplacée dans `docs/archives/`). Travail sur la branche `polish-2026-09-19`, jamais fusionnée : c'est Xav qui fusionne.
 
-Ordonnée par `SD_saccades-calque-statique_2026-09-19.md` v1.0.0, **Palier A seulement** — Xav a explicitement demandé de s'arrêter avant le Palier B (conditionnel, session séparée). Point de départ : premier relevé réel de Xav avec l'instrument livré la session précédente (traversée en ligne droite, PC/manette) — « recalculs calque statique : 250 (…) » à comparer à « frames plafonnées … 0/600 », ce qui semblait indiquer que le calque statique fenêtré (`render.js`) se recalculait ~7× plus souvent que l'ordre de grandeur attendu (20-40 sur 600 frames, déduit de la marge de fenêtrage).
+### Ticket 1 — MT héros à l'échelle 0,88 (visuel et hitbox)
 
-**Étape 1 (§3 point 1-2 de la fiche) : cause racine avant tout patch.** Plutôt que de présumer où était le bug, extraction d'un test rouge d'abord sur la décision de fenêtrage elle-même (`render.js#selectionnerTuilesVisibles` + `camera.js#calculerCamera`, déjà pures et déjà exportées) : `tests/test_sd_saccades_calque_statique_2026-09-19.md` [sic, voir fichier `.js`] rejoue les 4 scénarios demandés par la fiche (traversée en ligne droite avec borne CALCULÉE depuis distance/tileSize, caméra immobile, va-et-vient dans la marge, caméra bornée au bord de carte) — **les 4 sont VERTS sur HEAD**, avec des marges confortables (ex. un déplacement réaliste de 600 frames donne 15-37 recalculs selon la vitesse simulée, jamais plus). Une simulation headless supplémentaire à travers le VRAI `creerOrchestrateurGrotte` (scène `scene_maison_exterieur` réelle, mouvement pur X) a confirmé le même ordre de grandeur (10 recalculs pour ~292px parcourus, soit exactement distance/32). **Conclusion : le fenêtrage de `render.js` recalcule à la fréquence attendue — la fiche prévoyait explicitement ce cas (§3 point 2 : "S'il est vert, la cause est ailleurs : s'arrêter et rapporter.").**
+**Inventaire d'abord (demandé par le ticket), avant toute ligne de code.**
 
-**Cause racine réelle, trouvée en creusant l'écart entre "250" et "600" : `src/ui/hud_debug.js`.** Tous les champs du relevé sauf un sont fenêtrés sur les mêmes ~10 dernières secondes via `creerTamponCirculaire(CAPACITE_TAMPON_10S)` (deltas, durées maj/dessiner, écarts de position héros…) — mais `recalculsCouche` (piste 1, lignes 61 et 192-197 avant correctif) était un simple objet `{ nombre: 0, … }` initialisé une fois à la création du moniteur et **jamais remis à zéro ni fenêtré** : un compteur CUMULATIF depuis le chargement de `?debug=fps`, pas depuis les 10 dernières secondes. Comparer ce total cumulatif ("250") à `framesTotales` ("600", lui bien fenêtré) était donc une comparaison entre deux échelles de temps différentes — l'écart de ~7× n'avait rien à voir avec une sur-fréquence de recalcul réelle, seulement avec le temps de jeu écoulé avant la prise du relevé (marche jusqu'au point de test, entrées en scène précédentes, etc., chacune ayant elle aussi provoqué des recalculs jamais oubliés par le compteur).
+Où vivait la taille du héros, AVANT :
 
-**Correctif minimal (§3 point 3, mais dans l'instrument, pas dans le fenêtrage)** : `recalculsCouche` remplacé par 2 tampons circulaires de même capacité que le reste — `recalculs` (0/1 par frame, même patron que `plafonnages`) et `dureesRecalcul` (une valeur par recalcul réel, donc lui-même borné aux N derniers recalculs plutôt qu'un max depuis le chargement de la page). `nombre`/`dureeMoyenneMs`/`dureeMaxMs` sont désormais lus depuis ces tampons dans `construireEtat()`, directement comparables à `framesTotales`. `depuisDernierMs` reste un simple horodatage (sémantique différente, "temps depuis le dernier événement" — jamais un bug de fenêtrage).
+| Quoi | Où | Valeur |
+|---|---|---|
+| Silhouette visuelle | `data/visuels.json` > `visuel_heros` | cercle extérieur `w/h = 22` (donc rayon visuel 11 px), ombre `w 16 / h 6 / dy 8` |
+| Boîte de collision | `src/main.js:76` `const RAYON_HERO_PX = 10` | rayon 10 px, soit une hitbox carrée de 20×20 px |
+| Point de dérivation unique de la hitbox | `src/main.js#hitboxHeros()` | `{ x: hero.x - rayon, y: …, largeur: rayon*2, hauteur: rayon*2 }`, seule source pour `resoudreDeplacement` |
 
-`render.js` et `main.js` **non touchés** : le fenêtrage lui-même n'avait pas besoin de correctif, donc pas de rejeu de `docs/CHECKLIST_visuelle.md` (règle de méthode limitée à `render.js`/`ui/hud.js`/`ui/dialogue_box.js`/`main.js#dessiner()`, tous intacts cette session).
+**Constat de l'inventaire : les deux sources DIVERGEAIENT déjà** (rayon visuel 11 vs rayon de collision 10) — exactement ce que le ticket veut rendre impossible. Écart conservé tel quel en ratio (le visuel déborde légèrement la hitbox, ce qui est voulu : un corps qui mord d'un pixel sur un mur se lit mieux qu'un corps qui flotte), mais il dérive désormais d'un seul nombre.
 
-### Testé
+Ce qui est dérivé de la taille du héros, et ce qui ne l'est pas :
 
-- `node --check` sur `src/ui/hud_debug.js`, `tests/test_sd_saccades_calque_statique_2026-09-19.js`.
-- `tests/test_sd_saccades_calque_statique_2026-09-19.js` (nouveau, pur) : les 4 scénarios du §3 point 2 de la fiche, vert sur HEAD.
-- `node tools/run_tests.js` : **61 fichiers, tous verts** (1 nouveau fichier de test).
+- **Dérivé, donc suit automatiquement l'échelle** : `TOLERANCE_COIN_PX` (`scene.js:260`) vaut `largeur / 6` de la hitbox reçue — *déjà* relatif, aucun changement nécessaire, et il reste au même sixième de la boîte après réduction. Le ticket demandait de vérifier sa cohérence : elle est structurelle, pas numérique. Aucun test ne prouve qu'il faille la modifier → non modifiée.
+- **Non dérivé, donc rien à figer** (vérifié un par un, tous sont des constantes absolues ou des données, aucun ne lit le rayon du héros) : vitesse (`derivee_vitesse_deplacement_px_s`, stat dérivée), portée d'arme (`combat.js#estDansPortee`, en tuiles via `tile_size`), seuil d'interaction (`DISTANCE_INTERACT_PX = 28`), orbite du follet (`companion.js#ORBITE_RAYON_PX = 24`), aura (`companionActif.rayon_aura`, donnée), halo/lumière (`rayon_lumiere`, donnée), rayon d'effacement du toit (dérivé du `rayon_lumiere` du follet, pas du héros), taille des monstres (leurs propres visuels). **Aucune valeur n'a eu besoin d'être figée** — le ticket prévoyait ce cas, il ne s'est pas présenté.
+- Le ramassage n'a pas de rayon propre : `trouverItemProche` est appelé sous le même `DISTANCE_INTERACT_PX`, inchangé.
 
-### Reste ouvert
+**Fait.** Une seule échelle, en données :
 
-Le fenêtrage de `render.js` n'a pas de bug de sur-fréquence connu — reste à savoir si les saccades perçues par Xav viennent du coût de fond de `dessiner()` (§2 du relevé : 11,9 ms moyenne / 16 ms p95 sur un budget de 16,7 ms, déjà noté comme suspect par la fiche) ou d'autre chose. **Palier B non commencé** (cache par blocs / défilement incrémental), sur consigne explicite de Xav — à ne proposer/chiffrer que si un nouveau relevé de Xav, pris avec l'instrument désormais correctement fenêtré, montre encore un problème après cette correction. Xav doit rejouer le protocole du ticket (`?debug=fps`, traversée en ligne droite jour/nuit) pour obtenir un relevé fiable. `SD_saccades-calque-statique_2026-09-19.md` déplacée vers `docs/archives/` en fin de session.
+- `data/visuels.json` > `visuel_heros` porte désormais `"echelle": 0.88` — **le seul nombre à toucher pour retailler le héros**.
+- `src/visuels.js` : nouvel export `echelleVisuel(visuel)` (échelle propre d'une silhouette, 1 par défaut) ; `dessinerVisuel` compose *échelle propre × échelle d'instance* (`echelleEffective`). Un visuel sans `echelle` est strictement inchangé — tout le catalogue existant reste valide. Même esprit que `structures.js#tournerEmpreinte` : une seule fonction, deux consommateurs, pas de divergence possible.
+- `src/main.js` : `RAYON_HERO_PX = 10` devient `RAYON_HERO_BASE_PX = 10` (rayon de *référence*, échelle 1) et la nouvelle `rayonHeros()` renvoie `base × echelleVisuel(visuel_heros)`. Les 2 sites de création du héros (boot et `reinitialiserPartie`) passent par elle.
+- `src/schemas.js` : `echelle` validée sur les visuels (nombre strictement positif si présent) — une échelle nulle donnerait *à la fois* un héros invisible et une hitbox dégénérée, les deux venant du même champ, donc échec dur au boot.
+- **`render.js` n'a pas été touché** : l'échelle propre est appliquée à l'intérieur de `dessinerVisuel`, l'appelant n'a pas à la connaître. Donc **aucun rejeu de `docs/CHECKLIST_visuelle.md` exigé par la règle de méthode** (elle vise `render.js` / `ui/hud.js` / `ui/dialogue_box.js` / `main.js#dessiner()`, tous intacts pour ce ticket).
 
+Effet mesuré (headless) : rayon de collision 10 → 8,8 px, donc **jeu par côté dans un passage d'1 tuile : 6 px → 7,2 px** (+20 %), ce que le ticket visait.
+
+**Écarté volontairement** :
+
+- `TOLERANCE_COIN_PX` **non modifiée** — elle vaut déjà `largeur / 6` de la hitbox reçue, donc elle suit l'échelle toute seule. Le ticket n'autorisait un changement que si un test le prouvait nécessaire : aucun ne l'a prouvé.
+- Aucune valeur « figée » : l'inventaire ci-dessus montre qu'aucun des seuils listés par le ticket (vitesse, portées, interaction, aura, halo, orbite, toit, monstres) ne dérivait du héros. Rien à geler.
+- Le rayon de base (10) reste une constante de code : le ticket demandait *une seule échelle en données*, pas de déplacer toute la géométrie du héros en données.
+
+**Dette « mouvement légèrement téléporté à chaque angle » : réévaluée, non traitée** (le ticket l'interdit). Elle ne change pas de nature, mais son amplitude maximale **diminue** mécaniquement : la correction de coin est bornée par `TOLERANCE_COIN_PX = largeur/6`, soit 3,33 px avant, **2,93 px après**. Le saut sera donc un peu plus discret sans disparaître — la cause (repoussement appliqué d'un coup plutôt qu'interpolé) est intacte.
+
+**Testé** : `node --check` sur `src/visuels.js`, `src/main.js`, `src/schemas.js`, `tests/test_mt_heros_echelle_2026-09-19.js`. Nouveau `tests/test_mt_heros_echelle_2026-09-19.js` (5 blocs : échelle unique en données, composition d'échelle sur faux ctx, non-régression des visuels sans échelle, refus au boot d'une échelle invalide, couloir d'1 tuile sans contact, **2535 positions sauvegardées** valides avant qui le restent après). `node tools/run_tests.js` : **62 fichiers verts** (1 nouveau).
+
+**À valider par Xav à la manette** : silhouette du héros (proportion à 0,88 — si le ressenti est « trop petit » ou « pas assez », c'est `data/visuels.json > visuel_heros > echelle` et rien d'autre), passages étroits de la Forêt, couloir intérieur de la maison entre les stations. Aucune capture avant/après n'a pu être prise : **ni l'extension Chrome ni le démon browser-use ne répondent dans cette session** (extension non connectée ; `bu-default` ne démarre pas). Même cause pour les relevés `?debug=fps` avant/après demandés par le brief : ils supposent un navigateur *et* une traversée jouée à la main — entièrement dus à Xav.

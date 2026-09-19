@@ -664,6 +664,14 @@ function validerVisuel(entry, catalogs, path) {
   if (entry.teintable !== undefined && typeof entry.teintable !== 'boolean') {
     erreurs.push(`${path} > teintable doit être un booléen`);
   }
+  // MT_heros-echelle_2026-09-19 : `echelle` propre de la silhouette (absente
+  // = 1, un catalogue existant reste valide). Refusée au boot si elle n'est
+  // pas un nombre strictement positif — une échelle nulle ou négative rendrait
+  // le héros invisible ET lui donnerait une hitbox dégénérée, les deux
+  // dérivant désormais du même champ.
+  if (entry.echelle !== undefined && (typeof entry.echelle !== 'number' || entry.echelle <= 0)) {
+    erreurs.push(`${path} > echelle doit être un nombre strictement positif si présent`);
+  }
   if (!Array.isArray(entry.primitives) || entry.primitives.length === 0) {
     erreurs.push(`${path} > primitives doit être un tableau non vide`);
     return erreurs;

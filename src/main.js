@@ -28,7 +28,7 @@ import {
   charger as chargerSave, sauvegarder, importerSauvegarde as importerSauvegardeDansStore,
   saveNeuve, reinitialiserSauvegarde, VISUEL_HEROS_ID, COULEUR_HERO_NEUTRE,
 } from './save.js';
-import { dessinerVisuel, TAILLE_REFERENCE_FOLLET_PX } from './visuels.js';
+import { dessinerVisuel, echelleVisuel, TAILLE_REFERENCE_FOLLET_PX } from './visuels.js';
 import { creerRegistreFlags } from './flags.js';
 import { calculerStatsPrimaires, calculerStatsDerivees, appliquerModulateurSurvie } from './stats.js';
 import {
@@ -73,7 +73,13 @@ import { creerMoniteurPerf, creerMoniteurInactif } from './ui/hud_debug.js';
 // derivee_vitesse_deplacement_px_s (stats_derivees.json, stat_agilite) — un
 // seul chemin de calcul, donc le modulateur de survie la ralentit sans code
 // dédié, comme les dégâts et la cadence d'attaque.
-const RAYON_HERO_PX = 10;
+// MT_heros-echelle_2026-09-19 : rayon de RÉFÉRENCE (échelle 1) de la boîte de
+// collision du héros. Le rayon réellement utilisé est ce nombre multiplié par
+// l'échelle déclarée en données sur `visuel_heros` (data/visuels.json), la
+// MÊME que celle dont le rendu dérive (visuels.js#echelleVisuel) — avant
+// cette fiche, visuel (rayon 11) et collision (rayon 10) étaient deux nombres
+// indépendants qui pouvaient diverger sans que rien ne le signale.
+const RAYON_HERO_BASE_PX = 10;
 const INTERVALLE_AUTOSAVE_MS = 30000;
 const DISTANCE_INTERACT_PX = 28;
 // Respawn différé des items au sol (Palier B §3.2) : défaut appliqué quand
@@ -185,10 +191,21 @@ export function creerOrchestrateurGrotte({
   // que son flag vient d'être effacé.
   let indices = creerEtatIndices(registre);
 
+  // MT_heros-echelle_2026-09-19 : rayon de collision EFFECTIF du héros. Seul
+  // point de lecture — la boîte (hitboxHeros) et le rendu (render.js via
+  // dessinerVisuel) dérivent tous deux de `visuel_heros.echelle`, un unique
+  // nombre en données. Pour changer la taille du héros, on touche cette
+  // valeur-là et rien d'autre ; aucun autre seuil du jeu n'en dépend
+  // (orbite du follet, seuil d'interaction, portées d'arme, rayon
+  // d'effacement du toit sont tous indépendants — inventaire de la fiche).
+  function rayonHeros() {
+    return RAYON_HERO_BASE_PX * echelleVisuel(registre.obtenir('visuels', VISUEL_HEROS_ID));
+  }
+
   // --- État de jeu, mis à jour par entrerDansScene() à chaque transition ---
   // `hero` reste réaffectable pour la même raison que `flags` ci-dessus :
   // reinitialiserPartie() doit pouvoir repartir d'un héros neuf.
-  let hero = creerHeros({ x: 0, y: 0, rayon: RAYON_HERO_PX, pvMax: 1 });
+  let hero = creerHeros({ x: 0, y: 0, rayon: rayonHeros(), pvMax: 1 });
   hero.pv = save.hero.pv; // null tant que les stats dérivées n'ont pas encore tourné une fois
   let scene, decor, monstres, follet;
   let puzzlesEtat = {};
@@ -1620,7 +1637,7 @@ export function creerOrchestrateurGrotte({
     itemsSol = {};
     compteurRamassages = 0;
     respawnsEnAttente = {};
-    hero = creerHeros({ x: 0, y: 0, rayon: RAYON_HERO_PX, pvMax: 1 });
+    hero = creerHeros({ x: 0, y: 0, rayon: rayonHeros(), pvMax: 1 });
     hero.pv = save.hero.pv; // null : recalculé au premier calculerStatsHeros(), comme au tout premier boot
     etatModifie = false;
     dernierAutosave = performance.now();

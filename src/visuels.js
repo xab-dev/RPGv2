@@ -20,6 +20,17 @@
 // dessin, mis à l'échelle partout où il apparaît.
 export const TAILLE_REFERENCE_FOLLET_PX = 7;
 
+// MT_heros-echelle_2026-09-19 : échelle propre d'une silhouette, déclarée en
+// données (`echelle` sur l'entrée de visuels.json), 1 par défaut pour tout
+// visuel qui ne la déclare pas — un catalogue existant reste valide tel quel.
+// Exposée plutôt que lue inline pour que le rendu ET la boîte de collision du
+// héros dérivent du MÊME champ par la MÊME fonction (même esprit que
+// structures.js#tournerEmpreinte pour la rotation).
+export function echelleVisuel(visuel) {
+  const valeur = visuel && visuel.echelle;
+  return typeof valeur === 'number' && valeur > 0 ? valeur : 1;
+}
+
 function hexVersRgba(hex, alpha = 1) {
   const n = parseInt(hex.replace('#', ''), 16);
   const r = (n >> 16) & 255;
@@ -130,10 +141,19 @@ function dessinerPrimitive(ctx, primitive, teinte) {
 // dupliquer une silhouette pré-tournée pour chaque instance.
 export function dessinerVisuel(ctx, visuel, x, y, options = {}) {
   const { teinte = null, alpha = 1, echelle = 1, rotation = 0 } = options;
+  // MT_heros-echelle_2026-09-19 : `visuel.echelle` est l'échelle PROPRE de la
+  // silhouette (sa taille de référence en données), multipliée par l'échelle
+  // d'INSTANCE passée à l'appel (une station tournée, un follet au HUD). Deux
+  // notions distinctes qui se composent, jamais l'une écrasant l'autre — et
+  // surtout : c'est le SEUL endroit où l'échelle propre du héros est lue pour
+  // le rendu, la hitbox lisant le même champ (main.js#rayonHeros), pour que
+  // visuel et collision ne puissent plus diverger comme ils le faisaient
+  // (rayon visuel 11 px contre rayon de collision 10 px avant cette fiche).
+  const echelleEffective = echelle * echelleVisuel(visuel);
   ctx.save();
   ctx.translate(x, y);
   if (rotation !== 0) ctx.rotate((rotation * Math.PI) / 180);
-  if (echelle !== 1) ctx.scale(echelle, echelle);
+  if (echelleEffective !== 1) ctx.scale(echelleEffective, echelleEffective);
   if (alpha !== 1) ctx.globalAlpha *= alpha;
 
   // Ombre portée (§3.3) : ellipse sombre dessinée AVANT les primitives, sous

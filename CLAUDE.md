@@ -4,13 +4,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## État actuel du dépôt
 
-Phases validées : 0 (Socle technique), 1 (La Grotte), 1b (polish, DA validée), 2 (Région Maison, première marche, `specs/03_maison-exterieur.md`) et 3 (Maison, intérieur & systèmes de camp, `specs/04_maison-interieur.md`, close le 2026-09-17). **Chantier `specs/05_construction-stations.md` (placement libre des stations) close le 2026-09-19** : validé par Xav en jeu à la manette puis au clavier seul, après le correctif de parité clic/verbe (détail complet des 4 diagnostics successifs : `docs/archives/INDEX.md`). Polish post-Construction en cours (ordre d'injection acté par Xav, voir « Critère de passage courant ») : étape 1 (`MT_mesure-saccades_2026-09-19.md`) livrée en code cette session — instrument de mesure sous `?debug=fps` (`src/debug_perf.js`, `src/ui/hud_debug.js`), zéro correction, protocole de relevé en jeu encore dû par Xav.
+Phases validées : 0 (Socle technique), 1 (La Grotte), 1b (polish, DA validée), 2 (Région Maison, première marche, `specs/03_maison-exterieur.md`) et 3 (Maison, intérieur & systèmes de camp, `specs/04_maison-interieur.md`, close le 2026-09-17). **Chantier `specs/05_construction-stations.md` (placement libre des stations) close le 2026-09-19** : validé par Xav en jeu à la manette puis au clavier seul, après le correctif de parité clic/verbe (détail complet des 4 diagnostics successifs : `docs/archives/INDEX.md`). **Polish post-Construction : étapes 1 à 6 livrées et validées en jeu à la manette par Xav le 2026-09-19** (« ça fonctionne, le jeu est fluide ») — instrument de mesure sous `?debug=fps`, héros à l'échelle 0,88, follets visibles pendant l'intro, silhouette du puits, traînée de poussière, HUD sur un bandeau d'une ligne. La branche `polish-2026-09-19` est **fusionnée dans `main`** (`e5b6d44`) : on travaille sur `main`.
+
+**Deux relevés `?debug=fps` réels existent** (`R-01`, `R-02` du registre de performance, §6 de `docs/DOC_suivi-dettes.md`) ; seule la mesure **de nuit** reste due. Étape 7 (correction des saccades) : **diagnostic fait le 2026-09-19** — le fenêtrage du calque statique est sain (test rouge d'abord, vert sur HEAD) et le compteur cumulatif de `ui/hud_debug.js` a été corrigé ; **aucune correction de rendu n'a encore été faite**, elle est portée par `D-01` et `D-02` du suivi.
+
+**Ce qui reste dû (dettes, questions, validations) vit dans `docs/DOC_suivi-dettes.md`, et nulle part ailleurs.**
 
 Historique complet des sessions : **`docs/archives/INDEX.md`** — un fichier par session archivée, contenu verbatim (source de vérité en cas de doute sur le détail d'une décision passée). `CLAUDE.md` ne garde que le journal de la session la plus récente (en fin de ce fichier) — voir la règle de méthode correspondante ci-dessous.
 
 - `specs/00_ROADMAP.md` — brief autonome à lire en entier en premier. Contexte projet, décisions déjà tranchées (à ne jamais rouvrir), contraintes de méthode, détail de la phase en cours.
 - `specs/01_socle-technique.md`, `specs/02_grotte.md`, `specs/03_grotte-polish.md`, `specs/03_maison-exterieur.md`, `specs/04_maison-interieur.md`, `specs/04_stations-proportions-collision.md`, `specs/04_indices-commandes.md`, `specs/05_construction-stations.md` — specs détaillées des phases/chantiers livrés.
-- `docs/carte_mentale_RPG_V2_v1_5_0.md` — décisions produit/techniques verrouillées (§0, §8) et règle d'architecture directrice (§7).
+- `docs/carte_mentale_RPG_V2_v1_6_0.md` — décisions produit/techniques verrouillées (§0, §8) et règle d'architecture directrice (§7).
 
 **Avant toute action de code**, lire `specs/00_ROADMAP.md` en entier, puis le fichier `0N_*.md` de la phase courante. Ne pas rouvrir une décision déjà actée dans ces documents — un point de design non tranché se marque `[OUVERT]` et remonte à l'utilisateur (dev = Xav), il ne se tranche jamais en silence.
 
@@ -28,6 +32,8 @@ Test à appliquer à chaque catalogue de données : ajouter une entrée (arme, e
 
 ## Contraintes de méthode non négociables
 
+- **Un sujet par ticket, une session courte par ticket** (décision Xav, 2026-09-19) — les grosses sessions ont fait perdre plus de temps qu'elles n'en ont gagné. Xav valide en jeu entre deux tickets ; une spec par paliers se joue **un palier par session**. Chaque ticket cite les identifiants de `docs/DOC_suivi-dettes.md` qu'il touche (« traite `D-17`, ne touche pas à `D-11` ») : ne lire dans ce document que ces lignes-là.
+- **Un ticket (ou une session) = un commit**, fait en fin de session, l'identifiant du ticket dans le titre (décision Xav, 2026-09-19). Motif : le commit fourre-tout `1be4688` a rendu illisible une nuit entière de travail, alors que la nuit du polish, faite ticket par ticket, se relit d'un coup d'œil. **Les `push` restent à la main de Xav : ne jamais pousser.**
 - **Cause racine avant tout patch** — jamais de rustine sur un symptôme.
 - **Zéro chaîne en dur** — tout texte visible passe par la localisation FR/EN (`t("clé")`) dès la Phase 0.
 - **Zéro dépendance du gameplay à un périphérique** — aucun `KeyboardEvent`, `TouchEvent` ou `Gamepad` en dehors de la couche d'input ; le gameplay ne connaît que des verbes (`MOVE, ATTACK, SKILL_1..3, CONSUME, INTERACT, MENU`).
@@ -36,10 +42,10 @@ Test à appliquer à chaque catalogue de données : ajouter une entrée (arme, e
 - **Tout seuil numérique** (vitesse, `tile_size`, intervalle de sauvegarde, plafond de delta-time, tolérances de collision…) déclaré en un seul endroit, commenté avec son *pourquoi*, marqué **provisoire** s'il n'a pas été validé en jeu.
 - **Discipline de scope** : si une tâche déborde du brief, s'arrêter au dernier palier stable et documenter ce qui reste hors scope dans `CLAUDE.md`. Aucun système généralisé avant qu'un second cas d'usage réel existe, sauf les catalogues data-driven listés dans les specs.
 - **Le rendu canvas n'est jamais exercé par les tests headless** — toute vérification visuelle revient à Xav dans un vrai navigateur, à la manette.
-- **Toute composition de calque qui touche la transform du contexte 2D passe par une fonction unique qui la restaure** (`save`/`restore` ou re-`setTransform` en fin de fonction, commenté pourquoi) — jamais de `setTransform` inline dans `main.js#dessiner()`. Née du diagnostic dialogues invisibles (`docs/archives/JOURNAL_2026-09-15_diagnostic-dialogues-invisibles.md`) : un calque qui lit `ctx.canvas.width/height` pour se positionner alors qu'une transform logique→physique est active double la mise à l'échelle, sans qu'aucun test headless ne puisse l'attraper. **Tout ticket touchant `render.js`, `ui/hud.js`, `ui/dialogue_box.js` ou `main.js#dessiner()` rejoue `docs/CHECKLIST_visuelle.md` (capture par état) avant de conclure** — même quand le ticket prétend ne toucher qu'un seul de ces fichiers en isolation.
+- **Toute composition de calque qui touche la transform du contexte 2D passe par une fonction unique qui la restaure** (`save`/`restore` ou re-`setTransform` en fin de fonction, commenté pourquoi) — jamais de `setTransform` inline dans `main.js#dessiner()`. Née du diagnostic dialogues invisibles (`docs/archives/JOURNAL_2026-09-15_diagnostic-dialogues-invisibles.md`) : un calque qui lit `ctx.canvas.width/height` pour se positionner alors qu'une transform logique→physique est active double la mise à l'échelle, sans qu'aucun test headless ne puisse l'attraper. **Tout ticket touchant `render.js`, `ui/hud.js`, `ui/dialogue_box.js` ou `main.js#dessiner()` se clôt par une validation en jeu de Xav, guidée par `docs/CHECKLIST_visuelle.md`** — même quand le ticket prétend ne toucher qu'un seul de ces fichiers en isolation. *Révisé le 2026-09-19 (décision `Q-15`)* : la capture par état n'est plus exigée pour clore un ticket — la checklist reste la liste de ce que Xav regarde, et les captures deviennent un **album de référence** pris à chaque clôture de phase ou de chantier (six vues fixes dans `docs/captures/AAAA-MM-JJ_jalon/`, annexe B du suivi).
 - **Un renommage/retrait de contenu de catalogue (ex. id de scène) n'est jamais couvert par la migration de *schéma*** (`save.js#migrer`) — c'est une classe de bug distincte (données valides mais obsolètes) à traiter explicitement à chaque retrait. Née du repli sur `scene_grotte_salle_1` (`docs/archives/JOURNAL_2026-09-15_phase1-grotte.md`), reproduite ensuite par la migration 2→3 de la Région Maison (`docs/archives/JOURNAL_2026-09-16_phase2-premiere-marche.md`).
 - **Ménage de journal en début de session, avant tout code** : archiver le journal présent dans `docs/archives/`, mettre à jour `docs/archives/INDEX.md`, reporter dans les sections consolidées de ce fichier ce qui en relève (décision, règle, `[OUVERT]`, dette), puis seulement travailler. `CLAUDE.md` ne contient jamais plus d'un journal de session. Plafond indicatif : 300 lignes. Née du ménage du 2026-09-17 (`DOC_menage-claude-md_2026-09-17.md`) : le fichier avait atteint ~22 000 mots / 920 lignes, coûtant plus de contexte qu'il n'apportait d'utilité.
-- **Un sous-système explicitement "meilleur effort" (le contrat dit déjà : fichier absent → le jeu tourne sans son) rattrape ses propres erreurs à la frontière de son API publique, jamais au niveau de la boucle de jeu.** Née de `docs/archives/JOURNAL_2026-09-17_diagnostic-freeze-musique.md` : une exception dans `audio.js` (contexte/gain `null` à la reprise depuis le menu) est remontée non rattrapée jusqu'à `creerBoucle#frame` (`render.js`), qui ne se replanifie plus après une exception — jeu figé, manette/clavier morts (polling interne à `maj()`), souris vivante (DOM indépendant du `requestAnimationFrame`). Le remède reste local au sous-système fautif (`try/catch` dans `audio.js`, jamais un `try/catch` global autour de `update()`/`dessiner()`, qui masquerait aussi de vraies erreurs de gameplay) — voir `[OUVERT]` ci-dessous pour la question de généraliser ce patron à d'autres sous-systèmes.
+- **Un sous-système explicitement "meilleur effort" (le contrat dit déjà : fichier absent → le jeu tourne sans son) rattrape ses propres erreurs à la frontière de son API publique, jamais au niveau de la boucle de jeu.** Née de `docs/archives/JOURNAL_2026-09-17_diagnostic-freeze-musique.md` : une exception dans `audio.js` (contexte/gain `null` à la reprise depuis le menu) est remontée non rattrapée jusqu'à `creerBoucle#frame` (`render.js`), qui ne se replanifie plus après une exception — jeu figé, manette/clavier morts (polling interne à `maj()`), souris vivante (DOM indépendant du `requestAnimationFrame`). Le remède reste local au sous-système fautif (`try/catch` dans `audio.js`, jamais un `try/catch` global autour de `update()`/`dessiner()`, qui masquerait aussi de vraies erreurs de gameplay) — la question de généraliser ce patron à d'autres sous-systèmes est ouverte sous `Q-12` dans `docs/DOC_suivi-dettes.md`.
 - Pas de framework de jeu, pas de bundler obligatoire. Une dépendance de **dev** (ex. validateur de schéma type `ajv`) est acceptable tant qu'elle reste hors du jeu servi.
 - Servi en `http://` (jamais `file://`) ; modules ES natifs. Chaque fichier de `/src` doit rester importable depuis Node pour les tests headless — aucun accès DOM au niveau module.
 
@@ -130,9 +136,12 @@ rpg_v2/
 ├── data/                   catalogues JSON (voir specs/*.md §2.1 de chaque phase)
 ├── locales/fr.json, en.json
 ├── specs/                  00_ROADMAP.md, 0N_*.md par phase
-├── docs/                   carte_mentale_RPG_V2_v1_5_0.md + fiches de diagnostic/ticket actives
+├── docs/                   DOC_suivi-dettes.md (registre vivant : LA liste de ce qui est dû) +
+│                           carte_mentale_RPG_V2_v1_6_0.md + fiches de diagnostic/ticket actives
 │                           (SD_*.md, MT_*.md, NS_*.md, CHECKLIST_visuelle.md) + archives/
-│                           (journaux de session clos)
+│                           (journaux de session clos, fiches et NS closes) + captures/
+│                           (album de référence par jalon) + sauvegardes/ (sauvegardes réelles
+│                           exportées par Xav, servent aux migrations)
 ├── tests/                  un fichier par contrat/diagnostic, headless, `node:assert/strict`
 └── tools/run_tests.js      lance tous les tests/*.js en séquence (confort de `npm test`)
 ```
@@ -141,7 +150,7 @@ rpg_v2/
 
 ## Décisions produit verrouillées (ne pas rouvrir)
 
-Détail complet dans `docs/carte_mentale_RPG_V2_v1_5_0.md` §0 et §8. Points structurants pour le code :
+Détail complet dans `docs/carte_mentale_RPG_V2_v1_6_0.md` §0 et §8. Points structurants pour le code :
 
 - 3 éléments (Feu/Eau/Terre), extensibles en données uniquement.
 - 4 stats primaires : Force, Agilité, Vitalité, Esprit. Esprit = réserve de skills uniquement ; tout le scaling de dégâts converge sur Force, l'élément porte le type/les interactions, jamais la puissance brute.
@@ -188,7 +197,7 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 | Contrat unique de « ouvert » pour tout contrôleur de `ui/menu.js` (`creerControleurMenu#element`) : booléen interne ET DOM réellement visible, jamais l'un sans l'autre — remplace les 2 contrats qui coexistaient (booléen pur pour le menu Pause/la confirmation de reset, booléen+DOM pour Poche/Craft/Coffre/Stats/Construction) | 2026-09-17 | `docs/archives/JOURNAL_2026-09-17_ecrans-orphelins.md` |
 | Fermeture d'un écran de `creerEcranListeGenerique` : événement explicite `onAnnuler` (câblé sur `verbeAnnuler`) plutôt qu'une déduction après coup sur l'état du contrôleur — *2ᵉ classe de bug distincte* du contrat « ouvert » ci-dessus, cette fois entre le chemin clic (sain) et le chemin verbe (manette/clavier cassés) | 2026-09-19 | `docs/archives/JOURNAL_2026-09-19_parite-clic-verbe.md` |
 | **Construction validée en jeu par Xav, à la manette puis au clavier seul** (après le correctif de parité clic/verbe) — clôt le chantier `05_construction-stations.md` | 2026-09-19 | `NS_decisions-playtest_2026-09-19.md` |
-| **Vocabulaire figé de la Région Maison** : Forêt (côté Grotte) / Jardin (puits + arbre fruitier, = zone sûre) / Zone sûre (Maison + Jardin, aucun monstre) / Champs (angles opposés à la Forêt, où le Chaos s'installe la nuit) / Campagne (le reste) — sert de référence à toutes les specs suivantes | 2026-09-19 | même NS, `docs/carte_mentale_RPG_V2_v1_5_0.md` §3bis |
+| **Vocabulaire de la Région Maison** (version en vigueur, *révise* celle du playtest) : **Forêt** = côté ouest, où débouche la Grotte · **Jardin** = puits, arbre fruitier, réapparition du fruit · **Zone sûre** = Maison + Jardin **+ un rectangle autour de la sortie de la Grotte** (rien n'y apparaît, un monstre qui y entre fait demi-tour) · **Campagne** = la bande centrale autour du chemin, hors zone sûre, **neutre** (rien n'y apparaît, mais un monstre peut y poursuivre) · **Champs** = deux grandes zones en L, au nord et au sud de la bande centrale, à l'est de la Forêt (le Chaos s'y installe la nuit ; une ferme y viendra plus tard). **Toutes les zones se décrivent en rectangles**, au format `zones` déjà présent dans `scenes.json` | 2026-09-19 | `NS_decisions-revue-dettes_2026-09-19.md` §3, `docs/carte_mentale_RPG_V2_v1_6_0.md` §3bis |
 | Héros à l'échelle **0,88** (visuel et hitbox dérivés d'une seule échelle) ; pas de roulement — règle : aucun effet ne dépend de la forme du héros (reste un visuel remplaçable), effet de déplacement = traînée de poussière | 2026-09-19 | même NS |
 | HUD sur une ligne en haut, pleine largeur ; barre d'XP retirée du HUD (niveau seul affiché), conservée dans l'écran Stats | 2026-09-19 | même NS |
 | Intro : les follets non élus restent visibles pendant le texte (au lieu de disparaître avant) | 2026-09-19 | même NS |
@@ -196,276 +205,90 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 | L'intro reste vivante (étape `ETAPE_ATTENTE`) pendant le dialogue de choix, jusqu'à `confirmerChoixFollet()` — *révise* la mise à `null` à la fin de la convergence, qui laissait les follets sans personne pour les dessiner | 2026-09-19 | journal courant, `MT_intro-follets-visibles_2026-09-19.md` |
 | Un effet purement visuel du monde (poussière) est un module pur + une entrée de `data/effets.json` ; il ne connaît jamais la forme du héros, et il est gelé par le point de décision unique existant (`uiOuverte`), jamais par une condition propre | 2026-09-19 | journal courant, `MT_trainee-poussiere_2026-09-19.md` |
 | HUD = un bandeau d'une seule ligne en haut, pleine largeur ; tout son placement vit dans `ui/hud_layout.js` (pur, testable), jamais en dur dans `ui/hud.js` | 2026-09-19 | journal courant, `MT_hud-ligne-haute_2026-09-19.md` |
-| **Intrusion nocturne du Chaos dans la Région Maison** — *révise* « aucun monstre, ton chill » de `03_maison-exterieur.md` §5 ; cadre : nuit seulement, zone de Chaos dans les Champs, quelques monstres épars en Forêt, **un monstre qui entre en zone sûre fait demi-tour** (condition sur sa position, jamais sur celle du joueur) — spec à écrire, `07_chaos-nocturne.md` ; destruction des plantations non tranchée (le jardinage n'existe pas encore) | 2026-09-19 | même NS |
+| **Intrusion nocturne du Chaos dans la Région Maison** — *révise* « aucun monstre, ton chill » de `03_maison-exterieur.md` §5 ; cadre : nuit seulement, **par paliers de niveau déclarés en données** (Nv. 5 zone de Chaos nord-est, Nv. 10 zone sud, Nv. 15 apparitions éparses en Forêt et dans les Champs — la Forêt reste **vide avant 15**, ce qui *révise* « quelques monstres épars en Forêt dès le début »), **un monstre qui entre en zone sûre fait demi-tour** (condition sur sa position, jamais sur celle du joueur) ; destruction des plantations non tranchée (le jardinage n'existe pas encore) — spec `specs/07_chaos-nocturne.md` v1.1.0, qui ne livre que le système et le palier 1 | 2026-09-19 | `NS_decisions-revue-dettes_2026-09-19.md` §4-5 |
+
+| **Le seuil « accès à la 1ère zone de monstres gaté par niveau ~5 » est abandonné** (*révise une décision verrouillée*) : la carte suivante s'ouvre quand la carte Maison est **épuisée**, vers le niveau 40-50 (provisoire). Conséquence : les *systèmes* prévus en Phase 4 (armes, équipement, compétences, tables d'apparition) arrivent d'abord **sur la carte Maison** ; la *carte* de la Phase 4 vient après — **« Phase 4 = prochaine étape » ne doit plus se lire nulle part** | 2026-09-19 | `NS_decisions-revue-dettes_2026-09-19.md` §4 |
+| **Arc de progression de la carte Maison** : Nv. 5 zone de Chaos nord-est · Nv. 10 zone sud · Nv. 15 apparitions éparses (Forêt + Champs) — ces trois sont **décidés** ; Nv. 20 petite caverne en Forêt annoncée par une ligne de lore (casse-tête dessiné par Xav), Nv. 30 les compétences, Nv. 40-50 la carte suivante — ces trois restent des **idées**. Avant toute nouvelle carte : écrire ressources, crafts, armes, compétences | 2026-09-19 | même NS §4 |
+| **Critère de clôture de la Région Maison : la boucle de 2 heures** (sauvegarde neuve → deux heures de jeu → niveau 30 → l'envie de changer d'endroit), vérifiable à la main par Xav **et** par le bot headless — même patron que la boucle 5 minutes de la Phase 3 | 2026-09-19 | même NS §4 |
+| **Comportement des monstres : « un domaine, pas un piquet »** (*remplace* l'idée de laisse) — errance dans un domaine fait de **zones de la carte** · poursuite bornée depuis le point de repérage · désintérêt de quelques secondes après un abandon ou un demi-tour en lisière de zone sûre · anti-blocage après ~1 s sans avancer. Un monstre ne sort de son domaine que si le joueur l'y attire. **Seuils de niveau en données, jamais dans le code** | 2026-09-19 | même NS §5, `specs/07_chaos-nocturne.md` v1.1.0 |
+| **Bandeau HUD, ordre définitif** : compagnon · PV (jauge + nombre) · éclats · faim · soif · **buffs** · `Nv. N` collé au bord droit. Un buff = une icône par **effet** (la stat renforcée), forme et couleur, sans texte ni jauge ; pulsation douce en fondu sur les ~2 dernières secondes. Le bouton MENU tactile descend **sous** le bandeau, qui redevient libre sur toute sa largeur | 2026-09-19 | même NS §6 (tickets `D-13`, `D-17`) |
+| **Verbe de rotation en Construction : reste `SKILL_1`**, statut provisoire levé (Construction jugée intuitive à la manette) ; l'indice de commande reste **sous** le bandeau | 2026-09-19 | même NS §6 (`Q-08`, `Q-02`) |
+| **Déplacement du fantôme de Construction : impulsion puis répétition au maintien**, via une **brique d'input générique** (« maintien puis répétition ») exposée aux menus et au mode Construction, jamais recodée par écran — corrige aussi le tapotement du joystick tactile | 2026-09-19 | même NS §6 (`D-18`) |
 
 (Les décisions de `05_construction-stations.md` étaient déjà actées par Xav **dans la spec elle-même** avant tout code, v1.0.0 §9 — les lignes ci-dessus n'y renvoient que pour mémoire, elles ne tranchent rien de nouveau.)
 
-## Points `[OUVERT]`
+## Ce qui est dû : dettes, questions, validations
 
-- **Durées de l'intro cinématique** (`specs/03_grotte-polish.md` §9, palier 4) : budget ≤8s appliqué (mesuré ~7,2s sur les données réelles), valeurs de référence déjà données par la fiche — reste à ajuster sur ressenti manette réel. Pas un point de design non tranché en soi, juste un seuil numérique non encore validé en jeu.
-- **Généraliser le patron « sous-système meilleur effort rattrape ses propres erreurs » au-delà d'`audio.js`** (ex. persistance IndexedDB, résolution de loot) ? `SD_musique-freeze-reprise_2026-09-17.md` demandait explicitement de ne pas trancher ça en silence ni de l'implémenter sans validation : une règle architecturale (pas seulement le correctif ponctuel déjà livré) reste à décider par Xav.
-- **Verbe de rotation en mode Construction** (`specs/05_construction-stations.md` §9) : provisoire appliqué = `SKILL_1` (contextuel au mode, qui est une UI). Alternative envisagée par la fiche : la croix directionnelle — mais C3③ la réserve explicitement à de futures actions secondaires, et elle n'a pas d'équivalent tactile/clavier évident ; `INTERACT` est une autre option possible. À trancher par Xav sur ressenti manette réel.
-- **Maintien vs front montant sur `MOVE` en mode Construction** (même fiche, §9) : provisoire = front montant seul (une tuile par impulsion). Passer à une répétition après ~400 ms de maintien si déplacer le fantôme dans une grande pièce s'avère pénible en jeu — pas tranché avant un retour de Xav.
-- **Règle de méthode candidate, proposée par `SD_construction-ecrans-orphelins_2026-09-17.md`, pas encore validée par Xav** : *« ouvert » pour un écran DOM signifie toujours booléen ET DOM visible ; un écran qui n'a pas d'accesseur n'existe pas pour le routage.* Née du diagnostic des écrans orphelins (`docs/archives/JOURNAL_2026-09-17_ecrans-orphelins.md`) — appliquée en local à `ui/menu.js` (tous ses contrôleurs), pas encore généralisée en contrainte de méthode non négociable.
-- **Règle de méthode candidate n°2, proposée par `SD_construction-parite-clic-verbe_2026-09-19.md` §6, PAS À IMPLÉMENTER, à chiffrer seulement** : les trois bugs de suite de ce chantier (contrat « ouvert » à deux définitions, menu Pause fermé « à tort » puis « pas assez », déduction après coup dans `creerEcranListeGenerique#traiterInput`) ont la même forme — un état DÉDUIT après coup (booléen vs DOM, « fermé donc annulé ») au lieu d'un événement DÉCLARÉ. Proposition à chiffrer (effort, risque, fichiers) dans un futur journal, sans la coder : un état d'UI pur (pile d'écrans + mode placement, sans DOM, testable headless) dont la visibilité DOM et le routage des verbes seraient dérivés par une seule fonction ; clic et verbe ne feraient que dispatcher une action. `docs/CARTE_cycle-de-vie-ui_2026-09-17.md` sert de table de transitions de départ.
-- **Construction dans les Champs** (idée du playtest 2026-09-19, `NS_decisions-playtest_2026-09-19.md`) : une ferme dans les Champs contredit la grille intérieure fermée de `05_construction-stations.md` (placement pensé pour une pièce, pas pour de l'extérieur ouvert). Piste évoquée, pas actée : `zonesConstructibles` déclarées dans le JSON de scène. À trancher avant tout code de construction extérieure.
-- **Barre d'action du bas** (idée du playtest 2026-09-19, même NS) : Xav veut une barre visible dès maintenant (premier slot en bas à gauche, jaune, pour l'arme, puis les slots qui se remplissent — principe de la barre Minecraft), à faire cohabiter avec D5⑤ (5 slots d'action) et le tactile (bas-gauche déjà pris par le joystick virtuel). **Spec à écrire par Xav lui-même**, pas par Claude.
-- **Second rayon sûr autour de la sortie de la Grotte** (point de retour après une mort, proposé par Claude lors du playtest 2026-09-19) : retenu par défaut dans le cadrage de `07_chaos-nocturne.md`, à confirmer par Xav avant l'écriture de la spec.
+Tout vit dans `docs/DOC_suivi-dettes.md`. Ce fichier n'en garde aucune copie :
+deux listes finissent toujours par se contredire.
 
-Tous les autres `[OUVERT]` historiques (résolution logique, clignements/orbite pré-choix, couleur du héros, stations placeholder non solides) ont été tranchés — voir la table de décisions ci-dessus et `docs/archives/INDEX.md`.
+**Lecture.** Ne lis dans ce document que les lignes dont le ticket courant cite
+l'identifiant. Le reste ne concerne pas ta session et noierait ton travail.
 
-## Dette et « à reprendre »
+**Dans le périmètre du ticket, tu gardes l'initiative.** Quand un point de design
+n'est pas tranché, tu peux retenir une valeur ou une solution par défaut et
+continuer : marque-la `[OUVERT]`, ajoute une ligne `Q-` au document, et
+signale-la en tête de ton rapport pour que Xav confirme ou révise. Même chose
+pour une finition que le ticket ne demandait pas mais qui sert son intention.
+Arrête-toi plutôt que de choisir seulement quand le choix serait coûteux à
+défaire : format de sauvegarde, contrat entre modules, décision verrouillée.
 
-- **Toast de ramassage** à chaque objet ramassé (seul le premier a un retour, dialogue `dlg_premier_ramassage`) — 2026-09-16, `docs/archives/JOURNAL_2026-09-16_phase2-premiere-marche.md`.
-- **Indicateur jour/nuit au HUD** (optionnel selon la spec, non posé) — 2026-09-16, même archive.
-- **Mesure réelle du temps de frame / fps** (plancher mobile jamais mesuré, seulement borné fonctionnellement par `selectionnerTuilesVisibles`) — 2026-09-16, même archive. Reformulé le 2026-09-19 (`NS_decisions-playtest_2026-09-19.md`) : petites saccades régulières en traversant la carte en ligne droite, tous périphériques, perceptibles par un joueur confirmé. **Instrument livré le 2026-09-19** (`MT_mesure-saccades_2026-09-19.md`, journal courant) : `src/debug_perf.js`/`src/ui/hud_debug.js`, surcouche sous `?debug=fps` seulement — **zéro chiffre réel recueilli**, le protocole (traversée en ligne droite ~20s jour/nuit, bouton « copier ») reste entièrement dû par Xav en jeu ; le ticket de correction (étape 7 de l'ordre d'injection) s'écrira sur ces chiffres, pas avant.
-- **Tactile réel** — **partiellement levée le 2026-09-19** : première validation tactile réelle du jeu par Xav (jouable), Construction validée au clic/tactile ; le test du neveu de Xav (testeur de référence) reste dû.
-- **Mouvement légèrement téléporté à chaque angle depuis la correction de coin** (2026-09-17, retour Xav) : feeling meilleur, aucune interruption, mais pas très smooth — à lisser dans une phase de polish ultérieure (hypothèse : répartir le repoussement sur plusieurs frames ou l'interpoler plutôt que l'appliquer d'un coup — à diagnostiquer, pas à patcher en silence). **Réévalué le 2026-09-19** (ticket héros 0,88) : inchangé en nature, mais son amplitude maximale baisse mécaniquement de 3,33 à 2,93 px, la correction de coin étant bornée par `largeur/6` de la hitbox.
-- **Aucun buff actif n'est affiché au HUD** (2026-09-19, inventaire du ticket `MT_hud-ligne-haute`) : `status.js` tient bien des buffs temporaires, mais rien ne les dessine. La zone leur est réservée et testée dans `hud_layout.js#elementsBandeauHaut`, rien n'y est dessiné — un affichage aurait débordé du ticket. Question posée à Xav dans le journal courant.
-- **Validation visuelle des 5 tickets de polish du 2026-09-19 entièrement due par Xav** : `docs/CHECKLIST_visuelle.md` **en entier** (`ui/hud.js` touché → règle de méthode), avec les états réécrits (1, 25) et les nouveaux (17bis, 25bis, 32bis, 32ter). Aucune capture n'a pu être prise : ni l'extension Chrome ni le démon browser-use ne répondaient. Détail et ordre de validation : rapport en tête du journal courant.
-- **Validation manuelle du contraste jour/nuit encore due par Xav** (`MT_jour-nuit-contraste_2026-09-16.md` v1.1, archivée) — code fait et testé le 2026-09-17, reste la validation manette/navigateur réelle. `docs/archives/JOURNAL_2026-09-17_micro-ticket-contraste-jour-nuit.md`.
-- **Validation manuelle de l'ambiance synthétisée encore due par Xav** (`MT_musique-ambiance-synth_2026-09-16.md`, archivée) — code fait et testé, freeze diagnostiqué et corrigé le 2026-09-17 ; reste la validation navigateur/manette (5 min d'écoute). `docs/archives/JOURNAL_2026-09-17_diagnostic-freeze-musique.md`.
-- **Validation visuelle de `specs/04_indices-commandes.md` encore due par Xav** (état 24 de `docs/CHECKLIST_visuelle.md`, + états 1-23 rejoués) — code fait, suite headless verte, mais `main.js#dessiner()` a été touché (règle de méthode) et le rendu canvas n'est jamais exercé headless. `docs/archives/JOURNAL_2026-09-17_indices-commande.md`.
-- **`station_puits` : silhouette dégradée à l'échelle ×2,1** — **corrigée en code le 2026-09-19** (`SD_puits-silhouette_2026-09-19.md`, journal courant) : cause racine = les données (pied des mâts en porte-à-faux, défaut déjà présent à l'échelle 1), pas l'interprète ; empreinte solide inchangée. **Reste dû : la validation visuelle de Xav** (état 32bis de `docs/CHECKLIST_visuelle.md`).
-- **Coffre : transfert « par pile » (maintien)** non implémenté (Palier E, §3.5 de `04_maison-interieur.md`) — seul le transfert par unité (confirmer = 1) est livré ; la couche d'input n'expose pas encore de geste de maintien générique pour les menus contextuels. 2026-09-17, `docs/archives/JOURNAL_2026-09-17_phase3-palier-a-e.md`.
-- **Poche : action "Consommer" directe** (§3.3, "à défaut, l'action Consommer depuis le menu Poche") non implémentée — seul le chemin "Équiper au slot consommable" + verbe CONSUME en jeu est livré, qui couvre le hint et le critère de la boucle. 2026-09-17, même archive.
-- **`dlg_recette_indisponible`** déclaré au catalogue (§2.1) mais jamais déclenché en jeu — une entrée grisée du menu Craft retente silencieusement `fabriquer()` (résultat inchangé) plutôt que d'ouvrir un dialogue par-dessus un menu déjà ouvert (aurait cassé le routage input menu/dialogue). 2026-09-17, même archive.
-- **Migration `3 → 4` jamais exercée sur une vraie sauvegarde Phase 2** — testée uniquement en headless (`test_save_migration_3_4`). À exercer par Xav séparément (charger une sauvegarde Phase 2 réelle). Hors scope explicite de `docs/archives/JOURNAL_2026-09-17_diagnostic-stations-pv-jauges.md`.
-- **`nb_au_sol` de `item_branche`/`item_caillou` équilibrage** (`docs/archives/JOURNAL_2026-09-17_respawn-items-au-sol.md`) : la fiche demandait de le monter à 2 après la correction — déjà à 2 dans `data/items.json` depuis la Phase 2, aucun changement de donnée nécessaire ; noté pour éviter qu'une prochaine session ne recherche un changement qui n'a jamais eu lieu.
-- **Migration `4 → 5` (`maison.stations`) jamais exercée sur une vraie sauvegarde** — même classe de dette que la migration 3→4 ci-dessus, testée uniquement en headless (`test_save_migration_4_5`). 2026-09-17, `docs/archives/JOURNAL_2026-09-17_phase3-cloture-et-construction.md`.
-- **Validation manuelle de la Construction — close le 2026-09-19** : Xav a validé au clic/tactile puis à la manette et au clavier seul, après le correctif de parité clic/verbe (`NS_decisions-playtest_2026-09-19.md`). Reste dû : les captures des états 29-32 et 31bis de `docs/CHECKLIST_visuelle.md` (fantôme vert/rouge, station tournée, entrée de menu contextuelle, bandeau de placement), sauf mention contraire de Xav.
-- **Aide-texte du mode Construction toujours en glyphes MANETTE** (jamais clavier/tactile) — simplification assumée : `ui/menu.js` ne reçoit pas `input.peripheriqueActif()` (contrairement à `hints.js`, qui lui est branché dessus). Sans conséquence tant que le clavier/tactile restent hors du parcours de référence (décision produit : PC à la manette), à généraliser si Xav en a besoin.
-- **`menu.bandeauEstOuvert()` volontairement PAS inclus dans `menu.estOuvert()`** (`SD_construction-ecrans-orphelins_2026-09-17.md` §2 point 3, `docs/archives/JOURNAL_2026-09-17_ecrans-orphelins.md`) : l'inclure ferait gagner la branche `menu.traiterInput()` sur `traiterConstruction()` dans le dispatch de `main.js#maj()` pendant tout le placement (bandeau visible), réintroduisant le bug tout juste corrigé — main.js reste donc gelé pendant le placement via `constructionActif()` séparément, un appariement par convention entre les 4 fonctions qui touchent les deux (désormais vérifiable via `bandeauEstOuvert()`, plus implicite). Décorréler proprement demanderait de toucher le routage de `maj()`, explicitement hors scope de cette fiche.
-- **Confirmation de reset : double appel idempotent de `revenirAuMenuPrincipal()`** sur le chemin « Non » choisi par ATTACK (audité, non corrigé — `SD_construction-parite-clic-verbe_2026-09-19.md` §3.3, journal courant) : `actionConfirmerNon()` l'appelle déjà, puis le `else if (controleur.ouvertIntentionnellement())` de `menu.traiterInput` (retour de la confirmation) l'appelle une 2ᵉ fois, sans conséquence visible (fonction idempotente). Non touché délibérément : ce site est protégé par une régression déjà connue (`test_phase1_sd_menu_reset_invisible_2026-09-15.js`, cf. `docs/archives/JOURNAL_2026-09-17_ecrans-orphelins.md`) et ne présente PAS la même classe de bug que `creerEcranListeGenerique` (aucun `onFermer` à misfire) — aligner sur `onAnnuler` ici serait un nettoyage, pas un correctif, risque jugé disproportionné pour ce chantier.
+**Hors du périmètre du ticket, tu proposes.** Un défaut ou une idée qui touche
+d'autres fichiers ou un autre système ne se corrige pas en passant : personne ne
+relit un changement hors ticket. Vérifie s'il a déjà un identifiant ; sinon
+ajoute une ligne `D-` (défaut) ou `Q-` (idée, proposition de polish) et
+mentionne-la dans ton rapport. Tes propositions sont attendues : le jeu se
+conçoit à deux.
+
+**Clôture.** Tu clos les lignes `D-` et `DOC-` que tu as livrées, avec la date et
+une ligne de verdict. Tu ne clos jamais une ligne `Q-`, `V-` ou `E-` : Xav seul
+tranche, valide en jeu et écrit.
+
+**Ménage de journal.** En début de session, avec l'INDEX : ouvre les lignes que
+la session précédente a révélées, clos celles qu'elle a livrées.
 
 ## Critère de passage courant
 
-**Phase 3** (`04_maison-interieur.md`) et **chantier Construction** (`05_construction-stations.md`) : **tous deux close, tous deux validés en jeu par Xav.** Détail complet des diagnostics successifs (stations invisibles, jauges figées, respawn cassé, écrans orphelins, parité clic/verbe) : `docs/archives/INDEX.md`. Construction close le 2026-09-19 après validation au clic/tactile **puis** à la manette et au clavier seul, post-correctif de parité clic/verbe.
+**Phase 3** (`04_maison-interieur.md`) et **chantier Construction** (`05_construction-stations.md`) : **tous deux close, tous deux validés en jeu par Xav.** Détail complet des diagnostics successifs (stations invisibles, jauges figées, respawn cassé, écrans orphelins, parité clic/verbe) : `docs/archives/INDEX.md`.
 
-**Chantier courant : polish post-Construction** (ordre d'injection acté par Xav dans `NS_decisions-playtest_2026-09-19.md`). **Étapes 2 à 6 livrées en code le 2026-09-19** sur la branche `polish-2026-09-19` (non fusionnée — la fusion revient à Xav), chacune d'après sa propre fiche ; **toutes les validations en jeu restent dues**. Étape 1 : instrument livré, mesure en jeu toujours due. Étapes 7 à 9 pas commencées, chacune attend sa propre spec (même règle que pour une phase) :
+**Polish post-Construction — étapes 1 à 6 livrées et validées en jeu à la manette** (Xav, 2026-09-19 : « ça fonctionne, le jeu est fluide ») : instrument `?debug=fps`, héros à 0,88, follets visibles pendant l'intro, silhouette du puits, traînée de poussière, HUD sur un bandeau d'une ligne. Le tactile et les valeurs provisoires restent à valider (`V-02` a déjà rendu un « non » : le bouton MENU tactile chevauche le bandeau → ticket `D-17`). Étape 7 : **diagnostic fait, aucune correction de rendu encore faite** — elle est portée par `D-01` (les frames de recalcul du calque statique sortent du budget) et `D-02` (`dessiner()` coûte 12 ms sans aucun monstre).
 
-1. Mesure des saccades (`MT_mesure-saccades_2026-09-19.md`) — **instrument livré en code le 2026-09-19** (`?debug=fps`), protocole en jeu (traversée ligne droite jour/nuit, bouton « copier ») encore dû par Xav avant que l'étape 7 (correction) ne puisse s'écrire.
-2. Héros à l'échelle 0,88 (visuel + hitbox) — **livré en code le 2026-09-19** (branche `polish-2026-09-19`), validation manette due.
-3. Follets visibles pendant le texte de l'intro — **livré en code le 2026-09-19**, validation manette due.
-4. `station_puits` (silhouette dégradée à ×2,1) — **livré en code le 2026-09-19**, validation visuelle due.
-5. Traînée de poussière au déplacement (remplace le roulement) — **livré en code le 2026-09-19**, validation manette due.
-6. HUD sur une ligne pleine largeur, XP retirée du HUD — **livré en code le 2026-09-19**, validation manette **puis tactile** due.
-7. Correction des saccades, écrite d'après les chiffres mesurés à l'étape 1.
-8. `07_chaos-nocturne.md` (intrusion nocturne du Chaos dans la Région Maison — spec à écrire, cadrage déjà acté ci-dessus).
-9. Barre d'action du bas — après écriture de la spec par Xav lui-même.
+**La carte Maison n'est pas finie, et la Phase 4 n'est plus la prochaine étape.** Les systèmes prévus en Phase 4 (armes, équipement, compétences, tables d'apparition) arrivent d'abord **sur la carte Maison** ; la carte suivante s'ouvre quand la Maison est épuisée (Nv. 40-50, provisoire). Critère de clôture de la Région Maison : **la boucle de 2 heures** (sauvegarde neuve → 2 h de jeu → Nv. 30 → l'envie de changer d'endroit).
 
-**Aucune spec n'est encore écrite pour les étapes 7 à 9 : ne pas les commencer sans elle** (même règle que pour une phase).
+**Ordre d'injection proposé** (`NS_decisions-revue-dettes_2026-09-19.md` §7, à confirmer par Xav au fil de l'eau) — **un ticket par session**, chacun citant les identifiants du suivi qu'il touche :
 
-## Journal de session — Polish post-Construction, tickets 1-5 (2026-09-19)
+1. `D-17` — bouton MENU tactile sous le bandeau (libère le bord droit du bandeau).
+2. `D-13` — buffs actifs au bandeau HUD (une icône par effet, pulsation de fin).
+3. `D-02` — ventilation de `dessiner()` par calque dans `?debug=fps`, **mesure seule, zéro correction**.
+4. `specs/07_chaos-nocturne.md` v1.1.0 — **un palier par session** (A, puis B, puis C, puis D).
+5. `D-16` — puits (mâts plantés au sol, perspective de trois quarts), quand les captures de Xav sont là.
 
-### Rapport de fin de session (à lire en premier)
+`Q-07`, `Q-10`, `Q-11` et `Q-12` restent à trancher avec Xav. La spec de la barre d'action du bas (`E-01`) est écrite par Xav lui-même et attend le chiffrage `Q-11`. **Une spec non écrite ne se commence pas** (même règle que pour une phase).
 
-Branche **`polish-2026-09-19`**, jamais fusionnée dans `main` : la fusion revient à Xav. Suite headless **verte à chaque commit** ; **66 fichiers de test** en fin de session (61 au départ, 5 nouveaux). **Aucun ticket bloqué** — les 5 sont livrés.
+## Journal de session — Revue des dettes appliquée (`DOC-06`, 2026-09-19)
 
-| # | Ticket | Statut | Commit | Fichiers touchés |
-|---|---|---|---|---|
-| — | Ménage de journal + fiches de la session | livré | `80d45d7` | archive du journal précédent, `docs/archives/INDEX.md`, les 5 fiches |
-| 1 | `MT_heros-echelle` (héros à 0,88) | **livré** | `230e442` | `data/visuels.json`, `src/visuels.js`, `src/main.js`, `src/schemas.js`, + test |
-| 2 | `MT_intro-follets-visibles` | **livré** | `e288d1a` | `src/intro.js`, `src/main.js`, `docs/CHECKLIST_visuelle.md`, + test, + 3 assertions de tests existants |
-| 3 | `SD_puits-silhouette` | **livré** | `52a6a2e` | `data/visuels.json`, `src/structures.js`, `docs/CHECKLIST_visuelle.md`, + test |
-| 4 | `MT_trainee-poussiere` | **livré** | `ecae6bb` | `src/poussiere.js` (nouveau), `data/effets.json` (nouveau), `data/visuels.json`, `src/render.js`, `src/main.js`, `src/schemas.js`, `docs/CHECKLIST_visuelle.md`, + test |
-| 5 | `MT_hud-ligne-haute` | **livré** | `df0ef20` | `src/ui/hud_layout.js`, `src/ui/hud.js`, `src/ui/hud_hints.js`, `src/main.js`, `locales/fr.json`, `locales/en.json`, `docs/CHECKLIST_visuelle.md`, + test |
+**Session de documentation pure, ordonnée par `NS_decisions-revue-dettes_2026-09-19.md` v1.1.0 — aucun fichier de `src/`, `data/` ou `tests/` touché.** Lignes du suivi traitées, et aucune autre : `DOC-01`, `DOC-02`, `DOC-03`, `DOC-05`, `DOC-06`. Travail sur `main` (la branche `polish-2026-09-19` était déjà fusionnée par Xav, `e5b6d44`).
 
-**Aucune capture, aucun relevé `?debug=fps`.** Ni l'extension Chrome (« Browser extension is not connected ») ni le démon browser-use (« daemon default didn't come up ») ne répondent dans cette session. `docs/captures/polish-2026-09-19/` est donc resté vide, et les relevés avant/après demandés par le brief supposent de toute façon une traversée jouée à la main : **entièrement dus par Xav**, comme l'étape 1 du polish.
+**Ménage de journal d'abord** : le journal précédent (« Polish post-Construction, tickets 1-5 ») archivé verbatim dans `docs/archives/JOURNAL_2026-09-19_polish-tickets-1-5.md`, `docs/archives/INDEX.md` mis à jour (il manquait à l'INDEX), `docs/DOC_suivi-dettes.md` mis à jour dans la foulée (règle 4 du registre).
 
-#### À valider à la manette, dans l'ordre d'une seule boucle Grotte → Maison
+### Ce qui a changé, fichier par fichier
 
-1. **Intro, paupières puis convergence** — inchangées (budget ≤ 8 s, non-skippable).
-2. **Intro, texte de choix** *(ticket 2, état 17bis)* — les 3 follets **restent visibles derrière le texte**, leur lévitation se pose doucement ; à l'appui sur `A`, l'écran de choix apparaît **sans que les follets sautent**.
-3. **Départ des follets non élus** — inchangé, vérifier qu'aucun follet n'est dessiné en double.
-4. **Héros dans la Grotte** *(ticket 1)* — silhouette à 0,88 : proportion, lisibilité sur le voile sombre.
-5. **HUD** *(ticket 5, états 1, 25, 25bis)* — bandeau d'une seule ligne en haut : follet · PV · éclats · faim · soif · `Nv. N`. Rien dans la colonne de gauche, **aucune barre d'XP**. Vérifier que la bannière d'indice de commande ne chevauche pas le bandeau.
-6. **Traînée de poussière** *(ticket 4, état 32ter)* — en marchant : 2-3 bouffées, sous le héros ; **rien à l'arrêt**, rien contre un mur, rien sous le menu/dialogue.
-7. **Passages étroits de la Forêt** *(ticket 1)* — plus de jeu qu'avant (12 px → 14,4 px dans une ouverture d'1 tuile).
-8. **Puits, de jour, dans le Jardin** *(ticket 3, état 32bis)* — margelle, mâts plantés dessus, treuil, corde, seau, toit : **un seul objet**. Vérifier qu'il ne mord ni le chemin ni la zone du fruit.
-9. **Table / coffre / atelier** — ne devaient **pas** changer.
-10. **Couloir intérieur de la maison** *(ticket 1)* — circulation entre les stations.
-11. **Nuit** — la traînée de poussière doit s'assombrir avec la scène, jamais rester blanc vif.
-12. **Écran Stats** *(ticket 5)* — nouvelle entrée « Expérience : Nv.N — NN % ».
-13. **Montée de niveau** *(ticket 5, état 25bis)* — bref éclat doré sur `Nv. N`, aucun son.
-14. **Un passage au tactile** *(ticket 5)* — le bandeau ne doit recouvrir aucun bouton tactile.
+| Fichier | Changement |
+|---|---|
+| `CLAUDE.md` | « État actuel » réécrit (`DOC-01`, `DOC-02`) ; 2 contraintes de méthode ajoutées (micro-tickets, un ticket = un commit) ; règle de la checklist visuelle reformulée ; 7 décisions datées ajoutées et 2 réécrites ; **les sections « Points `[OUVERT]` » et « Dette et à reprendre » supprimées** et remplacées par le bloc de l'annexe A (`DOC-05`) ; « Critère de passage courant » réécrit |
+| `docs/carte_mentale_RPG_V2_v1_5_0.md` | **Renommée `..._v1_6_0.md`** (`git mv`, toutes les références mises à jour) ; §3bis vocabulaire révisé + arc de progression + boucle de 2 heures + `Q-18` ; §3bis table des scènes et §5 D21 (gating ~5 abandonné) ; §5 ⑦ (paliers, « un domaine, pas un piquet ») ; 4 lignes au journal §8 |
+| `specs/00_ROADMAP.md` | → **1.5.0** : statut, changelog, gating ~5 abandonné dans la table Design, 2 contraintes de méthode, section polish entièrement réécrite (`DOC-03`), section « Arc de progression de la carte Maison » ajoutée, Phase 4 déclassée, rappel de fin de session complété |
+| `docs/DOC_suivi-dettes.md` | → **1.6.0** : `DOC-01`, `DOC-02`, `DOC-03`, `DOC-05`, `DOC-06` descendues en §8 avec leur verdict ; **`D-19` ouverte et close** (voir ci-dessous) |
+| `docs/archives/` | Journal des tickets 1-5 archivé + ligne d'INDEX ; `NS_decisions-revue-dettes_2026-09-19.md` déplacée en fin de session |
 
-#### Valeurs provisoires introduites, à régler au ressenti
+### Trois points qui méritent d'être relus
 
-| Valeur | Fichier | Posée à |
-|---|---|---|
-| Échelle du héros (visuel **et** hitbox) | `data/visuels.json` > `visuel_heros` > `echelle` | **0,88** (décision Xav) |
-| Silhouette du puits : mâts, treuil, corde, seau | `data/visuels.json` > `visuel_puits` | mâts 3×18 en x=±7 ; treuil 15×2,5 ; corde 1×5 ; seau 5,5×4,5 |
-| Poussière : durée de vie | `data/effets.json` > `effet_poussiere` > `duree_ms` | 350 |
-| Poussière : distance entre deux bouffées | idem > `intervalle_px` | 14 |
-| Poussière : opacité de départ | idem > `alpha_depart` | 0,35 |
-| Poussière : échelle début → fin | idem > `echelle_depart` / `echelle_fin` | 0,8 → 1,6 |
-| Poussière : décalage latéral, décalage vertical | idem > `decalage_lateral_px` / `offset_y_px` | 3 / 6 |
-| Hauteur du bandeau HUD | `src/ui/hud_layout.js` > `BANDEAU_HAUT.hauteur` | 20 px (7,4 % de 270) |
-| Fin du contenu du bandeau | `src/ui/hud_layout.js` > `BANDEAU_CONTENU_FIN_X` | 430 px |
-| Durée de l'éclat de montée de niveau | `src/main.js` > `ECLAT_NIVEAU_MS` | 700 ms |
-| Position de la bannière d'indice | `src/ui/hud_hints.js` > `Y_BANNIERE` | 26 px (était 8) |
+**1. La vérification exigée par `DOC-05` avant de supprimer les deux listes.** Les **21 lignes** des sections « Points `[OUVERT]` » et « Dette et à reprendre » ont été reprises une à une pour retrouver leur identifiant dans le suivi. Toutes en avaient un (`V-09`, `Q-12`, `Q-08`, `Q-09`, `Q-10`, `Q-11`, `Q-07`, `E-01`, `Q-04` pour les `[OUVERT]` ; `D-04` à `D-13`, `D-16`, `V-01` à `V-05`, `V-10`, `V-11`, `Q-15`, `Q-16` pour les dettes) **sauf une** : la note sur `nb_au_sol` de `item_branche`/`item_caillou`. Elle est devenue **`D-19`**, ouverte et close le jour même en « sans objet » — la donnée est à 2 depuis la Phase 2, le changement demandé par la fiche du 17/09 n'a jamais eu lieu d'être. Rien d'autre n'a été perdu en vidant les deux sections.
 
-*Aucune valeur provisoire pour le ticket 2* : l'amortissement de la lévitation dure `levitation.periode_ms`, déjà en données.
+**2. `CLAUDE.md` ne contient plus aucune liste de ce qui est dû.** Le bloc de l'annexe A y a été recopié **tel quel**, comme le demande la NS : lecture ciblée par identifiant, initiative dans le périmètre du ticket, proposition hors périmètre, et l'interdiction de clore une ligne `Q-`, `V-` ou `E-`. Conséquence pratique pour les sessions suivantes : **un ticket qui ne cite aucun identifiant n'a pas de contexte de dette** — c'est voulu.
 
-#### Questions ouvertes
+**3. Ce que je n'ai pas fait, volontairement.** Les specs déjà livrées (`03_maison-exterieur.md`, `04_maison-interieur.md`) mentionnent encore le niveau ~5 « qui ouvre la zone suivante » : elles décrivent un état historique et la NS ne les listait pas — je les ai laissées intactes plutôt que de réécrire des specs closes. Seule la ROADMAP, qui est un document vivant, porte la note de révision. Même raisonnement pour les références à d'anciennes versions de la carte mentale dans les specs livrées.
 
-1. **Zone de buffs du HUD** (ticket 5) : l'inventaire a montré qu'**aucun buff n'est affiché au HUD** aujourd'hui, alors que `status.js` en tient. La zone est réservée et testée dans `elementsBandeauHaut`, mais rien n'y est dessiné — inventer un affichage aurait débordé du ticket. **Veux-tu un affichage des buffs actifs dans cette zone ?** (ticket à part).
-2. **Bannière d'indice descendue à y=26** (ticket 5) : conséquence mécanique du bandeau, pas une décision de design que j'aie prise à ta place — mais c'est un choix visible. **L'indice sous le bandeau te convient-il**, ou préfères-tu qu'il passe en bas de l'écran ?
-3. **Seau du puits** (ticket 3) : la fiche listait « seau » dans l'attendu, il n'existait pas dans les données. Je l'ai ajouté (avec treuil et corde) pour satisfaire le §Attendu. **À confirmer que c'est bien ce que tu voulais**, ou à retirer si le puits te paraît chargé.
-4. **`?debug=fps` avant/après** : impossible cette session (aucun navigateur). L'étape 7 du polish (correction des saccades) attend toujours tes chiffres, et la traînée de poussière ajoute un calque qu'il vaut mieux mesurer.
+### Question pour Xav
 
----
-
-
-Ménage de journal effectué en début de session : le journal précédent (« Diagnostic saccades : le calque statique n'était pas en cause ») archivé verbatim dans `docs/archives/JOURNAL_2026-09-19_diagnostic-saccades-calque.md`, `docs/archives/INDEX.md` mis à jour (lien de la dernière ligne corrigé, la fiche `SD_saccades-calque-statique_2026-09-19.md` était déjà déplacée dans `docs/archives/`). Travail sur la branche `polish-2026-09-19`, jamais fusionnée : c'est Xav qui fusionne.
-
-### Ticket 1 — MT héros à l'échelle 0,88 (visuel et hitbox)
-
-**Inventaire d'abord (demandé par le ticket), avant toute ligne de code.**
-
-Où vivait la taille du héros, AVANT :
-
-| Quoi | Où | Valeur |
-|---|---|---|
-| Silhouette visuelle | `data/visuels.json` > `visuel_heros` | cercle extérieur `w/h = 22` (donc rayon visuel 11 px), ombre `w 16 / h 6 / dy 8` |
-| Boîte de collision | `src/main.js:76` `const RAYON_HERO_PX = 10` | rayon 10 px, soit une hitbox carrée de 20×20 px |
-| Point de dérivation unique de la hitbox | `src/main.js#hitboxHeros()` | `{ x: hero.x - rayon, y: …, largeur: rayon*2, hauteur: rayon*2 }`, seule source pour `resoudreDeplacement` |
-
-**Constat de l'inventaire : les deux sources DIVERGEAIENT déjà** (rayon visuel 11 vs rayon de collision 10) — exactement ce que le ticket veut rendre impossible. Écart conservé tel quel en ratio (le visuel déborde légèrement la hitbox, ce qui est voulu : un corps qui mord d'un pixel sur un mur se lit mieux qu'un corps qui flotte), mais il dérive désormais d'un seul nombre.
-
-Ce qui est dérivé de la taille du héros, et ce qui ne l'est pas :
-
-- **Dérivé, donc suit automatiquement l'échelle** : `TOLERANCE_COIN_PX` (`scene.js:260`) vaut `largeur / 6` de la hitbox reçue — *déjà* relatif, aucun changement nécessaire, et il reste au même sixième de la boîte après réduction. Le ticket demandait de vérifier sa cohérence : elle est structurelle, pas numérique. Aucun test ne prouve qu'il faille la modifier → non modifiée.
-- **Non dérivé, donc rien à figer** (vérifié un par un, tous sont des constantes absolues ou des données, aucun ne lit le rayon du héros) : vitesse (`derivee_vitesse_deplacement_px_s`, stat dérivée), portée d'arme (`combat.js#estDansPortee`, en tuiles via `tile_size`), seuil d'interaction (`DISTANCE_INTERACT_PX = 28`), orbite du follet (`companion.js#ORBITE_RAYON_PX = 24`), aura (`companionActif.rayon_aura`, donnée), halo/lumière (`rayon_lumiere`, donnée), rayon d'effacement du toit (dérivé du `rayon_lumiere` du follet, pas du héros), taille des monstres (leurs propres visuels). **Aucune valeur n'a eu besoin d'être figée** — le ticket prévoyait ce cas, il ne s'est pas présenté.
-- Le ramassage n'a pas de rayon propre : `trouverItemProche` est appelé sous le même `DISTANCE_INTERACT_PX`, inchangé.
-
-**Fait.** Une seule échelle, en données :
-
-- `data/visuels.json` > `visuel_heros` porte désormais `"echelle": 0.88` — **le seul nombre à toucher pour retailler le héros**.
-- `src/visuels.js` : nouvel export `echelleVisuel(visuel)` (échelle propre d'une silhouette, 1 par défaut) ; `dessinerVisuel` compose *échelle propre × échelle d'instance* (`echelleEffective`). Un visuel sans `echelle` est strictement inchangé — tout le catalogue existant reste valide. Même esprit que `structures.js#tournerEmpreinte` : une seule fonction, deux consommateurs, pas de divergence possible.
-- `src/main.js` : `RAYON_HERO_PX = 10` devient `RAYON_HERO_BASE_PX = 10` (rayon de *référence*, échelle 1) et la nouvelle `rayonHeros()` renvoie `base × echelleVisuel(visuel_heros)`. Les 2 sites de création du héros (boot et `reinitialiserPartie`) passent par elle.
-- `src/schemas.js` : `echelle` validée sur les visuels (nombre strictement positif si présent) — une échelle nulle donnerait *à la fois* un héros invisible et une hitbox dégénérée, les deux venant du même champ, donc échec dur au boot.
-- **`render.js` n'a pas été touché** : l'échelle propre est appliquée à l'intérieur de `dessinerVisuel`, l'appelant n'a pas à la connaître. Donc **aucun rejeu de `docs/CHECKLIST_visuelle.md` exigé par la règle de méthode** (elle vise `render.js` / `ui/hud.js` / `ui/dialogue_box.js` / `main.js#dessiner()`, tous intacts pour ce ticket).
-
-Effet mesuré (headless) : rayon de collision 10 → 8,8 px, donc **jeu par côté dans un passage d'1 tuile : 6 px → 7,2 px** (+20 %), ce que le ticket visait.
-
-**Écarté volontairement** :
-
-- `TOLERANCE_COIN_PX` **non modifiée** — elle vaut déjà `largeur / 6` de la hitbox reçue, donc elle suit l'échelle toute seule. Le ticket n'autorisait un changement que si un test le prouvait nécessaire : aucun ne l'a prouvé.
-- Aucune valeur « figée » : l'inventaire ci-dessus montre qu'aucun des seuils listés par le ticket (vitesse, portées, interaction, aura, halo, orbite, toit, monstres) ne dérivait du héros. Rien à geler.
-- Le rayon de base (10) reste une constante de code : le ticket demandait *une seule échelle en données*, pas de déplacer toute la géométrie du héros en données.
-
-**Dette « mouvement légèrement téléporté à chaque angle » : réévaluée, non traitée** (le ticket l'interdit). Elle ne change pas de nature, mais son amplitude maximale **diminue** mécaniquement : la correction de coin est bornée par `TOLERANCE_COIN_PX = largeur/6`, soit 3,33 px avant, **2,93 px après**. Le saut sera donc un peu plus discret sans disparaître — la cause (repoussement appliqué d'un coup plutôt qu'interpolé) est intacte.
-
-**Testé** : `node --check` sur `src/visuels.js`, `src/main.js`, `src/schemas.js`, `tests/test_mt_heros_echelle_2026-09-19.js`. Nouveau `tests/test_mt_heros_echelle_2026-09-19.js` (5 blocs : échelle unique en données, composition d'échelle sur faux ctx, non-régression des visuels sans échelle, refus au boot d'une échelle invalide, couloir d'1 tuile sans contact, **2535 positions sauvegardées** valides avant qui le restent après). `node tools/run_tests.js` : **62 fichiers verts** (1 nouveau).
-
-**À valider par Xav à la manette** : silhouette du héros (proportion à 0,88 — si le ressenti est « trop petit » ou « pas assez », c'est `data/visuels.json > visuel_heros > echelle` et rien d'autre), passages étroits de la Forêt, couloir intérieur de la maison entre les stations. Aucune capture avant/après n'a pu être prise : **ni l'extension Chrome ni le démon browser-use ne répondent dans cette session** (extension non connectée ; `bu-default` ne démarre pas). Même cause pour les relevés `?debug=fps` avant/après demandés par le brief : ils supposent un navigateur *et* une traversée jouée à la main — entièrement dus à Xav.
-
-### Ticket 2 — MT intro : les follets restent visibles pendant le texte
-
-**Cause racine d'abord (hypothèse de la fiche vérifiée, pas présumée), nommée fichier:ligne.**
-
-`src/main.js#maj()`, ex-lignes 1185-1189 : à l'instant `intro.terminee`, le code faisait `intro = null` **puis** `demarrerChoixFollet()`. Or `demarrerChoixFollet()` (`main.js:291`) n'ouvre qu'un dialogue et ne pose `choixFollet` que dans son `onFermer`. Entre ces deux instants — c'est-à-dire pendant **tout** le texte :
-
-- `dessinerIntroConvergence()` (`main.js:1341`) sortait sur `if (!intro) return null;` ;
-- `dessinerEcranChoixFollet()` (`main.js:1313`) sortait sur `if (!choixFolletActif()) return;`.
-
-Personne ne dessinait les follets. Ils revenaient d'un coup à la fermeture du dialogue, quand `choixFollet` devenait non-null. **L'hypothèse de la fiche était exacte** ; la vérification a servi à nommer le point précis (`intro = null` trop tôt, pas un problème d'ordre de calques ni d'alpha).
-
-**Fait.**
-
-- `src/intro.js` : 3ᵉ étape `ETAPE_ATTENTE`. `creerIntro` gagne `tAttenteMs: 0` ; `avancerIntro` ne gèle plus l'horloge une fois `terminee` — il bascule sur `tAttenteMs` (et le dépassement de la frame de bascule amorce l'attente au lieu d'être perdu, pour ne pas marquer un micro-temps d'arrêt). La machine **reste pure** : aucune notion de dialogue, elle ne sait pas pourquoi on l'attend.
-- Continuité aux deux frontières, obtenue par un seul paramètre `amortissement` passé à `positionFolletConvergence` : la **phase du sinus continue de courir** (donc aucun saut à l'entrée en attente, amortissement = 1 des deux côtés), seule l'**amplitude** décroît jusqu'à 0 en une période de lévitation — à ce moment les follets sont posés **exactement** sur les cibles, là même où `dessinerEcranChoixFollet()` les redessine (donc aucun saut à la sortie non plus). Durée de l'amortissement **dérivée des données existantes** (`levitation.periode_ms`) : **aucun nouveau seuil numérique introduit**, rien de neuf à régler pour Xav.
-- `src/main.js` : l'intro n'est plus mise à `null` à la fin de la convergence ; `terminee` est lu comme un **front** (comparé à son état d'avant la frame) pour que le dialogue ne s'ouvre qu'une fois. L'intro s'éteint désormais dans `confirmerChoixFollet()`, où `depart` prend le relais. `dessinerIntroConvergence()` cède la priorité à `choixFolletActif()` (sans quoi les follets seraient dessinés deux fois pendant l'écran de choix).
-- Le dialogue est déjà dessiné **après** les follets dans `dessiner()` : le texte passe devant, les follets lévitent derrière, sans avoir à les atténuer.
-
-**Inchangé, comme l'exige le ticket** : durée de l'intro (budget ≤ 8 s, `dureeEtapesTempsFixe` intacte, testé), non-skippabilité (aucune lecture d'input ajoutée), armement anti-spam du dialogue (non touché).
-
-**3 assertions de tests existants mises à jour** — elles affirmaient l'ancien contrat, c'est-à-dire *le mécanisme même du bug*, pas un comportement à préserver : `test_phase1_sd_grotte_choix_follet` ligne 135 et `test_phase1b_intro` ligne 170 (« l'intro doit être terminée/null une fois la narration ouverte » → désormais « reste vivante, `terminee` vrai ») et `test_phase1b_intro` ligne 54 (« avancerIntro est un no-op une fois terminée » → `tMs` figé mais `tAttenteMs` qui avance). Chaque modification porte en commentaire la raison et la référence de la fiche.
-
-**Testé** : `node --check` sur `src/intro.js`, `src/main.js`, `tests/test_mt_intro_follets_visibles_2026-09-19.js`. Nouveau `tests/test_mt_intro_follets_visibles_2026-09-19.js` (6 blocs : visibilité et opacité sur 10 s de texte échantillonnées à 16 ms, continuité convergence→texte, report du dépassement de frame, follets posés au pixel près sur les cibles du choix, amortissement borné par son enveloppe et sans rebond, budget ≤ 8 s + front `terminee` unique). `node tools/run_tests.js` : **63 fichiers verts** (1 nouveau).
-
-**`main.js#dessiner()` touché → `docs/CHECKLIST_visuelle.md` à rejouer par Xav**, avec le nouvel **état 17bis « Intro — texte de choix + follets visibles »** ajouté à la checklist (les follets restent à l'écran derrière le texte, leur lévitation se pose, aucun saut à l'appui sur `A`). Comme pour le ticket 1, **aucune capture n'a pu être prise** : ni l'extension Chrome ni le démon browser-use ne répondent dans cette session.
-
-### Ticket 3 — SD puits : silhouette désolidarisée depuis l'échelle ×2,1
-
-**Cause racine d'abord : ce sont les DONNÉES, pas l'interprète.** Inventaire demandé par la fiche (chaque primitive, et si elle suit l'échelle) :
-
-`visuels.js#dessinerVisuel` applique **un unique `ctx.scale(e, e)`** autour de tout le dessin. Conséquence : longueurs, positions, rayons, **et épaisseurs de trait** (`lineWidth` est en espace utilisateur, donc mis à l'échelle lui aussi) suivent tous l'échelle, sans exception. `ancre` n'est même **jamais lu** par l'interprète (champ de métadonnée). **Donc l'interprète ne peut pas désolidariser une silhouette** : une silhouette bien assemblée à l'échelle 1 l'est à toute échelle — et réciproquement, un défaut d'assemblage existait déjà à l'échelle 1, il ne devenait visible qu'une fois agrandi. La branche « si c'est l'interprète, le défaut concerne tous les visuels » de la fiche **ne s'applique pas** ; table / coffre / atelier vérifiés malgré tout (voir tests), aucune pièce orpheline chez eux.
-
-Le défaut réel, mesuré sur les anciennes données :
-
-| Pièce | Boîte (échelle 1) | Verdict |
-|---|---|---|
-| margelle (cercle) | x[-10,10] y[-16,4] | disque r=10 centré (0,-6) |
-| eau (ellipse) | x[-7,7] y[-11,-1] | ok |
-| mât g / mât d (rect 3×14) | x[∓10.5,∓7.5] y[-25,-11] | **pied en porte-à-faux** |
-| toit (rect 22×3) | x[-11,11] y[-25.5,-22.5] | ok |
-
-Les **boîtes** des mâts et de la margelle se recouvrent (2,5 px) — un test naïf sur les boîtes serait resté vert. Mais le **disque** de la margelle ne mesure que `√(10² − 5²) = 8,66` px de demi-largeur à la hauteur où le mât s'arrêtait (y = −11), alors que le mât occupait x ∈ [−10,5 ; −7,5] : **seuls 1,16 px des 3 px du pied reposaient sur la margelle, 61 % flottaient dans le vide**. Et le pied s'arrêtait 5 px *au-dessus* du centre de la margelle, dans la partie où le disque se rétrécit vite — d'où « les mâts sont trop courts ». Agrandi ×2,1, le porte-à-faux devient un trou franc de ~3,9 px, parfaitement visible.
-
-**Fait (données seules, plus une extraction sans changement de règle) :**
-
-- `data/visuels.json` > `visuel_puits` : mâts rapprochés (x = ±7 au lieu de ±9) et **allongés** (h 18 au lieu de 14, pied à y = −7 au lieu de −11) — le pied repose désormais sur **toute** sa largeur (3 px d'appui sur 3), le sommet entre dans le toit (2,5 px de recouvrement). Ajout du **treuil** (rect 15×2,5) qui relie franchement les deux mâts, de la **corde** et du **seau**, explicitement listés au §Attendu et jusque-là absents de la silhouette.
-- `src/structures.js` : `boitePrimitive(p, echelle)` **extraite** de `empreinteParDefaut` — c'est exactement le calcul qui s'y trouvait, désormais nommé et réutilisé par elle. **Aucun changement de règle** ; le but est que la vérification d'assemblage et l'empreinte solide dérivent de la *même* fonction, pour qu'un test ne puisse pas rester vert pendant que l'empreinte, elle, dérive.
-
-**L'empreinte solide est strictement inchangée** : boîte englobante x[−11,11] y[−25,5 ; +4] avant **et** après (toutes les pièces ajoutées sont à l'intérieur ; le toit et la margelle, qui la définissent, n'ont pas bougé). La question « le puits mord-il sur un chemin ou sur la zone de réapparition du fruit ? » posée par la fiche **ne se pose donc pas** — et un test la verrouille aux 3 échelles pour qu'elle ne se pose pas non plus par surprise plus tard.
-
-**Valeurs nouvelles, toutes *provisoires*** (arrangement purement visuel, à juger à l'œil par Xav — elles sont toutes dans `data/visuels.json > visuel_puits`) : treuil 15×2,5 en y = −19 ; corde 1×5 en y = −16 ; seau 5,5×4,5 en y = −12 ; mâts 3×18 en x = ±7, y = −16.
-
-**Testé** : `node --check` sur `src/structures.js`, `tests/test_sd_puits_silhouette_2026-09-19.js`. Nouveau `tests/test_sd_puits_silhouette_2026-09-19.js`, **data-driven** (les contacts à vérifier sont déclarés dans une table en tête du fichier ; ajouter un visuel à surveiller ne demande aucune ligne de code) : 8 contacts tenus aux échelles **1, 2,1 et 3** ; appui réel du pied des mâts mesuré sur le **disque** et non sur sa boîte (c'est l'assertion qui aurait été **rouge** sur les anciennes données — vérifié : 1,16 px d'appui pour 3 px de mât) ; empreinte solide inchangée aux 3 échelles ; **aucune pièce orpheline** dans les 4 stations (table, coffre, atelier vérifiés au passage, tous sains). `node tools/run_tests.js` : **64 fichiers verts** (1 nouveau).
-
-**Vérification visuelle** : aucun navigateur piloté disponible dans cette session (extension Chrome non connectée, démon browser-use en échec) — donc, comme le prévoit la fiche, **nouvel état `32bis` ajouté à `docs/CHECKLIST_visuelle.md`** (« Puits — silhouette réassemblée », de jour, à comparer avec table/coffre/atelier qui ne devaient pas changer), dû par Xav. `visuels.js`, `render.js`, `hud.js`, `dialogue_box.js` et `main.js#dessiner()` **non touchés** : pas de rejeu intégral de la checklist exigé par la règle de méthode, seulement ce nouvel état.
-
-### Ticket 4 — MT traînée de poussière derrière le héros
-
-**Fait.** Nouveau module **pur** `src/poussiere.js` + nouveau catalogue de données `data/effets.json`.
-
-- `src/poussiere.js` (pur, aucun canvas, aucune horloge propre) : `creerPoussiere` / `avancerPoussiere` / `bouffeesVisibles` / `viderPoussiere`. **Réserve fixe de 8 bouffées pré-allouée une fois au boot** ; une bouffée morte est recyclée sur place (jamais `push`/`splice`), donc **zéro allocation en jeu**. Réserve pleine = la bouffée est abandonnée plutôt que d'agrandir le tableau (n'arrive qu'en téléportation).
-- **Émission à la distance parcourue** (`intervalle_px`), jamais au temps : la densité de la traînée est identique à 30 et à 144 fps (testé). La boucle d'émission est un `while` (une frame longue peut franchir plusieurs intervalles) borné par la réserve.
-- **Distance RÉELLEMENT parcourue**, mesurée *après* `resoudreDeplacement` (delta de `hero.x/y`), pas le déplacement demandé — pousser contre un mur ne soulève donc aucune poussière.
-- **Déterministe** : décalage latéral alterné par un compteur d'émissions, **aucun `Math.random()`** (un test relit le source du module pour le garantir).
-- **Règle directrice de la fiche respectée et verrouillée par un test** : le module ne connaît ni `rayon`, ni `heroVisuel`, ni `hitbox` — seulement une position et une distance. Remplacer la silhouette du héros demain ne touche pas une ligne de `poussiere.js`.
-- `src/render.js` : les bouffées sont dessinées **juste avant le héros** (donc sous lui) et **dans le monde** (coordonnées caméra) — le calque d'obscurité, appliqué bien plus tard, les assombrit la nuit **sans code dédié**. Paramètre `poussiere = null` par défaut : un appelant qui ne fournit rien dessine exactement comme avant.
-- `src/main.js` : réserve créée une fois au boot ; émission gelée par le **point de décision unique existant** (`if (!uiOuverte)`), jamais par une condition propre à l'effet — donc rien pendant l'intro, le dialogue, le menu ou la Construction, par construction. `viderPoussiere()` à chaque `entrerDansScene()` (donc aussi à `reinitialiserPartie`, qui y repasse) : une traînée ne suit pas le héros d'une scène à l'autre.
-- `src/schemas.js` : catalogue `effets` validé au boot (`visuel` référencé, `duree_ms`/`intervalle_px` strictement positifs — un intervalle nul ferait une boucle d'émission sans fin). Même patron que `survie_config` dans `survival.json`. **Data-driven** : un 2ᵉ effet s'ajoute en ajoutant une entrée, sans toucher au schéma.
-
-**Valeurs nouvelles, toutes *provisoires* et toutes dans `data/effets.json` > `effet_poussiere`** — c'est le seul fichier à ouvrir pour régler le ressenti : `duree_ms` 350, `intervalle_px` 14, `alpha_depart` 0,35, `echelle_depart` 0,8, `echelle_fin` 1,6, `decalage_lateral_px` 3, `offset_y_px` 6. La silhouette elle-même est `visuel_poussiere` dans `data/visuels.json` (3 petits cercles blancs).
-
-**Testé** : `node --check` sur `src/poussiere.js`, `src/render.js`, `src/main.js`, `src/schemas.js`, `tests/test_mt_trainee_poussiere_2026-09-19.js`. Nouveau `tests/test_mt_trainee_poussiere_2026-09-19.js` (les 4 contrats du §Tests + 3 de plus) : X px → k bouffées pour 4 pas différents ; densité identique à 30 et 144 fps ; réserve fixe même en saturation et en téléportation ; immobile → 0 ; UI ouverte → 0 ; l'arrêt ne met aucune bouffée « en attente » ; deux exécutions identiques → bouffées identiques ; alternance latérale ; alpha décroissant / échelle croissante puis recyclage ; `viderPoussiere` sans réallocation ; le module ignore la forme du héros et n'utilise aucun aléa. `node tools/run_tests.js` : **65 fichiers verts** (1 nouveau).
-
-**`main.js#dessiner()` et `render.js` touchés → `docs/CHECKLIST_visuelle.md` à rejouer par Xav** (règle de méthode), avec le nouvel **état `32ter` « Traînée de poussière »** ajouté à la checklist. **Relevé `?debug=fps` avant/après impossible** dans cette session : aucun navigateur piloté disponible (extension Chrome non connectée, démon browser-use en échec) et le protocole suppose de toute façon une traversée jouée à la main — dû par Xav, comme l'étape 1 du polish.
-
-### Ticket 5 — MT HUD sur une seule ligne en haut
-
-**Inventaire d'abord (demandé par le ticket) : ce que `ui/hud.js` dessinait.**
-
-| Calque | Où | Devenu |
-|---|---|---|
-| Cartouche 1 (arrondi, 120×46 en 6,6) : icône follet + barre de PV (valeur `pv/pvMax` centrée dedans) + ligne `◆ éclats` | colonne de gauche | **déplacé dans le bandeau haut** |
-| Cartouche 2 (sous le premier) : jauge faim, jauge soif, `Nv.N` + **barre d'XP** | colonne de gauche | jauges et niveau **déplacés dans le bandeau** ; **barre d'XP supprimée** |
-| Boutons tactiles (si tactile actif) | `hud_layout.js` | **non touché** |
-| Rangée de 5 slots en bas (si tactile inactif) | `dessinerSlotsBas` | **non touché** (spec à part de Xav) |
-
-**Deux choses que l'inventaire a révélées, et que la fiche n'avait pas listées** :
-
-1. **Les éclats (`◆ N`)**, qui vivaient dans le cartouche PV. La fiche prévoyait le cas (« à ajuster si l'inventaire révèle autre chose ») : ils prennent place dans le bandeau, entre les PV et la faim. Ordre final : **follet · PV · éclats · faim · soif · `Nv. N`** — espace — zone buffs.
-2. **Aucun buff n'est affiché au HUD aujourd'hui** (`status.js` en tient bien, mais rien ne les dessine). La zone de buffs est donc **calculée et testée** dans le layout, mais **rien n'y est dessiné** — inventer un affichage de buffs aurait débordé du ticket.
-
-**Fait.**
-
-- `src/ui/hud_layout.js` : `BANDEAU_HAUT` (0,0,480×20 — **7,4 % de la hauteur logique**, sous le plafond de 8 %) et `elementsBandeauHaut({ follet, survie, niveau })`, **pure**, qui renvoie les rectangles nommés. Tout le placement vit là, rien en dur dans `hud.js` — c'est ce qui rend le ticket testable, `hud.js` n'étant jamais exercé headless.
-- `src/ui/hud.js` : `dessinerHud` réécrite autour du bandeau. `dessinerRectangleArrondi`, `COULEUR_XP` et les 7 constantes `CARTOUCHE_*`/`BARRE_PV_HAUTEUR` **supprimées** (plus aucun cartouche). Les jauges gardent leurs icônes **par forme** (triangle/goutte) et les éclats leur losange — P4② intacte, chaque élément reste identifiable sans la couleur.
-- **Éclat de montée de niveau** : `main.js` tient un compte à rebours (`ECLAT_NIVEAU_MS = 700`, **provisoire**) déclenché par le **changement de `save.hero.niveau`** — donc un seul éclat par palier, quelle que soit la source d'XP — et passe un ratio 0..1 ; `hud.js` ne tient aucun état et vire simplement le texte à l'or. **Aucun son ajouté**, comme l'exige la fiche.
-- **L'XP reste lisible dans l'écran Stats** : nouvelle entrée informative (grisée) `Expérience : Nv.N — NN %`, même patron que « points libres ». Nouvelles clés `menu.stats_xp` en **FR et EN** (zéro chaîne en dur).
-
-**Conséquence non prévue par la fiche, traitée plutôt que laissée en collision** : la bannière d'indices de commande (`ui/hud_hints.js`) était dessinée à `y = 8`, hauteur 18 — elle se serait superposée au bandeau (0..20). La fiche exige explicitement que le bandeau ne recouvre pas les indices : **`Y_BANNIERE` passe de 8 à 26** (l'indice est fugace, le bandeau est permanent — c'est à l'indice de céder). Un seul nombre, commenté sur place.
-
-**Le bandeau ne recouvre aucun contrôle tactile** : son fond est bien plein écran (décision Xav), mais son **contenu** s'arrête à `x = 430`, avant le bouton MENU tactile (`cx 455, rayon 16`). Vérifié par test contre **tous** les boutons tactiles et le joystick.
-
-**Non touché, comme l'exige le ticket** : la rangée de cases du bas (spec à part, à écrire par Xav) et les boutons tactiles — un test le verrouille.
-
-**Testé** : `node --check` sur `src/ui/hud_layout.js`, `src/ui/hud.js`, `src/ui/hud_hints.js`, `src/main.js`, `tests/test_mt_hud_ligne_haute_2026-09-19.js`. Nouveau `tests/test_mt_hud_ligne_haute_2026-09-19.js` (7 blocs, les 8 combinaisons d'éléments optionnels à chaque fois) : bandeau plein écran et ≤ 8 % de hauteur ; tous les rectangles dans le bandeau et dans 480 px ; aucun chevauchement ; **plus aucun rectangle ni couleur ni paramètre d'XP** (layout *et* source de `hud.js`) ; `Nv. N` suit le niveau et les clés i18n existent en FR/EN ; aucun contenu ne recouvre un contrôle tactile ; la rangée du bas est intacte. `node tools/run_tests.js` : **66 fichiers verts** (1 nouveau).
-
-**`ui/hud.js` touché → `docs/CHECKLIST_visuelle.md` à rejouer EN ENTIER** (règle de méthode). La checklist a été mise à jour en conséquence : **état 1 réécrit** (le HUD y est décrit comme un bandeau haut), **état 25 réécrit** (jauges dans le bandeau, plus de barre d'XP, XP renvoyée à l'écran Stats), **nouvel état 25bis** (éclat de montée de niveau). Validation due par Xav : manette, **puis un passage au tactile** (le bandeau et les boutons tactiles coexistent en haut de l'écran).
+**L'ordre d'injection du §7 de la NS reste « proposé ».** Je l'ai inscrit tel quel dans « Critère de passage courant » (`D-17` → `D-13` → `D-02` → `07` palier A → B → C → D → `D-16`). Si tu veux commencer ailleurs — par exemple `D-04` (le saut à chaque angle, la dette qui touche le plus le ressenti au stick), ou `A-03` (le relevé de nuit, qui bloque la lecture de `D-01` avant que 07 ne pose des monstres la nuit) — dis-le : c'est une ligne à changer, pas un travail à refaire.

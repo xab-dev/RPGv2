@@ -1,8 +1,10 @@
 # RPG V2 — Roadmap + prompt d'exécution autonome
 
-**Version : 1.4.0** — document vivant.
+**Version : 1.5.0** — document vivant.
 
-**Statut** : Phases 0, 1, 1b, 2 et 3 (Palier A-E, boucle 5 minutes) et le chantier `05_construction-stations.md` (placement libre des stations dans la Maison) livrés et validés en jeu par Xav (manette **et** clavier, 2026-09-19). Chantier courant : polish post-Construction, session de documentation `NS_decisions-playtest_2026-09-19.md`, ordre d'injection ci-dessous. Ce document sert de brief autonome — à donner tel quel à Claude Code pour démarrer la phase/le chantier courant sans aller-retour préalable.
+**Statut** : Phases 0, 1, 1b, 2 et 3 (Palier A-E, boucle 5 minutes), le chantier `05_construction-stations.md` (placement libre des stations) **et les étapes 1 à 6 du polish post-Construction** sont livrés et validés en jeu par Xav (manette, 2026-09-19 : « ça fonctionne, le jeu est fluide »). La branche `polish-2026-09-19` est **fusionnée dans `main`** (`e5b6d44`) : on travaille sur `main`. **Chantier courant : la carte Maison elle-même** — ses systèmes et son contenu — jusqu'à la **boucle de 2 heures**. Ce document sert de brief autonome ; **ce qui reste dû (dettes, questions, validations) vit dans `docs/DOC_suivi-dettes.md`, et nulle part ailleurs**.
+
+**Changelog 1.5.0 (2026-09-19)** : session de revue des dettes (`NS_decisions-revue-dettes_2026-09-19.md`), aucun code touché. **Le gating « 1ère zone de monstres à partir du niveau ~5 » est abandonné** : la carte suivante s'ouvre quand la carte Maison est épuisée (Nv. 40-50, provisoire) ; les *systèmes* de la Phase 4 arrivent d'abord sur la carte Maison — **« Phase 4 = prochaine étape » ne se lit plus ici**. Arc de progression de la carte Maison et **boucle de 2 heures** inscrits comme critère de clôture de la Région Maison. Polish : étapes 1 à 6 actées comme livrées **et validées** ; étape 7 = diagnostic fait, **aucune correction de rendu encore faite**. Méthode : **micro-tickets** (un sujet par ticket, une session courte, validation de Xav entre deux), **un ticket = un commit** fait par Claude Code, **jamais de `push`**, et validation en jeu par Xav au lieu de la capture par état.
 
 **Changelog 1.4.0 (2026-09-19)** : session de tri/documentation, aucun code touché. Construction actée comme livrée et validée (verdict Xav manette + clavier, après le correctif de parité clic/verbe — détail `docs/archives/INDEX.md`). Décisions du playtest consignées : vocabulaire de la Région Maison figé, héros à l'échelle 0,88, HUD une ligne, follets visibles pendant l'intro, intrusion nocturne du Chaos dans la Région Maison cadrée (spec à écrire : `07_chaos-nocturne.md`). Ordre d'injection des prochains chantiers acté par Xav (§ « Ordre d'injection » ci-dessous).
 
@@ -31,7 +33,7 @@
 
 ## Décisions déjà tranchées (ne pas rouvrir)
 
-Référence complète : `docs/carte_mentale_RPG_V2_v1_5_0.md` §0 et §8. Résumé opérationnel :
+Référence complète : `docs/carte_mentale_RPG_V2_v1_6_0.md` §0 et §8. Résumé opérationnel :
 
 ### Plateforme & technique
 | Décision | Valeur |
@@ -53,7 +55,7 @@ Référence complète : `docs/carte_mentale_RPG_V2_v1_5_0.md` §0 et §8. Résum
 | Périmètre M1 | Grotte → Région Maison → 1ère zone → Château → Boss 1 → Poste avancé. **Liste close.** Console portable, cartouches (haTD, poker TCG, snake), Codex de collection au sens large, alignement bien/mal : **M2+**. |
 | Éléments | 3 : Feu / Eau / Terre. Table extensible en données, rien de codé en dur. |
 | Stats | 4 primaires : **Force, Agilité, Vitalité, Esprit**. Esprit = réserve de lancement des skills, rien d'autre. Tout scaling de dégâts (équipement, affinité initiale, maîtrise) converge sur Force ; l'élément porte le *type* et les interactions, jamais la puissance brute. |
-| Progression | **XP → stats** (points de stat par niveau). **Jalons narratifs → capacités.** Deux axes indépendants. Sources d'XP : combat **et craft**. Accès à la 1ère zone de monstres gaté par niveau (~5). |
+| Progression | **XP → stats** (points de stat par niveau). **Jalons narratifs → capacités.** Deux axes indépendants. Sources d'XP : combat **et craft**. **Le gating de la 1ère zone par niveau ~5 est abandonné (2026-09-19)** : la carte suivante s'ouvre quand la carte Maison est épuisée (Nv. 40-50, provisoire) — voir « Arc de progression de la carte Maison » plus bas. |
 | Actions | 5 slots : 1 attaque + 3 compétences + 1 consommable. Nombre de slots en données. |
 | Équipement | 3 slots : arme, armure, accessoire. |
 | Effets d'état | Buffs/débuffs, dégâts sur la durée, contrôles — **chacun dérivé logiquement de son élément**. Table des synergies élémentaires : à écrire (livrable Phase 1). |
@@ -71,12 +73,14 @@ Référence complète : `docs/carte_mentale_RPG_V2_v1_5_0.md` §0 et §8. Résum
 | Modèle | Gratuit + dons externes. Zéro pub, zéro achat, zéro monnaie premium, aucune mécanique de frustration monétisable. |
 
 ### Risques inscrits, à ne pas redécouvrir
-Voir `docs/carte_mentale_RPG_V2_v1_5_0.md` §0bis : cohérence 3 éléments RPG vs 9 haTD (à traiter au contrat de cartouche, M2+) ; tension éclats/paliers de vitalité si un marchand existe ; volume de texte doublé par le bilinguisme ; densité de 5 actions sous le pouce droit en tactile ; conformité Play Store sur la sollicitation de dons.
+Voir `docs/carte_mentale_RPG_V2_v1_6_0.md` §0bis : cohérence 3 éléments RPG vs 9 haTD (à traiter au contrat de cartouche, M2+) ; tension éclats/paliers de vitalité si un marchand existe ; volume de texte doublé par le bilinguisme ; densité de 5 actions sous le pouce droit en tactile ; conformité Play Store sur la sollicitation de dons.
 
 ---
 
 ## Contraintes de méthode non négociables
 
+- **Un sujet par ticket, une session courte par ticket** (2026-09-19). Xav valide en jeu entre deux tickets ; une spec par paliers se joue **un palier par session**. Chaque ticket cite les identifiants de `docs/DOC_suivi-dettes.md` qu'il touche, et Claude Code ne lit que ces lignes-là.
+- **Un ticket (ou une session) = un commit**, fait en fin de session, l'identifiant du ticket dans le titre. **Les `push` restent à la main de Xav : Claude Code ne pousse jamais.**
 - **Cause racine avant tout patch.** Jamais de rustine sur un symptôme.
 - **Valider avant de livrer** : `node --check` sur chaque fichier JS livré + toute la suite `tests/` rejouée. Un fichier `tests/test_<phase>_<date>.js` par session qui touche la logique de jeu.
 - **Le test data-driven, à chaque catalogue livré** : ajouter une entrée (arme, ennemi, recette, tuile, énigme…) doit être possible **en ajoutant une entrée JSON, sans toucher une ligne de code de système**. Si ce n'est pas le cas, le catalogue n'est pas livré.
@@ -84,7 +88,7 @@ Voir `docs/carte_mentale_RPG_V2_v1_5_0.md` §0bis : cohérence 3 éléments RPG 
 - **Zéro dépendance du gameplay à un périphérique.** Aucun `KeyboardEvent`, `TouchEvent` ou `Gamepad` en dehors de la couche d'input.
 - **Tout commentaire de code et texte d'UI en français**, style « contexte suffisant pour reconstruire le raisonnement » — un commentaire dit *pourquoi*, pas *quoi*.
 - **Scope discipline** : si une tâche déborde du brief, s'arrêter au dernier palier stable et documenter ce qui reste hors scope. Aucun système généralisé avant qu'un second cas d'usage réel existe — sauf les catalogues data-driven listés, qui sont généralisés par décision.
-- **Le rendu canvas n'est jamais exercé par les tests headless.** Toute vérification visuelle revient à Xav dans un vrai navigateur, à la manette.
+- **Le rendu canvas n'est jamais exercé par les tests headless.** Toute vérification visuelle revient à Xav dans un vrai navigateur, à la manette : **la validation en jeu par Xav suffit à clore un ticket de rendu** (2026-09-19), `docs/CHECKLIST_visuelle.md` restant la liste de ce qu'il regarde. Les captures deviennent un **album de référence** pris à chaque clôture de phase ou de chantier (six vues fixes, `docs/captures/AAAA-MM-JJ_jalon/`).
 - **Aucun fichier de la V1 n'est modifié.** La V2 vit dans son propre répertoire.
 
 ---
@@ -131,30 +135,45 @@ Première marche de la Région Maison (carte, ressources bloquées, items au sol
 - Intérieur avec **stations à placement libre** (atelier de cuisine, table de craft), coffre de base, déco légère — placement libre extrait en fiche autonome livrée le jour même, `05_construction-stations.md`.
 - **Système de recettes unique** (cuisine + craft), survie (faim/soif/santé + repas-buffs), inventaire poche → sac de craft, **XP par craft**, niveaux et attribution de stats.
 - Rouvre bois à couper / pierre à miner via le premier outil crafté (branche + caillou) — point d'accroche `resources.js#peutRecolter`.
-- Critère : la boucle 5 minutes tourne (sortir → récolter → revenir → cuisiner/crafter → repartir), et le joueur atteint le niveau ~5 qui ouvre la zone suivante — **prouvé par bot headless et validé par Xav en jeu**, détail `docs/archives/INDEX.md`.
+- Critère : la boucle 5 minutes tourne (sortir → récolter → revenir → cuisiner/crafter → repartir) et le joueur atteint le niveau ~5 — **prouvé par bot headless et validé par Xav en jeu**, détail `docs/archives/INDEX.md`. *Note 2026-09-19* : le niveau ~5 n'ouvre plus « la zone suivante » (gating abandonné), il ouvre désormais la **première zone de Chaos nocturne** de la carte Maison.
 
 ### Chantier Construction (`05_construction-stations.md`) — **close le 2026-09-19**
 Placement libre des stations dans la Maison (grille, rotation, fantôme de pose). Code livré le 2026-09-17, quatre diagnostics successifs (écran-liste, menu Pause invisible, contrat « ouvert », parité clic/verbe), tous corrigés et testés headless le jour même de leur découverte — détail `docs/archives/INDEX.md`. Validé par Xav en jeu au clic/tactile **puis** à la manette et au clavier seul.
 
-### Polish post-Construction — ordre d'injection acté par Xav (2026-09-19, `NS_decisions-playtest_2026-09-19.md`)
-Aucune de ces specs n'est encore écrite — ne pas commencer sans elle (même règle que pour une phase) :
+### Polish post-Construction — **étapes 1 à 6 livrées et validées en jeu (2026-09-19)**
 
-1. **Mesure des saccades** (`MT_mesure-saccades`, à écrire) — précise la dette « petites saccades régulières en traversant la carte en ligne droite, tous périphériques » avant tout correctif de perf.
-2. **Héros à l'échelle 0,88** (visuel et hitbox dérivés d'une seule échelle) ; pas de roulement (règle : aucun effet ne dépend de la forme du héros) — traînée de poussière au déplacement (étape 5).
+Les six fiches ont été écrites, livrées en code et validées à la manette par Xav le 2026-09-19 (« ça fonctionne, le jeu est fluide »). Journal : `docs/archives/JOURNAL_2026-09-19_polish-tickets-1-5.md` et `JOURNAL_2026-09-19_mesure-saccades.md`.
+
+1. **Mesure des saccades** (`MT_mesure-saccades_2026-09-19.md`) — instrument `?debug=fps` livré (`src/debug_perf.js`, `src/ui/hud_debug.js`). **Deux relevés réels existent** (`R-01`, `R-02` du registre §6 de `docs/DOC_suivi-dettes.md`) ; seule la mesure **de nuit** reste due (`A-03`).
+2. **Héros à l'échelle 0,88** — une seule échelle en données, visuel **et** hitbox ; règle : aucun effet ne dépend de la forme du héros.
 3. **Follets visibles pendant le texte de l'intro.**
-4. **`station_puits`** : silhouette dégradée à l'échelle ×2,1 (dette notée depuis le 2026-09-17), à diagnostiquer puis corriger.
-5. **Traînée de poussière** au déplacement (remplace l'idée de roulement, écartée).
-6. **HUD sur une ligne** en haut, pleine largeur ; XP retirée du HUD (conservée dans Stats).
-7. **Correction des saccades**, écrite d'après les chiffres mesurés à l'étape 1.
-8. **`07_chaos-nocturne.md`** — intrusion nocturne du Chaos dans la Région Maison : *révise* « aucun monstre, ton chill » de `03_maison-exterieur.md` §5. Cadre déjà acté par Xav : nuit seulement, zone de Chaos dans les Champs (vocabulaire figé en carte mentale §3bis : Forêt/Jardin/Zone sûre/Champs/Campagne), quelques monstres épars en Forêt, **un monstre qui entre en zone sûre (Maison+Jardin) fait demi-tour** (condition sur sa position, jamais sur celle du joueur). `[OUVERT]` retenu par défaut dans cette spec, à confirmer par Xav : un second rayon sûr autour de la sortie de la Grotte (point de retour après une mort).
-9. **Barre d'action du bas** — Xav veut qu'elle serve dès maintenant (premier slot en bas à gauche, jaune, pour l'arme, principe de la barre Minecraft) ; à faire cohabiter avec D5⑤ (5 slots) et le tactile (bas-gauche = joystick virtuel). **Spec à écrire par Xav lui-même**, en attente.
+4. **`station_puits`** — silhouette réassemblée (cause racine : les données). Un second défaut reste ouvert (`D-16` : mâts à planter au sol, perspective de trois quarts), gelé jusqu'aux captures de Xav.
+5. **Traînée de poussière** au déplacement (module pur + `data/effets.json`).
+6. **HUD sur un bandeau d'une ligne** en haut, pleine largeur ; XP retirée du HUD (conservée dans Stats). Au tactile, le bouton MENU chevauche le bandeau → ticket `D-17`.
+7. **Correction des saccades — pas encore faite.** Le diagnostic est fait (le fenêtrage du calque statique est sain, test rouge d'abord puis vert sur HEAD ; le compteur cumulatif de `ui/hud_debug.js` a été corrigé), mais **aucune correction de rendu n'a touché le jeu**. Elle est portée par `D-01` (les frames de recalcul du calque sortent du budget) et `D-02` (`dessiner()` coûte 12 ms sans aucun monstre) ; le prochain ticket de perf est une **ventilation de `dessiner()` par calque, mesure seule, zéro correction**.
+8. **`specs/07_chaos-nocturne.md` v1.1.0 — écrite.** Intrusion nocturne du Chaos dans la Région Maison, *révise* « aucun monstre, ton chill » de `03_maison-exterieur.md` §5. Apparitions **par paliers de niveau en données** (Nv. 5 zone nord-est, Nv. 10 zone sud, Nv. 15 apparitions éparses — la Forêt reste vide avant 15), zones en **rectangles**, comportement **« un domaine, pas un piquet »**. La spec ne livre que le système et le palier 1, **un palier par session** (A zones et tirage · B la nuit et le seuil · C comportement · D signal visuel).
+9. **Barre d'action du bas** (`E-01`) — **spec à écrire par Xav lui-même**, après le chiffrage `Q-11` (état d'UI pur).
 
-`[OUVERT]` inscrit en parallèle, non ordonnancé : construction en zone Champs (contredit la grille intérieure de `05_construction-stations.md`, piste `zonesConstructibles` en JSON de scène).
+### Arc de progression de la carte Maison (2026-09-19) — ce qui vient maintenant
 
-### Phase 4 — 1ère zone de monstres
+**La Phase 4 n'est plus la prochaine étape.** Les *systèmes* qu'elle prévoyait (armes, équipement, compétences, tables d'apparition) arrivent d'abord **sur la carte Maison** ; la *carte* de la Phase 4 vient après.
+
+| Niveau | Ce qui s'ouvre sur la carte Maison | Statut |
+|---|---|---|
+| 5 | Zone de Chaos nord-est (la nuit) | **décidé** — périmètre de `specs/07_chaos-nocturne.md` |
+| 10 | Zone de Chaos sud (la nuit) | **décidé** — micro-ticket données seules |
+| 15 | Apparitions éparses en Forêt et dans les Champs (la nuit) | **décidé** — la Forêt reste vide avant 15 |
+| 20 | Une petite caverne en Forêt, annoncée par une ligne de lore, casse-tête dessiné par Xav | idée |
+| 30 | Les compétences | idée — `Q-18` ouverte (frotte contre le double axe XP/jalons) |
+| 40-50 | La carte suivante (Phase 4) | idée |
+
+**Avant toute nouvelle carte** (`E-02`) : plus de ressources, écrire les crafts, écrire les armes, écrire les compétences. **Critère de clôture de la Région Maison : la boucle de 2 heures** — sauvegarde neuve → deux heures de jeu → niveau 30 → l'envie de changer d'endroit, vérifiable à la main par Xav **et** par le bot headless.
+
+### Phase 4 — 1ère zone de monstres — **plus la prochaine étape** (2026-09-19)
 Seconde région (≥ V1_M1), dans l'esprit chaos : plus sombre, plusieurs salles et passages, **mini-boss et boss farmables**.
-- Synergies du follet en double action (joueur / monstres), équipement 3 slots, compétences (5 slots, réserve Esprit), tables de spawn/loot, gating d'accès par niveau via le registre de flags.
+- Synergies du follet en double action (joueur / monstres), équipement 3 slots, compétences (5 slots, réserve Esprit), tables de spawn/loot.
 - Livre : le combat complet tel qu'il sera jusqu'au bout de M1.
+- **Ordre révisé** : ces systèmes arrivent d'abord **sur la carte Maison** (voir « Arc de progression de la carte Maison » ci-dessus) ; cette *carte*-ci ne s'ouvre qu'une fois la Maison épuisée, vers le Nv. 40-50 (provisoire). Le gating d'accès par niveau ~5 est abandonné.
 
 ### Phase 5 — Le Château
 Intérieur navigable multi-salles, **mini-boss à tir à distance** (trajectoire télégraphiée, cohérent avec « pas de mort injuste »), énigmes uniques scriptées réservées aux moments forts.
@@ -175,3 +194,5 @@ Casse-tête réparti sur tout le monde de la V2 : un bouton dans la Maison, un l
 
 ## Rappel pour l'agent en fin de session
 Avant de conclure : documenter explicitement dans `CLAUDE.md` du projet V2 (1) les décisions prises et pourquoi, (2) ce qui est livré et validé (commandes exactes rejouées), (3) ce qui reste hors scope et pour quelle phase c'est prévu. Ce résumé est la mémoire du projet entre sessions. Un point de design non tranché se marque `[OUVERT]` et remonte à Xav — il ne se tranche pas en silence.
+
+Puis, dans `docs/DOC_suivi-dettes.md` : clore les lignes `D-` et `DOC-` livrées (date + une ligne de verdict, la ligne descend en « Clos »), ouvrir celles que la session a révélées. **Ne jamais clore une ligne `Q-`, `V-` ou `E-`** : Xav seul tranche, valide en jeu et écrit. Enfin, **un commit** pour la session, l'identifiant du ticket dans le titre — et **aucun `push`**.

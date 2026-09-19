@@ -2,7 +2,7 @@
 projet: RPG V2
 episode/session: Polish post-Construction — suivi transversal
 type: registre de suivi (document vivant)
-version: 1.4.0
+version: 1.6.0
 statut: brouillon
 catégorie: Doc
 date: 2026-09-19
@@ -22,9 +22,9 @@ Emplacement : `docs/DOC_suivi-dettes.md`. Nom sans date : c'est un registre viva
 
 1. Un identifiant ne change jamais et n'est jamais réutilisé (`Q-` question, `V-` validation, `E-` à écrire, `D-` dette technique, `DOC-` doc, `R-` relevé).
 2. Statuts : `ouvert` · `en cours` · `gelé` (attend autre chose, dire quoi) · `clos` (date + une ligne de verdict) · `sans objet` (date + pourquoi).
-3. Une ligne close **descend en §7**, elle n'est pas supprimée.
+3. Une ligne close **descend en §8 « Clos »**, elle n'est jamais supprimée.
 4. Claude Code met ce fichier à jour **au ménage de journal de début de session**, en même temps que l'INDEX : il ajoute ce que la session précédente a ouvert, il clôt ce qu'elle a livré. Il ne clôt **jamais** une ligne `Q-`, `V-` ou `E-` : seul Xav le fait.
-5. **Ce fichier est la seule liste** (décision `Q-14`). `CLAUDE.md` n'en garde aucune copie : ses sections « Points `[OUVERT]` » et « Dette et à reprendre » sont remplacées par le bloc de règles de l'annexe A (à appliquer par `DOC-05`).
+5. **Ce fichier est la seule liste** (décision `Q-14`). `CLAUDE.md` n'en garde aucune copie : ses sections « Points `[OUVERT]` » et « Dette et à reprendre » ont été remplacées par le bloc de règles de l'annexe A le 2026-09-19 (`DOC-05`, clos).
 6. **Chaque ticket cite les identifiants qu'il touche** (« traite `D-04`, ne touche pas à `D-11` »). Claude Code ne lit ici que ces lignes-là : le contexte voyage avec le ticket.
 7. Claude Code garde l'initiative dans le périmètre de son ticket : il peut retenir une solution par défaut, la marquer `[OUVERT]` et ouvrir la ligne `Q-` correspondante. Hors périmètre, il propose (ligne `D-` ou `Q-`) sans corriger.
 
@@ -36,8 +36,6 @@ Emplacement : `docs/DOC_suivi-dettes.md`. Nom sans date : c'est un registre viva
 
 | Id | Action | Pourquoi maintenant | Statut |
 |---|---|---|---|
-| A-01 | Fusionner `polish-2026-09-19` dans `main` | Les 5 tickets sont validés à la manette ; tout nouveau ticket doit partir de cette base | ouvert |
-| A-02 | `git log --oneline --since=2026-09-18 -- src/render.js src/main.js` et coller la sortie | Tranche `DOC-02` en dix secondes : sait-on si un correctif de saccades a touché le jeu, ou seulement l'instrument | ouvert |
 | A-03 | Relevé `?debug=fps` **de nuit**, même protocole (voir §6) | Seul le jour est mesuré ; la nuit ajoute le calque d'obscurité et c'est là que 07 fera apparaître ses monstres | ouvert |
 
 ---
@@ -83,7 +81,7 @@ Priorité : `P1` avant 07 · `P2` dans un lot léger · `P3` quand le système c
 
 | Id | Dette | Cause connue / hypothèse | P | Statut |
 |---|---|---|---|---|
-| D-01 | **Les frames où le calque statique est recalculé sortent du budget.** 41 recalculs sur 600 frames (6,8 %), 5,8 ms de moyenne et 10 ms au pire, par-dessus 12 ms de base : ~18 ms, soit exactement le p95 de `dessiner()` | Mesuré (`R-02`). Marge du calque : (2304 − 1920) / 2 = 192 px physiques = **48 px logiques = 1,5 tuile** ; en course, un recalcul complet toutes les ~250 ms. Pistes à évaluer, pas à coder d'emblée : marge plus large (mémoire contre fréquence), ou défilement incrémental (recopier le calque décalé et ne dessiner que la bande entrante) | P1 | ouvert |
+| D-01 | **Les frames où le calque statique est recalculé sortent du budget.** 41 recalculs sur 600 frames (6,8 %), 5,8 ms de moyenne et 10 ms au pire, par-dessus 12 ms de base : ~18 ms, soit exactement le p95 de `dessiner()` | Mesuré (`R-02`). Marge du calque : (2304 − 1920) / 2 = 192 px physiques = **48 px logiques = 1,5 tuile** ; en course, un recalcul complet toutes les ~250 ms. Pistes à évaluer, pas à coder d'emblée : marge plus large (mémoire contre fréquence), ou défilement incrémental (recopier le calque décalé et ne dessiner que la bande entrante) **Piste lue dans le code (diff de `1be4688`)** : le calque est reconstruit dès que `fenetre.xDebut` ou `yDebut` change. À vérifier en premier : ce début de fenêtre change-t-il à chaque tuile franchie (32 px) ou seulement par pas de marge ? Si c'est à chaque tuile, la marge pré-rendue ne sert pas d'amortisseur, et la correction est d'attendre que la vue **sorte** de la zone pré-rendue avant de reconstruire | P1 | ouvert |
 | D-02 | **`dessiner()` coûte 12 ms sans aucun monstre** (0 monstre, 4 interactifs, 5 objets). Il reste 4,6 ms avant de perdre 60 fps | Cause inconnue. Suspects à *mesurer*, pas à présumer : blit du calque statique 2304×1408, calque d'obscurité 1920×1080 composé même de jour, rendu à résolution physique. Premier ticket = ventiler `dessiner()` par calque dans `?debug=fps`, zéro correction | P1 | ouvert |
 | D-03 | **L'instrument se contredit** : `dessiner()` p95 = 18 ms, mais delta max = 16,70 ms et 1 seule frame > 20 ms | Hypothèse : le delta vient de l'horodatage de `requestAnimationFrame` (calé sur le vsync), qui ne voit pas une frame rendue en retard. Par ailleurs toutes les durées sont entières (1,00 / 10,00 / 18,00) : minuterie du navigateur arrondie à 1 ms. À expliquer avant de se fier aux valeurs absolues | P1 | ouvert |
 | D-04 | Saut perceptible à chaque angle (correction de coin appliquée d'un coup) | Amplitude max 2,93 px depuis le héros à 0,88. Hypothèse : répartir ou interpoler le repoussement. À diagnostiquer d'abord. C'est la dette qui touche le plus directement le ressenti au stick | P2 | ouvert |
@@ -122,12 +120,7 @@ Protocole (à ne pas changer, sinon les lignes ne se comparent plus) : partie ne
 
 | Id | Où | Problème | Statut |
 |---|---|---|---|
-| DOC-01 | `CLAUDE.md`, « État actuel » et « Dette » | « zéro chiffre réel recueilli », « protocole encore dû par Xav » : faux depuis R-01, l'INDEX dit lui-même que le relevé a été livré | ouvert |
-| DOC-02 | `CLAUDE.md`, étape 7 du polish | Marquée « pas commencée », alors qu'une session de 3 h y a été consacrée. Le seul journal archivé conclut « le calque statique n'était pas en cause, correctif dans `hud_debug.js` seulement » ; le souvenir de Xav est un correctif dans le jeu. Trancher par `A-02`, puis écrire ce qui a réellement été fait | ouvert |
-| DOC-03 | `specs/00_ROADMAP.md` 1.4.0, section polish | « Aucune de ces specs n'est encore écrite », « `MT_mesure-saccades`, à écrire » : les étapes 1 à 6 sont livrées et validées | ouvert |
-| DOC-05 | `CLAUDE.md`, sections « Points `[OUVERT]` » et « Dette et à reprendre » | À remplacer par le bloc de l'annexe A (décision `Q-14`). Avant de supprimer : vérifier que chaque ligne des deux sections a bien son identifiant ici. Reformuler aussi la règle de méthode sur `CHECKLIST_visuelle.md` : « validation en jeu par Xav » au lieu de « capture par état » (décision `Q-15`) | ouvert |
 | DOC-04 | `specs/07_chaos-nocturne.md` | **Fait le 19/09** : passée en v1.1.0 (zones en rectangles, Campagne neutre, zone sûre de la Grotte en rectangle, paliers de niveau en données, comportement « un domaine, pas un piquet », périmètre réduit au palier 1). Reste : y reporter le budget de rendu mesuré (`D-02`) quand il sera ventilé | en cours |
-| DOC-06 | `specs/00_ROADMAP.md` (→ 1.5.0), `docs/carte_mentale_RPG_V2` (→ v1.6.0), `CLAUDE.md` | Appliquer `NS_decisions-revue-dettes_2026-09-19.md` : vocabulaire révisé de la Région Maison, seuil « niveau ~5 » de la 1ère zone de monstres abandonné, arc de progression de la carte Maison, critère de la boucle de 2 heures, méthode micro-tickets. Session **doc seule**, aucun code | ouvert |
 
 ---
 
@@ -135,6 +128,14 @@ Protocole (à ne pas changer, sinon les lignes ne se comparent plus) : partie ne
 
 | Id | Quoi | Clos le | Verdict |
 |---|---|---|---|
+| DOC-01 | « Zéro chiffre réel recueilli » dans `CLAUDE.md` | 2026-09-19 | **Corrigé.** « État actuel du dépôt » dit désormais que deux relevés réels existent (`R-01`, `R-02`) et renvoie au registre §6 ; seule la mesure **de nuit** reste due (`A-03`) |
+| DOC-02 | Statut de l'étape 7 du polish | 2026-09-19 | **Corrigé d'après `A-02`.** `CLAUDE.md` et la ROADMAP disent maintenant : diagnostic fait (fenêtrage sain, compteur cumulatif de `hud_debug.js` corrigé), **aucune correction de rendu encore faite**, portée par `D-01` et `D-02`. « Pas commencée » retiré |
+| DOC-03 | `specs/00_ROADMAP.md`, section polish | 2026-09-19 | **Corrigé en 1.5.0.** Les étapes 1 à 6 sont décrites comme livrées **et validées en jeu** ; « aucune de ces specs n'est encore écrite » et « `MT_mesure-saccades`, à écrire » retirés ; l'étape 8 renvoie à `07_chaos-nocturne.md` v1.1.0, déjà écrite |
+| DOC-05 | Sections « Points `[OUVERT]` » et « Dette et à reprendre » de `CLAUDE.md` | 2026-09-19 | **Remplacées** par le bloc de l'annexe A (section « Ce qui est dû »). Les 21 lignes des deux sections ont été vérifiées une à une : toutes avaient déjà leur identifiant ici, **sauf une** (`nb_au_sol`), ouverte et close le jour même en `D-19`. Règle de la checklist visuelle reformulée dans la foulée (`Q-15`) : validation en jeu par Xav, la capture devient un album de référence |
+| DOC-06 | Application de `NS_decisions-revue-dettes_2026-09-19.md` | 2026-09-19 | **Appliquée** : `CLAUDE.md` (vocabulaire révisé, arc de progression, boucle de 2 heures, « un domaine, pas un piquet », décisions d'interface, méthode micro-tickets et un ticket = un commit), `docs/carte_mentale_RPG_V2_v1_6_0.md` (renommée, §3bis, D21, §5 ⑦, §8) et `specs/00_ROADMAP.md` 1.5.0. Session doc seule, aucun fichier de `src/`, `data/` ou `tests/` touché |
+| D-19 | `nb_au_sol` de `item_branche` / `item_caillou` | 2026-09-19 | **Sans objet.** Déjà à 2 dans `data/items.json` depuis la Phase 2 : le changement demandé par la fiche de respawn du 17/09 n'a jamais eu lieu d'être. Ligne créée uniquement pour que la dernière phrase de l'ancienne section « Dette » de `CLAUDE.md` garde un identifiant |
+| A-01 | Fusion de `polish-2026-09-19` dans `main` | 2026-09-19 | **Faite par Xav**, en avance rapide, puis poussée : `main`, `origin/main` et la branche pointent sur `e5b6d44`. La branche peut être supprimée (`git branch -d polish-2026-09-19`) |
+| A-02 | Le correctif des saccades a-t-il touché le jeu ? | 2026-09-19 | **Non, l'outil de mesure seulement.** Vérifié par Xav dans git : tout le travail de la nuit du 18 au 19 est dans un seul commit (`1be4688`, 13 fichiers, 870 lignes ajoutées, 26 retirées). `render.js` : 58 ajouts, 4 retraits, tous des branchements de mesure (`surFrame`, `surRecalcul`, accesseurs) ; la condition qui décide de reconstruire le calque est **inchangée**. `main.js` : 43 ajouts, 1 retrait. Ce qui était « cumulatif » était le **compteur** de `hud_debug.js`, et ce correctif-là est réel. La dette de rendu (`D-01`, `D-02`) reste entière |
 | Q-06 | Zones de Chaos et Champs | 2026-09-19 | **Vocabulaire révisé** : Champs = deux grandes zones en L (nord et sud) ; bande centrale = **Campagne neutre** (rien n'y apparaît, un monstre peut y poursuivre) ; toutes les zones en **rectangles**, au format `zones` de `scenes.json`. **Chaos nocturne par paliers de niveau**, toujours la nuit : Nv. 5 zone nord-est · Nv. 10 zone sud · Nv. 15 apparitions éparses en Forêt et dans les Champs (remplace « quelques monstres en Forêt dès le début » : la Forêt reste vide avant 15). Seuils en données, jamais dans le code. 07 ne livre que le système et le palier 1 |
 | Q-04 | Zone sûre à la sortie de la Grotte | 2026-09-19 | **Oui, en rectangle**, plus large que le rayon de 8 tuiles proposé (carte de Xav) |
 | Q-05 | Laisse des monstres | 2026-09-19 | **« Un domaine, pas un piquet »** : errance dans un domaine fait de zones de la carte · poursuite bornée depuis le point où le monstre repère le joueur · désintérêt de quelques secondes après un abandon ou un demi-tour en lisière de zone sûre · anti-blocage après ~1 s sans avancer. Les monstres ne quittent leur domaine que si le joueur les attire. À observer en jeu : appât patient jusqu'au Jardin, poursuites courtes en Forêt dense |

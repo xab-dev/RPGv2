@@ -2,7 +2,7 @@
 projet: RPG V2
 episode/session: Polish post-Construction — revue des dettes (doc seule)
 type: notes de session
-version: 1.0.0
+version: 1.1.0
 statut: brouillon
 catégorie: Doc
 date: 2026-09-19
@@ -28,9 +28,10 @@ Source de vérité du détail : `docs/DOC_suivi-dettes.md` v1.4.0 (§8 « Clos �
 ## 2. Corrections de doc (faits établis)
 
 - `CLAUDE.md` affirme « zéro chiffre réel recueilli » : **faux**. Deux relevés `?debug=fps` existent (registre §6 du suivi, `R-01` et `R-02`).
-- **Étape 7 du polish (correction des saccades).** `CLAUDE.md` la dit « pas commencée » ; le seul journal archivé conclut « correctif dans `hud_debug.js` seulement » ; Xav se souvient d'un correctif dans le jeu, vu dans la session de 3 h. **Ne pas réécrire l'histoire à l'aveugle** : lancer `git log --oneline --since=2026-09-18 -- src/render.js src/main.js`, consigner la sortie dans le journal, et écrire le statut d'après ce qu'elle montre. Les relevés ne montrent aucun gain de rendu entre `R-01` et `R-02` (`dessiner()` ≈ 12 ms dans les deux).
+- **Étape 7 du polish (correction des saccades) — vérifié dans git par Xav le 19/09.** Tout le travail de la nuit du 18 au 19 est dans un seul commit, `1be4688`. Dans `render.js` (58 ajouts, 4 retraits) et `main.js` (43 ajouts, 1 retrait), il n'y a que des branchements de mesure ; la condition de reconstruction du calque statique est inchangée. Écrire donc : « diagnostic fait — fenêtrage sain, compteur cumulatif de `hud_debug.js` corrigé ; **aucune correction de rendu encore faite**, portée par `D-01` et `D-02` ». Les deux relevés le confirment : `dessiner()` ≈ 12 ms dans `R-01` comme dans `R-02`.
 - `specs/00_ROADMAP.md`, section polish : les étapes 1 à 6 sont **livrées et validées à la manette par Xav le 19/09** ; retirer « aucune de ces specs n'est encore écrite ».
-- Branche `polish-2026-09-19` : noter son état réel (fusionnée ou non) au moment de la session.
+- Branche `polish-2026-09-19` : **fusionnée dans `main` par Xav le 19/09** (avance rapide, poussée sur GitHub, `e5b6d44`). Travailler sur `main`.
+- **Règle de méthode confirmée par Xav le 19/09, à inscrire dans les « Contraintes de méthode » de `CLAUDE.md`** : *un ticket (ou une session Claude Code) = un commit*, fait par Claude Code en fin de session, l'identifiant du ticket dans le titre. Motif : le commit fourre-tout `1be4688` a rendu illisible ce qui avait été fait cette nuit-là ; la nuit du polish, faite ticket par ticket, se relit d'un coup d'œil. **Les `push` restent ponctuels et à la main de Xav**, pour les grosses modifications ou évolutions : Claude Code ne pousse jamais.
 
 ## 3. Région Maison — vocabulaire révisé (remplace le §2 de `NS_decisions-playtest_2026-09-19.md`)
 

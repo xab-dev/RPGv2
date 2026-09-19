@@ -176,7 +176,7 @@ Les six fiches ont été écrites, livrées en code et validées à la manette p
 Source : `NS_decisions-fondations_2026-09-19.md` §5, qui **remplace** le §7 de `NS_decisions-revue-dettes_2026-09-19.md`. Principe de Xav : **les fondations d'abord** — on ne rajoute pas de contenu sur des bases non confirmées, et les tickets légers et sûrs passent avant les lourds. Validation en jeu de Xav entre deux tickets.
 
 1. Session de documentation « fondations » (doc seule) — **faite**.
-2. `D-22` — clavier : `E` = interagir, `F` = consommer (`MT_clavier-e-f_2026-09-19.md`).
+2. `D-22` — clavier : `E` = interagir, `F` = consommer (`MT_clavier-e-f_2026-09-19.md`) — **livré le 2026-09-19** (échange dans `input/keyboard.js` seul ; glyphes des locales mis d'accord à la main, double source ouverte en `D-25`). Validation clavier de Xav due.
 3. `D-21` — rayon d'effacement du toit −10 % (`MT_toit-rayon_2026-09-19.md`).
 4. `D-20` palier A — « mains nues », portée de l'auto-attaque (`MT_mains-nues_2026-09-19.md`). **Validation dans la Grotte, sur le premier monstre.**
 5. `D-20` palier B — icône de l'arme équipée dans la case d'attaque.
@@ -189,7 +189,7 @@ Source : `NS_decisions-fondations_2026-09-19.md` §5, qui **remplace** le §7 de
 
 En parallèle, côté Xav : `A-04`, le relevé `?debug=fps` sur le **Galaxy A04 réel** par le Wi-Fi local (procédure au §6 de la NS). `D-24` (serveur local joignable depuis le téléphone, repli du bouton « copier ») ne s'ouvre que si cette procédure échoue.
 
-Les captures de la V1 (`docs/captures/inspiration_rpg_v1/`) sont une **inspiration, jamais un cahier des charges** : aucun ticket ne les lit tant que `E-03` (une ligne d'intention par image) n'est pas rempli.
+Les captures de la V1 (`docs/captures/v1/`) sont une **inspiration, jamais un cahier des charges** : aucun ticket ne les lit tant que `E-03` (une ligne d'intention par image) n'est pas rempli.
 
 ### Phase 4 — 1ère zone de monstres — **plus la prochaine étape** (2026-09-19)
 Seconde région (≥ V1_M1), dans l'esprit chaos : plus sombre, plusieurs salles et passages, **mini-boss et boss farmables**.

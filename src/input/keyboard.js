@@ -12,8 +12,12 @@ export const MAPPING_CLAVIER_PROVISOIRE = {
   skill_1: ['Digit1'],
   skill_2: ['Digit2'],
   skill_3: ['Digit3'],
-  consume: ['KeyE'],
-  interact: ['KeyF'],
+  // E porte l'action la plus fréquente (interagir, récolter, ramasser) :
+  // la main gauche posée sur les touches de déplacement y tombe seule.
+  // F prend l'action plus rare (se nourrir). Retour de playtest du
+  // 2026-09-19 (D-22) — les deux touches portaient les verbes inverses.
+  interact: ['KeyE'],
+  consume: ['KeyF'],
   menu: ['Escape'],
 };
 

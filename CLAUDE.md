@@ -261,7 +261,7 @@ la session précédente a révélées, clos celles qu'elle a livrées.
 **Ordre d'injection** (`NS_decisions-fondations_2026-09-19.md` §5 — *remplace* le §7 de `NS_decisions-revue-dettes_2026-09-19.md`) : les légers et sûrs d'abord, **un ticket par session, un commit par ticket**, chacun citant les identifiants du suivi qu'il touche.
 
 1. Cette session de documentation (doc seule) — faite.
-2. `D-22` — clavier : `E` = interagir, `F` = consommer (`MT_clavier-e-f_2026-09-19.md`).
+2. `D-22` — clavier : `E` = interagir, `F` = consommer (`MT_clavier-e-f_2026-09-19.md`) — **livré le 2026-09-19, validation clavier de Xav due**.
 3. `D-21` — rayon d'effacement du toit −10 % (`MT_toit-rayon_2026-09-19.md`).
 4. `D-20` palier A — « mains nues », portée (`MT_mains-nues_2026-09-19.md`). **Validation dans la Grotte.**
 5. `D-20` palier B — icône de la case d'attaque.
@@ -274,37 +274,45 @@ la session précédente a révélées, clos celles qu'elle a livrées.
 
 `A-04` (relevé `?debug=fps` sur le Galaxy A04 réel, par le Wi-Fi local — procédure au §6 de la NS) est une action de Xav, faisable dès maintenant, en parallèle. `D-24` (serveur local joignable depuis le téléphone, repli du bouton « copier ») ne s'ouvre que si cette procédure échoue.
 
-Les captures de la V1 (`docs/captures/inspiration_rpg_v1/`) sont une **inspiration, jamais un cahier des charges** : aucun ticket ne les lit tant que `E-03` (une ligne d'intention par capture) n'est pas rempli.
+Les captures de la V1 (`docs/captures/v1/`) sont une **inspiration, jamais un cahier des charges** : aucun ticket ne les lit tant que `E-03` (une ligne d'intention par capture) n'est pas rempli.
 
 `Q-10`, `Q-11` et `Q-12` restent à trancher avec Xav ; `Q-07` et `Q-19` sont gelées. La spec de la barre d'action du bas (`E-01`) est écrite par Xav lui-même et attend le chiffrage `Q-11`. **Une spec non écrite ne se commence pas** (même règle que pour une phase).
 
-## Journal de session — « Les fondations d'abord » (`NS_decisions-fondations_2026-09-19.md`, 2026-09-19)
+## Journal de session — `D-22` : clavier, `E` = INTERACT, `F` = CONSUME (2026-09-19)
 
-**Session de documentation pure — aucun fichier de `src/`, `data/` ou `tests/` touché.** Travail sur `main`. `docs/DOC_suivi-dettes.md` **v1.7.0 a été fourni par Xav avec la NS** : il n'a pas été réécrit, seulement vérifié (voir ci-dessous).
+Ticket `MT_clavier-e-f_2026-09-19.md`, **une seule ligne du suivi touchée : `D-22`** (close). Une ligne ouverte au passage : **`D-25`**. Suite headless verte, **67 fichiers** (66 + le nouveau). Un commit, pas de `push`.
 
-**Ménage de journal d'abord** : le journal précédent (« Revue des dettes appliquée, `DOC-06` ») archivé verbatim dans `docs/archives/JOURNAL_2026-09-19_revue-dettes-appliquee.md`, une ligne ajoutée à `docs/archives/INDEX.md`.
+**Ménage de journal** : journal précédent (« Les fondations d'abord ») archivé verbatim dans `docs/archives/JOURNAL_2026-09-19_fondations-doc.md`, ligne d'INDEX ajoutée. La NS des fondations reste dans `docs/` : son §6 est la procédure `A-04`, et ses quatre autres fiches `MT_*` sont des tickets encore à jouer.
 
-### Ce qui a changé, fichier par fichier
+### Étape 1 du ticket : la table touche → verbe, avant le changement
+
+| Verbe | Touches (avant) | Touches (après) |
+|---|---|---|
+| `MOVE` gauche / droite / haut / bas | `KeyA`/`←` · `KeyD`/`→` · `KeyW`/`↑` · `KeyS`/`↓` | inchangé |
+| `ATTACK` | `Space` | inchangé |
+| `SKILL_1` / `SKILL_2` / `SKILL_3` | `Digit1` / `Digit2` / `Digit3` | inchangé |
+| `CONSUME` | **`KeyE`** | **`KeyF`** |
+| `INTERACT` | **`KeyF`** | **`KeyE`** |
+| `MENU` | `Escape` | inchangé |
+
+Les deux touches portaient **exactement les verbes inverses** : rien d'autre n'écoutait `E` ni `F`, il n'y avait donc pas de question bloquante à poser. Le changement est un échange, pas une réaffectation.
+
+### Ce qui a changé
 
 | Fichier | Changement |
 |---|---|
-| `docs/archives/` | Journal précédent archivé verbatim + ligne d'INDEX |
-| `CLAUDE.md` | « État actuel » : **deux relevés → trois**, avec la réserve de `R-04` (émulation F12 = c'est le PC qui dessine) et le fait qu'il établit ; une **décision datée pour `Q-21`** (« mains nues » = première arme) ; « Critère de passage courant » : la décision de méthode du §1 et le **nouvel ordre d'injection** (§5 de la NS) à la place de l'ancien |
-| `specs/00_ROADMAP.md` | → **1.6.0** : version, statut (« chantier courant = les fondations »), changelog 1.6.0, étape 1 du polish (trois relevés, réserve de `R-04`), note de report sur `07_chaos-nocturne.md`, **nouvelle section « Ordre d'injection »** (qui répare au passage le renvoi mort du changelog 1.4.0) |
-| `docs/DOC_suivi-dettes.md` | **Non touché** (fourni en v1.7.0 par Xav, comme le demande la NS) |
-| `docs/carte_mentale_RPG_V2_v1_6_0.md` | **Non touchée**, comme le demande la NS : `Q-21` applique une décision déjà verrouillée, le report se fera à sa prochaine révision |
+| `src/input/keyboard.js` | `interact: ['KeyE']` / `consume: ['KeyF']` dans `MAPPING_CLAVIER_PROVISOIRE`, avec le *pourquoi* en commentaire (la main gauche posée sur les touches de déplacement tombe seule sur `E`, qui prend l'action la plus fréquente) |
+| `locales/fr.json`, `locales/en.json` | `glyphe.clavier.interact` : `F` → **`E`** ; `glyphe.clavier.consume` : `E` → **`F`** (mêmes valeurs dans les deux langues : une lettre isolée ne se traduit pas) |
+| `tests/test_d22_clavier_e_f_2026-09-19.js` | Nouveau. Rouge d'abord (`KeyE doit produire INTERACT`), vert après |
 
-### Vérification demandée par la NS : les identifiants cités existent-ils ?
+**Aucun autre fichier.** Recherche de `KeyE`/`KeyF`/`MAPPING_CLAVIER` sur tout le dépôt : les seules occurrences sont dans `input/keyboard.js`. **Aucun module de gameplay ne connaît une touche** — la contrainte « zéro dépendance du gameplay à un périphérique » tient, il n'y avait rien à signaler de ce côté. Manette et tactile non touchés.
 
-Les **18 identifiants** de l'en-tête `ids_suivi` ont été cherchés un à un dans `docs/DOC_suivi-dettes.md` v1.7.0 : `Q-07` (§2, gelée), `Q-19` (§2), `Q-20` (§2), `Q-21` (§8, close), `D-01`, `D-03`, `D-05`, `D-14`, `D-20`, `D-21`, `D-22`, `D-23`, `D-24` (§5), `A-04`, `A-05` (§1), `E-01`, `E-03` (§4), `R-04` (§6). **Tous présents, aucun manquant, aucune contradiction de statut avec la NS.**
+### Étape 3 du ticket : les glyphes ne sont **pas** dérivés du mapping → `D-25`
 
-### Ce que je n'ai pas fait, volontairement
+La chaîne d'affichage est `hints.js` → `glyphes.json#clavier_key` → `t("glyphe.clavier.interact")` → `locales/*.json`. Elle est propre côté périphérique (le glyphe suit bien `input.peripheriqueActif()`), mais **la lettre elle-même est recopiée** dans les locales : rien ne la relie à `MAPPING_CLAVIER_PROVISOIRE`. Changer le mapping sans toucher les locales afficherait la mauvaise touche, sans erreur au boot ni test rouge. Conformément au ticket, je n'ai **pas** refondu : les deux sources sont mises d'accord à la main, et la dette est ouverte en **`D-25`**.
 
-- **La décision verrouillée « pas de pixel art — rendu net à résolution physique (DPR) » (15/09) n'a pas été touchée**, comme la NS l'exige explicitement : `Q-19` la *réviserait*, mais elle n'est pas tranchée — elle attend `A-05`.
-- **Le suivi des dettes n'a pas été réécrit** : la NS le donne comme fourni. Conséquence pratique : les lignes que cette session aurait normalement ouvertes ou closes au ménage y sont déjà, écrites par Xav.
-- La carte mentale et les specs déjà livrées restent intactes (même raisonnement que la session précédente : ce sont des états historiques).
-- **La NS n'a pas été déplacée dans `docs/archives/`** : son §6 est la procédure que Xav doit suivre pour `A-04`, et les cinq fiches `MT_*_2026-09-19.md` de la file d'injection sont des tickets **actifs**. Tout ce lot sera archivé au ménage de la session qui archivera ce journal.
+Garde-fou en attendant : le bloc 4 du nouveau test compare les deux sources dans les deux langues. Ce n'est pas la correction — c'est ce qui rend la divergence bruyante. `D-25` est apparentée à `D-10` (l'aide de la Construction ignore le périphérique actif) et touche la matière de `E-01` (filigrane de la touche dans les cases de la barre du bas) : à traiter avec l'un des deux.
 
-### Un point à signaler à Xav
+### Validation due par Xav (clavier seul, partie neuve)
 
-**Le chemin de `E-03` ne correspond pas au dossier réel.** Le suivi (§4) et l'en-tête du gabarit disent `docs/captures/v1/DOC_captures-v1.md` ; le fichier et les 12 images vivent en réalité dans **`docs/captures/inspiration_rpg_v1/`**. Rien n'est cassé — aucun ticket ne lit ce dossier tant que `E-03` n'est pas rempli — mais un ticket futur qui suivrait le chemin écrit ne trouverait rien. J'ai écrit le **chemin réel** dans `CLAUDE.md` et la ROADMAP, et je n'ai pas corrigé le suivi ni le gabarit (hors périmètre, et la NS interdit de réécrire le suivi). À arbitrer : renommer le dossier, ou corriger les deux mentions.
+L'indice d'`INTERACT` doit montrer `E`, celui de `CONSUME` doit montrer `F` ; récolter un arbre avec `E`, ouvrir le Craft avec `E`, manger le fruit avec `F`. Tant que ce passage n'est pas fait, `D-22` est **livrée**, pas confirmée en jeu — c'est écrit dans son verdict au suivi.

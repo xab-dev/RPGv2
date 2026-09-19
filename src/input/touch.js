@@ -13,7 +13,19 @@ function dansCercle(x, y, cercle) {
   return Math.hypot(x - cercle.cx, y - cercle.cy) <= cercle.rayon;
 }
 
-export function creerSourceTactile(cible, { versLogique = (x, y) => ({ x, y }) } = {}) {
+// `surPremierContact` (`D-30`) : crochet optionnel appelé DANS le
+// gestionnaire de `touchstart`, donc **pendant** le geste du joueur — c'est
+// la condition que les navigateurs posent pour accorder le plein écran, et
+// c'est pourquoi il est ici plutôt que dans `maj()` à la frame suivante.
+//
+// Ce module ne sait pas ce qu'on en fait : il ne connaît ni le plein écran,
+// ni l'orientation, ni le DOM au-delà de ses propres événements. Il appelle à
+// **chaque** contact ; c'est `plein_ecran.js` qui porte le loquet « une seule
+// fois », en un seul endroit. Mettre le loquet ici l'aurait dispersé.
+export function creerSourceTactile(cible, {
+  versLogique = (x, y) => ({ x, y }),
+  surPremierContact = null,
+} = {}) {
   let actif = false;
   // Incrémenté à chaque touchstart (jamais décrémenté) : `estActif()` est un
   // loquet à vie (une fois vrai, reste vrai), insuffisant pour détecter "un
@@ -51,6 +63,11 @@ export function creerSourceTactile(cible, { versLogique = (x, y) => ({ x, y }) }
     bloquerComportementNatif(e);
     actif = true;
     nbContacts += 1;
+    // Avant toute autre chose, et sans jamais rien rattraper ici : le crochet
+    // est « meilleur effort » et rattrape ses propres erreurs à sa frontière
+    // (plein_ecran.js). Un `try/catch` de plus ici masquerait un vrai bug
+    // d'input le jour où le crochet servira à autre chose.
+    if (surPremierContact) surPremierContact();
     const points = positionsLogiques(e.touches);
     for (const p of points) doigts.set(p.identifier, p);
     attribuerJoystickSiBesoin(points);

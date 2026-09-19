@@ -15,6 +15,7 @@ import { creerI18n, verifierJeuxDeCles } from './i18n.js';
 import { creerSourceClavier } from './input/keyboard.js';
 import { creerSourceManette } from './input/gamepad.js';
 import { creerSourceTactile } from './input/touch.js';
+import { creerPleinEcranTactile } from './plein_ecran.js';
 import { creerCoucheInput, etatNeutre } from './input/input.js';
 import { chargerScene, resoudreDeplacement, portailFranchi, trouverPositionLibrePlusProche } from './scene.js';
 import { calculerCamera } from './camera.js';
@@ -2193,7 +2194,24 @@ export async function demarrerJeu() {
   ajusterTailleCanvas();
 
   // --- Input : clavier + manette + tactile fusionnés (§2.3) ---
+  // `D-30` : plein écran au premier appui TACTILE, et au tactile seul — sur
+  // PC, F11 reste le geste du joueur. La demande part depuis le gestionnaire
+  // de `touchstart` (donc pendant le geste, ce que le navigateur exige).
+  // Sous-système « meilleur effort » : il rattrape ses propres erreurs, rien
+  // à faire ici (cf. plein_ecran.js).
+  //
+  // C'est `document.documentElement` qu'on passe en plein écran, et **pas le
+  // canvas** : le menu Pause, les écrans Poche/Craft/Coffre/Stats, le bandeau
+  // de Construction et le relevé `?debug=fps` sont des éléments DOM ajoutés à
+  // `document.body`, à côté du canvas. Mettre le seul canvas en plein écran
+  // les rendrait tous invisibles — un menu inaccessible sur téléphone, et
+  // personne pour faire le lien avec ce ticket-ci.
+  const pleinEcran = creerPleinEcranTactile({
+    element: document.documentElement,
+    ecran: typeof screen !== 'undefined' ? screen : null,
+  });
   const sourceTactile = creerSourceTactile(canvasVisible, {
+    surPremierContact: () => pleinEcran.demanderUneFois(),
     // Seule source de vérité pour écran -> logique (diagnostic
     // SD_ui-lisibilite §3c) : versCoordonneesLogiques() est la même fonction
     // pure, testée, dont presenter()/calculerRectanglePresentation() dessine

@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Phases validées : 0 (Socle technique), 1 (La Grotte), 1b (polish, DA validée), 2 (Région Maison, première marche, `specs/03_maison-exterieur.md`) et 3 (Maison, intérieur & systèmes de camp, `specs/04_maison-interieur.md`, close le 2026-09-17). **Chantier `specs/05_construction-stations.md` (placement libre des stations) close le 2026-09-19** : validé par Xav en jeu à la manette puis au clavier seul, après le correctif de parité clic/verbe (détail complet des 4 diagnostics successifs : `docs/archives/INDEX.md`). **Polish post-Construction : étapes 1 à 6 livrées et validées en jeu à la manette par Xav le 2026-09-19** (« ça fonctionne, le jeu est fluide ») — instrument de mesure sous `?debug=fps`, héros à l'échelle 0,88, follets visibles pendant l'intro, silhouette du puits, traînée de poussière, HUD sur un bandeau d'une ligne. La branche `polish-2026-09-19` est **fusionnée dans `main`** (`e5b6d44`) : on travaille sur `main`.
 
-**Deux relevés `?debug=fps` réels existent** (`R-01`, `R-02` du registre de performance, §6 de `docs/DOC_suivi-dettes.md`) ; seule la mesure **de nuit** reste due. Étape 7 (correction des saccades) : **diagnostic fait le 2026-09-19** — le fenêtrage du calque statique est sain (test rouge d'abord, vert sur HEAD) et le compteur cumulatif de `ui/hud_debug.js` a été corrigé ; **aucune correction de rendu n'a encore été faite**, elle est portée par `D-01` et `D-02` du suivi.
+**Trois relevés `?debug=fps` réels existent** (`R-01`, `R-02`, `R-04` du registre de performance, §6 de `docs/DOC_suivi-dettes.md`). `R-04` a été pris **sous l'émulation F12** (vue adaptative, « Regular 3G ») : c'est le **PC** qui dessine, pas un téléphone — il ne dit donc rien d'un vrai appareil (`A-04`), mais il établit un fait utile, **le coût de rendu suit le nombre de pixels** (échelle 4 → 5 : `dessiner()` ×1,67, recalcul du calque ×1,63, `maj()` inchangé). La mesure **de nuit** (`A-03`) et la mesure sur téléphone réel (`A-04`) restent dues. Étape 7 (correction des saccades) : **diagnostic fait le 2026-09-19** — le fenêtrage du calque statique est sain (test rouge d'abord, vert sur HEAD) et le compteur cumulatif de `ui/hud_debug.js` a été corrigé ; **aucune correction de rendu n'a encore été faite**, elle est portée par `D-01` et `D-02` du suivi.
 
 **Ce qui reste dû (dettes, questions, validations) vit dans `docs/DOC_suivi-dettes.md`, et nulle part ailleurs.**
 
@@ -214,6 +214,7 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 | **Bandeau HUD, ordre définitif** : compagnon · PV (jauge + nombre) · éclats · faim · soif · **buffs** · `Nv. N` collé au bord droit. Un buff = une icône par **effet** (la stat renforcée), forme et couleur, sans texte ni jauge ; pulsation douce en fondu sur les ~2 dernières secondes. Le bouton MENU tactile descend **sous** le bandeau, qui redevient libre sur toute sa largeur | 2026-09-19 | même NS §6 (tickets `D-13`, `D-17`) |
 | **Verbe de rotation en Construction : reste `SKILL_1`**, statut provisoire levé (Construction jugée intuitive à la manette) ; l'indice de commande reste **sous** le bandeau | 2026-09-19 | même NS §6 (`Q-08`, `Q-02`) |
 | **Déplacement du fantôme de Construction : impulsion puis répétition au maintien**, via une **brique d'input générique** (« maintien puis répétition ») exposée aux menus et au mode Construction, jamais recodée par écran — corrige aussi le tapotement du joystick tactile | 2026-09-19 | même NS §6 (`D-18`) |
+| **« Mains nues » est la première arme du jeu** : la portée de l'auto-attaque de base (actuelle / 2, *provisoire*) et l'icône (une main) vivent dans une **entrée d'arme**, jamais dans une stat ni une constante de `combat.js` ; la case d'attaque de la barre du bas dessine l'icône de l'**arme équipée**, sans cas particulier. *Applique* la décision verrouillée « la portée vient de l'arme » — schéma minimal, à étendre par la spec des armes (`E-02`) | 2026-09-19 | `NS_decisions-fondations_2026-09-19.md` §3 (`Q-21` → `D-20`) |
 
 (Les décisions de `05_construction-stations.md` étaient déjà actées par Xav **dans la spec elle-même** avant tout code, v1.0.0 §9 — les lignes ci-dessus n'y renvoient que pour mémoire, elles ne tranchent rien de nouveau.)
 
@@ -255,40 +256,55 @@ la session précédente a révélées, clos celles qu'elle a livrées.
 
 **La carte Maison n'est pas finie, et la Phase 4 n'est plus la prochaine étape.** Les systèmes prévus en Phase 4 (armes, équipement, compétences, tables d'apparition) arrivent d'abord **sur la carte Maison** ; la carte suivante s'ouvre quand la Maison est épuisée (Nv. 40-50, provisoire). Critère de clôture de la Région Maison : **la boucle de 2 heures** (sauvegarde neuve → 2 h de jeu → Nv. 30 → l'envie de changer d'endroit).
 
-**Ordre d'injection proposé** (`NS_decisions-revue-dettes_2026-09-19.md` §7, à confirmer par Xav au fil de l'eau) — **un ticket par session**, chacun citant les identifiants du suivi qu'il touche :
+**Décision de méthode (Xav, 2026-09-19, 17 h 18) : on ne rajoute pas de contenu sur des bases non confirmées.** Avant `specs/07_chaos-nocturne.md` et avant de rouvrir `Q-07` (passée à **gelée**) : la **performance** et les **retours du playtest du 19/09**. On repart de la base et on remonte, **un ticket par session**, validation en jeu entre deux. Le critère qui dira « les fondations sont closes » n'est pas encore tranché : `Q-20` (proposition : PC sans aucune frame sautée, appareil plancher à 30 fps stables ; candidat = le Galaxy A04 de Xav), qui attend le relevé `A-04`.
 
-1. `D-17` — bouton MENU tactile sous le bandeau (libère le bord droit du bandeau).
-2. `D-13` — buffs actifs au bandeau HUD (une icône par effet, pulsation de fin).
-3. `D-02` — ventilation de `dessiner()` par calque dans `?debug=fps`, **mesure seule, zéro correction**.
-4. `specs/07_chaos-nocturne.md` v1.1.0 — **un palier par session** (A, puis B, puis C, puis D).
-5. `D-16` — puits (mâts plantés au sol, perspective de trois quarts), quand les captures de Xav sont là.
+**Ordre d'injection** (`NS_decisions-fondations_2026-09-19.md` §5 — *remplace* le §7 de `NS_decisions-revue-dettes_2026-09-19.md`) : les légers et sûrs d'abord, **un ticket par session, un commit par ticket**, chacun citant les identifiants du suivi qu'il touche.
 
-`Q-07`, `Q-10`, `Q-11` et `Q-12` restent à trancher avec Xav. La spec de la barre d'action du bas (`E-01`) est écrite par Xav lui-même et attend le chiffrage `Q-11`. **Une spec non écrite ne se commence pas** (même règle que pour une phase).
+1. Cette session de documentation (doc seule) — faite.
+2. `D-22` — clavier : `E` = interagir, `F` = consommer (`MT_clavier-e-f_2026-09-19.md`).
+3. `D-21` — rayon d'effacement du toit −10 % (`MT_toit-rayon_2026-09-19.md`).
+4. `D-20` palier A — « mains nues », portée (`MT_mains-nues_2026-09-19.md`). **Validation dans la Grotte.**
+5. `D-20` palier B — icône de la case d'attaque.
+6. `D-05` — texte flottant « +1 bois » (`MT_texte-flottant_2026-09-19.md`).
+7. `D-23` — paramètre debug `?echelle=N` (`MT_echelle-debug_2026-09-19.md`) → puis relevés `A-05` par Xav.
+8. `D-02` + `D-03` — ventilation de `dessiner()` par calque et explication du delta (même instrument, **mesure seule**).
+9. Xav tranche `Q-19` et `Q-20` → ticket de correction d'échelle, à écrire d'après les chiffres.
+10. `D-01` — défilement incrémental du calque.
+11. `D-17`, `D-13`, puis `07_chaos-nocturne.md` palier par palier ; `Q-07` reprend ici.
 
-## Journal de session — Revue des dettes appliquée (`DOC-06`, 2026-09-19)
+`A-04` (relevé `?debug=fps` sur le Galaxy A04 réel, par le Wi-Fi local — procédure au §6 de la NS) est une action de Xav, faisable dès maintenant, en parallèle. `D-24` (serveur local joignable depuis le téléphone, repli du bouton « copier ») ne s'ouvre que si cette procédure échoue.
 
-**Session de documentation pure, ordonnée par `NS_decisions-revue-dettes_2026-09-19.md` v1.1.0 — aucun fichier de `src/`, `data/` ou `tests/` touché.** Lignes du suivi traitées, et aucune autre : `DOC-01`, `DOC-02`, `DOC-03`, `DOC-05`, `DOC-06`. Travail sur `main` (la branche `polish-2026-09-19` était déjà fusionnée par Xav, `e5b6d44`).
+Les captures de la V1 (`docs/captures/inspiration_rpg_v1/`) sont une **inspiration, jamais un cahier des charges** : aucun ticket ne les lit tant que `E-03` (une ligne d'intention par capture) n'est pas rempli.
 
-**Ménage de journal d'abord** : le journal précédent (« Polish post-Construction, tickets 1-5 ») archivé verbatim dans `docs/archives/JOURNAL_2026-09-19_polish-tickets-1-5.md`, `docs/archives/INDEX.md` mis à jour (il manquait à l'INDEX), `docs/DOC_suivi-dettes.md` mis à jour dans la foulée (règle 4 du registre).
+`Q-10`, `Q-11` et `Q-12` restent à trancher avec Xav ; `Q-07` et `Q-19` sont gelées. La spec de la barre d'action du bas (`E-01`) est écrite par Xav lui-même et attend le chiffrage `Q-11`. **Une spec non écrite ne se commence pas** (même règle que pour une phase).
+
+## Journal de session — « Les fondations d'abord » (`NS_decisions-fondations_2026-09-19.md`, 2026-09-19)
+
+**Session de documentation pure — aucun fichier de `src/`, `data/` ou `tests/` touché.** Travail sur `main`. `docs/DOC_suivi-dettes.md` **v1.7.0 a été fourni par Xav avec la NS** : il n'a pas été réécrit, seulement vérifié (voir ci-dessous).
+
+**Ménage de journal d'abord** : le journal précédent (« Revue des dettes appliquée, `DOC-06` ») archivé verbatim dans `docs/archives/JOURNAL_2026-09-19_revue-dettes-appliquee.md`, une ligne ajoutée à `docs/archives/INDEX.md`.
 
 ### Ce qui a changé, fichier par fichier
 
 | Fichier | Changement |
 |---|---|
-| `CLAUDE.md` | « État actuel » réécrit (`DOC-01`, `DOC-02`) ; 2 contraintes de méthode ajoutées (micro-tickets, un ticket = un commit) ; règle de la checklist visuelle reformulée ; 7 décisions datées ajoutées et 2 réécrites ; **les sections « Points `[OUVERT]` » et « Dette et à reprendre » supprimées** et remplacées par le bloc de l'annexe A (`DOC-05`) ; « Critère de passage courant » réécrit |
-| `docs/carte_mentale_RPG_V2_v1_5_0.md` | **Renommée `..._v1_6_0.md`** (`git mv`, toutes les références mises à jour) ; §3bis vocabulaire révisé + arc de progression + boucle de 2 heures + `Q-18` ; §3bis table des scènes et §5 D21 (gating ~5 abandonné) ; §5 ⑦ (paliers, « un domaine, pas un piquet ») ; 4 lignes au journal §8 |
-| `specs/00_ROADMAP.md` | → **1.5.0** : statut, changelog, gating ~5 abandonné dans la table Design, 2 contraintes de méthode, section polish entièrement réécrite (`DOC-03`), section « Arc de progression de la carte Maison » ajoutée, Phase 4 déclassée, rappel de fin de session complété |
-| `docs/DOC_suivi-dettes.md` | → **1.6.0** : `DOC-01`, `DOC-02`, `DOC-03`, `DOC-05`, `DOC-06` descendues en §8 avec leur verdict ; **`D-19` ouverte et close** (voir ci-dessous) |
-| `docs/archives/` | Journal des tickets 1-5 archivé + ligne d'INDEX ; `NS_decisions-revue-dettes_2026-09-19.md` déplacée en fin de session |
+| `docs/archives/` | Journal précédent archivé verbatim + ligne d'INDEX |
+| `CLAUDE.md` | « État actuel » : **deux relevés → trois**, avec la réserve de `R-04` (émulation F12 = c'est le PC qui dessine) et le fait qu'il établit ; une **décision datée pour `Q-21`** (« mains nues » = première arme) ; « Critère de passage courant » : la décision de méthode du §1 et le **nouvel ordre d'injection** (§5 de la NS) à la place de l'ancien |
+| `specs/00_ROADMAP.md` | → **1.6.0** : version, statut (« chantier courant = les fondations »), changelog 1.6.0, étape 1 du polish (trois relevés, réserve de `R-04`), note de report sur `07_chaos-nocturne.md`, **nouvelle section « Ordre d'injection »** (qui répare au passage le renvoi mort du changelog 1.4.0) |
+| `docs/DOC_suivi-dettes.md` | **Non touché** (fourni en v1.7.0 par Xav, comme le demande la NS) |
+| `docs/carte_mentale_RPG_V2_v1_6_0.md` | **Non touchée**, comme le demande la NS : `Q-21` applique une décision déjà verrouillée, le report se fera à sa prochaine révision |
 
-### Trois points qui méritent d'être relus
+### Vérification demandée par la NS : les identifiants cités existent-ils ?
 
-**1. La vérification exigée par `DOC-05` avant de supprimer les deux listes.** Les **21 lignes** des sections « Points `[OUVERT]` » et « Dette et à reprendre » ont été reprises une à une pour retrouver leur identifiant dans le suivi. Toutes en avaient un (`V-09`, `Q-12`, `Q-08`, `Q-09`, `Q-10`, `Q-11`, `Q-07`, `E-01`, `Q-04` pour les `[OUVERT]` ; `D-04` à `D-13`, `D-16`, `V-01` à `V-05`, `V-10`, `V-11`, `Q-15`, `Q-16` pour les dettes) **sauf une** : la note sur `nb_au_sol` de `item_branche`/`item_caillou`. Elle est devenue **`D-19`**, ouverte et close le jour même en « sans objet » — la donnée est à 2 depuis la Phase 2, le changement demandé par la fiche du 17/09 n'a jamais eu lieu d'être. Rien d'autre n'a été perdu en vidant les deux sections.
+Les **18 identifiants** de l'en-tête `ids_suivi` ont été cherchés un à un dans `docs/DOC_suivi-dettes.md` v1.7.0 : `Q-07` (§2, gelée), `Q-19` (§2), `Q-20` (§2), `Q-21` (§8, close), `D-01`, `D-03`, `D-05`, `D-14`, `D-20`, `D-21`, `D-22`, `D-23`, `D-24` (§5), `A-04`, `A-05` (§1), `E-01`, `E-03` (§4), `R-04` (§6). **Tous présents, aucun manquant, aucune contradiction de statut avec la NS.**
 
-**2. `CLAUDE.md` ne contient plus aucune liste de ce qui est dû.** Le bloc de l'annexe A y a été recopié **tel quel**, comme le demande la NS : lecture ciblée par identifiant, initiative dans le périmètre du ticket, proposition hors périmètre, et l'interdiction de clore une ligne `Q-`, `V-` ou `E-`. Conséquence pratique pour les sessions suivantes : **un ticket qui ne cite aucun identifiant n'a pas de contexte de dette** — c'est voulu.
+### Ce que je n'ai pas fait, volontairement
 
-**3. Ce que je n'ai pas fait, volontairement.** Les specs déjà livrées (`03_maison-exterieur.md`, `04_maison-interieur.md`) mentionnent encore le niveau ~5 « qui ouvre la zone suivante » : elles décrivent un état historique et la NS ne les listait pas — je les ai laissées intactes plutôt que de réécrire des specs closes. Seule la ROADMAP, qui est un document vivant, porte la note de révision. Même raisonnement pour les références à d'anciennes versions de la carte mentale dans les specs livrées.
+- **La décision verrouillée « pas de pixel art — rendu net à résolution physique (DPR) » (15/09) n'a pas été touchée**, comme la NS l'exige explicitement : `Q-19` la *réviserait*, mais elle n'est pas tranchée — elle attend `A-05`.
+- **Le suivi des dettes n'a pas été réécrit** : la NS le donne comme fourni. Conséquence pratique : les lignes que cette session aurait normalement ouvertes ou closes au ménage y sont déjà, écrites par Xav.
+- La carte mentale et les specs déjà livrées restent intactes (même raisonnement que la session précédente : ce sont des états historiques).
+- **La NS n'a pas été déplacée dans `docs/archives/`** : son §6 est la procédure que Xav doit suivre pour `A-04`, et les cinq fiches `MT_*_2026-09-19.md` de la file d'injection sont des tickets **actifs**. Tout ce lot sera archivé au ménage de la session qui archivera ce journal.
 
-### Question pour Xav
+### Un point à signaler à Xav
 
-**L'ordre d'injection du §7 de la NS reste « proposé ».** Je l'ai inscrit tel quel dans « Critère de passage courant » (`D-17` → `D-13` → `D-02` → `07` palier A → B → C → D → `D-16`). Si tu veux commencer ailleurs — par exemple `D-04` (le saut à chaque angle, la dette qui touche le plus le ressenti au stick), ou `A-03` (le relevé de nuit, qui bloque la lecture de `D-01` avant que 07 ne pose des monstres la nuit) — dis-le : c'est une ligne à changer, pas un travail à refaire.
+**Le chemin de `E-03` ne correspond pas au dossier réel.** Le suivi (§4) et l'en-tête du gabarit disent `docs/captures/v1/DOC_captures-v1.md` ; le fichier et les 12 images vivent en réalité dans **`docs/captures/inspiration_rpg_v1/`**. Rien n'est cassé — aucun ticket ne lit ce dossier tant que `E-03` n'est pas rempli — mais un ticket futur qui suivrait le chemin écrit ne trouverait rien. J'ai écrit le **chemin réel** dans `CLAUDE.md` et la ROADMAP, et je n'ai pas corrigé le suivi ni le gabarit (hors périmètre, et la NS interdit de réécrire le suivi). À arbitrer : renommer le dossier, ou corriger les deux mentions.

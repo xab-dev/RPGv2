@@ -1,8 +1,10 @@
 # RPG V2 — Roadmap + prompt d'exécution autonome
 
-**Version : 1.5.0** — document vivant.
+**Version : 1.6.0** — document vivant.
 
-**Statut** : Phases 0, 1, 1b, 2 et 3 (Palier A-E, boucle 5 minutes), le chantier `05_construction-stations.md` (placement libre des stations) **et les étapes 1 à 6 du polish post-Construction** sont livrés et validés en jeu par Xav (manette, 2026-09-19 : « ça fonctionne, le jeu est fluide »). La branche `polish-2026-09-19` est **fusionnée dans `main`** (`e5b6d44`) : on travaille sur `main`. **Chantier courant : la carte Maison elle-même** — ses systèmes et son contenu — jusqu'à la **boucle de 2 heures**. Ce document sert de brief autonome ; **ce qui reste dû (dettes, questions, validations) vit dans `docs/DOC_suivi-dettes.md`, et nulle part ailleurs**.
+**Statut** : Phases 0, 1, 1b, 2 et 3 (Palier A-E, boucle 5 minutes), le chantier `05_construction-stations.md` (placement libre des stations) **et les étapes 1 à 6 du polish post-Construction** sont livrés et validés en jeu par Xav (manette, 2026-09-19 : « ça fonctionne, le jeu est fluide »). La branche `polish-2026-09-19` est **fusionnée dans `main`** (`e5b6d44`) : on travaille sur `main`. **Chantier courant : les fondations** — performance et retours du playtest du 19/09 — **avant** de reprendre le contenu de la carte Maison, qui va jusqu'à la **boucle de 2 heures**. Décision de méthode de Xav (2026-09-19) : **on ne rajoute pas de contenu sur des bases non confirmées** ; `specs/07_chaos-nocturne.md` et `Q-07` attendent (voir « Ordre d'injection » ci-dessous). Ce document sert de brief autonome ; **ce qui reste dû (dettes, questions, validations) vit dans `docs/DOC_suivi-dettes.md`, et nulle part ailleurs**.
+
+**Changelog 1.6.0 (2026-09-19)** : session de documentation « les fondations d'abord » (`NS_decisions-fondations_2026-09-19.md`), aucun code touché. **Décision de méthode de Xav : on ne rajoute pas de contenu sur des bases non confirmées** — performance et retours du playtest avant tout nouveau contenu ; `Q-07` (construction extérieure) passe à **gelée**, `specs/07_chaos-nocturne.md` recule en fin de file. **Ordre d'injection remplacé** par celui du §5 de la NS (clavier E/F, toit, mains nues A puis B, texte flottant, `?echelle=N`, ventilation de `dessiner()`, décision d'échelle, défilement incrémental, puis `D-17`/`D-13`/`07`). Troisième relevé de performance inscrit (`R-04`, **sous émulation F12 — c'est le PC qui dessine**) : il établit que **le coût de rendu suit le nombre de pixels**, et ouvre `Q-19` (plafonner l'échelle de rendu, non tranchée), `Q-20` (critère de clôture des fondations et appareil plancher) et `D-23` (prototype de mesure). Décision `Q-21` : **« mains nues » est la première arme du jeu**. La décision verrouillée « rendu net à résolution physique » n'est **pas** touchée — `Q-19` n'est pas tranchée.
 
 **Changelog 1.5.0 (2026-09-19)** : session de revue des dettes (`NS_decisions-revue-dettes_2026-09-19.md`), aucun code touché. **Le gating « 1ère zone de monstres à partir du niveau ~5 » est abandonné** : la carte suivante s'ouvre quand la carte Maison est épuisée (Nv. 40-50, provisoire) ; les *systèmes* de la Phase 4 arrivent d'abord sur la carte Maison — **« Phase 4 = prochaine étape » ne se lit plus ici**. Arc de progression de la carte Maison et **boucle de 2 heures** inscrits comme critère de clôture de la Région Maison. Polish : étapes 1 à 6 actées comme livrées **et validées** ; étape 7 = diagnostic fait, **aucune correction de rendu encore faite**. Méthode : **micro-tickets** (un sujet par ticket, une session courte, validation de Xav entre deux), **un ticket = un commit** fait par Claude Code, **jamais de `push`**, et validation en jeu par Xav au lieu de la capture par état.
 
@@ -144,14 +146,14 @@ Placement libre des stations dans la Maison (grille, rotation, fantôme de pose)
 
 Les six fiches ont été écrites, livrées en code et validées à la manette par Xav le 2026-09-19 (« ça fonctionne, le jeu est fluide »). Journal : `docs/archives/JOURNAL_2026-09-19_polish-tickets-1-5.md` et `JOURNAL_2026-09-19_mesure-saccades.md`.
 
-1. **Mesure des saccades** (`MT_mesure-saccades_2026-09-19.md`) — instrument `?debug=fps` livré (`src/debug_perf.js`, `src/ui/hud_debug.js`). **Deux relevés réels existent** (`R-01`, `R-02` du registre §6 de `docs/DOC_suivi-dettes.md`) ; seule la mesure **de nuit** reste due (`A-03`).
+1. **Mesure des saccades** (`MT_mesure-saccades_2026-09-19.md`) — instrument `?debug=fps` livré (`src/debug_perf.js`, `src/ui/hud_debug.js`). **Trois relevés réels existent** (`R-01`, `R-02`, `R-04` du registre §6 de `docs/DOC_suivi-dettes.md`). `R-04` a été pris **sous émulation F12** : c'est le PC qui dessine, pas un téléphone — il fonde le fait que **le coût de rendu suit le nombre de pixels**, pas un verdict sur mobile. Restent dues : la mesure **de nuit** (`A-03`) et le relevé sur **téléphone réel** (`A-04`).
 2. **Héros à l'échelle 0,88** — une seule échelle en données, visuel **et** hitbox ; règle : aucun effet ne dépend de la forme du héros.
 3. **Follets visibles pendant le texte de l'intro.**
 4. **`station_puits`** — silhouette réassemblée (cause racine : les données). Un second défaut reste ouvert (`D-16` : mâts à planter au sol, perspective de trois quarts), gelé jusqu'aux captures de Xav.
 5. **Traînée de poussière** au déplacement (module pur + `data/effets.json`).
 6. **HUD sur un bandeau d'une ligne** en haut, pleine largeur ; XP retirée du HUD (conservée dans Stats). Au tactile, le bouton MENU chevauche le bandeau → ticket `D-17`.
 7. **Correction des saccades — pas encore faite.** Le diagnostic est fait (le fenêtrage du calque statique est sain, test rouge d'abord puis vert sur HEAD ; le compteur cumulatif de `ui/hud_debug.js` a été corrigé), mais **aucune correction de rendu n'a touché le jeu**. Elle est portée par `D-01` (les frames de recalcul du calque sortent du budget) et `D-02` (`dessiner()` coûte 12 ms sans aucun monstre) ; le prochain ticket de perf est une **ventilation de `dessiner()` par calque, mesure seule, zéro correction**.
-8. **`specs/07_chaos-nocturne.md` v1.1.0 — écrite.** Intrusion nocturne du Chaos dans la Région Maison, *révise* « aucun monstre, ton chill » de `03_maison-exterieur.md` §5. Apparitions **par paliers de niveau en données** (Nv. 5 zone nord-est, Nv. 10 zone sud, Nv. 15 apparitions éparses — la Forêt reste vide avant 15), zones en **rectangles**, comportement **« un domaine, pas un piquet »**. La spec ne livre que le système et le palier 1, **un palier par session** (A zones et tirage · B la nuit et le seuil · C comportement · D signal visuel).
+8. **`specs/07_chaos-nocturne.md` v1.1.0 — écrite.** Intrusion nocturne du Chaos dans la Région Maison, *révise* « aucun monstre, ton chill » de `03_maison-exterieur.md` §5. Apparitions **par paliers de niveau en données** (Nv. 5 zone nord-est, Nv. 10 zone sud, Nv. 15 apparitions éparses — la Forêt reste vide avant 15), zones en **rectangles**, comportement **« un domaine, pas un piquet »**. La spec ne livre que le système et le palier 1, **un palier par session** (A zones et tirage · B la nuit et le seuil · C comportement · D signal visuel). **Repoussée en fin de file le 2026-09-19** (décision de méthode « les fondations d'abord ») : elle ne se commence qu'après les tickets de performance — voir « Ordre d'injection » ci-dessous.
 9. **Barre d'action du bas** (`E-01`) — **spec à écrire par Xav lui-même**, après le chiffrage `Q-11` (état d'UI pur).
 
 ### Arc de progression de la carte Maison (2026-09-19) — ce qui vient maintenant
@@ -168,6 +170,26 @@ Les six fiches ont été écrites, livrées en code et validées à la manette p
 | 40-50 | La carte suivante (Phase 4) | idée |
 
 **Avant toute nouvelle carte** (`E-02`) : plus de ressources, écrire les crafts, écrire les armes, écrire les compétences. **Critère de clôture de la Région Maison : la boucle de 2 heures** — sauvegarde neuve → deux heures de jeu → niveau 30 → l'envie de changer d'endroit, vérifiable à la main par Xav **et** par le bot headless.
+
+### Ordre d'injection (2026-09-19) — un ticket par session, un commit par ticket
+
+Source : `NS_decisions-fondations_2026-09-19.md` §5, qui **remplace** le §7 de `NS_decisions-revue-dettes_2026-09-19.md`. Principe de Xav : **les fondations d'abord** — on ne rajoute pas de contenu sur des bases non confirmées, et les tickets légers et sûrs passent avant les lourds. Validation en jeu de Xav entre deux tickets.
+
+1. Session de documentation « fondations » (doc seule) — **faite**.
+2. `D-22` — clavier : `E` = interagir, `F` = consommer (`MT_clavier-e-f_2026-09-19.md`).
+3. `D-21` — rayon d'effacement du toit −10 % (`MT_toit-rayon_2026-09-19.md`).
+4. `D-20` palier A — « mains nues », portée de l'auto-attaque (`MT_mains-nues_2026-09-19.md`). **Validation dans la Grotte, sur le premier monstre.**
+5. `D-20` palier B — icône de l'arme équipée dans la case d'attaque.
+6. `D-05` — texte flottant « +1 bois » à la récolte et au ramassage (`MT_texte-flottant_2026-09-19.md`).
+7. `D-23` — paramètre debug `?echelle=N`, **mesure seule** (`MT_echelle-debug_2026-09-19.md`) → relevés `A-05` par Xav.
+8. `D-02` + `D-03` — ventilation de `dessiner()` par calque et explication du delta par frame (même instrument, **mesure seule, zéro correction**).
+9. Xav tranche `Q-19` (plafonner l'échelle de rendu ?) et `Q-20` (critère de clôture des fondations, appareil plancher) → ticket de correction d'échelle, écrit d'après les chiffres.
+10. `D-01` — défilement incrémental du calque statique (piste préférée à la marge élargie : « on le calcule au fur et à mesure »).
+11. `D-17` (bouton MENU tactile sous le bandeau), `D-13` (buffs au bandeau), puis `specs/07_chaos-nocturne.md` **palier par palier** ; `Q-07` reprend ici.
+
+En parallèle, côté Xav : `A-04`, le relevé `?debug=fps` sur le **Galaxy A04 réel** par le Wi-Fi local (procédure au §6 de la NS). `D-24` (serveur local joignable depuis le téléphone, repli du bouton « copier ») ne s'ouvre que si cette procédure échoue.
+
+Les captures de la V1 (`docs/captures/inspiration_rpg_v1/`) sont une **inspiration, jamais un cahier des charges** : aucun ticket ne les lit tant que `E-03` (une ligne d'intention par image) n'est pas rempli.
 
 ### Phase 4 — 1ère zone de monstres — **plus la prochaine étape** (2026-09-19)
 Seconde région (≥ V1_M1), dans l'esprit chaos : plus sombre, plusieurs salles et passages, **mini-boss et boss farmables**.

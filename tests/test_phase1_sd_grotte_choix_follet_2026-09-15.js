@@ -132,7 +132,15 @@ async function construireOrchestrateurDeTest() {
   assert.notEqual(orchestrateur.obtenirIntro(), null, 'l\'intro doit démarrer dès l\'entrée en salle 1');
   assert.equal(orchestrateur.dialogueOuvert(), false, 'la narration ne doit pas être ouverte pendant l\'intro');
   assert.ok(avancerJusquauDialogue(orchestrateur, frames), 'l\'intro doit se terminer et ouvrir la narration');
-  assert.equal(orchestrateur.obtenirIntro(), null, 'l\'intro doit être terminée une fois la narration ouverte');
+  // MT_intro-follets-visibles_2026-09-19 : l'intro N'EST PLUS mise à `null`
+  // ici — cette ligne affirmait exactement le mécanisme du bug signalé par
+  // Xav (follets qui disparaissent pendant le texte, puis reviennent d'un
+  // coup sur A). Nouveau contrat : la partie à temps fixe est terminée
+  // (`terminee`), mais l'intro reste vivante en étape ATTENTE pour continuer
+  // à dessiner les 3 follets derrière le dialogue.
+  const introPendantTexte = orchestrateur.obtenirIntro();
+  assert.notEqual(introPendantTexte, null, 'l\'intro reste vivante pendant la narration (follets visibles)');
+  assert.equal(introPendantTexte.terminee, true, 'sa partie à temps fixe est bien terminée');
 
   // Ferme la narration (1 ligne, machine à écrire + armement compris,
   // cf. fermerLigneDialogue) -> choixFollet s'active.

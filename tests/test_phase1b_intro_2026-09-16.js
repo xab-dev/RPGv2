@@ -48,10 +48,16 @@ const CIBLES_TEST = [{ x: 150, y: 113 }, { x: 240, y: 113 }, { x: 330, y: 113 }]
   intro = avancerIntro(intro, CONFIG_TEST.convergence_ms + 100); // dépasse largement la fin
   assert.equal(intro.terminee, true, 'l\'intro doit se terminer une fois convergence_ms écoulé');
 
-  // Une fois terminée, avancerIntro() est un no-op (état figé, jamais négatif
-  // ni au-delà de la durée totale) — cohérent avec dialogue.js#avancer.
-  const introFigee = avancerIntro(intro, 1000);
-  assert.deepEqual(introFigee, intro, 'aucun effet une fois terminée');
+  // MT_intro-follets-visibles_2026-09-19 : une fois terminée, `tMs` reste figé
+  // (la partie à temps fixe ne rejoue jamais, budget ≤ 8 s intact) mais
+  // l'horloge bascule sur `tAttenteMs` — c'est elle qui fait vivre l'étape
+  // ATTENTE pendant que le joueur lit le texte. Avant cette fiche, tout était
+  // figé et main.js mettait l'intro à `null` : plus personne ne dessinait les
+  // follets pendant le dialogue.
+  const introEnAttente = avancerIntro(intro, 1000);
+  assert.equal(introEnAttente.tMs, intro.tMs, 'la partie à temps fixe ne bouge plus');
+  assert.equal(introEnAttente.terminee, true, 'terminee reste vrai');
+  assert.equal(introEnAttente.tAttenteMs, intro.tAttenteMs + 1000, "l'horloge d'attente, elle, continue");
 }
 
 // ===== 2. Budget §3.5 : étapes 1+2 <= 8s SUR LES VRAIES DONNÉES =====
@@ -161,7 +167,11 @@ const CIBLES_TEST = [{ x: 150, y: 113 }, { x: 240, y: 113 }, { x: 330, y: 113 }]
     if (orchestrateur.dialogueOuvert()) dialogueOuvert = true;
   }
   assert.ok(dialogueOuvert, 'la narration doit finir par s\'ouvrir une fois l\'intro terminée');
-  assert.equal(orchestrateur.obtenirIntro(), null, 'l\'intro doit être terminée');
+  // MT_intro-follets-visibles_2026-09-19 : `terminee` plutôt que `null` —
+  // l'intro survit à l'ouverture de la narration (étape ATTENTE) pour que les
+  // follets restent dessinés derrière le texte.
+  assert.notEqual(orchestrateur.obtenirIntro(), null, 'l\'intro reste vivante pendant la narration');
+  assert.equal(orchestrateur.obtenirIntro().terminee, true, 'sa partie à temps fixe est terminée');
   // La narration vient tout juste de s'ouvrir : le spam en cours ne doit pas
   // l'avoir aussi refermée à la même frame (mécanisme 1, §3.2, réutilisé).
   assert.equal(orchestrateur.dialogueOuvert(), true, 'le spam ATTACK ne doit pas fermer la narration à la frame où elle s\'ouvre');

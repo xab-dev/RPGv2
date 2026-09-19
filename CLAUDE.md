@@ -295,3 +295,29 @@ Effet mesuré (headless) : rayon de collision 10 → 8,8 px, donc **jeu par côt
 **Testé** : `node --check` sur `src/visuels.js`, `src/main.js`, `src/schemas.js`, `tests/test_mt_heros_echelle_2026-09-19.js`. Nouveau `tests/test_mt_heros_echelle_2026-09-19.js` (5 blocs : échelle unique en données, composition d'échelle sur faux ctx, non-régression des visuels sans échelle, refus au boot d'une échelle invalide, couloir d'1 tuile sans contact, **2535 positions sauvegardées** valides avant qui le restent après). `node tools/run_tests.js` : **62 fichiers verts** (1 nouveau).
 
 **À valider par Xav à la manette** : silhouette du héros (proportion à 0,88 — si le ressenti est « trop petit » ou « pas assez », c'est `data/visuels.json > visuel_heros > echelle` et rien d'autre), passages étroits de la Forêt, couloir intérieur de la maison entre les stations. Aucune capture avant/après n'a pu être prise : **ni l'extension Chrome ni le démon browser-use ne répondent dans cette session** (extension non connectée ; `bu-default` ne démarre pas). Même cause pour les relevés `?debug=fps` avant/après demandés par le brief : ils supposent un navigateur *et* une traversée jouée à la main — entièrement dus à Xav.
+
+### Ticket 2 — MT intro : les follets restent visibles pendant le texte
+
+**Cause racine d'abord (hypothèse de la fiche vérifiée, pas présumée), nommée fichier:ligne.**
+
+`src/main.js#maj()`, ex-lignes 1185-1189 : à l'instant `intro.terminee`, le code faisait `intro = null` **puis** `demarrerChoixFollet()`. Or `demarrerChoixFollet()` (`main.js:291`) n'ouvre qu'un dialogue et ne pose `choixFollet` que dans son `onFermer`. Entre ces deux instants — c'est-à-dire pendant **tout** le texte :
+
+- `dessinerIntroConvergence()` (`main.js:1341`) sortait sur `if (!intro) return null;` ;
+- `dessinerEcranChoixFollet()` (`main.js:1313`) sortait sur `if (!choixFolletActif()) return;`.
+
+Personne ne dessinait les follets. Ils revenaient d'un coup à la fermeture du dialogue, quand `choixFollet` devenait non-null. **L'hypothèse de la fiche était exacte** ; la vérification a servi à nommer le point précis (`intro = null` trop tôt, pas un problème d'ordre de calques ni d'alpha).
+
+**Fait.**
+
+- `src/intro.js` : 3ᵉ étape `ETAPE_ATTENTE`. `creerIntro` gagne `tAttenteMs: 0` ; `avancerIntro` ne gèle plus l'horloge une fois `terminee` — il bascule sur `tAttenteMs` (et le dépassement de la frame de bascule amorce l'attente au lieu d'être perdu, pour ne pas marquer un micro-temps d'arrêt). La machine **reste pure** : aucune notion de dialogue, elle ne sait pas pourquoi on l'attend.
+- Continuité aux deux frontières, obtenue par un seul paramètre `amortissement` passé à `positionFolletConvergence` : la **phase du sinus continue de courir** (donc aucun saut à l'entrée en attente, amortissement = 1 des deux côtés), seule l'**amplitude** décroît jusqu'à 0 en une période de lévitation — à ce moment les follets sont posés **exactement** sur les cibles, là même où `dessinerEcranChoixFollet()` les redessine (donc aucun saut à la sortie non plus). Durée de l'amortissement **dérivée des données existantes** (`levitation.periode_ms`) : **aucun nouveau seuil numérique introduit**, rien de neuf à régler pour Xav.
+- `src/main.js` : l'intro n'est plus mise à `null` à la fin de la convergence ; `terminee` est lu comme un **front** (comparé à son état d'avant la frame) pour que le dialogue ne s'ouvre qu'une fois. L'intro s'éteint désormais dans `confirmerChoixFollet()`, où `depart` prend le relais. `dessinerIntroConvergence()` cède la priorité à `choixFolletActif()` (sans quoi les follets seraient dessinés deux fois pendant l'écran de choix).
+- Le dialogue est déjà dessiné **après** les follets dans `dessiner()` : le texte passe devant, les follets lévitent derrière, sans avoir à les atténuer.
+
+**Inchangé, comme l'exige le ticket** : durée de l'intro (budget ≤ 8 s, `dureeEtapesTempsFixe` intacte, testé), non-skippabilité (aucune lecture d'input ajoutée), armement anti-spam du dialogue (non touché).
+
+**3 assertions de tests existants mises à jour** — elles affirmaient l'ancien contrat, c'est-à-dire *le mécanisme même du bug*, pas un comportement à préserver : `test_phase1_sd_grotte_choix_follet` ligne 135 et `test_phase1b_intro` ligne 170 (« l'intro doit être terminée/null une fois la narration ouverte » → désormais « reste vivante, `terminee` vrai ») et `test_phase1b_intro` ligne 54 (« avancerIntro est un no-op une fois terminée » → `tMs` figé mais `tAttenteMs` qui avance). Chaque modification porte en commentaire la raison et la référence de la fiche.
+
+**Testé** : `node --check` sur `src/intro.js`, `src/main.js`, `tests/test_mt_intro_follets_visibles_2026-09-19.js`. Nouveau `tests/test_mt_intro_follets_visibles_2026-09-19.js` (6 blocs : visibilité et opacité sur 10 s de texte échantillonnées à 16 ms, continuité convergence→texte, report du dépassement de frame, follets posés au pixel près sur les cibles du choix, amortissement borné par son enveloppe et sans rebond, budget ≤ 8 s + front `terminee` unique). `node tools/run_tests.js` : **63 fichiers verts** (1 nouveau).
+
+**`main.js#dessiner()` touché → `docs/CHECKLIST_visuelle.md` à rejouer par Xav**, avec le nouvel **état 17bis « Intro — texte de choix + follets visibles »** ajouté à la checklist (les follets restent à l'écran derrière le texte, leur lévitation se pose, aucun saut à l'appui sur `A`). Comme pour le ticket 1, **aucune capture n'a pu être prise** : ni l'extension Chrome ni le démon browser-use ne répondent dans cette session.

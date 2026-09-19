@@ -310,6 +310,11 @@ export function creerOrchestrateurGrotte({
     // visuel, indépendant de la logique de choix ci-dessus (déjà actée) ;
     // absent si la scène ne déclare pas d'intro (aucune scène hors la grotte
     // n'ouvre jamais un écran de choix, mais la garde coûte rien).
+    // MT_intro-follets-visibles_2026-09-19 : fin réelle de l'intro — jusqu'ici
+    // elle restait vivante (étape ATTENTE) pour que les follets ne
+    // disparaissent jamais entre la convergence et le choix. `depart` prend le
+    // relais pour les 2 non élus, `follet` (créé ci-dessus) pour l'élu.
+    intro = null;
     const donneesScene = registre.obtenir('scenes', scene.id);
     if (donneesScene.intro) depart = creerDepart(donneesScene.intro, index);
     dialogue.ouvrir(resoudreLignes('dlg_grotte_follet_enthousiaste', registre, i18n, companionId));
@@ -1182,11 +1187,18 @@ export function creerOrchestrateurGrotte({
     // vu la frame suivante (même patron que dialogueVientDeSOuvrir ci-dessus).
     const introEtaitActive = intro !== null;
     if (intro) {
+      // MT_intro-follets-visibles_2026-09-19 : l'intro N'EST PLUS mise à
+      // `null` ici. Avant, elle l'était à l'instant exact où le dialogue de
+      // choix s'ouvrait, et comme `choixFollet` n'est posé qu'au `onFermer`
+      // de ce dialogue, plus aucun des deux calques (dessinerIntroConvergence
+      // / dessinerEcranChoixFollet) ne dessinait les follets pendant tout le
+      // texte — ils disparaissaient puis revenaient d'un coup à l'appui sur A.
+      // Elle vit désormais jusqu'à confirmerChoixFollet(), en étape ATTENTE.
+      // `terminee` est un FRONT (comparé à son état d'avant la frame), pas un
+      // niveau : le dialogue ne doit s'ouvrir qu'une seule fois.
+      const introEtaitTerminee = intro.terminee;
       intro = avancerIntro(intro, deltaMs);
-      if (intro.terminee) {
-        intro = null;
-        demarrerChoixFollet();
-      }
+      if (intro.terminee && !introEtaitTerminee) demarrerChoixFollet();
     }
     const departEtaitActif = depart !== null;
     if (depart) {
@@ -1338,7 +1350,11 @@ export function creerOrchestrateurGrotte({
   // dupliquées ailleurs, seule la position/alpha changent d'un appel à
   // l'autre (cf. src/intro.js#etatRendu, pur).
   function dessinerIntroConvergence() {
-    if (!intro) return null;
+    // `choixFolletActif()` a la priorité : dès que l'écran de choix est ouvert,
+    // c'est LUI qui dessine les 3 follets (avec le halo de sélection). Sans
+    // cette garde, l'intro restée vivante (étape ATTENTE, cf. maj()) les
+    // dessinerait une 2ᵉ fois par-dessus.
+    if (!intro || choixFolletActif()) return null;
     const cibles = POSITIONS_ECRAN_FOLLETS.map((x) => ({ x, y: Y_ECRAN_FOLLETS }));
     const rendu = etatRenduIntro(intro, cibles);
     if (rendu.follets) {

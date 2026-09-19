@@ -56,12 +56,19 @@ export function dureeEtapesTempsFixe(config) {
 
 export const ETAPE_CLIGNEMENTS = 'clignements';
 export const ETAPE_CONVERGENCE = 'convergence';
+// MT_intro-follets-visibles_2026-09-19 : 3ᵉ étape, atteinte une fois la partie
+// à temps fixe finie. Elle ne dure pas un temps connu — elle tient tant que
+// main.js la garde vivante (le dialogue de choix est ouvert, le joueur lit à
+// son rythme). Avant cette fiche, l'intro était mise à `null` à cet instant
+// précis et PLUS PERSONNE ne dessinait les follets pendant tout le texte :
+// ils disparaissaient puis revenaient d'un coup à l'appui sur A.
+export const ETAPE_ATTENTE = 'attente';
 
 // État initial, reconstruit à chaque entrée en scène_grotte_salle_1 sans
 // flag_follet_choisi (jamais réutilisé d'une partie à l'autre, §4 edge case
 // "reinitialiserPartie() pendant l'intro").
 export function creerIntro(config) {
-  return { config, tMs: 0, terminee: false };
+  return { config, tMs: 0, tAttenteMs: 0, terminee: false };
 }
 
 // Avance le temps interne du même delta plafonné que le jeu (DELTA_MAX_MS,
@@ -69,10 +76,19 @@ export function creerIntro(config) {
 // l'animation au retour (§4), juste une frame un peu plus longue comme
 // n'importe quel autre système du jeu.
 export function avancerIntro(intro, deltaMs) {
-  if (intro.terminee) return intro;
+  // MT_intro-follets-visibles_2026-09-19 : une fois `terminee`, l'horloge ne
+  // se fige plus — elle bascule sur `tAttenteMs`, qui fait vivre l'étape
+  // ATTENTE (lévitation qui se pose). `terminee` garde exactement le même
+  // sens et le même INSTANT qu'avant (fin de la partie à temps fixe, budget
+  // ≤ 8 s inchangé) : c'est toujours lui qui déclenche l'ouverture du
+  // dialogue de choix côté main.js, une seule fois.
+  if (intro.terminee) return { ...intro, tAttenteMs: intro.tAttenteMs + deltaMs };
   const tMs = intro.tMs + deltaMs;
   const dureeTotale = dureeEtapesTempsFixe(intro.config);
-  return tMs >= dureeTotale ? { ...intro, tMs: dureeTotale, terminee: true } : { ...intro, tMs };
+  if (tMs < dureeTotale) return { ...intro, tMs };
+  // Le dépassement de la frame de bascule n'est pas perdu : il amorce
+  // l'attente, pour que la lévitation ne marque pas un micro-temps d'arrêt.
+  return { ...intro, tMs: dureeTotale, tAttenteMs: tMs - dureeTotale, terminee: true };
 }
 
 // Ouverture des paupières (0 = noir plein écran, 1 = grand ouvert) à
@@ -96,12 +112,20 @@ function ouverturePaupieres({ ouvertures_ms, noir_ms }, tMs) {
 // voir tous synchronisés) tout en convergeant (ease-out, "ralentit en
 // approchant") de sa position de départ vers `cible` (une des 3 positions de
 // l'écran de choix, déjà connues de l'appelant).
-function positionFolletConvergence(index, cible, tConvMs, config) {
+// `amortissement` (1 = lévitation pleine, 0 = posé exactement sur la cible)
+// sert à l'étape ATTENTE : la phase du sinus CONTINUE de courir (mêmes
+// `tConvMs` que si la convergence se prolongeait), seule son amplitude
+// décroît — d'où une continuité exacte à la frontière convergence→attente
+// (amortissement = 1 des deux côtés) ET à la frontière attente→écran de
+// choix (amortissement = 0, donc position = cible, exactement là où
+// main.js#dessinerEcranChoixFollet les redessine). Sans ça, le passage au
+// choix aurait sauté d'au plus `amplitude_px`.
+function positionFolletConvergence(index, cible, tConvMs, config, amortissement = 1) {
   const { amplitude_px, periode_ms } = config.levitation;
   const progression = config.convergence_ms > 0 ? Math.min(1, tConvMs / config.convergence_ms) : 1;
   const avancement = easeOutCubic(progression);
   const depart = POSITIONS_DEPART_FOLLETS[index];
-  const oscillation = periode_ms > 0 ? Math.sin((tConvMs / periode_ms) * Math.PI * 2 + index) * amplitude_px : 0;
+  const oscillation = periode_ms > 0 ? Math.sin((tConvMs / periode_ms) * Math.PI * 2 + index) * amplitude_px * amortissement : 0;
   return {
     x: depart.x + (cible.x - depart.x) * avancement,
     y: depart.y + (cible.y - depart.y) * avancement + oscillation,
@@ -125,10 +149,26 @@ export function etatRendu(intro, cibles) {
     };
   }
   const tConv = intro.tMs - dureeCli;
+  if (!intro.terminee) {
+    return {
+      etape: ETAPE_CONVERGENCE,
+      paupieres: 1,
+      follets: cibles.map((cible, i) => positionFolletConvergence(i, cible, tConv, intro.config)),
+    };
+  }
+  // ATTENTE : les follets sont arrivés (avancement = 1, donc centrés sur les
+  // cibles) et se posent en une période de lévitation — durée DÉRIVÉE des
+  // données existantes (`levitation.periode_ms`), pas un nouveau seuil à
+  // régler. La phase du sinus continue de courir depuis la convergence :
+  // aucune discontinuité à l'entrée dans l'étape.
+  const { periode_ms } = intro.config.levitation;
+  const amortissement = periode_ms > 0 ? Math.max(0, 1 - intro.tAttenteMs / periode_ms) : 0;
   return {
-    etape: ETAPE_CONVERGENCE,
+    etape: ETAPE_ATTENTE,
     paupieres: 1,
-    follets: cibles.map((cible, i) => positionFolletConvergence(i, cible, tConv, intro.config)),
+    follets: cibles.map((cible, i) =>
+      positionFolletConvergence(i, cible, tConv + intro.tAttenteMs, intro.config, amortissement),
+    ),
   };
 }
 

@@ -95,6 +95,16 @@ ajouté à `dessiner()`.
     et convergent vers les 3 positions de l'écran de choix, sans paupières
     par-dessus (grand ouvert). Aucun input (clavier/manette) ne doit avoir
     d'effet avant la bulle de choix (étape suivante, écran existant).
+17bis. **Intro — texte de choix + follets visibles**
+    (`MT_intro-follets-visibles_2026-09-19.md`) — juste APRÈS la convergence,
+    pendant que le dialogue de choix est affiché et AVANT tout appui sur `A`.
+    Vérifier : les 3 follets sont **toujours à l'écran**, derrière le texte
+    (jamais effacés), posés sur les 3 positions de l'écran de choix ; leur
+    lévitation se **pose** doucement en une petite seconde au lieu de
+    s'arrêter net ; à l'appui sur `A`, l'écran de choix apparaît **sans que
+    les follets sautent** de position (seul le halo de sélection et la taille
+    du follet sélectionné changent). Avant ce ticket, ils disparaissaient
+    pendant tout le texte et revenaient d'un coup.
 18. **Intro — départ des follets non élus** (idem) — juste après la
     confirmation du choix. Vérifier : les 2 follets non choisis repartent
     vers les bords de l'écran en s'éteignant (alpha décroissant), pendant que

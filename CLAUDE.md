@@ -402,3 +402,33 @@ pas tranché — c'est noté dans `V-14`, à régler en jouant, la valeur étant
 **Tests.** `test_mt_heros_echelle_2026-09-19.js` figeait 0,88 : mis à jour **volontairement** (c'est la valeur que le
 ticket révise), commentaire d'en-tête compris. Ses trois preuves tiennent telles quelles à la nouvelle échelle.
 Suite complète verte, **71 fichiers**.
+
+### Ticket 2 bis — `D-33` : la vitesse de base
+
+**Une ligne de données, elle aussi.** `data/stats_derivees.json`, `derivee_vitesse_deplacement_px_s.formule.base` :
+**100 → 75**. Ni la formule, ni le coefficient d'Agilité (4 px/s par point) ne sont touchés, comme le ticket le
+demande. Valeur `[OUVERT]` retenue par défaut — `Q-28` — : ×0,75, proche du rapport de taille du héros (0,73), pour
+que le couple taille/vitesse garde à l'écran un ressenti voisin. *Provisoire*.
+
+**Le −25 % porte sur la base, pas sur la vitesse réelle.** À agilité 5 (la valeur de départ de toutes les stats),
+la vitesse effective vaut `base + 4 × agilité` :
+
+| | avant | **après** | écart |
+|---|---|---|---|
+| Terme de base (données) | 100 px/s | **75 px/s** | −25,0 % |
+| Vitesse effective à agilité 5 | 120 px/s | **95 px/s** | **−20,8 %** |
+| Traversée de la carte Maison, ouest→est (170 tuiles = 5 440 px) | 45,3 s | **57,3 s** | **+26,3 %** |
+
+C'est exactement ce que produit la consigne « une seule valeur, le terme de base » : le terme d'Agilité (20 px/s
+aujourd'hui) est épargné, donc le joueur perd un peu moins que le quart annoncé. Je le signale plutôt que de bricoler
+un 70 qui aurait donné 90 px/s pile : la valeur est *provisoire* et se règle à l'œil.
+
+**Rapport de vitesses, à redonner au palier C de `07`.** Le seul monstre du jeu (`enemy_grotte_rampant`) avance à
+**40 px/s**, et sa poursuite est une ligne droite vers le héros (`entities.js#approcherEnLigneDroite`). Le héros reste
+donc **2,4× plus rapide** (95 contre 40), là où il l'était 3,0× ce matin. **On peut toujours semer un monstre**, et
+largement — rien à régler. Le chiffre à surveiller, quand `07` fera apparaître plusieurs monstres à la fois, est
+celui de la nouvelle entrée de catalogue : une vitesse au-dessus de ~65 px/s rendrait la fuite inégale.
+
+**Tests.** Aucun test ne figeait la vitesse (aucun rouge). `test_sd_saccades_calque_statique_2026-09-19.js` s'en servait
+comme *ordre de grandeur* dans un commentaire et une variable locale — mis à jour à 75 pour qu'il continue de décrire
+le jeu réel ; sa borne se calcule depuis la distance parcourue, elle n'en dépend pas. Suite verte, 71 fichiers.

@@ -514,18 +514,13 @@ export function dessinerScene(ctx, {
       ctx.fillRect(barreX, barreY, barreLargeur * ratioPv, barreHauteur);
     }
 
-    // Étiquette (§4 diagnostic SD_ui-lisibilite) : nom seul sous le sprite,
-    // déjà traduit par l'appelant (main.js) — pas de niveau, le champ
-    // n'existe pas encore dans enemies.json (Phase 1).
-    if (monstre.label) {
-      ctx.save();
-      ctx.font = '8px monospace';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'top';
-      ctx.fillStyle = '#ffffff';
-      ctx.fillText(monstre.label, mx, my + 10);
-      ctx.restore();
-    }
+    // `D-40` (décision de Xav, 20/09) : **plus de nom au-dessus des
+    // monstres**. L'étiquette du §4 de SD_ui-lisibilite chargeait l'affichage
+    // — on les distingue désormais par la forme et la couleur, et rien n'est
+    // mis à la place. Seul le DESSIN part : les noms restent dans
+    // `enemies.json` et dans les locales pour le futur bestiaire et le
+    // journal des découvertes. La barre de PV ci-dessus n'est pas concernée,
+    // c'est un bloc distinct.
   }
 
   // Héros (§3.4 03_grotte-polish) : gris neutre au spawn (avant choix du

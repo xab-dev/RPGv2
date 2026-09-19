@@ -1765,16 +1765,16 @@ export function creerOrchestrateurGrotte({
     const companionActif = follet ? registre.obtenir('companions', follet.companionId) : null;
     const heroVisuel = registre.obtenir('visuels', VISUEL_HEROS_ID);
 
-    // Étiquette ennemi (§4 diagnostic SD_ui-lisibilite) : nom localisé résolu
-    // ici (main.js a i18n + registre), render.js ne fait que dessiner un
-    // texte déjà traduit — pas de niveau, le champ n'existe pas en Phase 1
-    // (ne pas inventer une stat, cf. la fiche). `visuel` (§3.3) : résolu ici
-    // pour la même raison — render.js n'ouvre jamais visuels.json par id.
+    // `D-40` : plus d'étiquette de nom (l'ancien §4 de SD_ui-lisibilite est
+    // retiré, décision de Xav du 20/09 — forme et couleur suffisent). Le nom
+    // n'est donc plus résolu ici : `enemies.label_key` et les locales restent
+    // en place pour le futur bestiaire, simplement personne ne les lit au
+    // rendu. `visuel` (§3.3) reste résolu ici — render.js n'ouvre jamais
+    // visuels.json par id.
     const monstresAffiches = monstres.map((m) => {
       const donneesEnnemi = registre.obtenir('enemies', m.enemyId);
       return {
         ...m,
-        label: i18n.t(donneesEnnemi.label_key),
         visuel: registre.obtenir('visuels', donneesEnnemi.render.visuel),
         // §3.1 03_grotte-polish : barre de PV visible ssi "actif" (engagé ou
         // déjà touché) — jamais un monstre inerte à distance.
@@ -1971,8 +1971,7 @@ export function creerOrchestrateurGrotte({
     // d'interface posé dans le monde, pas une entité de la scène. Le gabarit
     // et le nom de l'item sont résolus ICI (main.js a i18n et le registre) :
     // render.js ne reçoit que des chaînes déjà prêtes, exactement comme
-    // `monstre.label` ou `visuelArme`. Changer de langue traduit donc aussi
-    // un texte déjà en vol.
+    // `visuelArme`. Changer de langue traduit donc aussi un texte déjà en vol.
     dessinerTextesFlottants(ctxLogique, {
       camera,
       config: effetTexteGain,

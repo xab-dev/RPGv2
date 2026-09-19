@@ -37,9 +37,13 @@ ajouté à `dessiner()`.
 4. **Menu DOM ouvert** — menu principal, puis le sous-écran de confirmation
    du reset. Vérifier : fond plein écran opaque, focus visible, un seul des
    deux écrans affiché à la fois.
-5. **Aura + étiquette ennemi** — un monstre à proximité du follet engagé.
-   Vérifier : cercle fin translucide (aura) autour du follet, nom du monstre
-   sous son sprite, tous deux à l'intérieur du cadre.
+5. **Aura du follet** — un monstre à proximité du follet engagé.
+   Vérifier : cercle fin translucide (aura) autour du follet, à l'intérieur
+   du cadre. **Plus de nom sous le monstre** (`D-40`, 20/09) : on le
+   reconnaît à sa forme et à sa couleur, et rien n'a pris la place du texte.
+   Depuis `D-39`, l'aura est centrée sur le point LOGIQUE du follet, pas sur
+   son corps : le corps tourne dedans, sur une petite orbite, et le cercle
+   lui, ne doit pas frétiller.
 6. **HUD tactile actif** — après un `touchstart` simulé. Vérifier : boutons
    d'action + joystick affichés, ligne de slots statique disparue (jamais
    les deux à la fois).
@@ -50,7 +54,8 @@ ajouté à `dessiner()`.
 8. **Monstre touché + barre de PV** (idem) — juste après un coup reçu par le
    monstre (auto-attaque ou tick de DoT). Vérifier : le monstre blanchit
    pendant `FLASH_TOUCHE_MS` (revient à sa couleur normale ensuite), une
-   barre de PV sombre + rouge apparaît au-dessus de son étiquette dès qu'il
+   barre de PV sombre + rouge apparaît au-dessus de lui (le seul repère qui
+   reste, depuis le retrait du nom) dès qu'il
    est "actif" (engagé ou déjà touché), jamais sur un monstre inerte à
    distance. Piège connu : le follet engagé se colle exactement à la
    position du monstre (`companion.js`, état `engager`) et peut donc le

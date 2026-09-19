@@ -856,10 +856,14 @@ export const SCHEMAS = {
     refs: [],
     custom: validerLootTable,
   },
+  // `icone` (optionnel, D-20 B) : la silhouette que la case d'attaque dessine
+  // pour cette arme. Une REF, donc un id inconnu tombe au boot avec son
+  // chemin — sans ça le HUD dessinerait un vide silencieux. Absent = case
+  // vide, ce qui reste un cas normal (une arme peut n'avoir pas d'icône).
   weapons: {
     requiredFields: ['id', 'label_key', 'portee'],
     idField: 'id',
-    refs: [],
+    refs: [{ field: 'icone', catalog: 'visuels' }],
     custom: validerWeapon,
   },
   enemies: {

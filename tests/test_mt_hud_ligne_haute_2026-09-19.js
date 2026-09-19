@@ -191,9 +191,16 @@ function seChevauchent(a, b) {
   const fichier = await import('node:fs/promises').then((fs) =>
     fs.readFile(path.join(RACINE, 'src', 'ui', 'hud.js'), 'utf8'),
   );
+  // Mis à jour volontairement le 2026-09-19 par `D-20` B, qui dessine l'icône
+  // de l'arme équipée DANS la case d'attaque : la rangée reçoit depuis un
+  // argument de plus. Ce que ce garde-fou protège reste entier — elle est
+  // toujours dessinée par la même fonction, sous la RÉSOLUTION LOGIQUE et non
+  // la taille physique du canvas (le défaut de SD_dialogues-invisibles), et
+  // aucune case n'a bougé. Seul son contenu a changé, ce qui est le sujet
+  // d'un autre ticket que celui-ci.
   assert.ok(
-    /dessinerSlotsBas\(ctx, RESOLUTION_LOGIQUE\)/.test(fichier),
-    'la rangée de cases du bas est toujours dessinée comme avant',
+    /dessinerSlotsBas\(ctx, RESOLUTION_LOGIQUE[,)]/.test(fichier),
+    'la rangée de cases du bas est toujours dessinée sous la résolution logique',
   );
   console.log('OK la rangée de cases du bas est intacte (spec à part)');
 }

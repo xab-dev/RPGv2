@@ -6,7 +6,9 @@
 // (hud_layout.js) — et jamais les deux affichages de slots à la fois (§4 :
 // la ligne du bas ne se dessine que quand le tactile est inactif).
 
-import { boutonsTactiles, JOYSTICK, BANDEAU_HAUT, elementsBandeauHaut } from './hud_layout.js';
+import {
+  boutonsTactiles, JOYSTICK, BANDEAU_HAUT, elementsBandeauHaut, echelleIconeArme,
+} from './hud_layout.js';
 import { RESOLUTION_LOGIQUE } from '../render.js';
 import { dessinerVisuel, TAILLE_REFERENCE_FOLLET_PX } from '../visuels.js';
 
@@ -50,14 +52,41 @@ const ORDRE_SLOTS_BAS = ['attack', 'skill_1', 'skill_2', 'skill_3', 'consume'];
 const SLOT_TAILLE = 16;
 const SLOT_ECART = 4;
 
-function dessinerBoutonsTactiles(ctx) {
+// Part de la case (ou du rayon du bouton tactile) occupée par l'icône —
+// provisoires, à régler au ressenti : l'icône doit respirer dans sa case sans
+// s'y perdre. Exprimées en FRACTION et non en px, pour que la case tactile
+// (rayon 28) et la case du bas (16 px de côté) restent d'accord sans deux
+// réglages à tenir.
+const ICONE_PART_DE_LA_CASE = 0.72;
+const ICONE_PART_DU_BOUTON = 1.15;
+
+// D-20 B : la case d'attaque dessine l'icône de l'ARME ÉQUIPÉE, résolue par
+// main.js (qui a le registre) et reçue ici comme une simple entrée de visuel
+// — ce module ignore qu'il s'agit d'une main, et dessinera le symbole d'une
+// épée ou d'un arc sans une ligne de plus. `null` (arme sans icône) = case
+// vide, jamais une erreur : c'est un cas normal, pas une donnée manquante.
+function dessinerIconeArme(ctx, visuelArme, cx, cy, taille) {
+  if (!visuelArme) return;
+  dessinerVisuel(ctx, visuelArme, cx, cy, {
+    teinte: COULEUR_SLOT_ACTIF,
+    echelle: echelleIconeArme(taille),
+  });
+}
+
+function dessinerBoutonsTactiles(ctx, visuelArme) {
   for (const bouton of boutonsTactiles()) {
     ctx.beginPath();
     ctx.arc(bouton.cx, bouton.cy, bouton.rayon, 0, Math.PI * 2);
-    ctx.fillStyle = bouton.verbe === 'attack' ? COULEUR_SLOT_ACTIF : COULEUR_SLOT_GRISE;
+    // `[OUVERT]` D-20 B : plus d'aplat jaune sur l'attaque — fond identique
+    // aux autres cases, c'est l'ICÔNE qui porte le jaune. On garde le repère
+    // de couleur sans le pavé, qui écrasait la silhouette.
+    ctx.fillStyle = COULEUR_SLOT_GRISE;
     ctx.fill();
     ctx.strokeStyle = 'rgba(255,255,255,0.6)';
     ctx.stroke();
+    if (bouton.verbe === 'attack') {
+      dessinerIconeArme(ctx, visuelArme, bouton.cx, bouton.cy, bouton.rayon * ICONE_PART_DU_BOUTON);
+    }
   }
 
   ctx.beginPath();
@@ -68,17 +97,23 @@ function dessinerBoutonsTactiles(ctx) {
 
 // Ligne statique en bas au centre (§4), même liste de verbes que les boutons
 // tactiles mais jamais leurs positions (celles-ci n'ont de sens qu'au doigt).
-function dessinerSlotsBas(ctx, resolution) {
+function dessinerSlotsBas(ctx, resolution, visuelArme) {
   const largeurTotale = ORDRE_SLOTS_BAS.length * SLOT_TAILLE + (ORDRE_SLOTS_BAS.length - 1) * SLOT_ECART;
   const xDepart = (resolution.largeur - largeurTotale) / 2;
   const y = resolution.hauteur - SLOT_TAILLE - 8;
 
   ORDRE_SLOTS_BAS.forEach((verbe, i) => {
     const x = xDepart + i * (SLOT_TAILLE + SLOT_ECART);
-    ctx.fillStyle = verbe === 'attack' ? COULEUR_SLOT_ACTIF : COULEUR_SLOT_GRISE;
+    // Même `[OUVERT]` que les boutons tactiles : fond commun, jaune porté par
+    // l'icône. Le contour de l'attaque reste plus vif — c'est le seul slot
+    // actif, et ça ne dépend pas de l'arme.
+    ctx.fillStyle = COULEUR_SLOT_GRISE;
     ctx.fillRect(x, y, SLOT_TAILLE, SLOT_TAILLE);
     ctx.strokeStyle = verbe === 'attack' ? '#ffffff' : 'rgba(255,255,255,0.4)';
     ctx.strokeRect(x, y, SLOT_TAILLE, SLOT_TAILLE);
+    if (verbe === 'attack') {
+      dessinerIconeArme(ctx, visuelArme, x + SLOT_TAILLE / 2, y + SLOT_TAILLE / 2, SLOT_TAILLE * ICONE_PART_DE_LA_CASE);
+    }
   });
 }
 
@@ -122,7 +157,7 @@ function dessinerJauge(ctx, x, y, ratio, couleur, dessinerIcone) {
 
 export function dessinerHud(ctx, {
   i18n, pv, pvMax, eclats, companion, visuelFollet, tactileActif,
-  survie = null, niveau = null, eclatNiveau = 0,
+  visuelArme = null, survie = null, niveau = null, eclatNiveau = 0,
 }) {
   ctx.save();
 
@@ -206,12 +241,12 @@ export function dessinerHud(ctx, {
 
   // §4 : jamais les deux à la fois. Sur tactile, les boutons SONT les slots.
   if (tactileActif) {
-    dessinerBoutonsTactiles(ctx);
+    dessinerBoutonsTactiles(ctx, visuelArme);
   } else {
     // Diagnostic SD_dialogues-invisibles_2026-09-15 : même défaut que
     // dialogue_box.js — `ctx.canvas.width/height` est la taille PHYSIQUE
     // depuis le MT rendu-net, jamais la résolution logique sous laquelle ce
     // dessin est réellement placé (transform f encore active).
-    dessinerSlotsBas(ctx, RESOLUTION_LOGIQUE);
+    dessinerSlotsBas(ctx, RESOLUTION_LOGIQUE, visuelArme);
   }
 }

@@ -176,10 +176,10 @@ Les six fiches ont été écrites, livrées en code et validées à la manette p
 Source : `NS_decisions-fondations_2026-09-19.md` §5, qui **remplace** le §7 de `NS_decisions-revue-dettes_2026-09-19.md`. Principe de Xav : **les fondations d'abord** — on ne rajoute pas de contenu sur des bases non confirmées, et les tickets légers et sûrs passent avant les lourds. Validation en jeu de Xav entre deux tickets.
 
 1. Session de documentation « fondations » (doc seule) — **faite**.
-2. `D-22` — clavier : `E` = interagir, `F` = consommer (`MT_clavier-e-f_2026-09-19.md`) — **livré le 2026-09-19** (échange dans `input/keyboard.js` seul ; glyphes des locales mis d'accord à la main, double source ouverte en `D-25`). Validation clavier de Xav due.
-3. `D-21` — rayon d'effacement du toit −10 % (`MT_toit-rayon_2026-09-19.md`) — **livré le 2026-09-19, validation en jeu de Xav due**.
-4. `D-20` palier A — « mains nues », portée de l'auto-attaque (`MT_mains-nues_2026-09-19.md`) — **livré le 2026-09-19, validation en jeu de Xav due** (partie neuve, dans la Grotte, sur le premier monstre).
-5. `D-20` palier B — icône de l'arme équipée dans la case d'attaque.
+2. `D-22` — clavier : `E` = interagir, `F` = consommer (`MT_clavier-e-f_2026-09-19.md`) — **livré et validé au clavier par Xav le 2026-09-19** (échange dans `input/keyboard.js` seul ; glyphes des locales mis d'accord à la main, double source ouverte en `D-25`). Validation clavier de Xav due.
+3. `D-21` — rayon d'effacement du toit −10 % (`MT_toit-rayon_2026-09-19.md`) — **livré et validé en jeu par Xav le 2026-09-19**.
+4. `D-20` palier A — « mains nues », portée de l'auto-attaque (`MT_mains-nues_2026-09-19.md`) — **livré et validé en jeu par Xav le 2026-09-19**.
+5. `D-20` palier B — icône de l'arme équipée dans la case d'attaque — **livré le 2026-09-19, validation en jeu de Xav due** (`docs/CHECKLIST_visuelle.md`, HUD état 1).
 6. `D-05` — texte flottant « +1 bois » à la récolte et au ramassage (`MT_texte-flottant_2026-09-19.md`).
 7. `D-23` — paramètre debug `?echelle=N`, **mesure seule** (`MT_echelle-debug_2026-09-19.md`) → relevés `A-05` par Xav.
 8. `D-02` + `D-03` — ventilation de `dessiner()` par calque et explication du delta par frame (même instrument, **mesure seule, zéro correction**).

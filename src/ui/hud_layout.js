@@ -39,6 +39,19 @@ export const BOUTON_CONSOMMABLE = { cx: 335, cy: 195, rayon: 20, verbe: 'consume
 export const BOUTON_INTERACT = { cx: 70, cy: 130, rayon: 20, verbe: 'interact' };
 export const BOUTON_MENU = { cx: 455, cy: 20, rayon: 16, verbe: 'menu' };
 
+// D-20 B : `data/visuels.json#visuel_icone_main` (et toute icône d'arme
+// future) est dessinée dans une boîte de ce côté-là ; chaque appelant calcule
+// son échelle avec `echelleIconeArme(tailleVoulue)` plutôt que de recopier la
+// silhouette à deux tailles — même patron que TAILLE_REFERENCE_FOLLET_PX.
+// Elle vit ici, avec le reste du placement, parce que c'est le module pur et
+// testable du HUD ; sa place naturelle serait à côté de sa jumelle dans
+// visuels.js, le jour où un ticket y touchera pour une autre raison.
+export const TAILLE_REFERENCE_ICONE_ARME_PX = 12;
+
+export function echelleIconeArme(tailleVoulue) {
+  return tailleVoulue / TAILLE_REFERENCE_ICONE_ARME_PX;
+}
+
 export function boutonsTactiles() {
   return [BOUTON_ATTAQUE, ...BOUTONS_SKILLS, BOUTON_CONSOMMABLE, BOUTON_INTERACT, BOUTON_MENU];
 }

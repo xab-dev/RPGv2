@@ -243,5 +243,19 @@
       { "forme": "polygone", "dx": 0, "dy": 0, "points": [[-6, 3], [-3, -5], [3, -5], [6, 2], [2, 5], [-2, 4]], "couleur": "#8a8a8a" },
       { "forme": "polygone", "dx": -2, "dy": -2, "points": [[-3, 0], [-1, -3], [2, -1], [0, 1]], "couleur": "#a8a8a8", "alpha": 0.5 }
     ]
+  },
+  {
+    "id": "visuel_icone_main",
+    "ancre": "centre",
+    "teintable": true,
+    "primitives": [
+      { "forme": "rect", "dx": 0.5, "dy": 1.2, "w": 7, "h": 7, "couleur": "#c2a83e", "teinte": true },
+      { "forme": "rect", "dx": 0.5, "dy": -2.6, "w": 7, "h": 5, "couleur": "#c2a83e", "teinte": true },
+      { "forme": "ellipse", "dx": 0.5, "dy": -4.4, "w": 7, "h": 3.2, "couleur": "#c2a83e", "teinte": true },
+      { "forme": "ellipse", "dx": -3.4, "dy": 1.4, "w": 5.2, "h": 3.2, "rotation": -38, "couleur": "#c2a83e", "teinte": true },
+      { "forme": "rect", "dx": 0.5, "dy": 5, "w": 4.6, "h": 2, "couleur": "#c2a83e", "teinte": true },
+      { "forme": "rect", "dx": -1.1, "dy": -2.8, "w": 0.7, "h": 4, "couleur": "#8a7526", "alpha": 0.5 },
+      { "forme": "rect", "dx": 2.1, "dy": -2.8, "w": 0.7, "h": 4, "couleur": "#8a7526", "alpha": 0.5 }
+    ]
   }
 ]

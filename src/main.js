@@ -1656,6 +1656,14 @@ export function creerOrchestrateurGrotte({
       companion: companionActif,
       visuelFollet: companionActif ? registre.obtenir('visuels', companionActif.render.visuel) : null,
       tactileActif: input.tactileActif(),
+      // D-20 B : icône de l'arme ÉQUIPÉE, résolue ici (main.js a le registre)
+      // exactement comme visuelFollet au-dessus — ui/hud.js ne reçoit qu'une
+      // silhouette et ignore de quelle arme elle vient. Même résolution
+      // d'arme que les dégâts et l'anneau, jamais une seconde.
+      visuelArme: (() => {
+        const arme = resoudreArmeEquipee(registre, save.hero.equipement.arme);
+        return arme && arme.icone ? registre.obtenir('visuels', arme.icone) : null;
+      })(),
       // Palier C/D (§3.9) : discret, un chiffre — jamais affiché avant le
       // premier calcul des jauges/XP (cinématique d'ouverture).
       survie: save.survie,

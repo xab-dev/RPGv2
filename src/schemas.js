@@ -240,6 +240,26 @@ function validerSpawn(entry, catalogs, path) {
     }
   }
 
+  // `signal` (palier D) : la teinte qui fait deviner la zone de nuit. Aucune
+  // lueur sur les monstres eux-mêmes (décision Xav, `Q-27`) — c'est la ZONE
+  // qui se devine de loin, pas les créatures.
+  if (entry.signal !== undefined) {
+    const sig = entry.signal;
+    if (!sig || typeof sig !== 'object') {
+      erreurs.push(`${path} > signal doit être un objet { couleur, alpha, pulsation_ms }`);
+    } else {
+      if (typeof sig.couleur !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(sig.couleur)) {
+        erreurs.push(`${path} > signal > couleur doit être un #rrggbb`);
+      }
+      if (typeof sig.alpha !== 'number' || sig.alpha <= 0 || sig.alpha > 1) {
+        erreurs.push(`${path} > signal > alpha doit être dans ]0, 1]`);
+      }
+      if (sig.pulsation_ms !== undefined && (typeof sig.pulsation_ms !== 'number' || sig.pulsation_ms <= 0)) {
+        erreurs.push(`${path} > signal > pulsation_ms doit être un nombre strictement positif`);
+      }
+    }
+  }
+
   if (entry.errance !== undefined) {
     const e = entry.errance;
     if (!e || typeof e !== 'object') {

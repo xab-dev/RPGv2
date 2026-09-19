@@ -782,6 +782,43 @@ export function dessinerObscurite(ctx, { scene, camera, follet, rayonLumiereFoll
   }
 }
 
+// Signal des zones de Chaos (specs/07_chaos-nocturne.md, palier D) : « la
+// zone doit se deviner de loin la nuit ». Une teinte additive, douce, posée
+// APRÈS le calque d'obscurité — elle se voit donc à travers la nuit, sans
+// percer le voile ni révéler le sol (ce n'est pas une source de lumière : on
+// devine une présence, on ne voit pas où l'on marche). Même patron que les
+// faisceaux de la Grotte, dont elle reprend le principe.
+//
+// **Aucune lueur sur les monstres eux-mêmes** (décision Xav, `Q-27`) : avec
+// une lumière de follet réduite, on ne les voit qu'au dernier moment, et
+// c'est voulu.
+//
+// `zones` arrive tout prêt de main.js : { rect (px monde), couleur, alpha }.
+// render.js ne lit ni spawns.json ni les zones de la scène.
+export function dessinerSignalZones(ctx, { zones = [], camera }) {
+  if (zones.length === 0) return;
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  for (const zone of zones) {
+    if (!(zone.alpha > 0)) continue;
+    const { r, g, b } = hexVersRgb(zone.couleur);
+    const cx = zone.rect.x + zone.rect.w / 2 - camera.x;
+    const cy = zone.rect.y + zone.rect.h / 2 - camera.y;
+    // Rayon = demi-diagonale : la teinte s'éteint au bord du rectangle plutôt
+    // que de s'arrêter net, sinon on verrait la boîte au lieu de deviner la
+    // zone.
+    const rayon = Math.hypot(zone.rect.w, zone.rect.h) / 2;
+    const degrade = ctx.createRadialGradient(cx, cy, 0, cx, cy, rayon);
+    degrade.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${zone.alpha})`);
+    degrade.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
+    ctx.fillStyle = degrade;
+    ctx.beginPath();
+    ctx.arc(cx, cy, rayon, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
 // --- Textes flottants de gain (MT_texte-flottant_2026-09-19, `D-05`) ------
 // « +1 Bois » qui monte depuis la source du gain et s'efface. Dessiné en
 // coordonnées du MONDE (comme toute entité) mais APRÈS le calque

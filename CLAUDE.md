@@ -682,3 +682,48 @@ que la spec posait au palier C a donc une réponse : rien à inventer. Test : `t
 machine pure pour les cinq règles, puis trois minutes de jeu réel avec le héros réfugié dans le Jardin — six
 rôdeurs, tous restés dans le Champ nord, **aucun n'entre en zone sûre**, et la mort du héros le ramène en Grotte
 sans que personne ne le suive. Suite verte, **76 fichiers**.
+
+### Ticket 8 — `07` palier D : le signal de la zone
+
+**On devine la zone, on ne voit pas les créatures.** Une teinte additive violette, posée **après** le calque
+d'obscurité : elle se voit à travers la nuit **sans percer le voile**, donc elle ne révèle pas le sol. C'est le
+principe des faisceaux de la Grotte, réutilisé tel quel — un faisceau éclaire l'air, un halo révèle le sol ; ici
+on veut le premier. Le dégradé s'éteint sur la demi-diagonale du rectangle : sans ça on verrait la **boîte** au lieu
+de deviner la zone.
+
+**Aucune lueur sur les monstres** (`Q-27`, décision de Xav : « je veux être surpris »). Le test le vérifie deux
+fois plutôt qu'une : le rôdeur ne porte ni `lumiere` ni `signal` en données, et la fonction de rendu ne connaît
+pas le mot « monstre ».
+
+**Tout est en données, et le calcul est pur.** `spawns.json` gagne un `signal` optionnel
+(`{ couleur: "#a24bd0", alpha: 0,16, pulsation_ms: 5200 }`, *provisoires*), validé au boot. `spawns.js#zonesSignalees`
+rend des rectangles **en pixels monde** avec leur alpha ; `render.js#dessinerSignalZones` ne fait que peindre — il
+n'ouvre ni `spawns.json` ni les zones de la scène. Trois règles y sont écrites une fois :
+
+- **l'intensité suit l'obscurité de la scène** (0 de jour, 0,07 à mi-nuit, 0,14 en pleine nuit) — donc le signal
+  disparaît de jour sans condition supplémentaire ;
+- **une table fermée ne s'annonce pas** : au niveau 4, aucune teinte. On ne fait pas miroiter une zone qui ne
+  produira personne ;
+- **la pulsation** (5,2 s, de 75 % à 100 % — jamais d'extinction) suit `save.monde.heure`, l'horloge de temps de jeu
+  actif : elle est donc gelée sous UI par construction, jamais par une condition à elle, et il n'y a pas de 2ᵉ
+  horloge.
+
+`render.js` et `main.js#dessiner()` sont touchés : **validation en jeu obligatoire**, `V-19` ouverte. Suite verte,
+**77 fichiers**.
+
+### Pour voir des monstres dès ce matin, sans rien tricher
+
+La question du brief (« quelle sauvegarde, et comment forcer la nuit ») a une réponse simple, et **aucun outil de
+triche n'a été créé** :
+
+> **Importer `docs/sauvegardes/rpg_v2_save(9).json`.**
+
+Elle coche tout, sans manipulation : **niveau 7** (au-dessus du seuil de 5) · **schéma v5**, celui d'aujourd'hui,
+donc aucune migration à traverser · dans la Région Maison · et son horloge est à **753 831 ms**, soit **64 secondes
+après le début de la nuit** (la nuit court de 690 000 à 930 000 ms). Il reste donc **≈ 3 minutes de nuit** à
+l'ouverture, et le premier rôdeur naît dans les 8 secondes.
+
+Deux replis si besoin : `rpg_v2_save(5).json` est aussi en pleine nuit au niveau 5, mais en schéma v4 (elle migrera
+au chargement) ; `rpg_v2_save(8).json` est au niveau 6 mais **de jour** — il faudrait y jouer ~5 minutes pour
+atteindre la nuit. **Il n'existe aucun paramètre d'URL pour forcer l'heure** : `?debug=fps` et `?echelle=N` sont
+les deux seuls, et ni l'un ni l'autre ne touche à l'horloge. Le dire plutôt que d'en ajouter un à la sauvette.

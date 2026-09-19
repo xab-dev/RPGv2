@@ -124,3 +124,40 @@ export function tableActive(table, { phase, evaluerCondition }) {
 export function tirerPointDomaine(scene, { domaine, graine = 1, tuilesAtteignables = null }) {
   return tirerPositionApparition(scene, { zoneId: domaine, graine, tuilesAtteignables });
 }
+
+// Signal visuel des zones de Chaos (palier D) : de quoi la nuit doit avoir
+// l'air, en pixels monde, prêt à dessiner. Pur — le rendu n'a plus qu'à
+// peindre. Rien n'est renvoyé si la table est fermée (mauvaise phase, niveau
+// trop bas) : on ne fait pas miroiter une zone qui ne produira rien.
+//
+// L'intensité suit **l'obscurité de la scène**, donc la teinte monte avec la
+// nuit et disparaît de jour sans condition supplémentaire ; la pulsation suit
+// l'horloge de temps de jeu actif, la même que tout le reste — gelée sous UI
+// par construction, jamais une 2ᵉ horloge.
+export function zonesSignalees(scene, tables, { phase, evaluerCondition, opacite, opaciteMax, heureMs }) {
+  const zones = [];
+  for (const table of tables) {
+    if (!table.signal) continue;
+    if (!tableActive(table, { phase, evaluerCondition })) continue;
+    const intensiteNuit = opaciteMax > 0 ? Math.max(0, Math.min(1, opacite / opaciteMax)) : 0;
+    if (intensiteNuit <= 0) continue;
+    // Pulsation douce : 75 % à 100 % de l'alpha, jamais d'extinction complète
+    // (on doit pouvoir la deviner à n'importe quel instant).
+    const periode = table.signal.pulsation_ms || 0;
+    const pulsation = periode > 0 ? 0.875 + 0.125 * Math.sin((heureMs / periode) * Math.PI * 2) : 1;
+    const alpha = table.signal.alpha * intensiteNuit * pulsation;
+    for (const rect of rectanglesDeZone(scene, table.zone_apparition)) {
+      zones.push({
+        rect: {
+          x: rect.x * scene.tileSize,
+          y: rect.y * scene.tileSize,
+          w: rect.w * scene.tileSize,
+          h: rect.h * scene.tileSize,
+        },
+        couleur: table.signal.couleur,
+        alpha,
+      });
+    }
+  }
+  return zones;
+}

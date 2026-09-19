@@ -20,7 +20,7 @@ import { chargerScene, resoudreDeplacement, portailFranchi, trouverPositionLibre
 import { calculerCamera } from './camera.js';
 import { genererDecor } from './decor.js';
 import {
-  creerBoucle, dessinerScene, dessinerObscurite, dessinerPaupieres, dessinerTextesFlottants, presenter,
+  creerBoucle, dessinerScene, dessinerObscurite, dessinerSignalZones, dessinerPaupieres, dessinerTextesFlottants, presenter,
   RESOLUTION_LOGIQUE, calculerRectanglePresentation, versCoordonneesLogiques, AURA_TRAIT,
   definirEchelleForcee,
 } from './render.js';
@@ -54,14 +54,16 @@ import {
   creerIntro, avancerIntro, etatRendu as etatRenduIntro,
   creerDepart, avancerDepart, etatRenduDepart, avancementDepart, ETAPE_CLIGNEMENTS,
 } from './intro.js';
-import { tablesDeScene, tableActive, tirerPositionApparition, tirerPointDomaine, estEnZoneSurePx } from './spawns.js';
+import {
+  tablesDeScene, tableActive, tirerPositionApparition, tirerPointDomaine, estEnZoneSurePx, zonesSignalees,
+} from './spawns.js';
 import { creerComportement, avancerComportement } from './comportement_monstres.js';
 import { peutRecolter, trouverRessourceProche } from './resources.js';
 import { ajouterItem, retirerItem } from './inventory.js';
 import { remplirItemsSol, trouverItemProche, ramasser, planifierRespawn, tickRespawns, calculerTuilesAtteignables } from './ground_items.js';
 import { calculerOpaciteToit, distanceAuRectangle, empreinteAbsoluePuzzle } from './structures.js';
 import { dansRectangleTuile, poseValide } from './placement.js';
-import { avancerHeure, opaciteAHeure, phaseAHeure } from './daynight.js';
+import { avancerHeure, opaciteAHeure, phaseAHeure, PHASES_CYCLE } from './daynight.js';
 import { armerAudio, definirMusiqueActive } from './audio.js';
 import { creerEtatIndices } from './hints.js';
 import { estExpire, poserCooldown, tempsRestantMs } from './cooldowns.js';
@@ -99,6 +101,10 @@ const RAYON_HERO_BASE_PX = 10;
 // rien à débloquer, et on verrait des rôdeurs traverser les arbres.
 // *Provisoire*, à l'œil : la silhouette du rampant tient dans 16 px.
 const RAYON_MONSTRE_CHAOS_PX = 8;
+// Obscurité la plus forte du cycle : sert de référence au signal des zones de
+// Chaos (palier D), dont l'intensité suit la nuit. Lue depuis daynight.js,
+// jamais recopiée — changer la nuit changera le signal avec elle.
+const OPACITE_NUIT_MAX = Math.max(...PHASES_CYCLE.map((p) => p.opacite));
 const INTERVALLE_AUTOSAVE_MS = 30000;
 const DISTANCE_INTERACT_PX = 28;
 // MT_texte-flottant_2026-09-19 (`D-05`) : gabarit du texte de gain (« +{n}
@@ -1883,6 +1889,22 @@ export function creerOrchestrateurGrotte({
       fonduLumiereFollet: profilLumiere.fonduPx,
       couleurLumiereFollet: companionActif ? companionActif.render.couleur : null,
     });
+    // Signal des zones de Chaos (specs/07 palier D) : APRÈS le calque
+    // d'obscurité — il se voit à travers la nuit sans percer le voile (on
+    // devine une présence, on ne voit pas où l'on marche). Le calcul est pur
+    // et vit dans spawns.js ; render.js reçoit des rectangles en pixels et
+    // une couleur, jamais une table d'apparition.
+    dessinerSignalZones(ctxLogique, {
+      camera,
+      zones: zonesSignalees(scene, tablesDeScene(registre.tous('spawns'), scene.id), {
+        phase: phaseAHeure(save.monde.heure),
+        evaluerCondition: flags.evaluate,
+        opacite: sceneAffichage.obscurite ? sceneAffichage.obscurite.opacite : 0,
+        opaciteMax: OPACITE_NUIT_MAX,
+        heureMs: save.monde.heure,
+      }),
+    });
+
     // Aura du follet (§2 diagnostic SD_ui-lisibilite, pointillée depuis §3.4
     // 03_grotte-polish/AURA_TRAIT) : trait fin translucide en pointillés,
     // jamais un disque plein ni un trait plein épais — purement visuel

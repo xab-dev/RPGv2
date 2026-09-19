@@ -1,4 +1,54 @@
 import { PHASES_CYCLE } from './daynight.js';
+import { empreinteParDefaut } from './structures.js';
+import { echelleVisuel } from './visuels.js';
+import { resoudreEchelleJeu } from './companion.js';
+
+// `D-39` — « le corps ne sort jamais de son aura », vérifié AU CHARGEMENT.
+//
+// Pourquoi au boot et pas à l'exécution : l'aura est le repère que le joueur
+// voit de la zone de jeu du follet. Un rayon de petite orbite trop grand ne
+// planterait rien — il produirait un follet dont le cercle affiché ment, un
+// défaut visible à l'écran et invisible aux tests (le dessin n'est jamais
+// exercé en headless). Autant le faire tomber au boot, avec son chemin.
+//
+// La demi-taille du corps dérive de la MÊME boîte englobante que les
+// empreintes d'interactifs (`structures.js#empreinteParDefaut`) et de la même
+// composition d'échelles que le rendu (échelle propre du visuel × échelle de
+// jeu du compagnon) : un test qui recopierait la règle pourrait rester vert
+// alors que la silhouette, elle, aurait grandi.
+//
+// L'échelle retenue est celle **du jeu** : pendant la cinématique du choix le
+// follet est bien plus gros, mais aucune aura n'y est dessinée (elle ne l'est
+// que pour un follet en jeu), et la règle de Xav dit « partout en jeu ».
+//
+// La vérification balaie TOUS les compagnons plutôt que de nommer un id :
+// aucun littéral de catalogue n'entre ici. Contrepartie assumée, à dire le
+// jour où elle coûtera : si un 2ᵉ effet de type `vol` apparaissait pour autre
+// chose qu'un follet, il serait mesuré contre les auras des compagnons sans
+// raison — il faudra alors rendre l'appariement explicite en données.
+function erreursBorneAura(entry, catalogs, path) {
+  const erreurs = [];
+  if (typeof entry.rayon_px !== 'number' || entry.rayon_px < 0) return erreurs; // déjà signalé
+  for (const comp of catalogs.companions || []) {
+    const visuel = (catalogs.visuels || []).find((v) => v.id === (comp.render && comp.render.visuel));
+    if (!visuel || !Array.isArray(visuel.primitives)) continue; // référence cassée : signalée ailleurs
+    const boite = empreinteParDefaut(visuel, echelleVisuel(visuel) * resoudreEchelleJeu(comp));
+    const demiTaille = Math.max(
+      Math.hypot(boite.x, boite.y),
+      Math.hypot(boite.x + boite.w, boite.y),
+      Math.hypot(boite.x, boite.y + boite.h),
+      Math.hypot(boite.x + boite.w, boite.y + boite.h),
+    );
+    if (entry.rayon_px + demiTaille >= comp.rayon_aura) {
+      erreurs.push(
+        `${path} > rayon_px (${entry.rayon_px}) + demi-taille du corps de "${comp.id}" `
+        + `(${demiTaille.toFixed(2)}) doit rester STRICTEMENT sous son rayon_aura (${comp.rayon_aura}) : `
+        + 'le corps du follet sortirait de son aura, qui cesserait d\'être un repère exact',
+      );
+    }
+  }
+  return erreurs;
+}
 
 // Noms des phases du cycle, pour que `spawns.json` ne puisse pas déclarer
 // une phase qui n'existe pas (« crépuscule » au lieu de « crepuscule » se
@@ -963,16 +1013,28 @@ export const SCHEMAS = {
       const positifs = ['duree_ms'];
       const positifsOuNuls = [];
       if (entry.type === 'vol') {
-        // Ressort sous-amorti : une raideur ou un amortissement négatif
-        // ferait diverger la silhouette à l'infini, loin de son follet.
-        for (const champ of ['raideur', 'amortissement', 'periode_ms', 'seuil_saut_px']) {
-          if (typeof entry[champ] !== 'number' || entry[champ] <= 0) {
-            erreurs.push(`${path} > ${champ} doit être un nombre strictement positif`);
-          }
+        // `D-39` : la petite orbite du corps autour du point logique. Une
+        // période nulle donnerait une division par zéro dans le calcul de
+        // l'angle — un follet figé ou `NaN`, qu'aucun test de rendu ne peut
+        // attraper puisque le dessin n'est jamais exercé en headless.
+        if (typeof entry.periode_ms !== 'number' || entry.periode_ms <= 0) {
+          erreurs.push(`${path} > periode_ms doit être un nombre strictement positif`);
         }
-        if (typeof entry.amplitude_px !== 'number' || entry.amplitude_px < 0) {
-          erreurs.push(`${path} > amplitude_px doit être un nombre positif ou nul`);
+        // Rayon nul ACCEPTÉ, et c'est volontaire : c'est le repli « corps au
+        // centre de l'aura », qui doit s'obtenir en changeant un nombre.
+        if (typeof entry.rayon_px !== 'number' || entry.rayon_px < 0) {
+          erreurs.push(`${path} > rayon_px doit être un nombre positif ou nul`);
         }
+        // `sens` est un SENS de rotation, pas un facteur de vitesse : le
+        // laisser prendre 0,5 déguiserait un changement de période en
+        // changement de sens, et la période cesserait de dire la vérité.
+        if (entry.sens !== 1 && entry.sens !== -1) {
+          erreurs.push(`${path} > sens doit valoir 1 ou -1 (sens de rotation, jamais un facteur)`);
+        }
+        if (typeof entry.phase_rad !== 'number' || !Number.isFinite(entry.phase_rad)) {
+          erreurs.push(`${path} > phase_rad doit être un nombre fini`);
+        }
+        erreurs.push(...erreursBorneAura(entry, catalogs, path));
         return erreurs;
       }
 

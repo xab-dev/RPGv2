@@ -14,11 +14,10 @@
   {
     "id": "effet_vol_follet",
     "type": "vol",
-    "raideur": 26,
-    "amortissement": 5.5,
-    "amplitude_px": 1.6,
-    "periode_ms": 1150,
-    "seuil_saut_px": 60
+    "rayon_px": 6,
+    "periode_ms": 1400,
+    "sens": -1,
+    "phase_rad": 0
   },
   {
     "id": "effet_sillage_follet",

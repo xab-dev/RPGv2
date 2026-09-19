@@ -1,67 +1,59 @@
-// Vol du follet (`D-36`, proposition) : le rendre aérien, léger, vif.
-// Référence de *sensation* donnée par Xav : le vif d'or — **pas** ses ailes
-// ni son or, le follet garde sa forme d'élément et sa couleur.
+// Vol du follet : la **petite orbite du corps** (`D-39`).
+//
+// Deux points, deux orbites (décision de Xav, 20/09) :
+//
+//   1. le **point logique** — centre de l'aura, de la lumière et de TOUT
+//      calcul de jeu — orbite autour du héros. C'est l'orbite de
+//      `companion.js`, inchangée, valeurs comprises.
+//   2. le **corps** orbite autour du point logique, sur une orbite plus
+//      petite et de sens inverse. Effet recherché : un « chaos maîtrisé »,
+//      joli et lisible.
+//
+// Ce que ce module remplace, et pourquoi. `D-36` décalait le corps par un
+// ressort sous-amorti doublé d'un vol stationnaire : l'écart dépendait donc
+// de l'HISTOIRE des déplacements du héros, et de rien que le joueur puisse
+// lire. Mesuré sur la build d'avant ce ticket : **13,2 px à l'arrêt, 33,4 px
+// en course**, pour une aura de rayon 40 — le corps frôlait la sortie de sa
+// propre aura dès qu'on courait. Ce n'était pas le décalage qui gênait Xav,
+// c'était l'absence de règle : deux points existaient sans relation entre eux.
+// Ici, le décalage ne lit QUE le temps. Sa norme vaut le rayon déclaré, à
+// tout instant, quoi que fasse le héros.
 //
 // RÈGLE DIRECTRICE, et elle est stricte : ce module ne produit qu'un
 // **décalage visuel**. La position logique du follet, son aura, sa distance
 // d'engagement et sa lumière ne bougent pas d'un pixel — sinon l'obscurité
-// scintillerait au rythme du vol, ce qui serait exactement l'inverse de
-// l'effet cherché. L'appelant dessine la silhouette ici, et continue de
+// scintillerait au rythme du vol, et l'aura cesserait d'être un repère exact
+// de la zone de jeu. L'appelant dessine la silhouette ici, et continue de
 // tout calculer là-bas.
 //
-// Module PUR : aucun canvas, aucune horloge propre, aucune allocation en
-// boucle (un petit état par frame, pas une réserve de particules).
+// Module PUR, et plus encore qu'avant : aucun canvas, aucune horloge propre,
+// **aucun état** — pas même un accumulateur. Une fonction du temps, point.
+// C'est ce qui rend la continuité vraie par construction plutôt que mesurée :
+// il n'existe plus de chemin par lequel le décalage pourrait sauter (le
+// `seuil_saut_px` du ressort, lui, le remettait à zéro d'un coup à chaque
+// entrée en scène).
+
+// `tempsMs` : le temps de jeu ACTIF écoulé, fourni par l'appelant. Le module
+// n'accumule rien lui-même, pour qu'il n'existe pas de 2ᵉ horloge dans le jeu
+// et que le gel sous UI reste l'affaire du point de décision unique de
+// `maj()`.
 //
-// Le mouvement est un **ressort sous-amorti** : la silhouette court après la
-// position logique et la dépasse légèrement aux changements de direction —
-// c'est ce dépassement qui fait « vif », plutôt qu'un suivi parfait qui fait
-// « collé ». Par-dessus, un vol stationnaire nerveux : deux oscillations de
-// périodes différentes, donc jamais un cercle régulier.
+// `config` : une entrée de `data/effets.json` de type `vol`, validée au boot
+// (rayon, période, sens, phase — toutes *provisoires*, toutes réglables par
+// Xav sans toucher une ligne de code).
+//
+// Rend `{ dx, dy }`, le décalage du corps PAR RAPPORT au point logique.
+export function decalageCorpsFollet(tempsMs, config) {
+  const { rayon_px: rayon, periode_ms: periode, sens, phase_rad: phase } = config;
 
-export function creerVol(config) {
-  return { config, x: null, y: null, vx: 0, vy: 0, tMs: 0 };
-}
+  // `sens` vient des données et ne vaut que 1 ou -1 (vérifié au boot) : le
+  // sens inverse de la grande orbite est un CHOIX de Xav, pas un signe écrit
+  // ici. C'est lui qui fait que la trajectoire composée dessine une rosace
+  // plutôt que des boucles qui se rattrapent.
+  const angle = phase + sens * (tempsMs / periode) * Math.PI * 2;
 
-// `cibleX/cibleY` : la position LOGIQUE du follet, celle que companion.js
-// calcule. Rend l'état suivant et le point où la silhouette doit être dessinée.
-export function avancerVol(etat, { cibleX, cibleY, deltaMs }) {
-  const { raideur, amortissement, amplitude_px, periode_ms, seuil_saut_px } = etat.config;
-  const dt = Math.max(0, deltaMs) / 1000;
-
-  // Premier appel, ou saut de position (entrée en scène, téléportation, fin
-  // de cinématique) : on se recolle, jamais un vol de 3 000 px à travers la
-  // carte.
-  if (etat.x === null || Math.hypot(cibleX - etat.x, cibleY - etat.y) > seuil_saut_px) {
-    return { ...etat, x: cibleX, y: cibleY, vx: 0, vy: 0, tMs: etat.tMs + deltaMs, rendu: { x: cibleX, y: cibleY } };
-  }
-
-  // Ressort : accélération vers la cible, puis frottement. Un amortissement
-  // faible laisse le dépassement vivre ; trop faible, le follet oscillerait
-  // sans fin (valeurs en données, *provisoires*).
-  let vx = etat.vx + (cibleX - etat.x) * raideur * dt;
-  let vy = etat.vy + (cibleY - etat.y) * raideur * dt;
-  const frottement = Math.max(0, 1 - amortissement * dt);
-  vx *= frottement;
-  vy *= frottement;
-  const x = etat.x + vx * dt;
-  const y = etat.y + vy * dt;
-
-  // Vol stationnaire : deux périodes volontairement non multiples l'une de
-  // l'autre (le rapport 0,63 est choisi pour ça), sinon le follet décrirait
-  // une figure fermée et régulière — l'œil la verrait tout de suite.
-  const tMs = etat.tMs + deltaMs;
-  const w = periode_ms > 0 ? (tMs / periode_ms) * Math.PI * 2 : 0;
-  const oscX = Math.sin(w) * amplitude_px;
-  const oscY = Math.sin(w * 0.63 + 1.7) * amplitude_px * 0.6;
-
-  return { ...etat, x, y, vx, vy, tMs, rendu: { x: x + oscX, y: y + oscY } };
-}
-
-// Distance entre la silhouette et la position logique — exposée pour les
-// tests (« le décalage reste borné ») et pour l'appelant qui voudrait s'en
-// servir un jour. Jamais utilisée par une règle de jeu : ce serait faire
-// dépendre le gameplay d'un effet visuel.
-export function ecartVisuel(etat, cibleX, cibleY) {
-  if (!etat.rendu) return 0;
-  return Math.hypot(etat.rendu.x - cibleX, etat.rendu.y - cibleY);
+  // Un rayon nul donne un décalage nul : c'est le repli prévu au brief
+  // (« remettre le corps au centre de l'aura »), et il s'obtient en changeant
+  // un nombre en données — jamais en retirant du code.
+  return { dx: Math.cos(angle) * rayon, dy: Math.sin(angle) * rayon };
 }

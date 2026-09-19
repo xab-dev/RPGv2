@@ -7,13 +7,17 @@
 // étaient ; seule la silhouette se décale. Si ce n'était pas le cas,
 // l'obscurité scintillerait au rythme du vol.
 //
+// **Mis à jour par `D-39` (20/09)** : les trois premiers blocs de ce fichier
+// éprouvaient le RESSORT (bornage, dépassement, recollage au saut). Xav a
+// remplacé ce mouvement par une petite orbite — le ressort n'existe plus, et
+// ses tests sont partis avec lui, dans `test_d39_double_orbite_2026-09-20.js`
+// qui éprouve la règle qui l'a remplacé. Ce qui reste ici est ce que `D-39`
+// ne touche pas et qui doit continuer de tenir : les ornements et le sillage.
+//
 // Prouvé ici :
-//   1. le vol est borné et revient toujours vers la position logique ;
-//   2. il DÉPASSE aux changements de direction (c'est ce qui fait « vif ») ;
-//   3. un saut de position (entrée en scène) recolle au lieu de traverser ;
-//   4. le module ne connaît ni la forme du follet, ni le jeu ;
-//   5. le sillage est une 2ᵉ instance de poussiere.js — aucun système neuf ;
-//   6. les ornements vivent dans les visuels PARTAGÉS, donc la cinématique
+//   1. le module de vol ne connaît ni la forme du follet, ni le jeu ;
+//   2. le sillage est une 2ᵉ instance de poussiere.js — aucun système neuf ;
+//   3. les ornements vivent dans les visuels PARTAGÉS, donc la cinématique
 //      du choix les a sans qu'on ait touché à `intro.js`.
 import assert from 'node:assert/strict';
 import path from 'node:path';
@@ -22,7 +26,6 @@ import { fileURLToPath } from 'node:url';
 import { chargerCataloguesDepuisDisque } from '../src/io_node.js';
 import { SCHEMAS } from '../src/schemas.js';
 import { validerCatalogues } from '../src/registry.js';
-import { creerVol, avancerVol, ecartVisuel } from '../src/vol_follet.js';
 import { creerPoussiere, avancerPoussiere, bouffeesVisibles } from '../src/poussiere.js';
 
 const RACINE = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -33,58 +36,10 @@ const { donnees: catalogues, erreurs } = await chargerCataloguesDepuisDisque(
 assert.deepEqual(erreurs, []);
 assert.deepEqual(validerCatalogues(catalogues), []);
 
-const CONFIG_VOL = catalogues.effets.find((e) => e.id === 'effet_vol_follet');
 const CONFIG_SILLAGE = catalogues.effets.find((e) => e.id === 'effet_sillage_follet');
 const FRAME_MS = 16;
 
-// --- 1. Borné, et toujours rappelé vers la position logique -------------
-{
-  let vol = creerVol(CONFIG_VOL);
-  const cible = { x: 1000, y: 500 };
-  let ecartMax = 0;
-  for (let i = 0; i < 600; i += 1) {
-    // Le follet logique orbite autour du héros : on lui fait décrire un
-    // cercle de 24 px, comme companion.js.
-    const angle = (i / 60) * 2;
-    const cibleX = cible.x + Math.cos(angle) * 24;
-    const cibleY = cible.y + Math.sin(angle) * 24;
-    vol = avancerVol(vol, { cibleX, cibleY, deltaMs: FRAME_MS });
-    ecartMax = Math.max(ecartMax, ecartVisuel(vol, cibleX, cibleY));
-  }
-  assert.ok(ecartMax < 20, `le décalage reste discret (max ${ecartMax.toFixed(1)} px)`);
-  assert.ok(ecartMax > 0.5, 'mais il existe : le follet n’est pas collé à sa position');
-  console.log(`OK vol borné : écart maximal ${ecartMax.toFixed(1)} px sur 10 s d’orbite`);
-}
-
-// --- 2. Le dépassement : c'est lui qui fait « vif » ----------------------
-{
-  let vol = creerVol(CONFIG_VOL);
-  // Immobile assez longtemps pour se poser...
-  for (let i = 0; i < 200; i += 1) vol = avancerVol(vol, { cibleX: 1000, cibleY: 500, deltaMs: FRAME_MS });
-  // ...puis la cible part franchement à droite (sans dépasser le seuil de
-  // saut, sinon le module recollerait au lieu de voler).
-  let maxX = -Infinity;
-  for (let i = 0; i < 120; i += 1) {
-    vol = avancerVol(vol, { cibleX: 1050, cibleY: 500, deltaMs: FRAME_MS });
-    maxX = Math.max(maxX, vol.rendu.x);
-  }
-  assert.ok(maxX > 1050 + CONFIG_VOL.amplitude_px, `la silhouette dépasse la cible (${maxX.toFixed(1)} > 1050)`);
-  assert.ok(Math.abs(vol.rendu.x - 1050) < 5, 'puis elle se repose dessus');
-  console.log(`OK dépassement de ${(maxX - 1050).toFixed(1)} px au changement de direction, puis retour`);
-}
-
-// --- 3. Un saut de position recolle, jamais un vol à travers la carte ---
-{
-  let vol = creerVol(CONFIG_VOL);
-  vol = avancerVol(vol, { cibleX: 100, cibleY: 100, deltaMs: FRAME_MS });
-  // Entrée dans une autre scène : le follet est brutalement ailleurs.
-  vol = avancerVol(vol, { cibleX: 4000, cibleY: 3000, deltaMs: FRAME_MS });
-  assert.deepEqual(vol.rendu, { x: 4000, y: 3000 }, 'au-delà du seuil de saut, la silhouette se recolle');
-  assert.equal(vol.vx, 0, 'et son élan est remis à zéro');
-  console.log(`OK saut de position : recollage net au-delà de ${CONFIG_VOL.seuil_saut_px} px`);
-}
-
-// --- 4. Le module ignore le follet, sa forme et le jeu ------------------
+// --- 1. Le module ignore le follet, sa forme et le jeu ------------------
 {
   const source = fs.readFileSync(path.join(RACINE, 'src/vol_follet.js'), 'utf8')
     .split('\n').filter((l) => !l.trim().startsWith('//')).join('\n');
@@ -94,7 +49,7 @@ const FRAME_MS = 16;
   console.log('OK le module de vol ne connaît ni l’aura, ni la lumière, ni la silhouette');
 }
 
-// --- 5. Le sillage n'est pas un système neuf ----------------------------
+// --- 2. Le sillage n'est pas un système neuf ----------------------------
 {
   // C'est `poussiere.js`, avec une autre configuration. Si ce test passe,
   // c'est que la règle du 19/09 (« l'effet ne connaît pas la forme du
@@ -117,7 +72,7 @@ const FRAME_MS = 16;
   console.log(`OK sillage : ${bouffees.length} étincelles vivantes, réserve fixe de poussiere.js, aucun système neuf`);
 }
 
-// --- 6. Les ornements sont dans les visuels partagés --------------------
+// --- 3. Les ornements sont dans les visuels partagés --------------------
 {
   // Donc la cinématique du choix les a AUSSI, sans que `intro.js` ait bougé :
   // elle dessine la même entrée de catalogue que le jeu.

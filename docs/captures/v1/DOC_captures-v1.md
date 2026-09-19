@@ -57,5 +57,10 @@ Tu as évité de capturer ce que tu n'aimes pas, et c'est normal. Mais ces point
 
 ## Ce que la V1 faisait et que la V2 ne fait pas encore (envie, pas commande)
 
--menu moderne
+-Style des menus : interface sombre en cartes. Fond noir bleuté ; tuiles un ton plus clair, bordure fine, coins arrondis, sans ombre ; grille régulière, beaucoup d'air. Deux niveaux de texte (titre blanc gras, explication grise). Une icône par carte. Une seule couleur d'accent, réservée à l'action et au focus ; rouge pour le danger seulement. Bouton principal plein, secondaire en contour. Un bouton = une action, avec une phrase qui dit ce qu'elle fait. (ce que la v1 ne faisait pas mais que la v2 devrait faire = 3 couleur d'accent : le VERT, le orange et le rouge)
 -
+## Ce que la v1 ne faisait pas et que la v2 devrait faire :
+
+- 3 couleur d'accent : le VERT, le orange et le rouge
+
+_ _ _

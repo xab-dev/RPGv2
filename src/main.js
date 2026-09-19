@@ -31,7 +31,7 @@ import {
 } from './save.js';
 import { dessinerVisuel, echelleVisuel, TAILLE_REFERENCE_FOLLET_PX } from './visuels.js';
 import { creerPoussiere, avancerPoussiere, bouffeesVisibles, viderPoussiere } from './poussiere.js';
-import { creerVol, avancerVol } from './vol_follet.js';
+import { decalageCorpsFollet } from './vol_follet.js';
 import {
   creerTextesFlottants, emettreTexte, avancerTextesFlottants, textesVisibles, viderTextesFlottants,
 } from './texte_flottant.js';
@@ -268,7 +268,14 @@ export function creerOrchestrateurGrotte({
   // système nouvelle : le module ne connaît ni le héros ni sa forme, il ne
   // connaît qu'une position et une distance parcourue. C'est exactement ce
   // que la règle du 19/09 promettait, vérifié ici sur un second cas d'usage.
-  let volFollet = creerVol(registre.obtenir('effets', 'effet_vol_follet'));
+  // `D-39` : plus d'état de vol du tout — la petite orbite du corps est une
+  // fonction du temps. On ne garde que la config et l'horloge de temps de jeu
+  // actif propre à l'effet, remise à zéro comme les réserves de particules.
+  const configVolFollet = registre.obtenir('effets', 'effet_vol_follet');
+  let tempsVolFolletMs = 0;
+  // Initialisé à sa valeur à t = 0, et non à zéro : sinon la toute première
+  // frame ferait sauter le corps de son centre à son orbite.
+  let corpsFollet = decalageCorpsFollet(0, configVolFollet);
   const effetSillage = registre.obtenir('effets', 'effet_sillage_follet');
   const visuelSillage = registre.obtenir('visuels', effetSillage.visuel);
   const sillageFollet = creerPoussiere(effetSillage);
@@ -532,7 +539,8 @@ export function creerOrchestrateurGrotte({
     // téléporté) — la réserve est vidée sur place, jamais réallouée.
     viderPoussiere(poussiere);
     viderPoussiere(sillageFollet);
-    volFollet = creerVol(registre.obtenir('effets', 'effet_vol_follet'));
+    tempsVolFolletMs = 0;
+    corpsFollet = decalageCorpsFollet(0, configVolFollet);
     // `D-05`, même raison exactement : un « +1 Bois » gagné dans la scène
     // qu'on quitte n'a rien à faire flottant dans la suivante.
     viderTextesFlottants(textesFlottants);
@@ -1520,13 +1528,14 @@ export function creerOrchestrateurGrotte({
       // sillage naît à la SILHOUETTE (là où l'œil voit le follet), et sa
       // densité suit la distance parcourue par elle.
       if (follet) {
-        const avantX = volFollet.rendu ? volFollet.rendu.x : follet.x;
-        const avantY = volFollet.rendu ? volFollet.rendu.y : follet.y;
-        volFollet = avancerVol(volFollet, { cibleX: follet.x, cibleY: follet.y, deltaMs });
-        const parcourue = Math.hypot(volFollet.rendu.x - avantX, volFollet.rendu.y - avantY);
+        const avantX = follet.x + corpsFollet.dx;
+        const avantY = follet.y + corpsFollet.dy;
+        tempsVolFolletMs += deltaMs;
+        corpsFollet = decalageCorpsFollet(tempsVolFolletMs, configVolFollet);
+        const parcourue = Math.hypot((follet.x + corpsFollet.dx) - avantX, (follet.y + corpsFollet.dy) - avantY);
         avancerPoussiere(sillageFollet, {
-          x: volFollet.rendu.x,
-          y: volFollet.rendu.y + effetSillage.offset_y_px,
+          x: follet.x + corpsFollet.dx,
+          y: follet.y + corpsFollet.dy + effetSillage.offset_y_px,
           distancePx: parcourue,
           deltaMs,
           emettre: true,
@@ -1890,10 +1899,11 @@ export function creerOrchestrateurGrotte({
       heroTeinte: companionActif ? companionActif.render.couleur : COULEUR_HERO_NEUTRE,
       monstres: monstresAffiches,
       follet: follet && companionActif ? {
-        // `D-36` : la SILHOUETTE suit le vol ; tout le reste (aura, lumière,
-        // engagement) continue de lire `follet.x/y`, la position logique.
-        x: volFollet.rendu ? volFollet.rendu.x : follet.x,
-        y: volFollet.rendu ? volFollet.rendu.y : follet.y,
+        // `D-39` : la SILHOUETTE tourne sur la petite orbite, autour du point
+        // logique ; tout le reste (aura, lumière, engagement) continue de lire
+        // `follet.x/y`, la position logique. Deux points, deux orbites.
+        x: follet.x + corpsFollet.dx,
+        y: follet.y + corpsFollet.dy,
         visuel: registre.obtenir('visuels', companionActif.render.visuel),
         couleur: companionActif.render.couleur,
         echelle: echelleFolletAffichee(companionActif),

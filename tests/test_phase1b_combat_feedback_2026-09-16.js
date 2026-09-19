@@ -16,7 +16,7 @@ import { creerI18n } from '../src/i18n.js';
 import { creerDialogue, DELAI_ARMEMENT_DIALOGUE_MS } from '../src/dialogue.js';
 import { saveNeuve, creerStoreMemoire } from '../src/save.js';
 import { creerOrchestrateurGrotte } from '../src/main.js';
-import { estMonstreActif, FLASH_ATTAQUE_MS, FLASH_TOUCHE_MS } from '../src/combat.js';
+import { estMonstreActif, resoudreArmeEquipee, FLASH_ATTAQUE_MS, FLASH_TOUCHE_MS } from '../src/combat.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const RACINE = path.join(__dirname, '..');
@@ -108,7 +108,12 @@ function avancerVers(orchestrateur, frames, cible, { maxFrames = 400, deltaMs = 
   return false;
 }
 
-function avancerVersMonstre(orchestrateur, frames, enemyId, { maxFrames = 400, deltaMs = 16 } = {}) {
+// `distanceArret` est fournie par l'appelant et dérivée de la portée réelle
+// de l'arme équipée (D-20, 2026-09-19) : une constante en px ici serait une
+// copie de la portée du jour, qui redeviendrait fausse au prochain réglage —
+// et le test échouerait alors pour une raison sans rapport avec son contrat
+// (le feedback visuel), comme cela s'est produit au passage aux mains nues.
+function avancerVersMonstre(orchestrateur, frames, enemyId, { distanceArret, maxFrames = 400, deltaMs = 16 } = {}) {
   for (let i = 0; i < maxFrames; i++) {
     if (orchestrateur.dialogueOuvert()) return true;
     const hero = orchestrateur.obtenirHero();
@@ -117,7 +122,7 @@ function avancerVersMonstre(orchestrateur, frames, enemyId, { maxFrames = 400, d
     const dx = monstre.x - hero.x;
     const dy = monstre.y - hero.y;
     const distance = Math.hypot(dx, dy);
-    if (distance < 20) return true;
+    if (distance < distanceArret) return true;
     frames.push(etat({ moveX: dx / distance, moveY: dy / distance }));
     orchestrateur.maj(deltaMs);
   }
@@ -161,7 +166,10 @@ function avancerVersMonstre(orchestrateur, frames, enemyId, { maxFrames = 400, d
   avancerVers(orchestrateur, frames, px(19, 6));
   frames.push(etat()); orchestrateur.maj(16); // laisse portailFranchi() s'exécuter
   fermerDialogue(orchestrateur, frames); // tuto combat salle 2
-  avancerVersMonstre(orchestrateur, frames, 'enemy_grotte_rampant');
+  // Bien à l'intérieur de la portée, pas à sa frontière : le monstre bouge
+  // aussi, et un arrêt pile sur le bord rendrait le coup suivant incertain.
+  const porteeMaxPx = resoudreArmeEquipee(registre, null).portee.max * TILE;
+  avancerVersMonstre(orchestrateur, frames, 'enemy_grotte_rampant', { distanceArret: porteeMaxPx * 0.6 });
 
   const monstre = () => orchestrateur.obtenirMonstres().find((m) => m.enemyId === 'enemy_grotte_rampant');
 

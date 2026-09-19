@@ -760,10 +760,19 @@ export const SCHEMAS = {
     refs: [],
     custom: null,
   },
+  // `defaut` (optionnel, D-20) : l'objet équipé d'office quand la sauvegarde
+  // n'en désigne aucun — déclaré ici plutôt qu'en littéral dans le code, pour
+  // qu'échanger l'arme de départ reste un changement de données. Passer par
+  // une REF (et non par un drapeau sur l'arme elle-même) fait tomber un id
+  // inconnu en échec dur au boot, avec son chemin exact, via la machinerie
+  // déjà en place — jamais un `undefined` qui casserait en pleine partie.
+  // La cible est `weapons` parce que c'est le seul slot qui ait un défaut
+  // aujourd'hui ; le jour où l'armure en aura un, c'est le slot qui devra
+  // dire son catalogue (pas avant : aucun second cas d'usage réel).
   equipment_slots: {
     requiredFields: ['id', 'label_key'],
     idField: 'id',
-    refs: [],
+    refs: [{ field: 'defaut', catalog: 'weapons' }],
     custom: null,
   },
   flags: {

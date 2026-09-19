@@ -10,6 +10,24 @@
 export const FLASH_ATTAQUE_MS = 120;
 export const FLASH_TOUCHE_MS = 80;
 
+// Slot d'équipement qui porte l'arme (data/equipment_slots.json). Seul id de
+// catalogue écrit en dur de tout ce module : un slot est une structure du
+// jeu, pas du contenu — ce qu'il contient, lui, vient entièrement des données.
+const SLOT_ARME = 'equip_arme';
+
+// L'arme équipée se résout AU CHARGEMENT, en un seul endroit (D-20, décision
+// Q-21) : une sauvegarde qui ne désigne aucune arme prend le défaut déclaré
+// en données (`equipment_slots#equip_arme.defaut`), jamais un id en dur.
+// « Sans arme » n'existe donc pas — les mains nues sont une arme comme une
+// autre, ce qui évite le cas particulier « pas d'arme » partout en aval.
+// Le calcul de dégâts ET l'anneau de feedback passent tous deux par ici :
+// deux résolutions parallèles finiraient par diverger (une portée affichée
+// qui ne serait plus celle qui touche).
+export function resoudreArmeEquipee(registre, idArmeEquipee) {
+  const slot = registre.obtenir('equipment_slots', SLOT_ARME);
+  return registre.obtenir('weapons', idArmeEquipee || (slot && slot.defaut));
+}
+
 export function estDansPortee(hero, monstre, portee, tileSize) {
   const distanceTuiles = Math.hypot(monstre.x - hero.x, monstre.y - hero.y) / tileSize;
   return distanceTuiles >= portee.min && distanceTuiles <= portee.max;

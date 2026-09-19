@@ -1,5 +1,5 @@
 [
-  { "id": "equip_arme", "label_key": "equipment.arme" },
+  { "id": "equip_arme", "label_key": "equipment.arme", "defaut": "weapon_mains_nues" },
   { "id": "equip_armure", "label_key": "equipment.armure" },
   { "id": "equip_accessoire", "label_key": "equipment.accessoire" }
 ]

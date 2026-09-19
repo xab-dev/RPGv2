@@ -36,7 +36,9 @@ import {
   modificateursHeros, statsEffectivesMonstre, tickBuffsActifs, ajouterBuffActif, modificateursBuffsActifs,
 } from './status.js';
 import { creerHeros, creerMonstre, approcherEnLigneDroite, infligerDegats, mourir, respawn, reconcilierPvMax } from './entities.js';
-import { resoudreAutoAttaque, tickCooldown, estMonstreActif, FLASH_ATTAQUE_MS, FLASH_TOUCHE_MS } from './combat.js';
+import {
+  resoudreArmeEquipee, resoudreAutoAttaque, tickCooldown, estMonstreActif, FLASH_ATTAQUE_MS, FLASH_TOUCHE_MS,
+} from './combat.js';
 import {
   creerFollet, mettreAJourEtat as mettreAJourFollet, avancerPosition as avancerFollet, DISTANCE_ENGAGEMENT_PX,
 } from './companion.js';
@@ -1093,7 +1095,7 @@ export function creerOrchestrateurGrotte({
       // (cooldown non écoulé, cas déjà exclu par ce `if`) ferait croire au
       // joueur qu'il a frappé alors qu'il n'a rien fait.
       anneauAttaqueMs = FLASH_ATTAQUE_MS;
-      const arme = registre.obtenir('weapons', save.hero.equipement.arme);
+      const arme = resoudreArmeEquipee(registre, save.hero.equipement.arme);
       const idsTouches = new Set(resoudreAutoAttaque(hero, monstres, arme.portee, scene.tileSize).map((m) => m.id));
       if (idsTouches.size > 0) {
         monstres = monstres.map((monstre) => {
@@ -1531,7 +1533,7 @@ export function creerOrchestrateurGrotte({
     // Anneau d'attaque (§3.1) : converti en px logiques ici (main.js a le
     // registre pour résoudre l'arme équipée) — render.js ne connaît que
     // [rayonMin, rayonMax, alpha], jamais weapons.json.
-    const arme = registre.obtenir('weapons', save.hero.equipement.arme);
+    const arme = resoudreArmeEquipee(registre, save.hero.equipement.arme);
     const anneauAttaque = anneauAttaqueMs > 0 ? {
       rayonMin: arme.portee.min * scene.tileSize,
       rayonMax: arme.portee.max * scene.tileSize,

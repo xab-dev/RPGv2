@@ -7,14 +7,20 @@ export const VERSION_SCHEMA_COURANTE = 5;
 const CLE_ACTUELLE = 'save_current';
 const CLE_SUIVANTE = 'save_next';
 
-// Arme de départ équipée d'office en données (§2.1 : weapon_epee_bois),
-// sans UI d'équipement avant Phase 4 — une seule constante ici plutôt qu'une
-// valeur recopiée à chaque site qui crée une sauvegarde neuve.
-const ARME_DEPART = 'weapon_epee_bois';
+// Plus d'arme de départ en dur ici (D-20, 2026-09-19) : une sauvegarde
+// n'inscrit une arme que si le joueur en a réellement équipé une. `null` veut
+// dire « aucun choix », et le défaut se résout au chargement depuis les
+// données (`equipment_slots#equip_arme.defaut`, via
+// combat.js#resoudreArmeEquipee) — changer l'arme de départ redevient ainsi
+// un changement de JSON, et aucune sauvegarde ne fige un id de catalogue
+// qu'elle n'a pas choisi. Les sauvegardes déjà écrites, elles, portent leur
+// arme en dur et la gardent : seule une partie neuve a les mains nues.
+const ARME_MIGRATION_1_2 = 'weapon_epee_bois';
 
 // Silhouette du héros (03_grotte-polish §2.1 : « hero, données de départ, là
-// où vit l'arme par défaut ») — même logique que ARME_DEPART ci-dessus, un
-// seul endroit plutôt qu'une constante recopiée dans main.js. La teinte
+// où vit l'arme par défaut ») — un seul endroit plutôt qu'une constante
+// recopiée dans main.js ; contrairement à l'arme, le héros n'a pas de
+// catalogue de silhouettes jouables où déclarer ce défaut. La teinte
 // selon le compagnon choisi (couleur_neutre avant choix) est palier 3, pas
 // encore branchée ici : visuel_heros garde sa propre couleur par défaut tant
 // qu'aucune teinte n'est passée à dessinerVisuel.
@@ -54,7 +60,7 @@ export function saveNeuve() {
       y: 0,
       pv: null, // renseigné au premier calcul des stats dérivées (pv_max inconnu ici)
       companion: null,
-      equipement: { arme: ARME_DEPART, consommable: null },
+      equipement: { arme: null, consommable: null },
       // xp/niveau/points_stats_libres (Palier D §3.4) ; stats.points = points
       // alloués par le joueur, { statId: n }, distinct de status_effects
       // (buffs) — combiné aux autres modificateurs par
@@ -115,7 +121,11 @@ function migrer_1_vers_2(payload) {
       ...payload.hero,
       pv: null,
       companion: null,
-      equipement: { arme: ARME_DEPART },
+      // Histoire figée, pas le défaut du jour (D-20, 2026-09-19) : cette
+      // migration doit reproduire ce qu'elle produisait déjà, sinon une
+      // sauvegarde v1 se mettrait à diverger des v2-v5, qui portent toutes
+      // `weapon_epee_bois` en dur dans leur fichier et le garderont.
+      equipement: { arme: ARME_MIGRATION_1_2 },
     },
     inventaire: { eclats: 0 },
     puzzles: {},

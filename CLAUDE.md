@@ -263,7 +263,7 @@ la session précédente a révélées, clos celles qu'elle a livrées.
 1. Cette session de documentation (doc seule) — faite.
 2. `D-22` — clavier : `E` = interagir, `F` = consommer (`MT_clavier-e-f_2026-09-19.md`) — **livré le 2026-09-19, validation clavier de Xav due**.
 3. `D-21` — rayon d'effacement du toit −10 % (`MT_toit-rayon_2026-09-19.md`) — **livré le 2026-09-19, validation en jeu de Xav due**.
-4. `D-20` palier A — « mains nues », portée (`MT_mains-nues_2026-09-19.md`). **Validation dans la Grotte.**
+4. `D-20` palier A — « mains nues », portée (`MT_mains-nues_2026-09-19.md`) — **livré le 2026-09-19, validation en jeu de Xav due** (partie neuve, la Grotte).
 5. `D-20` palier B — icône de la case d'attaque.
 6. `D-05` — texte flottant « +1 bois » (`MT_texte-flottant_2026-09-19.md`).
 7. `D-23` — paramètre debug `?echelle=N` (`MT_echelle-debug_2026-09-19.md`) → puis relevés `A-05` par Xav.
@@ -278,37 +278,50 @@ Les captures de la V1 (`docs/captures/v1/`) sont une **inspiration, jamais un ca
 
 `Q-10`, `Q-11` et `Q-12` restent à trancher avec Xav ; `Q-07` et `Q-19` sont gelées. La spec de la barre d'action du bas (`E-01`) est écrite par Xav lui-même et attend le chiffrage `Q-11`. **Une spec non écrite ne se commence pas** (même règle que pour une phase).
 
-## Journal de session — `D-21` : toit, rayon d'effacement −10 % (2026-09-19)
 
-Ticket `MT_toit-rayon_2026-09-19.md`, **une seule ligne du suivi touchée : `D-21`** (close). Aucune ligne ouverte au passage. Suite headless verte, **67 fichiers**. Un commit, pas de `push`.
+## Journal de session — `D-20` palier A : « mains nues », la portée vient de l'arme (2026-09-19)
 
-**Ménage de journal** : journal précédent (`D-22`, clavier `E`/`F`) archivé verbatim dans `docs/archives/JOURNAL_2026-09-19_clavier-e-f.md`, ligne d'INDEX ajoutée. La validation clavier de `D-22` par Xav reste due — elle est écrite dans le verdict de `D-22` au suivi, pas perdue par l'archivage.
+Ticket `MT_mains-nues_2026-09-19.md`, **palier A seulement** (« un palier par session »). Lignes du suivi touchées : `D-20` (palier A livré, la ligne reste ouverte pour B) ; deux lignes ouvertes au passage, `D-26` et `D-27`. `E-01` et `E-02` non touchées. Suite headless verte, **68 fichiers**. Un commit, pas de `push`.
+
+**Ménage de journal** : journal précédent (`D-21`, rayon du toit) archivé verbatim dans `docs/archives/JOURNAL_2026-09-19_toit-rayon.md`, ligne d'INDEX ajoutée. La validation en jeu de `D-21` par Xav reste due (inscrite au verdict de `D-21`, §8 du suivi).
+
+### Ce que la lecture a trouvé (étape 1 du ticket)
+
+La moitié du travail était déjà faite, et pas là où le ticket la cherchait :
+
+- La portée est déclarée dans **`data/weapons.json`**, qui existe déjà et est validé au boot (`schemas.js#validerWeapon`).
+- Sa forme est déjà l'intervalle `{ min, max }` **en tuiles** — le format de la décision verrouillée, pas un rayon.
+- `combat.js` ne connaît aucune portée : il la reçoit en paramètre. Aucune stat, aucune constante de combat n'intervenait déjà.
+- L'anneau de feedback lisait **la même entrée d'arme** (`main.js`, converti en px par `tileSize` ; `render.js` ne reçoit que `[rayonMin, rayonMax, alpha]`) — même valeur, mais **deux résolutions indépendantes**.
+- Le héros connaissait son arme par `save.hero.equipement.arme`, **persisté**, initialisé depuis un littéral `ARME_DEPART = 'weapon_epee_bois'` dans `save.js`.
+
+Ce dernier point contredit la prémisse du ticket (« le héros n'a pas encore d'équipement persisté ») — d'où `D-26` plus bas.
 
 ### Le changement
 
-`main.js#FACTEUR_EFFACEMENT_TOIT` : **1,25 → 1,125**. C'est le seul endroit où la valeur vit (`structures.js` ne connaît que la géométrie, le rayon lui est passé par l'appelant). Commentaire *pourquoi* mis à jour, marque **provisoire** conservée.
+- `weapon_mains_nues` dans `weapons.json`, portée `[0 ; 0,5]` tuile (**16 px logiques** au lieu de 32, `tile_size` = 32) ; `weapon_epee_bois` conservée telle quelle en `[0 ; 1]`, elle devient la première amélioration.
+- L'arme par défaut est désignée **en données** : `equipment_slots#equip_arme.defaut`. Choisi comme une **référence** (et non un drapeau `defaut: true` sur l'arme) pour qu'un id inconnu tombe en **échec dur au boot avec son chemin exact**, par la machinerie de `refs` déjà en place.
+- `combat.js#resoudreArmeEquipee(registre, id)` : **point de résolution unique**. Une sauvegarde sans arme (`null`) prend le défaut ; une arme réellement équipée prime. Les deux sites de `main.js` (dégâts, anneau) passent par là — deux résolutions parallèles finissent toujours par diverger.
+- `ARME_DEPART` supprimé de `save.js` : une partie neuve écrit `arme: null`. **Aucun nouveau champ, aucune migration, `schema_version` toujours 5.**
 
-Ce que ça donne, pour un follet à `rayon_lumiere` 110 :
+### Deux tests rouges d'abord, puis deux régressions instructives
 
-| | Avant | Après |
-|---|---|---|
-| Le toit commence à s'effacer à | 137,5 px du bord de la maison | **123,75 px** |
-| Toit complètement transparent à | 107,5 px | **93,75 px** |
-| Largeur du fondu | 30 px | 30 px, **inchangée** |
+`tests/test_d20_mains_nues_2026-09-19.js` (7 blocs) écrit avant le code, rouge à l'import. Il couvre les trois points demandés : la portée effective vient de l'arme, changer le défaut **en données** change la portée sans toucher au code, une référence d'arme inconnue est un échec dur au boot.
 
-La courbe garde donc exactement la même forme — elle recule de 13,75 px. L'opacité reste dégressive, la décision verrouillée du 16/09 (« jamais un on/off ») n'est pas touchée.
+Deux fichiers existants ont viré au rouge, et tous deux disaient quelque chose :
 
-### Pourquoi il n'y a pas eu de test rouge
+- `test_phase1_save_migration_1_2` figeait `weapon_epee_bois` en sortie de migration. **Décision : la migration garde le littéral**, étiqueté histoire figée. Une sauvegarde v1 doit se comporter comme les v2-v5, qui portent toutes l'épée en dur dans leur fichier et la garderont — la faire diverger aurait créé une troisième famille de comportement.
+- `test_phase1b_combat_feedback` amenait le héros « au contact » à une distance de **20 px en dur**, écrite quand la portée valait 32. Les mains nues portent à 16 : le coup ne partait plus. C'est très exactement l'effet recherché par le ticket. La distance d'arrêt **dérive maintenant de la portée réelle de l'arme équipée** (60 % de son maximum), pour que le prochain réglage de portée ne fasse plus échouer un test dont le contrat est le feedback visuel.
 
-Il n'y en avait pas à obtenir : `FACTEUR_EFFACEMENT_TOIT` n'est lu que dans `main.js#dessiner()`, qui n'est jamais exercé en headless (contrainte de méthode). Le `110 * 1.25` de `tests/test_phase2_toit_opacite_2026-09-16.js` n'était pas un garde-fou mais une **config plausible** pour éprouver la forme de la courbe (bornes 0–1, monotonie, distance mesurée au bord et non au centre) — vérifié plutôt que supposé : le test passe au vert avec `1.125` alors que `main.js` était encore à `1.25`. Il est mis à jour volontairement (demande du ticket), avec un commentaire qui dit désormais ce qu'il fige et ce qu'il ne fige pas.
+### Deux dettes ouvertes, aucune corrigée en passant
 
-Conséquence à connaître pour les prochains réglages au ressenti : **une valeur de feel de ce genre n'est protégée par rien**, et c'est probablement le bon compromis — un test qui la recopierait ne protégerait aucun contrat et rendrait chaque réglage plus coûteux. Aucune dette ouverte pour ça, c'est un choix, pas un oubli.
+- **`D-26`** : les sauvegardes existantes gardent `weapon_epee_bois`. Vérifié une par une sur les dix sauvegardes réelles de `docs/sauvegardes/` (v2 à v5) : toutes. Le seul remède est une migration, que l'arrêt obligatoire du ticket interdit d'improviser. **Conséquence pratique : la validation de ce palier se fait sur une partie neuve**, ce que le ticket demandait déjà.
+- **`D-27`** : un id de catalogue venu de la sauvegarde (`arme`, `consommable`, `scene`) n'est vérifié par rien — la validation du boot ne couvre que les références entre catalogues. Classe de bug déjà nommée dans ce fichier (repli sur `scene_grotte_salle_1`) ; ce qui manque est le garde-fou systématique, pas un retrait précis.
 
-### Deux endroits qui citaient encore « 1,25 »
+### Convention d'id
 
-- `src/structures.js`, commentaire d'en-tête : corrigé — il renvoie maintenant à `main.js#FACTEUR_EFFACEMENT_TOIT` au lieu de recopier le nombre.
-- `specs/03_maison-exterieur.md` §3.4 et `docs/carte_mentale_RPG_V2_v1_6_0.md` : **laissés tels quels**. Ce sont des états historiques du 16/09, et la spec annonçait elle-même la valeur comme provisoire — même convention que la revue des dettes du 19/09 (« specs déjà livrées volontairement laissées intactes »). La valeur en vigueur se lit dans le code et dans le suivi.
+Le ticket écrivait `arme_mains_nues` ; l'id livré est **`weapon_mains_nues`**, par la convention du dépôt (préfixe = catégorie au singulier, comme `weapon_epee_bois`).
 
-### Validation due par Xav
+### Validation due par Xav — dans la Grotte
 
-Approcher la maison **par l'ouest puis par le sud, de jour et de nuit** : le toit doit commencer à s'effacer plus tard qu'avant, sans saut ni clignotement à l'entrée du fondu. Dire « bon », ou donner une autre valeur (rejoint `V-11`). Tant que ce passage n'est pas fait, `D-21` est **livrée**, pas confirmée en jeu.
+**Partie neuve**, à la manette. Le premier monstre (`enemy_grotte_rampant`) doit rester tuable en **2-3 coups** sans que le combat devienne punitif : il faut maintenant **aller au contact**. L'anneau d'attaque doit montrer la nouvelle portée (moitié moins large). Verdict : « bon », ou une autre fraction. Tant que ce passage n'est pas fait, le palier A est **livré**, pas confirmé en jeu — et le palier B (icône de la main dans la case) ne se commence pas avant.

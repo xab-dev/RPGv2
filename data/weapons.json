@@ -1,3 +1,4 @@
 [
+  { "id": "weapon_mains_nues", "label_key": "weapon.mains_nues", "portee": { "min": 0, "max": 0.5 } },
   { "id": "weapon_epee_bois", "label_key": "weapon.epee_bois", "portee": { "min": 0, "max": 1 } }
 ]

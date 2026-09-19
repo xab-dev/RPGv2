@@ -179,6 +179,15 @@
     ]
   },
   {
+    "id": "visuel_poussiere",
+    "ancre": "centre",
+    "primitives": [
+      { "forme": "cercle", "dx": 0, "dy": 0, "w": 5, "h": 5, "couleur": "#ffffff" },
+      { "forme": "cercle", "dx": -2, "dy": 1, "w": 3, "h": 3, "couleur": "#ffffff", "alpha": 0.7 },
+      { "forme": "cercle", "dx": 2, "dy": 1, "w": 2.5, "h": 2.5, "couleur": "#ffffff", "alpha": 0.7 }
+    ]
+  },
+  {
     "id": "visuel_puits",
     "ancre": "bas",
     "ombre": { "dy": 1, "w": 22, "h": 6, "alpha": 0.3 },

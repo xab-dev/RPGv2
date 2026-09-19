@@ -1,0 +1,13 @@
+[
+  {
+    "id": "effet_poussiere",
+    "visuel": "visuel_poussiere",
+    "duree_ms": 350,
+    "intervalle_px": 14,
+    "alpha_depart": 0.35,
+    "echelle_depart": 0.8,
+    "echelle_fin": 1.6,
+    "decalage_lateral_px": 3,
+    "offset_y_px": 6
+  }
+]

@@ -794,6 +794,38 @@ export const SCHEMAS = {
     ],
     custom: null,
   },
+  // MT_trainee-poussiere_2026-09-19 : catalogue des réglages d'effets
+  // purement visuels du monde. Même patron que `survie_config` dans
+  // survival.json (une entrée de configuration dans son catalogue) — un 2ᵉ
+  // effet s'ajoute en ajoutant une entrée, sans toucher au schéma.
+  effets: {
+    requiredFields: ['id', 'visuel'],
+    idField: 'id',
+    refs: [{ field: 'visuel', catalog: 'visuels' }],
+    custom(entry, catalogs, path) {
+      const erreurs = [];
+      // Tous les seuils sont PROVISOIRES (à régler au ressenti par Xav), mais
+      // leur type et leur signe, eux, sont vérifiés au boot : une durée nulle
+      // ferait une bouffée invisible, un intervalle nul une boucle d'émission
+      // sans fin dans avancerPoussiere().
+      for (const champ of ['duree_ms', 'intervalle_px']) {
+        if (typeof entry[champ] !== 'number' || entry[champ] <= 0) {
+          erreurs.push(`${path} > ${champ} doit être un nombre strictement positif`);
+        }
+      }
+      for (const champ of ['alpha_depart', 'echelle_depart', 'echelle_fin']) {
+        if (typeof entry[champ] !== 'number' || entry[champ] < 0) {
+          erreurs.push(`${path} > ${champ} doit être un nombre >= 0`);
+        }
+      }
+      for (const champ of ['decalage_lateral_px', 'offset_y_px']) {
+        if (entry[champ] !== undefined && typeof entry[champ] !== 'number') {
+          erreurs.push(`${path} > ${champ} doit être un nombre si présent`);
+        }
+      }
+      return erreurs;
+    },
+  },
   visuels: {
     requiredFields: ['id', 'ancre', 'primitives'],
     idField: 'id',

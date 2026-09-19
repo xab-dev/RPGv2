@@ -29,6 +29,7 @@ import {
   saveNeuve, reinitialiserSauvegarde, VISUEL_HEROS_ID, COULEUR_HERO_NEUTRE,
 } from './save.js';
 import { dessinerVisuel, echelleVisuel, TAILLE_REFERENCE_FOLLET_PX } from './visuels.js';
+import { creerPoussiere, avancerPoussiere, bouffeesVisibles, viderPoussiere } from './poussiere.js';
 import { creerRegistreFlags } from './flags.js';
 import { calculerStatsPrimaires, calculerStatsDerivees, appliquerModulateurSurvie } from './stats.js';
 import {
@@ -201,6 +202,13 @@ export function creerOrchestrateurGrotte({
   function rayonHeros() {
     return RAYON_HERO_BASE_PX * echelleVisuel(registre.obtenir('visuels', VISUEL_HEROS_ID));
   }
+
+  // MT_trainee-poussiere_2026-09-19 : réglages en données (data/effets.json,
+  // tous PROVISOIRES, à régler au ressenti par Xav) et réserve fixe allouée
+  // UNE fois au boot — jamais par frame, jamais par entrée en scène.
+  const effetPoussiere = registre.obtenir('effets', 'effet_poussiere');
+  const visuelPoussiere = registre.obtenir('visuels', effetPoussiere.visuel);
+  const poussiere = creerPoussiere(effetPoussiere);
 
   // --- État de jeu, mis à jour par entrerDansScene() à chaque transition ---
   // `hero` reste réaffectable pour la même raison que `flags` ci-dessus :
@@ -412,6 +420,10 @@ export function creerOrchestrateurGrotte({
   }
 
   function entrerDansScene(sceneId, positionInitialePx) {
+    // MT_trainee-poussiere_2026-09-19 : une traînée laissée dans la scène
+    // qu'on quitte n'a rien à faire dans la suivante (le héros y est
+    // téléporté) — la réserve est vidée sur place, jamais réallouée.
+    viderPoussiere(poussiere);
     scene = chargerScene(registre, sceneId, resoudreOverridesStations(sceneId));
     // Décor (§3.4 03_grotte-polish) : genererDecor() reste pur et ne connaît
     // que des id (visuel: string) — résolus ici une seule fois, à l'entrée en
@@ -1247,6 +1259,8 @@ export function creerOrchestrateurGrotte({
     const deltaS = deltaMs / 1000;
     const dx = etatGameplay.move.x * statsDerivees.derivee_vitesse_deplacement_px_s * deltaS;
     const dy = etatGameplay.move.y * statsDerivees.derivee_vitesse_deplacement_px_s * deltaS;
+    const xAvantDeplacement = hero.x;
+    const yAvantDeplacement = hero.y;
     if (dx !== 0 || dy !== 0) {
       const resultat = resoudreDeplacement(scene, hitboxHeros(), dx, dy, flags.has);
       hero.x = resultat.x + hero.rayon;
@@ -1254,6 +1268,23 @@ export function creerOrchestrateurGrotte({
       save.hero.x = hero.x;
       save.hero.y = hero.y;
       etatModifie = true;
+    }
+
+    // Traînée de poussière (MT_trainee-poussiere_2026-09-19) : émise à la
+    // DISTANCE RÉELLEMENT parcourue (après collision, pas le déplacement
+    // demandé) — pousser contre un mur ne soulève donc aucune poussière, et
+    // la densité de la traînée ne dépend pas du framerate. Gelée sous UI
+    // comme tout le reste du gameplay (§4), donc rien pendant l'intro, le
+    // dialogue, le menu ou la construction : le point de décision reste
+    // `uiOuverte`, jamais une condition propre à l'effet.
+    if (!uiOuverte) {
+      avancerPoussiere(poussiere, {
+        x: hero.x,
+        y: hero.y + (effetPoussiere.offset_y_px || 0),
+        distancePx: Math.hypot(hero.x - xAvantDeplacement, hero.y - yAvantDeplacement),
+        deltaMs,
+        emettre: true,
+      });
     }
 
     // Le temps de jeu est en pause sous UI (§4) : ni combat, ni énigme, ni
@@ -1553,6 +1584,8 @@ export function creerOrchestrateurGrotte({
       objetsSol: objetsSolAffiches,
       structures: structuresAffichees,
       fantome: fantomeAffiche,
+      // Visuel résolu ici (main.js a le registre), jamais par render.js.
+      poussiere: { visuel: visuelPoussiere, bouffees: bouffeesVisibles(poussiere) },
       // `undefined` (jamais un no-op) hors `?debug=fps` — même raison que
       // `surFrame` ci-dessous : render.js ne lit `performance.now()` que si
       // ce callback est fourni.

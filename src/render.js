@@ -341,6 +341,11 @@ function dessinerCoucheStatique(ctx, scene, decor, camera, estFlagActif, visuels
 export function dessinerScene(ctx, {
   scene, decor, camera, hero, heroVisuel, heroTeinte = null, monstres = [], follet, puzzles = [], estFlagActif, anneauAttaque,
   visuelsTuiles = new Map(), objetsSol = [], structures = [], fantome = null,
+  // MT_trainee-poussiere_2026-09-19 : bouffées déjà calculées par
+  // src/poussiere.js (pur) et déjà résolues en visuel par l'appelant — ce
+  // fichier ne connaît ni le module, ni visuels.json par id. Défaut vide :
+  // un appelant qui ne fournit rien dessine exactement comme avant.
+  poussiere = null,
   // MT_mesure-saccades_2026-09-19, piste 1 : cf. dessinerCoucheStatique plus
   // haut — `undefined` par défaut, jamais fourni par le jeu réel hors
   // `?debug=fps` (ui/hud_debug.js).
@@ -456,6 +461,19 @@ export function dessinerScene(ctx, {
   // est déjà résolu par l'appelant (main.js, save.js#COULEUR_HERO_NEUTRE ou
   // companion.render.couleur), jamais une 2ᵉ silhouette dessinée pour le cas
   // "neutre".
+  // Traînée de poussière : SOUS le héros (dessinée juste avant lui) et dans
+  // le monde (coordonnées caméra, comme toute entité) — donc le calque
+  // d'obscurité, appliqué bien plus tard, l'assombrit la nuit sans code
+  // dédié, exactement comme le reste de la scène.
+  if (poussiere && poussiere.bouffees.length > 0) {
+    for (const b of poussiere.bouffees) {
+      dessinerVisuel(ctx, poussiere.visuel, b.x - camera.x, b.y - camera.y, {
+        alpha: b.alpha,
+        echelle: b.echelle,
+      });
+    }
+  }
+
   dessinerVisuel(ctx, heroVisuel, hero.x - camera.x, hero.y - camera.y, { teinte: heroTeinte });
 
   if (follet) {

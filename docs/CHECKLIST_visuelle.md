@@ -226,6 +226,17 @@ différente) entre les trois emplacements.
     ni sur le chemin ni sur la zone où réapparaît le fruit (son empreinte
     solide est inchangée, mais c'est l'œil qui tranche). Comparer avec table /
     coffre / atelier, qui ne devaient pas changer.
+32ter. **Traînée de poussière** (`MT_trainee-poussiere_2026-09-19.md`) — en
+    marchant en ligne droite dans la Région Maison, de jour. Vérifier : de
+    petites bouffées blanches se soulèvent **derrière** le héros (dessinées
+    SOUS lui), **2-3 visibles à la fois**, qui grossissent un peu et
+    s'estompent ; elles alternent légèrement à gauche et à droite ; **rien à
+    l'arrêt**, rien pendant l'intro, rien quand le menu ou un dialogue est
+    ouvert ; **rien quand on pousse contre un mur** (aucune distance
+    réellement parcourue). De nuit, les bouffées doivent s'assombrir avec le
+    reste de la scène (elles sont dans le monde, sous le calque d'obscurité),
+    jamais rester blanc vif. Changer de scène ne doit laisser aucune bouffée
+    en suspens.
 33. **Surcouche debug perf** (`MT_mesure-saccades_2026-09-19.md`) — lancer le jeu avec `?debug=fps` dans l'URL. Vérifier : calque en haut à gauche, lisible, mis à jour sans à-coup visible (≤ 4 fois/s), bouton « copier » présent ; **sans** `?debug=fps`, aucun calque, aucune trace DOM (`document.getElementById('debug-perf')` doit renvoyer `null`). Traverser la Région Maison en ligne droite pour vérifier que le relevé (fps, delta, recalculs du calque statique, entités) varie de façon plausible.
 
 **États 21/25-28 validés (2026-09-17)** : Xav a rejoué la Phase 3 en jeu et

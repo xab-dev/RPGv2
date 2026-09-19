@@ -126,7 +126,11 @@ rpg_v2/
 │   ├── hints.js            indices de commande (specs/04_indices-commandes.md) : un seul affiché
 │   │                       à la fois, montré une fois par partie (flag persisté), fermé dès
 │   │                       l'émission effective du verbe — pur, ignore i18n/DOM
-│   ├── i18n.js
+│   ├── texte_flottant.js   retour de gain dans le monde (« +1 Bois ») : réserve fixe, fusion des
+│   │                       gains d'une même frame — pur, ne connaît ni item, ni i18n, ni canvas ;
+│   │                       transporte des CLÉS, l'appelant compose le texte au rendu
+│   ├── i18n.js             `t(cle, params?)` — `params` substitue les marqueurs `{n}`/`{item}` d'un
+│   │                       gabarit traduit ; le gabarit lui-même vit dans les locales, jamais en code
 │   └── ui/                 menu.js (DOM ; Langue/Musique/Poche/Stats/Construction/Export/Import/
 │                           Reset/Fermer — Construction contextuel, absent hors de la Maison,
 │                           liste reconstruite à chaque ouverture ; + écrans contextuels Craft/Coffre
@@ -207,6 +211,7 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 | HUD = un bandeau d'une seule ligne en haut, pleine largeur ; tout son placement vit dans `ui/hud_layout.js` (pur, testable), jamais en dur dans `ui/hud.js` | 2026-09-19 | journal courant, `MT_hud-ligne-haute_2026-09-19.md` |
 | **Intrusion nocturne du Chaos dans la Région Maison** — *révise* « aucun monstre, ton chill » de `03_maison-exterieur.md` §5 ; cadre : nuit seulement, **par paliers de niveau déclarés en données** (Nv. 5 zone de Chaos nord-est, Nv. 10 zone sud, Nv. 15 apparitions éparses en Forêt et dans les Champs — la Forêt reste **vide avant 15**, ce qui *révise* « quelques monstres épars en Forêt dès le début »), **un monstre qui entre en zone sûre fait demi-tour** (condition sur sa position, jamais sur celle du joueur) ; destruction des plantations non tranchée (le jardinage n'existe pas encore) — spec `specs/07_chaos-nocturne.md` v1.1.0, qui ne livre que le système et le palier 1 | 2026-09-19 | `NS_decisions-revue-dettes_2026-09-19.md` §4-5 |
 
+| **Un retour de gain dans le monde est UN seul mécanisme**, jamais un par système : `texte_flottant.js` transporte une clé de regroupement, une quantité et des **clés** de localisation — jamais une chaîne composée, qui interdirait la fusion « +1 puis +1 = +2 » et figerait la langue d'un texte déjà en vol. La composition se fait au rendu, dans l'orchestrateur. Butin, XP et dégâts s'y brancheront sans code de système nouveau | 2026-09-19 | journal courant, `MT_texte-flottant_2026-09-19.md` |
 | **Le seuil « accès à la 1ère zone de monstres gaté par niveau ~5 » est abandonné** (*révise une décision verrouillée*) : la carte suivante s'ouvre quand la carte Maison est **épuisée**, vers le niveau 40-50 (provisoire). Conséquence : les *systèmes* prévus en Phase 4 (armes, équipement, compétences, tables d'apparition) arrivent d'abord **sur la carte Maison** ; la *carte* de la Phase 4 vient après — **« Phase 4 = prochaine étape » ne doit plus se lire nulle part** | 2026-09-19 | `NS_decisions-revue-dettes_2026-09-19.md` §4 |
 | **Arc de progression de la carte Maison** : Nv. 5 zone de Chaos nord-est · Nv. 10 zone sud · Nv. 15 apparitions éparses (Forêt + Champs) — ces trois sont **décidés** ; Nv. 20 petite caverne en Forêt annoncée par une ligne de lore (casse-tête dessiné par Xav), Nv. 30 les compétences, Nv. 40-50 la carte suivante — ces trois restent des **idées**. Avant toute nouvelle carte : écrire ressources, crafts, armes, compétences | 2026-09-19 | même NS §4 |
 | **Critère de clôture de la Région Maison : la boucle de 2 heures** (sauvegarde neuve → deux heures de jeu → niveau 30 → l'envie de changer d'endroit), vérifiable à la main par Xav **et** par le bot headless — même patron que la boucle 5 minutes de la Phase 3 | 2026-09-19 | même NS §4 |
@@ -265,7 +270,7 @@ la session précédente a révélées, clos celles qu'elle a livrées.
 3. `D-21` — rayon d'effacement du toit −10 % — **livré et validé en jeu par Xav le 2026-09-19**.
 4. `D-20` palier A — « mains nues », portée (`MT_mains-nues_2026-09-19.md`) — **livré et validé en jeu par Xav le 2026-09-19**.
 5. `D-20` palier B — icône de la case d'attaque — **livré le 2026-09-19, validation en jeu de Xav due** (`CHECKLIST_visuelle.md`, HUD état 1).
-6. `D-05` — texte flottant « +1 bois » (`MT_texte-flottant_2026-09-19.md`).
+6. `D-05` — texte flottant « +1 bois » (`MT_texte-flottant_2026-09-19.md`) — **livré le 2026-09-19, validation en jeu de Xav due** (`V-12`, `CHECKLIST_visuelle.md` état 34, de jour **et** de nuit).
 7. `D-23` — paramètre debug `?echelle=N` (`MT_echelle-debug_2026-09-19.md`) → puis relevés `A-05` par Xav.
 8. `D-02` + `D-03` — ventilation de `dessiner()` par calque et explication du delta (même instrument, **mesure seule**).
 9. Xav tranche `Q-19` et `Q-20` → ticket de correction d'échelle, à écrire d'après les chiffres.
@@ -279,30 +284,101 @@ Les captures de la V1 (`docs/captures/v1/`) sont une **inspiration, jamais un ca
 `Q-10`, `Q-11` et `Q-12` restent à trancher avec Xav ; `Q-07` et `Q-19` sont gelées. La spec de la barre d'action du bas (`E-01`) est écrite par Xav lui-même et attend le chiffrage `Q-11`. **Une spec non écrite ne se commence pas** (même règle que pour une phase).
 
 
-## Journal de session — `D-20` palier B : la main dans la case d'attaque (2026-09-19)
+## Journal de session — `D-05` : le texte flottant de gain (2026-09-19)
 
-Ticket `MT_mains-nues_2026-09-19.md`, **palier B**, qui clôt `D-20`. Lignes touchées : `D-20` (close), plus `Q-22` ouverte (le défaut visuel que le ticket demandait de marquer `[OUVERT]`). `E-01` et `E-02` non touchées. Suite headless verte, **69 fichiers**. Un commit, pas de `push`.
+Ticket `MT_texte-flottant_2026-09-19.md`, qui clôt `D-05`. Lignes touchées :
+`D-05` (close), plus trois ouvertes — `D-28` (défaut révélé hors périmètre),
+`Q-23` (le doublon que la fiche demandait de signaler), `V-12` (validation en
+jeu). Aucune autre ligne du suivi lue ni touchée. Suite headless verte,
+**70 fichiers**. Un commit, pas de `push`.
 
-**Ménage de journal** : journal du palier A archivé dans `docs/archives/JOURNAL_2026-09-19_mains-nues-palier-a.md` + ligne d'INDEX. Xav ayant validé en jeu `D-20` A, `D-21` et `D-22` (« all good »), les trois verdicts sont inscrits au suivi et les fiches `MT_clavier-e-f` et `MT_toit-rayon` descendent dans `docs/archives/`. `D-26` passe en P3 sur son verdict (« n'impacte que le dev »). Les cinq commits en attente ont été **poussés sur `main`** à sa demande explicite.
+**Ménage de journal** : journal du palier B de `D-20` archivé dans
+`docs/archives/JOURNAL_2026-09-19_icone-arme.md` + ligne d'INDEX ; la fiche
+`MT_mains-nues_2026-09-19.md`, ses deux paliers livrés, descend dans
+`docs/archives/`.
 
 ### Le changement
 
-- **`visuel_icone_main`** dans `visuels.json` : 7 primitives (paume, bloc des doigts, bouts arrondis, pouce incliné, poignet, deux séparations sombres), `teintable`, dessinée dans une boîte de **12 px** de côté. Pas de pixel art, assemblage de primitives — la DA du dépôt.
-- L'arme **désigne** son icône : `weapons.icone`, champ optionnel posé en **référence** vers `visuels` (un id inconnu tombe au boot avec son chemin exact). Absent = case vide, ce qui reste un cas normal — `weapon_epee_bois` en est l'exemple réel.
-- `ui/hud.js` dessine `visuelArme` via `dessinerVisuel`, **dans la rangée du bas et dans le bouton tactile**. Il ne cite aucun id de visuel ni d'arme — vérifié par test. Le symbole d'une épée ou d'un arc arrivera donc sans une ligne de code.
-- Résolution faite par `main.js`, exactement comme `visuelFollet`, et à partir de **la même** `resoudreArmeEquipee` que les dégâts et l'anneau.
-- `TAILLE_REFERENCE_ICONE_ARME_PX` / `echelleIconeArme()` dans `hud_layout.js` (module pur, donc testable) : une seule silhouette mise à l'échelle pour les deux tailles de case, jamais deux dessins à tenir.
+- **`src/texte_flottant.js`**, pur, sur le patron exact de `poussiere.js` :
+  réserve pré-allouée, zéro allocation en jeu (`for` bruts, jamais
+  `find`/`reduce`, qui allouent une closure par appel), aucune horloge propre.
+- **`effet_texte_gain`** dans `data/effets.json` : 10 réglages, **tous
+  provisoires**, capacité de la réserve comprise. `creerTextesFlottants` lève
+  si `capacite` manque, plutôt que de porter un défaut de repli qui
+  divergerait en silence des données.
+- **Émission par un point unique**, `main.js#signalerGainItem(itemId,
+  quantite, x, y)`, appelé aux deux endroits où un gain est déjà résolu.
+  `resources.js`, `ground_items.js` et `inventory.js` n'ont pas bougé d'une
+  ligne : ils continuent d'ignorer qu'un rendu existe.
+- **Le texte part de la source**, jamais du héros — centre de la tuile
+  récoltée, position réelle de l'objet au sol **capturée avant son retrait**
+  (après, elle n'existe plus).
+- **Rendu** par `render.js#dessinerTextesFlottants`, **après** l'obscurité et
+  **avant** le HUD : c'est un retour d'interface, il doit rester lisible de
+  nuit. Contour puis remplissage, pas de cartouche opaque qui masquerait la
+  scène. `save`/`restore` en tête/fin, aucune transform touchée.
+- **Gelé par `uiOuverte`**, le point de décision unique, jamais par une
+  condition propre ; **vidé à chaque entrée en scène**, comme la poussière.
 
-### Le défaut appliqué, soumis en `Q-22`
+### Deux écarts assumés, et pourquoi
 
-Le ticket demandait de marquer `[OUVERT]` : **fond de case identique aux autres, icône en jaune**. Appliqué à la rangée du bas *et* au bouton tactile. Le contour de l'attaque reste plus vif — c'est le seul slot actif, et ça ne dépend pas de l'arme. Les parts d'occupation de la case (`ICONE_PART_DE_LA_CASE` 0,72 · `ICONE_PART_DU_BOUTON` 1,15) sont **provisoires**, exprimées en fraction pour que les deux tailles restent d'accord sans deux réglages à tenir.
+**La fiche esquissait `emettre(x, y, texte)`.** Le module transporte à la
+place `cle` + `quantite` + les clés `format`/`libelle`. Une chaîne déjà
+composée rend impossible la fusion « +1 puis +1 = +2 » que la fiche exige au
+paragraphe suivant, et différer la composition au rendu a un second mérite :
+changer de langue traduit aussi un texte déjà en vol. Le module ne connaît
+donc ni item, ni ressource, ni i18n, ni canvas — vérifié par garde-fou de
+source. C'est ce qui rend crédible la promesse « butin, XP et dégâts sans
+code nouveau ».
+
+**Deux fichiers hors de la liste de lecture de la fiche**, parce que « aucune
+chaîne en dur » l'exigeait. `i18n.js#t(cle, params)` prend un 2ᵉ argument
+**optionnel** : le gabarit `monde.gain_item` (« +{n} {item} », dans les deux
+langues) est traduisible dans son entier — le « + », l'ordre des morceaux,
+l'espace. Le composer par concaténation dans `main.js` aurait remis du texte
+visible hors des locales. Purement additif : aucun appel existant modifié.
+Et le schéma de `effets` distingue maintenant deux `type` (`particules` /
+`texte`), **déclarés en données** plutôt que devinés à la présence d'un
+champ : sans ça, une faute de frappe sur `intervalle_px` ferait passer la
+poussière pour un effet d'un autre genre sans que rien ne le dise.
 
 ### Ce que les tests peuvent et ne peuvent pas dire
 
-`tests/test_d20b_icone_arme_2026-09-19.js` (8 blocs) écrit avant le code, rouge à l'import. Le dessin lui-même n'est jamais exercé (canvas, contrainte de méthode) ; ce qui est vérifié à froid : l'icône existe et est référencée, une icône inconnue est un échec **dur au boot**, une arme sans icône reste valide, la silhouette **ne contient aucune pièce orpheline** (même garde-fou data-driven que les stations — une pièce isolée à 16 px est illisible), elle tient dans sa boîte de référence, l'échelle est juste, et `ui/hud.js` ne connaît aucun id.
+`tests/test_d05_texte_flottant_2026-09-19.js` (7 blocs) écrit avant le code,
+rouge à l'import. Vérifiés à froid : émission/montée/fondu/extinction ·
+réserve pleine qui recycle **le plus ancien** sans jamais grandir · fusion
+dans la frame, jamais entre deux items ni hors fenêtre · gabarit et noms
+d'items résolus dans les **deux** langues, sans marqueur résiduel · une
+récolte et un ramassage sur le **vrai** orchestrateur donnent chacun **une**
+émission, à la bonne position · garde-fou de généricité sur la source du
+module.
 
-**Un test existant mis à jour volontairement** : le garde-fou « la rangée du bas n'est pas touchée » de `MT_hud-ligne-haute` figeait la signature d'appel. Son sujet était le **bandeau**, pas le contenu des cases : il vérifie désormais que la rangée est toujours dessinée sous la **résolution logique** (le défaut de `SD_dialogues-invisibles`) et qu'aucune case n'a bougé, en laissant passer l'argument supplémentaire.
+**Le dessin n'est jamais exercé** (canvas, contrainte de méthode). Il a été
+lancé **une fois, hors suite de tests**, contre un contexte 2D factice :
+aucune exception, coordonnées justes. Ça ne dit rien de ce que ça donne à
+l'œil. Le contrôle au navigateur réel n'a pas pu être fait, l'extension
+Chrome n'étant pas connectée.
+
+### Ce que j'ai vu et n'ai pas corrigé
+
+`D-28` : **récolter la poche pleine consomme le cooldown de la tuile et ne
+donne rien, en silence.** `essayerInteraction` ne regarde pas
+`resultatRecolte.ajoute` — au plafond de pile, l'inventaire est réécrit à
+l'identique et le cooldown posé quand même. Le ramassage au sol, lui, teste
+bien `ajoute > 0` et laisse l'objet par terre : les deux chemins divergent.
+Le texte flottant rend le défaut **visible** (rien ne monte) au lieu de muet,
+mais le corriger touche le gameplay, pas le rendu — hors périmètre.
+
+`Q-23` : le retour existant du premier ramassage est **inchangé**, comme la
+fiche le demandait. Ce n'est pas un doublon à mon sens (le texte dit *ce qui
+a été gagné*, la réplique dit *ce que ça veut dire*), mais les deux se gênent
+un peu : le dialogue gèle le « +1 Branche » à mi-montée. Trois issues
+proposées dans la ligne, à trancher en jeu.
 
 ### Validation due par Xav — ticket de rendu
 
-`ui/hud.js` est touché : clôture par une validation en jeu guidée par `docs/CHECKLIST_visuelle.md` (HUD, état 1). **La main doit se lire d'un coup d'œil sur PC et au tactile**, où la case voisine le joystick. Verdict sur `Q-22` en même temps (icône jaune sur fond commun : bon, ou l'aplat jaune revient). Tant que ce passage n'est pas fait, le palier B est **livré**, pas confirmé.
+`render.js` et `main.js#dessiner()` sont touchés : clôture par une validation
+en jeu guidée par `docs/CHECKLIST_visuelle.md`, **état 34**, de jour **et de
+nuit**. Les 10 réglages sont provisoires (`V-12`, qui rejoint `V-11`) : durée
+900 ms, montée 16 px, fondu à mi-vie, taille 8 px, couleurs. Tant que ce
+passage n'est pas fait, `D-05` est **livré**, pas confirmé.

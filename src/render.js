@@ -688,6 +688,50 @@ export function dessinerObscurite(ctx, { scene, camera, follet, rayonLumiereFoll
   }
 }
 
+// --- Textes flottants de gain (MT_texte-flottant_2026-09-19, `D-05`) ------
+// « +1 Bois » qui monte depuis la source du gain et s'efface. Dessiné en
+// coordonnées du MONDE (comme toute entité) mais APRÈS le calque
+// d'obscurité : c'est un retour d'interface, il doit rester lisible de nuit
+// sans que la nuit ne l'assombrisse. C'est la seule raison pour laquelle il
+// ne vit pas dans dessinerScene() avec la poussière.
+//
+// `textes` arrive déjà composé par l'appelant ({ x, y, texte, alpha }) :
+// ce fichier ne connaît ni src/texte_flottant.js, ni i18n, ni le catalogue
+// des items — même patron que `poussiere` et `monstre.label` plus haut.
+// `config` porte les réglages de data/effets.json (tous PROVISOIRES).
+//
+// ctx.save()/restore() en tête/fin (règle de méthode née du diagnostic
+// dialogues-invisibles) : ce calque ne touche pas la transform, mais modifie
+// font/alpha/fillStyle — les restaurer évite toute fuite sur le HUD, dessiné
+// juste après.
+export function dessinerTextesFlottants(ctx, { textes, camera, config }) {
+  if (!textes || textes.length === 0) return;
+  const decalageY = config.offset_y_px || 0;
+  const contourPx = config.contour_px || 0;
+
+  ctx.save();
+  ctx.font = `bold ${config.taille_px}px monospace`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.lineJoin = 'round'; // sans ça, le contour épais produit des pointes aux angles des lettres
+  ctx.lineWidth = contourPx;
+  for (const t of textes) {
+    ctx.globalAlpha = t.alpha;
+    const x = t.x - camera.x;
+    const y = t.y - camera.y + decalageY;
+    // Contour d'abord, remplissage ensuite : le texte reste lisible aussi
+    // bien sur le sol clair du Jardin que sur le voile de nuit, sans
+    // cartouche opaque qui masquerait la scène (§ "se lit sans gêner").
+    if (contourPx > 0 && config.contour) {
+      ctx.strokeStyle = config.contour;
+      ctx.strokeText(t.texte, x, y);
+    }
+    ctx.fillStyle = config.couleur;
+    ctx.fillText(t.texte, x, y);
+  }
+  ctx.restore();
+}
+
 // --- Paupières de l'intro (§3.5 étape 1, 03_grotte-polish palier 4) --------
 // Même piège que le voile d'obscurité (SD_dialogues-invisibles_2026-09-15) :
 // percer un trou en "destination-out" DIRECTEMENT sur `ctx` (scène déjà

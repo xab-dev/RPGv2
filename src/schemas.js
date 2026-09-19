@@ -808,26 +808,67 @@ export const SCHEMAS = {
   // survival.json (une entrée de configuration dans son catalogue) — un 2ᵉ
   // effet s'ajoute en ajoutant une entrée, sans toucher au schéma.
   effets: {
-    requiredFields: ['id', 'visuel'],
+    // `visuel` n'est plus requis depuis MT_texte-flottant_2026-09-19 (`D-05`) :
+    // un effet de type `texte` n'a pas de silhouette, il a un gabarit de
+    // localisation. Il reste une RÉFÉRENCE quand il est présent (id inconnu =
+    // échec dur au boot avec son chemin exact, cf. registry.js).
+    requiredFields: ['id', 'type'],
     idField: 'id',
     refs: [{ field: 'visuel', catalog: 'visuels' }],
     custom(entry, catalogs, path) {
       const erreurs = [];
       // Tous les seuils sont PROVISOIRES (à régler au ressenti par Xav), mais
-      // leur type et leur signe, eux, sont vérifiés au boot : une durée nulle
-      // ferait une bouffée invisible, un intervalle nul une boucle d'émission
-      // sans fin dans avancerPoussiere().
-      for (const champ of ['duree_ms', 'intervalle_px']) {
+      // leur type et leur signe, eux, sont vérifiés au boot.
+      //
+      // Le jeu de champs attendu dépend du `type`, déclaré explicitement en
+      // données plutôt que deviné à la présence d'un champ : sans ça, une
+      // faute de frappe sur `intervalle_px` ferait passer la poussière pour un
+      // effet d'un autre genre, et la validation ne dirait rien.
+      const TYPES = ['particules', 'texte'];
+      if (!TYPES.includes(entry.type)) {
+        erreurs.push(`${path} > type doit valoir ${TYPES.map((t) => `"${t}"`).join(' ou ')}`);
+        return erreurs;
+      }
+
+      // `duree_ms` est commun aux deux : une durée nulle donne un effet
+      // invisible, quel que soit son genre.
+      const positifs = ['duree_ms'];
+      const positifsOuNuls = [];
+      if (entry.type === 'particules') {
+        // Un intervalle nul ferait une boucle d'émission sans fin dans
+        // avancerPoussiere().
+        positifs.push('intervalle_px');
+        positifsOuNuls.push('alpha_depart', 'echelle_depart', 'echelle_fin');
+        if (entry.visuel === undefined) erreurs.push(`${path} > visuel est requis pour un effet de particules`);
+      } else {
+        // `montee_px` à 0 donnerait un texte qui ne monte pas : accepté (le
+        // réglage est à Xav), mais il doit rester un nombre.
+        positifs.push('taille_px');
+        positifsOuNuls.push('montee_px', 'fondu_depuis');
+        if (!Number.isInteger(entry.capacite) || entry.capacite <= 0) {
+          erreurs.push(`${path} > capacite doit être un entier strictement positif (taille de la réserve)`);
+        }
+        if (entry.fusion_ms !== undefined && (typeof entry.fusion_ms !== 'number' || entry.fusion_ms < 0)) {
+          erreurs.push(`${path} > fusion_ms doit être un nombre >= 0 si présent`);
+        }
+        for (const champ of ['couleur', 'contour']) {
+          if (entry[champ] !== undefined && typeof entry[champ] !== 'string') {
+            erreurs.push(`${path} > ${champ} doit être une couleur (chaîne) si présent`);
+          }
+        }
+      }
+
+      for (const champ of positifs) {
         if (typeof entry[champ] !== 'number' || entry[champ] <= 0) {
           erreurs.push(`${path} > ${champ} doit être un nombre strictement positif`);
         }
       }
-      for (const champ of ['alpha_depart', 'echelle_depart', 'echelle_fin']) {
+      for (const champ of positifsOuNuls) {
         if (typeof entry[champ] !== 'number' || entry[champ] < 0) {
           erreurs.push(`${path} > ${champ} doit être un nombre >= 0`);
         }
       }
-      for (const champ of ['decalage_lateral_px', 'offset_y_px']) {
+      for (const champ of ['decalage_lateral_px', 'offset_y_px', 'contour_px']) {
         if (entry[champ] !== undefined && typeof entry[champ] !== 'number') {
           erreurs.push(`${path} > ${champ} doit être un nombre si présent`);
         }

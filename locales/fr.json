@@ -140,6 +140,7 @@
   "menu.stats_ajouter": "+1",
   "menu.points_libres": "Points libres",
   "menu.stats_xp": "Expérience",
+  "monde.gain_item": "+{n} {item}",
   "hud.niveau_prefixe": "Nv.",
   "menu.construction": "Construction",
   "menu.construction_titre": "Construction",

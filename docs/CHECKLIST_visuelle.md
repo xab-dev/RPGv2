@@ -253,6 +253,23 @@ différente) entre les trois emplacements.
     en suspens.
 33. **Surcouche debug perf** (`MT_mesure-saccades_2026-09-19.md`) — lancer le jeu avec `?debug=fps` dans l'URL. Vérifier : calque en haut à gauche, lisible, mis à jour sans à-coup visible (≤ 4 fois/s), bouton « copier » présent ; **sans** `?debug=fps`, aucun calque, aucune trace DOM (`document.getElementById('debug-perf')` doit renvoyer `null`). Traverser la Région Maison en ligne droite pour vérifier que le relevé (fps, delta, recalculs du calque statique, entités) varie de façon plausible.
 
+34. **Texte flottant de gain** (`MT_texte-flottant_2026-09-19.md`, `D-05`) —
+    récolter un arbre (hache en poche), un rocher (pioche), puis ramasser une
+    branche, un caillou, un fruit. Vérifier : un « +1 Bois » (ou le nom juste
+    de l'item, dans la langue courante) **monte depuis la source du gain** —
+    la tuile récoltée, l'endroit exact où l'objet était posé — et non depuis
+    le héros ; il monte, s'efface, et a disparu au bout de ~0,9 s ; il ne
+    saute pas quand la caméra bouge (il est en coordonnées du monde, pas de
+    l'écran) ; deux gains du même item coup sur coup dans la même frame
+    donnent **un seul** texte « +2 ». **À refaire de nuit** : le texte est
+    dessiné après le calque d'obscurité, il doit rester pleinement lisible
+    sans être entouré d'un cartouche opaque. Changer de langue dans le menu
+    pendant qu'un texte est en vol doit le traduire au vol. Piège connu, pas
+    un bug : au **tout premier** ramassage d'une partie, le dialogue du
+    follet s'ouvre et **gèle** le texte à mi-montée (point de décision unique
+    `uiOuverte`, comme la poussière et les cooldowns) — il reprend sa course
+    à la fermeture. C'est exactement l'objet de `Q-23`.
+
 **États 21/25-28 validés (2026-09-17)** : Xav a rejoué la Phase 3 en jeu et
 confirmé « tous les points testés, bon » (clôture du critère de passage
 ROADMAP, voir `CLAUDE.md`) — cette validation couvre fonctionnellement les
@@ -288,6 +305,20 @@ réelle est `jauge_faim`/`jauge_soif`). Les deux corrections touchent
 `main.js#dessiner()`/`ui/hud.js` : états 21 et 25 restent donc **encore dus**
 malgré le correctif, cette fois avec une cause écrite plutôt qu'un simple
 "jamais capturé".
+
+**Encore dû (2026-09-19, `MT_texte-flottant_2026-09-19.md`)** : l'état 34
+n'a **jamais été capturé en navigateur réel**. La session touche `render.js`
+(nouvelle fonction `dessinerTextesFlottants`) et `main.js#dessiner()` (un
+appel de plus, entre l'obscurité et le HUD), ce qui déclenche la règle
+« rejouer toute la checklist ». Justification consignée plutôt qu'appliquée à
+la lettre, comme pour l'état 33 : le calque ajouté ne dessine rien tant
+qu'aucun gain n'a eu lieu (retour anticipé sur liste vide), il est encadré
+d'un `save`/`restore` et ne touche pas la transform — aucun des 33 états
+existants ne peut donc changer de comportement observable. Le chemin de
+dessin a été exercé **une fois, hors suite de tests**, contre un contexte 2D
+factice : il ne lève pas d'exception et pose les bonnes coordonnées. Ça ne
+dit rien de ce que ça donne à l'œil, qui reste entièrement à la charge de
+Xav (`V-12`).
 
 ## Méthode
 

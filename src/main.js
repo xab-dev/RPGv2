@@ -20,7 +20,7 @@ import { chargerScene, resoudreDeplacement, portailFranchi, trouverPositionLibre
 import { calculerCamera } from './camera.js';
 import { genererDecor } from './decor.js';
 import {
-  creerBoucle, dessinerScene, dessinerObscurite, dessinerPaupieres, presenter,
+  creerBoucle, dessinerScene, dessinerObscurite, dessinerPaupieres, dessinerTextesFlottants, presenter,
   RESOLUTION_LOGIQUE, calculerRectanglePresentation, versCoordonneesLogiques, AURA_TRAIT,
 } from './render.js';
 import { creerStoreIndexedDB } from './storage_indexeddb.js';
@@ -30,6 +30,9 @@ import {
 } from './save.js';
 import { dessinerVisuel, echelleVisuel, TAILLE_REFERENCE_FOLLET_PX } from './visuels.js';
 import { creerPoussiere, avancerPoussiere, bouffeesVisibles, viderPoussiere } from './poussiere.js';
+import {
+  creerTextesFlottants, emettreTexte, avancerTextesFlottants, textesVisibles, viderTextesFlottants,
+} from './texte_flottant.js';
 import { creerRegistreFlags } from './flags.js';
 import { calculerStatsPrimaires, calculerStatsDerivees, appliquerModulateurSurvie } from './stats.js';
 import {
@@ -85,6 +88,12 @@ import { creerMoniteurPerf, creerMoniteurInactif } from './ui/hud_debug.js';
 const RAYON_HERO_BASE_PX = 10;
 const INTERVALLE_AUTOSAVE_MS = 30000;
 const DISTANCE_INTERACT_PX = 28;
+// MT_texte-flottant_2026-09-19 (`D-05`) : gabarit du texte de gain (« +{n}
+// {item} »), déclaré une seule fois ici. C'est une CLÉ de localisation, pas
+// un texte : le « + », l'ordre des morceaux et l'espace se traduisent comme
+// le reste (contrainte « zéro chaîne en dur »). Un futur gain d'XP ou un
+// nombre de dégâts prendra son propre gabarit, sans toucher texte_flottant.js.
+const CLE_TEXTE_GAIN_ITEM = 'monde.gain_item';
 // Respawn différé des items au sol (Palier B §3.2) : défaut appliqué quand
 // l'item ne surcharge pas `spawn.respawn_ms` — même esprit que
 // cooldown_ms par défaut de recipes.js.
@@ -216,6 +225,27 @@ export function creerOrchestrateurGrotte({
   const effetPoussiere = registre.obtenir('effets', 'effet_poussiere');
   const visuelPoussiere = registre.obtenir('visuels', effetPoussiere.visuel);
   const poussiere = creerPoussiere(effetPoussiere);
+
+  // MT_texte-flottant_2026-09-19 (`D-05`) : même patron exactement — réglages
+  // en données (tous PROVISOIRES, à régler au ressenti par Xav) et réserve
+  // fixe allouée UNE fois au boot. `texte_flottant.js` ignore i18n : c'est
+  // ici, au rendu, que le gabarit et le nom de l'item sont résolus.
+  const effetTexteGain = registre.obtenir('effets', 'effet_texte_gain');
+  const textesFlottants = creerTextesFlottants(effetTexteGain);
+
+  // Un gain d'item, quelle que soit sa source (ramassage au sol, récolte à
+  // l'outil, et demain butin ou coffre) passe par ce seul point : le texte
+  // monte depuis la SOURCE du gain, jamais depuis le héros. `cle` est l'id de
+  // l'item — deux gains du même item dans la même frame fusionnent en « +2 ».
+  function signalerGainItem(itemId, quantite, x, y) {
+    if (!(quantite > 0)) return;
+    const itemDef = registre.obtenir('items', itemId);
+    emettreTexte(textesFlottants, {
+      x, y, cle: itemId, quantite,
+      format: CLE_TEXTE_GAIN_ITEM,
+      libelle: itemDef.label_key,
+    });
+  }
 
   // MT_hud-ligne-haute_2026-09-19 : la barre d'XP a quitté le HUD, mais la
   // montée de niveau garde un retour visuel — un bref éclat sur « Niv. N »
@@ -440,6 +470,9 @@ export function creerOrchestrateurGrotte({
     // qu'on quitte n'a rien à faire dans la suivante (le héros y est
     // téléporté) — la réserve est vidée sur place, jamais réallouée.
     viderPoussiere(poussiere);
+    // `D-05`, même raison exactement : un « +1 Bois » gagné dans la scène
+    // qu'on quitte n'a rien à faire flottant dans la suivante.
+    viderTextesFlottants(textesFlottants);
     scene = chargerScene(registre, sceneId, resoudreOverridesStations(sceneId));
     // Décor (§3.4 03_grotte-polish) : genererDecor() reste pur et ne connaît
     // que des id (visuel: string) — résolus ici une seule fois, à l'entrée en
@@ -561,6 +594,9 @@ export function creerOrchestrateurGrotte({
       if (resultat.ajoute > 0) {
         save.inventaire.items = resultat.inventaire;
         compteurRamassages += 1;
+        // `D-05` : émis AVANT le retrait de l'objet, pour partir de la
+        // position réelle où il était posé — après, elle n'existe plus.
+        signalerGainItem(itemProche.itemId, resultat.ajoute, itemProche.position.x, itemProche.position.y);
         // Palier B (§3.2) : retrait immédiat, régénération DIFFÉRÉE (jamais
         // plus un tirage immédiat comme en Phase 2) — respawn_ms de l'item,
         // ou le défaut de catalogue.
@@ -597,6 +633,16 @@ export function creerOrchestrateurGrotte({
       const itemDefProduit = registre.obtenir('items', donneesRessource.item_produit);
       const resultatRecolte = ajouterItem(save.inventaire.items, donneesRessource.item_produit, 1, itemDefProduit.stack_max);
       save.inventaire.items = resultatRecolte.inventaire;
+      // `D-05` : depuis le centre de la TUILE récoltée (l'arbre, le rocher),
+      // pas depuis le héros — la source du gain est ce qu'on vient de frapper.
+      // `resultatRecolte.ajoute` vaut 0 si la poche est pleine : rien ne monte
+      // alors, ce qui reflète exactement ce qui s'est passé (cf. `D-28`).
+      signalerGainItem(
+        donneesRessource.item_produit,
+        resultatRecolte.ajoute,
+        (ressourceProche.tx + 0.5) * scene.tileSize,
+        (ressourceProche.ty + 0.5) * scene.tileSize,
+      );
       save.cooldowns = poserCooldown(save.cooldowns, cleCooldown, save.monde.heure);
       etatModifie = true;
     }
@@ -1319,6 +1365,12 @@ export function creerOrchestrateurGrotte({
         deltaMs,
         emettre: true,
       });
+      // `D-05` : gelé par le MÊME point de décision que tout le reste du
+      // gameplay (`uiOuverte`), jamais par une condition propre. Conséquence
+      // assumée : au tout premier ramassage, qui ouvre un dialogue, le
+      // « +1 Branche » se fige le temps de la réplique puis reprend sa montée
+      // — comme la poussière, comme les cooldowns, comme l'horloge du monde.
+      avancerTextesFlottants(textesFlottants, deltaMs);
     }
 
     // Le temps de jeu est en pause sous UI (§4) : ni combat, ni énigme, ni
@@ -1648,6 +1700,23 @@ export function creerOrchestrateurGrotte({
       ctxLogique.stroke();
       ctxLogique.restore();
     }
+    // Textes flottants de gain (`D-05`) : APRÈS le calque d'obscurité (donc
+    // pleinement lisibles de nuit) et AVANT le HUD — c'est un retour
+    // d'interface posé dans le monde, pas une entité de la scène. Le gabarit
+    // et le nom de l'item sont résolus ICI (main.js a i18n et le registre) :
+    // render.js ne reçoit que des chaînes déjà prêtes, exactement comme
+    // `monstre.label` ou `visuelArme`. Changer de langue traduit donc aussi
+    // un texte déjà en vol.
+    dessinerTextesFlottants(ctxLogique, {
+      camera,
+      config: effetTexteGain,
+      textes: textesVisibles(textesFlottants).map((t) => ({
+        x: t.x,
+        y: t.y,
+        alpha: t.alpha,
+        texte: i18n.t(t.format, { n: t.quantite, item: t.libelle ? i18n.t(t.libelle) : '' }),
+      })),
+    });
     dessinerHud(ctxLogique, {
       i18n,
       pv: hero.pv || 0,
@@ -1765,6 +1834,12 @@ export function creerOrchestrateurGrotte({
     // affiché sans passer par dessiner() (canvas jamais exercé headless,
     // contrainte de méthode) — même patron que les accesseurs ci-dessus.
     obtenirIndiceAffiche: () => (uiOuverteMaintenant() ? null : indices.indiceAffiche(input.peripheriqueActif ? input.peripheriqueActif() : 'manette')),
+    // `D-05` : même patron que l'indice ci-dessus — observer les textes de
+    // gain sans passer par dessiner() (canvas jamais exercé headless,
+    // contrainte de méthode). `obtenirEtatTextesFlottants` donne la réserve
+    // elle-même, pour qu'un test puisse la vider entre deux scénarios.
+    obtenirTextesFlottants: () => textesVisibles(textesFlottants),
+    obtenirEtatTextesFlottants: () => textesFlottants,
     // Palier D (§3.4) : fourni à ui/menu.js via menu.definirEntreesStats()
     // une fois l'orchestrateur construit (même patron que
     // reinitialiserPartie ci-dessus) — le menu Stats n'a besoin d'appeler

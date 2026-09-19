@@ -5,10 +5,26 @@
 export function creerI18n(dictionnaires, langueInitiale = 'fr') {
   let langue = langueInitiale;
 
-  function t(cle) {
+  // `params` (MT_texte-flottant_2026-09-19, `D-05`) : substitution des
+  // marqueurs `{nom}` du gabarit par des valeurs déjà calculées par
+  // l'appelant — « +{n} {item} » devient « +2 Bois ». Optionnel et purement
+  // additif : tous les appels d'avant ce ticket restent inchangés.
+  //
+  // Pourquoi ici et pas chez l'appelant : c'est le gabarit lui-même qui est
+  // traduisible (le « + », l'ordre des morceaux, l'espace). Le composer par
+  // concaténation dans main.js remettrait du texte visible hors des
+  // locales — exactement ce que la contrainte « zéro chaîne en dur »
+  // interdit. Un marqueur sans valeur fournie est laissé tel quel : il se
+  // voit à l'écran, comme le `[[cle]]` d'une clé manquante, au lieu de
+  // disparaître silencieusement.
+  function t(cle, params = null) {
     const dict = dictionnaires[langue] || {};
-    if (Object.prototype.hasOwnProperty.call(dict, cle)) return dict[cle];
-    return `[[${cle}]]`;
+    if (!Object.prototype.hasOwnProperty.call(dict, cle)) return `[[${cle}]]`;
+    const texte = dict[cle];
+    if (!params) return texte;
+    return texte.replace(/\{([a-z0-9_]+)\}/gi, (marqueur, nom) => (
+      Object.prototype.hasOwnProperty.call(params, nom) ? String(params[nom]) : marqueur
+    ));
   }
 
   function definirLangue(l) {

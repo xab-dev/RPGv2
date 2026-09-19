@@ -2,7 +2,7 @@
 projet: RPG V2
 episode/session: Région Maison — intrusion nocturne du Chaos
 type: spec par paliers
-version: 1.2.0
+version: 1.3.0
 statut: brouillon
 catégorie: Spec
 date: 2026-09-19
@@ -12,11 +12,13 @@ verifie_par: xav
 
 # RPG V2 — 07 : Chaos nocturne dans la Région Maison
 
+**Changelog 1.3.0 (nuit du 19 au 20/09)** — la référence de coût du §6 passe de `R-02` (mesuré sous **Firefox**, donc incomparable) à **`R-03`**, le relevé de nuit de base pris sous Chrome : 59,9 fps, **zéro frame sautée**, `dessiner()` 0,32 ms, `maj()` 0,06 ms. Sous Chrome il n'y a pas de « marge de rendu » à défendre : le signal est **frames sautées**, puis **`maj()`** — c'est ce dernier que les monstres feront monter. **Pas de branche `chaos-nocturne`** : les paliers de la nuit du 19 au 20 sont livrés sur `nuit-2026-09-19`, un commit par palier (brief de la nuit). Deux éléments extérieurs à cette spec la touchent : le héros rétrécit (`D-32`) — le contact monstre/héros utilise donc une hitbox plus petite — et il ralentit (`D-33`), d'où le rapport de vitesses à redonner au palier C. **Palier D : aucune lueur sur les monstres** (`Q-27`) — avec une lumière de follet réduite, on ne les voit qu'au dernier moment, et c'est voulu : la **zone** se devine de loin, pas les créatures.
+
 **Changelog 1.2.0 (2026-09-19, soir)** — un **relevé de nuit après chaque palier**, comparé au relevé de base `R-03`, inscrit dans la méthode ci-dessous (clôt `DOC-04`). Le renvoi à `D-02` (« budget de rendu à mesurer ») est retiré : cette ligne est déclassée en P3 depuis que les relevés Chrome ont montré que les 12 ms de `dessiner()` étaient des millisecondes de Firefox. Sous Chrome, le signal de fluidité est **« frames sautées »**. Voir `docs/DOC_navigateurs.md`.
 
 **Changelog 1.1.0 (2026-09-19, revue des dettes)** — décisions `Q-04`, `Q-05`, `Q-06`, `Q-17` de `docs/DOC_suivi-dettes.md` : zones décrites en **rectangles** (format `zones` de `scenes.json`) et non plus en centre + rayon ; Champs redéfinis (deux grandes zones en L), bande centrale = **Campagne neutre** ; zone sûre de la Grotte confirmée, en rectangle ; apparitions **débloquées par paliers de niveau**, en données ; « quelques monstres en Forêt » retiré de cette spec (reporté au palier Nv. 15) ; la « laisse » est remplacée par le comportement **« un domaine, pas un piquet »** ; périmètre réduit au **palier 1** ; méthode : **un palier par session**.
 
-**Méthode.** Branche git dédiée (`chaos-nocturne`), **un palier par session, un commit par palier**, validation de Xav en jeu entre deux paliers. Ce n'est plus une session longue sans surveillance. Identifiants du suivi touchés par cette spec : `Q-04`, `Q-05`, `Q-06` (closes, appliquées ici). Ne toucher à aucune autre ligne du suivi.
+**Méthode.** **Un palier par session, un commit par palier**, validation de Xav en jeu entre deux paliers. Ce n'est plus une session longue sans surveillance. Identifiants du suivi touchés par cette spec : `Q-04`, `Q-05`, `Q-06` (closes, appliquées ici). Ne toucher à aucune autre ligne du suivi.
 
 **Mesure — obligatoire à chaque palier** (*ajout 1.2.0, clôt `DOC-04`*). Cette spec est la première à faire apparaître des entités qui bougent, se cherchent et meurent : c'est elle qui peut coûter des images par seconde. Donc, **après chaque palier**, Xav prend le **relevé de nuit** du protocole de traversée (§6 de `docs/DOC_suivi-dettes.md`), sous **Chrome**, plein écran, manette, et le compare à `R-03` — le relevé de nuit **de base**, pris avant que le premier monstre n'existe (`A-03`). Sans ce point de comparaison, un palier qui ferait chuter les fps ne serait imputable à rien, et un palier innocent serait accusé à tort. Le relevé se note au registre §6, avec son navigateur et son plein écran oui/non. **Pas de budget de rendu à défendre ici** : la version précédente de cette ligne renvoyait à `D-02`, déclassée le 19/09 au soir (elle mesurait des millisecondes de Firefox). Le signal à lire sous Chrome est **« frames sautées »**, pas `dessiner()`.
 
@@ -99,7 +101,7 @@ La **Forêt** reste sans monstres dans cette spec (palier Nv. 15, hors scope).
 ## 6. À observer et rapporter, sans trancher
 
 - **Appât patient** : attirer un monstre jusqu'au Jardin par poursuites successives, puis le frapper à chaque retour vers la lisière (portée d'arme > 0). Classé « le système le permet » par défaut ; le constater, le noter.
-- **Coût** : relevé `?debug=fps` de nuit, plafond atteint, avant/après. Référence de jour avant cette spec (`R-02`) : `dessiner()` 12,02 ms de moyenne, p95 18 ms, **marge ≈ 4,6 ms** avec zéro monstre (`D-02`). Si la marge ne suffit pas : rapporter, ne pas optimiser ici.
+- **Coût** : relevé `?debug=fps` de **nuit**, plafond de monstres atteint, comparé à **`R-03`** — le relevé de nuit de base, pris sous Chrome avant que le premier monstre n'existe : **59,9 fps, 0 frame sautée**, `dessiner()` 0,32 ms (p95 0,80), `maj()` 0,06 ms (p95 0,20), 37 recalculs de calque à 0,73 ms. Les monstres coûtent du **`maj()`** (ils se décident, se déplacent, se cherchent) bien avant de coûter du `dessiner()`. Ce qui alerte, dans l'ordre : **frames sautées > 0**, puis `maj()` qui s'approche du budget de frame (16,7 ms). Si le palier coûte : **rapporter, ne pas optimiser ici**.
 - **Table des niveaux** : `levels.json` monte-t-elle au moins jusqu'à 15 ? (paliers suivants : 10 et 15, et au-delà.)
 - Nuit de 4 min au niveau 5 : le plafond de 6 monstres se remplit-il trop vite, trop lentement ?
 

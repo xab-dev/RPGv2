@@ -8,7 +8,7 @@ Phases validées : 0 (Socle technique), 1 (La Grotte), 1b (polish, DA validée),
 
 **Le volet rendu des fondations est clos sur PC, sous Chrome.** Treize relevés `?debug=fps` réels existent (§6 de `docs/DOC_suivi-dettes.md`). Le relevé qui tranche est `R-11` : **Chrome, plein écran, échelle forcée 8 — 59,9 fps, aucune frame sautée**, GPU à 14 %, aucune saccade vue par Xav en traversée. **Chrome est le navigateur de développement, de jeu et de référence** ; sous Firefox, le même PC exécute le dessin sur le fil principal et devient injouable à l'échelle 5 — ce n'était pas le jeu, c'était le navigateur (registre `docs/DOC_navigateurs.md`). Conséquences : `Q-19` close **sans plafond d'échelle** (la décision « rendu net à résolution physique » est confirmée, cette fois sur mesure), `D-01` déclassée en P2, `D-02` et `D-03` en P3.
 
-**Côté mobile, rien n'est clos.** Le Galaxy A04 rend ~37 fps à l'échelle naturelle et ~40 à l'échelle 1 (`R-12`, `R-13`) : diviser les pixels par 9 ne rend que 3,6 fps, donc **l'échelle n'y est pour rien**. `maj()` + `dessiner()` ≈ 7 ms pour 27 ms de delta — **≈ 18 ms par frame que l'instrument ne voit pas** (`D-31`, gelée jusqu'au profil USB `A-07` : aucune correction ne se tente sans profil). L'A04 n'est donc **pas** déclaré appareil plancher (`Q-20`, part mobile). Restent dus avant tout contenu : les **deux relevés de base sous Chrome**, un de jour et un de nuit (`A-03`, `R-14`/`R-03`) — c'est le point de comparaison de `specs/07_chaos-nocturne.md`.
+**Côté mobile, rien n'est clos.** Le Galaxy A04 rend ~37 fps à l'échelle naturelle et ~40 à l'échelle 1 (`R-12`, `R-13`) : diviser les pixels par 9 ne rend que 3,6 fps, donc **l'échelle n'y est pour rien**. `maj()` + `dessiner()` ≈ 7 ms pour 27 ms de delta — **≈ 18 ms par frame que l'instrument ne voit pas** (`D-31`, gelée jusqu'au profil USB `A-07` : aucune correction ne se tente sans profil). L'A04 n'est donc **pas** déclaré appareil plancher (`Q-20`, part mobile). Les **deux relevés de base sous Chrome** sont **pris** (`A-03` close) : `R-14` de jour et `R-03` de nuit, **59,9 fps et zéro frame sautée** à l'échelle naturelle, `dessiner()` 0,33 ms, `maj()` 0,06 ms. `specs/07_chaos-nocturne.md` a donc son point de comparaison : après chaque palier, le même relevé de nuit, comparé à `R-03`.
 
 **Ce qui reste dû (dettes, questions, validations) vit dans `docs/DOC_suivi-dettes.md`, et nulle part ailleurs.**
 
@@ -229,6 +229,8 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 
 | **Pas de plafond d'échelle de rendu** : la décision « rendu net à résolution physique (DPR) » du 15/09 est **maintenue et confirmée, cette fois sur mesure** (`Q-19` close). Motif : sous Chrome, 59,9 fps sans une frame sautée jusqu'à l'échelle forcée 8 (`R-11`) ; sur le Galaxy A04, diviser les pixels par 9 ne rend que 3,6 fps (`R-12` → `R-13`). Ni le PC ni le téléphone n'y gagnent : **l'échelle par calque est abandonnée comme chantier**, et pas d'échelle au-dessus de la naturelle non plus (aucun gain de netteté). `?echelle=N` reste un outil de debug | 2026-09-19 | `NS_decisions-rendu-navigateurs_2026-09-19.md` §2 |
 | **Chrome est le navigateur de développement, de jeu et de référence.** Les autres : « on verra plus tard », en conseillant gentiment Chrome aux joueurs (politique d'engagement envers Firefox/Safari non tranchée, `Q-24`). Deux mises en garde qui ne se retournent jamais contre le joueur : **jamais de navigation privée** dans un conseil (la sauvegarde IndexedDB y est effacée à la fermeture), et **« hors connexion » n'existe pas** tant que le jeu n'est pas mis en ligne avec une mise en cache applicative | 2026-09-19 | même NS §2, registre `docs/DOC_navigateurs.md` |
+| **Les valeurs de base du début de jeu sont basses, et tout grandit ensuite** par l'équipement, les niveaux, les buffs : taille et vitesse du héros, portée de l'arme, lumière et orbite du follet. « Là, maintenant, ce sera dur à jouer ; plus tard, ce sera normal. » **Conséquence d'architecture, et la seule** : une valeur de base destinée à grandir n'est **jamais lue directement par un système** — elle passe par une fonction pure de résolution (base en données → valeur effective), qui rend aujourd'hui la base telle quelle. Aucun buff, aucun équipement, aucun modificateur n'est livré avec le point d'entrée : seulement le point d'entrée, testé | 2026-09-19 | `BRIEF_nuit-2026-09-19.md` §0 bis |
+| **Le follet est équipable** (tranche D11④ de la carte mentale) : *a priori* **un seul emplacement**, qui reçoit soit une **amulette** (capacités plutôt offensives), soit un **talisman** (capacités plutôt défensives, de support). Exemple d'effet donné par Xav : orbite × 2, pour aller frapper des monstres plus loin du héros ; l'orbite pourra aussi grandir avec la portée, le niveau et les stats du follet. **Rien n'est livré** : ni emplacement, ni objet, ni champ de sauvegarde — la spec vient avec celle des armes et de l'équipement (`E-02`) | 2026-09-19 | même brief, `Q-29` |
 
 (Les décisions de `05_construction-stations.md` étaient déjà actées par Xav **dans la spec elle-même** avant tout code, v1.0.0 §9 — les lignes ci-dessus n'y renvoient que pour mémoire, elles ne tranchent rien de nouveau.)
 
@@ -274,14 +276,14 @@ la session précédente a révélées, clos celles qu'elle a livrées.
 
 **Décision de méthode (Xav, 2026-09-19, 17 h 18) : on ne rajoute pas de contenu sur des bases non confirmées.** Avant `specs/07_chaos-nocturne.md` et avant de rouvrir `Q-07` (passée à **gelée**) : la **performance** et les **retours du playtest du 19/09**. On repart de la base et on remonte, **un ticket par session**, validation en jeu entre deux.
 
-**Ordre d'injection** (`NS_decisions-rendu-navigateurs_2026-09-19.md` §5 — *remplace* le §5 de `NS_decisions-fondations_2026-09-19.md`, archivée) : **un ticket par session, un commit par ticket**, chacun citant les identifiants du suivi qu'il touche.
+**Ordre d'injection** (amendé par `BRIEF_nuit-2026-09-19.md`, décision de Xav — *remplace* le §5 de `NS_decisions-rendu-navigateurs_2026-09-19.md`, archivée) : **un ticket par session, un commit par ticket**, chacun citant les identifiants du suivi qu'il touche. La nuit du 19 au 20 respecte la règle autrement : une **file de micro-tickets**, un commit chacun, dans cet ordre, pour que Xav puisse fusionner « jusqu'au commit N » et laisser le reste.
 
-1. Cette session de documentation (doc seule) — faite.
-2. **Relevés de base avant contenu** (`A-03`) — Xav, Chrome, plein écran, manette, protocole de traversée : un de **jour** (`R-14`), un de **nuit** (`R-03`). C'est le point de comparaison de `07` : sans lui, on accusera les monstres à tort, ou on les innocentera à tort.
-3. `D-17` — bouton MENU tactile sous le bandeau.
-4. `D-30` — plein écran demandé au premier appui tactile (même périphérique que `D-17`, à traiter avec lui).
-5. `D-13` — buffs dans le bandeau HUD.
-6. `specs/07_chaos-nocturne.md`, **un palier par session**. Après chaque palier : le même relevé de nuit, comparé à celui de l'étape 2.
+1. Doc : NS de la soirée + les deux relevés de base — **fait** (`A-03` close : `R-14` jour, `R-03` nuit, 59,9 fps et zéro frame sautée sous Chrome).
+2. **Tailles, vitesse, lumière** : `D-32` (héros à 9 px), `D-33` (vitesse de base −25 %), `D-34` (follet −25 % en jeu, orbite inchangée), `D-35` (lumière du follet ramenée à l'aura, **à l'extérieur seulement** — la Grotte ne change pas).
+3. `specs/07_chaos-nocturne.md`, **un palier par session** (A, B, C, D). Après chaque palier : le relevé de nuit, comparé à `R-03`.
+4. `D-36` — follet « aérien » : **proposition**, volontairement en dernier pour rester détachable.
+5. `D-17` (bouton MENU tactile sous le bandeau) et `D-30` (plein écran au premier appui tactile) — même périphérique, même validation, à traiter ensemble.
+6. `D-13` — buffs dans le bandeau HUD.
 7. `D-01` (défilement incrémental du calque), `D-16` (puits), puis reprise de `Q-07`.
 
 Les sept tickets de code du 19/09 (`D-22`, `D-21`, `D-20` A et B, `D-05`, `D-23`) sont livrés — détail et validations restantes dans `docs/DOC_suivi-dettes.md`. En parallèle, côté Xav : `A-06` (Firefox `about:support`, 2 min) et `A-07` (profil Chrome de l'A04 par USB, sans urgence, débloque `D-31`).
@@ -291,100 +293,63 @@ Les captures de la V1 (`docs/captures/v1/`) sont une **inspiration, jamais un ca
 `Q-10`, `Q-11`, `Q-12`, `Q-24` et `Q-25` restent à trancher avec Xav ; `Q-07` est gelée. La spec de la barre d'action du bas (`E-01`) est écrite par Xav lui-même et attend le chiffrage `Q-11`. **Une spec non écrite ne se commence pas** (même règle que pour une phase).
 
 
-## Journal de session — NS « rendu, navigateurs, téléphone » (2026-09-19, doc seule)
+## Journal de session — Nuit du 19 au 20/09 (file de micro-tickets)
 
-Application de `docs/NS_decisions-rendu-navigateurs_2026-09-19.md`, même patron que
-la NS « fondations ». **Aucun fichier de `src/`, `data/`, `tests/` n'est touché** —
-la suite headless n'a pas été relancée, rien de ce qui l'exerce n'a bougé.
-Un commit, pas de `push`.
+`BRIEF_nuit-2026-09-19.md` v1.3.0. Branche **`nuit-2026-09-19`**, créée depuis `main` ; **aucun `push`**.
+Un ticket = un commit, dans l'ordre du brief, pour que la nuit se fusionne « jusqu'au commit N ».
+Le rapport complet (tableau ticket par ticket) est écrit en fin de nuit, en tête de ce journal.
 
-### Identifiants : quatre des six proposés étaient déjà pris
+### Les identifiants du brief étaient tous pris
 
-La NS avertissait que ses identifiants *(nouveau)* étaient tirés du suivi **v1.7.0**,
-et que les sessions de code de la soirée avaient pu les prendre entre-temps. C'est le
-cas : `Q-22`, `Q-23`, `D-25` et `D-26` sont tous occupés depuis (icône de la case
-d'attaque, doublon texte/réplique, double source de la touche clavier, sauvegardes
-portant encore l'épée). Renumérotation, suivant la règle du §0 (« un identifiant n'est
-jamais réutilisé ») :
+Le brief les tirait du suivi **v1.7.0** ; les sessions de code du 19/09 au soir ont pris la suite entre-temps.
+Renumérotation, suivant la règle du §0 du suivi (« un identifiant n'est jamais réutilisé ») :
 
-| NS | Suivi | Sujet |
-|---|---|---|
-| `Q-22` | **`Q-24`** | Politique navigateurs |
-| `Q-23` | **`Q-25`** | Conseiller sur le symptôme, pas sur le navigateur |
-| `D-25` | **`D-30`** | Plein écran au tactile |
-| `D-26` | **`D-31`** | A04 : ≈ 18 ms par frame hors du code du jeu |
-| `A-06`, `A-07` | inchangés | Firefox `about:support` · profil USB de l'A04 |
+| Brief | Suivi | Sujet | Déjà pris par |
+|---|---|---|---|
+| `D-27` | **`D-32`** | Héros à 9 px | id de catalogue venu d'une sauvegarde, non vérifié |
+| `D-31` | **`D-33`** | Vitesse de base du héros | Galaxy A04, ≈ 18 ms hors du code du jeu |
+| `D-28` | **`D-34`** | Follet −25 % en jeu | récolte à poche pleine, silencieuse |
+| `D-29` | **`D-35`** | Lumière du follet à l'extérieur | `image-rendering: pixelated` résiduel |
+| `D-30` | **`D-36`** | Follet « aérien » | plein écran au tactile |
+| `Q-24` | **`Q-26`** | Orbite du follet (ouverte et close) | politique navigateurs |
+| `Q-25` | **`Q-27`** | Lueur sur les monstres | conseiller sur le symptôme |
+| `Q-26` | **`Q-28`** | Vitesse ×0,75 (`[OUVERT]`) | — |
+| `Q-27` | **`Q-29`** | Follet équipable (ouverte et close) | — |
+| `Q-28` | **`Q-30`** | Lumière à l'intérieur de la Maison | — |
 
-Les relevés `R-05` à `R-13` étaient libres et gardent leurs numéros.
+**Le relevé de nuit s'appelle `R-03`, pas `R-15`.** Le registre §6 lui réservait déjà une ligne vide depuis le 19/09,
+nommée par `A-03` et par le §Méthode de `07`. Créer `R-15` aurait donné **deux identifiants pour une seule mesure** :
+j'ai rempli la ligne réservée et j'y ai noté l'alias, pour que « R-15 » reste retrouvable. `R-14` (jour), lui,
+tombait juste.
 
-### Ménage de journal
+### Ticket 1 — doc seule
 
-Journal de `D-23` archivé (`docs/archives/JOURNAL_2026-09-19_echelle-debug.md`) avec sa
-ligne d'INDEX ; `MT_echelle-debug_2026-09-19.md` descend à côté. **`NS_decisions-fondations_2026-09-19.md`
-est archivée aussi** : son §5 est remplacé par celui de la NS du soir, son §6 était la
-procédure `A-04`, désormais close, et ses cinq fiches `MT_*` sont toutes livrées et
-archivées — il ne restait rien d'actif dedans. La NS du soir, elle, reste dans `docs/` :
-c'est la source du journal ci-dessus, la prochaine session l'archivera avec lui.
-`docs/DOC_navigateurs.md` est rangé tel quel — c'est un registre **vivant**, comme le suivi.
+**Ménage.** Le journal de la NS « rendu, navigateurs, téléphone » est archivé verbatim
+(`docs/archives/JOURNAL_2026-09-19_ns-rendu-navigateurs.md`) avec sa ligne d'INDEX ;
+`NS_decisions-rendu-navigateurs_2026-09-19.md` descend à côté, comme ce journal l'annonçait lui-même.
+`docs/DOC_navigateurs.md` reste dans `docs/` : registre **vivant**, comme le suivi.
 
-### Le fond : ce n'était pas le jeu, c'était le navigateur
+**Les deux relevés de base, inscrits au §6.** `R-14` (jour) et `R-03` (nuit), Chrome, F11, 1920×1080, échelle
+naturelle 4, manette, protocole de traversée. **59,9 fps et zéro frame sautée dans les deux cas** ; `dessiner()`
+0,34 / 0,32 ms, `maj()` 0,05 / 0,06 ms, ≈ 37 recalculs de calque à environ 1 ms. `A-03` **close**.
 
-La soirée renverse la lecture des trois semaines précédentes. `R-02` → `R-04` avait
-établi que **le coût de rendu suit le nombre de pixels**, et tout le plan de bataille en
-découlait : plafonner l'échelle (`Q-19`), ventiler `dessiner()` (`D-02`), amortir le
-calque (`D-01`). Ce fait reste vrai — mais il décrivait **qui dessine** autant que ce qui
-est dessiné. Sous Chrome, à l'échelle forcée **8**, le même PC tient 59,9 fps **sans une
-frame sautée**, GPU à 14 % (`R-11`). Les 12 ms de `dessiner()` étaient des millisecondes
-de Firefox.
+Ce que ces deux lignes changent pour `07` : il n'y a **pas de marge de rendu à défendre** sous Chrome. À 0,33 ms de
+`dessiner()` pour un budget de 16,7 ms, le rendu n'est plus le sujet — les monstres coûteront du **`maj()`** (ils se
+décident, se déplacent, se cherchent) bien avant de coûter du dessin. Le §6 de la spec citait encore `R-02` et sa
+« marge ≈ 4,6 ms » : c'étaient des millisecondes de **Firefox**, elles ne se comparent à rien de ce qui sera mesuré
+cette nuit. Remplaçé par `R-03`, avec l'ordre de lecture : **frames sautées d'abord, `maj()` ensuite, jamais
+`dessiner()`**.
 
-D'où les requalifications, toutes inscrites au suivi : `Q-19` close **sans plafond**
-(la décision verrouillée du 15/09 est confirmée sur mesure, et l'échelle par calque est
-abandonnée comme chantier) · `D-01` **P1 → P2** · `D-02` et `D-03` **P1 → P3, gelées**.
+**Deux décisions datées consignées** dans le tableau des décisions : le **principe d'équilibrage** (les valeurs de
+base sont basses et tout grandit ensuite — avec sa **seule** conséquence d'architecture : une valeur destinée à
+grandir passe par une fonction pure de résolution, jamais lue directement par un système, et **aucun buff n'est
+livré avec**) et le **follet équipable** (un emplacement, amulette *ou* talisman — `Q-29`, rien de livré).
 
-Et la règle de méthode qui manquait : **un relevé cite son navigateur**, deux relevés pris
-sous des navigateurs différents ne se comparent pas. Firefox garde une utilité — c'est un
-banc de mesure du coût par calque, puisqu'il dessine sur le fil principal. Ce n'est
-simplement jamais un verdict de fluidité.
+**Ordre d'injection réécrit** dans `CLAUDE.md` et la ROADMAP (1.8.0) : tailles/vitesse/lumière → `07` AàD → `D-36`,
+**puis** `D-17` + `D-30`, `D-13`, `D-01`/`D-16`, reprise de `Q-07`. La spec `07` passe en 1.3.0 : plus de branche
+`chaos-nocturne` (tout sur `nuit-2026-09-19`), et trois éléments extérieurs la touchent désormais — héros plus petit
+(`D-32`), héros plus lent (`D-33`), aucune lueur sur les monstres (`Q-27`).
 
-### Le téléphone, lui, n'est pas expliqué
-
-`R-12`/`R-13` : ~37 fps à l'échelle naturelle, ~40 à l'échelle 1. Diviser les pixels par
-neuf rend **3,6 fps**. `maj()` + `dessiner()` ≈ 7 ms pour 27 ms de delta : **≈ 18 ms par
-frame que l'instrument ne voit pas**, avec le même ressenti sans `?debug=fps`. Écartés par
-la mesure : l'échelle, l'instrument, un canvas logiciel. Restent le coût de la page autour
-du canvas et la composition par un GPU faible — c'est `D-31`, **gelée** jusqu'au profil USB
-`A-07`, parce que corriger sans profil serait deviner. Conséquence directe : l'A04 n'est
-**pas** déclaré appareil plancher, et `Q-20` est reformulée en deux moitiés (PC acquis,
-mobile ouvert).
-
-Le relevé de l'A04 fait au passage un constat non-mesuré mais net : hors plein écran, le
-jeu occupe 1440×810 sur un écran de 2340×1080, barre d'adresse comprise — 46 %. C'est
-`D-30`, à traiter avec `D-17` puisque c'est le même périphérique et la même validation.
-
-### Ce que j'ai vu et n'ai pas corrigé
-
-**`DOC-08` (nouvelle)** : `MT_ventilation-dessiner_2026-09-19.md` v1.1.0 **n'est pas au
-dépôt**. Le registre §6 y renvoie pour le détail chiffré de `R-05` à `R-10`, les six
-relevés Firefox — ces nombres ne vivent donc nulle part dans le dépôt, alors que le
-registre est censé être la seule liste. Je n'ai inscrit au §6 que ce que la NS donne en
-toutes lettres (la loi `≈ 6,8 ms + 0,55 ms × échelle²`, les échelles couvertes) plutôt
-que d'inventer des colonnes. Deux issues proposées : ranger la fiche dans `docs/`, ou
-recopier les six relevés au §6 et l'archiver.
-
-**`DOC-04` close.** Sa part restante était « y reporter le budget de rendu mesuré
-(`D-02`) » : il n'y a plus de budget de rendu à défendre sur PC. Elle est remplacée par ce
-qui protège vraiment la spec — le relevé de nuit après chaque palier, inscrit dans la
-méthode de `specs/07_chaos-nocturne.md`, comparé aux deux relevés de base de `A-03`.
-
-**`docs/DOC_navigateurs.md` §4** reste en place, avec un renvoi ajouté en tête : il portait
-les identifiants d'avant renumérotation, et la NS dit elle-même que son §4 est remplacé.
-Plutôt que de réécrire un document fourni « tel quel », je l'ai laissé et j'ai pointé le
-suivi, qui fait foi.
-
-### Ce qui bloque la suite
-
-Rien, côté code : l'étape 2 de l'ordre d'injection est une **action de Xav** — les deux
-relevés de base sous Chrome, un de jour, un de nuit (`A-03`). Tant qu'ils n'existent pas,
-`07_chaos-nocturne.md` n'a pas de point de comparaison, et un palier qui ferait chuter les
-fps ne serait imputable à rien. Les tickets `D-17` + `D-30` (tactile) et `D-13` (buffs)
-sont, eux, prêts à être pris sans attendre.
+**Une précision de méthode, dite ici pour ne pas la découvrir au matin** : ce journal grandit d'une section à chaque
+ticket, dans le commit de ce ticket. Ce n'est pas revenir sur un ticket précédent — c'est le journal qui avance.
+Aucun fichier de `src/`, `data/` ou `tests/` n'a été touché par ce ticket-ci.

@@ -49,6 +49,35 @@ export const ECHELLE_STATION_PROVISOIRE = 2.1;
 // utilisée pour le rendu (position.x/y du puzzle), jamais un second repère.
 // Rotation de primitive ignorée (aucun interactif n'en utilise à ce jour) :
 // approximation documentée, pas un bug si elle réapparaît un jour.
+// SD_puits-silhouette_2026-09-19 : boîte d'UNE primitive, à l'échelle
+// demandée. Extraite de empreinteParDefaut (aucun changement de règle : c'est
+// exactement le calcul qui s'y trouvait, désormais nommé) pour que la
+// vérification d'assemblage d'une silhouette (les pièces se touchent-elles ?)
+// et l'empreinte solide dérivent de la MÊME règle — un test qui recopierait
+// la règle pourrait rester vert alors que l'empreinte, elle, aurait changé.
+export function boitePrimitive(p, echelle = 1) {
+  const dx = p.dx || 0;
+  const dy = p.dy || 0;
+  if (p.forme === 'polygone' || p.forme === 'ligne') {
+    const xs = p.points.map(([px]) => dx + px);
+    const ys = p.points.map(([, py]) => dy + py);
+    return {
+      minX: Math.min(...xs) * echelle,
+      minY: Math.min(...ys) * echelle,
+      maxX: Math.max(...xs) * echelle,
+      maxY: Math.max(...ys) * echelle,
+    };
+  }
+  const demiW = (p.w || 0) / 2;
+  const demiH = (p.h || 0) / 2;
+  return {
+    minX: (dx - demiW) * echelle,
+    minY: (dy - demiH) * echelle,
+    maxX: (dx + demiW) * echelle,
+    maxY: (dy + demiH) * echelle,
+  };
+}
+
 export function empreinteParDefaut(visuel, echelle) {
   let minX = Infinity;
   let minY = Infinity;
@@ -56,23 +85,11 @@ export function empreinteParDefaut(visuel, echelle) {
   let maxY = -Infinity;
 
   for (const p of visuel.primitives) {
-    const dx = p.dx || 0;
-    const dy = p.dy || 0;
-    if (p.forme === 'polygone' || p.forme === 'ligne') {
-      for (const [px, py] of p.points) {
-        minX = Math.min(minX, dx + px);
-        maxX = Math.max(maxX, dx + px);
-        minY = Math.min(minY, dy + py);
-        maxY = Math.max(maxY, dy + py);
-      }
-      continue;
-    }
-    const demiW = (p.w || 0) / 2;
-    const demiH = (p.h || 0) / 2;
-    minX = Math.min(minX, dx - demiW);
-    maxX = Math.max(maxX, dx + demiW);
-    minY = Math.min(minY, dy - demiH);
-    maxY = Math.max(maxY, dy + demiH);
+    const b = boitePrimitive(p);
+    minX = Math.min(minX, b.minX);
+    maxX = Math.max(maxX, b.maxX);
+    minY = Math.min(minY, b.minY);
+    maxY = Math.max(maxY, b.maxY);
   }
 
   return { x: minX * echelle, y: minY * echelle, w: (maxX - minX) * echelle, h: (maxY - minY) * echelle };

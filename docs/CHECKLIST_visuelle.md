@@ -217,6 +217,15 @@ différente) entre les trois emplacements.
     suit la rotation (on ne traverse plus le nouveau côté large, on peut
     traverser l'ancien), `INTERACT` fonctionne sur les 4 côtés après la pose.
 
+32bis. **Puits — silhouette réassemblée** (`SD_puits-silhouette_2026-09-19.md`)
+    — de **jour**, dans le Jardin, à l'échelle réelle (×2,1). Vérifier : la
+    margelle, les deux mâts, le treuil, la corde, le seau et le toit forment
+    **un seul objet** — le pied de chaque mât est posé sur la margelle (plus
+    de porte-à-faux dans le vide), le toit repose sur les mâts, le seau pend
+    au-dessus du trou. Vérifier aussi que le puits n'a pas bougé : il ne mord
+    ni sur le chemin ni sur la zone où réapparaît le fruit (son empreinte
+    solide est inchangée, mais c'est l'œil qui tranche). Comparer avec table /
+    coffre / atelier, qui ne devaient pas changer.
 33. **Surcouche debug perf** (`MT_mesure-saccades_2026-09-19.md`) — lancer le jeu avec `?debug=fps` dans l'URL. Vérifier : calque en haut à gauche, lisible, mis à jour sans à-coup visible (≤ 4 fois/s), bouton « copier » présent ; **sans** `?debug=fps`, aucun calque, aucune trace DOM (`document.getElementById('debug-perf')` doit renvoyer `null`). Traverser la Région Maison en ligne droite pour vérifier que le relevé (fps, delta, recalculs du calque statique, entités) varie de façon plausible.
 
 **États 21/25-28 validés (2026-09-17)** : Xav a rejoué la Phase 3 en jeu et

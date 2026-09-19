@@ -185,8 +185,11 @@
     "primitives": [
       { "forme": "cercle", "dx": 0, "dy": -6, "w": 20, "h": 20, "couleur": "#7a5c3e" },
       { "forme": "ellipse", "dx": 0, "dy": -6, "w": 14, "h": 10, "couleur": "#2f6f9f" },
-      { "forme": "rect", "dx": -9, "dy": -18, "w": 3, "h": 14, "couleur": "#5a4530" },
-      { "forme": "rect", "dx": 9, "dy": -18, "w": 3, "h": 14, "couleur": "#5a4530" },
+      { "forme": "rect", "dx": 0, "dy": -16, "w": 1, "h": 5, "couleur": "#cbbb9a" },
+      { "forme": "rect", "dx": 0, "dy": -12, "w": 5.5, "h": 4.5, "couleur": "#8a6b4a" },
+      { "forme": "rect", "dx": -7, "dy": -16, "w": 3, "h": 18, "couleur": "#5a4530" },
+      { "forme": "rect", "dx": 7, "dy": -16, "w": 3, "h": 18, "couleur": "#5a4530" },
+      { "forme": "rect", "dx": 0, "dy": -19, "w": 15, "h": 2.5, "couleur": "#6b5238" },
       { "forme": "rect", "dx": 0, "dy": -24, "w": 22, "h": 3, "couleur": "#5a4530" }
     ]
   },

@@ -321,3 +321,33 @@ Personne ne dessinait les follets. Ils revenaient d'un coup à la fermeture du d
 **Testé** : `node --check` sur `src/intro.js`, `src/main.js`, `tests/test_mt_intro_follets_visibles_2026-09-19.js`. Nouveau `tests/test_mt_intro_follets_visibles_2026-09-19.js` (6 blocs : visibilité et opacité sur 10 s de texte échantillonnées à 16 ms, continuité convergence→texte, report du dépassement de frame, follets posés au pixel près sur les cibles du choix, amortissement borné par son enveloppe et sans rebond, budget ≤ 8 s + front `terminee` unique). `node tools/run_tests.js` : **63 fichiers verts** (1 nouveau).
 
 **`main.js#dessiner()` touché → `docs/CHECKLIST_visuelle.md` à rejouer par Xav**, avec le nouvel **état 17bis « Intro — texte de choix + follets visibles »** ajouté à la checklist (les follets restent à l'écran derrière le texte, leur lévitation se pose, aucun saut à l'appui sur `A`). Comme pour le ticket 1, **aucune capture n'a pu être prise** : ni l'extension Chrome ni le démon browser-use ne répondent dans cette session.
+
+### Ticket 3 — SD puits : silhouette désolidarisée depuis l'échelle ×2,1
+
+**Cause racine d'abord : ce sont les DONNÉES, pas l'interprète.** Inventaire demandé par la fiche (chaque primitive, et si elle suit l'échelle) :
+
+`visuels.js#dessinerVisuel` applique **un unique `ctx.scale(e, e)`** autour de tout le dessin. Conséquence : longueurs, positions, rayons, **et épaisseurs de trait** (`lineWidth` est en espace utilisateur, donc mis à l'échelle lui aussi) suivent tous l'échelle, sans exception. `ancre` n'est même **jamais lu** par l'interprète (champ de métadonnée). **Donc l'interprète ne peut pas désolidariser une silhouette** : une silhouette bien assemblée à l'échelle 1 l'est à toute échelle — et réciproquement, un défaut d'assemblage existait déjà à l'échelle 1, il ne devenait visible qu'une fois agrandi. La branche « si c'est l'interprète, le défaut concerne tous les visuels » de la fiche **ne s'applique pas** ; table / coffre / atelier vérifiés malgré tout (voir tests), aucune pièce orpheline chez eux.
+
+Le défaut réel, mesuré sur les anciennes données :
+
+| Pièce | Boîte (échelle 1) | Verdict |
+|---|---|---|
+| margelle (cercle) | x[-10,10] y[-16,4] | disque r=10 centré (0,-6) |
+| eau (ellipse) | x[-7,7] y[-11,-1] | ok |
+| mât g / mât d (rect 3×14) | x[∓10.5,∓7.5] y[-25,-11] | **pied en porte-à-faux** |
+| toit (rect 22×3) | x[-11,11] y[-25.5,-22.5] | ok |
+
+Les **boîtes** des mâts et de la margelle se recouvrent (2,5 px) — un test naïf sur les boîtes serait resté vert. Mais le **disque** de la margelle ne mesure que `√(10² − 5²) = 8,66` px de demi-largeur à la hauteur où le mât s'arrêtait (y = −11), alors que le mât occupait x ∈ [−10,5 ; −7,5] : **seuls 1,16 px des 3 px du pied reposaient sur la margelle, 61 % flottaient dans le vide**. Et le pied s'arrêtait 5 px *au-dessus* du centre de la margelle, dans la partie où le disque se rétrécit vite — d'où « les mâts sont trop courts ». Agrandi ×2,1, le porte-à-faux devient un trou franc de ~3,9 px, parfaitement visible.
+
+**Fait (données seules, plus une extraction sans changement de règle) :**
+
+- `data/visuels.json` > `visuel_puits` : mâts rapprochés (x = ±7 au lieu de ±9) et **allongés** (h 18 au lieu de 14, pied à y = −7 au lieu de −11) — le pied repose désormais sur **toute** sa largeur (3 px d'appui sur 3), le sommet entre dans le toit (2,5 px de recouvrement). Ajout du **treuil** (rect 15×2,5) qui relie franchement les deux mâts, de la **corde** et du **seau**, explicitement listés au §Attendu et jusque-là absents de la silhouette.
+- `src/structures.js` : `boitePrimitive(p, echelle)` **extraite** de `empreinteParDefaut` — c'est exactement le calcul qui s'y trouvait, désormais nommé et réutilisé par elle. **Aucun changement de règle** ; le but est que la vérification d'assemblage et l'empreinte solide dérivent de la *même* fonction, pour qu'un test ne puisse pas rester vert pendant que l'empreinte, elle, dérive.
+
+**L'empreinte solide est strictement inchangée** : boîte englobante x[−11,11] y[−25,5 ; +4] avant **et** après (toutes les pièces ajoutées sont à l'intérieur ; le toit et la margelle, qui la définissent, n'ont pas bougé). La question « le puits mord-il sur un chemin ou sur la zone de réapparition du fruit ? » posée par la fiche **ne se pose donc pas** — et un test la verrouille aux 3 échelles pour qu'elle ne se pose pas non plus par surprise plus tard.
+
+**Valeurs nouvelles, toutes *provisoires*** (arrangement purement visuel, à juger à l'œil par Xav — elles sont toutes dans `data/visuels.json > visuel_puits`) : treuil 15×2,5 en y = −19 ; corde 1×5 en y = −16 ; seau 5,5×4,5 en y = −12 ; mâts 3×18 en x = ±7, y = −16.
+
+**Testé** : `node --check` sur `src/structures.js`, `tests/test_sd_puits_silhouette_2026-09-19.js`. Nouveau `tests/test_sd_puits_silhouette_2026-09-19.js`, **data-driven** (les contacts à vérifier sont déclarés dans une table en tête du fichier ; ajouter un visuel à surveiller ne demande aucune ligne de code) : 8 contacts tenus aux échelles **1, 2,1 et 3** ; appui réel du pied des mâts mesuré sur le **disque** et non sur sa boîte (c'est l'assertion qui aurait été **rouge** sur les anciennes données — vérifié : 1,16 px d'appui pour 3 px de mât) ; empreinte solide inchangée aux 3 échelles ; **aucune pièce orpheline** dans les 4 stations (table, coffre, atelier vérifiés au passage, tous sains). `node tools/run_tests.js` : **64 fichiers verts** (1 nouveau).
+
+**Vérification visuelle** : aucun navigateur piloté disponible dans cette session (extension Chrome non connectée, démon browser-use en échec) — donc, comme le prévoit la fiche, **nouvel état `32bis` ajouté à `docs/CHECKLIST_visuelle.md`** (« Puits — silhouette réassemblée », de jour, à comparer avec table/coffre/atelier qui ne devaient pas changer), dû par Xav. `visuels.js`, `render.js`, `hud.js`, `dialogue_box.js` et `main.js#dessiner()` **non touchés** : pas de rejeu intégral de la checklist exigé par la règle de méthode, seulement ce nouvel état.

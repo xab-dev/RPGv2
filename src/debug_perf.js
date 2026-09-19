@@ -30,6 +30,37 @@ export function estDebugFpsActif(search) {
   return new URLSearchParams(search).get('debug') === 'fps';
 }
 
+// Bornes de `?echelle=N` (MT_echelle-debug_2026-09-19, `D-23`). 1 = plancher
+// absolu du rendu (RESOLUTION_LOGIQUE elle-même, cf. calculerEchelleEntiere
+// qui ne descend jamais sous 1) ; 8 = un cran au-dessus de la plus haute
+// échelle naturelle rencontrée dans les relevés (5, cf. `R-04`), de quoi
+// mesurer aussi le sens "plus de pixels" sans permettre une valeur qui
+// ferait exploser la mémoire canvas. Provisoire : ce sont des bornes
+// d'instrument, aucune décision de rendu n'en dépend (`Q-19` reste ouverte).
+export const ECHELLE_FORCEE_MIN = 1;
+export const ECHELLE_FORCEE_MAX = 8;
+
+// Lecture de `?echelle=N` — pure, comme `estDebugFpsActif` : `location`
+// n'est lu qu'une fois, au boot, par main.js. Rend TOUJOURS la même forme
+// { echelle, avertissement } : `echelle` null = "ne force rien, comportement
+// d'avant" (c'est ce null qui traverse toute la chaîne jusqu'à render.js,
+// jamais une valeur de repli plausible qui masquerait la faute de frappe).
+// L'avertissement est rendu plutôt qu'écrit ici : ce module ne connaît pas
+// la console, seul son appelant décide quoi en faire.
+export function lireEchelleForcee(search) {
+  if (!search) return { echelle: null, avertissement: null };
+  const brut = new URLSearchParams(search).get('echelle');
+  if (brut === null) return { echelle: null, avertissement: null };
+  const valeur = Number(brut);
+  if (!Number.isFinite(valeur) || valeur < ECHELLE_FORCEE_MIN || valeur > ECHELLE_FORCEE_MAX) {
+    return {
+      echelle: null,
+      avertissement: `?echelle=${brut} ignoré : attendu un nombre entre ${ECHELLE_FORCEE_MIN} et ${ECHELLE_FORCEE_MAX} (décimales admises). Rendu à l'échelle naturelle.`,
+    };
+  }
+  return { echelle: valeur, avertissement: null };
+}
+
 // Tampon circulaire PRÉ-ALLOUÉ (Float64Array de taille fixe) : ajouter une
 // valeur n'alloue jamais rien — contrairement à un tableau qui grandirait ou
 // serait recopié (`slice`) à chaque frame. Seule `valeursTampon` (lue au
@@ -124,6 +155,12 @@ export function formaterReleve(etat) {
     `écart position héros (px logiques) X : moy ${etat.ecartHeroX.moyenne.toFixed(3)} min ${etat.ecartHeroX.min.toFixed(3)} max ${etat.ecartHeroX.max.toFixed(3)} | Y : moy ${etat.ecartHeroY.moyenne.toFixed(3)} min ${etat.ecartHeroY.min.toFixed(3)} max ${etat.ecartHeroY.max.toFixed(3)}`,
     `entités dessinées (dernière frame) : monstres ${etat.entites.monstres}, interactifs ${etat.entites.puzzles}, objets au sol ${etat.entites.objetsSol}`,
     `canvas visible : ${etat.ecranPhysique.largeurPhysique}x${etat.ecranPhysique.hauteurPhysique}px physiques (dpr ${etat.ecranPhysique.dpr})`,
+    // `D-23` : sans cette ligne, un relevé `?echelle=N` serait indiscernable
+    // d'un relevé normal une fois collé dans le suivi — et c'est justement la
+    // comparaison des deux qui doit trancher `Q-19` (`A-05`).
+    etat.echelleRendu.forcee === null
+      ? `échelle : ${etat.echelleRendu.naturelle} (naturelle)`
+      : `échelle : ${etat.echelleRendu.forcee} (forcée) — naturelle : ${etat.echelleRendu.naturelle}`,
     `calque statique : ${etat.coucheStatique ? `${etat.coucheStatique.largeur}x${etat.coucheStatique.hauteur}px` : 'pas encore construit'}`,
     `calque d'obscurité : ${etat.canvasVoile ? `${etat.canvasVoile.largeur}x${etat.canvasVoile.hauteur}px` : 'absent (scène sans obscurité)'}`,
     `périphérique actif : ${etat.peripheriqueActif} (${etat.basculesParSeconde.toFixed(2)} bascule(s)/s)`,

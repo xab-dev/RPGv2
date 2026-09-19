@@ -82,7 +82,10 @@ rpg_v2/
 │   │                       portailFranchi()
 │   ├── camera.js           bornée sur grande scène, centrée sur scène plus petite que le viewport
 │   ├── decor.js            décor procédural pondéré (PRNG mulberry32) + couleurTuile (variantes/teinte)
-│   ├── render.js           résolution logique/physique (DPR), fenêtrage du calque statique
+│   ├── render.js           résolution logique/physique (DPR) — `echelleDepuisCanvas` est LA
+│   │                       dérivation de l'échelle, relue par tous les calques ; `?echelle=N`
+│   │                       (debug, `D-23`) la remplace en un seul point et ne touche jamais la
+│   │                       présentation à l'écran ; fenêtrage du calque statique
 │   │                       tuiles+décor, obscurité par scène (voile+faisceaux+halos), paupières
 │   │                       d'intro, HUD/dialogue/anneau/aura — jamais testés headless au-delà
 │   │                       des fonctions pures (résolution, fenêtrage)
@@ -205,13 +208,13 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 | Héros à l'échelle **0,88** (visuel et hitbox dérivés d'une seule échelle) ; pas de roulement — règle : aucun effet ne dépend de la forme du héros (reste un visuel remplaçable), effet de déplacement = traînée de poussière | 2026-09-19 | même NS |
 | HUD sur une ligne en haut, pleine largeur ; barre d'XP retirée du HUD (niveau seul affiché), conservée dans l'écran Stats | 2026-09-19 | même NS |
 | Intro : les follets non élus restent visibles pendant le texte (au lieu de disparaître avant) | 2026-09-19 | même NS |
-| Échelle propre d'une silhouette déclarée en données (`echelle` sur une entrée de `visuels.json`, composée avec l'échelle d'instance par `visuels.js#dessinerVisuel`) — le rendu ET la hitbox du héros en dérivent, jamais deux nombres indépendants | 2026-09-19 | journal courant, `MT_heros-echelle_2026-09-19.md` |
-| L'intro reste vivante (étape `ETAPE_ATTENTE`) pendant le dialogue de choix, jusqu'à `confirmerChoixFollet()` — *révise* la mise à `null` à la fin de la convergence, qui laissait les follets sans personne pour les dessiner | 2026-09-19 | journal courant, `MT_intro-follets-visibles_2026-09-19.md` |
-| Un effet purement visuel du monde (poussière) est un module pur + une entrée de `data/effets.json` ; il ne connaît jamais la forme du héros, et il est gelé par le point de décision unique existant (`uiOuverte`), jamais par une condition propre | 2026-09-19 | journal courant, `MT_trainee-poussiere_2026-09-19.md` |
-| HUD = un bandeau d'une seule ligne en haut, pleine largeur ; tout son placement vit dans `ui/hud_layout.js` (pur, testable), jamais en dur dans `ui/hud.js` | 2026-09-19 | journal courant, `MT_hud-ligne-haute_2026-09-19.md` |
+| Échelle propre d'une silhouette déclarée en données (`echelle` sur une entrée de `visuels.json`, composée avec l'échelle d'instance par `visuels.js#dessinerVisuel`) — le rendu ET la hitbox du héros en dérivent, jamais deux nombres indépendants | 2026-09-19 | `docs/archives/JOURNAL_2026-09-19_polish-tickets-1-5.md` |
+| L'intro reste vivante (étape `ETAPE_ATTENTE`) pendant le dialogue de choix, jusqu'à `confirmerChoixFollet()` — *révise* la mise à `null` à la fin de la convergence, qui laissait les follets sans personne pour les dessiner | 2026-09-19 | `docs/archives/JOURNAL_2026-09-19_polish-tickets-1-5.md` |
+| Un effet purement visuel du monde (poussière) est un module pur + une entrée de `data/effets.json` ; il ne connaît jamais la forme du héros, et il est gelé par le point de décision unique existant (`uiOuverte`), jamais par une condition propre | 2026-09-19 | `docs/archives/JOURNAL_2026-09-19_polish-tickets-1-5.md` |
+| HUD = un bandeau d'une seule ligne en haut, pleine largeur ; tout son placement vit dans `ui/hud_layout.js` (pur, testable), jamais en dur dans `ui/hud.js` | 2026-09-19 | `docs/archives/JOURNAL_2026-09-19_polish-tickets-1-5.md` |
 | **Intrusion nocturne du Chaos dans la Région Maison** — *révise* « aucun monstre, ton chill » de `03_maison-exterieur.md` §5 ; cadre : nuit seulement, **par paliers de niveau déclarés en données** (Nv. 5 zone de Chaos nord-est, Nv. 10 zone sud, Nv. 15 apparitions éparses en Forêt et dans les Champs — la Forêt reste **vide avant 15**, ce qui *révise* « quelques monstres épars en Forêt dès le début »), **un monstre qui entre en zone sûre fait demi-tour** (condition sur sa position, jamais sur celle du joueur) ; destruction des plantations non tranchée (le jardinage n'existe pas encore) — spec `specs/07_chaos-nocturne.md` v1.1.0, qui ne livre que le système et le palier 1 | 2026-09-19 | `NS_decisions-revue-dettes_2026-09-19.md` §4-5 |
 
-| **Un retour de gain dans le monde est UN seul mécanisme**, jamais un par système : `texte_flottant.js` transporte une clé de regroupement, une quantité et des **clés** de localisation — jamais une chaîne composée, qui interdirait la fusion « +1 puis +1 = +2 » et figerait la langue d'un texte déjà en vol. La composition se fait au rendu, dans l'orchestrateur. Butin, XP et dégâts s'y brancheront sans code de système nouveau | 2026-09-19 | journal courant, `MT_texte-flottant_2026-09-19.md` |
+| **Un retour de gain dans le monde est UN seul mécanisme**, jamais un par système : `texte_flottant.js` transporte une clé de regroupement, une quantité et des **clés** de localisation — jamais une chaîne composée, qui interdirait la fusion « +1 puis +1 = +2 » et figerait la langue d'un texte déjà en vol. La composition se fait au rendu, dans l'orchestrateur. Butin, XP et dégâts s'y brancheront sans code de système nouveau | 2026-09-19 | `docs/archives/JOURNAL_2026-09-19_texte-flottant.md` |
 | **Le seuil « accès à la 1ère zone de monstres gaté par niveau ~5 » est abandonné** (*révise une décision verrouillée*) : la carte suivante s'ouvre quand la carte Maison est **épuisée**, vers le niveau 40-50 (provisoire). Conséquence : les *systèmes* prévus en Phase 4 (armes, équipement, compétences, tables d'apparition) arrivent d'abord **sur la carte Maison** ; la *carte* de la Phase 4 vient après — **« Phase 4 = prochaine étape » ne doit plus se lire nulle part** | 2026-09-19 | `NS_decisions-revue-dettes_2026-09-19.md` §4 |
 | **Arc de progression de la carte Maison** : Nv. 5 zone de Chaos nord-est · Nv. 10 zone sud · Nv. 15 apparitions éparses (Forêt + Champs) — ces trois sont **décidés** ; Nv. 20 petite caverne en Forêt annoncée par une ligne de lore (casse-tête dessiné par Xav), Nv. 30 les compétences, Nv. 40-50 la carte suivante — ces trois restent des **idées**. Avant toute nouvelle carte : écrire ressources, crafts, armes, compétences | 2026-09-19 | même NS §4 |
 | **Critère de clôture de la Région Maison : la boucle de 2 heures** (sauvegarde neuve → deux heures de jeu → niveau 30 → l'envie de changer d'endroit), vérifiable à la main par Xav **et** par le bot headless — même patron que la boucle 5 minutes de la Phase 3 | 2026-09-19 | même NS §4 |
@@ -271,7 +274,7 @@ la session précédente a révélées, clos celles qu'elle a livrées.
 4. `D-20` palier A — « mains nues », portée (`MT_mains-nues_2026-09-19.md`) — **livré et validé en jeu par Xav le 2026-09-19**.
 5. `D-20` palier B — icône de la case d'attaque — **livré le 2026-09-19, validation en jeu de Xav due** (`CHECKLIST_visuelle.md`, HUD état 1).
 6. `D-05` — texte flottant « +1 bois » (`MT_texte-flottant_2026-09-19.md`) — **livré le 2026-09-19, validation en jeu de Xav due** (`V-12`, `CHECKLIST_visuelle.md` état 34, de jour **et** de nuit).
-7. `D-23` — paramètre debug `?echelle=N` (`MT_echelle-debug_2026-09-19.md`) → puis relevés `A-05` par Xav.
+7. `D-23` — paramètre debug `?echelle=N` (`MT_echelle-debug_2026-09-19.md`) — **livré le 2026-09-19, validation de non-régression de Xav due** (`V-13`) → puis relevés `A-05` par Xav, qui trancheront `Q-19`.
 8. `D-02` + `D-03` — ventilation de `dessiner()` par calque et explication du delta (même instrument, **mesure seule**).
 9. Xav tranche `Q-19` et `Q-20` → ticket de correction d'échelle, à écrire d'après les chiffres.
 10. `D-01` — défilement incrémental du calque.
@@ -284,101 +287,120 @@ Les captures de la V1 (`docs/captures/v1/`) sont une **inspiration, jamais un ca
 `Q-10`, `Q-11` et `Q-12` restent à trancher avec Xav ; `Q-07` et `Q-19` sont gelées. La spec de la barre d'action du bas (`E-01`) est écrite par Xav lui-même et attend le chiffrage `Q-11`. **Une spec non écrite ne se commence pas** (même règle que pour une phase).
 
 
-## Journal de session — `D-05` : le texte flottant de gain (2026-09-19)
 
-Ticket `MT_texte-flottant_2026-09-19.md`, qui clôt `D-05`. Lignes touchées :
-`D-05` (close), plus trois ouvertes — `D-28` (défaut révélé hors périmètre),
-`Q-23` (le doublon que la fiche demandait de signaler), `V-12` (validation en
-jeu). Aucune autre ligne du suivi lue ni touchée. Suite headless verte,
-**70 fichiers**. Un commit, pas de `push`.
+## Journal de session — `D-23` : le paramètre debug `?echelle=N` (2026-09-19)
 
-**Ménage de journal** : journal du palier B de `D-20` archivé dans
-`docs/archives/JOURNAL_2026-09-19_icone-arme.md` + ligne d'INDEX ; la fiche
-`MT_mains-nues_2026-09-19.md`, ses deux paliers livrés, descend dans
-`docs/archives/`.
+Ticket `MT_echelle-debug_2026-09-19.md`, qui clôt `D-23`. Lignes touchées :
+`D-23` (close), `A-05` (dégelée), plus deux ouvertes — `D-29` (reste trouvé
+dans le périmètre de lecture) et `V-13` (validation de non-régression).
+`Q-19` **n'est pas touchée** : ce ticket livre l'instrument, pas la décision.
+Ni `D-01`, ni `D-02`, ni `D-03` n'ont été lues. Suite headless verte,
+**71 fichiers**. Un commit, pas de `push`.
+
+**Ménage de journal** : journal de `D-05` archivé dans
+`docs/archives/JOURNAL_2026-09-19_texte-flottant.md` + ligne d'INDEX ; la
+fiche `MT_texte-flottant_2026-09-19.md` descend dans `docs/archives/`. Cinq
+renvois « journal courant » de la table des décisions, devenus faux depuis
+l'archivage des sessions précédentes, pointent désormais leur archive.
 
 ### Le changement
 
-- **`src/texte_flottant.js`**, pur, sur le patron exact de `poussiere.js` :
-  réserve pré-allouée, zéro allocation en jeu (`for` bruts, jamais
-  `find`/`reduce`, qui allouent une closure par appel), aucune horloge propre.
-- **`effet_texte_gain`** dans `data/effets.json` : 10 réglages, **tous
-  provisoires**, capacité de la réserve comprise. `creerTextesFlottants` lève
-  si `capacite` manque, plutôt que de porter un défaut de repli qui
-  divergerait en silence des données.
-- **Émission par un point unique**, `main.js#signalerGainItem(itemId,
-  quantite, x, y)`, appelé aux deux endroits où un gain est déjà résolu.
-  `resources.js`, `ground_items.js` et `inventory.js` n'ont pas bougé d'une
-  ligne : ils continuent d'ignorer qu'un rendu existe.
-- **Le texte part de la source**, jamais du héros — centre de la tuile
-  récoltée, position réelle de l'objet au sol **capturée avant son retrait**
-  (après, elle n'existe plus).
-- **Rendu** par `render.js#dessinerTextesFlottants`, **après** l'obscurité et
-  **avant** le HUD : c'est un retour d'interface, il doit rester lisible de
-  nuit. Contour puis remplissage, pas de cartouche opaque qui masquerait la
-  scène. `save`/`restore` en tête/fin, aucune transform touchée.
-- **Gelé par `uiOuverte`**, le point de décision unique, jamais par une
-  condition propre ; **vidé à chaque entrée en scène**, comme la poussière.
+- **`debug_perf.js#lireEchelleForcee`** — pure, même patron que
+  `estDebugFpsActif` : `location` n'est lu qu'une fois, au boot, par
+  `main.js`. Rend toujours `{ echelle, avertissement }`. Une valeur invalide
+  rend `echelle: null` **et** un avertissement, jamais une valeur de repli
+  plausible : mesurer à 4 en croyant mesurer à 9 fausserait `A-05` en
+  silence. L'avertissement est *rendu*, pas écrit — ce module ne connaît pas
+  la console.
+- **`render.js#calculerEchelleRendu`** — l'échelle naturelle, sauf si une
+  échelle forcée la remplace. Délègue à `calculerEchelleEntiere` plutôt que
+  de refaire le calcul.
+- **`render.js#echelleDepuisCanvas`** — LA dérivation de l'échelle à partir
+  d'un canvas déjà dimensionné. Les trois calques (statique, obscurité,
+  paupières) l'écrivaient chacun de leur côté (`largeur / RESOLUTION_LOGIQUE.
+  largeur`, trois fois) ; ils l'appellent maintenant. C'est ce qui rend vraie
+  la phrase du ticket « aucun calque ne recalcule sa taille de son côté »,
+  et ce qui la rend *vérifiable*.
+- **`render.js#dimensionnerCanvasRendu`** — pure, donc testable, alors que
+  `ajusterCanvasLogiquePhysique` (qui l'appelle) ne l'est pas. Elle porte le
+  contrat de non-régression.
+- **`definirEchelleForcee` / `etatEchelleRendu`** — une variable de module,
+  posée une fois au boot. `render.js` ne lit toujours pas `location` : il
+  doit rester importable depuis Node.
+- **Relevé `?debug=fps`** : une ligne de plus, `échelle : 3 (forcée) —
+  naturelle : 5`, ou `échelle : 5 (naturelle)` sans paramètre.
 
-### Deux écarts assumés, et pourquoi
+### Ce que le ticket ne dit pas et qu'il a fallu trancher
 
-**La fiche esquissait `emettre(x, y, texte)`.** Le module transporte à la
-place `cle` + `quantite` + les clés `format`/`libelle`. Une chaîne déjà
-composée rend impossible la fusion « +1 puis +1 = +2 » que la fiche exige au
-paragraphe suivant, et différer la composition au rendu a un second mérite :
-changer de langue traduit aussi un texte déjà en vol. Le module ne connaît
-donc ni item, ni ressource, ni i18n, ni canvas — vérifié par garde-fou de
-source. C'est ce qui rend crédible la promesse « butin, XP et dégâts sans
-code nouveau ».
+**Deux fonctions, pas un paramètre de plus sur `calculerEchelleEntiere`.**
+La fiche dit « l'échelle forcée remplace l'échelle naturelle dans la
+fonction pure de résolution (paramètre optionnel) ». Ajouter le paramètre à
+`calculerEchelleEntiere` elle-même l'aurait fait remonter dans
+`calculerRectanglePresentation`, qui l'appelle — et la boîte affichée aurait
+rétréci avec le canvas, au lieu que le navigateur agrandisse. Le hit-test
+tactile serait parti avec elle. `calculerEchelleRendu` est donc une seconde
+porte, qui délègue ; la présentation garde la première. Accessoirement, une
+échelle forcée a le droit d'être décimale, ce que le nom « entière »
+démentirait.
 
-**Deux fichiers hors de la liste de lecture de la fiche**, parce que « aucune
-chaîne en dur » l'exigeait. `i18n.js#t(cle, params)` prend un 2ᵉ argument
-**optionnel** : le gabarit `monde.gain_item` (« +{n} {item} », dans les deux
-langues) est traduisible dans son entier — le « + », l'ordre des morceaux,
-l'espace. Le composer par concaténation dans `main.js` aurait remis du texte
-visible hors des locales. Purement additif : aucun appel existant modifié.
-Et le schéma de `effets` distingue maintenant deux `type` (`particules` /
-`texte`), **déclarés en données** plutôt que devinés à la présence d'un
-champ : sans ça, une faute de frappe sur `intervalle_px` ferait passer la
-poussière pour un effet d'un autre genre sans que rien ne le dise.
+**L'échelle qui fait foi est celle du canvas réel, pas celle demandée.**
+`?echelle=3.3` donne une largeur de 1584 px (arrondie) ; c'est `1584 / 480`
+que tous les calques liront ensuite, et c'est donc cette valeur-là qui est
+posée sur le contexte et qui dérive la hauteur. Sinon l'image serait étirée
+dans un sens et pas dans l'autre — et personne ne l'aurait vu venir avant
+l'œil de Xav.
 
 ### Ce que les tests peuvent et ne peuvent pas dire
 
-`tests/test_d05_texte_flottant_2026-09-19.js` (7 blocs) écrit avant le code,
-rouge à l'import. Vérifiés à froid : émission/montée/fondu/extinction ·
-réserve pleine qui recycle **le plus ancien** sans jamais grandir · fusion
-dans la frame, jamais entre deux items ni hors fenêtre · gabarit et noms
-d'items résolus dans les **deux** langues, sans marqueur résiduel · une
-récolte et un ramassage sur le **vrai** orchestrateur donnent chacun **une**
-émission, à la bonne position · garde-fou de généricité sur la source du
-module.
+`tests/test_d23_echelle_debug_2026-09-19.js` (6 blocs), écrit avant le code,
+rouge à l'import. Le bloc central est **négatif** : sur la table d'écrans du
+ticket (1920×1080 dpr 1 → 4 ; 2961×1449 dpr 3,5 → 5 ; 720×1600 dpr 2 → 3),
+sans paramètre, l'échelle et les dimensions du canvas sont **exactement**
+celles d'avant, au pixel près. Le reste : lecture du paramètre (bornes,
+décimales, cumul avec `?debug=fps`, les sept valeurs invalides et leur
+avertissement) · échelle 3 sur l'écran de `R-04`, calques cohérents entre
+eux, ~2,78× moins de pixels · échelles décimales · **tactile** — le
+rectangle de présentation est identique avec et sans forçage, donc un appui
+tombe au même endroit logique, vérifié plutôt que déduit.
 
-**Le dessin n'est jamais exercé** (canvas, contrainte de méthode). Il a été
-lancé **une fois, hors suite de tests**, contre un contexte 2D factice :
-aucune exception, coordonnées justes. Ça ne dit rien de ce que ça donne à
-l'œil. Le contrôle au navigateur réel n'a pas pu être fait, l'extension
-Chrome n'étant pas connectée.
+Le contrat de `formaterReleve` dans `test_mesure_saccades_2026-09-19.js` a
+été mis à jour **volontairement** (un champ optionnel à valeur de repli
+aurait masqué un jour un branchement oublié entre `render.js` et
+l'instrument — exactement le défaut que `D-03` traque).
+
+**Le dessin n'est jamais exercé** (contrainte de méthode). Une passe unique
+hors suite de tests, contre un contexte 2D factice et l'écran de `R-04`, a
+confirmé qu'aucun calque ne lève sous échelle forcée et que le voile suit le
+canvas (`null` → 2400×1350, `3` → 1440×810, `3.3` → 1584×891) — dont la
+valeur non forcée **retrouve exactement** le « obscurité 2400×1350 (échelle
+5) » inscrit dans `R-04`. Ça ne dit rien de ce que ça donne à l'œil. Le
+contrôle au navigateur réel n'a pas pu être fait : l'extension Chrome n'est
+pas connectée.
 
 ### Ce que j'ai vu et n'ai pas corrigé
 
-`D-28` : **récolter la poche pleine consomme le cooldown de la tuile et ne
-donne rien, en silence.** `essayerInteraction` ne regarde pas
-`resultatRecolte.ajoute` — au plafond de pile, l'inventaire est réécrit à
-l'identique et le cooldown posé quand même. Le ramassage au sol, lui, teste
-bien `ajoute > 0` et laisse l'objet par terre : les deux chemins divergent.
-Le texte flottant rend le défaut **visible** (rien ne monte) au lieu de muet,
-mais le corriger touche le gameplay, pas le rendu — hors périmètre.
+**Point de vigilance du ticket : levé.** Aucun calque ne se positionne sur
+`ctx.canvas.width/height` — `ui/hud.js`, `ui/dialogue_box.js`,
+`ui/hud_hints.js` et `visuels.js` portent tous un commentaire qui dit
+explicitement qu'ils écrivent en unités logiques, hérité du diagnostic
+« dialogues invisibles ». Les seules lectures de ces dimensions sont celles
+des trois calques, et elles passent maintenant par une fonction commune.
 
-`Q-23` : le retour existant du premier ramassage est **inchangé**, comme la
-fiche le demandait. Ce n'est pas un doublon à mon sens (le texte dit *ce qui
-a été gagné*, la réplique dit *ce que ça veut dire*), mais les deux se gênent
-un peu : le dialogue gèle le « +1 Branche » à mi-montée. Trois issues
-proposées dans la ligne, à trancher en jeu.
+`D-29` : **`image-rendering: pixelated` est toujours dans `index.html`**,
+alors que la décision verrouillée du 15/09 l'interdit et que le commentaire
+de `render.js#presenter` le décrit déjà au passé. Sans effet observable
+aujourd'hui — `presenter()` dimensionne le canvas visible en pixels
+physiques et sa boîte en pixels CSS, donc le mappage vers la grille de
+l'appareil est 1:1 et il n'y a rien à ré-échantillonner ; l'agrandissement
+de `?echelle=N`, lui, est fait par `drawImage` (lissage de contexte), pas
+par le CSS. La fiche n'autorisait à corriger que si ça empêchait la mesure :
+ce n'est pas le cas, y compris sur l'émulation de `R-04`.
 
-### Validation due par Xav — ticket de rendu
+### Validation due par Xav — puis `A-05`
 
-`render.js` et `main.js#dessiner()` sont touchés : clôture par une validation
-en jeu guidée par `docs/CHECKLIST_visuelle.md`, **état 34**, de jour **et de
-nuit**. Les 10 réglages sont provisoires (`V-12`, qui rejoint `V-11`) : durée
-900 ms, montée 16 px, fondu à mi-vie, taille 8 px, couleurs. Tant que ce
-passage n'est pas fait, `D-05` est **livré**, pas confirmé.
+`render.js` est touché : clôture par une validation en jeu guidée par
+`docs/CHECKLIST_visuelle.md`, **sans aucun paramètre d'URL** (`V-13`) — la
+seule chose que ce ticket peut casser est la non-régression. Ensuite
+seulement les relevés `A-05` (`echelle=5, 4, 3` sur l'émulation de `R-04` ;
+`4, 3, 2` sur PC plein écran), avec à chaque fois le relevé **et** un
+verdict à l'œil. Ce sont eux qui trancheront `Q-19`, pas ce ticket.

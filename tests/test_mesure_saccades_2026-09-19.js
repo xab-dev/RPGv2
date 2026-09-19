@@ -93,6 +93,11 @@ assert.deepEqual(ecartsSuccessifs([0, 2, 4, 4, 7]), [2, 2, 0, 3]);
     ecartHeroY: { moyenne: 0, min: 0, max: 0 },
     entites: { monstres: 2, puzzles: 4, objetsSol: 6 },
     ecranPhysique: { largeurPhysique: 1920, hauteurPhysique: 1080, dpr: 2 },
+    // `D-23` (MT_echelle-debug_2026-09-19) : le relevé gagne une ligne
+    // d'échelle. Mise à jour VOLONTAIRE de ce contrat — un champ optionnel
+    // avec valeur de repli masquerait un jour un branchement oublié entre
+    // render.js et l'instrument, exactement le défaut que `D-03` traque.
+    echelleRendu: { forcee: null, naturelle: 4 },
     coucheStatique: { largeur: 640, hauteur: 360 },
     canvasVoile: null,
     peripheriqueActif: 'manette',
@@ -104,6 +109,13 @@ assert.deepEqual(ecartsSuccessifs([0, 2, 4, 4, 7]), [2, 2, 0, 3]);
   assert.ok(texte.includes('recalculs calque statique : aucun'), 'aucun recalcul -> message explicite');
   assert.ok(texte.includes('manette'), 'périphérique actif présent');
   assert.ok(texte.includes('absent (scène sans obscurité)'), 'canvasVoile null géré sans planter');
+  assert.ok(texte.includes('échelle : 4 (naturelle)'), 'sans échelle forcée, le relevé le dit');
+  assert.ok(!texte.includes('forcée'), "aucune mention de forçage quand il n'y en a pas");
+
+  // Sous `?echelle=3` : les deux chiffres côte à côte (§ Comportement du
+  // ticket), c'est leur comparaison qui tranchera `Q-19`.
+  const texteForce = formaterReleve({ ...etat, echelleRendu: { forcee: 3, naturelle: 5 } });
+  assert.ok(texteForce.includes('échelle : 3 (forcée) — naturelle : 5'), 'échelle forcée et naturelle affichées ensemble');
 
   // Avec au moins un recalcul (formatage du nombre + horodatage relatif).
   const etatAvecRecalcul = {

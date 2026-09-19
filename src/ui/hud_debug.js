@@ -41,7 +41,12 @@ import {
 // désormais le même tampon circulaire que tout le reste, un flag 0/1 pour le
 // compte, une durée par recalcul réel pour les durées — fenêtrés aux mêmes
 // ~10 s, directement comparables à `framesTotales`.
-import { statsCoucheStatique, statsCanvasVoile, dimensionsEcranPhysiquesActuelles } from '../render.js';
+import {
+  statsCoucheStatique, statsCanvasVoile, dimensionsEcranPhysiquesActuelles,
+  // `D-23` : échelle forcée + échelle naturelle, lues au même endroit unique
+  // que le rendu les applique — l'instrument ne recalcule rien de son côté.
+  etatEchelleRendu,
+} from '../render.js';
 
 // Exporté pour servir de valeur par défaut à creerOrchestrateurGrotte()
 // (main.js) : les tests headless qui construisent l'orchestrateur sans
@@ -163,6 +168,7 @@ export function creerMoniteurPerf({ document, search, peripheriqueActifInitial =
       ecartHeroY: { moyenne: moyenne(ecartsY), min: ecartsY.length ? Math.min(...ecartsY) : 0, max: maximum(ecartsY) },
       entites: dernierEntites,
       ecranPhysique: dimensionsEcranPhysiquesActuelles(),
+      echelleRendu: etatEchelleRendu(),
       coucheStatique: statsCoucheStatique(),
       canvasVoile: statsCanvasVoile(),
       peripheriqueActif: peripheriqueCourant,

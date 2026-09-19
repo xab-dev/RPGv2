@@ -35,6 +35,76 @@ export function calculerEchelleEntiere(largeurEcran, hauteurEcran, resolution = 
   return Math.max(1, echelle);
 }
 
+// Échelle de RENDU (MT_echelle-debug_2026-09-19, `D-23`) : l'échelle
+// naturelle ci-dessus, sauf si `?echelle=N` en impose une autre — auquel cas
+// elle la REMPLACE purement et simplement. Instrument de mesure : tant que
+// `echelleForcee` vaut null (le seul cas du jeu réel), cette fonction rend
+// exactement `calculerEchelleEntiere`, à laquelle elle délègue plutôt que de
+// refaire le calcul — deux formules qui pourraient diverger, c'est
+// précisément ce que le ticket interdit.
+//
+// Deux fonctions et non un paramètre de plus sur `calculerEchelleEntiere` :
+// la présentation à l'écran (`calculerRectanglePresentation` juste dessous)
+// doit rester sur l'échelle NATURELLE quoi qu'il arrive — c'est ce qui fait
+// que la boîte affichée ne bouge pas, que le navigateur agrandit lui-même
+// l'image plus petite, et que le hit-test tactile tombe au même endroit
+// logique avec et sans le paramètre. Une échelle forcée est par ailleurs
+// autorisée à être décimale, ce que le nom "entière" démentirait.
+export function calculerEchelleRendu(largeurEcran, hauteurEcran, resolution = RESOLUTION_LOGIQUE, echelleForcee = null) {
+  if (echelleForcee !== null && echelleForcee !== undefined) return echelleForcee;
+  return calculerEchelleEntiere(largeurEcran, hauteurEcran, resolution);
+}
+
+// LA dérivation de l'échelle à partir d'un canvas déjà dimensionné — seul
+// endroit où elle est écrite. Les calques (statique, obscurité, paupières)
+// ne reçoivent jamais l'échelle : ils la relisent ici, sur la largeur du
+// canvas qu'ils accompagnent. C'est ce qui rend vraie la phrase du ticket
+// "tous les calques en dérivent : aucun calque ne recalcule sa taille de son
+// côté", et ce qui ferme la porte au diagnostic "dialogues invisibles"
+// (SD_dialogues-invisibles_2026-09-15) sous échelle forcée.
+export function echelleDepuisCanvas(largeurCanvas, resolution = RESOLUTION_LOGIQUE) {
+  return largeurCanvas / resolution.largeur;
+}
+
+// Dimensions du canvas hors-écran pour un écran donné. Pure (donc testable
+// sans DOM, alors que `ajusterCanvasLogiquePhysique` ne l'est pas) : c'est
+// elle qui porte le contrat de non-régression du ticket — sans échelle
+// forcée, elle rend exactement 480·f x 270·f, la formule d'avant, au pixel
+// près.
+//
+// L'échelle rendue est celle RELUE sur la largeur arrondie, jamais celle
+// demandée : un canvas ne peut pas faire 1584,000000002 px de large, et
+// c'est la largeur réelle du canvas que tous les calques liront ensuite. La
+// hauteur dérive de cette même échelle effective, pour que l'image ne soit
+// jamais étirée dans un sens et pas dans l'autre.
+export function dimensionnerCanvasRendu(largeurEcran, hauteurEcran, echelleForcee = null, resolution = RESOLUTION_LOGIQUE) {
+  const demandee = calculerEchelleRendu(largeurEcran, hauteurEcran, resolution, echelleForcee);
+  const largeur = Math.max(1, Math.round(resolution.largeur * demandee));
+  const echelle = echelleDepuisCanvas(largeur, resolution);
+  return { echelle, largeur, hauteur: Math.max(1, Math.round(resolution.hauteur * echelle)) };
+}
+
+// Échelle forcée courante : une variable de module, posée une seule fois au
+// boot par main.js (qui lit `location.search` via debug_perf.js#
+// lireEchelleForcee) — render.js ne lit jamais `location` lui-même, il doit
+// rester importable depuis Node. null = le jeu réel, comportement d'avant.
+let echelleForceeRendu = null;
+
+export function definirEchelleForcee(echelle) {
+  echelleForceeRendu = typeof echelle === 'number' && Number.isFinite(echelle) && echelle > 0 ? echelle : null;
+}
+
+// Accesseur de lecture seule pour le relevé `?debug=fps` (ui/hud_debug.js) —
+// jamais appelé par le rendu. Les deux chiffres côte à côte sont ce que
+// `A-05` demande de noter à chaque échelle.
+export function etatEchelleRendu() {
+  const { largeurPhysique, hauteurPhysique } = dimensionsEcranPhysiques();
+  return {
+    forcee: echelleForceeRendu,
+    naturelle: calculerEchelleEntiere(largeurPhysique, hauteurPhysique),
+  };
+}
+
 // Rectangle (en pixels PHYSIQUES du canvas visible) où l'image logique mise
 // à l'échelle est centrée — le reste du canvas reste en bandes noires
 // (letterboxing), déjà peintes par la couleur de fond du canvas.
@@ -141,15 +211,17 @@ export function dimensionsEcranPhysiquesActuelles() {
 // chaque frame (pas seulement au redimensionnement) : `ctx.setTransform`
 // remplace l'état plutôt que de l'accumuler, donc rejouer la même valeur
 // est sans risque et protège contre un `save`/`restore` déséquilibré ailleurs.
+// `D-23` : seul endroit de tout le rendu qui consulte l'échelle forcée. Tout
+// le reste (calques, HUD, dialogue, hit-test) n'en entend jamais parler —
+// soit il écrit en unités logiques sous le repère posé ici, soit il relit
+// l'échelle sur la largeur du canvas (echelleDepuisCanvas).
 function ajusterCanvasLogiquePhysique(ctx) {
   const { largeurPhysique, hauteurPhysique } = dimensionsEcranPhysiques();
-  const echelle = calculerEchelleEntiere(largeurPhysique, hauteurPhysique);
-  const largeurCanvas = RESOLUTION_LOGIQUE.largeur * echelle;
-  const hauteurCanvas = RESOLUTION_LOGIQUE.hauteur * echelle;
+  const { echelle, largeur, hauteur } = dimensionnerCanvasRendu(largeurPhysique, hauteurPhysique, echelleForceeRendu);
   const canvas = ctx.canvas;
-  if (canvas.width !== largeurCanvas || canvas.height !== hauteurCanvas) {
-    canvas.width = largeurCanvas;
-    canvas.height = hauteurCanvas;
+  if (canvas.width !== largeur || canvas.height !== hauteur) {
+    canvas.width = largeur;
+    canvas.height = hauteur;
   }
   ctx.setTransform(echelle, 0, 0, echelle, 0, 0);
 }
@@ -294,7 +366,7 @@ function construireCoucheStatique(scene, decor, echelle, signaturePortes, estFla
 // ci-dessus pour le même patron. Reçoit { dureeMs } exactement quand le
 // calque est effectivement reconstruit, jamais sur un simple recadrage.
 function dessinerCoucheStatique(ctx, scene, decor, camera, estFlagActif, visuelsTuiles, surRecalcul) {
-  const echelle = ctx.canvas.width / RESOLUTION_LOGIQUE.largeur;
+  const echelle = echelleDepuisCanvas(ctx.canvas.width);
   const signature = signaturePortesScene(scene, estFlagActif);
   const fenetre = selectionnerTuilesVisibles(camera, RESOLUTION_LOGIQUE, scene.tileSize);
 
@@ -611,7 +683,7 @@ export function dessinerObscurite(ctx, { scene, camera, follet, rayonLumiereFoll
   // au lieu de recalculer le facteur une 2ᵉ fois indépendamment — une seule
   // définition du facteur par frame (MT_rendu-net_2026-09-15, point 5).
   const { width: largeur, height: hauteur } = ctx.canvas;
-  const echelle = largeur / RESOLUTION_LOGIQUE.largeur;
+  const echelle = echelleDepuisCanvas(largeur);
 
   // Calque voile à la MÊME taille physique que la scène, avec le même repère
   // logique : ses propres dessins (dégradés, arcs) sortent alors nets à la
@@ -760,7 +832,7 @@ const RATIO_COEUR_PAUPIERE = 0.7;
 export function dessinerPaupieres(ctx, ouverture) {
   if (ouverture >= 1) return;
   const { width: largeur, height: hauteur } = ctx.canvas;
-  const echelle = largeur / RESOLUTION_LOGIQUE.largeur;
+  const echelle = echelleDepuisCanvas(largeur);
 
   const calque = obtenirCanvasPaupieres(largeur, hauteur).getContext('2d');
   calque.setTransform(echelle, 0, 0, echelle, 0, 0);

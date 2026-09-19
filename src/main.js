@@ -22,6 +22,7 @@ import { genererDecor } from './decor.js';
 import {
   creerBoucle, dessinerScene, dessinerObscurite, dessinerPaupieres, dessinerTextesFlottants, presenter,
   RESOLUTION_LOGIQUE, calculerRectanglePresentation, versCoordonneesLogiques, AURA_TRAIT,
+  definirEchelleForcee,
 } from './render.js';
 import { creerStoreIndexedDB } from './storage_indexeddb.js';
 import {
@@ -72,6 +73,7 @@ import { dessinerHud } from './ui/hud.js';
 import { dessinerHudHints } from './ui/hud_hints.js';
 import { dessinerDialogue } from './ui/dialogue_box.js';
 import { creerMoniteurPerf, creerMoniteurInactif } from './ui/hud_debug.js';
+import { lireEchelleForcee } from './debug_perf.js';
 
 // Provisoires, non validés en jeu par Xav — seuils uniques, commentés ici.
 // VITESSE_HERO_PX_S est retirée en Palier C (specs/04_maison-interieur.md
@@ -1991,6 +1993,18 @@ export async function demarrerJeu() {
   window.addEventListener('keydown', armerAudioUneFois, { once: true });
   window.addEventListener('pointerdown', armerAudioUneFois, { once: true });
   window.addEventListener('touchstart', armerAudioUneFois, { once: true });
+
+  // MT_echelle-debug_2026-09-19 (`D-23`) : `?echelle=N` force l'échelle de
+  // rendu — mesure seule, INDÉPENDANTE de `?debug=fps` (les deux se cumulent,
+  // et c'est bien le but : un relevé par échelle, cf. `A-05`). Lu ici et
+  // nulle part ailleurs, une seule fois au boot ; sans le paramètre,
+  // `definirEchelleForcee(null)` laisse render.js exactement dans son état
+  // d'avant. Une valeur invalide est ignorée et signalée plutôt que remplacée
+  // par un repli plausible, qui ferait mesurer autre chose que ce que Xav
+  // croit avoir demandé.
+  const echelleDebug = lireEchelleForcee(window.location.search);
+  if (echelleDebug.avertissement) console.warn(echelleDebug.avertissement);
+  definirEchelleForcee(echelleDebug.echelle);
 
   // MT_mesure-saccades_2026-09-19 : instrument de debug perf, actif SEULEMENT
   // sous `?debug=fps` (estDebugFpsActif dans debug_perf.js) — inactif sinon,

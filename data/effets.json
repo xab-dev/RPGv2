@@ -12,6 +12,27 @@
     "offset_y_px": 6
   },
   {
+    "id": "effet_vol_follet",
+    "type": "vol",
+    "raideur": 26,
+    "amortissement": 5.5,
+    "amplitude_px": 1.6,
+    "periode_ms": 1150,
+    "seuil_saut_px": 60
+  },
+  {
+    "id": "effet_sillage_follet",
+    "type": "particules",
+    "visuel": "visuel_sillage_follet",
+    "duree_ms": 420,
+    "intervalle_px": 9,
+    "alpha_depart": 0.5,
+    "echelle_depart": 0.9,
+    "echelle_fin": 0.2,
+    "decalage_lateral_px": 1.5,
+    "offset_y_px": 0
+  },
+  {
     "id": "effet_texte_gain",
     "type": "texte",
     "duree_ms": 900,

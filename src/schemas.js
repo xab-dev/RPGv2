@@ -975,7 +975,10 @@ export const SCHEMAS = {
       // données plutôt que deviné à la présence d'un champ : sans ça, une
       // faute de frappe sur `intervalle_px` ferait passer la poussière pour un
       // effet d'un autre genre, et la validation ne dirait rien.
-      const TYPES = ['particules', 'texte'];
+      // `vol` (`D-36`) : un décalage purement visuel, sans silhouette ni
+      // gabarit — d'où un 3ᵉ jeu de champs. Ajouter un genre d'effet reste
+      // ce qu'il était : une branche de plus ici, et rien ailleurs.
+      const TYPES = ['particules', 'texte', 'vol'];
       if (!TYPES.includes(entry.type)) {
         erreurs.push(`${path} > type doit valoir ${TYPES.map((t) => `"${t}"`).join(' ou ')}`);
         return erreurs;
@@ -985,6 +988,20 @@ export const SCHEMAS = {
       // invisible, quel que soit son genre.
       const positifs = ['duree_ms'];
       const positifsOuNuls = [];
+      if (entry.type === 'vol') {
+        // Ressort sous-amorti : une raideur ou un amortissement négatif
+        // ferait diverger la silhouette à l'infini, loin de son follet.
+        for (const champ of ['raideur', 'amortissement', 'periode_ms', 'seuil_saut_px']) {
+          if (typeof entry[champ] !== 'number' || entry[champ] <= 0) {
+            erreurs.push(`${path} > ${champ} doit être un nombre strictement positif`);
+          }
+        }
+        if (typeof entry.amplitude_px !== 'number' || entry.amplitude_px < 0) {
+          erreurs.push(`${path} > amplitude_px doit être un nombre positif ou nul`);
+        }
+        return erreurs;
+      }
+
       if (entry.type === 'particules') {
         // Un intervalle nul ferait une boucle d'émission sans fin dans
         // avancerPoussiere().

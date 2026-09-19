@@ -417,7 +417,7 @@ export function dessinerScene(ctx, {
   // src/poussiere.js (pur) et déjà résolues en visuel par l'appelant — ce
   // fichier ne connaît ni le module, ni visuels.json par id. Défaut vide :
   // un appelant qui ne fournit rien dessine exactement comme avant.
-  poussiere = null,
+  poussiere = null, sillage = null,
   // MT_mesure-saccades_2026-09-19, piste 1 : cf. dessinerCoucheStatique plus
   // haut — `undefined` par défaut, jamais fourni par le jeu réel hors
   // `?debug=fps` (ui/hud_debug.js).
@@ -547,6 +547,19 @@ export function dessinerScene(ctx, {
   }
 
   dessinerVisuel(ctx, heroVisuel, hero.x - camera.x, hero.y - camera.y, { teinte: heroTeinte });
+
+  // Sillage du follet (`D-36`) : même mécanisme que la poussière, dessiné
+  // juste avant la silhouette pour passer dessous. render.js ne sait pas que
+  // c'est un follet : il reçoit un visuel, une teinte et des bouffées.
+  if (sillage && sillage.bouffees.length > 0) {
+    for (const b of sillage.bouffees) {
+      dessinerVisuel(ctx, sillage.visuel, b.x - camera.x, b.y - camera.y, {
+        teinte: sillage.teinte,
+        alpha: b.alpha,
+        echelle: b.echelle,
+      });
+    }
+  }
 
   if (follet) {
     // `D-34` : `follet.echelle` est résolue par main.js (échelle de jeu en

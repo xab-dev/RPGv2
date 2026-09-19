@@ -31,6 +31,7 @@ import {
 } from './save.js';
 import { dessinerVisuel, echelleVisuel, TAILLE_REFERENCE_FOLLET_PX } from './visuels.js';
 import { creerPoussiere, avancerPoussiere, bouffeesVisibles, viderPoussiere } from './poussiere.js';
+import { creerVol, avancerVol } from './vol_follet.js';
 import {
   creerTextesFlottants, emettreTexte, avancerTextesFlottants, textesVisibles, viderTextesFlottants,
 } from './texte_flottant.js';
@@ -255,6 +256,22 @@ export function creerOrchestrateurGrotte({
   const effetPoussiere = registre.obtenir('effets', 'effet_poussiere');
   const visuelPoussiere = registre.obtenir('visuels', effetPoussiere.visuel);
   const poussiere = creerPoussiere(effetPoussiere);
+
+  // `D-36` (proposition) : le follet « aérien ». Deux effets, tous deux
+  // PUREMENT VISUELS et tous deux en données.
+  //
+  // `vol` décale la SILHOUETTE autour de la position logique : celle-ci, son
+  // aura, sa distance d'engagement et sa lumière ne bougent jamais — sinon
+  // l'obscurité scintillerait au rythme du vol.
+  //
+  // `sillage` est une 2ᵉ instance de `poussiere.js`, sans une ligne de
+  // système nouvelle : le module ne connaît ni le héros ni sa forme, il ne
+  // connaît qu'une position et une distance parcourue. C'est exactement ce
+  // que la règle du 19/09 promettait, vérifié ici sur un second cas d'usage.
+  let volFollet = creerVol(registre.obtenir('effets', 'effet_vol_follet'));
+  const effetSillage = registre.obtenir('effets', 'effet_sillage_follet');
+  const visuelSillage = registre.obtenir('visuels', effetSillage.visuel);
+  const sillageFollet = creerPoussiere(effetSillage);
 
   // MT_texte-flottant_2026-09-19 (`D-05`) : même patron exactement — réglages
   // en données (tous PROVISOIRES, à régler au ressenti par Xav) et réserve
@@ -514,6 +531,8 @@ export function creerOrchestrateurGrotte({
     // qu'on quitte n'a rien à faire dans la suivante (le héros y est
     // téléporté) — la réserve est vidée sur place, jamais réallouée.
     viderPoussiere(poussiere);
+    viderPoussiere(sillageFollet);
+    volFollet = creerVol(registre.obtenir('effets', 'effet_vol_follet'));
     // `D-05`, même raison exactement : un « +1 Bois » gagné dans la scène
     // qu'on quitte n'a rien à faire flottant dans la suivante.
     viderTextesFlottants(textesFlottants);
@@ -1496,6 +1515,24 @@ export function creerOrchestrateurGrotte({
       save.monde.heure = avancerHeure(save.monde.heure, deltaMs);
       etatModifie = true;
 
+      // Vol et sillage du follet (`D-36`) : dans ce bloc, donc gelés sous UI
+      // par le point de décision unique, comme la poussière du héros. Le
+      // sillage naît à la SILHOUETTE (là où l'œil voit le follet), et sa
+      // densité suit la distance parcourue par elle.
+      if (follet) {
+        const avantX = volFollet.rendu ? volFollet.rendu.x : follet.x;
+        const avantY = volFollet.rendu ? volFollet.rendu.y : follet.y;
+        volFollet = avancerVol(volFollet, { cibleX: follet.x, cibleY: follet.y, deltaMs });
+        const parcourue = Math.hypot(volFollet.rendu.x - avantX, volFollet.rendu.y - avantY);
+        avancerPoussiere(sillageFollet, {
+          x: volFollet.rendu.x,
+          y: volFollet.rendu.y + effetSillage.offset_y_px,
+          distancePx: parcourue,
+          deltaMs,
+          emettre: true,
+        });
+      }
+
       // Apparitions nocturnes (palier B) : APRÈS l'avance de l'horloge, pour
       // que la phase lue soit celle de cette frame-ci — sinon la première
       // frame de la nuit ferait encore apparaître au crépuscule, et la
@@ -1853,8 +1890,10 @@ export function creerOrchestrateurGrotte({
       heroTeinte: companionActif ? companionActif.render.couleur : COULEUR_HERO_NEUTRE,
       monstres: monstresAffiches,
       follet: follet && companionActif ? {
-        x: follet.x,
-        y: follet.y,
+        // `D-36` : la SILHOUETTE suit le vol ; tout le reste (aura, lumière,
+        // engagement) continue de lire `follet.x/y`, la position logique.
+        x: volFollet.rendu ? volFollet.rendu.x : follet.x,
+        y: volFollet.rendu ? volFollet.rendu.y : follet.y,
         visuel: registre.obtenir('visuels', companionActif.render.visuel),
         couleur: companionActif.render.couleur,
         echelle: echelleFolletAffichee(companionActif),
@@ -1868,6 +1907,11 @@ export function creerOrchestrateurGrotte({
       fantome: fantomeAffiche,
       // Visuel résolu ici (main.js a le registre), jamais par render.js.
       poussiere: { visuel: visuelPoussiere, bouffees: bouffeesVisibles(poussiere) },
+      // Sillage du follet : même calque, même mécanisme, teinté à la couleur
+      // du compagnon — render.js ne sait pas qu'il s'agit du follet.
+      sillage: companionActif
+        ? { visuel: visuelSillage, teinte: companionActif.render.couleur, bouffees: bouffeesVisibles(sillageFollet) }
+        : null,
       // `undefined` (jamais un no-op) hors `?debug=fps` — même raison que
       // `surFrame` ci-dessous : render.js ne lit `performance.now()` que si
       // ce callback est fourni.

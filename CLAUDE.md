@@ -727,3 +727,45 @@ Deux replis si besoin : `rpg_v2_save(5).json` est aussi en pleine nuit au niveau
 au chargement) ; `rpg_v2_save(8).json` est au niveau 6 mais **de jour** — il faudrait y jouer ~5 minutes pour
 atteindre la nuit. **Il n'existe aucun paramètre d'URL pour forcer l'heure** : `?debug=fps` et `?echelle=N` sont
 les deux seuls, et ni l'un ni l'autre ne touche à l'horloge. Le dire plutôt que d'en ajouter un à la sauvette.
+
+### Ticket 9 — `D-36` : le follet « aérien » (proposition)
+
+**C'est une proposition, et le dernier commit de la nuit : il se retire seul** (`git revert`), sans toucher à ce qui
+précède. Trois morceaux, tous *provisoires*, tous en données.
+
+**1. Le vol** (`src/vol_follet.js`, pur). Un **ressort sous-amorti** : la silhouette court après la position logique
+et la **dépasse** aux changements de direction — c'est ce dépassement qui fait « vif », là où un suivi parfait fait
+« collé ». Par-dessus, un vol stationnaire à deux périodes volontairement non multiples l'une de l'autre, sans quoi
+l'œil verrait tout de suite une figure fermée. Mesuré par le test : écart maximal **13,9 px** sur dix secondes
+d'orbite, dépassement de **6,1 px** au démarrage, et **recollage net** au-delà de 60 px (entrée en scène : le follet
+ne traverse pas la carte en volant).
+
+**La règle que ce ticket devait surtout ne pas casser** : ce décalage est **purement visuel**. La position logique,
+l'aura, la distance d'engagement et la lumière lisent toujours `follet.x/y` — sinon l'obscurité **scintillerait** au
+rythme du vol, ce qui serait l'exact contraire de l'effet cherché. Le test relit le source du module pour vérifier
+qu'il ne connaît ni « aura », ni « lumiere », ni « engagement », ni « visuel ».
+
+**2. Les ornements**, et ici j'ai choisi la voie la plus simple. Plutôt qu'une silhouette supplémentaire dessinée
+par-dessus (qui aurait demandé un appel de plus à chaque endroit où un follet apparaît, et donc du code dans
+`intro.js`), les trois primitives fines — un halo très doux, deux filaments — sont **dans l'entrée de
+`visuels.json` de chaque follet**. Conséquence directe : elles apparaissent **partout où la silhouette est
+dessinée**, y compris sur les trois follets de la cinématique du choix et sur l'icône du HUD, **sans qu'un seul
+appelant change**. C'est exactement le « uniquement par les visuels partagés » du ticket. Contrepartie assumée,
+prévue par le ticket : elles sont **statiques** (`dessinerVisuel` n'anime pas une primitive isolément, et ce ticket
+n'a pas à lui apprendre) — c'est le **vol** qui met le tout en mouvement.
+
+**3. Le sillage** : une **2ᵉ instance de `poussiere.js`**, avec sa propre entrée d'effets et son propre visuel. Pas
+une ligne de système nouvelle. C'était l'engagement pris le 19/09 en écrivant ce module (« il ne connaît ni le
+héros, ni sa forme, ni son rayon — seulement une position et une distance parcourue ») : il tient, vérifié sur un
+**second cas d'usage réel**. Une différence de réglage, et elle est voulue : le sillage **rétrécit** en s'éteignant
+(0,9 → 0,2) là où la poussière du héros s'étale — une étincelle qui meurt, pas un nuage qui retombe. Il naît à la
+**silhouette** (là où l'œil voit le follet), et sa densité suit la distance qu'elle parcourt.
+
+**Un ajout au schéma, minime** : `effets.json` accepte un 3ᵉ genre, `vol`, avec son jeu de champs
+(raideur, amortissement, amplitude, période, seuil de saut) — une raideur ou un amortissement négatif ferait
+diverger la silhouette à l'infini, loin de son follet, et c'est le genre de chose qu'on veut voir tomber au boot.
+
+**Interdits respectés** : `intro.js` n'est pas touché par ce ticket (le test le vérifie sur son source), aucune
+valeur de jeu du follet ne bouge, et aucun effet ne dépend de sa forme — il reste un visuel remplaçable, comme le
+héros. Le reste de la Grotte (décor, lumières, leviers) : **rien cette nuit**, comme demandé. Suite verte,
+**78 fichiers**. Verdict entièrement à l'œil de Xav : `V-20`.

@@ -162,9 +162,9 @@ export function dessinerHud(ctx, {
   ctx.save();
 
   // MT_hud-ligne-haute_2026-09-19 : UNE ligne en haut, pleine largeur, à la
-  // place des deux cartouches de la colonne de gauche. Le fond couvre toute
-  // la largeur (décision Xav) mais le CONTENU s'arrête avant le bouton MENU
-  // tactile — cf. hud_layout.js#BANDEAU_CONTENU_FIN_X.
+  // place des deux cartouches de la colonne de gauche. Depuis `D-17` (le
+  // bouton MENU tactile est descendu sous le bandeau), le CONTENU va lui
+  // aussi jusqu'au bord : `Nv. N` y est ancré, à une seule position.
   ctx.fillStyle = 'rgba(0,0,0,0.55)';
   ctx.fillRect(BANDEAU_HAUT.x, BANDEAU_HAUT.y, BANDEAU_HAUT.largeur, BANDEAU_HAUT.hauteur);
 
@@ -226,13 +226,19 @@ export function dessinerHud(ctx, {
     // au blanc. Aucun son (§À faire), aucun état tenu ici — `eclatNiveau` est
     // un ratio 0..1 fourni par main.js.
     const intensite = Math.max(0, Math.min(1, eclatNiveau));
-    ctx.textAlign = 'left';
+    // `D-17` : aligné à DROITE, sur le bord droit de sa zone. La zone est
+    // désormais ancrée au bord de l'écran (hud_layout.js), mais un texte
+    // aligné à gauche dedans flotterait quand même : « Nv.7 » laisserait un
+    // trou que « Nv.50 » n'a pas. Aligné à droite, le nombre grandit vers la
+    // gauche et le bord droit ne bouge jamais — c'est ce que « collé au bord
+    // droit » veut dire.
+    ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
     ctx.font = '9px monospace';
     ctx.fillStyle = intensite > 0 ? COULEUR_ECLAT_NIVEAU : '#fff';
     ctx.fillText(
       `${i18n.t('hud.niveau_prefixe')}${niveau}`,
-      zones.niveau.x,
+      zones.niveau.x + zones.niveau.largeur,
       zones.niveau.y + zones.niveau.hauteur / 2,
     );
   }

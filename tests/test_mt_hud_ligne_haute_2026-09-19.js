@@ -156,8 +156,11 @@ function seChevauchent(a, b) {
 }
 
 // --- 6. Le bandeau ne recouvre aucun contrôle tactile ---------------------
-// La fiche l'exige. Le fond du bandeau est plein écran, mais son CONTENU
-// s'arrête avant le bouton MENU tactile.
+// La fiche l'exige. Ce bloc passait avant `D-17` parce que le contenu du
+// bandeau s'arrêtait à 430 pour éviter le bouton MENU ; il passe depuis pour
+// une meilleure raison — le bouton est descendu SOUS le bandeau, et le
+// contenu peut donc aller jusqu'au bord. La garantie testée, elle, est la
+// même, et c'est pour ça qu'on la garde ici telle quelle.
 {
   const zones = rectangles({ follet: true, survie: true, niveau: true }).map(([, r]) => r);
   const cercles = [...boutonsTactiles(), { ...JOYSTICK, rayon: JOYSTICK.rayonZone }];

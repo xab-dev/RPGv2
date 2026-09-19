@@ -37,7 +37,20 @@ export const BOUTON_CONSOMMABLE = { cx: 335, cy: 195, rayon: 20, verbe: 'consume
 // Juste au-dessus du joystick (§3), assez loin de rayonZone pour ne pas se
 // chevaucher visuellement (distance centre-centre 70px > 45+20).
 export const BOUTON_INTERACT = { cx: 70, cy: 130, rayon: 20, verbe: 'interact' };
-export const BOUTON_MENU = { cx: 455, cy: 20, rayon: 16, verbe: 'menu' };
+// `D-17` : descendu SOUS le bandeau (cy 20 -> 38, donc y 22..54, deux pixels
+// sous le bandeau qui finit à 20). Il était à moitié dessus — verdict de
+// `V-02` par Xav sur l'A04. Deux gains, tous deux dans la décision verrouillée
+// du 19/09 : le pouce l'atteint mieux, et le bandeau redevient libre sur
+// toute sa largeur, ce qui permet de coller `Nv. N` au bord droit.
+//
+// Il croise en y la bannière d'indice de commande (26..44), mais jamais en x :
+// la bannière est centrée (hud_hints.js) et celle-ci est au bord droit — le
+// test le prouve avec les vraies chaînes des deux locales plutôt que de
+// l'espérer. Le relevé `?debug=fps`, lui, est un calque DOM en haut à
+// GAUCHE de la fenêtre (ui/hud_debug.js) : il ne peut pas le rencontrer.
+//
+// PROVISOIRE : jamais validé au pouce par Xav (`V-23`).
+export const BOUTON_MENU = { cx: 455, cy: 38, rayon: 16, verbe: 'menu' };
 
 // D-20 B : `data/visuels.json#visuel_icone_main` (et toute icône d'arme
 // future) est dessinée dans une boîte de ce côté-là ; chaque appelant calcule
@@ -72,11 +85,11 @@ export const BANDEAU_HAUT = { x: 0, y: 0, largeur: 480, hauteur: 20 };
 
 const BANDEAU_PADDING = 6;
 const BANDEAU_ECART = 8;
-// Le bandeau est plein écran en LARGEUR (décision Xav), mais son CONTENU
-// s'arrête ici pour ne jamais passer sous le bouton MENU tactile
-// (BOUTON_MENU : cx 455, rayon 16, donc à partir de x = 439) — la fiche
-// exige de ne recouvrir aucun contrôle tactile.
-const BANDEAU_CONTENU_FIN_X = 430;
+// `BANDEAU_CONTENU_FIN_X` (430) a disparu avec `D-17` : il existait pour que
+// le contenu du bandeau ne passe jamais sous le bouton MENU tactile, qui
+// mordait sur le bandeau. Le bouton étant descendu, le bandeau est libre sur
+// toute sa largeur — c'était la moitié de la décision de Xav, et c'est ce qui
+// permet à `Nv. N` d'avoir UNE seule position, la même partout.
 
 const LARGEUR_FOLLET = 12;
 const LARGEUR_PV = 86;
@@ -84,10 +97,19 @@ const LARGEUR_ECLATS = 30;
 const LARGEUR_JAUGE_SURVIE = 50; // icône (6) + écart (4) + barre (40)
 const LARGEUR_NIVEAU = 30;
 
-// Rectangles du bandeau, de gauche à droite : follet · PV · éclats · faim ·
-// soif · Niv. N — puis l'espace restant, réservé aux buffs actifs (aucun
-// buff n'est affiché au HUD aujourd'hui, cf. journal : la zone est calculée
-// et testée, rien n'y est encore dessiné).
+// Rectangles du bandeau, dans l'ordre définitif de la décision verrouillée du
+// 19/09 : follet · PV · éclats · faim · soif · **buffs** · `Nv. N` collé au
+// bord droit.
+//
+// `D-17` corrige ici deux choses à la fois, et c'est la même : le niveau
+// n'est plus posé à la suite des autres mais **ancré à droite**, et les buffs
+// prennent tout ce qui reste entre la soif et lui. Avant, le niveau flottait
+// (sa position dépendait de la présence du follet et des jauges de survie) et
+// les buffs finissaient à 430 pour éviter le bouton MENU. Le bouton étant
+// descendu, il n'y a plus de raison de s'arrêter avant le bord.
+//
+// (Aucun buff n'est encore dessiné : la zone est calculée et testée, `D-13`
+// la remplira.)
 //
 // Les éléments optionnels (`follet`, `survie`, `niveau`) suivent la même
 // règle qu'avant : avant le premier calcul des stats (cinématique
@@ -116,14 +138,31 @@ export function elementsBandeauHaut({ follet = false, survie = false, niveau = f
     elements.faim = poser(LARGEUR_JAUGE_SURVIE, 8);
     elements.soif = poser(LARGEUR_JAUGE_SURVIE, 8);
   }
-  if (niveau) elements.niveau = poser(LARGEUR_NIVEAU, 10);
 
-  // Reste de la ligne : réservé aux buffs actifs. Jamais négatif, même si
-  // tous les éléments optionnels sont présents (vérifié par test).
+  // Bord droit du contenu : le bandeau entier, moins la marge. Le niveau s'y
+  // ancre, donc il ne bouge plus jamais — c'est « une seule position » de la
+  // décision de Xav, et c'est ce que le test vérifie en comparant un bandeau
+  // complet à un bandeau réduit.
+  const finContenu = BANDEAU_HAUT.x + BANDEAU_HAUT.largeur - BANDEAU_PADDING;
+  let finBuffs = finContenu;
+  if (niveau) {
+    elements.niveau = {
+      x: finContenu - LARGEUR_NIVEAU,
+      y: BANDEAU_HAUT.y + (BANDEAU_HAUT.hauteur - 10) / 2,
+      largeur: LARGEUR_NIVEAU,
+      hauteur: 10,
+    };
+    finBuffs = elements.niveau.x - BANDEAU_ECART;
+  }
+
+  // Ce qui reste entre la soif et le niveau : les buffs actifs. Jamais
+  // négatif, même si tous les éléments optionnels sont présents à la fois
+  // (vérifié par test) — un bandeau plein doit se dégrader en « pas de place
+  // pour les buffs », jamais en rectangle à l'envers.
   elements.buffs = {
     x,
     y: BANDEAU_HAUT.y + (BANDEAU_HAUT.hauteur - 12) / 2,
-    largeur: Math.max(0, BANDEAU_CONTENU_FIN_X - x),
+    largeur: Math.max(0, finBuffs - x),
     hauteur: 12,
   };
   return elements;

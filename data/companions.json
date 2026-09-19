@@ -6,7 +6,6 @@
     "synergie": "syn_feu",
     "echelle_jeu": 0.75,
     "rayon_aura": 40,
-    "lumiere": { "rayon": 40, "fondu_px": 6 },
     "rayon_lumiere": 110,
     "render": { "visuel": "visuel_follet_feu", "couleur": "#ff6a3d" }
   },
@@ -17,7 +16,6 @@
     "synergie": "syn_eau",
     "echelle_jeu": 0.75,
     "rayon_aura": 40,
-    "lumiere": { "rayon": 40, "fondu_px": 6 },
     "rayon_lumiere": 110,
     "render": { "visuel": "visuel_follet_eau", "couleur": "#3daaff" }
   },
@@ -28,7 +26,6 @@
     "synergie": "syn_terre",
     "echelle_jeu": 0.75,
     "rayon_aura": 40,
-    "lumiere": { "rayon": 40, "fondu_px": 6 },
     "rayon_lumiere": 110,
     "render": { "visuel": "visuel_follet_terre", "couleur": "#c2a23a" }
   }

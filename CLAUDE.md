@@ -310,7 +310,7 @@ ce qui touche au rendu est livré « tests verts, validation en jeu due »**, ja
 | 2 | `895390d` `D-32` héros : échelle 9 px | livré | lisibilité du héros jour **et** nuit, passages entre les arbres, couloir de la maison (`V-14`) |
 | 2 bis | `be83df2` `D-33` vitesse de base −25 % | livré | le ressenti au stick : plus petit **et** plus lent, est-ce que ça tient ? (`V-15`) |
 | 3 | `2f49092` `D-34` follet : échelle de jeu −25 % | livré | **partie neuve** : cinématique inchangée, puis l'élu qui rétrécit **pendant** que les deux autres s'éloignent (`V-16`) |
-| 4 | `9997cec` `D-35` lumière du follet (extérieur) | livré | **la nuit dehors** : l'effet nocturne est-il revenu sans rendre le jeu injouable ? Et **la Grotte n'a pas bougé** (`V-17`) |
+| 4 | ~~`9997cec` `D-35` lumière du follet~~ | **retiré** (`git revert`, Xav, 20/09) | plus rien à regarder : la lumière reste celle d'avant la nuit (110 px). `D-35` repasse à *ouvert* |
 | 5 | `f2f632b` `07-A` zones et tirage | livré | rien : aucun monstre en jeu à ce palier |
 | 6 | `65a80f1` `07-B` la nuit et le seuil | livré | les rôdeurs sortent-ils au bon endroit, au bon rythme ? Tout disparaît-il à l'aube ? (`V-18`) |
 | 7 | `ae5d2ea` `07-C` comportement | livré | errent-ils, poursuivent-ils, renoncent-ils ? **Aucun n'entre dans le Jardin** (`V-18`) |
@@ -324,18 +324,17 @@ ce qui touche au rendu est livré « tests verts, validation en jeu due »**, ja
 | Échelle du héros | `visuels.json#visuel_heros.echelle` | **0,643** (silhouette Ø 14,2 px, hitbox Ø 12,9) |
 | Base de vitesse | `stats_derivees.json` | **75** (95 px/s effectifs à agilité 5) |
 | Échelle de jeu du follet | `companions.json#echelle_jeu` | **0,75** |
-| Lumière du follet | `companions.json#lumiere` | **rayon 40, fondu 6** (110/71,5 en Grotte) |
+| ~~Lumière du follet~~ | ~~`companions.json#lumiere`~~ | **retirée** avec `D-35` : la lumière reste à 110 px partout |
 | Rythme d'apparition | `spawns.json#intervalle_ms` | **8 000** (plafond de 6 rempli en 48 s) |
 | Détection du rôdeur | `spawns.json#detection_tuiles` | **8 tuiles** |
 | Signal de la zone | `spawns.json#signal` | `#a24bd0`, alpha **0,16**, pulsation 5,2 s |
 | Vol du follet | `effets.json#effet_vol_follet` | raideur 26, amortissement 5,5, amplitude 1,6 px |
 | Rayon des monstres | `main.js#RAYON_MONSTRE_CHAOS_PX` | **8 px** |
 
-**Les `[OUVERT]` retenus par défaut**, tous inscrits au suivi : `Q-28` (vitesse ×0,75) · `Q-30` (lumière à
-l'intérieur de la maison — **réécrite** : il n'existe pas de scène d'intérieur, l'intérieur reçoit donc
-forçément la base réduite) · `Q-31` (le toit garde son ancien rayon de lumière) · `Q-32` (détection à 8 tuiles).
+**Les `[OUVERT]` retenus par défaut**, tous inscrits au suivi : `Q-28` (vitesse ×0,75) · `Q-32` (détection à 8 tuiles).
+`Q-30` et `Q-31` sont tombées avec le revert de `D-35` — `Q-30` retrouve sa formulation d'origine.
 
-**Ouvert au suivi cette nuit** : `D-32` à `D-36` (les cinq tickets, quatre clos, `D-36` proposé) · **`D-37`**
+**Ouvert au suivi cette nuit** : `D-32` à `D-36` (les cinq tickets — trois clos, `D-35` **revertée donc rouverte**, `D-36` proposé) · **`D-37`**
 (l'engagement du follet ne suit pas la définition de Xav, et `rayon_aura` n'a aucun effet de jeu — constaté, **non
 corrigé**, hors périmètre) · **`D-38`** (deux monstres du même type étaient un seul monstre — **corrigé** dans
 `07-B`, sans quoi le palier livrait une fonctionnalité fausse) · `Q-26` à `Q-32` · `V-14` à `V-20`. `A-03` close.
@@ -566,48 +565,22 @@ follet ne déplace pas le centre du test.
 boot d'une échelle dégénérée, orbite inchangée **au pixel**, continuité de la frontière frame par frame, et
 non-régression de la cinématique. Suite verte, **72 fichiers**.
 
-### Ticket 4 — `D-35` : la lumière du follet, dehors seulement
+### Ticket 4 — `D-35` : la lumière du follet — **retirée** (`git revert`, 20/09)
 
-**Un profil, deux endroits où il peut vivre.** `{ rayon, fondu_px }` est désormais une donnée à part entière :
-le compagnon porte sa **base** (`companions.json#lumiere`), une scène peut déclarer **le sien**
-(`scenes.json#lumiere_follet`). `companion.js#resoudreProfilLumiere(companion, scene)` tranche — scène d'abord,
-base ensuite — et c'est la seule lecture : `render.js` ne connaît ni l'un ni l'autre catalogue, il reçoit un rayon
-et une largeur de fondu.
+Le commit `9997cec` a été **reverté par Xav** au matin. La lumière du follet reste donc celle d'avant la nuit :
+**rayon 110 px, cœur net jusqu'à 35 %**, partout, dehors comme en Grotte. Ce qui disparaît avec elle : le champ
+`lumiere` des compagnons, le `lumiere_follet` des scènes, `companion.js#resoudreProfilLumiere`, le paramètre de
+fondu de `dessinerObscurite` et le test de non-régression de la Grotte. Au suivi : **`D-35` repasse à *ouvert***,
+`V-17` et `Q-31` (le rayon d'effacement du toit) tombent, `Q-30` retrouve sa formulation d'origine.
 
-| | rayon | fondu | cœur net |
-|---|---|---|---|
-| Avant ce ticket, partout | 110 px | 71,5 px | jusqu'à 38,5 px (35 %) |
-| **Base du follet** (donc la Région Maison) | **40 px** | **6 px** | jusqu'à 34 px (85 %) |
-| Les deux salles de la Grotte (déclaré) | 110 px | 71,5 px | jusqu'à 38,5 px (35 %) |
+**Ce que le ticket avait trouvé en chemin reste vrai**, et mérite d'être gardé en tête le jour où le sujet se rouvre :
+il **n'existe pas de scène d'intérieur de maison** (l'intérieur vit dans `scene_maison_exterieur`, sous un toit qui
+s'efface), donc lui donner une lumière différente de l'extérieur demanderait un profil **par zone** — et
+`rayon_lumiere` sert aussi au rayon d'effacement du toit, réglé à l'œil par `D-21`.
 
-40 px, c'est **exactement le rayon de l'aura** d'aujourd'hui, comme le demandait le ticket — mais dans un champ
-`lumiere` **distinct**, initialisé à cette valeur : les deux divergeront. Dehors, le disque éclairé passe donc de
-≈ 3,4 tuiles de rayon à **1,25 tuile**. C'est drastique, et c'est le principe : partir du minimum, faire grandir
-ensuite. La teinte chaude et la douceur à l'intérieur du disque sont conservées telles quelles.
-
-**Le critère d'acceptation est un test, pas une promesse.** `test_d35_lumiere_follet_2026-09-19.js` vérifie que dans
-les **deux salles de la Grotte**, pour **les trois follets**, le rayon vaut 110 px et le cœur net s'arrête à 35 % —
-des nombres **recopiés en dur dans le test**, jamais relus depuis les données : un test qui relirait le catalogue
-validerait n'importe quelle dérive future. Il vérifie aussi qu'un compagnon sans champ `lumiere` (catalogue
-d'avant) dessine exactement comme avant, qu'un profil incohérent (fondu plus large que le rayon) tombe **au boot**
-plutôt que de nuit en jeu, et qu'une scène de plus déclare le sien sans une ligne de code.
-
-**Deux choses trouvées en chemin, laissées en l'état.**
-
-- **Il n'existe pas de scène d'intérieur de maison.** Le jeu compte trois scènes : deux salles de Grotte et
-  `scene_maison_exterieur`. L'intérieur *est* dans l'extérieur, avec un toit qui s'efface à l'approche. La valeur
-  `[OUVERT]` que le ticket prévoyait (« l'intérieur garde les valeurs d'aujourd'hui ») était donc **impossible à
-  appliquer sans inventer un profil par zone**, ce que le ticket ne demande pas. L'intérieur reçoit la base réduite.
-  `Q-30` réécrite en conséquence : la question qui reste est « est-ce jouable ? », et elle se répond en jouant.
-- **Le toit garde son ancien rayon.** `RAYON_EFFACEMENT_TOIT` lit `rayon_lumiere` (110) × 1,125, réglé à l'œil par
-  `D-21` il y a quelques heures. Le brancher sur les 40 px nouveaux aurait fait un toit qui ne se soulève presque
-  plus — une décision de gameplay que ce ticket n'a pas à prendre, et que ses interdits n'évoquent pas. Conséquence
-  à assumer : `rayon_lumiere` ne décrit plus la lumière, il ne sert plus qu'au toit (et de repli). Ligne **`Q-31`**
-  ouverte, trois issues proposées.
-
-**Rien d'autre n'a bougé** : ni les lumières de scène, ni les faisceaux de la Grotte, ni la fenêtre de la maison, ni
-les opacités jour/nuit, ni le décor, ni les leviers. Les lumières **statiques** gardent le profil historique dans
-tous les cas : seul le follet a désormais un profil à lui. Suite verte, **73 fichiers**.
+**Conséquence pour la nuit du Chaos** : les rôdeurs se voient de nouveau venir de loin. `Q-27` (« aucune lueur sur
+les monstres, je veux être surpris ») et `Q-32` (détection à 8 tuiles) ont été posées **en supposant une lumière
+réduite** : à relire ensemble, pas séparément.
 
 ### Ticket 5 — `07` palier A : zones et tirage (pur)
 

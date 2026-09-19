@@ -7,7 +7,6 @@
     "seed": 20260915,
     "spawn": { "x": 2, "y": 6 },
     "obscurite": { "opacite": 0.72 },
-    "lumiere_follet": { "rayon": 110, "fondu_px": 71.5 },
     "lumieres": [
       { "x": 80, "y": 208, "rayon": 140 },
       { "type": "faisceau", "x": 224, "y": 32, "angle": -8, "ouverture": 12, "longueur": 170, "alpha": 0.14 },
@@ -63,7 +62,6 @@
     "seed": 20260916,
     "spawn": { "x": 1, "y": 6 },
     "obscurite": { "opacite": 0.72 },
-    "lumiere_follet": { "rayon": 110, "fondu_px": 71.5 },
     "lumieres": [
       { "type": "faisceau", "x": 160, "y": 32, "angle": 5, "ouverture": 12, "longueur": 160, "alpha": 0.13 },
       { "type": "faisceau", "x": 352, "y": 32, "angle": -6, "ouverture": 11, "longueur": 175, "alpha": 0.12 },

@@ -694,15 +694,7 @@ export function statsCanvasVoile() {
 // propre calque, on y perce des trous dégradés (coeur net, bord doux, cf.
 // constantes ci-dessus) en "destination-out", puis on compose ce calque
 // par-dessus la scène.
-// `D-35` : `fonduLumiereFollet` (largeur de la couronne de décroissance, en
-// px logiques, mesurée vers l'intérieur depuis le bord) est résolue par
-// main.js à partir du follet et de la scène — render.js ne lit ni
-// companions.json ni scenes.json#lumiere_follet. Absente : le profil
-// historique (cœur net jusqu'à RATIO_COEUR_LUMIERE), pour qu'un appelant qui
-// l'ignore dessine exactement comme avant. Les lumières STATIQUES de la scène
-// (halos, faisceaux) gardent le profil historique dans tous les cas : ce
-// ticket ne touche qu'au follet.
-export function dessinerObscurite(ctx, { scene, camera, follet, rayonLumiereFollet, fonduLumiereFollet, couleurLumiereFollet }) {
+export function dessinerObscurite(ctx, { scene, camera, follet, rayonLumiereFollet, couleurLumiereFollet }) {
   if (!scene.obscurite) return;
 
   // Taille déjà posée par dessinerScene un peu plus tôt dans la même frame
@@ -727,22 +719,14 @@ export function dessinerObscurite(ctx, { scene, camera, follet, rayonLumiereFoll
   // une atmosphère additive dessinée plus bas, jamais un trou (§3.4).
   const halos = (scene.lumieres || []).filter((l) => (l.type || 'halo') === 'halo');
   const sources = [...halos.map((l) => ({ x: l.x, y: l.y, rayon: l.rayon }))];
-  if (follet) {
-    const rayon = rayonLumiereFollet || 0;
-    // Profil propre au follet : le cœur net s'arrête à `rayon - fondu`. Un
-    // fondu non fourni retombe sur le ratio historique — même dessin qu'avant.
-    const ratioCoeur = fonduLumiereFollet === undefined || rayon <= 0
-      ? RATIO_COEUR_LUMIERE
-      : Math.max(0, (rayon - fonduLumiereFollet) / rayon);
-    sources.push({ x: follet.x, y: follet.y, rayon, ratioCoeur });
-  }
+  if (follet) sources.push({ x: follet.x, y: follet.y, rayon: rayonLumiereFollet || 0 });
 
   for (const source of sources) {
     const x = source.x - camera.x;
     const y = source.y - camera.y;
     const degrade = voile.createRadialGradient(x, y, 0, x, y, source.rayon);
     degrade.addColorStop(0, 'rgba(255,255,255,1)');
-    degrade.addColorStop(source.ratioCoeur === undefined ? RATIO_COEUR_LUMIERE : source.ratioCoeur, 'rgba(255,255,255,1)');
+    degrade.addColorStop(RATIO_COEUR_LUMIERE, 'rgba(255,255,255,1)');
     degrade.addColorStop(1, 'rgba(255,255,255,0)');
     voile.fillStyle = degrade;
     voile.beginPath();

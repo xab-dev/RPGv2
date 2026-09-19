@@ -432,3 +432,55 @@ celui de la nouvelle entrée de catalogue : une vitesse au-dessus de ~65 px/s re
 **Tests.** Aucun test ne figeait la vitesse (aucun rouge). `test_sd_saccades_calque_statique_2026-09-19.js` s'en servait
 comme *ordre de grandeur* dans un commentaire et une variable locale — mis à jour à 75 pour qu'il continue de décrire
 le jeu réel ; sa borne se calcule depuis la distance parcourue, elle n'en dépend pas. Suite verte, 71 fichiers.
+
+### Ticket 3 — `D-34` : le follet à −25 % en jeu
+
+**En données, par compagnon.** `data/companions.json` gagne un champ `echelle_jeu` (**0,75**, *provisoire*), validé
+au boot comme celle du héros — une échelle nulle ou négative rendrait le follet invisible, et personne ne s'en
+apercevrait avant de jouer la nuit. Un compagnon qui ne déclare pas le champ garde **1** : un catalogue existant
+reste valide tel quel, comme le veut la règle des catalogues. C'est bien une échelle **de jeu** : la cinématique du
+choix continue de calculer la sienne depuis `TAILLE_FOLLET_* / TAILLE_REFERENCE_FOLLET_PX`, intouchée.
+
+**La frontière sautait déjà, avant ce ticket.** En lisant le code pour poser l'interpolation, j'ai trouvé que le
+follet élu passait de l'échelle **2,86** (sa taille de focus sur l'écran de choix, 20 / 7) à **1** *d'une frame à
+l'autre*, à l'instant de la confirmation. Le ticket demandait d'interpoler « sur la durée de l'étape de départ » :
+c'est fait, et cela corrige du même coup un saut qui existait déjà. Désormais l'élu rétrécit **de 2,86 à 0,75 en
+1 s**, pendant que les deux autres s'éloignent — sur **la même courbe**, celle de `intro.js#avancementDepart`, que
+j'ai extraite pour qu'elle serve aux deux (jamais une 2ᵉ horloge). `intro.js` ne connaît toujours ni `echelle_jeu`
+ni la taille de l'élu ; ses étapes et ses durées ne sont pas touchées. Le test mesure le plus gros écart d'une frame
+à l'autre à 60 Hz : **0,104** pour une amplitude de 2,107, soit 5 % du chemin.
+
+**Le point d'entrée unique du §0 bis.** `companion.js` expose désormais `resoudreOrbiteRayonPx()` et
+`resoudreEchelleJeu(companion)`. L'orbite **ne bouge pas** (`Q-26`, close) : la fonction rend la base telle quelle, et
+le test le prouve par le comportement, pas seulement par la constante — un follet laissé tourner 10 s décrit un
+cercle de **23,5 px** autour du héros, comme avant. **Aucun buff, aucun équipement, aucun modificateur** n'est livré
+avec : c'est la consigne, et c'est ce qui rend ces deux fonctions utiles le jour du talisman (`Q-29`).
+
+### Les distances du follet, telles qu'elles sont (rapport, rien corrigé)
+
+| Valeur | Où | Combien | Ce qu'elle fait **vraiment** |
+|---|---|---|---|
+| `ORBITE_RAYON_PX` | `companion.js` | 24 px | Rayon du cercle que le follet décrit autour du héros en état `suivre` |
+| `ORBITE_LERP` | `companion.js` | 0,15 | « Retard ressort » du suivi : le follet n'est jamais pile sur son point d'orbite |
+| `DISTANCE_ENGAGEMENT_PX` | `companion.js` | **48 px** | **La seule** distance qui décide d'un engagement. Mesurée du **héros** au monstre |
+| `rayon_aura` | `companions.json` | 40 px | **Uniquement dessinée** (cercle pointillé). Aucune règle de jeu ne la lit |
+| `rayon_lumiere` | `companions.json` | 110 px | Halo dans le calque d'obscurité, et rayon d'effacement du toit (× 1,125) |
+
+**La condition d'engagement ne correspond pas à la définition de Xav**, et l'écart n'est pas un détail. Le code fait
+`distance(héros, monstre) <= 48` : c'est exactement la « distance d'engagement distincte » que la définition dit ne
+pas exister, et elle ne vaut ni l'orbite (24), ni l'aura (40), ni l'union des deux. Pire pour la lisibilité : le
+cercle pointillé que le joueur voit fait **40 px** alors que le follet engage à **48** — l'indicateur ment de 8 px.
+Et `status.js` approxime « le monstre est dans l'aura » par « le follet l'a engagé », donc `rayon_aura` n'a
+strictement aucun effet de jeu. Ligne **`D-37`** ouverte, **non corrigée** : c'est du comportement de combat, hors du
+périmètre de ce ticket, et ça mérite son propre commit.
+
+**Ce qui borne la position du follet** (question posée par le brief) : en `suivre`, il converge vers un point à
+24 px du héros — borné. En `engager`, il se **colle à la position du monstre**, et ce monstre est à 48 px du héros
+au plus, sans quoi l'état retombe à `suivre`. L'allonge maximale du follet est donc de **48 px depuis le héros**,
+et non « orbite + aura ». **L'engagement ne peut pas s'étirer de proche en proche** — la crainte inscrite au brief
+ne se vérifie pas — parce que la condition est mesurée depuis le **héros**, jamais depuis le follet : déplacer le
+follet ne déplace pas le centre du test.
+
+**Tests.** Un fichier neuf, `test_d34_follet_echelle_jeu_2026-09-19.js` : échelle en données et défaut 1, refus au
+boot d'une échelle dégénérée, orbite inchangée **au pixel**, continuité de la frontière frame par frame, et
+non-régression de la cinématique. Suite verte, **72 fichiers**.

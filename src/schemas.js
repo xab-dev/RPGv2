@@ -489,6 +489,18 @@ function erreursRenderVisuel(entry, catalogs, path) {
   return [];
 }
 
+// `D-34` : échelle du follet EN JEU (optionnelle, 1 par défaut), distincte de
+// la taille que la cinématique du choix lui donne. Même garde que
+// `visuel.echelle` : une échelle nulle ou négative rendrait le compagnon
+// invisible ou retourné, et personne ne le verrait avant de jouer la nuit.
+function erreursCompanion(entry, catalogs, path) {
+  const erreurs = erreursRenderVisuel(entry, catalogs, path);
+  if (entry.echelle_jeu !== undefined && (typeof entry.echelle_jeu !== 'number' || entry.echelle_jeu <= 0)) {
+    erreurs.push(`${path} > echelle_jeu doit être un nombre strictement positif`);
+  }
+  return erreurs;
+}
+
 // specs/04_stations-proportions-collision.md §2 : `echelle`/`solide`/
 // `empreinte`, communs aux types "levier" et "station_placeholder" (les seuls
 // à avoir une position). Un défaut absent = comportement Phase 2 inchangé
@@ -889,7 +901,7 @@ export const SCHEMAS = {
       { field: 'element', catalog: 'elements' },
       { field: 'synergie', catalog: 'synergies' },
     ],
-    custom: erreursRenderVisuel,
+    custom: erreursCompanion,
   },
   loot_tables: {
     requiredFields: ['id', 'entrees'],

@@ -45,13 +45,14 @@ import {
 } from './combat.js';
 import {
   creerFollet, mettreAJourEtat as mettreAJourFollet, avancerPosition as avancerFollet, DISTANCE_ENGAGEMENT_PX,
+  resoudreEchelleJeu as resoudreEchelleJeuFollet, echelleFolletEnTransition,
 } from './companion.js';
 import { creerGenerateur, resoudreLoot } from './loot.js';
 import { etatInitial as etatInitialPuzzles, activerLevier } from './puzzles.js';
 import { creerDialogue, resoudreLignes } from './dialogue.js';
 import {
   creerIntro, avancerIntro, etatRendu as etatRenduIntro,
-  creerDepart, avancerDepart, etatRenduDepart, ETAPE_CLIGNEMENTS,
+  creerDepart, avancerDepart, etatRenduDepart, avancementDepart, ETAPE_CLIGNEMENTS,
 } from './intro.js';
 import { peutRecolter, trouverRessourceProche } from './resources.js';
 import { ajouterItem, retirerItem } from './inventory.js';
@@ -136,6 +137,12 @@ const Y_ECRAN_FOLLETS = 113;
 // l'intro pour que les follets n'apparaissent pas à une taille différente au
 // moment où l'écran de choix officiel prend le relais.
 const TAILLE_FOLLET_REPOS_PX = 14;
+// Taille du follet FOCALISÉ sur l'écran de choix. Extraite pour `D-34` : c'est
+// la taille d'où part l'élu quand il devient le vrai follet, et elle doit se
+// lire au même endroit que le dessin de l'écran de choix — deux nombres 20
+// recopiés auraient pu diverger, et la transition aurait sauté sans que rien
+// ne le signale. Les tailles de la cinématique, elles, ne changent pas.
+const TAILLE_FOLLET_SELECTIONNE_PX = 20;
 
 function afficherErreurBoot(erreurs) {
   document.body.innerHTML = `
@@ -1450,7 +1457,7 @@ export function creerOrchestrateurGrotte({
       const visuel = registre.obtenir('visuels', companion.render.visuel);
       const x = POSITIONS_ECRAN_FOLLETS[i];
       const y = Y_ECRAN_FOLLETS;
-      const taille = i === choixFollet.index ? 20 : TAILLE_FOLLET_REPOS_PX;
+      const taille = i === choixFollet.index ? TAILLE_FOLLET_SELECTIONNE_PX : TAILLE_FOLLET_REPOS_PX;
       dessinerVisuel(ctxLogique, visuel, x, y, {
         teinte: companion.render.couleur,
         echelle: taille / TAILLE_REFERENCE_FOLLET_PX,
@@ -1506,6 +1513,21 @@ export function creerOrchestrateurGrotte({
         alpha,
       });
     }
+  }
+
+  // Échelle à laquelle le vrai follet (celui de companion.js) est dessiné
+  // cette frame. En régime établi : son échelle de jeu, déclarée en données
+  // (`D-34`). Pendant l'étape de départ des deux follets non élus, elle
+  // s'interpole depuis la taille qu'il avait sur l'écran de choix : le follet
+  // élu rétrécit **en même temps** que les deux autres s'éloignent, au lieu de
+  // changer de taille d'une frame à l'autre (décision du 19/09 : aucun saut
+  // aux frontières). Les deux mouvements suivent la même courbe, celle de
+  // intro.js#avancementDepart — jamais une 2ᵉ horloge.
+  function echelleFolletAffichee(companion) {
+    const echelleJeu = resoudreEchelleJeuFollet(companion);
+    if (!depart) return echelleJeu;
+    const echelleCinematique = TAILLE_FOLLET_SELECTIONNE_PX / TAILLE_REFERENCE_FOLLET_PX;
+    return echelleFolletEnTransition(echelleCinematique, echelleJeu, avancementDepart(depart));
   }
 
   function dessiner() {
@@ -1664,6 +1686,7 @@ export function creerOrchestrateurGrotte({
         y: follet.y,
         visuel: registre.obtenir('visuels', companionActif.render.visuel),
         couleur: companionActif.render.couleur,
+        echelle: echelleFolletAffichee(companionActif),
       } : null,
       puzzles: puzzlesAffiches,
       estFlagActif: flags.has,

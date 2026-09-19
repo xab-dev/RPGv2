@@ -191,10 +191,19 @@ export function avancerDepart(depart, deltaMs) {
 // convergence (symétrique, cf. POSITIONS_DEPART_FOLLETS) en s'éteignant
 // (alpha 1 -> 0) ; l'élu n'est jamais renvoyé ici — main.js dessine déjà le
 // vrai follet (companion.js) qui prend sa place, jamais une 2ᵉ silhouette.
-export function etatRenduDepart(depart, cibles) {
-  const { config, indexElu, tMs } = depart;
+// Avancement (0..1, déjà amorti) de l'étape de départ. Exposé pour `D-34` :
+// la taille du follet élu s'interpole sur **cette** courbe-là, celle qui porte
+// déjà les positions des deux partants — jamais une 2ᵉ horloge qui pourrait
+// dériver. Les étapes et les durées de l'intro ne sont pas touchées.
+export function avancementDepart(depart) {
+  const { config, tMs } = depart;
   const progression = config.depart_ms > 0 ? Math.min(1, tMs / config.depart_ms) : 1;
-  const avancement = easeOutCubic(progression);
+  return easeOutCubic(progression);
+}
+
+export function etatRenduDepart(depart, cibles) {
+  const { indexElu } = depart;
+  const avancement = avancementDepart(depart);
   return cibles
     .map((cible, index) => ({ index, cible }))
     .filter(({ index }) => index !== indexElu)

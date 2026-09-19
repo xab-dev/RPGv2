@@ -549,7 +549,13 @@ export function dessinerScene(ctx, {
   dessinerVisuel(ctx, heroVisuel, hero.x - camera.x, hero.y - camera.y, { teinte: heroTeinte });
 
   if (follet) {
-    dessinerVisuel(ctx, follet.visuel, follet.x - camera.x, follet.y - camera.y, { teinte: follet.couleur });
+    // `D-34` : `follet.echelle` est résolue par main.js (échelle de jeu en
+    // données, interpolée à la sortie de la cinématique). Absente = 1, donc
+    // un appelant qui l'ignore dessine comme avant.
+    dessinerVisuel(ctx, follet.visuel, follet.x - camera.x, follet.y - camera.y, {
+      teinte: follet.couleur,
+      echelle: follet.echelle === undefined ? 1 : follet.echelle,
+    });
   }
 
   // Anneau d'attaque (§3.1 03_grotte-polish, spec 02_grotte.md §3.5 jamais

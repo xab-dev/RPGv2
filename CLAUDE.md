@@ -297,7 +297,88 @@ Les captures de la V1 (`docs/captures/v1/`) sont une **inspiration, jamais un ca
 
 `BRIEF_nuit-2026-09-19.md` v1.3.0. Branche **`nuit-2026-09-19`**, créée depuis `main` ; **aucun `push`**.
 Un ticket = un commit, dans l'ordre du brief, pour que la nuit se fusionne « jusqu'au commit N ».
-Le rapport complet (tableau ticket par ticket) est écrit en fin de nuit, en tête de ce journal.
+
+## Rapport du matin
+
+**La file est allée au bout : 10 commits, aucun ticket en échec, aucun arrêt obligatoire rencontré.** Suite
+headless verte à chaque commit (71 fichiers au départ, **78** à l'arrivée). Personne n'a regardé l'écran : **tout
+ce qui touche au rendu est livré « tests verts, validation en jeu due »**, jamais « validé ».
+
+| # | Commit | État | Ce que Xav regarde en jeu |
+|---|---|---|---|
+| 1 | `0755a88` DOC ns rendu-navigateurs + relevés de base | livré | rien à regarder (doc seule) |
+| 2 | `895390d` `D-32` héros : échelle 9 px | livré | lisibilité du héros jour **et** nuit, passages entre les arbres, couloir de la maison (`V-14`) |
+| 2 bis | `be83df2` `D-33` vitesse de base −25 % | livré | le ressenti au stick : plus petit **et** plus lent, est-ce que ça tient ? (`V-15`) |
+| 3 | `2f49092` `D-34` follet : échelle de jeu −25 % | livré | **partie neuve** : cinématique inchangée, puis l'élu qui rétrécit **pendant** que les deux autres s'éloignent (`V-16`) |
+| 4 | `9997cec` `D-35` lumière du follet (extérieur) | livré | **la nuit dehors** : l'effet nocturne est-il revenu sans rendre le jeu injouable ? Et **la Grotte n'a pas bougé** (`V-17`) |
+| 5 | `f2f632b` `07-A` zones et tirage | livré | rien : aucun monstre en jeu à ce palier |
+| 6 | `65a80f1` `07-B` la nuit et le seuil | livré | les rôdeurs sortent-ils au bon endroit, au bon rythme ? Tout disparaît-il à l'aube ? (`V-18`) |
+| 7 | `ae5d2ea` `07-C` comportement | livré | errent-ils, poursuivent-ils, renoncent-ils ? **Aucun n'entre dans le Jardin** (`V-18`) |
+| 8 | `1ce9de5` `07-D` signal de la zone | livré | **devine**-t-on la zone au nord-est sans la voir ? Elle ne doit **rien révéler du sol** (`V-19`) |
+| 9 | `507f954` `D-36` follet aérien | **proposition** | tout à l'œil : la sensation, le vol, le sillage, les ornements — **garder, régler ou retirer** (`V-20`) |
+
+**Valeurs provisoires posées cette nuit** (toutes réglables en un nombre, toutes en données) :
+
+| Valeur | Où | Retenue |
+|---|---|---|
+| Échelle du héros | `visuels.json#visuel_heros.echelle` | **0,643** (silhouette Ø 14,2 px, hitbox Ø 12,9) |
+| Base de vitesse | `stats_derivees.json` | **75** (95 px/s effectifs à agilité 5) |
+| Échelle de jeu du follet | `companions.json#echelle_jeu` | **0,75** |
+| Lumière du follet | `companions.json#lumiere` | **rayon 40, fondu 6** (110/71,5 en Grotte) |
+| Rythme d'apparition | `spawns.json#intervalle_ms` | **8 000** (plafond de 6 rempli en 48 s) |
+| Détection du rôdeur | `spawns.json#detection_tuiles` | **8 tuiles** |
+| Signal de la zone | `spawns.json#signal` | `#a24bd0`, alpha **0,16**, pulsation 5,2 s |
+| Vol du follet | `effets.json#effet_vol_follet` | raideur 26, amortissement 5,5, amplitude 1,6 px |
+| Rayon des monstres | `main.js#RAYON_MONSTRE_CHAOS_PX` | **8 px** |
+
+**Les `[OUVERT]` retenus par défaut**, tous inscrits au suivi : `Q-28` (vitesse ×0,75) · `Q-30` (lumière à
+l'intérieur de la maison — **réécrite** : il n'existe pas de scène d'intérieur, l'intérieur reçoit donc
+forçément la base réduite) · `Q-31` (le toit garde son ancien rayon de lumière) · `Q-32` (détection à 8 tuiles).
+
+**Ouvert au suivi cette nuit** : `D-32` à `D-36` (les cinq tickets, quatre clos, `D-36` proposé) · **`D-37`**
+(l'engagement du follet ne suit pas la définition de Xav, et `rayon_aura` n'a aucun effet de jeu — constaté, **non
+corrigé**, hors périmètre) · **`D-38`** (deux monstres du même type étaient un seul monstre — **corrigé** dans
+`07-B`, sans quoi le palier livrait une fonctionnalité fausse) · `Q-26` à `Q-32` · `V-14` à `V-20`. `A-03` close.
+
+**Aucun arrêt obligatoire n'a été rencontré.** Le seul qui menait quelque part — la migration de sauvegarde du
+palier B — n'a pas eu lieu d'être : les monstres nocturnes ne sont pas persistés, `schema_version` ne bouge pas.
+
+**Le `maj()` du bot, avec et sans monstres** (Node, sans rendu ni manette ; seconde moitié d'une nuit de 4 min,
+7 499 frames mesurées dans chaque cas) :
+
+| | `maj()` moy | p95 |
+|---|---|---|
+| Niveau 4, **zéro monstre** | 0,004 ms | 0,006 ms |
+| Niveau 5, **plafond de 6**, palier B seul | 0,005 ms | 0,006 ms |
+| Niveau 5, **plafond de 6**, avec le comportement (palier C) | **0,009 ms** | 0,010 ms |
+
+Six rôdeurs qui décident, errent, se cognent et attaquent coûtent donc **0,005 ms par frame** sur un budget de
+16,7 ms. Ce chiffre ne dit pas « le jeu tiendra 60 fps » — c'est Node, et sans le rendu : il dit que **la logique
+des monstres n'est pas le sujet**. Le verdict reste le relevé `?debug=fps` de nuit sous Chrome, plafond atteint,
+comparé à **`R-03`** (59,9 fps, 0 frame sautée, `maj()` 0,06 ms).
+
+**Pour voir des monstres tout de suite** : importer **`docs/sauvegardes/rpg_v2_save(9).json`** — niveau 7, schéma v5
+(aucune migration), dans la Région Maison, horloge à **64 s après le début de la nuit**, donc ≈ 3 minutes de nuit
+à l'ouverture et le premier rôdeur dans les 8 secondes. **Il n'existe aucun paramètre d'URL pour forcer l'heure**
+(seuls `?debug=fps` et `?echelle=N` existent) et je n'en ai pas ajouté.
+
+**Un contrôle de démarrage, et il faut savoir ce qu'il vaut.** La suite headless **n'exécute jamais le rendu**
+(`ctxLogique` y est `null`) : or cette nuit a touché `render.js` quatre fois. J'ai donc ouvert le jeu dans Chrome
+pour vérifier **qu'il démarre et que la boucle tourne** : intro jouée, paupières puis Grotte dessinée, héros à sa
+nouvelle taille, touches réactives, **aucune erreur console** — une exception dans `frame` aurait figé l'image,
+elle a avancé. Servi sur **127.0.0.1:8099**, un port à moi : l'IndexedDB du jeu étant liée à l'origine,
+**la sauvegarde de `localhost:8080` n'a pas été touchée**. Ce contrôle dit « ça ne plante pas ». Il ne dit **rien**
+de ce à quoi ça ressemble, ni de la nuit dehors, ni du signal de la zone : ça, c'est `V-14` à `V-20`.
+
+**Rappel de manipulation :**
+
+```
+git log --oneline main..nuit-2026-09-19   # les 10 commits de la nuit
+git merge <hash>                          # depuis main : fusionne JUSQU'A ce commit
+git revert <hash>                         # retire un seul commit (ex. 507f954, le follet aérien)
+```
+
+---
 
 ### Les identifiants du brief étaient tous pris
 

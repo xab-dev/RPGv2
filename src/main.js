@@ -1998,6 +1998,23 @@ export function creerOrchestrateurGrotte({
         const arme = resoudreArmeEquipee(registre, save.hero.equipement.arme);
         return arme && arme.icone ? registre.obtenir('visuels', arme.icone) : null;
       })(),
+      // `D-13` : les buffs actifs du bandeau. On LIT la table tenue par
+      // status.js (`save.hero.buffs_actifs`), on ne la recalcule pas — c'est
+      // la même table qui alimente `modificateursBuffsActifs` plus haut, donc
+      // l'icône affichée et le bonus réellement appliqué ne peuvent pas
+      // diverger. L'ordre des clés EST l'ordre d'activation.
+      //
+      // L'icône vient de la STAT renforcée, pas de l'effet : `buff_repas` et
+      // un futur `buff_potion_vitalite` montrent la même. Un buff sans stat
+      // (un effet qui toucherait un `param` plutôt qu'une stat) n'a rien à
+      // montrer : il est simplement absent du bandeau, pas dessiné en trou.
+      buffs: Object.entries(save.hero.buffs_actifs || {}).flatMap(([effetId, resteMs]) => {
+        const effet = registre.obtenir('status_effects', effetId);
+        if (effet.cible !== 'joueur' || !effet.stat) return [];
+        const { icone } = registre.obtenir('stats', effet.stat);
+        if (!icone) return [];
+        return [{ visuel: registre.obtenir('visuels', icone), resteMs }];
+      }),
       // Palier C/D (§3.9) : discret, un chiffre — jamais affiché avant le
       // premier calcul des jauges/XP (cinématique d'ouverture).
       survie: save.survie,

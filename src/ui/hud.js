@@ -8,6 +8,7 @@
 
 import {
   boutonsTactiles, JOYSTICK, BANDEAU_HAUT, elementsBandeauHaut, echelleIconeArme,
+  placerIconesBuffs, alphaPulsationBuff, echelleIconeBuff, ICONE_BUFF,
 } from './hud_layout.js';
 import { RESOLUTION_LOGIQUE } from '../render.js';
 import { dessinerVisuel, TAILLE_REFERENCE_FOLLET_PX } from '../visuels.js';
@@ -158,6 +159,12 @@ function dessinerJauge(ctx, x, y, ratio, couleur, dessinerIcone) {
 export function dessinerHud(ctx, {
   i18n, pv, pvMax, eclats, companion, visuelFollet, tactileActif,
   visuelArme = null, survie = null, niveau = null, eclatNiveau = 0,
+  // `D-13` : buffs actifs, dans l'ordre d'activation. Chaque entrée est
+  // { visuel, resteMs } — la silhouette est DÉJÀ résolue par main.js (qui a
+  // le registre), exactement comme `visuelFollet` et `visuelArme`. Ce module
+  // ne sait pas ce qu'est un status_effect, et ne recalcule rien : la table
+  // des buffs est tenue par status.js, il la LIT.
+  buffs = [],
 }) {
   ctx.save();
 
@@ -241,6 +248,30 @@ export function dessinerHud(ctx, {
       zones.niveau.x + zones.niveau.largeur,
       zones.niveau.y + zones.niveau.hauteur / 2,
     );
+  }
+
+  // `D-13` : les buffs actifs, entre la soif et le niveau. Une icône par
+  // effet (la stat renforcée), forme ET couleur, **sans texte ni jauge de
+  // durée** — la durée ne se lit que dans la pulsation des dernières
+  // secondes. Le placement et l'alpha viennent tous deux de hud_layout.js
+  // (pur, testé) : ce fichier n'a pas le droit de décider où ça va.
+  if (buffs.length > 0 && zones.buffs) {
+    const { rects } = placerIconesBuffs(zones.buffs, buffs.length);
+    for (let i = 0; i < rects.length; i += 1) {
+      const rect = rects[i];
+      const buff = buffs[i];
+      if (!buff || !buff.visuel) continue;
+      ctx.save();
+      ctx.globalAlpha = alphaPulsationBuff(buff.resteMs);
+      dessinerVisuel(
+        ctx,
+        buff.visuel,
+        rect.x + rect.largeur / 2,
+        rect.y + rect.hauteur / 2,
+        { echelle: echelleIconeBuff(ICONE_BUFF.taille) },
+      );
+      ctx.restore();
+    }
   }
 
   ctx.restore();

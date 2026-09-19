@@ -65,6 +65,77 @@ export function echelleIconeArme(tailleVoulue) {
   return tailleVoulue / TAILLE_REFERENCE_ICONE_ARME_PX;
 }
 
+// --- Icônes de buff dans le bandeau (`D-13`) -------------------------------
+// Même patron que l'icône d'arme au-dessus : les silhouettes de
+// `data/visuels.json` sont dessinées dans une boîte de référence de ce
+// côté-là, et chaque appelant calcule son échelle plutôt que de recopier la
+// silhouette à deux tailles.
+export const TAILLE_REFERENCE_ICONE_BUFF_PX = 10;
+
+export function echelleIconeBuff(tailleVoulue) {
+  return tailleVoulue / TAILLE_REFERENCE_ICONE_BUFF_PX;
+}
+
+// `taille` tient dans la hauteur de la zone des buffs (12 px) en laissant un
+// pixel de part et d'autre. PROVISOIRE, jamais validé en jeu (`V-24`).
+export const ICONE_BUFF = { taille: 10, ecart: 3 };
+
+// Rectangles des icônes de buff, rangés **dans l'ordre d'activation**, de la
+// soif vers la droite (décision verrouillée du 19/09).
+//
+// Débordement : la décision dit « au-delà de la place disponible, **les plus
+// anciens restent** ». On garde donc les PREMIERS de la liste et on masque la
+// queue, sans indicateur — un « +2 » serait du texte, et la décision dit
+// « sans texte ni jauge ». `masques` est rendu pour que l'appelant sache que
+// quelque chose manque, jamais pour qu'il l'écrive à l'écran.
+//
+// (Le brief de la nuit du 20/09 disait l'inverse, « les plus récentes
+// d'abord », en le marquant `[OUVERT]` — c'est le suivi, qui porte la
+// décision de Xav, qui l'emporte ici. Question posée en `Q-35`.)
+//
+// `nombre` plutôt qu'une liste de buffs : ce module ne connaît ni les effets,
+// ni le registre, ni i18n — il place des carrés.
+export function placerIconesBuffs(zone, nombre) {
+  const { taille, ecart } = ICONE_BUFF;
+  if (!zone || nombre <= 0) return { rects: [], masques: Math.max(0, nombre) };
+
+  // Combien tiennent : n icônes occupent n*taille + (n-1)*ecart.
+  const capacite = Math.max(0, Math.floor((zone.largeur + ecart) / (taille + ecart)));
+  const visibles = Math.min(nombre, capacite);
+
+  const rects = [];
+  for (let i = 0; i < visibles; i += 1) {
+    rects.push({
+      x: zone.x + i * (taille + ecart),
+      y: zone.y + (zone.hauteur - taille) / 2,
+      largeur: taille,
+      hauteur: taille,
+    });
+  }
+  return { rects, masques: nombre - visibles };
+}
+
+// Fin de buff : « pulsation douce en fondu pendant les ~2 dernières secondes
+// (2 à 3 battements par seconde au plus, **jamais de flash sec**), puis
+// disparition » (décision verrouillée du 19/09).
+//
+// Deux choix qui servent ce « jamais de flash sec », et qui sont la raison
+// d'être de cette fonction plutôt que d'un `Math.sin` posé dans hud.js :
+//   - le cosinus vaut 1 à l'entrée de la fenêtre, donc l'alpha y est
+//     exactement celui d'avant : aucune marche au moment où la pulsation
+//     commence (vérifié par test des deux côtés de la frontière) ;
+//   - l'alpha ne descend jamais à 0 (`alpha_min`) : l'icône respire, elle ne
+//     clignote pas.
+export const PULSATION_BUFF = { fenetre_ms: 2000, frequence_hz: 2.5, alpha_min: 0.35 };
+
+export function alphaPulsationBuff(resteMs) {
+  const { fenetre_ms: fenetre, frequence_hz: frequence, alpha_min: alphaMin } = PULSATION_BUFF;
+  if (resteMs >= fenetre) return 1;
+  const ecoule = Math.max(0, fenetre - resteMs) / 1000;
+  const phase = ecoule * frequence * Math.PI * 2;
+  return alphaMin + (1 - alphaMin) * (0.5 + 0.5 * Math.cos(phase));
+}
+
 export function boutonsTactiles() {
   return [BOUTON_ATTAQUE, ...BOUTONS_SKILLS, BOUTON_CONSOMMABLE, BOUTON_INTERACT, BOUTON_MENU];
 }

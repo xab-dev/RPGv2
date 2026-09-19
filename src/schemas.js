@@ -918,9 +918,24 @@ export const SCHEMAS = {
     custom: validerScene,
   },
   stats: {
+    // `icone` (`D-13`) : la silhouette montrée au bandeau HUD quand un buff
+    // renforce cette stat. Elle vit ICI, sur la stat, et non sur l'effet —
+    // décision verrouillée du 19/09 : « l'icône représente l'effet (la stat
+    // renforcée), jamais le plat : ajouter une stat = une icône, pas une par
+    // recette ». `buff_repas` et `buff_vitalite` montrent donc la même.
+    // Posée en RÉFÉRENCE (id inconnu = échec dur au boot avec son chemin
+    // exact) mais **optionnelle**, comme `weapons.icone` l'est depuis
+    // `D-20 B` et `companions.echelle_jeu` depuis `D-34` : un catalogue
+    // existant doit rester valide tel quel, et une douzaine de fixtures de
+    // test déclarent une stat minimale pour des sujets qui n'ont rien à voir
+    // avec les icônes. Ce n'est pas un trou pour autant — le catalogue RÉEL
+    // du jeu, lui, est tenu d'en déclarer une pour chaque stat, et c'est
+    // `tests/test_d13_buffs_bandeau_2026-09-20.js` (bloc 1) qui l'exige.
+    // Une stat sans icône ne casse rien : ses buffs sont simplement absents
+    // du bandeau, jamais dessinés en trou (cf. main.js).
     requiredFields: ['id', 'label_key', 'base'],
     idField: 'id',
-    refs: [],
+    refs: [{ field: 'icone', catalog: 'visuels' }],
     custom: null,
   },
   stats_derivees: {

@@ -632,3 +632,53 @@ horloge · sauvegarde inchangée · ids tous distincts. Le héros y est maintenu
 fichier : au palier B les monstres foncent encore **en ligne droite** sur lui (le domaine, c'est le palier C) et
 finiraient par traverser la carte pour le tuer — on ne triche que sur ce qui n'est pas le sujet. Suite verte,
 **75 fichiers**.
+
+### Ticket 7 — `07` palier C : « un domaine, pas un piquet »
+
+**Une machine à états pure, qui ne déplace rien.** `src/comportement_monstres.js` dit seulement **où le monstre veut
+aller** et **à quelle fraction de sa vitesse** ; le mouvement, lui, se fait dans l'orchestrateur, avec les fonctions
+du jeu. Trois états — `errance`, `poursuite`, `desinteret` — et deux règles transversales qui priment sur eux :
+le **demi-tour en lisière** et l'**anti-blocage**.
+
+Les cinq règles du §2.3, et ce qu'elles donnent :
+
+| Règle | Implémentation | Mesuré par le test |
+|---|---|---|
+| Errance | point au hasard du **domaine**, marche à 0,5×, pause de 0,8 à 2,5 s | 98 frames de marche pour 302 de pause sur 400 |
+| Poursuite bornée | l'origine est **le point où IL a repéré**, pas sa naissance ni la position du joueur | abandon à **20,0 tuiles** du repérage |
+| Désintérêt | 6 s sans re-ciblage possible, même collé au joueur | aucun re-ciblage avant 6 000 ms, puis oui |
+| Demi-tour | condition sur **la prochaine position du monstre** (un demi-pas devant lui), jamais sur celle du joueur | jamais entré, et **796 px** d'éloignement ensuite |
+| Anti-blocage | 1 s sans avancer → autre destination ; **en poursuite, il lâche** plutôt que de s'acharner | nouvelle idée à 1 008 ms |
+
+**Un choix qui n'était pas écrit, et qu'il fallait faire : les monstres du Chaos entrent en collision.** La règle
+anti-blocage de la spec suppose qu'un monstre *puisse* être bloqué — or jusqu'ici aucun ne l'était :
+`approcherEnLigneDroite` traverse les arbres. Un rôdeur qui erre dans un Champ bordé de forêt doit se cogner, sinon
+la règle 5 n'a rien à débloquer et on voit des monstres passer à travers les troncs. Ils bougent donc via
+`resoudreDeplacement` — **la même fonction que le héros**, donc ils glissent le long des obstacles — avec un rayon
+de 8 px (*provisoire*, la silhouette du rampant tient dans 16). **Les monstres de la Grotte n'y touchent pas** :
+ligne droite de Phase 1, validée en jeu, on ne rouvre pas un comportement validé. Seuls ceux qui portent un
+`spawnId` décident.
+
+**`detection_tuiles` : la spec ne l'avait pas chiffrée.** Sa liste de champs du §3 l'oubliait, alors que « poursuite
+bornée depuis le point où il a repéré » n'a pas de sens sans elle. Je l'ai mise **en données** (ce que la spec exige
+pour tout le reste) et **requise** dans le schéma — une table qui l'oublierait produirait des monstres parfaitement
+passifs, un bug qui ne dirait pas son nom. Valeur retenue : **8 tuiles**, `[OUVERT]` → **`Q-32`**. À relire avec
+`D-35` : le follet n'éclaire plus qu'à 1,25 tuile, donc à 8 tuiles **le rôdeur voit le joueur bien avant que le
+joueur ne le voie**. C'est peut-être exactement ce que Xav veut (« je veux être surpris », `Q-27`) — ça se tranche
+en jouant, pas ici.
+
+**Le rapport de vitesses, redonné comme le brief le demande.** Héros **95 px/s** (après `D-33`) · rôdeur **45 px/s**
+en poursuite, **22,5** en errance. Le joueur reste **2,1× plus rapide** : il peut semer un monstre, et le monstre
+abandonne de toute façon à 20 tuiles du repérage. Rien à régler.
+
+**Coût** (même instrument qu'au palier B, seconde moitié d'une nuit, 7 499 frames) : `maj()` passe de **0,004 ms**
+sans monstre à **0,009 ms** avec six rôdeurs qui décident, errent et se cognent. Le comportement a donc doublé le
+coût des monstres — et ces six monstres coûtent toujours **0,005 ms par frame** sur un budget de 16,7. Node, sans
+rendu : le verdict reste celui de Xav sous Chrome (`V-18`).
+
+**Ce qui n'est pas touché**, comme la spec l'exige : `combat.js`, `loot.js`, `xp.js`. Tuer un rôdeur donne son butin
+et ses 35 XP par les chemins existants — **l'XP au combat existe bien** (`onMonstreMort` la crédite), la question
+que la spec posait au palier C a donc une réponse : rien à inventer. Test : `test_07c_comportement_2026-09-20.js`,
+machine pure pour les cinq règles, puis trois minutes de jeu réel avec le héros réfugié dans le Jardin — six
+rôdeurs, tous restés dans le Champ nord, **aucun n'entre en zone sûre**, et la mort du héros le ramène en Grotte
+sans que personne ne le suive. Suite verte, **76 fichiers**.

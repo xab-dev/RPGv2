@@ -10,6 +10,7 @@
     "intervalle_ms": 8000,
     "distance_min_joueur_tuiles": 10,
     "domaine": ["champ_nord"],
+    "detection_tuiles": 8,
     "poursuite_max_tuiles": 20,
     "desinteret_ms": 6000,
     "blocage_ms": 1000,

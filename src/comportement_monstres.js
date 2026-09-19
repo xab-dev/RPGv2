@@ -1,0 +1,191 @@
+// Comportement des monstres du Chaos (specs/07_chaos-nocturne.md §2.3,
+// palier C) : « un domaine, pas un piquet ». Machine à états PURE — elle ne
+// déplace rien, elle dit seulement *où le monstre veut aller* et *à quelle
+// fraction de sa vitesse*. L'appelant (main.js) fait le mouvement avec ses
+// propres fonctions, collisions comprises.
+//
+// Trois états, et rien d'autre :
+//   errance    : sans cible, le monstre va d'un point au hasard de son
+//                domaine à un autre, lentement, avec des pauses ;
+//   poursuite  : il a repéré le joueur et le suit — mais la poursuite est
+//                bornée depuis LE POINT OÙ IL L'A REPÉRÉ, jamais depuis sa
+//                naissance : on peut donc l'attirer loin de son domaine, mais
+//                pas indéfiniment, et il n'y va jamais de lui-même ;
+//   desinteret : il vient d'abandonner (distance, demi-tour, ou blocage) et
+//                ignore le joueur quelques secondes avant de repartir errer.
+//
+// Deux règles transversales, qui valent dans tous les états :
+//   - **demi-tour en lisière de zone sûre** : la condition porte sur la
+//     PROCHAINE POSITION DU MONSTRE, jamais sur celle du joueur (§2.3 règle
+//     4). Un joueur réfugié dans le Jardin n'est pas « protégé par une règle
+//     qui le regarde » : c'est le monstre qui refuse d'entrer ;
+//   - **anti-blocage** : s'il n'avance plus depuis `blocage_ms`, il change
+//     d'idée. Aucune recherche de chemin dans cette spec — un monstre coincé
+//     contre un arbre choisit une autre destination, il ne calcule pas de
+//     contournement.
+
+export const ETAT_ERRANCE = 'errance';
+export const ETAT_POURSUITE = 'poursuite';
+export const ETAT_DESINTERET = 'desinteret';
+
+// Un but est « atteint » à moins de ça : sans tolérance, un monstre tournerait
+// indéfiniment autour du pixel exact de sa destination.
+const TOLERANCE_BUT_PX = 6;
+// Déplacement en dessous duquel on considère qu'il n'a pas avancé (frame à
+// frame, un monstre qui glisse le long d'un mur bouge de très peu mais bouge).
+const SEUIL_IMMOBILE_PX = 0.4;
+
+function distance(ax, ay, bx, by) {
+  return Math.hypot(ax - bx, ay - by);
+}
+
+export function creerComportement() {
+  return {
+    etat: ETAT_ERRANCE,
+    but: null, // { x, y } en pixels monde, ou null = immobile (en pause)
+    pauseMs: 0,
+    // Point de repérage : origine de la poursuite bornée. Mis à la position
+    // DU MONSTRE au moment où il repère, jamais à celle du joueur.
+    reperageX: 0,
+    reperageY: 0,
+    desinteretMs: 0,
+    blocageMs: 0,
+  };
+}
+
+// Durée de pause tirée dans l'intervalle déclaré en données.
+function tirerPause(table, alea) {
+  const e = table.errance;
+  if (!e) return 0;
+  return e.pause_ms_min + alea() * (e.pause_ms_max - e.pause_ms_min);
+}
+
+function facteurErrance(table) {
+  return table.errance && typeof table.errance.facteur_vitesse === 'number' ? table.errance.facteur_vitesse : 1;
+}
+
+function partirEnDesinteret(c, table, but) {
+  return { ...c, etat: ETAT_DESINTERET, desinteretMs: table.desinteret_ms, blocageMs: 0, pauseMs: 0, but };
+}
+
+// Une frame de décision. Rend le comportement suivant ET ce que l'appelant
+// doit en faire : `but` (où aller, ou null = ne pas bouger) et
+// `facteurVitesse` (1 en poursuite, celui des données en errance).
+//
+// `ctx` :
+//   deltaMs, monstre {x,y}, hero {x,y}, table (entrée de spawns.json),
+//   tileSize,
+//   distanceParcouruePx : de combien il a bougé depuis la frame précédente
+//     (l'appelant le sait : c'est lui qui a appliqué le mouvement),
+//   entrerait EnZoneSure(x, y) : « cette position est-elle en zone sûre ? »,
+//   tirerPointDomaine() : un point au hasard du domaine, ou null,
+//   alea() : PRNG injecté.
+export function avancerComportement(c, ctx) {
+  const {
+    deltaMs, monstre, hero, table, tileSize,
+    distanceParcouruePx = 0, estEnZoneSure, tirerPointDomaine, alea,
+  } = ctx;
+
+  let suivant = { ...c };
+
+  // --- 1. Demi-tour en lisière de zone sûre -----------------------------
+  // Évalué sur la position vers laquelle il irait cette frame. Prioritaire
+  // sur tout le reste : même en pleine poursuite, il renonce.
+  if (suivant.but || suivant.etat === ETAT_POURSUITE) {
+    const cibleX = suivant.etat === ETAT_POURSUITE ? hero.x : suivant.but.x;
+    const cibleY = suivant.etat === ETAT_POURSUITE ? hero.y : suivant.but.y;
+    const dx = cibleX - monstre.x;
+    const dy = cibleY - monstre.y;
+    const norme = Math.hypot(dx, dy);
+    if (norme > 0) {
+      // Un pas d'une demi-tuile devant lui : assez pour voir venir la
+      // frontière sans qu'il s'arrête trois tuiles trop tôt.
+      const pas = tileSize / 2;
+      const prochainX = monstre.x + (dx / norme) * pas;
+      const prochainY = monstre.y + (dy / norme) * pas;
+      if (estEnZoneSure(prochainX, prochainY)) {
+        // Il repart vers son domaine : il ne reste pas planté à la bordure.
+        return {
+          comportement: partirEnDesinteret(suivant, table, tirerPointDomaine()),
+          but: null,
+          facteurVitesse: facteurErrance(table),
+          demiTour: true,
+        };
+      }
+    }
+  }
+
+  // --- 2. Anti-blocage ---------------------------------------------------
+  const voulaitAvancer = suivant.etat === ETAT_POURSUITE || (suivant.but !== null && suivant.pauseMs <= 0);
+  if (voulaitAvancer && distanceParcouruePx < SEUIL_IMMOBILE_PX) {
+    suivant.blocageMs += deltaMs;
+  } else {
+    suivant.blocageMs = 0;
+  }
+  if (suivant.blocageMs >= table.blocage_ms) {
+    suivant.blocageMs = 0;
+    if (suivant.etat === ETAT_POURSUITE) {
+      // Coincé en poursuivant : il lâche l'affaire (et ne rejoue pas la
+      // détection tout de suite, sinon il se recoincerait aussitôt).
+      return {
+        comportement: partirEnDesinteret(suivant, table, tirerPointDomaine()),
+        but: null,
+        facteurVitesse: facteurErrance(table),
+        bloque: true,
+      };
+    }
+    suivant.but = tirerPointDomaine();
+    suivant.pauseMs = 0;
+    return { comportement: suivant, but: suivant.but, facteurVitesse: facteurErrance(table), bloque: true };
+  }
+
+  // --- 3. Désintérêt : il ignore le joueur le temps de se calmer ---------
+  if (suivant.etat === ETAT_DESINTERET) {
+    suivant.desinteretMs -= deltaMs;
+    if (suivant.desinteretMs > 0) {
+      if (!suivant.but) suivant.but = tirerPointDomaine();
+      return { comportement: suivant, but: suivant.but, facteurVitesse: facteurErrance(table) };
+    }
+    suivant.etat = ETAT_ERRANCE;
+    suivant.desinteretMs = 0;
+  }
+
+  // --- 4. Poursuite en cours : bornée depuis le point de repérage --------
+  if (suivant.etat === ETAT_POURSUITE) {
+    const parcourue = distance(monstre.x, monstre.y, suivant.reperageX, suivant.reperageY);
+    if (parcourue > table.poursuite_max_tuiles * tileSize) {
+      return {
+        comportement: partirEnDesinteret(suivant, table, tirerPointDomaine()),
+        but: null,
+        facteurVitesse: facteurErrance(table),
+        abandon: true,
+      };
+    }
+    return { comportement: suivant, but: { x: hero.x, y: hero.y }, facteurVitesse: 1 };
+  }
+
+  // --- 5. Détection ------------------------------------------------------
+  // `detection_tuiles` est une donnée : que la spec ne l'ait pas chiffrée ne
+  // justifie pas de l'écrire ici.
+  const detection = (table.detection_tuiles || 0) * tileSize;
+  if (detection > 0 && distance(monstre.x, monstre.y, hero.x, hero.y) <= detection) {
+    suivant.etat = ETAT_POURSUITE;
+    suivant.reperageX = monstre.x; // le point d'où IL a repéré, pas où était le joueur
+    suivant.reperageY = monstre.y;
+    suivant.pauseMs = 0;
+    return { comportement: suivant, but: { x: hero.x, y: hero.y }, facteurVitesse: 1, reperage: true };
+  }
+
+  // --- 6. Errance --------------------------------------------------------
+  if (suivant.pauseMs > 0) {
+    suivant.pauseMs -= deltaMs;
+    return { comportement: suivant, but: null, facteurVitesse: facteurErrance(table) };
+  }
+  if (!suivant.but || distance(monstre.x, monstre.y, suivant.but.x, suivant.but.y) <= TOLERANCE_BUT_PX) {
+    // Arrivé (ou jamais parti) : il souffle, puis il choisit ailleurs.
+    suivant.pauseMs = tirerPause(table, alea);
+    suivant.but = tirerPointDomaine();
+    return { comportement: suivant, but: null, facteurVitesse: facteurErrance(table) };
+  }
+  return { comportement: suivant, but: suivant.but, facteurVitesse: facteurErrance(table) };
+}

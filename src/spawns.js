@@ -25,7 +25,8 @@ function dansRect(tx, ty, rect) {
 // peut nommer les deux (« champ_nord » ou « champs »), et un Champ en L est
 // justement deux rectangles qui partagent un id de groupe.
 export function rectanglesDeZone(scene, nom) {
-  return (scene.zones || []).filter((z) => z.id === nom || z.type === nom).map((z) => z.rect);
+  const noms = Array.isArray(nom) ? nom : [nom];
+  return (scene.zones || []).filter((z) => noms.includes(z.id) || noms.includes(z.type)).map((z) => z.rect);
 }
 
 export function rectanglesZonesSures(scene) {
@@ -65,6 +66,8 @@ export function tirerPositionApparition(scene, {
   graine = 1,
   tuilesAtteignables = null,
 }) {
+  // `zoneId` accepte un tableau : c'est ainsi qu'un **domaine** (une liste de
+  // zones, palier C) se tire avec la même fonction qu'une zone d'apparition.
   const rects = rectanglesDeZone(scene, zoneId);
   if (rects.length === 0) return null;
 
@@ -113,4 +116,11 @@ export function tableActive(table, { phase, evaluerCondition }) {
   if (!table.phases.includes(phase)) return false;
   if (table.condition === undefined || table.condition === null) return true;
   return !!evaluerCondition(table.condition);
+}
+
+// Point d'errance : une position au hasard du **domaine** du monstre (palier
+// C). C'est exactement le tirage d'apparition, sans la distance minimale au
+// joueur — errer près de lui est permis, naître près de lui ne l'est pas.
+export function tirerPointDomaine(scene, { domaine, graine = 1, tuilesAtteignables = null }) {
+  return tirerPositionApparition(scene, { zoneId: domaine, graine, tuilesAtteignables });
 }

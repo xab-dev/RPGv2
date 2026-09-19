@@ -234,7 +234,7 @@ function validerSpawn(entry, catalogs, path) {
     }
   }
 
-  for (const champ of ['max_simultanes', 'intervalle_ms', 'distance_min_joueur_tuiles', 'poursuite_max_tuiles', 'desinteret_ms', 'blocage_ms']) {
+  for (const champ of ['max_simultanes', 'intervalle_ms', 'distance_min_joueur_tuiles', 'detection_tuiles', 'poursuite_max_tuiles', 'desinteret_ms', 'blocage_ms']) {
     if (typeof entry[champ] !== 'number' || entry[champ] < 0) {
       erreurs.push(`${path} > ${champ} doit être un nombre positif`);
     }
@@ -1047,7 +1047,7 @@ export const SCHEMAS = {
   spawns: {
     requiredFields: [
       'id', 'scene', 'zone_apparition', 'enemy', 'phases', 'max_simultanes', 'intervalle_ms',
-      'distance_min_joueur_tuiles', 'domaine', 'poursuite_max_tuiles', 'desinteret_ms', 'blocage_ms',
+      'distance_min_joueur_tuiles', 'domaine', 'detection_tuiles', 'poursuite_max_tuiles', 'desinteret_ms', 'blocage_ms',
     ],
     idField: 'id',
     refs: [

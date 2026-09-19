@@ -54,7 +54,8 @@ import {
   creerIntro, avancerIntro, etatRendu as etatRenduIntro,
   creerDepart, avancerDepart, etatRenduDepart, avancementDepart, ETAPE_CLIGNEMENTS,
 } from './intro.js';
-import { tablesDeScene, tableActive, tirerPositionApparition } from './spawns.js';
+import { tablesDeScene, tableActive, tirerPositionApparition, tirerPointDomaine, estEnZoneSurePx } from './spawns.js';
+import { creerComportement, avancerComportement } from './comportement_monstres.js';
 import { peutRecolter, trouverRessourceProche } from './resources.js';
 import { ajouterItem, retirerItem } from './inventory.js';
 import { remplirItemsSol, trouverItemProche, ramasser, planifierRespawn, tickRespawns, calculerTuilesAtteignables } from './ground_items.js';
@@ -90,6 +91,14 @@ import { lireEchelleForcee } from './debug_perf.js';
 // cette fiche, visuel (rayon 11) et collision (rayon 10) étaient deux nombres
 // indépendants qui pouvaient diverger sans que rien ne le signale.
 const RAYON_HERO_BASE_PX = 10;
+// specs/07_chaos-nocturne.md palier C : rayon de la boîte de collision d'un
+// monstre du Chaos. Les monstres posés à la main (la Grotte, Phase 1 validée)
+// continuent d'aller droit au héros sans rien heurter — on ne rouvre pas un
+// comportement validé. Mais un monstre qui **erre** dans un Champ bordé de
+// forêt doit se cogner : sans ça, la règle anti-blocage de la spec n'aurait
+// rien à débloquer, et on verrait des rôdeurs traverser les arbres.
+// *Provisoire*, à l'œil : la silhouette du rampant tient dans 16 px.
+const RAYON_MONSTRE_CHAOS_PX = 8;
 const INTERVALLE_AUTOSAVE_MS = 30000;
 const DISTANCE_INTERACT_PX = 28;
 // MT_texte-flottant_2026-09-19 (`D-05`) : gabarit du texte de gain (« +{n}
@@ -281,6 +290,9 @@ export function creerOrchestrateurGrotte({
   //     (cf. entities.js#creerMonstre) — jamais deux monstres du même id.
   let accumulateursSpawn = {};
   let compteurMonstresNes = 0;
+  // Graine des points d'errance : un compteur, jamais Math.random(), pour
+  // qu'une nuit rejouée depuis la même sauvegarde se déroule pareil.
+  let compteurPointsErrance = 0;
 
   // --- État de jeu, mis à jour par entrerDansScene() à chaque transition ---
   // `hero` reste réaffectable pour la même raison que `flags` ci-dessus :
@@ -1122,6 +1134,53 @@ export function creerOrchestrateurGrotte({
     return { statsPrimaires, statsDerivees };
   }
 
+  // Comportement « un domaine, pas un piquet » (specs/07 §2.3, palier C).
+  //
+  // La décision est prise par une machine à états **pure**
+  // (`comportement_monstres.js`) qui ne connaît ni la scène ni les
+  // collisions : elle dit où le monstre veut aller et à quelle fraction de
+  // sa vitesse. Le mouvement, lui, se fait ici, avec les fonctions du jeu —
+  // `resoudreDeplacement`, la même que pour le héros, donc un rôdeur glisse
+  // le long des arbres au lieu de les traverser.
+  //
+  // Ne concerne QUE les monstres nés d'une table (`spawnId`). Ceux de la
+  // Grotte gardent leur ligne droite de Phase 1, validée en jeu.
+  function deplacerMonstreDuChaos(monstre, vitesse, deltaS, deltaMs) {
+    const table = tablesDeScene(registre.tous('spawns'), scene.id).find((t) => t.id === monstre.spawnId);
+    if (!table) return approcherEnLigneDroite(monstre, hero.x, hero.y, vitesse, deltaS);
+
+    compteurPointsErrance += 1;
+    const graine = compteurPointsErrance;
+    const decision = avancerComportement(monstre.comportement || creerComportement(), {
+      deltaMs,
+      monstre,
+      hero,
+      table,
+      tileSize: scene.tileSize,
+      distanceParcouruePx: monstre.distanceParcouruePx || 0,
+      estEnZoneSure: (x, y) => estEnZoneSurePx(scene, x, y),
+      tirerPointDomaine: () => tirerPointDomaine(scene, { domaine: table.domaine, graine, tuilesAtteignables }),
+      alea: () => ((graine * 9301 + 49297) % 233280) / 233280,
+    });
+
+    const suivant = { ...monstre, comportement: decision.comportement };
+    if (!decision.but) {
+      suivant.distanceParcouruePx = 0;
+      return suivant;
+    }
+
+    // Pas voulu par la machine à états, puis collision : la différence entre
+    // les deux est exactement ce que l'anti-blocage observe.
+    const vise = approcherEnLigneDroite(monstre, decision.but.x, decision.but.y, vitesse * decision.facteurVitesse, deltaS);
+    const rayon = RAYON_MONSTRE_CHAOS_PX;
+    const boite = { x: monstre.x - rayon, y: monstre.y - rayon, largeur: rayon * 2, hauteur: rayon * 2 };
+    const resolu = resoudreDeplacement(scene, boite, vise.x - monstre.x, vise.y - monstre.y, flags.has);
+    suivant.x = resolu.x + rayon;
+    suivant.y = resolu.y + rayon;
+    suivant.distanceParcouruePx = Math.hypot(suivant.x - monstre.x, suivant.y - monstre.y);
+    return suivant;
+  }
+
   function mettreAJourCombat(deltaMs, etatGameplay, statsPrimaires, statsDerivees) {
     const deltaS = deltaMs / 1000;
     anneauAttaqueMs = tickCooldown(anneauAttaqueMs, deltaMs);
@@ -1136,7 +1195,11 @@ export function creerOrchestrateurGrotte({
       const donneesEnnemi = registre.obtenir('enemies', monstre.enemyId);
       const { force, vitesse, dot } = statsEffectivesMonstre(registre, donneesEnnemi, follet);
 
-      let suivant = approcherEnLigneDroite(monstre, hero.x, hero.y, vitesse, deltaS);
+      // Palier C : les monstres du Chaos décident (errance / poursuite /
+      // désintérêt) ; ceux de la Grotte vont droit au but, comme en Phase 1.
+      let suivant = monstre.spawnId
+        ? deplacerMonstreDuChaos(monstre, vitesse, deltaS, deltaMs)
+        : approcherEnLigneDroite(monstre, hero.x, hero.y, vitesse, deltaS);
       suivant.cooldownAttaqueMs = tickCooldown(suivant.cooldownAttaqueMs, deltaMs);
       suivant.flashMs = tickCooldown(suivant.flashMs || 0, deltaMs);
 
@@ -1626,6 +1689,8 @@ export function creerOrchestrateurGrotte({
       // posés à la main dans la scène (la Grotte) ne l'ont pas, et ne sont
       // donc jamais balayés.
       monstre.spawnId = table.id;
+      monstre.comportement = creerComportement();
+      monstre.distanceParcouruePx = 0;
       monstres = [...monstres, monstre];
     }
   }

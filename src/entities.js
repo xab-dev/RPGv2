@@ -6,9 +6,16 @@ export function creerHeros({ x, y, rayon, pvMax }) {
   return { x, y, rayon, pv: pvMax, pvMax, mort: false };
 }
 
-export function creerMonstre(donneesEnnemi, { x, y }) {
+// `id` : identifiant d'INSTANCE, et il doit être unique. Jusqu'au palier B de
+// specs/07_chaos-nocturne.md, il valait l'id du CATALOGUE — invisible tant
+// qu'une scène n'avait qu'un monstre de chaque type (la Grotte), mais dès que
+// deux rôdeurs identiques coexistent, frapper l'un les blesse **tous** (main.js
+// filtre les touchés par id) et le follet ne sait plus lequel il engage.
+// L'appelant fournit donc un id d'instance ; le défaut ne reste que pour les
+// scènes à un seul monstre par type et pour les tests d'avant.
+export function creerMonstre(donneesEnnemi, { x, y, id = donneesEnnemi.id }) {
   return {
-    id: donneesEnnemi.id,
+    id,
     enemyId: donneesEnnemi.id,
     x,
     y,

@@ -54,12 +54,13 @@ import {
   creerIntro, avancerIntro, etatRendu as etatRenduIntro,
   creerDepart, avancerDepart, etatRenduDepart, avancementDepart, ETAPE_CLIGNEMENTS,
 } from './intro.js';
+import { tablesDeScene, tableActive, tirerPositionApparition } from './spawns.js';
 import { peutRecolter, trouverRessourceProche } from './resources.js';
 import { ajouterItem, retirerItem } from './inventory.js';
 import { remplirItemsSol, trouverItemProche, ramasser, planifierRespawn, tickRespawns, calculerTuilesAtteignables } from './ground_items.js';
 import { calculerOpaciteToit, distanceAuRectangle, empreinteAbsoluePuzzle } from './structures.js';
 import { dansRectangleTuile, poseValide } from './placement.js';
-import { avancerHeure, opaciteAHeure } from './daynight.js';
+import { avancerHeure, opaciteAHeure, phaseAHeure } from './daynight.js';
 import { armerAudio, definirMusiqueActive } from './audio.js';
 import { creerEtatIndices } from './hints.js';
 import { estExpire, poserCooldown, tempsRestantMs } from './cooldowns.js';
@@ -204,6 +205,11 @@ export function creerOrchestrateurGrotte({
         save.flags[id] = true;
         etatModifie = true;
       },
+      // specs/07_chaos-nocturne.md §3 : valeurs nommées que les conditions de
+      // données peuvent comparer (« niveau ≥ 5 » pour le palier 1 du Chaos).
+      // Lue à chaque évaluation, jamais capturée : le seuil s'ouvre à l'instant
+      // où le joueur monte de niveau, sans rien avoir à réévaluer à la main.
+      valeurs: () => ({ niveau: save.hero.niveau }),
     });
   }
   let flags = construireFlags();
@@ -264,6 +270,17 @@ export function creerOrchestrateurGrotte({
   const ECLAT_NIVEAU_MS = 700; // PROVISOIRE, jamais validé en jeu par Xav
   let eclatNiveauMs = 0;
   let niveauPrecedent = save.hero.niveau;
+
+  // Apparitions nocturnes (specs/07_chaos-nocturne.md, palier B). Deux états,
+  // volontairement **hors de la sauvegarde** : la spec l'exige (« non
+  // persistés : la sauvegarde ne change pas de version ; recharger en pleine
+  // nuit repart de zéro »), et c'est ce qui évite une migration.
+  //   - `accumulateursSpawn` : le temps de jeu actif écoulé depuis la
+  //     dernière naissance, par table ;
+  //   - `compteurMonstresNes` : sert à frapper un id d'INSTANCE unique
+  //     (cf. entities.js#creerMonstre) — jamais deux monstres du même id.
+  let accumulateursSpawn = {};
+  let compteurMonstresNes = 0;
 
   // --- État de jeu, mis à jour par entrerDansScene() à chaque transition ---
   // `hero` reste réaffectable pour la même raison que `flags` ci-dessus :
@@ -514,10 +531,17 @@ export function creerOrchestrateurGrotte({
 
     monstres = scene.spawns
       .filter((s) => s.condition == null || flags.evaluate(s.condition))
-      .map((s) => creerMonstre(registre.obtenir('enemies', s.enemy), {
-        x: (s.position.x + 0.5) * scene.tileSize,
-        y: (s.position.y + 0.5) * scene.tileSize,
-      }));
+      .map((s) => {
+        compteurMonstresNes += 1;
+        return creerMonstre(registre.obtenir('enemies', s.enemy), {
+          x: (s.position.x + 0.5) * scene.tileSize,
+          y: (s.position.y + 0.5) * scene.tileSize,
+          id: `${s.enemy}#${compteurMonstresNes}`,
+        });
+      });
+    // Les monstres nocturnes ne traversent pas un changement de scène : on
+    // repart de la nuit en cours, plafond vide (palier B, « non persistés »).
+    accumulateursSpawn = {};
 
     follet = save.hero.companion ? creerFollet(save.hero.companion, hero) : null;
     puzzlesEtat = { ...etatInitialPuzzles(registre), ...save.puzzles };
@@ -1403,6 +1427,12 @@ export function creerOrchestrateurGrotte({
       save.monde.heure = avancerHeure(save.monde.heure, deltaMs);
       etatModifie = true;
 
+      // Apparitions nocturnes (palier B) : APRÈS l'avance de l'horloge, pour
+      // que la phase lue soit celle de cette frame-ci — sinon la première
+      // frame de la nuit ferait encore apparaître au crépuscule, et la
+      // première frame de l'aube laisserait vivre une frame de trop.
+      mettreAJourApparitionsNocturnes(deltaMs);
+
       // Survie (Palier C §3.3) : décroissance en temps actif, jamais hors
       // session ni sous UI (déjà garanti par ce bloc). Détection du premier
       // franchissement sous 0,5 AVANT/APRÈS pour ne déclencher
@@ -1528,6 +1558,76 @@ export function creerOrchestrateurGrotte({
     if (!depart) return echelleJeu;
     const echelleCinematique = TAILLE_FOLLET_SELECTIONNE_PX / TAILLE_REFERENCE_FOLLET_PX;
     return echelleFolletEnTransition(echelleCinematique, echelleJeu, avancementDepart(depart));
+  }
+
+  // Apparitions nocturnes (specs/07_chaos-nocturne.md, palier B).
+  //
+  // Appelée **dans** le bloc `if (!uiOuverte)` de maj(), donc gelée sous UI
+  // par le point de décision unique existant, jamais par une condition à
+  // elle. Elle lit la phase du cycle sur l'horloge de temps de jeu actif
+  // (`save.monde.heure`), celle-là même que les cooldowns et la survie :
+  // pas de 2ᵉ horloge.
+  //
+  // Deux moitiés, dans cet ordre : d'abord **l'aube** (tout ce qui est né de
+  // la nuit disparaît, sans butin et sans XP — ils ne sont pas tués, ils
+  // s'en vont), ensuite **la naissance** progressive jusqu'au plafond.
+  function mettreAJourApparitionsNocturnes(deltaMs) {
+    const phase = phaseAHeure(save.monde.heure);
+    const tables = tablesDeScene(registre.tous('spawns'), scene.id);
+    if (tables.length === 0) return;
+
+    for (const table of tables) {
+      const active = tableActive(table, { phase, evaluerCondition: flags.evaluate });
+
+      if (!active) {
+        // Retrait sec côté logique (le fondu est l'affaire du rendu, palier
+        // D) : `onMonstreMort` n'est PAS appelé, donc ni butin ni XP — la
+        // nuit s'en va, elle ne se fait pas tuer.
+        monstres = monstres.filter((m) => m.spawnId !== table.id);
+        accumulateursSpawn[table.id] = 0;
+        continue;
+      }
+
+      const vivants = monstres.filter((m) => m.spawnId === table.id && !m.mort).length;
+      if (vivants >= table.max_simultanes) {
+        // Plafond atteint : on n'accumule pas de « dette », sans quoi tuer
+        // un monstre en ferait apparaître trois d'un coup.
+        accumulateursSpawn[table.id] = 0;
+        continue;
+      }
+
+      const accumule = (accumulateursSpawn[table.id] || 0) + deltaMs;
+      if (accumule < table.intervalle_ms) {
+        accumulateursSpawn[table.id] = accumule;
+        continue;
+      }
+      accumulateursSpawn[table.id] = 0;
+
+      compteurMonstresNes += 1;
+      const position = tirerPositionApparition(scene, {
+        zoneId: table.zone_apparition,
+        hero,
+        distanceMinTuiles: table.distance_min_joueur_tuiles,
+        dejaOccupees: monstres.filter((m) => !m.mort),
+        graine: compteurMonstresNes,
+        tuilesAtteignables,
+      });
+      // Aucune position tenable (joueur planté au milieu de la zone, tuiles
+      // saturées) : on ne force rien, la prochaine fenêtre retentera.
+      if (!position) continue;
+
+      const monstre = creerMonstre(registre.obtenir('enemies', table.enemy), {
+        x: position.x,
+        y: position.y,
+        id: `${table.enemy}#${compteurMonstresNes}`,
+      });
+      // Marque d'appartenance : c'est elle qui dit qui doit disparaître à
+      // l'aube et qui compte dans le plafond de CETTE table. Les monstres
+      // posés à la main dans la scène (la Grotte) ne l'ont pas, et ne sont
+      // donc jamais balayés.
+      monstre.spawnId = table.id;
+      monstres = [...monstres, monstre];
+    }
   }
 
   function dessiner() {

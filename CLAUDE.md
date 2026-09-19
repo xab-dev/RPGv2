@@ -576,3 +576,59 @@ de phase sont lus depuis `daynight.js`, jamais recopiés) · monstre inconnu.
 vérifie aussi, en relisant le **source** du module, qu'aucun « niveau » n'y est écrit, et qu'une 2ᵉ table (zone
 sud, seuil 10 — exactement le palier Nv. 10) fonctionne sans une ligne de code. 300 tirages sur 300 respectent les
 cinq règles. Suite verte, **74 fichiers**.
+
+### Ticket 6 — `07` palier B : la nuit et le seuil
+
+**Les monstres naissent.** Une fonction dans l'orchestrateur, appelée **dans** le bloc `if (!uiOuverte)` de `maj()`,
+juste **après** l'avance de l'horloge — elle est donc gelée sous UI par le point de décision unique qui existe déjà,
+jamais par une condition à elle, et la phase qu'elle lit est celle de la frame en cours (sans cela, la première
+frame de la nuit ferait encore naître au crépuscule). Elle fait deux choses, dans cet ordre : à l'aube (ou dès que
+la condition se ferme) **elle balaie** ce qui est né de la nuit ; sinon elle **accumule** le temps de jeu actif et
+fait naître un rôdeur par `intervalle_ms`, jusqu'au plafond.
+
+Trois détails qui ne se voient pas mais qui comptent :
+
+- **Le plafond n'accumule pas de dette.** Quand les six sont là, l'accumulateur est remis à zéro plutôt que de
+  continuer à courir — sinon tuer un monstre en ferait sortir trois d'un coup.
+- **Le retrait de l'aube n'est pas une mort.** `onMonstreMort` n'est pas appelé : ni butin, ni XP. La nuit s'en va,
+  elle ne se fait pas tuer. (Le fondu est l'affaire du rendu, palier D.)
+- **Les monstres de la Grotte ne sont jamais balayés** : seuls ceux qui portent la marque de leur table (`spawnId`)
+  sont concernés, et le plafond se compte par table.
+
+**Rien n'est persisté, donc rien à migrer** — c'était l'arrêt obligatoire de la spec, et il n'a pas eu lieu d'être :
+`save.schema_version` ne bouge pas, et le test vérifie qu'aucune chaîne « chaos » ne traîne dans la sauvegarde.
+Changer de scène remet les compteurs à zéro, recharger en pleine nuit aussi.
+
+### Une dette trouvée en chemin, corrigée ici : `D-38`
+
+`creerMonstre` donnait à chaque instance **l'id de son catalogue**. Tant qu'une scène n'a qu'un monstre de chaque
+type — la Grotte — personne ne le voit. Avec six rôdeurs identiques, c'est autre chose : `main.js` filtre les
+monstres touchés **par id**, donc frapper celui qui est à portée les aurait **tous** blessés, où qu'ils soient, et le
+follet n'aurait plus su lequel il engageait. J'ai corrigé **dans ce commit** plutôt que d'ouvrir une ligne à part :
+sans ça, le palier B livrait une fonctionnalité fausse. `creerMonstre` prend désormais un `id` d'instance (le
+défaut reste l'id de catalogue, pour les scènes à un monstre et les tests d'avant), et l'orchestrateur le frappe
+depuis un compteur — y compris pour les monstres posés à la main dans le layout.
+
+### Le coût, mesuré (additif 2 du brief)
+
+Bot headless, nuit complète de 4 minutes, seconde moitié seulement (plafond atteint), 7 499 frames dans chaque cas :
+
+| | `maj()` moy | p95 | max |
+|---|---|---|---|
+| Niveau 4 — **zéro monstre** | 0,004 ms | 0,005 ms | 0,188 ms |
+| Niveau 5 — **plafond de 6 atteint** | **0,005 ms** | 0,006 ms | 0,625 ms |
+
+**+0,001 ms par frame** pour six monstres qui se déplacent et attaquent, sur un budget de 16,7 ms. Deux réserves à
+garder en tête, sans quoi ce tableau se lirait de travers : c'est **Node**, pas Chrome, et c'est le `maj()` du bot,
+sans lecture de manette ni rendu. Ce qu'il dit, ce n'est pas « le jeu tiendra 60 fps » — c'est que la logique des
+monstres, elle, ne coûte rien. Le verdict reste le relevé de Xav sous Chrome, comparé à `R-03` (`V-18`).
+Aucune optimisation faite, aucune nécessaire pour l'instant.
+
+**Tests** (`test_07b_nuit_et_seuil_2026-09-19.js`, bot headless sur la vraie scène, avec le vrai orchestrateur) :
+niveau 4 → nuit entière vide · niveau 5 → 6 apparitions, plafond atteint, **toutes** dans la zone de Chaos, jamais
+en zone sûre, jamais en Campagne, jamais à moins de 10 tuiles du joueur (vérifié à la frame de naissance de
+chacun) · à l'aube, plus rien, sans butin ni XP · de jour, rien, même au niveau 30 · UI ouverte, ni apparition ni
+horloge · sauvegarde inchangée · ids tous distincts. Le héros y est maintenu en vie de force, et c'est dit dans le
+fichier : au palier B les monstres foncent encore **en ligne droite** sur lui (le domaine, c'est le palier C) et
+finiraient par traverser la carte pour le tuer — on ne triche que sur ce qui n'est pas le sujet. Suite verte,
+**75 fichiers**.

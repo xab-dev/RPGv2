@@ -173,6 +173,10 @@ function validerLayoutLignes(layout, legende, largeur, hauteur, tileIds, path, e
 
 function validerScene(entry, catalogs, path) {
   const erreurs = [];
+  // `D-35` : une scène peut déclarer le profil de lumière du follet qui lui
+  // est propre (les deux salles de la Grotte le font, avec les valeurs d'avant
+  // le ticket). Même garde que le profil de base du compagnon.
+  erreurs.push(...erreursProfilLumiere(entry.lumiere_follet, `${path} > lumiere_follet`));
   const largeur = entry.width;
   const hauteur = entry.height;
   const layout = entry.layout;
@@ -489,6 +493,27 @@ function erreursRenderVisuel(entry, catalogs, path) {
   return [];
 }
 
+// `D-35` : profil de lumière { rayon, fondu_px }, partagé par le follet
+// (`companions.json#lumiere`, sa base) et par une scène qui veut le sien
+// (`scenes.json#lumiere_follet`). Un fondu plus large que le rayon n'aurait
+// pas de sens (le cœur net disparaîtrait) : refusé au boot plutôt que
+// découvert de nuit, en jeu.
+function erreursProfilLumiere(profil, path) {
+  if (profil === undefined) return [];
+  if (profil === null || typeof profil !== 'object') return [`${path} doit être un objet { rayon, fondu_px }`];
+  const erreurs = [];
+  if (typeof profil.rayon !== 'number' || profil.rayon <= 0) {
+    erreurs.push(`${path} > rayon doit être un nombre strictement positif`);
+  }
+  if (typeof profil.fondu_px !== 'number' || profil.fondu_px < 0) {
+    erreurs.push(`${path} > fondu_px doit être un nombre positif ou nul`);
+  }
+  if (erreurs.length === 0 && profil.fondu_px > profil.rayon) {
+    erreurs.push(`${path} > fondu_px (${profil.fondu_px}) ne peut pas dépasser rayon (${profil.rayon})`);
+  }
+  return erreurs;
+}
+
 // `D-34` : échelle du follet EN JEU (optionnelle, 1 par défaut), distincte de
 // la taille que la cinématique du choix lui donne. Même garde que
 // `visuel.echelle` : une échelle nulle ou négative rendrait le compagnon
@@ -498,6 +523,7 @@ function erreursCompanion(entry, catalogs, path) {
   if (entry.echelle_jeu !== undefined && (typeof entry.echelle_jeu !== 'number' || entry.echelle_jeu <= 0)) {
     erreurs.push(`${path} > echelle_jeu doit être un nombre strictement positif`);
   }
+  erreurs.push(...erreursProfilLumiere(entry.lumiere, `${path} > lumiere`));
   return erreurs;
 }
 

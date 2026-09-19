@@ -177,6 +177,11 @@ export function chargerScene(registre, sceneId, overridesInteractifs = {}) {
     // avant ce ticket : render.js lit directement `obscurite.opacite`.
     obscurite: donnees.obscurite || null,
     lumieres: donnees.lumieres || [],
+    // `D-35` : profil de lumière du follet PROPRE à cette scène (« lieu où le
+    // follet brille plus fort »), absent = le follet éclaire à sa base. Les
+    // deux salles de la Grotte le déclarent avec les valeurs d'avant le
+    // ticket : Xav aime la Grotte telle qu'elle est, elle ne change pas.
+    lumiereFollet: donnees.lumiere_follet || null,
     // decor (§3.4) : { densite, motifs: [{ visuel, poids }] }, lu par
     // decor.js#genererDecor — absent = aucun motif, jamais une erreur.
     decor: donnees.decor || null,

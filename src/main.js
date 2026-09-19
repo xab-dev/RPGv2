@@ -45,7 +45,7 @@ import {
 } from './combat.js';
 import {
   creerFollet, mettreAJourEtat as mettreAJourFollet, avancerPosition as avancerFollet, DISTANCE_ENGAGEMENT_PX,
-  resoudreEchelleJeu as resoudreEchelleJeuFollet, echelleFolletEnTransition,
+  resoudreEchelleJeu as resoudreEchelleJeuFollet, echelleFolletEnTransition, resoudreProfilLumiere,
 } from './companion.js';
 import { creerGenerateur, resoudreLoot } from './loot.js';
 import { etatInitial as etatInitialPuzzles, activerLevier } from './puzzles.js';
@@ -1702,11 +1702,20 @@ export function creerOrchestrateurGrotte({
       // ce callback est fourni.
       surRecalculCoucheStatique: moniteurPerf.actif ? moniteurPerf.surRecalculCoucheStatique : undefined,
     });
+    // `D-35` : profil de lumière du follet résolu ici (main.js a le registre et
+    // la scène), jamais par render.js — même patron que tout le reste. La
+    // scène prime si elle déclare le sien (les deux salles de la Grotte le
+    // font, avec les valeurs d'avant ce ticket) ; sinon c'est la base du
+    // compagnon, volontairement minimale.
+    const profilLumiere = companionActif
+      ? resoudreProfilLumiere(companionActif, sceneAffichage)
+      : { rayon: 0, fonduPx: 0 };
     dessinerObscurite(ctxLogique, {
       scene: sceneAffichage,
       camera,
       follet: follet ? { x: follet.x, y: follet.y } : null,
-      rayonLumiereFollet: companionActif ? companionActif.rayon_lumiere : 0,
+      rayonLumiereFollet: profilLumiere.rayon,
+      fonduLumiereFollet: profilLumiere.fonduPx,
       couleurLumiereFollet: companionActif ? companionActif.render.couleur : null,
     });
     // Aura du follet (§2 diagnostic SD_ui-lisibilite, pointillée depuis §3.4

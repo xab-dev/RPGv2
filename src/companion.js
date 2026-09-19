@@ -43,6 +43,32 @@ export function resoudreEchelleJeu(companion) {
 // taille de jeu **pendant** l'étape de départ des deux autres. `avancement`
 // est celui de cette étape (intro.js#avancementDepart, déjà amorti) : une
 // seule courbe pour les positions des partants et pour la taille de l'élu.
+// Profil de lumière EFFECTIF du follet (`D-35`) : ce que le calque
+// d'obscurité doit percer autour de lui, en pixels logiques.
+//
+// Deux sources, dans cet ordre : la **scène**, si elle déclare le sien
+// (`scenes.json#lumiere_follet` — « ici le follet brille plus fort » : les
+// deux salles de la Grotte, que Xav aime telles qu'elles sont), sinon la
+// **base du compagnon** (`companions.json#lumiere`), volontairement minimale
+// depuis ce ticket : dehors la nuit, l'ancienne lumière éclairait presque
+// tout l'écran et cassait l'effet nocturne. C'est une valeur de début de jeu
+// destinée à **grandir** (principe d'équilibrage du 19/09) : elle passe donc
+// par cette résolution, et aucun système ne lit les données directement.
+// Aucun buff, aucun équipement n'est livré ici.
+//
+// `fonduPx` est la largeur de la couronne de décroissance, mesurée **vers
+// l'intérieur** depuis le bord : le cœur net va de 0 à `rayon - fonduPx`.
+// Repli sur `rayon_lumiere` pour un compagnon qui ne déclare pas `lumiere`
+// (catalogue d'avant ce ticket), avec le profil d'avant (cœur à 35 %).
+export const RATIO_COEUR_LUMIERE_HISTORIQUE = 0.35;
+
+export function resoudreProfilLumiere(companion, scene) {
+  const profil = (scene && scene.lumiereFollet) || (companion && companion.lumiere);
+  if (profil) return { rayon: profil.rayon, fonduPx: Math.min(profil.fondu_px, profil.rayon) };
+  const rayon = (companion && companion.rayon_lumiere) || 0;
+  return { rayon, fonduPx: rayon * (1 - RATIO_COEUR_LUMIERE_HISTORIQUE) };
+}
+
 export function echelleFolletEnTransition(echelleCinematique, echelleJeu, avancement) {
   const a = Math.min(1, Math.max(0, avancement));
   return echelleCinematique + (echelleJeu - echelleCinematique) * a;

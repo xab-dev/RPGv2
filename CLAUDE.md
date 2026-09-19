@@ -484,3 +484,46 @@ follet ne déplace pas le centre du test.
 **Tests.** Un fichier neuf, `test_d34_follet_echelle_jeu_2026-09-19.js` : échelle en données et défaut 1, refus au
 boot d'une échelle dégénérée, orbite inchangée **au pixel**, continuité de la frontière frame par frame, et
 non-régression de la cinématique. Suite verte, **72 fichiers**.
+
+### Ticket 4 — `D-35` : la lumière du follet, dehors seulement
+
+**Un profil, deux endroits où il peut vivre.** `{ rayon, fondu_px }` est désormais une donnée à part entière :
+le compagnon porte sa **base** (`companions.json#lumiere`), une scène peut déclarer **le sien**
+(`scenes.json#lumiere_follet`). `companion.js#resoudreProfilLumiere(companion, scene)` tranche — scène d'abord,
+base ensuite — et c'est la seule lecture : `render.js` ne connaît ni l'un ni l'autre catalogue, il reçoit un rayon
+et une largeur de fondu.
+
+| | rayon | fondu | cœur net |
+|---|---|---|---|
+| Avant ce ticket, partout | 110 px | 71,5 px | jusqu'à 38,5 px (35 %) |
+| **Base du follet** (donc la Région Maison) | **40 px** | **6 px** | jusqu'à 34 px (85 %) |
+| Les deux salles de la Grotte (déclaré) | 110 px | 71,5 px | jusqu'à 38,5 px (35 %) |
+
+40 px, c'est **exactement le rayon de l'aura** d'aujourd'hui, comme le demandait le ticket — mais dans un champ
+`lumiere` **distinct**, initialisé à cette valeur : les deux divergeront. Dehors, le disque éclairé passe donc de
+≈ 3,4 tuiles de rayon à **1,25 tuile**. C'est drastique, et c'est le principe : partir du minimum, faire grandir
+ensuite. La teinte chaude et la douceur à l'intérieur du disque sont conservées telles quelles.
+
+**Le critère d'acceptation est un test, pas une promesse.** `test_d35_lumiere_follet_2026-09-19.js` vérifie que dans
+les **deux salles de la Grotte**, pour **les trois follets**, le rayon vaut 110 px et le cœur net s'arrête à 35 % —
+des nombres **recopiés en dur dans le test**, jamais relus depuis les données : un test qui relirait le catalogue
+validerait n'importe quelle dérive future. Il vérifie aussi qu'un compagnon sans champ `lumiere` (catalogue
+d'avant) dessine exactement comme avant, qu'un profil incohérent (fondu plus large que le rayon) tombe **au boot**
+plutôt que de nuit en jeu, et qu'une scène de plus déclare le sien sans une ligne de code.
+
+**Deux choses trouvées en chemin, laissées en l'état.**
+
+- **Il n'existe pas de scène d'intérieur de maison.** Le jeu compte trois scènes : deux salles de Grotte et
+  `scene_maison_exterieur`. L'intérieur *est* dans l'extérieur, avec un toit qui s'efface à l'approche. La valeur
+  `[OUVERT]` que le ticket prévoyait (« l'intérieur garde les valeurs d'aujourd'hui ») était donc **impossible à
+  appliquer sans inventer un profil par zone**, ce que le ticket ne demande pas. L'intérieur reçoit la base réduite.
+  `Q-30` réécrite en conséquence : la question qui reste est « est-ce jouable ? », et elle se répond en jouant.
+- **Le toit garde son ancien rayon.** `RAYON_EFFACEMENT_TOIT` lit `rayon_lumiere` (110) × 1,125, réglé à l'œil par
+  `D-21` il y a quelques heures. Le brancher sur les 40 px nouveaux aurait fait un toit qui ne se soulève presque
+  plus — une décision de gameplay que ce ticket n'a pas à prendre, et que ses interdits n'évoquent pas. Conséquence
+  à assumer : `rayon_lumiere` ne décrit plus la lumière, il ne sert plus qu'au toit (et de repli). Ligne **`Q-31`**
+  ouverte, trois issues proposées.
+
+**Rien d'autre n'a bougé** : ni les lumières de scène, ni les faisceaux de la Grotte, ni la fenêtre de la maison, ni
+les opacités jour/nuit, ni le décor, ni les leviers. Les lumières **statiques** gardent le profil historique dans
+tous les cas : seul le follet a désormais un profil à lui. Suite verte, **73 fichiers**.

@@ -42,3 +42,76 @@ export const BOUTON_MENU = { cx: 455, cy: 20, rayon: 16, verbe: 'menu' };
 export function boutonsTactiles() {
   return [BOUTON_ATTAQUE, ...BOUTONS_SKILLS, BOUTON_CONSOMMABLE, BOUTON_INTERACT, BOUTON_MENU];
 }
+
+// --- Bandeau haut, pleine largeur (MT_hud-ligne-haute_2026-09-19) ---------
+// Décision Xav : PV, faim, soif, niveau sur UNE ligne en haut, à la place de
+// la colonne de gauche qui prenait trop de place. La barre d'XP quitte le
+// HUD (seul le numéro du niveau reste) ; la progression d'XP reste lisible
+// dans l'écran Stats.
+//
+// Tout le placement vit ICI, pas en dur dans hud.js : ce module est pur et
+// testable headless, alors que hud.js dessine et n'est jamais exercé par les
+// tests (contrainte de méthode).
+
+// 20 px sur 270 = 7,4 % de la hauteur logique, sous le plafond de 8 % fixé
+// par la fiche. PROVISOIRE : jamais validé en jeu par Xav.
+export const BANDEAU_HAUT = { x: 0, y: 0, largeur: 480, hauteur: 20 };
+
+const BANDEAU_PADDING = 6;
+const BANDEAU_ECART = 8;
+// Le bandeau est plein écran en LARGEUR (décision Xav), mais son CONTENU
+// s'arrête ici pour ne jamais passer sous le bouton MENU tactile
+// (BOUTON_MENU : cx 455, rayon 16, donc à partir de x = 439) — la fiche
+// exige de ne recouvrir aucun contrôle tactile.
+const BANDEAU_CONTENU_FIN_X = 430;
+
+const LARGEUR_FOLLET = 12;
+const LARGEUR_PV = 86;
+const LARGEUR_ECLATS = 30;
+const LARGEUR_JAUGE_SURVIE = 50; // icône (6) + écart (4) + barre (40)
+const LARGEUR_NIVEAU = 30;
+
+// Rectangles du bandeau, de gauche à droite : follet · PV · éclats · faim ·
+// soif · Niv. N — puis l'espace restant, réservé aux buffs actifs (aucun
+// buff n'est affiché au HUD aujourd'hui, cf. journal : la zone est calculée
+// et testée, rien n'y est encore dessiné).
+//
+// Les éléments optionnels (`follet`, `survie`, `niveau`) suivent la même
+// règle qu'avant : avant le premier calcul des stats (cinématique
+// d'ouverture), il n'y a rien à afficher — la ligne se resserre alors sans
+// laisser de trou.
+export function elementsBandeauHaut({ follet = false, survie = false, niveau = false } = {}) {
+  const elements = {};
+  let x = BANDEAU_HAUT.x + BANDEAU_PADDING;
+
+  // Hauteur d'un élément, centré verticalement dans le bandeau.
+  const poser = (largeur, hauteur) => {
+    const rect = {
+      x,
+      y: BANDEAU_HAUT.y + (BANDEAU_HAUT.hauteur - hauteur) / 2,
+      largeur,
+      hauteur,
+    };
+    x += largeur + BANDEAU_ECART;
+    return rect;
+  };
+
+  if (follet) elements.follet = poser(LARGEUR_FOLLET, 12);
+  elements.pv = poser(LARGEUR_PV, 10);
+  elements.eclats = poser(LARGEUR_ECLATS, 10);
+  if (survie) {
+    elements.faim = poser(LARGEUR_JAUGE_SURVIE, 8);
+    elements.soif = poser(LARGEUR_JAUGE_SURVIE, 8);
+  }
+  if (niveau) elements.niveau = poser(LARGEUR_NIVEAU, 10);
+
+  // Reste de la ligne : réservé aux buffs actifs. Jamais négatif, même si
+  // tous les éléments optionnels sont présents (vérifié par test).
+  elements.buffs = {
+    x,
+    y: BANDEAU_HAUT.y + (BANDEAU_HAUT.hauteur - 12) / 2,
+    largeur: Math.max(0, BANDEAU_CONTENU_FIN_X - x),
+    hauteur: 12,
+  };
+  return elements;
+}

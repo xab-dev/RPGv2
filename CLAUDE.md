@@ -370,3 +370,36 @@ Les **boîtes** des mâts et de la margelle se recouvrent (2,5 px) — un test n
 **Testé** : `node --check` sur `src/poussiere.js`, `src/render.js`, `src/main.js`, `src/schemas.js`, `tests/test_mt_trainee_poussiere_2026-09-19.js`. Nouveau `tests/test_mt_trainee_poussiere_2026-09-19.js` (les 4 contrats du §Tests + 3 de plus) : X px → k bouffées pour 4 pas différents ; densité identique à 30 et 144 fps ; réserve fixe même en saturation et en téléportation ; immobile → 0 ; UI ouverte → 0 ; l'arrêt ne met aucune bouffée « en attente » ; deux exécutions identiques → bouffées identiques ; alternance latérale ; alpha décroissant / échelle croissante puis recyclage ; `viderPoussiere` sans réallocation ; le module ignore la forme du héros et n'utilise aucun aléa. `node tools/run_tests.js` : **65 fichiers verts** (1 nouveau).
 
 **`main.js#dessiner()` et `render.js` touchés → `docs/CHECKLIST_visuelle.md` à rejouer par Xav** (règle de méthode), avec le nouvel **état `32ter` « Traînée de poussière »** ajouté à la checklist. **Relevé `?debug=fps` avant/après impossible** dans cette session : aucun navigateur piloté disponible (extension Chrome non connectée, démon browser-use en échec) et le protocole suppose de toute façon une traversée jouée à la main — dû par Xav, comme l'étape 1 du polish.
+
+### Ticket 5 — MT HUD sur une seule ligne en haut
+
+**Inventaire d'abord (demandé par le ticket) : ce que `ui/hud.js` dessinait.**
+
+| Calque | Où | Devenu |
+|---|---|---|
+| Cartouche 1 (arrondi, 120×46 en 6,6) : icône follet + barre de PV (valeur `pv/pvMax` centrée dedans) + ligne `◆ éclats` | colonne de gauche | **déplacé dans le bandeau haut** |
+| Cartouche 2 (sous le premier) : jauge faim, jauge soif, `Nv.N` + **barre d'XP** | colonne de gauche | jauges et niveau **déplacés dans le bandeau** ; **barre d'XP supprimée** |
+| Boutons tactiles (si tactile actif) | `hud_layout.js` | **non touché** |
+| Rangée de 5 slots en bas (si tactile inactif) | `dessinerSlotsBas` | **non touché** (spec à part de Xav) |
+
+**Deux choses que l'inventaire a révélées, et que la fiche n'avait pas listées** :
+
+1. **Les éclats (`◆ N`)**, qui vivaient dans le cartouche PV. La fiche prévoyait le cas (« à ajuster si l'inventaire révèle autre chose ») : ils prennent place dans le bandeau, entre les PV et la faim. Ordre final : **follet · PV · éclats · faim · soif · `Nv. N`** — espace — zone buffs.
+2. **Aucun buff n'est affiché au HUD aujourd'hui** (`status.js` en tient bien, mais rien ne les dessine). La zone de buffs est donc **calculée et testée** dans le layout, mais **rien n'y est dessiné** — inventer un affichage de buffs aurait débordé du ticket.
+
+**Fait.**
+
+- `src/ui/hud_layout.js` : `BANDEAU_HAUT` (0,0,480×20 — **7,4 % de la hauteur logique**, sous le plafond de 8 %) et `elementsBandeauHaut({ follet, survie, niveau })`, **pure**, qui renvoie les rectangles nommés. Tout le placement vit là, rien en dur dans `hud.js` — c'est ce qui rend le ticket testable, `hud.js` n'étant jamais exercé headless.
+- `src/ui/hud.js` : `dessinerHud` réécrite autour du bandeau. `dessinerRectangleArrondi`, `COULEUR_XP` et les 7 constantes `CARTOUCHE_*`/`BARRE_PV_HAUTEUR` **supprimées** (plus aucun cartouche). Les jauges gardent leurs icônes **par forme** (triangle/goutte) et les éclats leur losange — P4② intacte, chaque élément reste identifiable sans la couleur.
+- **Éclat de montée de niveau** : `main.js` tient un compte à rebours (`ECLAT_NIVEAU_MS = 700`, **provisoire**) déclenché par le **changement de `save.hero.niveau`** — donc un seul éclat par palier, quelle que soit la source d'XP — et passe un ratio 0..1 ; `hud.js` ne tient aucun état et vire simplement le texte à l'or. **Aucun son ajouté**, comme l'exige la fiche.
+- **L'XP reste lisible dans l'écran Stats** : nouvelle entrée informative (grisée) `Expérience : Nv.N — NN %`, même patron que « points libres ». Nouvelles clés `menu.stats_xp` en **FR et EN** (zéro chaîne en dur).
+
+**Conséquence non prévue par la fiche, traitée plutôt que laissée en collision** : la bannière d'indices de commande (`ui/hud_hints.js`) était dessinée à `y = 8`, hauteur 18 — elle se serait superposée au bandeau (0..20). La fiche exige explicitement que le bandeau ne recouvre pas les indices : **`Y_BANNIERE` passe de 8 à 26** (l'indice est fugace, le bandeau est permanent — c'est à l'indice de céder). Un seul nombre, commenté sur place.
+
+**Le bandeau ne recouvre aucun contrôle tactile** : son fond est bien plein écran (décision Xav), mais son **contenu** s'arrête à `x = 430`, avant le bouton MENU tactile (`cx 455, rayon 16`). Vérifié par test contre **tous** les boutons tactiles et le joystick.
+
+**Non touché, comme l'exige le ticket** : la rangée de cases du bas (spec à part, à écrire par Xav) et les boutons tactiles — un test le verrouille.
+
+**Testé** : `node --check` sur `src/ui/hud_layout.js`, `src/ui/hud.js`, `src/ui/hud_hints.js`, `src/main.js`, `tests/test_mt_hud_ligne_haute_2026-09-19.js`. Nouveau `tests/test_mt_hud_ligne_haute_2026-09-19.js` (7 blocs, les 8 combinaisons d'éléments optionnels à chaque fois) : bandeau plein écran et ≤ 8 % de hauteur ; tous les rectangles dans le bandeau et dans 480 px ; aucun chevauchement ; **plus aucun rectangle ni couleur ni paramètre d'XP** (layout *et* source de `hud.js`) ; `Nv. N` suit le niveau et les clés i18n existent en FR/EN ; aucun contenu ne recouvre un contrôle tactile ; la rangée du bas est intacte. `node tools/run_tests.js` : **66 fichiers verts** (1 nouveau).
+
+**`ui/hud.js` touché → `docs/CHECKLIST_visuelle.md` à rejouer EN ENTIER** (règle de méthode). La checklist a été mise à jour en conséquence : **état 1 réécrit** (le HUD y est décrit comme un bandeau haut), **état 25 réécrit** (jauges dans le bandeau, plus de barre d'XP, XP renvoyée à l'écran Stats), **nouvel état 25bis** (éclat de montée de niveau). Validation due par Xav : manette, **puis un passage au tactile** (le bandeau et les boutons tactiles coexistent en haut de l'écran).

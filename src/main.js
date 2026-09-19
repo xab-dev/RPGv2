@@ -210,6 +210,15 @@ export function creerOrchestrateurGrotte({
   const visuelPoussiere = registre.obtenir('visuels', effetPoussiere.visuel);
   const poussiere = creerPoussiere(effetPoussiere);
 
+  // MT_hud-ligne-haute_2026-09-19 : la barre d'XP a quitté le HUD, mais la
+  // montée de niveau garde un retour visuel — un bref éclat sur « Niv. N »
+  // (aucun son ajouté, §À faire de la fiche). Compte à rebours tenu ici,
+  // même patron que `flashMs` sur un monstre touché (entities.js) : le HUD
+  // ne reçoit qu'un ratio déjà calculé et ne tient aucun état.
+  const ECLAT_NIVEAU_MS = 700; // PROVISOIRE, jamais validé en jeu par Xav
+  let eclatNiveauMs = 0;
+  let niveauPrecedent = save.hero.niveau;
+
   // --- État de jeu, mis à jour par entrerDansScene() à chaque transition ---
   // `hero` reste réaffectable pour la même raison que `flags` ci-dessus :
   // reinitialiserPartie() doit pouvoir repartir d'un héros neuf.
@@ -924,6 +933,15 @@ export function creerOrchestrateurGrotte({
       grisee: true,
       action: () => {},
     });
+    // MT_hud-ligne-haute_2026-09-19 : la barre d'XP ayant quitté le HUD, la
+    // progression doit rester lisible quelque part — c'est ici (§À faire de
+    // la fiche). Entrée purement informative (grisée, action vide), même
+    // patron que « points libres » juste au-dessus.
+    entrees.push({
+      texte: `${i18n.t('menu.stats_xp')} : ${i18n.t('hud.niveau_prefixe')}${save.hero.niveau} — ${Math.round(ratioProgressionXp() * 100)} %`,
+      grisee: true,
+      action: () => {},
+    });
     return entrees;
   }
 
@@ -1277,6 +1295,15 @@ export function creerOrchestrateurGrotte({
     // comme tout le reste du gameplay (§4), donc rien pendant l'intro, le
     // dialogue, le menu ou la construction : le point de décision reste
     // `uiOuverte`, jamais une condition propre à l'effet.
+    // Éclat de montée de niveau : détecté sur le CHANGEMENT de
+    // `save.hero.niveau` (jamais sur l'XP brute, qui bouge à chaque gain) —
+    // donc un seul éclat par palier franchi, quelle que soit la source d'XP.
+    if (save.hero.niveau !== niveauPrecedent) {
+      if (save.hero.niveau > niveauPrecedent) eclatNiveauMs = ECLAT_NIVEAU_MS;
+      niveauPrecedent = save.hero.niveau;
+    }
+    if (eclatNiveauMs > 0) eclatNiveauMs = Math.max(0, eclatNiveauMs - deltaMs);
+
     if (!uiOuverte) {
       avancerPoussiere(poussiere, {
         x: hero.x,
@@ -1626,7 +1653,10 @@ export function creerOrchestrateurGrotte({
       // premier calcul des jauges/XP (cinématique d'ouverture).
       survie: save.survie,
       niveau: save.hero.niveau,
-      ratioXp: ratioProgressionXp(),
+      // MT_hud-ligne-haute_2026-09-19 : plus de `ratioXp` au HUD (la barre
+      // d'XP a quitté le bandeau) — la progression est désormais lisible dans
+      // l'écran Stats, cf. obtenirEntreesStats().
+      eclatNiveau: ECLAT_NIVEAU_MS > 0 ? eclatNiveauMs / ECLAT_NIVEAU_MS : 0,
     });
     // Indices de commande (§2 : "masqué" sous UI) — résolution i18n ici (même
     // patron que les autres calques : hud_hints.js ne connaît jamais i18n).

@@ -14,7 +14,13 @@ import { RESOLUTION_LOGIQUE } from '../render.js';
 
 // Sous le cartouche PV (haut-gauche, cf. hud.js), centré — jamais superposé.
 // Provisoire, position/durée non validées en jeu par Xav (§7, critère manuel).
-const Y_BANNIERE = 8;
+// MT_hud-ligne-haute_2026-09-19 : descendue de 8 à 26 px. Le HUD occupe
+// désormais un bandeau plein écran sur les 20 premiers pixels (hud_layout.js
+// #BANDEAU_HAUT) — à 8 px, la bannière d'indice se serait superposée à la
+// ligne PV/faim/soif/niveau. La fiche exige explicitement que le bandeau ne
+// recouvre pas les indices de commande : c'est l'indice qui laisse la place,
+// le bandeau étant, lui, permanent.
+const Y_BANNIERE = 26;
 const HAUTEUR_BANNIERE = 18;
 const PADDING_X = 8;
 const DUREE_FONDU_MS = 250;

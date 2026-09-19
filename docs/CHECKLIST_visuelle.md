@@ -21,6 +21,13 @@ ajouté à `dessiner()`.
 1. **Scène seule** — jeu en cours, aucune UI ouverte (ni menu, ni dialogue,
    ni écran de choix). Vérifier : tuiles, décor, héros, follet visibles et
    nets, ligne de 5 slots statique en bas au centre (hors tactile).
+   Depuis `MT_hud-ligne-haute_2026-09-19.md` : **le HUD est un bandeau d'une
+   seule ligne en haut, pleine largeur** — follet · PV · éclats · faim · soif
+   · `Nv. N`, dans cet ordre, de gauche à droite. **Plus rien dans la colonne
+   de gauche** (les deux cartouches empilés ont disparu) et **plus de barre
+   d'XP** nulle part au HUD : seul le numéro du niveau reste. Vérifier aussi
+   que le bandeau ne recouvre ni la bannière d'indice de commande (descendue
+   à y=26), ni la boîte de dialogue, ni le bouton MENU tactile.
 2. **Dialogue ouvert** — une ligne de dialogue affichée par-dessus la scène.
    Vérifier : boîte dans le tiers bas de l'écran (pas hors cadre), texte
    lisible, locuteur nommé.
@@ -165,14 +172,21 @@ différente) entre les trois emplacements.
     manette -> clavier pendant qu'un indice est affiché doit changer le
     glyphe affiché sans le refermer.
 
-25. **Jauges faim/soif + niveau/XP** (Palier C/D, specs/04_maison-interieur.md
-    §3.9) — panneau séparé sous le cartouche PV/éclats, laisser le temps de
-    jeu actif s'écouler. Vérifier : icône triangle (faim) et icône goutte
-    (soif) distinctes par FORME (jamais la couleur seule, P4②), barres qui
-    baissent avec le temps ; `Nv.N` + barre XP discrète sous les jauges,
-    jamais une injonction. Le panneau ne s'affiche qu'une fois les stats
-    calculées au moins une fois (absent pendant la toute première frame de
-    la cinématique d'ouverture).
+25. **Jauges faim/soif + niveau** (Palier C/D, specs/04_maison-interieur.md
+    §3.9 ; **réécrit par `MT_hud-ligne-haute_2026-09-19.md`**) — laisser le
+    temps de jeu actif s'écouler. Vérifier : faim et soif sont **dans le
+    bandeau haut**, à droite des PV et des éclats (plus de panneau séparé
+    sous le cartouche : il n'y a plus de cartouche) ; icône triangle (faim)
+    et icône goutte (soif) distinctes par FORME (jamais la couleur seule,
+    P4②), barres qui baissent avec le temps ; `Nv.N` à droite des jauges,
+    **sans barre d'XP** — la progression d'XP se lit désormais dans l'écran
+    Stats (entrée « Expérience », en pourcentage). Faim/soif/niveau ne
+    s'affichent qu'une fois les stats calculées au moins une fois (absents
+    pendant la toute première frame de la cinématique d'ouverture), et la
+    ligne se resserre alors sans laisser de trou.
+25bis. **Éclat de montée de niveau** (idem) — gagner assez d'XP pour passer
+    un palier. Vérifier : `Nv. N` vire brièvement à l'or puis revient au
+    blanc (~0,7 s), **aucun son ajouté**, un seul éclat par palier franchi.
 26. **Menu Craft** (Palier A §3.1) — INTERACT sur l'atelier ou la table.
     Vérifier : liste des recettes de CETTE station seulement, entrées
     grisées avec le motif attendu (cooldown en secondes, "ingrédients

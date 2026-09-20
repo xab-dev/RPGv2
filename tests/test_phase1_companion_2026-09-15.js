@@ -50,12 +50,23 @@ function monstre(id, x, y, mort = false) {
   assert.equal(follet.etat, 'suivre');
 }
 
-// 6. Position : collée au monstre engagé (la lumière suit sans code séparé).
+// 6. Position : le follet REJOINT le monstre engagé sans jamais s'y téléporter
+// (`D-37`) — l'approche est amortie comme le retour en orbite, et elle
+// converge. Ce test disait "collée au monstre dès la 1ʳᵉ frame" : c'était le
+// flash que la décision de Xav du 20/09 supprime.
 {
-  let follet = mettreAJourEtat(creerFollet('comp_feu', hero(0, 0)), hero(0, 0), [monstre('m1', 10, 20)]);
-  follet = avancerPosition(follet, hero(0, 0), [monstre('m1', 10, 20)], 0.1);
-  assert.equal(follet.x, 10);
-  assert.equal(follet.y, 20);
+  const h = hero(0, 0);
+  const cible = monstre('m1', 10, 20);
+  let follet = mettreAJourEtat(creerFollet('comp_feu', h), h, [cible]);
+  const depart = { x: follet.x, y: follet.y };
+  follet = avancerPosition(follet, h, [cible], 0.1);
+  const saut = Math.hypot(follet.x - depart.x, follet.y - depart.y);
+  assert.ok(saut > 0, 'le follet avance vers sa cible');
+  assert.ok(saut < Math.hypot(cible.x - depart.x, cible.y - depart.y) * 0.5,
+    `la 1ʳᵉ frame ne doit pas téléporter le follet (saut = ${saut.toFixed(2)} px)`);
+  for (let i = 0; i < 200; i += 1) follet = avancerPosition(follet, h, [cible], 0.1);
+  assert.ok(Math.hypot(follet.x - cible.x, follet.y - cible.y) < 0.01,
+    'après quelques secondes, le follet est collé au monstre (la lumière suit sans code séparé)');
 }
 
 console.log('OK test_phase1_companion');

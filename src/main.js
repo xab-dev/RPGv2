@@ -46,7 +46,7 @@ import {
   resoudreArmeEquipee, resoudreAutoAttaque, tickCooldown, estMonstreActif, FLASH_ATTAQUE_MS, FLASH_TOUCHE_MS,
 } from './combat.js';
 import {
-  creerFollet, mettreAJourEtat as mettreAJourFollet, avancerPosition as avancerFollet, DISTANCE_ENGAGEMENT_PX,
+  creerFollet, mettreAJourEtat as mettreAJourFollet, avancerPosition as avancerFollet, monstreEngageable,
   resoudreEchelleJeu as resoudreEchelleJeuFollet, echelleFolletEnTransition, resoudreRayonAuraPx,
 } from './companion.js';
 import { creerGenerateur, resoudreLoot } from './loot.js';
@@ -1370,8 +1370,12 @@ export function creerOrchestrateurGrotte({
     const deltaS = deltaMs / 1000;
     anneauAttaqueMs = tickCooldown(anneauAttaqueMs, deltaMs);
 
+    // Le compagnon est résolu AVANT la mise à jour du follet : depuis `D-37`,
+    // la règle d'engagement lit l'aura (donc le catalogue), et non plus une
+    // constante de portée.
+    const companionDuFollet = follet ? registre.obtenir('companions', follet.companionId) : null;
     if (follet) {
-      follet = mettreAJourFollet(follet, hero, monstres);
+      follet = mettreAJourFollet(follet, hero, monstres, companionDuFollet);
       follet = avancerFollet(follet, hero, monstres, deltaS);
     }
 
@@ -1380,7 +1384,6 @@ export function creerOrchestrateurGrotte({
     // et le cercle affiché —, son rayon passe par la fonction de résolution que
     // le dessin lit aussi. Deux monstres dans le cercle reçoivent donc tous les
     // deux l'effet, sans que rien d'autre ait à le savoir.
-    const companionDuFollet = follet ? registre.obtenir('companions', follet.companionId) : null;
     const auraFollet = companionDuFollet
       ? { centre: { x: follet.x, y: follet.y }, rayonPx: resoudreRayonAuraPx(companionDuFollet) }
       : null;
@@ -1508,9 +1511,12 @@ export function creerOrchestrateurGrotte({
     }
 
     // ATTACK : "premier monstre engagé, à l'entrée dans distance_engagement"
-    // — même constante que l'engagement réel du follet (companion.js), pas
-    // une 2ᵉ portée qui pourrait diverger.
-    if (monstres.some((m) => !m.mort && Math.hypot(hero.x - m.x, hero.y - m.y) <= DISTANCE_ENGAGEMENT_PX)) {
+    // — depuis `D-37` ce n'est plus une constante mais LE prédicat
+    // d'engagement du follet (companion.js#monstreEngageable), appelé tel
+    // quel : l'indice apparaît exactement quand le follet partirait, et une
+    // orbite ou une aura qui grandira l'emmènera avec elle.
+    const companionPourIndice = follet ? registre.obtenir('companions', follet.companionId) : null;
+    if (monstres.some((m) => monstreEngageable(m, hero, follet, companionPourIndice))) {
       indices.declencherVerbeUtile('attack', flags);
     }
 
@@ -2141,9 +2147,8 @@ export function creerOrchestrateurGrotte({
     // zone où les effets sur les monstres s'appliquent, parce que le rayon
     // dessiné et le rayon de la règle sortent de la même fonction
     // (`resoudreRayonAuraPx`) et que le centre est le même point logique.
-    // Ce qui reste hors de son ressort : la distance d'ENGAGEMENT du follet
-    // (`companion.js#DISTANCE_ENGAGEMENT_PX`), qui se mesure depuis le héros et
-    // appartient au reste de `D-37`.
+    // Depuis `D-37`, ce cercle décide aussi de l'ENGAGEMENT : un monstre qu'il
+    // touche est un monstre vers lequel le follet part (companion.js).
     if (follet && companionActif) {
       ctxLogique.save();
       ctxLogique.strokeStyle = `rgba(255,255,255,${AURA_TRAIT.alpha})`;

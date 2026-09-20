@@ -3,10 +3,6 @@
 // dans tous les états (aucun code séparé pour "la lumière suit l'engagement").
 
 // Provisoires, non validés en jeu par Xav.
-// Exportée (specs/04_indices-commandes.md §3) : l'indice ATTACK se déclenche
-// "à l'entrée dans distance_engagement" — même seuil que l'engagement réel du
-// follet, jamais une 2ᵉ constante qui pourrait diverger.
-export const DISTANCE_ENGAGEMENT_PX = 48;
 const ORBITE_RAYON_PX = 24;
 const ORBITE_VITESSE_RAD_S = 2;
 const ORBITE_LERP = 0.15; // "retard ressort" du suivi
@@ -78,18 +74,70 @@ function distance(a, b) {
   return Math.hypot(a.x - b.x, a.y - b.y);
 }
 
-// Transition suivre <-> engager. Un monstre engagé reste la cible tant
-// qu'il est vivant et à portée ; sinon retour à `suivre` (§3.6).
-export function mettreAJourEtat(follet, hero, monstres) {
+// --- Règle d'engagement (`D-37`, décisions de Xav des 19 et 20/09) ---------
+// Il n'existe PLUS de distance d'engagement propre au follet
+// (la constante de 48 px est retirée) : la portée du follet est celle
+// qu'on VOIT — son orbite et son aura. Ce qui est dessiné est ce qui agit,
+// exactement comme pour l'aura (`D-51`) et pour `rayon_lumiere`.
+
+// Marge d'hystérésis entre engager et relâcher. FIXE, et c'est le point : ce
+// n'est pas une portée, c'est l'épaisseur du bord. Sans elle, un monstre
+// immobile pile sur la frontière ferait osciller le follet d'une frame à
+// l'autre. Orbite et aura, elles, grandiront (`Q-26`, `Q-29`) — la portée
+// d'engagement et de relâche suivra toute seule, sans toucher ce nombre.
+const MARGE_RELACHE_PX = 12;
+
+// Rayon d'aura tolérant : un appelant qui n'a pas le catalogue du compagnon
+// sous la main n'engage que par l'orbite, il ne lève pas. Même discipline que
+// `flags.js` face à une condition qu'on ne sait pas évaluer : on n'ouvre pas.
+function rayonAuraDe(companion) {
+  return companion ? resoudreRayonAuraPx(companion) : 0;
+}
+
+// Distance héros -> monstre au-delà de laquelle le follet lâche sa cible.
+// Tout passe par les fonctions de résolution, jamais par les constantes.
+export function distanceRelachePx(companion) {
+  return resoudreOrbiteRayonPx() + rayonAuraDe(companion) + MARGE_RELACHE_PX;
+}
+
+// LE prédicat d'engagement — une seule source, lue par `mettreAJourEtat` et
+// par l'indice de commande ATTACK (specs/04_indices-commandes.md §3), qui se
+// déclenche donc exactement quand le follet partirait.
+//
+// Le garde-fou de la 1ʳᵉ ligne n'est pas du zèle : sans lui, un monstre à
+// 70 px effleuré par l'aura d'un follet qui rentre serait engagé à une frame
+// et relâché à la suivante (la relâche, elle, se mesure depuis le héros).
+export function monstreEngageable(monstre, hero, follet, companion) {
+  if (!monstre || monstre.mort) return false;
+  const dHero = distance(hero, monstre);
+  if (dHero > distanceRelachePx(companion)) return false;
+  if (dHero <= resoudreOrbiteRayonPx()) return true;
+  return follet ? distance(follet, monstre) <= rayonAuraDe(companion) : false;
+}
+
+// Transition suivre <-> engager. Un monstre engagé reste la cible tant qu'il
+// est vivant et en deçà de la distance de relâche ; sinon retour à `suivre`.
+// En `suivre` — donc aussi pendant le retour en orbite —, le follet accroche
+// le candidat le PLUS PROCHE DU HÉROS parmi les engageables.
+export function mettreAJourEtat(follet, hero, monstres, companion) {
   if (follet.etat === 'engager') {
     const cible = monstres.find((m) => m.id === follet.cibleMonstreId);
-    if (!cible || cible.mort || distance(hero, cible) > DISTANCE_ENGAGEMENT_PX) {
+    if (!cible || cible.mort || distance(hero, cible) > distanceRelachePx(companion)) {
       return { ...follet, etat: 'suivre', cibleMonstreId: null };
     }
     return follet;
   }
 
-  const proche = monstres.find((m) => !m.mort && distance(hero, m) <= DISTANCE_ENGAGEMENT_PX);
+  let proche = null;
+  let meilleure = Infinity;
+  for (const monstre of monstres) {
+    if (!monstreEngageable(monstre, hero, follet, companion)) continue;
+    const d = distance(hero, monstre);
+    if (d < meilleure) {
+      meilleure = d;
+      proche = monstre;
+    }
+  }
   if (proche) return { ...follet, etat: 'engager', cibleMonstreId: proche.id };
   return follet;
 }
@@ -99,9 +147,22 @@ export function mettreAJourEtat(follet, hero, monstres) {
 export function avancerPosition(follet, hero, monstres, deltaS) {
   const angleOrbite = follet.angleOrbite + deltaS * ORBITE_VITESSE_RAD_S;
 
+  // Aller ET retour amortis par la MÊME loi (décision Xav : « mouvement
+  // fluide, jamais un flash »). L'approche copiait la position du monstre
+  // d'un coup : jusqu'à ~70 px en une frame, un saut visible. Conséquence
+  // voulue, cohérente avec `D-51` : l'aura arrive AVEC le follet, l'effet
+  // commence quand le cercle touche le monstre, pas à l'instant de la
+  // décision d'engager.
   if (follet.etat === 'engager') {
     const cible = monstres.find((m) => m.id === follet.cibleMonstreId);
-    if (cible) return { ...follet, x: cible.x, y: cible.y, angleOrbite };
+    if (cible) {
+      return {
+        ...follet,
+        x: follet.x + (cible.x - follet.x) * ORBITE_LERP,
+        y: follet.y + (cible.y - follet.y) * ORBITE_LERP,
+        angleOrbite,
+      };
+    }
   }
 
   // Lu à travers la résolution, jamais la constante directement (voir plus haut).

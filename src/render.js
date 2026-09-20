@@ -239,7 +239,8 @@ const COULEUR_LEVIER_ACTIF = '#ffd94a';
 
 // Aura pointillée du follet engagé (§2.2/§3.4 03_grotte-polish) — remplace
 // l'ancien cercle plein épais du diagnostic SD_ui-lisibilite : purement
-// visuel, DISTANCE_ENGAGEMENT_PX (companion.js) inchangé. Un seul endroit.
+// visuel : le rayon, lui, vient de companion.js#resoudreRayonAuraPx, seule
+// source du cercle dessiné comme de la règle qui l'utilise (`D-51`, `D-37`).
 export const AURA_TRAIT = { largeur: 1, pointilles: [4, 4], alpha: 0.25 };
 
 // Fantôme de pose (specs/05_construction-stations.md §3) : vert/rouge selon

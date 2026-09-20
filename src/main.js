@@ -47,7 +47,7 @@ import {
 } from './combat.js';
 import {
   creerFollet, mettreAJourEtat as mettreAJourFollet, avancerPosition as avancerFollet, DISTANCE_ENGAGEMENT_PX,
-  resoudreEchelleJeu as resoudreEchelleJeuFollet, echelleFolletEnTransition,
+  resoudreEchelleJeu as resoudreEchelleJeuFollet, echelleFolletEnTransition, resoudreRayonAuraPx,
 } from './companion.js';
 import { creerGenerateur, resoudreLoot } from './loot.js';
 import { etatInitial as etatInitialPuzzles, activerLevier } from './puzzles.js';
@@ -1375,10 +1375,23 @@ export function creerOrchestrateurGrotte({
       follet = avancerFollet(follet, hero, monstres, deltaS);
     }
 
+    // Géométrie de l'aura, résolue UNE fois pour la frame (`D-51`) : son centre
+    // est le point LOGIQUE du follet — celui dont `D-39` fait dériver le corps
+    // et le cercle affiché —, son rayon passe par la fonction de résolution que
+    // le dessin lit aussi. Deux monstres dans le cercle reçoivent donc tous les
+    // deux l'effet, sans que rien d'autre ait à le savoir.
+    const companionDuFollet = follet ? registre.obtenir('companions', follet.companionId) : null;
+    const auraFollet = companionDuFollet
+      ? { centre: { x: follet.x, y: follet.y }, rayonPx: resoudreRayonAuraPx(companionDuFollet) }
+      : null;
+
     monstres = monstres.map((monstre) => {
       if (monstre.mort) return monstre;
       const donneesEnnemi = registre.obtenir('enemies', monstre.enemyId);
-      const { force, vitesse, dot } = statsEffectivesMonstre(registre, donneesEnnemi, follet);
+      const { force, vitesse, dot } = statsEffectivesMonstre(registre, donneesEnnemi, follet, {
+        position: { x: monstre.x, y: monstre.y },
+        aura: auraFollet,
+      });
 
       // Palier C : les monstres du Chaos décident (errance / poursuite /
       // désintérêt) ; ceux de la Grotte vont droit au but, comme en Phase 1.
@@ -2122,17 +2135,22 @@ export function creerOrchestrateurGrotte({
 
     // Aura du follet (§2 diagnostic SD_ui-lisibilite, pointillée depuis §3.4
     // 03_grotte-polish/AURA_TRAIT) : trait fin translucide en pointillés,
-    // jamais un disque plein ni un trait plein épais — purement visuel
-    // (indication de portée d'engagement), aucun changement à la distance
-    // d'engagement réelle de companion.js#DISTANCE_ENGAGEMENT_PX (hors
-    // scope, gameplay/équilibrage).
+    // jamais un disque plein ni un trait plein épais.
+    //
+    // Depuis `D-51`, ce cercle n'est plus une indication : c'est EXACTEMENT la
+    // zone où les effets sur les monstres s'appliquent, parce que le rayon
+    // dessiné et le rayon de la règle sortent de la même fonction
+    // (`resoudreRayonAuraPx`) et que le centre est le même point logique.
+    // Ce qui reste hors de son ressort : la distance d'ENGAGEMENT du follet
+    // (`companion.js#DISTANCE_ENGAGEMENT_PX`), qui se mesure depuis le héros et
+    // appartient au reste de `D-37`.
     if (follet && companionActif) {
       ctxLogique.save();
       ctxLogique.strokeStyle = `rgba(255,255,255,${AURA_TRAIT.alpha})`;
       ctxLogique.lineWidth = AURA_TRAIT.largeur;
       ctxLogique.setLineDash(AURA_TRAIT.pointilles);
       ctxLogique.beginPath();
-      ctxLogique.arc(follet.x - camera.x, follet.y - camera.y, companionActif.rayon_aura, 0, Math.PI * 2);
+      ctxLogique.arc(follet.x - camera.x, follet.y - camera.y, resoudreRayonAuraPx(companionActif), 0, Math.PI * 2);
       ctxLogique.stroke();
       ctxLogique.restore();
     }

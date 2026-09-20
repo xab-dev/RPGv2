@@ -27,6 +27,21 @@ export function resoudreOrbiteRayonPx() {
   return ORBITE_RAYON_PX;
 }
 
+// Rayon d'aura EFFECTIF (`D-51`). L'aura n'est plus un cercle décoratif : le
+// trait pointillé DESSINÉ et la règle qui décide « ce monstre est dans
+// l'aura » lisent tous les deux ce nombre-ci, et jamais `companion.rayon_aura`
+// en direct — c'est ce qui garantit que ce qui est dessiné est ce qui agit
+// (même contrat que `rayon_lumiere`, à la fois halo et trou dans le voile).
+// Déclaré par compagnon dans `data/companions.json#rayon_aura` (requis par le
+// schéma, donc jamais absent d'un catalogue valide).
+//
+// AUCUN modificateur n'est livré ici : un talisman qui élargirait l'aura
+// (`Q-29`) ou un pourcentage de synergie se brancheront à cet endroit, et à
+// cet endroit seulement.
+export function resoudreRayonAuraPx(companion) {
+  return companion.rayon_aura;
+}
+
 // Échelle EFFECTIVE du follet en jeu (`D-34`) : déclarée par compagnon dans
 // `data/companions.json#echelle_jeu`, 1 pour un compagnon qui ne la déclare
 // pas (un catalogue existant reste valide tel quel). Distincte de la taille

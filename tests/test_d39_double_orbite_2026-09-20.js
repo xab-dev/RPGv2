@@ -193,7 +193,9 @@ const FRAME_MS = 16;
   // L'aura : son arc doit être centré sur le follet LOGIQUE.
   const debutAura = source.indexOf('// Aura du follet');
   assert.ok(debutAura > 0, 'le bloc de l’aura doit rester repérable dans main.js');
-  const blocAura = source.slice(debutAura, debutAura + 900);
+  // Fenêtre élargie par `D-51`, qui a allongé le commentaire de ce bloc (le
+  // cercle n'est plus une indication : c'est la zone d'effet elle-même).
+  const blocAura = source.slice(debutAura, debutAura + 1600);
   assert.ok(/arc\(\s*follet\.x - camera\.x,\s*follet\.y - camera\.y/.test(blocAura),
     'l’aura doit être centrée sur follet.x/y (le point logique), pas sur la silhouette');
   assert.ok(!/corpsFollet|decalageCorps/.test(blocAura),

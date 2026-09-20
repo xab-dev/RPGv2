@@ -44,6 +44,12 @@ ajouté à `dessiner()`.
    Depuis `D-39`, l'aura est centrée sur le point LOGIQUE du follet, pas sur
    son corps : le corps tourne dedans, sur une petite orbite, et le cercle
    lui, ne doit pas frétiller.
+   Depuis `D-51` (20/09), ce cercle n'est plus une indication : **c'est la
+   zone d'effet**. Un monstre DEDANS subit l'effet de l'élément (feu : il
+   clignote et perd des PV sans être frappé ; eau : il frappe moins fort ;
+   terre : il ralentit), un monstre DEHORS ne subit rien — et **plusieurs
+   monstres dedans les subissent tous**. Ce qu'on regarde ici, c'est donc que
+   le trait et l'effet coïncident, y compris à la sortie du cercle.
 6. **HUD tactile actif** — après un `touchstart` simulé. Vérifier : boutons
    d'action + joystick affichés, ligne de slots statique disparue (jamais
    les deux à la fois).

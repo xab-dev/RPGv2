@@ -1,4 +1,5 @@
-// Contrat (§3.4/§7) : Feu -> DoT uniquement dans l'aura ; Eau -> dégâts
+// Contrat (§3.4/§7, révisé par `D-51`) : « dans l'aura » se mesure au compas,
+// pas à l'état d'engagement. Feu -> DoT uniquement dans l'aura ; Eau -> dégâts
 // reçus réduits ; Terre -> vitesse -50% dans l'aura, normale hors aura ; un
 // 4ᵉ élément ajouté en JSON de test fonctionne sans modification de code.
 import assert from 'node:assert/strict';
@@ -32,9 +33,15 @@ function donneesTroisElements() {
   };
 }
 
-function follet(companionId, etat, cibleMonstreId) {
-  return { companionId, etat, cibleMonstreId };
+function follet(companionId) {
+  return { companionId, etat: 'suivre', cibleMonstreId: null };
 }
+
+// `D-51` : « dans l'aura » est GÉOMÉTRIQUE — plus aucune comparaison d'ids.
+// Aura centrée sur l'origine, rayon 40 (celui des compagnons de test).
+const AURA = { centre: { x: 0, y: 0 }, rayonPx: 40 };
+const dans = { position: { x: 10, y: 0 }, aura: AURA };
+const hors = { position: { x: 100, y: 0 }, aura: AURA };
 
 // 1. appliquerModificateur : plat additionne, pourcent multiplie.
 {
@@ -49,16 +56,16 @@ function follet(companionId, etat, cibleMonstreId) {
   assert.deepEqual(modificateursHeros(registre, null), {});
 }
 
-// 3. Feu : DoT actif uniquement quand le monstre est engagé (dans l'aura).
+// 3. Feu : DoT actif uniquement quand le monstre est DANS le cercle d'aura.
 {
   const registre = construireRegistre(donneesTroisElements());
   const monstre = { id: 'm1', force: 3, vitesse: 40 };
 
-  const horsAura = statsEffectivesMonstre(registre, monstre, follet('comp_feu', 'suivre', null));
+  const horsAura = statsEffectivesMonstre(registre, monstre, follet('comp_feu'), hors);
   assert.equal(horsAura.dot, null);
   assert.equal(horsAura.dansAura, false);
 
-  const dansAura = statsEffectivesMonstre(registre, monstre, follet('comp_feu', 'engager', 'm1'));
+  const dansAura = statsEffectivesMonstre(registre, monstre, follet('comp_feu'), dans);
   assert.equal(dansAura.dansAura, true);
   assert.equal(dansAura.dot.id, 'dot_brulure');
   assert.equal(dansAura.force, 3, "le feu ne modifie pas la force du monstre");
@@ -68,7 +75,7 @@ function follet(companionId, etat, cibleMonstreId) {
 {
   const registre = construireRegistre(donneesTroisElements());
   const monstre = { id: 'm1', force: 3, vitesse: 40 };
-  const dansAura = statsEffectivesMonstre(registre, monstre, follet('comp_eau', 'engager', 'm1'));
+  const dansAura = statsEffectivesMonstre(registre, monstre, follet('comp_eau'), dans);
   assert.equal(dansAura.force, 2);
   assert.equal(dansAura.dot, null);
 }
@@ -77,8 +84,8 @@ function follet(companionId, etat, cibleMonstreId) {
 {
   const registre = construireRegistre(donneesTroisElements());
   const monstre = { id: 'm1', force: 3, vitesse: 40 };
-  assert.equal(statsEffectivesMonstre(registre, monstre, follet('comp_terre', 'suivre', null)).vitesse, 40);
-  assert.equal(statsEffectivesMonstre(registre, monstre, follet('comp_terre', 'engager', 'm1')).vitesse, 20);
+  assert.equal(statsEffectivesMonstre(registre, monstre, follet('comp_terre'), hors).vitesse, 40);
+  assert.equal(statsEffectivesMonstre(registre, monstre, follet('comp_terre'), dans).vitesse, 20);
 }
 
 // 6. Data-driven : un 4ᵉ élément ajouté en JSON de test fonctionne sans
@@ -96,7 +103,7 @@ function follet(companionId, etat, cibleMonstreId) {
   const registre = construireRegistre(donnees);
   assert.deepEqual(modificateursHeros(registre, 'comp_vent'), { stat_agilite: 2 });
   const monstre = { id: 'm1', force: 3, vitesse: 40 };
-  const dansAura = statsEffectivesMonstre(registre, monstre, follet('comp_vent', 'engager', 'm1'));
+  const dansAura = statsEffectivesMonstre(registre, monstre, follet('comp_vent'), dans);
   assert.equal(dansAura.vitesse, 60);
 }
 

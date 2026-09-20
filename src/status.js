@@ -64,14 +64,47 @@ export function modificateursBuffsActifs(registre, buffs) {
   return modificateurs;
 }
 
-// Stats/paramètres effectifs d'un monstre, selon qu'il est "dans l'aura" du
-// follet ou non. "Dans l'aura" est approximé par l'état d'engagement du
-// follet (§3.6 : le follet se colle au monstre engagé) plutôt que par un
-// second calcul de distance — même source de vérité, provisoire mais
-// suffisant tant qu'un seul monstre est engageable à la fois (Phase 4
-// réévaluera si plusieurs monstres doivent être dans l'aura en même temps).
-export function statsEffectivesMonstre(registre, monstreDonnees, follet) {
-  const dansAura = !!follet && follet.etat === 'engager' && follet.cibleMonstreId === monstreDonnees.id;
+// Un monstre est-il DANS l'aura ? Question purement géométrique (`D-51`, décision
+// de Xav du 20/09 : « il faut que l'aura serve à quelque chose » — ce qui est
+// DESSINÉ est ce qui AGIT, comme la lumière du follet, à la fois halo et trou
+// dans le voile).
+//
+// Ce que ça remplace, et pourquoi c'était faux. L'ancienne version approximait
+// « dans l'aura » par l'état d'engagement du follet (`follet.cibleMonstreId ===
+// monstre.id`). Deux ennuis, dont un mortel : (1) depuis `D-38`, une instance
+// de monstre porte un id d'INSTANCE (`enemy_rodeur#12`) alors que l'appelant
+// passait la fiche CATALOGUE — la comparaison était toujours fausse, et les
+// trois effets monstre (brûlure, affaiblissement, entrave) étaient morts dans
+// toutes les scènes ; (2) même réparée, elle n'aurait jamais pu toucher plus
+// d'un monstre à la fois, alors que la 1ʳᵉ zone de monstres aura des groupes.
+// On ne répare donc pas la comparaison d'ids : on supprime l'approximation.
+//
+// `centre` est le point LOGIQUE du follet (celui dont `D-39` fait dériver le
+// corps et l'aura), jamais le corps décalé par `vol_follet.js` — sinon l'effet
+// clignoterait au rythme du vol, et le cercle affiché cesserait d'être exact.
+//
+// Rien n'est allé chercher : la fonction reste pure et ne lit pas le monde. Une
+// géométrie absente (pas de follet, pas de centre, pas de rayon) rend `false` —
+// même discipline que `flags.js` : ce qu'on ne sait pas évaluer ne déclenche pas.
+export function estDansAura(positionMonstre, aura) {
+  if (!positionMonstre || !aura || !aura.centre || typeof aura.rayonPx !== 'number') return false;
+  const dx = positionMonstre.x - aura.centre.x;
+  const dy = positionMonstre.y - aura.centre.y;
+  return Math.hypot(dx, dy) <= aura.rayonPx;
+}
+
+// Stats/paramètres effectifs d'un monstre, selon qu'il est dans l'aura du
+// follet ou non. `monstreDonnees` est la fiche CATALOGUE (force, vitesse de
+// base) ; la position vivante de l'instance et la géométrie de l'aura arrivent
+// par `contexte` — la fonction ne va rien chercher (`D-51`).
+//
+// `contexte` = { position: {x, y}, aura: { centre: {x, y}, rayonPx } }.
+// PLUSIEURS monstres peuvent être dans l'aura en même temps et reçoivent tous
+// l'effet : c'est voulu, et c'est l'appelant qui en décide en appelant cette
+// fonction pour chacun. L'appelant ne la lui passe que pour un monstre VIVANT
+// (un mort n'a plus de stats à moduler).
+export function statsEffectivesMonstre(registre, monstreDonnees, follet, contexte = {}) {
+  const dansAura = !!follet && estDansAura(contexte.position, contexte.aura);
   let force = monstreDonnees.force;
   let vitesse = monstreDonnees.vitesse;
   let dot = null;

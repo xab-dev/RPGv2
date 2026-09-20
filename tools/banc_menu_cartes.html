@@ -1,0 +1,136 @@
+<!doctype html>
+<!--
+  Banc d'essai du composant « grille de cartes » (specs/08_menus-cartes.md).
+  OUTIL DE DEV, jamais chargé par le jeu. Il monte `ui/grille_cartes.js` SEUL,
+  sur le vrai `data/menus.json`, avec des actions factices — pour juger une
+  mise en page sans lancer une partie, et pour voir ce qu'aucun écran réel ne
+  montre encore (la grille 3 × 2, une case vide au milieu d'une rangée).
+
+  Servi par `node serveur_local.js` : http://localhost:8080/tools/banc_menu_cartes.html
+    ?follet=feu | eau | terre    accent du compagnon (absent : accent neutre)
+    ?lieu=maison                 la case contextuelle s'affiche (Construction)
+    ?plein_ecran=non             la carte Plein écran tombe, sa case reste vide
+    ?lang=en
+
+  La feuille de style est RELUE dans `index.html` (elle y est en ligne) :
+  aucune règle n'est recopiée ici, le banc montre exactement ce que le jeu
+  montrera. Clavier et manette passent par la vraie couche d'input.
+-->
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Banc — menus en cartes</title>
+</head>
+<body>
+  <!-- Le « jeu » derrière le menu : un damier, pour juger l'opacité du fond. -->
+  <canvas id="jeu"></canvas>
+  <script type="module">
+    import { creerMenuCartes } from '../src/ui/grille_cartes.js';
+    import { creerDessinateurIcones } from '../src/ui/icone_canvas.js';
+    import { afficherEcran, SEUIL_POUSSEE_MENU } from '../src/ui/menu.js';
+    import { creerI18n } from '../src/i18n.js';
+    import { chargerLocalesDepuisReseau } from '../src/io_navigateur.js';
+    import { calculerRectanglePresentation } from '../src/render.js';
+    import { creerCoucheInput } from '../src/input/input.js';
+    import { creerSourceClavier } from '../src/input/keyboard.js';
+    import { creerSourceManette } from '../src/input/gamepad.js';
+
+    const params = new URLSearchParams(location.search);
+    const [html, menusReels, visuels, compagnons, dictionnaires] = await Promise.all([
+      fetch('../index.html').then((r) => r.text()),
+      fetch('../data/menus.json').then((r) => r.json()),
+      fetch('../data/visuels.json').then((r) => r.json()),
+      fetch('../data/companions.json').then((r) => r.json()),
+      chargerLocalesDepuisReseau('../locales'),
+    ]);
+    const style = document.createElement('style');
+    style.textContent = /<style>([\s\S]*?)<\/style>/.exec(html)[1];
+    document.head.appendChild(style);
+
+    // Un écran de six cartes, que le catalogue réel n'a pas encore : la grille
+    // 3 × 2, avec une carte absente (case 4) pour voir la case vide. Branché
+    // sur la case LIBRE de la racine — dans le banc seulement.
+    const menus = structuredClone(menusReels);
+    const modele = (id) => menus.flatMap((e) => e.cartes).find((c) => c.id === id);
+    menus.find((e) => e.racine).cartes.push({ ...modele('carte_heros'), id: 'carte_banc', case: 2, cible: 'menu_banc' });
+    menus.push({
+      id: 'menu_banc', cle_titre: 'menu.carte.parametres',
+      cartes: ['carte_poche', 'carte_stats', 'carte_langue', 'carte_musique', 'carte_plein_ecran', 'carte_reinitialiser']
+        .map((id, i) => ({ ...modele(id), id: `${id}_banc`, case: i, ...(i === 4 ? { condition: { valeur: 'jamais', min: 1 } } : {}) })),
+    });
+
+    const i18n = creerI18n(dictionnaires, params.get('lang') || 'fr');
+    const valeurs = {
+      stations_placables: params.get('lieu') === 'maison' ? 4 : 0,
+      plein_ecran_disponible: params.get('plein_ecran') === 'non' ? 0 : 1,
+      jamais: 0,
+    };
+    const etat = { musique: true, pleinEcran: false };
+    const journal = (texte) => console.log(`[banc] ${texte}`);
+    const compagnon = compagnons.find((c) => c.id === `comp_follet_${params.get('follet')}`);
+
+    const canvasJeu = document.getElementById('jeu');
+    function rectangle() {
+      return calculerRectanglePresentation(window.innerWidth, window.innerHeight);
+    }
+    function dessinerFond() {
+      canvasJeu.width = window.innerWidth;
+      canvasJeu.height = window.innerHeight;
+      const ctx = canvasJeu.getContext('2d');
+      const r = rectangle();
+      for (let y = 0; y < 270; y += 15) {
+        for (let x = 0; x < 480; x += 15) {
+          ctx.fillStyle = ((x + y) / 15) % 2 === 0 ? '#3f7a4a' : '#2f6a8a';
+          ctx.fillRect(r.x + x * r.echelle, r.y + y * r.echelle, 15 * r.echelle, 15 * r.echelle);
+        }
+      }
+    }
+
+    const menu = creerMenuCartes({
+      document, i18n, menus, afficherEcran, seuilPoussee: SEUIL_POUSSEE_MENU,
+      actions: {
+        action_basculer_langue: () => i18n.definirLangue(i18n.langueCourante() === 'fr' ? 'en' : 'fr'),
+        action_basculer_musique: () => { etat.musique = !etat.musique; },
+        // Un refus une fois sur deux : le message d'en-tête de `D-30`.
+        action_basculer_plein_ecran: () => Promise.resolve().then(() => {
+          if (etat.pleinEcran) { etat.pleinEcran = false; return null; }
+          if (params.get('refus') === 'oui') return { cleMessage: 'menu.plein_ecran_refuse' };
+          etat.pleinEcran = true;
+          return null;
+        }),
+        action_exporter_sauvegarde: () => journal('exporter'),
+        action_importer_sauvegarde: () => journal('importer'),
+        action_reinitialiser_sauvegarde: () => journal('RÉINITIALISER'),
+      },
+      etats: {
+        etat_langue: () => `menu.etat.langue_${i18n.langueCourante()}`,
+        etat_musique: () => (etat.musique ? 'menu.etat.musique_oui' : 'menu.etat.musique_non'),
+        etat_plein_ecran: () => (etat.pleinEcran ? 'menu.etat.plein_ecran_oui' : 'menu.etat.plein_ecran_non'),
+      },
+      ecrans: {
+        ecran_poche: () => { journal('écran existant : Poche'); menu.reafficher(); },
+        ecran_stats: () => { journal('écran existant : Stats'); menu.reafficher(); },
+        ecran_construction: () => { journal('écran existant : Construction'); menu.reafficher(); },
+      },
+      evaluerCondition: (c) => valeurs[c.valeur] >= c.min,
+      couleurAccent: () => (compagnon ? compagnon.couleur_ui : null),
+      rectangleJeu: () => { const r = rectangle(); return { x: r.x, y: r.y, unite: r.echelle }; },
+      dessinerIcone: creerDessinateurIcones({ obtenirVisuel: (id) => visuels.find((v) => v.id === id), fenetre: window }),
+      onFermer: () => { journal('menu fermé — il se rouvre'); setTimeout(() => menu.ouvrir(), 400); },
+    });
+    window.bancMenu = menu;
+
+    const input = creerCoucheInput({
+      sourceClavier: creerSourceClavier(window), sourceManette: creerSourceManette(navigator), sourceTactile: null,
+    });
+    window.addEventListener('resize', () => { dessinerFond(); menu.actualiserGeometrie(); });
+    dessinerFond();
+    menu.ouvrir();
+    (function boucle() {
+      menu.traiterInput(input.maj());
+      requestAnimationFrame(boucle);
+    })();
+  </script>
+</body>
+</html>

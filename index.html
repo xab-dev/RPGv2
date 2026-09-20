@@ -126,6 +126,134 @@
       flex: 0 0 auto; margin: auto 0;
       display: flex; flex-direction: column; align-items: center; gap: 1rem;
     }
+
+    /* --- Menus en grille de cartes (specs/08_menus-cartes.md) --------------
+       Posées par `ui/grille_cartes.js`, qui ne connaît que ces noms de
+       classes. AUCUNE couleur, aucun rayon, aucune épaisseur n'est écrit
+       ici : tout vient du bloc de jetons en tête de cette feuille.
+
+       `.ecran-cartes` s'ajoute à `.ecran-ui` (elle garde donc l'en-tête figé
+       et le corps défilant de `D-42`, ce dernier comme simple filet).
+
+       La boîte se cale sur LE RECTANGLE DU CANVAS : le fond couvre toute la
+       page, et le rembourrage (`--jeu-x`, `--jeu-y`, posés par le composant)
+       ramène le contenu exactement sur le jeu. `--u` = hauteur de ce
+       rectangle ÷ 270 : toutes les longueurs ci-dessous sont des multiples de
+       `--u`, donc le menu a les mêmes proportions sur un téléphone et sur un
+       grand écran — comme s'il était dessiné en 480 × 270.
+       Budget vertical (en u) : en-tête 24 · marge 12 · rangée 105 · marge 12
+       · rangée 105 · marge 12 = 270. */
+    .ecran-cartes {
+      --u: 1px; --jeu-x: 0px; --jeu-y: 0px;
+      box-sizing: border-box; padding: var(--jeu-y) var(--jeu-x);
+      background: var(--menu-fond); color: var(--menu-texte-titre);
+      /* Un menu n'est pas un texte : rien ne s'y sélectionne, et l'appui ne
+         doit pas flasher en bleu sous le doigt. */
+      user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+      /* Chrome Android grossit de lui-même les petits textes (« font
+         boosting ») : il casserait la règle « tout en unités --u ». */
+      text-size-adjust: 100%; -webkit-text-size-adjust: 100%;
+    }
+
+    /* L'en-tête porte LA sortie. Sa hauteur est de 24 u, mais jamais moins de
+       40 px DE PAGE (*provisoire*) : à 703 × 280 une unité vaut 1 px, et un
+       bouton de 24 px n'est pas une cible pour un pouce. Les deux rangées de
+       cartes absorbent la différence (`1fr`). */
+    .cartes-entete {
+      box-sizing: border-box; padding: 0 calc(12 * var(--u));
+      min-height: max(calc(24 * var(--u)), 40px);
+      display: flex; align-items: center; gap: calc(8 * var(--u));
+    }
+    .cartes-titre { margin: 0; flex: 0 0 auto; font-size: calc(12 * var(--u)); font-weight: 700; }
+    /* Le message (un refus de plein écran, `D-30`) vit dans l'en-tête : il ne
+       déplace aucune carte en apparaissant. */
+    .cartes-message {
+      margin: 0; flex: 1 1 auto; min-width: 0; text-align: right;
+      font-size: calc(8 * var(--u)); color: var(--menu-texte-phrase);
+    }
+    .cartes-bouton-entete {
+      --carte-trait: var(--menu-accent);
+      flex: 0 0 auto; box-sizing: border-box; cursor: pointer;
+      min-width: max(calc(24 * var(--u)), 40px); height: max(calc(24 * var(--u)), 40px);
+      display: flex; align-items: center; justify-content: center; gap: calc(4 * var(--u));
+      background: var(--menu-carte);
+      border: var(--menu-carte-bordure-px) solid var(--menu-carte-bordure);
+      border-radius: calc(var(--menu-carte-rayon-u) * var(--u));
+    }
+    .cartes-bouton-entete .carte-icone { width: max(calc(12 * var(--u)), 18px); height: max(calc(12 * var(--u)), 18px); }
+    /* « À essayer en jeu : un simple [X] / [←] sans texte » (décision 1 de
+       Xav, `V-27`). Pour voir le mot à côté de l'icône : `display: inline`, et
+       un `padding` horizontal sur le bouton. Une ligne, ici, et rien d'autre. */
+    .cartes-bouton-mot { display: none; font-size: calc(9 * var(--u)); }
+
+    .cartes-corps { padding: calc(12 * var(--u)); }
+    /* `minmax(0, 1fr)` et non `1fr` : une piste `1fr` refuse de descendre sous
+       la taille de son contenu, et une phrase trop longue élargirait SA
+       colonne — les cartes cesseraient d'être égales. */
+    .cartes-grille {
+      flex: 1 1 auto; min-height: 0;
+      display: grid; gap: calc(12 * var(--u));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-rows: repeat(2, minmax(0, 1fr));
+    }
+    .cartes-grille[data-colonnes="3"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+    /* `--carte-trait` : la couleur qui « parle » sur cette carte — l'accent, ou
+       le danger. Le focus et l'icône la relisent, ils n'ont donc pas à savoir
+       si la carte est dangereuse. */
+    .carte {
+      --carte-trait: var(--menu-accent);
+      box-sizing: border-box; min-width: 0; min-height: 0; overflow: hidden; cursor: pointer;
+      display: flex; align-items: center; gap: calc(10 * var(--u));
+      padding: calc(12 * var(--u));
+      background: var(--menu-carte);
+      border: var(--menu-carte-bordure-px) solid var(--menu-carte-bordure);
+      border-radius: calc(var(--menu-carte-rayon-u) * var(--u));
+    }
+    /* Danger : bordure et icône, JAMAIS un aplat. */
+    .carte-danger { --carte-trait: var(--menu-danger); border-color: var(--menu-danger); }
+
+    /* Focus : jamais la couleur seule — le trait s'épaissit, un halo
+       l'entoure ET la carte s'éclaircit. L'épaississement passe par une ombre
+       portée sans flou plutôt que par `border-width` : une bordure qui
+       grossit décalerait le contenu de la carte d'un demi-pixel à chaque
+       déplacement du focus.
+       Les deux `background` : le second (`color-mix`) l'emporte là où il est
+       compris ; ailleurs le premier reste — l'ordre fait le repli, jamais un
+       test en JS (même patron que `100vh` / `100dvh`). */
+    .carte-focus {
+      border-color: var(--carte-trait);
+      background: var(--menu-carte);
+      background: color-mix(in srgb, var(--menu-carte), white var(--menu-focus-eclaircie));
+      box-shadow:
+        0 0 0 calc(var(--menu-focus-bordure-px) - var(--menu-carte-bordure-px)) var(--carte-trait),
+        0 0 0 calc(var(--menu-focus-halo-u) * var(--u)) color-mix(in srgb, var(--carte-trait) var(--menu-focus-halo-opacite), transparent);
+    }
+    /* Appuyé : l'inverse du focus, sans animation. */
+    .carte:active, .cartes-bouton-entete:active {
+      background: color-mix(in srgb, var(--menu-carte), black var(--menu-appuye-assombrie));
+    }
+    /* Une case vide tient sa place dans la grille et ne dessine RIEN : les
+       autres cartes ne glissent pas (la mémoire du pouce prime). */
+    .carte-vide { min-width: 0; min-height: 0; }
+
+    /* L'icône est un canvas : la règle `canvas { … }` du jeu, plus haut, s'y
+       appliquerait (fond noir, rendu pixelisé, doigt bâillonné) — on la
+       défait. Sa COULEUR est lue par `ui/icone_canvas.js` comme teinte. */
+    .carte-icone {
+      flex: 0 0 auto; width: calc(40 * var(--u)); height: calc(40 * var(--u));
+      color: var(--carte-trait);
+      background: transparent; image-rendering: auto; touch-action: auto;
+    }
+    .carte-textes { min-width: 0; display: flex; flex-direction: column; gap: calc(4 * var(--u)); }
+    .carte-titre { font-size: calc(13 * var(--u)); font-weight: 700; line-height: 1.15; color: var(--menu-texte-titre); }
+    .carte-phrase { font-size: calc(9 * var(--u)); line-height: 1.3; color: var(--menu-texte-phrase); }
+    /* L'état d'une bascule EST l'information de la carte : à l'accent. */
+    .carte-etat { font-size: calc(10 * var(--u)); color: var(--carte-trait); }
+    /* À trois colonnes une carte est trop étroite pour mettre le texte à côté
+       de l'icône : on empile. */
+    .cartes-grille[data-colonnes="3"] .carte { flex-direction: column; align-items: flex-start; justify-content: center; gap: calc(6 * var(--u)); }
+    .cartes-grille[data-colonnes="3"] .carte-icone { width: calc(28 * var(--u)); height: calc(28 * var(--u)); }
   </style>
 </head>
 <body>

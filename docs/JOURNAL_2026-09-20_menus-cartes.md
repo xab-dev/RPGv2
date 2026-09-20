@@ -148,3 +148,102 @@ catalogue réel** (un catalogue inventé pourrait rester vert pendant que le vra
 
 **Vérifié dans Chrome** (pas de capture : rien ne change à l'écran) : le jeu démarre avec `menus.json` chargé et
 validé, aucun écran d'erreur, aucune erreur console.
+
+---
+
+## Commit A3 — Le composant grille (trois types, navigation 2D, cases stables)
+
+**À ce commit, le jeu ne change pas.** Le composant existe, il est testé et il se voit sur un banc d'essai ; il
+n'est **branché sur rien** — c'est A4 qui remplace la liste du menu Pause. C'est ce qui rend A4 retirable seul.
+
+**Livré.**
+
+- **`src/menu_cartes.js`** (pur), suite : `voisin()`, `resoudreCases()`, `premiereCasePresente()`,
+  `creerLecteurDirection()` (front montant sur deux axes), `creerPileMenus()`, `construireConfirmation()`.
+- **`src/ui/grille_cartes.js`** : le composant DOM. Un seul élément plein écran qui affiche le **sommet d'une pile**
+  d'écrans. Il ne connaît ni un id de catalogue, ni une valeur de style, ni l'audio, ni la sauvegarde, ni l'API plein
+  écran : le catalogue apporte les écrans, l'appelant apporte les fonctions (`actions`, `etats`, `ecrans`).
+- **`src/ui/icone_canvas.js`** : une icône de `visuels.json` dans un petit `<canvas>`. « Meilleur effort » — il
+  rattrape ses erreurs à sa frontière (il est appelé depuis la boucle de jeu, qui ne se replanifie pas après une
+  exception) : une icône qui rate laisse une carte sans icône, elle ne fige jamais le jeu.
+- **`index.html`** : les règles `.ecran-cartes`, `.cartes-*`, `.carte*`. **Aucune couleur, aucun rayon, aucune
+  épaisseur n'y est écrit** — tout vient du bloc de jetons d'A1. Toutes les longueurs sont des multiples de `--u`.
+- **Deux outils de dev** (`tools/`, jamais chargés par le jeu) : `banc_menu_cartes.html` et `cadre_viewport.html`.
+
+### Les décisions de ce commit
+
+1. **`voisin()` a une seconde passe, et ce n'est pas du zèle.** La spec dit « une case vide se saute ». En ligne
+   droite seulement, une carte peut devenir **inatteignable au stick** : avec les seules cases 0 et 3 occupées, ni
+   « droite » ni « bas » ne mènent de l'une à l'autre. Et ce n'est pas un cas d'école — c'est l'écran **Sauvegarde**
+   (`0 1 / 2 ·`) : depuis Importer, « bas » ne rencontre rien. Retenu : d'abord la ligne droite en sautant les vides ;
+   sinon **la carte présente la plus proche dans cette direction**, même en diagonale. Jamais vers l'arrière, jamais
+   de bouclage (*provisoire*, comme la spec). **Garantie vérifiée exhaustivement** : les 78 combinaisons de cases
+   (2 × 2 et 3 × 2), toute carte atteignable depuis toute autre.
+2. **Les cartes sont des `<div>`, pas des `<button>`.** Un bouton natif **garde le focus du navigateur** après un
+   clic, et Espace l'active — or Espace est le verbe `ATTACK`, qui valide la carte focalisée. Une bascule cliquée
+   puis validée au clavier se serait activée **deux fois dans la même frame** : retour à l'état de départ, sans que
+   rien ne bouge à l'écran. (Le défaut existe sur l'ancien menu ; il ne migre pas.)
+3. **Les icônes passent par `visuels.js#dessinerVisuel`, dans un `<canvas>`, jamais par du SVG.** C'est « le seul
+   point qui interprète `visuels.json` » : un traducteur SVG aurait été un second interprète, condamné à diverger.
+   **La teinte est la couleur CSS du canvas** : la feuille de style dit « accent » ou « danger », le code ne
+   transporte aucune couleur.
+4. **`[X]` et `[←]` occupent LA MÊME place** (en haut à droite), seule l'icône change — « la mémoire du pouce
+   prime ». Le mot est dans le DOM, masqué par une règle CSS commentée : **le montrer est une ligne de feuille de
+   style**, pour que Xav puisse juger « seul, ou avec son mot » sans nouveau commit de code.
+5. **La boîte se cale sur le canvas par le rembourrage** de l'écran (`--jeu-x`, `--jeu-y`), sans boîte intérieure :
+   la découpe de `D-42` (en-tête figé + corps) est conservée telle quelle, l'en-tête reste le dernier enfant du
+   document. Le composant ne pose que de la **géométrie** ; il ne connaît pas « 270 » (l'appelant donne l'unité).
+6. **En-tête : 24 u, mais jamais moins de 40 px de page** (*provisoire*, spec §4.4). À 703 × 280 une unité vaut
+   1 px : l'en-tête passe à 40 px et les deux rangées (`1fr`) absorbent la différence — 97 px au lieu de 105.
+7. **Tailles de texte de départ** (*provisoires*, en u) : titre d'écran 12 · titre de carte 13 · phrase 9 · état
+   d'une bascule 10, **à l'accent** (c'est l'information de la carte). À 703 × 280, 9 u = **9 px de page** : c'est
+   petit, et c'est exactement ce que veut dire « comme dessiné en 480 × 270 ». À juger sur le téléphone (`V-27`).
+   `text-size-adjust: 100%` est posé : Chrome Android grossit de lui-même les petits textes, il aurait cassé la règle.
+8. **`Échap` ne fait rien dans le menu, et c'est voulu à ce palier.** La spec (§4.3) liste « Retour (B, Échap,
+   `[←]`) » ; mais `Échap` est le verbe `MENU`, et « `MENU` menu ouvert » **est `Q-36`, tranchée au palier B**. Rien
+   n'est codé ici. Au clavier, le retour est la touche `3` (`skill_3`), comme aujourd'hui.
+
+### Ce que les tests prouvent — et ce qu'ils ne peuvent pas prouver
+
+`tests/test_d43_a3_grille_cartes_2026-09-20.js`, dix blocs. **Aucun ne prouve qu'un écran tient, que le focus se
+voit, ni qu'une icône se lit** : Node n'a pas de moteur de mise en page. Ce qui est prouvé : `voisin()` (et sa
+garantie exhaustive) · cases stables, case réservée, case contextuelle à candidates ordonnées · front montant par
+axe, un seul cran en diagonale · pile et **focus rendu à la carte qui avait ouvert l'écran** · confirmation :
+« Non » en case 0, toujours · **structure DOM** : la sortie vit dans l'en-tête figé, l'en-tête ne contient jamais
+une carte, une case vide n'a **ni écouteur, ni enfant, ni classe de carte** et ne prend jamais le focus · les trois
+types (un dossier empile, une bascule reste, une action ferme, un danger confirme d'abord) · un refus s'annonce dans
+l'en-tête et laisse la carte inchangée · survol, clic, verbe et bouton d'en-tête passent par **les mêmes fonctions**
+· un écran existant **masque** la grille sans la dépiler, et un focus mémorisé sur une carte disparue se replie.
+Le faux DOM du test est **volontairement sans** `setProperty`, `setAttribute` ni `classList` : le composant doit
+vivre sans. **86 fichiers de test verts.**
+
+### Vérifié dans Chrome — `docs/captures/menus-cartes-2026-09-20/`
+
+Sur le banc d'essai (vrai `menus.json`, vraie feuille de style relue dans `index.html`, vraie couche d'input,
+actions factices). Aucune erreur console.
+
+| Capture | Ce qu'elle montre |
+|---|---|
+| `a3_banc_racine_feu_703x280.jpg` | racine, accent **feu**, case contextuelle présente. Boîte 480 × 270 centrée, `--u` = 1 px, en-tête 40 px |
+| `a3_banc_racine_terre_case-contextuelle-vide_703x280.jpg` | accent **terre** ; hors de la Maison la case 3 est **vide**, rien ne glisse |
+| `a3_banc_racine_accent-neutre_703x280.jpg` | **accent neutre**, avant le choix du follet |
+| `a3_banc_parametres_refus-plein-ecran_703x280.jpg` | trois bascules (état à l'accent) ; **refus annoncé dans l'en-tête**, carte inchangée |
+| `a3_banc_sauvegarde_danger_703x280.jpg` | le **danger** : bordure et icône magenta, jamais un aplat |
+| `a3_banc_confirmation_703x280.jpg` | confirmation à deux cartes, **focus sur « Non, revenir »** |
+| `a3_banc_racine_eau_1920x1080_cadre.png` | **1920 × 1080**, accent **eau**, `--u` = 4 px : mêmes proportions qu'à 703 × 280 |
+| `a3_banc_grille-3x2_case-vide_1920x1080_cadre.png` | la grille **3 × 2** (qu'aucun écran réel n'a encore), avec une case vide au milieu d'une rangée |
+
+**Mesuré** : à 1920 × 1080 le corps fait 984 px de contenu pour 984 px de boîte — **aucun débordement**, le filet
+défilant ne sert pas. Au clavier, sur le banc : le focus revient bien sur Réinitialiser, puis Sauvegarde, puis
+Paramètres en dépilant trois fois.
+
+**Pourquoi `_cadre` dans deux noms de fichier — et ce que ça change.** Une fenêtre de navigateur ne peut pas offrir
+un viewport plus grand que l'écran qui la porte : sur cet écran 1920 × 1080, Chrome fenêtré plafonne à **1920 × 949**,
+où l'échelle entière du jeu tombe à 3. `tools/cadre_viewport.html` charge la page dans un `<iframe>` de la taille
+demandée : `innerWidth`/`innerHeight` y valent **exactement 1920 × 1080** (vérifié), toute la mise en page y est
+calculée à cette taille, puis le cadre est **réduit à l'affichage**. Ces deux captures prouvent donc la **mise en
+page** à 1920 × 1080 ; elles ne disent rien de la **netteté au pixel** (l'image est rééchantillonnée). Les six
+captures à 703 × 280, elles, sont prises dans une vraie fenêtre, pixel pour pixel.
+
+**Ce qui n'est PAS vérifié** : la manette (une manette ne se simule pas ici), le doigt, et tout jugement d'œil —
+focus « plus, moins ou bon », lisibilité des icônes, taille des textes sur un vrai téléphone. C'est `V-27`.

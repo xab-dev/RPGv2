@@ -1,0 +1,50 @@
+<!doctype html>
+<!--
+  Cadre à taille de viewport imposée — OUTIL DE DEV, jamais chargé par le jeu.
+
+  Pourquoi il existe : une fenêtre de navigateur ne peut pas offrir un viewport
+  plus grand que l'écran qui la porte. Sur un écran 1920 × 1080, Chrome fenêtré
+  plafonne vers 1920 × 949 (barres du navigateur et du système) : l'échelle
+  entière du jeu y tombe à 3, et « 1920 × 1080, échelle 4 » — l'une des deux
+  tailles exigées par `specs/08_menus-cartes.md` §7 — devient impossible à
+  capturer. Une page chargée dans un <iframe> a pour viewport LA TAILLE DE
+  L'IFRAME : `innerWidth`/`innerHeight`, les media queries et toute la mise en
+  page y sont calculés à la taille demandée, exactement. Le cadre est ensuite
+  réduit À L'AFFICHAGE (`transform: scale`) pour tenir dans la fenêtre.
+
+  Ce que ça prouve, et ce que ça ne prouve pas : la MISE EN PAGE est celle du
+  viewport demandé (positions, tailles, débordements) ; l'image, elle, est
+  rééchantillonnée — elle ne dit rien de la netteté au pixel. Une capture prise
+  ici le dit dans son nom (`…_cadre.jpg`).
+
+  http://localhost:8080/tools/cadre_viewport.html?l=1920&h=1080&src=/index.html
+-->
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>Cadre viewport</title>
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #333; }
+    iframe { border: 0; transform-origin: 0 0; display: block; background: #000; }
+  </style>
+</head>
+<body>
+  <iframe id="cadre" allow="fullscreen; gamepad"></iframe>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const largeur = Number(params.get('l')) || 1920;
+    const hauteur = Number(params.get('h')) || 1080;
+    const cadre = document.getElementById('cadre');
+    cadre.width = largeur;
+    cadre.height = hauteur;
+    cadre.src = params.get('src') || '/index.html';
+    function ajuster() {
+      // Jamais agrandi : à 703 × 280 dans une grande fenêtre, 1 px reste 1 px.
+      const echelle = Math.min(1, window.innerWidth / largeur, window.innerHeight / hauteur);
+      cadre.style.transform = `scale(${echelle})`;
+    }
+    window.addEventListener('resize', ajuster);
+    ajuster();
+  </script>
+</body>
+</html>

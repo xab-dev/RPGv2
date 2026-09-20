@@ -129,3 +129,193 @@ export function erreursCablageMenus(menus, enregistres) {
   }
   return erreurs;
 }
+
+// ---------------------------------------------------------------------------
+// Palier A3 — ce que le composant `ui/grille_cartes.js` décide sans DOM.
+// ---------------------------------------------------------------------------
+
+// Les cases d'un écran, telles qu'elles s'affichent MAINTENANT : un tableau de
+// la taille de la grille, une carte ou `null` par case.
+//
+// Positions stables (§4.2) : une carte absente laisse sa case VIDE, les autres
+// ne glissent pas — « la mémoire du pouce prime ». C'est pour ça que ce
+// tableau est indexé par `case`, jamais compacté.
+//
+// Case contextuelle : plusieurs cartes peuvent viser la même case ; ce sont
+// des candidates, dans l'ordre du fichier, et la PREMIÈRE dont la condition
+// est vraie l'occupe. Aucune → `null`, rien n'est dessiné. Une carte ordinaire
+// avec une condition n'est que le cas à une seule candidate : un seul chemin.
+//
+// `evaluer` est injecté (c'est `flags.evaluate`) : ce module ne connaît ni les
+// drapeaux, ni le niveau, ni le lieu.
+export function resoudreCases(ecran, evaluer) {
+  const grille = choisirGrille(nombreCases(ecran));
+  if (!grille) return [];
+  const cases = new Array(grille.colonnes * grille.rangees).fill(null);
+  for (const carte of ecran.cartes) {
+    if (cases[carte.case] !== null) continue;
+    const presente = carte.condition === undefined || carte.condition === null || evaluer(carte.condition);
+    if (presente) cases[carte.case] = carte;
+  }
+  return cases;
+}
+
+// §4.3 : « focus sur la première carte présente ». -1 si l'écran est vide.
+export function premiereCasePresente(cases) {
+  return cases.findIndex((c) => c !== null);
+}
+
+const PAS = {
+  haut: { dc: 0, dr: -1 }, bas: { dc: 0, dr: 1 }, gauche: { dc: -1, dr: 0 }, droite: { dc: 1, dr: 0 },
+};
+
+// Navigation en deux dimensions (§4.3). Rend l'index de la case où va le
+// focus, ou `index` lui-même si rien ne convient — jamais `null`, l'appelant
+// n'a aucun cas particulier à traiter.
+//
+//   1. **En ligne droite**, en SAUTANT les cases vides (« une case vide se
+//      saute »), jusqu'au bord. Pas de bouclage d'un bord à l'autre
+//      (*provisoire*, à valider par Xav).
+//   2. **Sinon, la carte présente la plus proche DANS CETTE DIRECTION**, même
+//      en diagonale. Sans cette seconde passe, une carte peut devenir
+//      inatteignable au stick : avec seulement les cases 0 et 3 occupées, ni
+//      « droite » ni « bas » ne mènent de l'une à l'autre en ligne droite. Ce
+//      n'est pas un cas d'école — c'est l'écran racine dès qu'une carte tombe,
+//      et l'écran Paramètres sur un navigateur sans plein écran.
+//
+// Garantie vérifiée exhaustivement par le test (toutes les combinaisons de
+// cases, 2 × 2 et 3 × 2) : depuis n'importe quelle carte présente, toutes les
+// autres sont atteignables.
+export function voisin(index, direction, colonnes, total, estPresente = () => true) {
+  const pas = PAS[direction];
+  if (!pas || index < 0 || index >= total) return index;
+  const rangees = Math.ceil(total / colonnes);
+  const col0 = index % colonnes;
+  const rang0 = Math.floor(index / colonnes);
+
+  let col = col0 + pas.dc;
+  let rang = rang0 + pas.dr;
+  while (col >= 0 && col < colonnes && rang >= 0 && rang < rangees) {
+    const i = rang * colonnes + col;
+    if (i < total && estPresente(i)) return i;
+    col += pas.dc;
+    rang += pas.dr;
+  }
+
+  let meilleur = index;
+  let meilleureDistance = Infinity;
+  for (let i = 0; i < total; i++) {
+    if (i === index || !estPresente(i)) continue;
+    const dCol = (i % colonnes) - col0;
+    const dRang = Math.floor(i / colonnes) - rang0;
+    // Strictement du bon côté, mesuré sur l'axe du déplacement.
+    const avance = dCol * pas.dc + dRang * pas.dr;
+    if (avance <= 0) continue;
+    // L'écart de côté pèse plus lourd que l'avance : on préfère la carte la
+    // mieux alignée avec celle qu'on quitte.
+    const ecart = Math.abs(dCol * pas.dr) + Math.abs(dRang * pas.dc);
+    const distance = ecart * total + avance;
+    if (distance < meilleureDistance) {
+      meilleureDistance = distance;
+      meilleur = i;
+    }
+  }
+  return meilleur;
+}
+
+// Front montant sur DEUX axes (même principe que
+// `ui/menu.js#creerNavigationMenu`, qui n'en gère qu'un) : `MOVE` est
+// analogique, la navigation avance par cran. Un stick maintenu ne défile pas ;
+// il faut revenir au neutre sur l'axe pour repartir. Rend 'haut' | 'bas' |
+// 'gauche' | 'droite' | null. `seuil` est donné par l'appelant : il n'existe
+// qu'en un endroit (`ui/menu.js#SEUIL_POUSSEE_MENU`).
+export function creerLecteurDirection(seuil) {
+  const precedent = { x: 0, y: 0 };
+  const signe = (v) => (v > seuil ? 1 : v < -seuil ? -1 : 0);
+  return {
+    lire(move) {
+      const x = signe(move.x);
+      const y = signe(move.y);
+      let direction = null;
+      // L'axe vertical d'abord : un stick poussé en diagonale ne doit donner
+      // qu'UN cran, et c'est le vertical qui existait déjà dans les listes.
+      if (y !== 0 && precedent.y === 0) direction = y > 0 ? 'bas' : 'haut';
+      else if (x !== 0 && precedent.x === 0) direction = x > 0 ? 'droite' : 'gauche';
+      precedent.x = x;
+      precedent.y = y;
+      return direction;
+    },
+    reinitialiser() {
+      precedent.x = 0;
+      precedent.y = 0;
+    },
+  };
+}
+
+// La pile de navigation LOCALE du palier A (§6 : « une pile locale minimale ;
+// les sept contrats existants ne bougent pas encore »). Elle ne connaît que
+// des écrans de cartes ; le palier B la remplacera par LA pile du menu entier.
+//
+// Ce qu'elle garantit : « Retour dépile UN écran, et rend le focus à la carte
+// qui l'avait ouvert » (§4.3). Chaque niveau mémorise donc la case focalisée
+// au moment où on l'a quitté vers le bas — c'est `focus`, tenu à jour par le
+// composant à chaque déplacement.
+export function creerPileMenus() {
+  let niveaux = [];
+  return {
+    empiler(ecran, focus) {
+      niveaux.push({ ecran, focus });
+    },
+    // Rend le niveau retiré, ou `null` si la pile était déjà vide.
+    depiler() {
+      return niveaux.pop() || null;
+    },
+    sommet() {
+      return niveaux.length > 0 ? niveaux[niveaux.length - 1] : null;
+    },
+    definirFocus(focus) {
+      if (niveaux.length > 0) niveaux[niveaux.length - 1].focus = focus;
+    },
+    profondeur: () => niveaux.length,
+    vider() {
+      niveaux = [];
+    },
+  };
+}
+
+// Textes que le composant affiche DE LUI-MÊME (aucune carte du catalogue ne
+// les cite) : listés ici pour passer par le même contrôle de démarrage que
+// les textes du catalogue (`erreursTextesMenus`, troisième argument).
+export const CLES_TEXTE_COMPOSANT = [
+  'menu.fermer', 'menu.retour',
+  'menu.confirmation_non', 'menu.confirmation_non_phrase', 'menu.confirmation_oui_phrase',
+];
+
+// L'écran de confirmation d'une carte `danger` (§3, §4.1) : deux cartes,
+// « Non, revenir » en case 0 — donc focus par défaut, puisque le focus va à la
+// première carte présente — et « Oui, … » en case 1, en magenta.
+//
+// Construit ici et pas décrit dans `menus.json` : « Non d'abord » est une
+// règle de SÉCURITÉ. Elle ne doit pas dépendre de l'attention de celui qui
+// ajoutera la prochaine action destructive au catalogue.
+//
+// Les deux cartes sont de type `action` comme les autres ; `interne` dit au
+// composant laquelle dépile et laquelle exécute. `iconeRetour` vient de
+// l'écran racine (aucun id de catalogue n'est écrit ici).
+export function construireConfirmation(carte, iconeRetour) {
+  return {
+    id: `${carte.id}#confirmation`,
+    cle_titre: carte.cle_confirmation,
+    cartes: [
+      {
+        id: `${carte.id}#non`, case: 0, type: 'action', interne: 'retour',
+        cle_titre: 'menu.confirmation_non', cle_phrase: 'menu.confirmation_non_phrase', icone: iconeRetour,
+      },
+      {
+        id: `${carte.id}#oui`, case: 1, type: 'action', interne: 'confirmer', danger: true,
+        cle_titre: carte.cle_confirmer, cle_phrase: 'menu.confirmation_oui_phrase', icone: carte.icone,
+        action: carte.action,
+      },
+    ],
+  };
+}

@@ -15,7 +15,9 @@
 // en-deçà, on revient au neutre. Nécessaire car MOVE reste analogique
 // (§2.4) alors que la navigation de menu doit avancer par cran, jamais en
 // défilement continu.
-const SEUIL_POUSSEE_MENU = 0.5;
+// Exporté depuis specs/08_menus-cartes.md : la grille de cartes navigue sur
+// deux axes avec le MÊME seuil, reçu en paramètre — il reste écrit ici seul.
+export const SEUIL_POUSSEE_MENU = 0.5;
 
 // Logique de focus pure : un index borné [0, nbElements-1], qui n'avance
 // que sur front montant de MOVE.y (jamais en continu tant que le stick
@@ -220,7 +222,9 @@ function appliquerClasseEcran(el) {
 // annulerait l'effet de `hidden` (une valeur inline bat la règle UA
 // `[hidden]{display:none}`). Les deux doivent donc toujours changer
 // ensemble, ici et nulle part ailleurs.
-function afficherEcran(el, visible) {
+// Exportée pour `ui/grille_cartes.js`, qui la reçoit en paramètre : « ici et
+// nulle part ailleurs » reste vrai, il n'en existe toujours qu'une.
+export function afficherEcran(el, visible) {
   el.hidden = !visible;
   el.style.display = visible ? 'flex' : 'none';
 }

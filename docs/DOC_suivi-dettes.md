@@ -2,7 +2,7 @@
 projet: RPG V2
 episode/session: Fondations — suivi transversal
 type: registre de suivi (document vivant)
-version: 1.22.0
+version: 1.23.0
 statut: brouillon
 catégorie: Doc
 date: 2026-09-20
@@ -96,7 +96,7 @@ Emplacement : `docs/DOC_suivi-dettes.md`. Nom sans date : c'est un registre viva
 ---
 
 | V-31 | **Les menus à la bonne taille d'emblée sur téléphone** (`D-48`, `V-28`, `V-29`) | 20/09 | Sur le téléphone, par l'**URL publique**, et **sans jamais pivoter l'appareil** : ouvrir le menu, puis **chaque** sous-écran (Construction, Poche, Craft, Coffre, Stats, Paramètres) — tout doit être à la bonne taille du premier coup, plus jamais « une tuile et demie ». Puis pivoter, et entrer/sortir du plein écran : rien ne doit sauter. Mesuré avant/après sous Chrome sans fenêtre au profil `telephone` (780 × 360 px CSS, DPR 3) : `--u` passait de 4 px à l'ouverture à 1 px après un pivot, elle vaut désormais 4/3 px aux trois moments, et la boîte du menu recouvre exactement l'image du jeu. **Ce que la mesure ne dit pas** : si c'est agréable au doigt à cette taille — c'est le seul point qui reste | | ouvert |
-| V-32 | **Échap court ferme le menu, Échap long quitte le plein écran** (`D-50`) | 20/09 | Au clavier, sous Chrome PC, **le jeu en plein écran par l'entrée de menu** (pas F11 : l'API ne vaut que pour le plein écran demandé par la page). Échap court → le menu se ferme et **le plein écran reste** · Échap court de nouveau → le menu se rouvre · Échap **maintenu** (~2 s) → sortie du plein écran, avec le message du navigateur · hors plein écran → Échap comme avant. Mesuré sous Chrome sans fenêtre : l'API est là, le contexte est sécurisé, `lock(['Escape'])` part à l'entrée et `unlock()` à la sortie, zéro erreur console. **Ce que la mesure ne dit pas** : si l'appui maintenu tombe bien sous le doigt en jouant, et si le message du navigateur gêne | | ouvert |
+| V-32 | **Échap court ferme le menu, Échap long quitte le plein écran** (`D-50`) | 20/09 | Au clavier, sous Chrome PC, **le jeu en plein écran par l'entrée de menu** (pas F11 : l'API ne vaut que pour le plein écran demandé par la page). Échap court → le menu se ferme et **le plein écran reste** · Échap court de nouveau → le menu se rouvre · Échap **maintenu** (~2 s) → sortie du plein écran, avec le message du navigateur · hors plein écran → Échap comme avant. Mesuré sous Chrome sans fenêtre : l'API est là, le contexte est sécurisé, `lock(['Escape'])` part à l'entrée et `unlock()` à la sortie, zéro erreur console. **Ce que la mesure ne dit pas** : si l'appui maintenu tombe bien sous le doigt en jouant, et si le message du navigateur gêne | **ok — Xav, 20/09 : « all good »**, au clavier sous Chrome PC | clos |
 
 ## 4. À écrire par Xav
 

@@ -13,9 +13,11 @@
 // visible ». Plus aucun écran ne s'affiche ni ne se masque lui-même.
 //
 // creerNavigationMenu() et creerControleurMenu() sont pures (aucune
-// référence DOM, actions passées en callbacks) : c'est le patron de focus
-// que reprennent tous les écrans d'UI — écrit une fois ici, testé depuis
-// Node sans faux DOM.
+// référence DOM, actions passées en callbacks) : c'était le patron de focus
+// des écrans de LISTE. Depuis le palier C6 de specs/08 il n'y a plus d'écran
+// de liste, donc plus d'appelant — seul `test_menu_navigation` les exerce.
+// Gardées telles quelles (`D-46` au suivi : les retirer avec leur test, ou les
+// garder pour un futur menu vertical — à Xav de dire).
 
 import { creerMenuCartes } from './grille_cartes.js';
 import { creerEcranFiches } from './ecran_fiches.js';
@@ -161,50 +163,13 @@ export function creerControleurMenu(actions, options = {}) {
   };
 }
 
-// Marque l'élément focalisé (bordure + curseur `›`), qu'il soit sélectionné
-// au clavier/manette/tactile ou survolé à la souris (P4② : jamais la couleur
-// seule) — factorisé une fois, réutilisé par tous les écrans à liste.
-function appliquerFocusVisuel(elements, indexFocalise) {
-  elements.forEach((el, i) => {
-    const curseur = el.querySelector('.menu-curseur');
-    const estFocalise = i === indexFocalise;
-    curseur.textContent = estFocalise ? '›' : '';
-    el.style.border = estFocalise ? '2px solid #fff' : '2px solid transparent';
-    // `D-42` : depuis que le corps de l'écran défile, une entrée focalisée
-    // peut être HORS de la zone visible — à la manette et au clavier, le
-    // joueur perdrait alors son curseur en descendant la liste. Le
-    // défilement suit donc le focus, et lui seul (`nearest` : on ne bouge
-    // que si c'est nécessaire, jamais de recentrage à chaque cran).
-    // `typeof` plutôt qu'un `try` : le faux DOM des tests headless n'a pas
-    // de moteur de mise en page, son absence est un cas normal.
-    if (estFocalise && typeof el.scrollIntoView === 'function') {
-      el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-    }
-  });
-}
-
-// Cause racine du reset invisible (SD_menu-reset-invisible_2026-09-15.md) :
-// un sous-écran plein écran construit dynamiquement n'avait ni règle CSS
-// dédiée ni style inline — `hidden=false` retirait bien l'attribut, mais sans
-// position ni display l'élément restait en flux normal statique, hors du
-// viewport visible (`body{overflow:hidden}`) : invisible bien que
-// fonctionnellement ouvert. La leçon tient toujours : CHAQUE écran plein
-// écran reçoit le même habillage, par ce seul point de passage.
+// La leçon du reset invisible (SD_menu-reset-invisible_2026-09-15.md) tient
+// toujours : un écran plein écran construit dynamiquement, sans règle CSS
+// dédiée, reste en flux statique hors du viewport — « ouvert » et invisible.
+// Depuis `D-42` l'habillage est UNE classe d'`index.html` (`.ecran-ui`), que
+// posent les deux composants d'écran (`grille_cartes.js`, `ecran_fiches.js`) :
+// ce module ne connaît que des noms de classes, jamais une valeur de style.
 //
-// Ce qui change avec `D-42` : l'habillage n'est plus une pile de styles
-// inline, c'est UNE classe définie dans `index.html`. Le style en dur ne
-// pouvait pas exprimer ce que le ticket exige (un en-tête figé, un corps
-// défilant, une hauteur bornée à `100dvh` avec repli `100vh`) — une règle de
-// repli se déclare, elle ne se calcule pas en JS. Et le contrat reste le
-// même : `ui/menu.js` ne connaît QUE le nom des classes, jamais une valeur
-// de style ; `index.html` ne connaît que des classes, jamais un élément
-// nommé créé ici (c'est ce qui interdisait déjà d'y styliser `#menu-poche`).
-const CLASSE_ECRAN = 'ecran-ui';
-
-function appliquerClasseEcran(el) {
-  el.className = CLASSE_ECRAN;
-}
-
 // Point d'affichage/masquage unique pour tous les écrans plein écran :
 // `hidden` seul ne suffit pas à garantir la visibilité effective (cf.
 // ci-dessus), et un `display` inline qui resterait figé sur "flex"
@@ -216,185 +181,6 @@ function appliquerClasseEcran(el) {
 export function afficherEcran(el, visible) {
   el.hidden = !visible;
   el.style.display = visible ? 'flex' : 'none';
-}
-
-// Écran générique à liste focalisable + titre + "Fermer" toujours en
-// dernier (Palier A/D/E, specs/04_maison-interieur.md §3.1/§3.4/§3.5) —
-// réutilise creerControleurMenu (§3.1 : "jamais un 2e mécanisme de focus"),
-// jamais dupliqué pour Craft/Coffre/Stats/Poche : chacun ne fournit que son
-// propre contenu (`obtenirEntrees(): [{ texte, grisee?, action }]`),
-// reconstruit à l'ouverture ET à la demande (`rafraichir()`, appelé par
-// main.js après une action qui change l'état affiché — ex. un craft qui
-// grise la recette suivante, cf. edge case §4 de la fiche).
-//
-// Palier B (specs/08_menus-cartes.md) : cet écran est une VUE de la pile du
-// menu. Il ne s'ouvre ni ne se ferme plus lui-même — la pile appelle
-// `montrer(niveau)` et `masquer()` —, et ses deux sorties (« Fermer » au clic,
-// B/skill_3 au verbe) appellent LA MÊME fonction injectée, `onRetour` (le
-// `retour()` de la pile). Ce qui a disparu avec : `onFermer`, par lequel Poche
-// et Stats faisaient réapparaître le menu qu'ils avaient masqué, et
-// `fermerSansCallback`, l'exception qu'il avait fallu lui ajouter pour le
-// placement d'une station. Un niveau de liste porte son contenu :
-// `{ vue, id, obtenirEntrees, titre, aide? }`.
-function creerEcranListeGenerique(document, i18n, { onRetour }) {
-  const el = document.createElement('div');
-  appliquerClasseEcran(el);
-  afficherEcran(el, false);
-  // `D-42` : le titre, l'aide et « Fermer » vivent dans un EN-TÊTE qui ne
-  // défile pas ; seules les entrées fournies par l'appelant vont dans le
-  // corps défilant. « Fermer » sort donc de la liste — c'est ce qui le rend
-  // atteignable sans défilement, sur n'importe quelle hauteur d'écran, et
-  // c'est décisif au tactile : le menu recouvre le canvas, donc les boutons
-  // tactiles (dont `skill_3`, le « retour » de la manette) sont hors
-  // d'atteinte tant qu'il est ouvert. « Fermer » n'est pas une sortie parmi
-  // trois, c'est LA sortie du doigt.
-  //
-  // Son rang dans la NAVIGATION ne bouge pas pour autant : il reste la
-  // dernière entrée du tableau d'actions (`reconstruire`), l'ordre au
-  // clavier/à la manette est celui du tableau, jamais celui du DOM.
-  const entete = document.createElement('div');
-  entete.className = 'ecran-ui-entete';
-  entete.innerHTML = `
-    <div class="ecran-ui-entete-ligne">
-      <h2 class="ecran-ui-titre"></h2>
-      <div class="menu-item" data-item="fermer">
-        <span class="menu-curseur"></span>
-        <button class="ecran-ui-fermer" type="button"></button>
-      </div>
-    </div>
-    <p class="ecran-ui-aide"></p>
-  `;
-  const titre = entete.querySelector('.ecran-ui-titre');
-  // Aide optionnelle (specs/05_construction-stations.md §3 : "les touches du
-  // mode sont affichées dans le menu lui-même") — vide par défaut, invisible
-  // (`.ecran-ui-aide:empty`), un seul écran de plus ne demande aucun
-  // changement ici.
-  const aide = entete.querySelector('.ecran-ui-aide');
-  const itemFermer = entete.querySelector('.menu-item');
-  const boutonFermer = entete.querySelector('.ecran-ui-fermer');
-  const corps = document.createElement('div');
-  corps.className = 'ecran-ui-corps';
-  const liste = document.createElement('div');
-  liste.className = 'ecran-ui-liste';
-  corps.appendChild(liste);
-  // Le corps AVANT l'en-tête dans le DOM, l'en-tête au-dessus à l'écran
-  // (`order: -1`, feuille de style) : « Fermer » reste ainsi le dernier
-  // élément du document, comme il est le dernier cran de navigation. L'ordre
-  // du DOM n'a jamais décidé du focus ici (c'est le tableau d'actions qui le
-  // fait), mais le voir diverger serait un piège pour le prochain qui lira ce
-  // fichier — et c'est ce que vérifient, sans avoir été touchés, les tests qui
-  // exigent « Fermer toujours en dernier ».
-  el.appendChild(corps);
-  el.appendChild(entete);
-  document.body.appendChild(el);
-
-  // Le contrôleur ne sert plus ici qu'au FOCUS (index, front montant, verbe
-  // d'annulation) : « cet écran est-il ouvert ? » n'est plus sa question,
-  // c'est celle de la pile. `element: el` reste passé — son `traiterInput`
-  // est ainsi inerte sur un écran masqué, même si quelqu'un l'appelait.
-  //
-  // `onAnnuler: onRetour` (SD_construction-parite-clic-verbe_2026-09-19 §3.2,
-  // conservé) : B/skill_3 est un ÉVÉNEMENT déclaré, jamais une déduction après
-  // coup — et depuis le palier B il appelle exactement ce qu'appelle le clic
-  // sur « Fermer ».
-  let controleur = creerControleurMenu([], { verbeAnnuler: 'skill_3', element: el, onAnnuler: onRetour });
-  let elements = [];
-  let fournisseurEntrees = () => [];
-
-  function actualiserFocus() {
-    appliquerFocusVisuel(elements, controleur.index());
-  }
-
-  // « Fermer » : la dernière entrée de la navigation ET le bouton de
-  // l'en-tête. Un retour, rien d'autre — c'est la pile qui masque.
-  function fermer() {
-    onRetour();
-  }
-
-  function reconstruire() {
-    // « Fermer » reste la DERNIÈRE entrée de la navigation (l'ordre est celui
-    // de ce tableau) — seul son élément DOM vit ailleurs, dans l'en-tête figé
-    // (`D-42`). Les deux listes se rejoignent plus bas : `elements` suit
-    // exactement l'ordre de `toutes`.
-    const entrees = fournisseurEntrees();
-    const toutes = [...entrees, { texte: i18n.t('menu.fermer'), action: fermer }];
-    liste.innerHTML = entrees.map((e, i) => `
-      <div class="menu-item" data-item="${i}">
-        <span class="menu-curseur"></span>
-        <button type="button" ${e.grisee ? 'disabled' : ''}>${e.texte}</button>
-      </div>
-    `).join('');
-    boutonFermer.textContent = i18n.t('menu.fermer');
-    elements = [...Array.from(liste.querySelectorAll('.menu-item')), itemFermer];
-    const boutonsListe = Array.from(liste.querySelectorAll('button'));
-    const indexPrecedent = controleur.index();
-    controleur = creerControleurMenu(toutes.map((e) => e.action), { verbeAnnuler: 'skill_3', element: el, onAnnuler: onRetour });
-    controleur.ouvrir();
-    controleur.definirIndex(indexPrecedent);
-    // Les entrées de la liste sont des éléments NEUFS à chaque reconstruction
-    // (`liste.innerHTML` plus haut) : `addEventListener` n'y accumule rien.
-    // L'élément « Fermer », lui, SURVIT aux reconstructions — ses deux
-    // gestionnaires sont donc posés une seule fois, à la construction de
-    // l'écran (voir plus bas), par affectation plutôt qu'en empilant des
-    // écouteurs. Même raison que `el.onmouseenter =` dans
-    // `construireMenuPrincipal` : un clic sur « Fermer » aurait sinon fermé
-    // l'écran autant de fois qu'il a été reconstruit.
-    elements.slice(0, -1).forEach((elItem, i) => {
-      elItem.addEventListener('mouseenter', () => {
-        controleur.definirIndex(i);
-        actualiserFocus();
-      });
-    });
-    boutonsListe.forEach((btn, i) => {
-      btn.addEventListener('click', () => toutes[i].action());
-    });
-    actualiserFocus();
-  }
-
-  // Les deux gestionnaires de l'entrée « Fermer » de l'en-tête (cf.
-  // `reconstruire`). Son action ne change jamais — c'est toujours `fermer` —
-  // et son rang de focus est toujours le dernier.
-  boutonFermer.addEventListener('click', fermer);
-  itemFermer.onmouseenter = () => {
-    controleur.definirIndex(elements.length - 1);
-    actualiserFocus();
-  };
-
-  // La vue, telle que la pile l'attend (`menu_cartes.js#creerNavigationEcrans`).
-  return {
-    // Les entrées sont relues À NEUF à chaque affichage : revenir sur la liste
-    // après la pose d'une station, c'est la retrouver à jour. Le focus, lui,
-    // est repris là où il était (`reconstruire`).
-    montrer(niveau) {
-      fournisseurEntrees = niveau.obtenirEntrees;
-      titre.textContent = niveau.titre;
-      aide.textContent = niveau.aide || '';
-      afficherEcran(el, true);
-      reconstruire();
-    },
-    masquer() {
-      controleur.fermer();
-      afficherEcran(el, false);
-    },
-    // L'état RÉEL de l'élément : c'est lui que lit la pile.
-    estVisible: () => !el.hidden,
-    // Après une action qui change ce qui est affiché (un craft, un dépôt, un
-    // point de stat). Sans effet sur un écran masqué : reconstruire rouvrirait
-    // son contrôleur dans le dos de la pile.
-    rafraichir() {
-      if (!el.hidden) reconstruire();
-    },
-    // SD_construction-parite-clic-verbe_2026-09-19 §3.2 : aucune déduction ici.
-    // B/skill_3 est un événement déclaré (`onAnnuler`) ; une action choisie par
-    // ATTACK peut elle aussi faire quitter l'écran (choisir une station). Il ne
-    // reste qu'à rafraîchir le focus si l'écran est toujours là.
-    traiterInput(etat) {
-      controleur.traiterInput(etat);
-      if (controleur.estOuvert()) {
-        actualiserFocus();
-      }
-    },
-  };
 }
 
 // Les ids sous lesquels ce module enregistre ce qu'il sait ouvrir, faire et
@@ -713,8 +499,8 @@ export function initialiserMenu({
 
   // Palier C : l'écran « maître-détail » (`ui/ecran_fiches.js`). UNE instance,
   // comme la grille de cartes : c'est le NIVEAU empilé qui porte le contenu
-  // (titre, entrées, focus), pas l'élément. Les écrans de liste y migrent un
-  // par un ; ceux qui ne l'ont pas encore fait gardent `creerEcranListeGenerique`.
+  // (titre, entrées, focus), pas l'élément. Poche, Stats, Coffre, Craft et
+  // Construction y vivent tous les cinq.
   // Créé APRÈS la grille : le menu Pause reste le premier écran du document.
   // Les deux icônes de sortie sont celles que le catalogue donne à l'écran
   // racine : la sortie a la même tête partout.

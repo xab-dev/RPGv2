@@ -276,3 +276,17 @@ de visible que le bandeau, `menu.estOuvert()` faux), et le retour à la liste pa
 
 `creerEcranListeGenerique` n'a plus d'appelant : son retrait est le commit suivant (pour retirer C6 seul, retirer
 d'abord celui-là).
+
+## Commit C7 — Retrait du code mort : l'écran de liste générique
+
+Plus aucun appelant depuis C6 : `creerEcranListeGenerique`, `appliquerFocusVisuel`, `appliquerClasseEcran` sortent de
+`ui/menu.js` (813 → 650 lignes), et les règles `.ecran-ui-entete-ligne`, `.ecran-ui-titre`, `.ecran-ui-aide`,
+`.ecran-ui-liste` de la feuille de style. La leçon du « reset invisible » reste écrite, en quatre lignes, là où elle
+sert encore (`afficherEcran`). **Aucun changement visible** : les cinq écrans repassés sous Chrome sans fenêtre aux deux
+tailles, console sans erreur, aucun texte coupé. **94 fichiers verts.**
+
+**Gardé, et signalé (`D-46`)** : `creerNavigationMenu` et `creerControleurMenu` — pures, exportées, testées par
+`test_menu_navigation` depuis la Phase 0, et désormais **sans appelant**. Les retirer supprime un fichier de test
+historique ; les garder, c'est du code mort testé. Ce n'est pas à moi de trancher à 5 h du matin : ligne au suivi.
+
+Pour retirer C6 seul : retirer d'abord ce commit-ci.

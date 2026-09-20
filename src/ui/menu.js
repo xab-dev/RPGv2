@@ -475,7 +475,6 @@ export function initialiserMenu({
   const navigation = creerNavigationEcrans();
   const ecranCraft = creerEcranListeGenerique(document, i18n, { onRetour: navigation.retour });
   const ecranCoffre = creerEcranListeGenerique(document, i18n, { onRetour: navigation.retour });
-  const ecranStats = creerEcranListeGenerique(document, i18n, { onRetour: navigation.retour });
   // Construction (specs/05_construction-stations.md §3, précisée par
   // MT_construction-bandeau-placement_2026-09-17 v1.0.1) : ouvert DEPUIS le
   // menu Pause, comme Poche/Stats. Choisir une station dans cette liste
@@ -650,6 +649,7 @@ export function initialiserMenu({
   // Fournie après coup de la même façon (§3.4) : le menu Stats a besoin de
   // resoudre les stats/points depuis main.js, qui construit le menu.
   let fournisseurEntreesStats = () => [];
+  let fournisseurSousTitreStats = () => '';
   // Même patron pour Construction (§3) : liste des stations placable de la
   // structure où se trouve le héros — dépend de main.js (scène/position).
   let fournisseurEntreesConstruction = () => [];
@@ -685,8 +685,11 @@ export function initialiserMenu({
       vue: ecranFiches, id: ECRAN_POCHE, obtenirEntrees: entreesPoche, titre: i18n.t('menu.poche_titre'),
       texteVide: i18n.t('menu.poche_vide'),
     }),
+    // Stats (palier C3) : maître-détail, comme la Poche. Le sous-titre (points
+    // libres, progression d'XP) est relu à chaque affichage.
     [ECRAN_STATS]: () => navigation.empiler({
-      vue: ecranStats, id: ECRAN_STATS, obtenirEntrees: () => fournisseurEntreesStats(), titre: i18n.t('menu.stats_titre'),
+      vue: ecranFiches, id: ECRAN_STATS, titre: i18n.t('menu.stats_titre'),
+      obtenirEntrees: () => fournisseurEntreesStats(), sousTitre: () => fournisseurSousTitreStats(),
     }),
     [ECRAN_CONSTRUCTION]: () => navigation.empiler(niveauConstruction()),
   };
@@ -807,8 +810,10 @@ export function initialiserMenu({
     // Palier D : main.js fournit un obtenirEntrees() propre au menu Stats
     // (résout registre/i18n/save, que ce module ne connaît pas) une fois
     // l'orchestrateur construit — même patron que reinitialiserPartie.
-    definirEntreesStats(fn) {
+    // `sousTitre` (palier C3, optionnel) : ce que dit l'en-tête de l'écran.
+    definirEntreesStats(fn, sousTitre = () => '') {
       fournisseurEntreesStats = fn;
+      fournisseurSousTitreStats = sousTitre;
     },
     // Écrans contextuels ouverts directement par INTERACT sur une station
     // (Palier A/E, hors du menu Pause) — `obtenirEntrees` est fourni à
@@ -826,8 +831,10 @@ export function initialiserMenu({
     rafraichirCoffre() {
       ecranCoffre.rafraichir();
     },
+    // Stats vit dans l'écran « maître-détail » : sans effet s'il affiche autre
+    // chose… qu'il relirait sans dommage (il relit son niveau courant).
     rafraichirStats() {
-      ecranStats.rafraichir();
+      ecranFiches.rafraichir();
     },
     // Point d'entrée appelé par main.js tant que le menu est ouvert (voir
     // la priorité UI/gameplay dans main.js#maj). Les verbes vont au SOMMET de

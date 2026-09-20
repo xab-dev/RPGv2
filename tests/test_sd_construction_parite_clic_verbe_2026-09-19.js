@@ -237,6 +237,10 @@ function construireBanc() {
   // aucune entrée à afficher.
   menu.definirEvaluateurCondition(orchestrateur.evaluerCondition);
   menu.definirEntreesConstruction(orchestrateur.entreesConstruction);
+  // specs/08 palier C3 : de vraies tuiles dans l'écran Stats, et un point à
+  // dépenser pour que la fiche ait son bouton « +1 ».
+  save.hero.points_stats_libres = 3;
+  menu.definirEntreesStats(orchestrateur.obtenirEntreesStats, orchestrateur.sousTitreStats);
   const conteneur = document.body.querySelector('#menu');
   return { save, orchestrateur, frames, menu, document, conteneur };
 }
@@ -570,7 +574,7 @@ function testerPariteFiches(nomDeLEcran, ouvrir) {
 }
 
 testerPariteFiches('Poche', ouvrirPoche);
-testerCliqueVsVerbePourEcran('Stats', ouvrirStats);
+testerPariteFiches('Stats', ouvrirStats);
 testerCliqueVsVerbePourEcran('Construction (liste)', ouvrirConstructionListe);
 testerCliqueVsVerbePourEcran('Craft', ouvrirCraft);
 testerCliqueVsVerbePourEcran('Coffre', ouvrirCoffre);

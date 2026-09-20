@@ -1096,14 +1096,33 @@ export function creerOrchestrateurGrotte({
   // = après Boss 1, hors scope). Fournie à ui/menu.js via
   // menu.definirEntreesStats() une fois l'orchestrateur construit (même
   // patron que reinitialiserPartie).
+  //
+  // specs/08_menus-cartes.md, palier C3 : l'écran Stats est un « maître-détail ».
+  // Une TUILE par stat (son icône de `stats.json`, sa valeur en pastille) ; sa
+  // FICHE liste les stats dérivées qui en dépendent, avec leur valeur du moment
+  // — lues dans `stats_derivees.json` (champ `stat`), jamais écrites par stat :
+  // une dérivée ajoutée au catalogue apparaît ici sans code. Le bouton « +1 »
+  // n'existe que s'il reste un point à dépenser (l'écran est d'abord un écran
+  // d'information : quatre tuiles grisées le feraient passer pour désactivé).
+  // Les deux lignes purement informatives de l'ancienne liste — points libres,
+  // progression d'XP — ne sont plus des entrées sans action : elles sont le
+  // SOUS-TITRE de l'écran (`sousTitreStats`).
   function obtenirEntreesStats() {
     const statsPrimaires = calculerStatsPrimaires(registre, resoudreModificateursHeros());
-    const entrees = registre.tous('stats').map((s) => {
+    const statsDerivees = calculerStatsDerivees(registre, statsPrimaires);
+    return registre.tous('stats').map((s) => {
       const peutAjouter = save.hero.points_stats_libres > 0;
       const suffixe = peutAjouter ? ` (${i18n.t('menu.stats_ajouter')})` : '';
       return {
         texte: `${i18n.t(s.label_key)} : ${statsPrimaires[s.id]}${suffixe}`,
-        grisee: !peutAjouter,
+        titre: i18n.t(s.label_key),
+        icone: s.icone || null,
+        quantite: statsPrimaires[s.id],
+        lignes: registre.tous('stats_derivees')
+          .filter((d) => d.stat === s.id)
+          .map((d) => `${i18n.t(d.label_key)} : ${Math.round(statsDerivees[d.id])}`),
+        libelleAction: peutAjouter ? i18n.t('menu.stats_ajouter') : null,
+        grisee: false,
         action: () => {
           if (save.hero.points_stats_libres <= 0) return;
           save.hero.stats.points[s.id] = (save.hero.stats.points[s.id] || 0) + 1;
@@ -1113,21 +1132,17 @@ export function creerOrchestrateurGrotte({
         },
       };
     });
-    entrees.push({
-      texte: `${i18n.t('menu.points_libres')} : ${save.hero.points_stats_libres}`,
-      grisee: true,
-      action: () => {},
-    });
-    // MT_hud-ligne-haute_2026-09-19 : la barre d'XP ayant quitté le HUD, la
-    // progression doit rester lisible quelque part — c'est ici (§À faire de
-    // la fiche). Entrée purement informative (grisée, action vide), même
-    // patron que « points libres » juste au-dessus.
-    entrees.push({
-      texte: `${i18n.t('menu.stats_xp')} : ${i18n.t('hud.niveau_prefixe')}${save.hero.niveau} — ${Math.round(ratioProgressionXp() * 100)} %`,
-      grisee: true,
-      action: () => {},
-    });
-    return entrees;
+  }
+
+  // MT_hud-ligne-haute_2026-09-19 : la barre d'XP ayant quitté le HUD, la
+  // progression doit rester lisible quelque part — c'est ici, avec les points
+  // à dépenser, dans l'en-tête de l'écran Stats : visible quelle que soit la
+  // tuile regardée.
+  function sousTitreStats() {
+    return [
+      `${i18n.t('menu.points_libres')} : ${save.hero.points_stats_libres}`,
+      `${i18n.t('menu.stats_xp')} : ${i18n.t('hud.niveau_prefixe')}${save.hero.niveau} — ${Math.round(ratioProgressionXp() * 100)} %`,
+    ].join(' · ');
   }
 
   // Manger (Palier C §3.3) : consomme l'item équipé au slot consommable
@@ -2199,6 +2214,7 @@ export function creerOrchestrateurGrotte({
     // reinitialiserPartie ci-dessus) — le menu Stats n'a besoin d'appeler
     // que cette seule fonction, jamais de connaître registre/save/i18n.
     obtenirEntreesStats: () => obtenirEntreesStats(),
+    sousTitreStats: () => sousTitreStats(),
     // specs/05_construction-stations.md §3 : fournis à ui/menu.js via
     // menu.definirDisponibiliteConstruction()/definirEntreesConstruction()
     // (même patron que obtenirEntreesStats ci-dessus) — et exposés ici pour
@@ -2467,7 +2483,7 @@ export async function demarrerJeu() {
   menu.definirActionReinitialiser(orchestrateur.reinitialiserPartie);
   // Même patron (§3.4) : le menu Stats a besoin de l'orchestrateur pour
   // résoudre les stats/points courants.
-  menu.definirEntreesStats(orchestrateur.obtenirEntreesStats);
+  menu.definirEntreesStats(orchestrateur.obtenirEntreesStats, orchestrateur.sousTitreStats);
   // specs/05_construction-stations.md §3 : même patron de couture différée
   // (le menu ne connaît ni la scène ni la position du héros).
   menu.definirEvaluateurCondition(orchestrateur.evaluerCondition);

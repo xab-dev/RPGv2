@@ -198,3 +198,24 @@ puis A »**, chemin du stick calculé par `voisin()` ; + la sortie : bouton d'en
 la Poche hors de ce qui défile ; l'écran de liste témoin devient Craft), `test_d43_a4`, `test_d43_b2`.
 **91 fichiers verts.** Vu dans le jeu sous Chrome sans fenêtre, aux deux tailles : rien ne déborde, aucun texte coupé,
 console sans erreur (`tools/scenarios/ecrans_palier_c.mjs`, captures `c_poche_*`).
+
+## Commit C3 — Stats en maître-détail
+
+Une **tuile par stat** du catalogue (son icône de `stats.json`, sa valeur en pastille) ; la **fiche** liste les stats
+dérivées qui dépendent de cette stat, avec leur valeur du moment — lues dans `stats_derivees.json` (champ `stat`), jamais
+écrites par stat : une dérivée ajoutée au catalogue apparaît sans code. Le bouton **« +1 » n'existe que s'il reste un
+point** ; aucune tuile n'est grisée (quatre tuiles grisées feraient passer un écran d'information pour un écran
+désactivé). Les deux entrées *sans action* de l'ancienne liste (points libres, progression d'XP) deviennent le
+**sous-titre** de l'écran (`orchestrateur.sousTitreStats`, relu à chaque affichage) — visibles quelle que soit la tuile.
+
+`menu.definirEntreesStats(fn, sousTitre)` : second argument optionnel. L'écran de liste de Stats disparaît de
+`ui/menu.js` (cinq écrans partagés au lieu de six ; `test_d42` le dit). `obtenirEntreesStats()` garde `texte`, `grisee`
+et `action` : `test_phase3_boucle` est vert sans être touché.
+
+Tests : `test_d43_c3_stats_fiches` (vrai orchestrateur) ; parité pointeur/verbes de Stats passée au maître-détail, avec de
+vraies tuiles et un point à dépenser. **92 fichiers verts.** Vu dans le jeu, aux deux tailles : rien ne déborde, aucun
+texte coupé. Un défaut vu à la capture et corrigé ici : l'icône de la fiche n'était pas à l'accent (`--carte-trait`
+n'était défini que sur les tuiles).
+
+**À Xav (`Q-39`)** : « Force » n'a aucune stat dérivée en données — sa fiche est vide. Et « Cadence d'attaque : 500 »
+affiche des millisecondes brutes (la donnée n'a pas d'unité). Rien d'inventé ici : c'est du contenu.

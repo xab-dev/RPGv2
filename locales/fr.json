@@ -182,5 +182,8 @@
   "item.categorie.outil": "Outil",
   "menu.fiche.rend_faim": "Faim +{n} %",
   "menu.fiche.rend_soif": "Soif +{n} %",
-  "menu.fiche.equipe": "Équipé"
+  "menu.fiche.equipe": "Équipé",
+  "menu.fiche.coffre_plein": "Coffre plein",
+  "menu.fiche.pile_pleine": "Pile pleine",
+  "menu.fiche.coffre_piles": "Piles : {n} / {max}"
 }

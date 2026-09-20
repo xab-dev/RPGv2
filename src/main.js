@@ -168,6 +168,8 @@ export function clesTexteFiches() {
   return [
     ...CATEGORIES_ITEM.map((c) => `item.categorie.${c}`),
     'menu.fiche.rend_faim', 'menu.fiche.rend_soif', 'menu.fiche.equipe',
+    'menu.fiche.coffre_plein', 'menu.fiche.pile_pleine', 'menu.fiche.coffre_piles',
+    'menu.coffre_deposer', 'menu.coffre_retirer', 'menu.poche',
     'menu.poche_equiper', 'menu.poche_vide',
   ];
 }
@@ -780,7 +782,10 @@ export function creerOrchestrateurGrotte({
       return;
     }
     if (station.role === 'stockage') {
-      menu.ouvrirCoffre(() => entreesCoffre(station), i18n.t(station.label_key));
+      menu.ouvrirCoffre(() => entreesCoffre(station), i18n.t(station.label_key), {
+        sousTitre: () => i18n.t('menu.fiche.coffre_piles', { n: nombrePilesCoffre(), max: station.capacite }),
+        texteVide: i18n.t('menu.poche_vide'),
+      });
       return;
     }
     // role === 'eau' (puits, §3.3) : boit directement, jamais un menu —
@@ -845,23 +850,55 @@ export function creerOrchestrateurGrotte({
   // geste que la couche d'input n'expose pas encore de façon générique,
   // hors scope de cette session (cf. journal, à reprendre si Xav le
   // redemande).
+  //
+  // specs/08_menus-cartes.md, palier C4 : le Coffre est un « maître-détail » à
+  // DEUX GROUPES — la poche (on dépose), puis le coffre (on retire). Chaque
+  // tuile est un objet ; sa fiche est celle de la Poche (`lignesFicheItem` :
+  // trois écrans qui décriraient le même objet chacun à leur façon finiraient
+  // par se contredire), plus la raison d'un refus probable.
+  //
+  // `D-45`, corrigé ici : un transfert vers une pile DÉJÀ PLEINE retirait l'unité
+  // de la source sans l'ajouter à la destination (`ajouterItem` plafonne à
+  // `stack_max` et le dit par `ajoute`, que personne ne lisait) — l'objet
+  // disparaissait. On ajoute D'ABORD, et on ne retire que ce qui est entré.
+  function nombrePilesCoffre() {
+    return Object.values(save.coffre.items).filter((qte) => qte > 0).length;
+  }
+
+  // Déplace UNE unité de `source` vers `destination` (deux clés de `save` qui
+  // portent un `items`). Rend vrai si l'unité a bougé.
+  function transfererUnite(source, destination, itemId, stackMax) {
+    const resultat = ajouterItem(save[destination].items, itemId, 1, stackMax);
+    if (resultat.ajoute < 1) return false;
+    save[destination].items = resultat.inventaire;
+    save[source].items = retirerItem(save[source].items, itemId, 1);
+    etatModifie = true;
+    return true;
+  }
+
   function entreesCoffre(station) {
-    const nbPilesCoffre = () => Object.values(save.coffre.items).filter((qte) => qte > 0).length;
     const entreesDepot = Object.entries(save.inventaire.items)
       .filter(([, qte]) => qte > 0)
       .map(([itemId, qte]) => {
         const itemDef = registre.obtenir('items', itemId);
+        const dansLeCoffre = save.coffre.items[itemId] || 0;
+        const coffrePlein = dansLeCoffre === 0 && nombrePilesCoffre() >= station.capacite;
+        const pilePleine = dansLeCoffre >= itemDef.stack_max;
+        const refus = coffrePlein ? 'menu.fiche.coffre_plein' : pilePleine ? 'menu.fiche.pile_pleine' : null;
         return {
           texte: `${i18n.t('menu.coffre_deposer')} : ${i18n.t(itemDef.label_key)} × ${qte}`,
+          groupe: i18n.t('menu.poche'),
+          titre: i18n.t(itemDef.label_key), icone: itemDef.render.visuel, quantite: qte,
+          lignes: [...lignesFicheItem(itemDef, registre, i18n), ...(refus ? [i18n.t(refus)] : [])],
+          libelleAction: i18n.t('menu.coffre_deposer'),
+          grisee: refus !== null,
           action: () => {
+            // Le plafond de piles se relit au moment d'agir : `grisee` n'est
+            // qu'un indice, le résultat fait foi.
             const dejaPresent = (save.coffre.items[itemId] || 0) > 0;
-            if (!dejaPresent && nbPilesCoffre() >= station.capacite) {
-              menu.rafraichirCoffre();
-              return;
+            if (dejaPresent || nombrePilesCoffre() < station.capacite) {
+              transfererUnite('inventaire', 'coffre', itemId, itemDef.stack_max);
             }
-            save.inventaire.items = retirerItem(save.inventaire.items, itemId, 1);
-            save.coffre.items = ajouterItem(save.coffre.items, itemId, 1, itemDef.stack_max).inventaire;
-            etatModifie = true;
             menu.rafraichirCoffre();
           },
         };
@@ -870,12 +907,16 @@ export function creerOrchestrateurGrotte({
       .filter(([, qte]) => qte > 0)
       .map(([itemId, qte]) => {
         const itemDef = registre.obtenir('items', itemId);
+        const pilePleine = (save.inventaire.items[itemId] || 0) >= itemDef.stack_max;
         return {
           texte: `${i18n.t('menu.coffre_retirer')} : ${i18n.t(itemDef.label_key)} × ${qte}`,
+          groupe: i18n.t(station.label_key),
+          titre: i18n.t(itemDef.label_key), icone: itemDef.render.visuel, quantite: qte,
+          lignes: [...lignesFicheItem(itemDef, registre, i18n), ...(pilePleine ? [i18n.t('menu.fiche.pile_pleine')] : [])],
+          libelleAction: i18n.t('menu.coffre_retirer'),
+          grisee: pilePleine,
           action: () => {
-            save.coffre.items = retirerItem(save.coffre.items, itemId, 1);
-            save.inventaire.items = ajouterItem(save.inventaire.items, itemId, 1, itemDef.stack_max).inventaire;
-            etatModifie = true;
+            transfererUnite('coffre', 'inventaire', itemId, itemDef.stack_max);
             menu.rafraichirCoffre();
           },
         };

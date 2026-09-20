@@ -334,8 +334,8 @@ function carteDuMenu(document, id) {
 {
   const { document } = construireMenu();
   const ecrans = document.body.children.filter((el) => el.style.pointerEvents !== 'none' && el.tagName !== 'INPUT');
-  assert.equal(ecrans.length, 5,
-    'menu Pause (grille, confirmation de reset comprise), maître-détail (Poche et Stats, specs/08 palier C), Craft, Coffre, Construction');
+  assert.equal(ecrans.length, 4,
+    'menu Pause (grille, confirmation de reset comprise), maître-détail (Poche, Stats et Coffre, specs/08 palier C), Craft, Construction');
   for (const el of ecrans) {
     assert.ok(el._classes.includes('ecran-ui'),
       `chaque écran porte la classe commune (${el.id || 'écran générique'})`);
@@ -345,7 +345,7 @@ function carteDuMenu(document, id) {
       + el.querySelectorAll('.fiches-tuiles').length;
     assert.equal(listes, 1, 'une liste, OU une grille de cartes, OU une grille de tuiles — et une seule');
   }
-  console.log('  les 5 écrans partagés portent le même habillage (bandeau et sélecteur de fichier exclus)');
+  console.log('  les 4 écrans partagés portent le même habillage (bandeau et sélecteur de fichier exclus)');
 }
 
 // --- 5. Le focus demande la mise en vue ----------------------------------

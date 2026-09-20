@@ -1,5 +1,11 @@
 // Ce que partagent les scénarios de `tools/capture_chrome.mjs` — OUTIL DE DEV.
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { saveNeuve } from '../../src/save.js';
+import { SCHEMAS } from '../../src/schemas.js';
+import { construireRegistre } from '../../src/registry.js';
+import { chargerCataloguesDepuisDisque } from '../../src/io_node.js';
+import { chargerScene } from '../../src/scene.js';
 
 export const ORIGINE = process.env.RPG_URL || 'http://localhost:8080';
 const TILE = 32;
@@ -75,4 +81,16 @@ export async function mesurerEcrans(chrome) {
       fenetre: [innerWidth, innerHeight],
     };
   })`);
+}
+
+// Un point juste à l'ouest de l'empreinte d'un interactif de la Maison, à portée
+// d'INTERACT — calculé depuis les vrais catalogues (jamais une position recopiée :
+// elle mentirait au premier déplacement d'une station dans les données).
+export async function positionPresDe(idInteractif, idScene = 'scene_maison_exterieur') {
+  const racine = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+  const { donnees } = await chargerCataloguesDepuisDisque(path.join(racine, 'data'), Object.keys(SCHEMAS));
+  const scene = chargerScene(construireRegistre(donnees), idScene);
+  const e = scene.empreintesSolides.find((x) => x.id === idInteractif);
+  if (!e) throw new Error(`interactif introuvable : ${idInteractif}`);
+  return { x: e.x - 20, y: e.y + e.h / 2 };
 }

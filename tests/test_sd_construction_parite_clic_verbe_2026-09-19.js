@@ -464,7 +464,11 @@ function ouvrirCraft(banc) {
   banc.menu.ouvrirCraft(() => [{ texte: 'Fabriquer (test)', action: () => {} }], 'Craft (test)');
 }
 function ouvrirCoffre(banc) {
-  banc.menu.ouvrirCoffre(() => [{ texte: 'Transférer (test)', action: () => {} }], 'Coffre (test)');
+  // specs/08 palier C4 : le Coffre est un maître-détail — des entrées à TUILES, en deux groupes.
+  banc.menu.ouvrirCoffre(() => [
+    { groupe: 'Poche (test)', titre: 'Branche', quantite: 2, libelleAction: 'Déposer (test)', action: () => {} },
+    { groupe: 'Coffre (test)', titre: 'Bois', quantite: 5, libelleAction: 'Retirer (test)', action: () => {} },
+  ], 'Coffre (test)');
 }
 
 function testerCliqueVsVerbePourEcran(nomDeLEcran, ouvrir) {
@@ -577,4 +581,4 @@ testerPariteFiches('Poche', ouvrirPoche);
 testerPariteFiches('Stats', ouvrirStats);
 testerCliqueVsVerbePourEcran('Construction (liste)', ouvrirConstructionListe);
 testerCliqueVsVerbePourEcran('Craft', ouvrirCraft);
-testerCliqueVsVerbePourEcran('Coffre', ouvrirCoffre);
+testerPariteFiches('Coffre', ouvrirCoffre);

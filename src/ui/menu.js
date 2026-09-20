@@ -474,7 +474,6 @@ export function initialiserMenu({
   // le menu : il n'avait pas disparu, il était sous le sommet.
   const navigation = creerNavigationEcrans();
   const ecranCraft = creerEcranListeGenerique(document, i18n, { onRetour: navigation.retour });
-  const ecranCoffre = creerEcranListeGenerique(document, i18n, { onRetour: navigation.retour });
   // Construction (specs/05_construction-stations.md §3, précisée par
   // MT_construction-bandeau-placement_2026-09-17 v1.0.1) : ouvert DEPUIS le
   // menu Pause, comme Poche/Stats. Choisir une station dans cette liste
@@ -825,11 +824,16 @@ export function initialiserMenu({
     rafraichirCraft() {
       ecranCraft.rafraichir();
     },
-    ouvrirCoffre(obtenirEntrees, titre) {
-      navigation.ouvrir({ vue: ecranCoffre, id: ECRAN_COFFRE, obtenirEntrees, titre });
+    // Coffre (palier C4) : maître-détail. `options` : `sousTitre` (la capacité)
+    // et `texteVide`, que seul main.js sait écrire.
+    ouvrirCoffre(obtenirEntrees, titre, options = {}) {
+      navigation.ouvrir({
+        vue: ecranFiches, id: ECRAN_COFFRE, obtenirEntrees, titre,
+        sousTitre: options.sousTitre || null, texteVide: options.texteVide || '',
+      });
     },
     rafraichirCoffre() {
-      ecranCoffre.rafraichir();
+      ecranFiches.rafraichir();
     },
     // Stats vit dans l'écran « maître-détail » : sans effet s'il affiche autre
     // chose… qu'il relirait sans dommage (il relit son niveau courant).

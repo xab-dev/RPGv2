@@ -4,7 +4,7 @@
 //   node tools/capture_chrome.mjs tools/scenarios/ecrans_palier_c.mjs [poche|stats|…]
 // Un écran qui n'a pas encore migré est capturé tel qu'il est : la comparaison
 // avant / après se lit dans l'historique du dossier de captures.
-import { ouvrirLeJeu, saveDansLaMaison, cliquer, mesurerEcrans } from './commun.mjs';
+import { ouvrirLeJeu, saveDansLaMaison, cliquer, mesurerEcrans, positionPresDe } from './commun.mjs';
 
 const DOSSIER = 'docs/captures/menus-cartes-2026-09-20/palier-c';
 const seulement = process.argv[3] || null;
@@ -13,6 +13,9 @@ const seulement = process.argv[3] || null;
 const ECRANS = {
   poche: async (chrome) => { await chrome.touche('Escape'); await chrome.touche('Space'); await chrome.touche('Space'); },
   stats: async (chrome) => { await chrome.touche('Escape'); await chrome.touche('Space'); await chrome.touche('ArrowRight'); await chrome.touche('Space'); },
+  // Coffre et Craft s'ouvrent depuis le monde : le héros est posé à côté de la station.
+  coffre: Object.assign(async (chrome) => { await chrome.touche('KeyE'); }, { pres: 'station_coffre' }),
+  craft: Object.assign(async (chrome) => { await chrome.touche('KeyE'); }, { pres: 'station_atelier' }),
   construction: async (chrome) => { await chrome.touche('Escape'); await cliquer(chrome, '[data-carte="carte_construction"]'); },
 };
 
@@ -31,6 +34,7 @@ export default async function (chrome) {
       const save = saveDansLaMaison();
       save.hero.points_stats_libres = 2;
       save.hero.equipement.consommable = 'item_fruit';
+      if (ouvrir.pres) Object.assign(save.hero, await positionPresDe(ouvrir.pres));
       await ouvrirLeJeu(chrome, { largeur, hauteur, save });
       await ouvrir(chrome);
       await chrome.capture(`${DOSSIER}/c_${nom}_${largeur}x${hauteur}.png`);

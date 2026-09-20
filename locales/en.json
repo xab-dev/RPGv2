@@ -182,5 +182,8 @@
   "item.categorie.outil": "Tool",
   "menu.fiche.rend_faim": "Hunger +{n}%",
   "menu.fiche.rend_soif": "Thirst +{n}%",
-  "menu.fiche.equipe": "Equipped"
+  "menu.fiche.equipe": "Equipped",
+  "menu.fiche.coffre_plein": "Chest full",
+  "menu.fiche.pile_pleine": "Stack full",
+  "menu.fiche.coffre_piles": "Stacks: {n} / {max}"
 }

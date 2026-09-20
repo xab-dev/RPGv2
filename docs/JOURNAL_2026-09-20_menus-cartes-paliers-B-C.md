@@ -219,3 +219,23 @@ n'était défini que sur les tuiles).
 
 **À Xav (`Q-39`)** : « Force » n'a aucune stat dérivée en données — sa fiche est vide. Et « Cadence d'attaque : 500 »
 affiche des millisecondes brutes (la donnée n'a pas d'unité). Rien d'inventé ici : c'est du contenu.
+
+## Commit C4 — Le Coffre en maître-détail, et `D-45` (un objet disparaissait)
+
+Deux **groupes** dans la grille de tuiles : la **Poche** (on dépose), puis le **Coffre** (on retire) ; chacun commence
+sur une rangée neuve, `voisin()` saute les cases de remplissage sans rien avoir appris. La fiche d'un objet est **celle
+de la Poche** (`lignesFicheItem`), plus la raison d'un refus probable (« Coffre plein », « Pile pleine ») ; le bouton dit
+« Déposer » ou « Retirer » ; le **sous-titre** dit la capacité (« Piles : 2 / 20 »). `menu.ouvrirCoffre(entrees, titre,
+{ sousTitre, texteVide })` : troisième argument optionnel. Trois clés FR/EN de plus, contrôlées au démarrage.
+
+**`D-45` — trouvé en réécrivant ces entrées, corrigé ici (c'est une perte d'objet, et c'est l'écran du ticket).** Un
+transfert vers une pile **déjà pleine** (`stack_max`) retirait l'unité de la source **sans l'ajouter** à la destination :
+`ajouterItem` plafonne et le dit par `ajoute`, que personne ne lisait — l'objet s'évaporait, dans les deux sens.
+Désormais `transfererUnite` **ajoute d'abord, et ne retire que ce qui est entré**. Atteignable en jeu dès que la poche
+porte 20 bois et qu'on en retire un 21ᵉ du coffre. Test de non-régression dans `test_d43_c4_coffre_fiches` (les deux
+sens), avec « coffre plein » exercé sur le vrai catalogue à capacité réduite (une donnée : le code ne change pas).
+
+`test_phase3_boucle` (le bot dépose puis retire du bois via `entree.texte` / `entree.action`) : **vert sans être touché**.
+Parité pointeur/verbes du Coffre passée au maître-détail (deux groupes). **93 fichiers verts.** Vu dans le jeu aux deux
+tailles : rien ne déborde hors de la grille de tuiles ; avec deux intertitres, la 3ᵉ rangée est coupée au bord — c'est
+le signe « il y en a d'autres », et le focus la ramène en vue.

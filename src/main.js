@@ -1450,11 +1450,25 @@ export function creerOrchestrateurGrotte({
     // placement a désormais un effet (annule + revient au menu Pause,
     // jamais superposé) — cas à part du reste, qui n'ouvre le menu QUE s'il
     // n'y a encore aucune UI ouverte.
+    //
+    // `Q-36` (specs/08_menus-cartes.md, palier B — retenu par défaut, [OUVERT]) :
+    // `MENU`, menu ouvert, FERME TOUT, depuis n'importe quelle profondeur et
+    // quel que soit l'écran (Craft et Coffre compris, ils vivent dans la même
+    // pile). Par `menu.fermer()`, qui EST la fonction du `[X]` de la racine
+    // (`navigation.fermerTout`) : un seul chemin de fermeture, donc pas de
+    // parité clic/verbe à surveiller. C'est ici, et pas dans
+    // `menu.traiterInput`, parce que c'est ici qu'on sait que `MENU` vient
+    // d'OUVRIR le menu dans cette même frame — le traiter là-bas le refermerait
+    // aussitôt.
+    let menuFermeParVerbe = false;
     if (etatBrut.menu.pressed && !dialogueOuvertMaintenant && !choixFolletActif() && !introEtaitActive && !departEtaitActif) {
       if (constructionActif()) {
         quitterConstructionVersMenuPause();
       } else if (!menu.estOuvert()) {
         menu.ouvrir();
+      } else {
+        menu.fermer();
+        menuFermeParVerbe = true;
       }
     }
 
@@ -1463,9 +1477,13 @@ export function creerOrchestrateurGrotte({
     // départ OU construction, specs/05_construction-stations.md §3 : "le jeu
     // reste gelé comme sous UI") : le gameplay ne voit jamais les verbes
     // bruts pendant qu'une UI les capte.
+    // `menuFermeParVerbe` : la frame où `MENU` ferme le menu reste une frame
+    // d'UI, exactement comme celle où B le ferme (là, `uiOuverte` est calculé
+    // AVANT `menu.traiterInput`, donc encore vrai). Le gameplay ne voit jamais
+    // les verbes d'une frame qu'une UI a consommée, quel que soit le verbe.
     const uiOuverte = (
       menu.estOuvert() || dialogueOuvertMaintenant || choixFolletActif() || introEtaitActive || departEtaitActif ||
-      constructionActif()
+      constructionActif() || menuFermeParVerbe
     );
     if (menu.estOuvert()) menu.traiterInput(etatBrut);
     else if (dialogueOuvertMaintenant) dialogue.traiterInput(dialogueVientDeSOuvrir ? etatNeutre(etatBrut) : etatBrut);

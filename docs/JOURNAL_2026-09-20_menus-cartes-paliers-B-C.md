@@ -85,3 +85,24 @@ Tests adaptés : `test_d43_a4` (un écran de liste est désormais un **niveau** 
 gardé son état en se masquant » mais « B a dépilé un niveau, focus rendu à la carte ») ; `test_d43_a3` (bloc « pile
 locale » retiré, porté par `test_d43_b1`). **89 fichiers verts.** Aucun changement visuel attendu : si Xav voit une
 différence, c'est un défaut.
+
+## Commit B3 — `Q-36` : `MENU`, menu ouvert, ferme tout
+
+Retenu par défaut par la spec, **`[OUVERT]` — à confirmer par Xav** (`Q-36` reste ouverte, c'est lui qui la clôt).
+`main.js#maj` : la branche qui manquait — `MENU` pressé, menu ouvert → `menu.fermer()`, qui **est**
+`navigation.fermerTout`, la fonction du `[X]` de la racine. Un seul chemin de fermeture : pas de parité clic/verbe à
+surveiller. Depuis n'importe quelle profondeur, et Craft / Coffre compris (même pile).
+
+Deux choix à dire :
+- **C'est dans `main.js`, pas dans `menu.traiterInput`** : c'est là qu'on sait que `MENU` vient d'**ouvrir** le menu dans
+  cette même frame — le traiter dans le menu le refermerait aussitôt.
+- **La frame où `MENU` ferme reste une frame d'UI** (`menuFermeParVerbe` entre dans `uiOuverte`) : aucun verbe de cette
+  frame n'atteint le gameplay, exactement comme la frame où B ferme. Testé (MENU + MOVE dans la même frame : le héros ne
+  bouge pas).
+
+Tests : `test_d43_b2` gagne un bloc 6 (MENU depuis la racine, un écran profond, la confirmation d'un danger, une liste
+empilée, la liste Construction, Craft ; le héros repart ; MENU rouvre à la racine). `test_construction` documentait
+l'ancien « MENU, menu ouvert = sans effet » : adapté, en le disant. **89 fichiers verts.**
+
+À noter pour Xav : au clavier, `MENU` est **Échap** — qui est aussi la touche par laquelle le navigateur **quitte le
+plein écran**. En plein écran, un Échap fait donc les deux. Rien à corriger ici (c'est le navigateur), mais ça se verra.

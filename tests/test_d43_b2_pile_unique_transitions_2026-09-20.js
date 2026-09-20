@@ -454,4 +454,51 @@ const profondeur = (banc) => banc.menu.obtenirEtatPile().profondeur;
   console.log('OK Construction : placement = sommet masqué, pile intacte ; B, A et MENU ramènent où il faut');
 }
 
+// --- 6. `Q-36` (B3) : MENU, menu ouvert, ferme TOUT — le chemin du `[X]` ---------
+{
+  // Depuis chaque profondeur et chaque genre d'écran, et le héros repart.
+  const scenarios = [
+    ['la racine', []],
+    ['un écran de cartes profond', ['carte_parametres', 'carte_sauvegarde']],
+    ['la confirmation d\'un danger', ['carte_parametres', 'carte_sauvegarde', 'carte_reinitialiser']],
+    ['un écran de liste empilé', ['carte_heros', 'carte_stats']],
+    ['la liste Construction', ['carte_construction']],
+  ];
+  for (const [nom, chemin] of scenarios) {
+    const banc = construireBanc();
+    jouer(banc, etat({ menu: true }), 'Start');
+    assert.equal(banc.menu.estOuvert(), true, 'MENU qui OUVRE ne referme pas dans la même frame');
+    for (const id of chemin) cliquer(banc, carte(banc, id), id);
+    assert.equal(profondeur(banc), chemin.length + 1);
+    jouer(banc, etat({ menu: true }), `MENU depuis ${nom}`);
+    assert.deepEqual([banc.menu.estOuvert(), profondeur(banc), banc.journal], [false, 0, []], `MENU depuis ${nom} : tout est fermé, rien n'a été déclenché`);
+    const avant = banc.orchestrateur.obtenirHero().x;
+    jouer(banc, etat({ moveX: 1 }), 'le héros repart');
+    assert.notEqual(banc.orchestrateur.obtenirHero().x, avant);
+    // Et MENU rouvre, à la racine : une bascule ouvrir/fermer sur la même touche.
+    jouer(banc, etat({ menu: true }), 'MENU rouvre');
+    assert.deepEqual([banc.menu.estOuvert(), sommet(banc), profondeur(banc)], [true, 'menu_racine', 1]);
+  }
+
+  // Craft, ouvert par INTERACT : la même pile, donc le même verbe le ferme.
+  const empreinte = construireBanc().orchestrateur.obtenirScene().empreintesSolides.find((e) => e.id === 'station_table');
+  const banc = construireBanc({ x: empreinte.x - 20, y: empreinte.y + empreinte.h / 2 });
+  jouer(banc, etat({ interact: true }), 'INTERACT');
+  assert.equal(sommet(banc), 'ecran_craft');
+  jouer(banc, etat({ menu: true }), 'MENU depuis Craft');
+  assert.deepEqual([banc.menu.estOuvert(), profondeur(banc)], [false, 0]);
+
+  // La frame où MENU ferme reste une frame d'UI : aucun verbe de cette frame
+  // n'atteint le gameplay (même règle que la frame où B ferme).
+  const banc2 = construireBanc();
+  jouer(banc2, etat({ menu: true }), 'Start');
+  const x0 = banc2.orchestrateur.obtenirHero().x;
+  banc2.frames.push(etat({ menu: true, moveX: 1 }));
+  banc2.orchestrateur.maj(16);
+  verifierInvariants(banc2, 'MENU + MOVE dans la même frame');
+  assert.equal(banc2.menu.estOuvert(), false);
+  assert.equal(banc2.orchestrateur.obtenirHero().x, x0, 'le MOVE de la frame de fermeture est neutralisé');
+  console.log('OK Q-36 : MENU ferme tout depuis partout, par le chemin du [X] ; MENU rouvre à la racine');
+}
+
 console.log('OK test_d43_b2_pile_unique_transitions');

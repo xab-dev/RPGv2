@@ -623,14 +623,16 @@ function estVisibleEffectif(el) {
     'MENU -> menu Pause proprement (jamais la liste ET jamais le bandeau en même temps, aucun écran orphelin)'
   );
 
-  // Rejouer MENU une fois dans le jeu réel (hors placement) reste sans danger
-  // (aucune régression du chemin existant) : ici, `menu.estOuvert()` est déjà
-  // vrai (pauseOuverte), donc le garde-fou `!menu.estOuvert()` l'empêche de
-  // rouvrir par erreur.
+  // Rejouer MENU, menu Pause ouvert : jusqu'au palier B de specs/08_menus-cartes.md
+  // c'était sans effet (le garde-fou `!menu.estOuvert()` empêchait seulement de
+  // rouvrir). `Q-36` y est tranchée : `MENU`, menu ouvert, FERME TOUT — par
+  // `menu.fermer()`, le même chemin que `[X]`. Jamais une réouverture par erreur,
+  // jamais un retour au placement.
   frames.push(etat({ menu: true }));
   orchestrateur.maj(16);
-  assert.deepEqual(menuEtat(), { listeOuverte: false, bandeauVisible: false, pauseOuverte: true });
-  console.log('OK MENU pendant le placement : annule + retour propre au menu Pause, aucun écran orphelin');
+  assert.deepEqual(menuEtat(), { listeOuverte: false, bandeauVisible: false, pauseOuverte: false });
+  assert.equal(orchestrateur.constructionActif(), false, 'fermer le menu ne ressuscite pas le placement annulé');
+  console.log('OK MENU pendant le placement : annule + retour propre au menu Pause, aucun écran orphelin ; MENU encore : tout se ferme');
 }
 
 // --- C6 : pose invalide au chargement (sauvegarde altérée) -----------------

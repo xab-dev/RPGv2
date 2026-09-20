@@ -2194,9 +2194,15 @@ export async function demarrerJeu() {
   ajusterTailleCanvas();
 
   // --- Input : clavier + manette + tactile fusionnés (§2.3) ---
-  // `D-30` : plein écran au premier appui TACTILE, et au tactile seul — sur
-  // PC, F11 reste le geste du joueur. La demande part depuis le gestionnaire
-  // de `touchstart` (donc pendant le geste, ce que le navigateur exige).
+  // `D-30` (rouvert le 20/09) : plein écran au premier RELÂCHEMENT tactile.
+  // Pas au contact : le contrat d'« activation utilisateur » du HTML ne liste
+  // pas `touchstart` parmi les événements qui l'accordent (un contact peut
+  // encore devenir un glissement), il liste `touchend`. La première version
+  // demandait depuis `touchstart`, se faisait refuser en silence, et le
+  // loquet « une seule tentative » interdisait ensuite toute autre demande.
+  // Sur PC, F11 reste le geste du joueur — et depuis ce ticket, l'entrée de
+  // menu « Plein écran » aussi, sur tous les périphériques qui produisent un
+  // vrai geste (souris, doigt ; pas la manette, lue par sondage).
   // Sous-système « meilleur effort » : il rattrape ses propres erreurs, rien
   // à faire ici (cf. plein_ecran.js).
   //
@@ -2209,9 +2215,12 @@ export async function demarrerJeu() {
   const pleinEcran = creerPleinEcranTactile({
     element: document.documentElement,
     ecran: typeof screen !== 'undefined' ? screen : null,
+    // `doc` : l'ÉTAT RÉEL (`fullscreenElement`) et la sortie
+    // (`exitFullscreen`). Le sous-système ne tient aucun booléen de son côté.
+    doc: document,
   });
   const sourceTactile = creerSourceTactile(canvasVisible, {
-    surPremierContact: () => pleinEcran.demanderUneFois(),
+    surRelachement: () => pleinEcran.demanderUneFois(),
     // Seule source de vérité pour écran -> logique (diagnostic
     // SD_ui-lisibilite §3c) : versCoordonneesLogiques() est la même fonction
     // pure, testée, dont presenter()/calculerRectanglePresentation() dessine
@@ -2272,7 +2281,19 @@ export async function demarrerJeu() {
     // MT_construction-bandeau-placement_2026-09-17 : glyphes du bandeau
     // résolus sur le périphérique réellement actif, jamais manette en dur.
     peripheriqueActif: () => input.peripheriqueActif(),
+    // `D-30` : l'entrée de menu à bascule. `ui/menu.js` ne connaît ni l'API
+    // ni `document` — il demande « est-ce possible », « est-ce actif », et
+    // « bascule ». L'état réel fait foi des deux côtés.
+    pleinEcranDisponible: () => pleinEcran.disponible(),
+    pleinEcranActif: () => pleinEcran.estActif(),
+    basculerPleinEcran: () => pleinEcran.basculer(),
   });
+
+  // Le seul moment où l'état réel change sans que le menu ait rien demandé :
+  // Échap, un geste système, ou la fin d'une bascule asynchrone. Le libellé
+  // se réécrit alors depuis l'état réel — c'est ce qui interdit à l'entrée de
+  // mentir après une sortie que personne ici n'a provoquée.
+  document.addEventListener('fullscreenchange', () => menu.actualiserPleinEcran());
 
   const dialogue = creerDialogue();
 

@@ -284,7 +284,11 @@ function aPourAncetre(el, classe) {
   const dernier = items[items.length - 1];
   assert.ok(dernier.querySelector('#menu-fermer'),
     '« Fermer » doit rester la dernière entrée dans l’ordre du document');
-  assert.equal(items.length, 9, 'les 9 entrées du menu Pause, ni une de plus ni une de moins');
+  // 10 éléments dans le DOM : 8 entrées fixes, « Fermer », et les deux
+  // entrées CONTEXTUELLES (Construction, Plein écran) qui existent toujours
+  // mais restent masquées tant qu'elles ne peuvent rien faire — elles ne
+  // comptent alors pas dans la navigation (`construireMenuPrincipal`).
+  assert.equal(items.length, 10, 'les entrées du menu Pause, ni une de plus ni une de moins');
   console.log('  ordre des entrées inchangé : « Fermer » toujours en dernier');
 }
 
@@ -312,17 +316,20 @@ function aPourAncetre(el, classe) {
   const { document, menu } = construireMenu();
   menu.ouvrir();
   const conteneur = document.body.querySelector('#menu');
-  const items = conteneur.querySelectorAll('.menu-item');
-  const compteursAvant = items.map((el) => el.misEnVue);
-  assert.ok(compteursAvant.some((n) => n > 0), 'le focus initial est déjà mis en vue');
+  // Les entrées contextuelles masquées (Construction hors de la maison, Plein
+  // écran sans l'API) sont dans le DOM mais hors de la navigation : c'est la
+  // liste des entrées RÉELLEMENT navigables qu'on suit ici.
+  const navigables = conteneur.querySelectorAll('.menu-item').filter((el) => !el.hidden);
+  assert.ok(navigables.length >= 8, 'le menu Pause a au moins ses 8 entrées non contextuelles');
+  assert.ok(navigables.some((el) => el.misEnVue > 0), 'le focus initial est déjà mis en vue');
 
   // Trois crans vers le bas : à chaque fois, c'est l'entrée focalisée — et
   // elle seule — qui demande à être ramenée dans la zone visible.
   for (let i = 0; i < 3; i += 1) {
-    const avant = items.map((el) => el.misEnVue);
+    const avant = navigables.map((el) => el.misEnVue);
     menu.traiterInput(etat({ y: 1 }));
     menu.traiterInput(etat({ y: 0 }));
-    const bouges = items.map((el, k) => el.misEnVue - avant[k]).map((n, k) => (n > 0 ? k : -1)).filter((k) => k >= 0);
+    const bouges = navigables.map((el, k) => (el.misEnVue - avant[k] > 0 ? k : -1)).filter((k) => k >= 0);
     assert.deepEqual(bouges, [i + 1], `cran ${i + 1} : seule l’entrée focalisée est mise en vue`);
   }
   console.log('  le focus ramène l’entrée sélectionnée dans la zone visible (manette/clavier)');

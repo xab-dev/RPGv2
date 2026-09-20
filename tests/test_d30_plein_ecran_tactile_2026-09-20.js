@@ -1,25 +1,40 @@
-// `D-30` — plein écran au premier appui tactile.
+// `D-30` — plein écran : au relâchement tactile, et par le menu.
 //
 // Constat de Xav sur l'A04 (19/09) : la barre d'adresse reste affichée, le jeu
 // n'occupe que **1440×810 sur 2340×1080** — 46 % de l'écran, échelle entière
 // 3. En vrai plein écran il passerait à l'**échelle 4**.
 //
-// Le sous-système est explicitement « meilleur effort » : un navigateur peut
-// refuser le plein écran, et le verrouillage en paysage n'existe pas partout.
-// Il rattrape donc ses propres erreurs **à la frontière de son API publique**,
-// jamais au niveau de la boucle de jeu — c'est la règle née du diagnostic
-// freeze-musique (`audio.js`), et c'est exactement le même cas de figure.
+// TICKET ROUVERT LE 20/09 : sur le téléphone, le plein écran ne se déclenchait
+// **jamais**. La première version demandait depuis `touchstart`, en croyant que
+// c'était « ce que le navigateur exige ». C'est l'inverse : le contrat
+// d'« activation utilisateur » du HTML ne liste PAS `touchstart` parmi les
+// événements qui l'accordent (un contact peut encore devenir un glissement) —
+// il liste `keydown`, `mousedown`, `pointerdown`, `pointerup` et **`touchend`**.
+// Vérifié sous Chrome : une demande sans activation est rejetée par
+// `TypeError: Permissions check failed`. Le contrat « meilleur effort » avalait
+// ce rejet, et le loquet « une seule tentative » interdisait toute demande
+// suivante. Trois pièces saines, un enchaînement qui ne pouvait pas marcher.
+//
+// Le sous-système reste explicitement « meilleur effort » : un navigateur peut
+// refuser, et le verrouillage en paysage n'existe pas partout. Il rattrape donc
+// ses propres erreurs **à la frontière de son API publique**, jamais au niveau
+// de la boucle de jeu — règle née du diagnostic freeze-musique (`audio.js`).
 //
 // Prouvé ici :
-//   1. la demande part une fois, et UNE seule — même si le joueur ressort du
-//      plein écran, on ne le harcèle pas ;
-//   2. tout échec est silencieux : refus, API absente, promesse rejetée,
-//      exception synchrone — le jeu continue ;
-//   3. le paysage n'est tenté qu'APRÈS un plein écran réussi, et son échec à
+//   1. le crochet part au **relâchement**, jamais au contact — et jamais sur un
+//      `touchcancel`, qui n'accorde aucune activation ;
+//   2. la demande automatique part une fois, et UNE seule — même si le joueur
+//      ressort du plein écran, on ne le harcèle pas ;
+//   3. tout échec est silencieux : refus, API absente, promesse rejetée,
+//      exception synchrone, retour non-promesse — le jeu continue ;
+//   4. le paysage n'est tenté qu'APRÈS un plein écran réussi, et son échec à
 //      lui non plus ne remonte pas ;
-//   4. c'est le tactile, et lui seul, qui déclenche — le clavier, la souris
-//      et la manette n'ont aucun chemin vers cette demande ;
-//   5. le redimensionnement qui suit passe par le chemin existant : l'échelle
+//   5. c'est le tactile, et lui seul, qui déclenche la demande AUTOMATIQUE —
+//      le clavier, la souris et la manette n'ont aucun chemin vers elle ;
+//   6. l'entrée de menu bascule dans les deux sens, son libellé lit l'**état
+//      réel** (jamais un booléen interne), et un refus laisse l'état cohérent ;
+//   7. sortir par le menu ne réarme pas la demande automatique ;
+//   8. le redimensionnement qui suit passe par le chemin existant : l'échelle
 //      change (3 -> 4), tous les calques la relisent, et le hit-test tactile
 //      suit — un appui sur un bouton reste un appui sur ce bouton.
 import assert from 'node:assert/strict';
@@ -32,68 +47,147 @@ import {
   dimensionnerCanvasRendu, echelleDepuisCanvas, calculerRectanglePresentation,
 } from '../src/render.js';
 import { BOUTON_MENU } from '../src/ui/hud_layout.js';
+import { initialiserMenu } from '../src/ui/menu.js';
 
 const RACINE = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-// Un élément de test qui accepte le plein écran, et note ce qu'on lui demande.
+// Un faux `document` : il ne sait qu'une chose, s'il est en plein écran, et
+// c'est exactement ce que le vrai expose (`fullscreenElement`).
+function faireDocument({ element = null, sortiePossible = true } = {}) {
+  const doc = {
+    fullscreenElement: null,
+    exitFullscreen() {
+      if (!sortiePossible) return Promise.reject(new Error('refusé'));
+      doc.fullscreenElement = null;
+      return Promise.resolve();
+    },
+  };
+  if (element) element._doc = doc;
+  return doc;
+}
+
+// Un élément qui accepte le plein écran, note ce qu'on lui demande, et met à
+// jour l'état réel du document — comme le ferait un navigateur.
 function elementQuiAccepte(journal) {
   return {
-    requestFullscreen() { journal.push('plein-ecran'); return Promise.resolve(); },
+    _doc: null,
+    requestFullscreen() {
+      journal.push('plein-ecran');
+      if (this._doc) this._doc.fullscreenElement = this;
+      return Promise.resolve();
+    },
   };
 }
 function ecranQuiAccepte(journal) {
   return { orientation: { lock(mode) { journal.push(`paysage:${mode}`); return Promise.resolve(); } } };
 }
 
-// --- 1. Une fois, et une seule -------------------------------------------
+function fausseCible() {
+  return { ecouteurs: {}, addEventListener(n, f) { this.ecouteurs[n] = f; } };
+}
+
+// --- 1. Au relâchement, jamais au contact -------------------------------
+// C'est LA correction du ticket rouvert. Le reste du fichier ne vaut que si
+// ce bloc-ci est vrai.
+{
+  const appels = [];
+  const cible = fausseCible();
+  creerSourceTactile(cible, { surRelachement: () => appels.push('relâché') });
+
+  cible.ecouteurs.touchstart({ touches: [{ identifier: 1, clientX: 10, clientY: 10 }] });
+  assert.deepEqual(appels, [], 'le CONTACT ne déclenche rien : il n’accorde aucune activation utilisateur');
+
+  cible.ecouteurs.touchmove({ touches: [{ identifier: 1, clientX: 30, clientY: 10 }] });
+  assert.deepEqual(appels, [], 'un glissement non plus');
+
+  cible.ecouteurs.touchend({ touches: [] });
+  assert.deepEqual(appels, ['relâché'], 'le RELÂCHEMENT déclenche — c’est lui qui accorde l’activation');
+
+  // Un contact annulé par le système (appel entrant, geste de navigation)
+  // n'accorde rien : l'appeler aurait brûlé le loquet pour rien.
+  cible.ecouteurs.touchstart({ touches: [{ identifier: 2, clientX: 10, clientY: 10 }] });
+  cible.ecouteurs.touchcancel({ touches: [] });
+  assert.deepEqual(appels, ['relâché'], 'un `touchcancel` ne déclenche jamais');
+
+  cible.ecouteurs.touchstart({ touches: [{ identifier: 3, clientX: 20, clientY: 20 }] });
+  cible.ecouteurs.touchend({ touches: [] });
+  assert.deepEqual(appels, ['relâché', 'relâché'],
+    'touch.js appelle à chaque relâchement — c’est le loquet de plein_ecran.js qui filtre, un seul endroit');
+
+  // Un crochet absent ne change rien (tous les tests d'avant ce ticket).
+  const cible2 = fausseCible();
+  const source2 = creerSourceTactile(cible2, {});
+  assert.doesNotThrow(() => cible2.ecouteurs.touchstart({ touches: [{ identifier: 1, clientX: 1, clientY: 1 }] }));
+  assert.doesNotThrow(() => cible2.ecouteurs.touchend({ touches: [] }));
+  assert.equal(source2.estActif(), true);
+
+  // Le relâchement met aussi à jour l'état d'input, et AVANT d'appeler le
+  // crochet : ce qu'il déclenche redimensionne la page.
+  const ordre = [];
+  const cible3 = fausseCible();
+  const source3 = creerSourceTactile(cible3, {
+    surRelachement: () => ordre.push(`crochet:${source3.instantane().move.x}`),
+  });
+  cible3.ecouteurs.touchstart({ touches: [{ identifier: 1, clientX: 0, clientY: 0 }] });
+  cible3.ecouteurs.touchend({ touches: [] });
+  assert.deepEqual(ordre, ['crochet:0'], 'le doigt relâché ne pilote plus rien quand le crochet part');
+  console.log('  le crochet part au relâchement, pas au contact, et jamais sur un touchcancel');
+}
+
+// --- 2. Une fois, et une seule (demande automatique) ---------------------
 {
   const journal = [];
-  const pleinEcran = creerPleinEcranTactile({
-    element: elementQuiAccepte(journal),
-    ecran: ecranQuiAccepte(journal),
-  });
+  const element = elementQuiAccepte(journal);
+  const doc = faireDocument({ element });
+  const pleinEcran = creerPleinEcranTactile({ element, ecran: ecranQuiAccepte(journal), doc });
 
   assert.equal(pleinEcran.dejaDemande(), false);
   assert.equal(pleinEcran.demanderUneFois(), true, 'la première demande part');
   assert.equal(pleinEcran.dejaDemande(), true);
 
-  // Les appuis suivants ne redemandent rien. C'est la consigne : « sortie du
-  // plein écran par le joueur : ne pas le redemander en boucle ». Le loquet
-  // est posé sur la TENTATIVE, jamais sur le résultat — sinon un refus du
-  // navigateur relancerait une demande à chaque doigt posé.
+  // Les relâchements suivants ne redemandent rien. C'est la consigne :
+  // « sortie du plein écran par le joueur : ne pas le redemander en boucle ».
+  // Le loquet est posé sur la TENTATIVE, jamais sur le résultat — sinon un
+  // refus du navigateur relancerait une demande à chaque doigt levé.
   for (let i = 0; i < 50; i += 1) {
     assert.equal(pleinEcran.demanderUneFois(), false, 'aucune seconde demande');
   }
   await new Promise((r) => setTimeout(r, 0));
   assert.deepEqual(journal, ['plein-ecran', 'paysage:landscape'],
     'exactement une demande de plein écran, puis une de paysage');
-  console.log('  une seule demande, même après 51 appuis');
+  console.log('  une seule demande automatique, même après 51 relâchements');
 }
 
-// --- 2. Tout échec est silencieux ----------------------------------------
-// Quatre façons de rater, et aucune ne doit remonter : le jeu doit continuer
+// --- 3. Tout échec est silencieux ----------------------------------------
+// Cinq façons de rater, et aucune ne doit remonter : le jeu doit continuer
 // « exactement comme aujourd'hui ».
 {
   const cas = {
     'API absente': {},
-    'promesse rejetée': { requestFullscreen: () => Promise.reject(new Error('refusé par le navigateur')) },
+    'promesse rejetée': { requestFullscreen: () => Promise.reject(new Error('Permissions check failed')) },
     'exception synchrone': { requestFullscreen() { throw new Error('geste non reconnu'); } },
     'retour non-promesse': { requestFullscreen: () => undefined },
   };
 
   for (const [nom, element] of Object.entries(cas)) {
-    const pleinEcran = creerPleinEcranTactile({ element, ecran: null });
+    const pleinEcran = creerPleinEcranTactile({ element, ecran: null, doc: faireDocument() });
     assert.doesNotThrow(() => pleinEcran.demanderUneFois(), `"${nom}" ne doit jamais remonter`);
     assert.equal(pleinEcran.dejaDemande(), true, `"${nom}" : le loquet est posé quand même`);
+    // Et la bascule explicite non plus, sur le même élément.
+    await assert.doesNotReject(() => Promise.resolve(pleinEcran.basculer()),
+      `"${nom}" : la bascule du menu ne rejette jamais non plus`);
   }
 
-  // Un élément absent non plus (le jeu tourne sans DOM dans les tests).
+  // Un élément absent non plus (le jeu tourne sans DOM dans les tests), et un
+  // `document` absent non plus.
   assert.doesNotThrow(() => creerPleinEcranTactile({ element: null }).demanderUneFois());
+  assert.equal(creerPleinEcranTactile({ element: null }).estActif(), false,
+    'sans document, l’état réel est « pas en plein écran », jamais une exception');
   await new Promise((r) => setTimeout(r, 0));
   console.log(`  ${Object.keys(cas).length + 1} façons de rater, aucune ne remonte`);
 }
 
-// --- 3. Le paysage n'est tenté qu'après un plein écran réussi ------------
+// --- 4. Le paysage n'est tenté qu'après un plein écran réussi ------------
 {
   // a) plein écran refusé -> on ne tente même pas le paysage : verrouiller
   //    l'orientation hors plein écran est refusé partout, autant ne pas
@@ -102,6 +196,7 @@ function ecranQuiAccepte(journal) {
   const pleinEcran = creerPleinEcranTactile({
     element: { requestFullscreen: () => Promise.reject(new Error('non')) },
     ecran: ecranQuiAccepte(journal),
+    doc: faireDocument(),
   });
   pleinEcran.demanderUneFois();
   await new Promise((r) => setTimeout(r, 0));
@@ -109,9 +204,11 @@ function ecranQuiAccepte(journal) {
 
   // b) plein écran accepté, paysage refusé -> silencieux lui aussi.
   const journal2 = [];
+  const element2 = elementQuiAccepte(journal2);
   const pleinEcran2 = creerPleinEcranTactile({
-    element: elementQuiAccepte(journal2),
+    element: element2,
     ecran: { orientation: { lock: () => Promise.reject(new Error('non supporté')) } },
+    doc: faireDocument({ element: element2 }),
   });
   assert.doesNotThrow(() => pleinEcran2.demanderUneFois());
   await new Promise((r) => setTimeout(r, 0));
@@ -119,39 +216,80 @@ function ecranQuiAccepte(journal) {
   console.log('  paysage tenté seulement après un plein écran réussi, et silencieux');
 }
 
-// --- 4. Le tactile, et lui seul ------------------------------------------
+// --- 5. La demande AUTOMATIQUE est tactile, et rien d'autre --------------
 {
-  // `touch.js` reçoit un crochet `surPremierContact`, appelé DANS le
-  // gestionnaire de `touchstart` — donc pendant le geste du joueur, ce que le
-  // navigateur exige. Aucun autre périphérique n'a de chemin vers lui.
-  const appels = [];
-  const cible = { ecouteurs: {}, addEventListener(n, f) { this.ecouteurs[n] = f; } };
-  creerSourceTactile(cible, { surPremierContact: () => appels.push('appui') });
-
-  assert.deepEqual(appels, [], 'rien avant le premier contact');
-  cible.ecouteurs.touchstart({ touches: [{ identifier: 1, clientX: 10, clientY: 10 }] });
-  assert.deepEqual(appels, ['appui'], 'le premier contact appelle le crochet');
-  cible.ecouteurs.touchend({ touches: [] });
-  cible.ecouteurs.touchstart({ touches: [{ identifier: 2, clientX: 20, clientY: 20 }] });
-  assert.deepEqual(appels, ['appui', 'appui'],
-    'touch.js appelle à chaque contact — c’est le loquet de plein_ecran.js qui filtre, un seul endroit');
-
-  // Un crochet absent ne change rien (tous les tests d'avant ce ticket).
-  const cible2 = { ecouteurs: {}, addEventListener(n, f) { this.ecouteurs[n] = f; } };
-  const source2 = creerSourceTactile(cible2, {});
-  assert.doesNotThrow(() => cible2.ecouteurs.touchstart({ touches: [{ identifier: 1, clientX: 1, clientY: 1 }] }));
-  assert.equal(source2.estActif(), true);
-
-  // Et aucune autre couche d'input ne connaît le plein écran.
   for (const fichier of ['keyboard.js', 'gamepad.js', 'input.js']) {
     const source = fs.readFileSync(path.join(RACINE, 'src', 'input', fichier), 'utf8');
-    assert.ok(!/plein_ecran|requestFullscreen|surPremierContact/.test(source),
+    assert.ok(!/plein_ecran|requestFullscreen|surRelachement/.test(source),
       `input/${fichier} ne doit pas connaître le plein écran`);
   }
-  console.log('  déclenché par le tactile seul : clavier, manette et fusion d’input l’ignorent');
+  // `ui/menu.js` non plus ne connaît l'API : il reçoit trois fonctions. Les
+  // lignes de commentaire sont retirées avant de chercher — elles CITENT
+  // l'API (c'est même leur travail d'expliquer ce que le module ne fait pas),
+  // et un garde-fou qui interdit d'en parler pousse à moins écrire.
+  const menuSrc = fs.readFileSync(path.join(RACINE, 'src', 'ui', 'menu.js'), 'utf8')
+    .replace(/^\s*\/\/.*$/gm, '');
+  assert.ok(!/requestFullscreen|fullscreenElement|exitFullscreen/.test(menuSrc),
+    'ui/menu.js ne doit connaître que `pleinEcranActif()` / `basculerPleinEcran()`, jamais l’API du navigateur');
+  console.log('  la demande automatique vient du tactile seul ; le menu ne connaît pas l’API');
 }
 
-// --- 5. Le redimensionnement passe par le chemin existant ----------------
+// --- 6. La bascule du menu : aller, retour, et l'état réel fait foi ------
+{
+  const journal = [];
+  const element = elementQuiAccepte(journal);
+  const doc = faireDocument({ element });
+  const pleinEcran = creerPleinEcranTactile({ element, ecran: null, doc });
+
+  assert.equal(pleinEcran.estActif(), false, 'au départ, pas en plein écran');
+  assert.equal(pleinEcran.disponible(), true, 'l’API est là, donc l’entrée de menu existe');
+
+  assert.equal(await pleinEcran.basculer(), true, 'aller : on entre en plein écran');
+  assert.equal(pleinEcran.estActif(), true);
+  assert.equal(await pleinEcran.basculer(), false, 'retour : on en sort');
+  assert.equal(pleinEcran.estActif(), false);
+
+  // L'état réel fait foi, même quand personne ici n'a rien demandé : le
+  // joueur sort par Échap, le document change, `estActif()` suit.
+  doc.fullscreenElement = element;
+  assert.equal(pleinEcran.estActif(), true, 'l’état est LU, jamais mémorisé');
+  doc.fullscreenElement = null;
+  assert.equal(pleinEcran.estActif(), false);
+
+  // Sans API, l'entrée n'a pas lieu d'exister.
+  assert.equal(creerPleinEcranTactile({ element: {}, doc }).disponible(), false);
+  console.log('  la bascule fait l’aller ET le retour ; l’état réel fait foi');
+}
+
+// --- 7. Un refus laisse l'état cohérent, et le menu ne se réarme pas -----
+{
+  // Le cas de la MANETTE : elle est lue par sondage, pas par événement, donc
+  // le navigateur ne voit aucun geste et refuse. On ne contourne pas.
+  const doc = faireDocument();
+  const pleinEcran = creerPleinEcranTactile({
+    element: { requestFullscreen: () => Promise.reject(new TypeError('Permissions check failed')) },
+    doc,
+  });
+  const obtenu = await pleinEcran.basculer();
+  assert.equal(obtenu, false, 'refusé : la bascule rend l’état réel, pas ce qu’on espérait');
+  assert.equal(pleinEcran.estActif(), false, 'et l’état réel n’a pas bougé');
+
+  // « Sortir par le menu ne redéclenche pas la demande automatique » : la
+  // bascule POSE le loquet. Sans ça, le premier doigt reposé après une sortie
+  // volontaire remettrait le joueur en plein écran contre son gré.
+  const journal = [];
+  const element2 = elementQuiAccepte(journal);
+  const doc2 = faireDocument({ element: element2 });
+  const pe2 = creerPleinEcranTactile({ element: element2, doc: doc2 });
+  await pe2.basculer();          // entré par le menu
+  await pe2.basculer();          // ressorti par le menu
+  assert.equal(pe2.estActif(), false);
+  assert.equal(pe2.demanderUneFois(), false,
+    'le doigt suivant ne redemande rien : le joueur a choisi de sortir');
+  console.log('  un refus laisse l’état cohérent ; sortir par le menu ne réarme pas l’automatique');
+}
+
+// --- 8. Le redimensionnement passe par le chemin existant ----------------
 // Les chiffres sont ceux de l'A04, relevés par Xav.
 {
   const AVANT = { l: 1440, h: 810 };   // avec la barre d'adresse
@@ -180,7 +318,7 @@ function ecranQuiAccepte(journal) {
   // La preuve utile : après le passage en plein écran, un appui sur le bouton
   // MENU reste un appui sur le bouton MENU.
   for (const [nom, rect] of [['avant', rectAvant], ['après', rectApres]]) {
-    const cible = { ecouteurs: {}, addEventListener(n, f) { this.ecouteurs[n] = f; } };
+    const cible = fausseCible();
     const tactile = creerSourceTactile(cible, {
       versLogique: (cx, cy) => ({ x: (cx - rect.x) / rect.echelle, y: (cy - rect.y) / rect.echelle }),
     });
@@ -194,6 +332,153 @@ function ecranQuiAccepte(journal) {
     assert.equal(tactile.instantane().menu, true, `${nom} : l'appui sur MENU doit porter`);
   }
   console.log(`  A04 : ${AVANT.l}x${AVANT.h} (échelle 3) -> ${APRES.l}x${APRES.h} (échelle 4), hit-test tactile suivi`);
+}
+
+// --- 9. L'entrée de menu : libellé, refus, et absence d'API --------------
+// Le libellé est la seule chose que le joueur lit pour savoir où il en est :
+// il doit dire l'état RÉEL, jamais ce qu'on avait demandé. Faux DOM minimal,
+// même gabarit que les autres tests de `ui/menu.js` (copié, pas partagé :
+// convention du dépôt).
+{
+  class ElementFactice {
+    constructor(tag) {
+      this.tagName = String(tag).toUpperCase();
+      this.id = ''; this.dataset = {}; this.style = {}; this.children = [];
+      this.parentNode = null; this._classes = []; this._listeners = {};
+      this._texte = ''; this.hidden = false; this.value = '';
+    }
+    get className() { return this._classes.join(' '); }
+    set className(v) { this._classes = String(v || '').split(/\s+/).filter(Boolean); }
+    setAttribut(nom, val) {
+      if (nom === 'id') this.id = val;
+      else if (nom === 'class') this._classes = (val || '').split(/\s+/).filter(Boolean);
+      else if (nom.startsWith('data-')) {
+        const cle = nom.slice(5).replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+        this.dataset[cle] = val;
+      } else if (nom === 'value') this.value = val;
+    }
+    appendChild(e) { e.parentNode = this; this.children.push(e); return e; }
+    addEventListener(t, f) { (this._listeners[t] ||= []).push(f); }
+    declencher(t) { for (const f of this._listeners[t] || []) f({}); }
+    scrollIntoView() {}
+    get textContent() { return this._texte; }
+    set textContent(v) { this._texte = v; this.children = []; }
+    set innerHTML(html) {
+      const racine = new ElementFactice('root');
+      const pile = [racine];
+      const regexTag = /<(\/)?([a-zA-Z0-9-]+)([^>]*?)(\/)?>|([^<]+)/g;
+      let m;
+      while ((m = regexTag.exec(html))) {
+        const [, fermante, nomTag, attrsStr, autoFerme, texte] = m;
+        if (texte !== undefined) continue;
+        if (fermante) { pile.pop(); continue; }
+        const el = new ElementFactice(nomTag);
+        const regexAttr = /([a-zA-Z0-9-]+)(?:="([^"]*)")?/g;
+        let a;
+        while ((a = regexAttr.exec(attrsStr || ''))) {
+          if (!a[1]) continue;
+          el.setAttribut(a[1], a[2] !== undefined ? a[2] : true);
+        }
+        pile[pile.length - 1].appendChild(el);
+        if (!autoFerme) pile.push(el);
+      }
+      this.children = racine.children;
+      this.children.forEach((c) => (c.parentNode = this));
+    }
+    querySelectorAll(sel) {
+      const out = [];
+      const visiter = (el) => {
+        for (const enfant of el.children) {
+          if (sel.startsWith('#') ? enfant.id === sel.slice(1)
+            : sel.startsWith('.') ? enfant._classes.includes(sel.slice(1))
+              : false) out.push(enfant);
+          visiter(enfant);
+        }
+      };
+      visiter(this);
+      return out;
+    }
+    querySelector(sel) { return this.querySelectorAll(sel)[0] || null; }
+  }
+  const document = { createElement: (t) => new ElementFactice(t), body: new ElementFactice('body') };
+  const i18n = { t: (cle) => cle, langueCourante: () => 'fr', definirLangue: () => {} };
+
+  // Un vrai `plein_ecran.js` derrière le menu : on teste l'assemblage, pas
+  // deux doubles qui se parlent.
+  const journal = [];
+  const element = elementQuiAccepte(journal);
+  const doc = faireDocument({ element });
+  const pleinEcran = creerPleinEcranTactile({ element, doc });
+
+  const menu = initialiserMenu({
+    document, i18n, exporterSauvegarde: () => {}, importerSauvegarde: () => {},
+    pleinEcranDisponible: () => pleinEcran.disponible(),
+    pleinEcranActif: () => pleinEcran.estActif(),
+    basculerPleinEcran: () => pleinEcran.basculer(),
+  });
+  menu.ouvrir();
+  const conteneur = document.body.querySelector('#menu');
+  const bouton = conteneur.querySelector('#menu-plein-ecran');
+  const message = conteneur.querySelector('#menu-message');
+
+  assert.equal(bouton.textContent, 'menu.plein_ecran', 'hors plein écran : « Plein écran »');
+  assert.equal(bouton.parentNode.hidden, false, "l'API est là, donc l'entrée est visible");
+
+  bouton.declencher('click');
+  await new Promise((r) => setTimeout(r, 0));
+  menu.actualiserPleinEcran(); // ce que fait main.js sur `fullscreenchange`
+  assert.equal(pleinEcran.estActif(), true);
+  assert.equal(bouton.textContent, 'menu.quitter_plein_ecran', 'en plein écran : « Quitter le plein écran »');
+  assert.equal(message.textContent, '', 'aucun message quand ça marche');
+
+  bouton.declencher('click');
+  await new Promise((r) => setTimeout(r, 0));
+  menu.actualiserPleinEcran();
+  assert.equal(bouton.textContent, 'menu.plein_ecran', 'le retour aussi suit l’état réel');
+
+  // Le joueur sort par Échap : personne n'a rien demandé, le libellé suit
+  // quand même — c'est tout l'intérêt de lire l'état plutôt que de le tenir.
+  doc.fullscreenElement = element;
+  menu.actualiserPleinEcran();
+  assert.equal(bouton.textContent, 'menu.quitter_plein_ecran');
+  doc.fullscreenElement = null;
+  menu.actualiserPleinEcran();
+  assert.equal(bouton.textContent, 'menu.plein_ecran');
+
+  // Un refus (le cas de la manette) : le libellé ne bouge pas, un message
+  // localisé apparaît. Jamais un libellé qui ment.
+  const document2 = { createElement: (t) => new ElementFactice(t), body: new ElementFactice('body') };
+  const peRefuse = creerPleinEcranTactile({
+    element: { requestFullscreen: () => Promise.reject(new TypeError('Permissions check failed')) },
+    doc: faireDocument(),
+  });
+  const menu2 = initialiserMenu({
+    document: document2, i18n, exporterSauvegarde: () => {}, importerSauvegarde: () => {},
+    pleinEcranDisponible: () => peRefuse.disponible(),
+    pleinEcranActif: () => peRefuse.estActif(),
+    basculerPleinEcran: () => peRefuse.basculer(),
+  });
+  menu2.ouvrir();
+  const conteneur2 = document2.body.querySelector('#menu');
+  const bouton2 = conteneur2.querySelector('#menu-plein-ecran');
+  bouton2.declencher('click');
+  await new Promise((r) => setTimeout(r, 0));
+  assert.equal(bouton2.textContent, 'menu.plein_ecran', 'un refus laisse le libellé tel quel');
+  assert.equal(conteneur2.querySelector('#menu-message').textContent, 'menu.plein_ecran_refuse',
+    'et le dit au joueur, en texte localisé');
+  assert.equal(menu2.estOuvert(), true, "l'état du menu reste cohérent : rien ne s'est fermé");
+
+  // Sans API, l'entrée n'existe pas dans la navigation (même patron que
+  // Construction hors de la maison).
+  const document3 = { createElement: (t) => new ElementFactice(t), body: new ElementFactice('body') };
+  const menu3 = initialiserMenu({
+    document: document3, i18n, exporterSauvegarde: () => {}, importerSauvegarde: () => {},
+    pleinEcranDisponible: () => false,
+  });
+  menu3.ouvrir();
+  assert.equal(document3.body.querySelector('#menu-plein-ecran').parentNode.hidden, true,
+    "sans API, l'entrée est masquée : une entrée qui ne peut rien faire n'a rien à faire dans le menu");
+  console.log('  l’entrée de menu suit l’état réel ; un refus le dit sans mentir');
 }
 
 console.log('OK test_d30_plein_ecran_tactile');

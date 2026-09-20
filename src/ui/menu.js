@@ -200,6 +200,14 @@ function appliquerFocusVisuel(elements, indexFocalise) {
 // même : `ui/menu.js` ne connaît QUE le nom des classes, jamais une valeur
 // de style ; `index.html` ne connaît que des classes, jamais un élément
 // nommé créé ici (c'est ce qui interdisait déjà d'y styliser `#menu-poche`).
+// L'ABSENCE de texte, pas un texte. Elle est nommée plutôt qu'écrite en
+// place pour une raison de fond et une de forme : de fond, effacer un message
+// n'est pas afficher quelque chose, donc ça n'a rien à faire dans les locales ;
+// de forme, le garde-fou d'i18n (`test_phase0_i18n`, bloc 5) refuse toute
+// chaîne littérale assignée à un `textContent` de ce fichier — et il a raison de
+// ne pas savoir faire la différence, c'est à nous de la dire ici.
+const AUCUN_MESSAGE = '';
+
 const CLASSE_ECRAN = 'ecran-ui';
 
 function appliquerClasseEcran(el) {
@@ -424,6 +432,14 @@ export function initialiserMenu({
   musiqueActive = () => true, basculerMusique = () => {}, listerPoche = () => [],
   equipementConsommable = () => null, equiperConsommable = () => {},
   peripheriqueActif = () => 'manette',
+  // `D-30` (rouvert le 20/09) : le plein écran est injecté comme tout le
+  // reste — ce module ne connaît ni `document.fullscreenElement`, ni
+  // `requestFullscreen`. `pleinEcranDisponible` décide si l'entrée EXISTE
+  // (une entrée qui ne peut rien faire n'a rien à faire dans le menu, même
+  // règle que Construction hors de la maison) ; `pleinEcranActif` est lu à
+  // CHAQUE affichage du libellé, jamais recopié dans un booléen d'ici.
+  pleinEcranDisponible = () => false, pleinEcranActif = () => false,
+  basculerPleinEcran = () => {},
 }) {
   const conteneur = document.createElement('div');
   conteneur.id = 'menu';
@@ -445,6 +461,10 @@ export function initialiserMenu({
         <div class="menu-item" data-item="1">
           <span class="menu-curseur"></span>
           <button id="menu-musique" data-cle="menu.musique" type="button"></button>
+        </div>
+        <div class="menu-item" data-item="1b">
+          <span class="menu-curseur"></span>
+          <button id="menu-plein-ecran" type="button"></button>
         </div>
         <div class="menu-item" data-item="2">
           <span class="menu-curseur"></span>
@@ -480,6 +500,7 @@ export function initialiserMenu({
           <button id="menu-fermer" data-cle="menu.fermer" type="button"></button>
         </div>
       </div>
+      <p class="ecran-ui-aide" id="menu-message"></p>
     </div>
   `;
   document.body.appendChild(conteneur);
@@ -703,6 +724,42 @@ export function initialiserMenu({
   }
   boutonMusique.addEventListener('click', actionBasculerMusique);
 
+  // Plein écran (`D-30`, rouvert le 20/09). Même convention que Musique :
+  // ATTACK bascule. Deux règles, et elles ne se négocient pas :
+  //
+  //   1. **Le libellé lit l'état RÉEL** (`pleinEcranActif()`, câblé sur
+  //      `document.fullscreenElement`), jamais un booléen tenu à jour ici. Le
+  //      joueur peut sortir par Échap ou par un geste système sans que
+  //      personne ici ne soit prévenu ; un booléen local mentirait.
+  //   2. **Un refus ne change rien au libellé.** Il affiche un message, et
+  //      c'est tout — c'est exactement ce qui arrivera si Xav confirme
+  //      l'entrée à la MANETTE : une manette est lue par sondage, pas par
+  //      événement, donc le navigateur ne voit aucun geste et refuse. On ne
+  //      contourne pas ; on le dit au joueur.
+  const boutonPleinEcran = conteneur.querySelector('#menu-plein-ecran');
+  const elPleinEcran = boutonPleinEcran.parentNode;
+  const message = conteneur.querySelector('#menu-message');
+  function actualiserBoutonPleinEcran() {
+    boutonPleinEcran.textContent = pleinEcranActif()
+      ? i18n.t('menu.quitter_plein_ecran')
+      : i18n.t('menu.plein_ecran');
+  }
+  function actionBasculerPleinEcran() {
+    message.textContent = AUCUN_MESSAGE;
+    const attendu = !pleinEcranActif();
+    // `basculer()` rend une promesse résolue à l'état RÉEL obtenu, jamais
+    // rejetée (frontière du sous-système). Un appelant de test peut rendre un
+    // booléen nu : les deux formes sont acceptées, comme partout ici.
+    const resultat = basculerPleinEcran();
+    const conclure = (actif) => {
+      actualiserBoutonPleinEcran();
+      if (actif !== attendu) message.textContent = i18n.t('menu.plein_ecran_refuse');
+    };
+    if (resultat && typeof resultat.then === 'function') resultat.then(conclure, () => conclure(pleinEcranActif()));
+    else conclure(pleinEcranActif());
+  }
+  boutonPleinEcran.addEventListener('click', actionBasculerPleinEcran);
+
   retraduireBase();
 
   function retraduireBase() {
@@ -713,6 +770,7 @@ export function initialiserMenu({
       el.textContent = i18n.t(el.dataset.cle);
     });
     actualiserBoutonMusique();
+    actualiserBoutonPleinEcran();
   }
 
   function fermerMenu() {
@@ -833,8 +891,16 @@ export function initialiserMenu({
     const visible = disponibiliteConstruction();
     elConstruction.hidden = !visible;
     elConstruction.style.display = visible ? '' : 'none';
+    // `D-30` : seconde entrée contextuelle, même patron que Construction —
+    // absente si le navigateur n'a pas l'API (elle ne pourrait qu'échouer).
+    // Sur PC elle reste affichée : c'est le défaut retenu, F11 existe mais
+    // l'entrée ne gêne personne et rend le réglage découvrable à la souris.
+    const pleinEcranVisible = pleinEcranDisponible();
+    elPleinEcran.hidden = !pleinEcranVisible;
+    elPleinEcran.style.display = pleinEcranVisible ? '' : 'none';
     const entrees = [
       ...ENTREES_FIXES_DEBUT,
+      ...(pleinEcranVisible ? [{ el: elPleinEcran, action: actionBasculerPleinEcran }] : []),
       ...(visible ? [{ el: elConstruction, action: actionOuvrirConstruction }] : []),
       ...ENTREES_FIXES_FIN,
     ];
@@ -878,6 +944,7 @@ export function initialiserMenu({
 
   return {
     ouvrir() {
+      message.textContent = AUCUN_MESSAGE;
       afficherEcran(conteneur, true);
       afficherEcran(confirmation, false);
       afficherEcran(bandeauConstruction, false);
@@ -933,6 +1000,13 @@ export function initialiserMenu({
         ecranPoche.estOuvert() || ecranCraft.estOuvert() || ecranCoffre.estOuvert() || ecranStats.estOuvert() ||
         ecranConstruction.estOuvert()
       );
+    },
+    // `D-30` : appelée par main.js sur `fullscreenchange` — le seul moment où
+    // l'état réel peut changer sans que ce module ait rien demandé (Échap, un
+    // geste système, ou la fin d'une bascule asynchrone). Le libellé se
+    // réécrit alors depuis l'état réel, jamais depuis ce qu'on avait demandé.
+    actualiserPleinEcran() {
+      actualiserBoutonPleinEcran();
     },
     // Fournie par main.js (§3) : vrai si le héros est actuellement dans une
     // structure dont au moins une station est placable — décide si l'entrée

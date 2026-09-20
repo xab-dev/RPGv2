@@ -13,18 +13,28 @@ function dansCercle(x, y, cercle) {
   return Math.hypot(x - cercle.cx, y - cercle.cy) <= cercle.rayon;
 }
 
-// `surPremierContact` (`D-30`) : crochet optionnel appelé DANS le
-// gestionnaire de `touchstart`, donc **pendant** le geste du joueur — c'est
-// la condition que les navigateurs posent pour accorder le plein écran, et
-// c'est pourquoi il est ici plutôt que dans `maj()` à la frame suivante.
+// `surRelachement` (`D-30`, rouvert le 20/09) : crochet optionnel appelé DANS
+// le gestionnaire de `touchend`, donc **pendant** le geste du joueur.
 //
-// Ce module ne sait pas ce qu'on en fait : il ne connaît ni le plein écran,
-// ni l'orientation, ni le DOM au-delà de ses propres événements. Il appelle à
-// **chaque** contact ; c'est `plein_ecran.js` qui porte le loquet « une seule
-// fois », en un seul endroit. Mettre le loquet ici l'aurait dispersé.
+// Il était appelé sur `touchstart` jusqu'au 20/09, et c'était l'erreur. Le
+// contrat d'« activation utilisateur » du HTML ne liste PAS `touchstart`
+// parmi les événements qui l'accordent (il peut encore ouvrir un défilement,
+// le navigateur ne sait donc pas encore si c'est un geste ou un glissement) —
+// il liste `keydown`, `mousedown`, `pointerdown`, `pointerup` et **`touchend`**.
+// Une demande de plein écran partie du contact était donc refusée d'office,
+// silencieusement, une seule fois et pour toujours.
+//
+// `touchcancel` ne l'appelle PAS : un contact annulé par le système (appel
+// entrant, geste de navigation) n'accorde aucune activation, et il aurait
+// brûlé le loquet « une seule fois » sans rien obtenir.
+//
+// Ce module ne sait toujours pas ce qu'on en fait : il ne connaît ni le plein
+// écran, ni l'orientation, ni le DOM au-delà de ses propres événements. Il
+// appelle à **chaque** relâchement ; c'est `plein_ecran.js` qui porte le
+// loquet, en un seul endroit. Mettre le loquet ici l'aurait dispersé.
 export function creerSourceTactile(cible, {
   versLogique = (x, y) => ({ x, y }),
-  surPremierContact = null,
+  surRelachement = null,
 } = {}) {
   let actif = false;
   // Incrémenté à chaque touchstart (jamais décrémenté) : `estActif()` est un
@@ -63,11 +73,6 @@ export function creerSourceTactile(cible, {
     bloquerComportementNatif(e);
     actif = true;
     nbContacts += 1;
-    // Avant toute autre chose, et sans jamais rien rattraper ici : le crochet
-    // est « meilleur effort » et rattrape ses propres erreurs à sa frontière
-    // (plein_ecran.js). Un `try/catch` de plus ici masquerait un vrai bug
-    // d'input le jour où le crochet servira à autre chose.
-    if (surPremierContact) surPremierContact();
     const points = positionsLogiques(e.touches);
     for (const p of points) doigts.set(p.identifier, p);
     attribuerJoystickSiBesoin(points);
@@ -88,10 +93,22 @@ export function creerSourceTactile(cible, {
     if (idJoystick !== null && !restants.has(idJoystick)) idJoystick = null;
   }
 
+  // `touchend` seul (jamais `touchcancel`, cf. l'en-tête). Le crochet part
+  // APRÈS la mise à jour de l'état : ce qu'il déclenche peut redimensionner
+  // la page (plein écran), et l'état d'input doit être cohérent avant. Sans
+  // jamais rien rattraper ici non plus — le crochet est « meilleur effort »
+  // et rattrape ses propres erreurs à sa frontière (`plein_ecran.js`) ; un
+  // `try/catch` de plus ici masquerait un vrai bug d'input le jour où il
+  // servira à autre chose.
+  function surRelachementTactile(e) {
+    surFin(e);
+    if (surRelachement) surRelachement();
+  }
+
   if (cible && typeof cible.addEventListener === 'function') {
     cible.addEventListener('touchstart', surDebut);
     cible.addEventListener('touchmove', surDeplacement);
-    cible.addEventListener('touchend', surFin);
+    cible.addEventListener('touchend', surRelachementTactile);
     cible.addEventListener('touchcancel', surFin);
   }
 

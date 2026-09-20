@@ -3,10 +3,10 @@ projet: RPG V2
 episode/session: Polish — menu tactile fermable, puis plein écran
 type: fichier de bord (devient le rapport)
 version: 1.0.0
-statut: en cours
+statut: complet
 catégorie: Journal
 date: 2026-09-20
-ids_suivi: [D-02, D-03, D-14, D-30, D-31, D-42, Q-20, A-07, R-16, V-25, V-26]
+ids_suivi: [D-02, D-03, D-14, D-30, D-31, D-42, Q-20, Q-36, A-07, R-16, V-25, V-26]
 genere_par: claude
 verifie_par: —
 ---
@@ -170,4 +170,140 @@ qu'il est ouvert. Je ne l'ai pas ajouté — le brief l'interdit explicitement. 
 recouvert) · une bascule sur la même touche est l'usage courant · mais elle créerait un **second** chemin de
 fermeture à côté de `onAnnuler`, et c'est exactement la classe de bug de `SD_construction-parite-clic-verbe`.
 
-*(le reste s'écrit commit par commit)*
+---
+
+## Commit 2 — `D-30` rouvert : plein écran au relâchement, et par le menu
+
+### L'hypothèse du brief était la bonne, et le journal de la nuit avait tort
+
+Le brief demandait de vérifier **avant tout code**, et de s'arrêter si l'hypothèse tombait. Elle tient, sur deux
+sources indépendantes.
+
+**1. La spécification.** Le contrat d'« activation utilisateur » du HTML définit l'*activation triggering input
+event* comme tout événement de confiance dont le type est l'un de : `keydown`, `mousedown`, `pointerdown`,
+`pointerup`, **`touchend`**. `touchstart` **n'y est pas** — et la raison est logique : au moment du contact, le
+navigateur ne sait pas encore s'il a affaire à un appui ou au début d'un glissement. Il attend de le savoir.
+
+**2. Chrome, mesuré.** Une demande de plein écran émise sans activation utilisateur est **rejetée** :
+`TypeError: Permissions check failed`. Pas une exception synchrone, pas un silence — un **rejet de promesse**.
+
+Ce qui donne l'enchaînement complet, et il n'a rien d'un bug isolé :
+
+1. la demande partait de `touchstart`, donc **sans activation** ;
+2. Chrome rejetait la promesse ;
+3. le contrat « meilleur effort » (`promesse.then(paysage, () => {})`) **avalait le rejet**, comme il doit le
+   faire — c'est lui qui garantit qu'un refus ne casse pas le jeu ;
+4. le loquet, posé sur la **tentative** et jamais réarmé — ce qui est également voulu, pour ne pas harceler le
+   joueur — interdisait toute demande suivante.
+
+**Trois pièces saines, un enchaînement qui ne pouvait jamais aboutir.** Aucune des trois n'est à corriger ; c'est
+le point de départ qui était faux. C'est aussi pourquoi le défaut était invisible : le sous-système faisait
+exactement ce qu'on lui avait demandé, en silence, une fois, et pour toujours.
+
+### Ce qui est livré
+
+- **`touch.js`** : le crochet part de `touchend`. Il est renommé `surRelachement` — d'après ce qu'il fait, pas
+  d'après ce qu'on en attend ; le module ne sait toujours pas qu'un plein écran existe. **Jamais sur
+  `touchcancel`** (un contact annulé par le système n'accorde aucune activation, et aurait brûlé le loquet pour
+  rien). Le crochet part **après** la mise à jour de l'état d'input : ce qu'il déclenche redimensionne la page.
+- **`plein_ecran.js`** : deux chemins, un seul loquet. `demanderUneFois()` reste le chemin **automatique**
+  (latched, inchangé dans son principe) ; `basculer()` est le chemin **explicite** du menu — il ne passe pas par
+  le loquet mais il le **pose**, sans quoi le premier doigt reposé après une sortie volontaire remettrait le
+  joueur en plein écran contre son gré. `estActif()` lit `document.fullscreenElement` : **l'état réel, jamais un
+  booléen tenu à jour ici**. Toutes les sorties rendent une promesse qui se résout, jamais qui rejette.
+- **Entrée de menu à bascule** : « Plein écran » / « Quitter le plein écran », libellé écrit **uniquement** depuis
+  l'état réel, relu sur `fullscreenchange` (câblé par `main.js`). Contextuelle comme Construction : **absente si
+  l'API n'existe pas**, présente sur PC (défaut retenu — F11 existe, mais l'entrée ne gêne personne et rend le
+  réglage découvrable à la souris).
+- **Le refus est dit au joueur** : une ligne localisée FR/EN dans l'en-tête du menu, et le libellé **ne bouge
+  pas**. C'est le cas de la manette, et il n'est pas contourné (voir plus bas).
+- **`ui/menu.js` ne connaît pas l'API** : trois fonctions injectées (`pleinEcranDisponible`, `pleinEcranActif`,
+  `basculerPleinEcran`), comme la musique et la poche. Un test le vérifie sur le source, commentaires exclus.
+
+### Vérifié de bout en bout dans Chrome, à 703 × 280
+
+| Geste | Résultat observé |
+|---|---|
+| **Vrai clic** sur « Plein écran » | `document.fullscreenElement = HTML` · viewport 703 × 280 → **1920 × 1024** · libellé passé à « Quitter le plein écran » · aucun message |
+| **Vrai clic** sur « Quitter le plein écran » | `fullscreenElement = null` · retour à 703 × 280 · libellé revenu · le menu est resté ouvert et utilisable |
+| Clic **sans geste utilisateur** (`b.click()` depuis la console) | refus · libellé **inchangé** · message « Le navigateur a refusé le plein écran. Essaie avec le doigt ou la souris. » · menu cohérent |
+
+Ce troisième cas n'est pas un artifice de test : **c'est exactement la situation de la manette.** Une manette est
+lue par **sondage** (`navigator.getGamepads()` à chaque frame), pas par événement — le navigateur ne voit donc
+aucun geste, et refuse. Le piège annoncé par le brief est donc **vérifié**, et il n'est pas contourné : le refus
+est dit, pas masqué. Capture : `docs/captures/menu-tactile-2026-09-20/d30_refus-sans-geste_703x280.jpg`.
+
+Ce qui n'est **toujours pas** vérifié : le **doigt** sur un vrai téléphone. Un navigateur de bureau n'a pas
+d'événement `touchend` réel à offrir. C'est `V-25`, réécrite, par l'URL publique après fusion et `push` de Xav.
+
+### Les tests
+
+`tests/test_d30_plein_ecran_tactile_2026-09-20.js`, neuf blocs. Les **cinq cas d'échec** sont conservés et
+étendus : chacun est désormais exercé par les **deux** chemins (demande automatique et bascule du menu), plus
+deux nouveaux — un `document` absent rend `estActif() === false` plutôt qu'une exception, et un refus de sortie
+ne remonte pas. Ajoutés : le crochet part au relâchement et **pas** au contact, ni sur `touchcancel` · la bascule
+fait l'aller **et** le retour · l'état réel fait foi même quand personne n'a rien demandé (le joueur sort par
+Échap) · un refus laisse l'état cohérent · sortir par le menu ne réarme pas l'automatique · l'entrée de menu
+affiche le bon libellé, le change dans les deux sens, et disparaît sans API. **83 fichiers de test verts.**
+
+### Une décision de forme, signalée
+
+L'entrée s'insère **juste après « Musique »** : ce sont les deux seuls réglages d'ambiance du menu, et les
+regrouper les rend découvrables ensemble. Conséquence assumée : c'est la **deuxième** entrée contextuelle du menu
+Pause (avec Construction), et l'ordre de navigation compte désormais 8, 9 ou 10 entrées selon le contexte. Rien
+d'autre n'a bougé de place. `[OUVERT]` si Xav la préfère ailleurs — c'est une ligne à déplacer.
+
+---
+
+## Les identifiants de cette mini-file
+
+| Id | Sujet | État |
+|---|---|---|
+| `D-31` | A04 : ≈ 18 ms par frame hors du code du jeu | **close** (décision de Xav : « ça vient du matériel ») |
+| `A-07` | Profil Chrome de l'A04 par USB | **sans objet** (tombe avec `D-31`) |
+| `D-02`, `D-03` | Instrument et coût de `dessiner()` | **dégelées**, P3, rien à y corriger aujourd'hui |
+| `Q-20`, `D-14` | Plancher mobile | plancher **revu à la hausse**, définition `[OUVERT]` (téléphone du neveu) |
+| `R-16` | Relevé A04 en ligne, 37,3 fps | **créé** (et non `R-15`, déjà employé — voir commit 0) |
+| `D-42` | Menu non fermable au tactile | **ouverte puis close le 20/09**, validation due `V-26` |
+| `D-30` | Plein écran au tactile | **rouverte puis re-close le 20/09**, validation due `V-25` (réécrite) |
+| `Q-36` | Le verbe `MENU` doit-il aussi fermer le menu ? | **ouverte**, signalée sans rien ajouter (consigne du brief) |
+| `V-25`, `V-26` | Les deux validations en jeu | **ouvertes** — elles demandent un vrai téléphone |
+
+**Prochains identifiants libres** : `D-43`, `Q-37`, `V-27`, `R-17`.
+
+## Ce que je n'ai pas décidé seul
+
+1. **Le verbe `MENU` ne ferme pas le menu** (`Q-36`). Constaté, signalé, **pas ajouté** — le brief l'interdisait
+   explicitement. C'est à Xav de trancher, et la remarque qui compte est celle-ci : le bouton tactile `MENU`
+   devient inatteignable dès que l'écran s'ouvre, puisqu'il est dessiné sur le canvas que l'écran recouvre.
+2. **Deux `[OUVERT]` de forme**, faciles à défaire : la confirmation de reset garde « Oui » et « Non » ensemble
+   dans le corps (sa sortie n'est pas « Fermer », c'est « Non ») ; l'entrée « Plein écran » se place juste après
+   « Musique » (les deux réglages d'ambiance ensemble).
+3. **`R-16` plutôt que `R-15`** : l'identifiant demandé par le brief avait déjà servi. Le brief prévoyait ce cas ;
+   je l'applique et je le dis, plutôt que de dédoubler un identifiant.
+4. **`D-14` touchée sans être citée** par le brief : elle nommait l'A04 comme candidat plancher, et la décision
+   de Xav la rendait fausse à la ligne suivante. C'est du ménage de suivi, pas un ticket de plus.
+
+## Ce qui reste dû, et à qui
+
+- **À Xav, sur un vrai téléphone, par l'URL publique** (donc après fusion **et** `push`) : `V-26` (le menu se
+  ferme au doigt, sans défiler, sur les sept écrans) et `V-25` (le jeu prend l'écran au premier relâchement ·
+  l'entrée de menu fait l'aller et le retour · le menu reste fermable en plein écran comme hors plein écran).
+- **À Xav, à trancher** : `Q-36`, et les deux `[OUVERT]` de forme ci-dessus.
+- **Rien à personne d'autre.** Aucun ticket de cette file n'attend un autre ticket.
+
+## Rappel de manipulation
+
+```
+git log --oneline main..menu-tactile-2026-09-20   # les 3 commits de la mini-file
+git merge <hash>                                  # depuis main : fusionne JUSQU'A ce commit
+git revert <hash>                                 # retire un seul commit
+```
+
+**Une dépendance à connaître avant de couper.** Le commit 2 (`D-30`) se retire seul — vérifié : `git revert`
+propre, et les 83 fichiers de test restent verts sans lui. Le commit 1 (`D-42`), lui, ne se retire seul **que si
+le commit 2 l'est d'abord** : le commit 2 touche deux lignes du test de `D-42` (le menu Pause y gagne une
+entrée). Le commit 0 est de la documentation pure et ne gêne personne dans un sens ou dans l'autre.
+
+Et le rappel qui compte plus que les autres depuis ce matin : **`push` sur `main` publie le jeu.** Les trois
+commits sont sur la branche, rien n'a été poussé.

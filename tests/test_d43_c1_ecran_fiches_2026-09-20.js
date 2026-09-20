@@ -124,7 +124,7 @@ class ElementFactice {
 const creerFauxDocument = () => ({ createElement: (tag) => new ElementFactice(tag), body: new ElementFactice('body') });
 function etatInput({ x = 0, y = 0, attack = false, skill3 = false } = {}) {
   const b = (v) => ({ pressed: v, held: v });
-  return { move: { x, y }, attack: b(attack), skill_1: b(false), skill_2: b(false), skill_3: b(skill3), consume: b(false), interact: b(false), menu: b(false) };
+  return { move: { x, y }, attack: b(attack), skill_1: b(false), skill_2: b(false), skill_3: b(skill3), consume: b(false), interact: b(false), menu: b(false), target_next: b(false) };
 }
 
 function monter({ entrees, profondeurSous = 1, glyphe = 'A' }) {

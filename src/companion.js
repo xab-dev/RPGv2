@@ -176,3 +176,43 @@ export function avancerPosition(follet, hero, monstres, deltaS) {
     angleOrbite,
   };
 }
+
+// --- « Cible suivante » (`D-54`, décision de Xav du 20/09) -----------------
+// Le joueur fait changer le follet de monstre : RB à la manette, Tab au
+// clavier (le geste tactile reste à définir, `Q-40`). Pur, aucun périphérique
+// ici — le verbe abstrait `target_next` arrive déjà traduit.
+//
+// CANDIDATS = les monstres vivants que le follet ne lâcherait pas aussitôt,
+// c'est-à-dire en deçà de la distance de RELÂCHE, et non les seuls
+// engageables : ordonner une cible est justement le moyen d'envoyer le follet
+// sur un monstre que la règle automatique (orbite ou aura) n'aurait pas pris.
+// La cible ainsi choisie tient ensuite toute seule — `mettreAJourEtat` ne
+// reprend « le plus proche » qu'en état `suivre`.
+//
+// L'ordre est « le plus proche du héros d'abord », et il boucle. Le tri se
+// fait sur la distance PUIS sur l'id : deux monstres à égalité parfaite
+// donneraient sinon un ordre dépendant de la position dans le tableau, qui
+// change quand un monstre meurt — le cycle sauterait sans raison visible.
+//
+// Sans candidat, ou quand le seul candidat est DÉJÀ la cible : le follet est
+// rendu tel quel, sans effet et sans erreur. Un appui alors que le follet
+// n'a aucune cible prend le premier de la liste (le plus proche) — lecture
+// retenue par défaut du « zéro ou un candidat : sans effet » du ticket,
+// marquée `[OUVERT]` (`Q-41`) : l'inverse serait un appui sans réponse.
+export function cibleSuivante(follet, hero, monstres, companion) {
+  if (!follet) return follet;
+  const portee = distanceRelachePx(companion);
+  const candidats = monstres
+    .filter((m) => m && !m.mort && distance(hero, m) <= portee)
+    .sort((a, b) => distance(hero, a) - distance(hero, b) || String(a.id).localeCompare(String(b.id)));
+  if (candidats.length === 0) return follet;
+
+  const courant = candidats.findIndex((m) => m.id === follet.cibleMonstreId);
+  // `courant === -1` (aucune cible, ou cible morte/hors portée entre deux
+  // appuis) -> index 0 : le plus proche.
+  const suivant = candidats[(courant + 1) % candidats.length];
+  if (suivant.id === follet.cibleMonstreId) return follet;
+  // Pas de saut de position : `avancerPosition` amortit l'approche de la
+  // nouvelle cible exactement comme celle d'une cible engagée toute seule.
+  return { ...follet, etat: 'engager', cibleMonstreId: suivant.id };
+}

@@ -48,7 +48,7 @@ const etatNeutre = {
   skill_3: { pressed: false, held: false },
   consume: { pressed: false, held: false },
   interact: { pressed: false, held: false },
-  menu: { pressed: false, held: false },
+  menu: { pressed: false, held: false }, target_next: { pressed: false, held: false },
 };
 
 // Un orchestrateur planté dans la Région Maison, au niveau voulu, à l'heure

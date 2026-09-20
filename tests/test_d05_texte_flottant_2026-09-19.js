@@ -226,7 +226,7 @@ const CLE_FORMAT = 'monde.gain_item';
     move: { x: 0, y: 0 }, attack: { pressed: false, held: false },
     skill_1: { pressed: false, held: false }, skill_2: { pressed: false, held: false },
     skill_3: { pressed: false, held: false }, consume: { pressed: false, held: false },
-    interact: { pressed: true, held: true }, menu: { pressed: false, held: false },
+    interact: { pressed: true, held: true }, menu: { pressed: false, held: false }, target_next: { pressed: false, held: false },
   };
   const etatNeutre = { ...etatInteract, interact: { pressed: false, held: false } };
 

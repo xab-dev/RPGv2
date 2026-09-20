@@ -3,7 +3,11 @@
 // Aucun système de jeu ne doit lire un Gamepad, un KeyboardEvent ou un
 // TouchEvent directement — seulement cet état.
 
-const VERBES_BOUTON = ['attack', 'skill_1', 'skill_2', 'skill_3', 'consume', 'interact', 'menu'];
+// `target_next` (`D-54`) : cible suivante pour le follet. Aucune source
+// tactile ne le produit aujourd'hui (le geste reste à définir, `Q-40`) —
+// un verbe qu'une source ignore vaut simplement `false` pour elle, la
+// fusion ci-dessous n'a pas de cas particulier à écrire pour autant.
+const VERBES_BOUTON = ['attack', 'skill_1', 'skill_2', 'skill_3', 'consume', 'interact', 'menu', 'target_next'];
 
 function clamp(v, min, max) {
   return Math.max(min, Math.min(max, v));

@@ -13,6 +13,9 @@ export const MAPPING_MANETTE_PROVISOIRE = {
     interact: 4, // LB
     consume: 7, // RT (gâchette)
     menu: 9, // Start
+    // `D-54` : cible suivante du follet. RB était libre (vérifié le 20/09),
+    // et c'est le bouton que Xav a choisi.
+    target_next: 5, // RB
   },
   axeX: 0,
   axeY: 1,
@@ -68,6 +71,7 @@ export function creerSourceManette(nav, mapping = MAPPING_MANETTE_PROVISOIRE) {
         consume: brut(mapping.boutons.consume),
         interact: brut(mapping.boutons.interact),
         menu: brut(mapping.boutons.menu),
+        target_next: brut(mapping.boutons.target_next),
       };
     },
   };

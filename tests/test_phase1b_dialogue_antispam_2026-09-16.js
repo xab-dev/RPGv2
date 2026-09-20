@@ -110,7 +110,7 @@ function etat({ attack = false } = {}) {
       skill_3: { pressed: false, held: false },
       consume: { pressed: false, held: false },
       interact: { pressed: interact, held: interact },
-      menu: { pressed: false, held: false },
+      menu: { pressed: false, held: false }, target_next: { pressed: false, held: false },
     };
   }
   function creerInputScripte(frames) {

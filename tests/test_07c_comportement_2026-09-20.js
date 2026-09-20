@@ -234,7 +234,7 @@ function contexte(monstre, hero, options = {}) {
         move: { x: 0, y: 0 }, attack: { pressed: false, held: false },
         skill_1: { pressed: false, held: false }, skill_2: { pressed: false, held: false },
         skill_3: { pressed: false, held: false }, consume: { pressed: false, held: false },
-        interact: { pressed: false, held: false }, menu: { pressed: false, held: false },
+        interact: { pressed: false, held: false }, menu: { pressed: false, held: false }, target_next: { pressed: false, held: false },
       }),
     },
     ctxLogique: null,

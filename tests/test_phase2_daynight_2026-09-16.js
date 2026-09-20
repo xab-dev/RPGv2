@@ -132,7 +132,7 @@ const DEBUTS_MS = (() => {
     skill_3: { pressed: false, held: false },
     consume: { pressed: false, held: false },
     interact: { pressed: false, held: false },
-    menu: { pressed: false, held: false },
+    menu: { pressed: false, held: false }, target_next: { pressed: false, held: false },
   });
   const input = { maj: () => etatNeutreInput() };
 

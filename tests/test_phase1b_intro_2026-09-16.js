@@ -138,7 +138,7 @@ const CIBLES_TEST = [{ x: 150, y: 113 }, { x: 240, y: 113 }, { x: 330, y: 113 }]
       skill_3: { pressed: false, held: false },
       consume: { pressed: false, held: false },
       interact: { pressed: false, held: false },
-      menu: { pressed: false, held: false },
+      menu: { pressed: false, held: false }, target_next: { pressed: false, held: false },
     };
   }
   // Source d'input scriptée simplifiée : ce test ne pousse QUE des appuis

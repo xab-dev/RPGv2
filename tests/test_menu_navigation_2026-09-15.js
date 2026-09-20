@@ -15,7 +15,7 @@ function etat({ y = 0, attack = false, menu = false, skill3 = false } = {}) {
     skill_3: { pressed: skill3, held: skill3 },
     consume: { pressed: false, held: false },
     interact: { pressed: false, held: false },
-    menu: { pressed: menu, held: menu },
+    menu: { pressed: menu, held: menu }, target_next: { pressed: false, held: false },
   };
 }
 

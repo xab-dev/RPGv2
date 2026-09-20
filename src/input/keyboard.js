@@ -19,13 +19,31 @@ export const MAPPING_CLAVIER_PROVISOIRE = {
   interact: ['KeyE'],
   consume: ['KeyF'],
   menu: ['Escape'],
+  // `D-54` : cible suivante du follet. Tab était libre (vérifié le 20/09).
+  target_next: ['Tab'],
 };
 
-export function creerSourceClavier(cible, mapping = MAPPING_CLAVIER_PROVISOIRE) {
+// Codes dont l'action PAR DÉFAUT du navigateur sortirait le joueur du jeu.
+// La liste ne se dérive pas du mapping : la raison d'être d'une entrée
+// n'est pas « c'est un verbe », c'est « le navigateur en fait autre chose ».
+// Aujourd'hui `Tab` seul — sans `preventDefault`, il déplace le focus hors
+// du canvas et l'appui suivant ne revient jamais au jeu.
+const CODES_ACTION_NAVIGATEUR = new Set(['Tab']);
+
+// `interceptionActive` : le jeu a-t-il la main en ce moment ? Fourni par
+// l'appelant, parce que lui seul le sait (main.js#maj tient LE point de
+// décision unique UI/gameplay) et parce qu'un `keydown` arrive hors frame.
+// Menu ouvert, on n'intercepte rien : les écrans de cartes sont du DOM, et
+// `Tab` y appartient au navigateur. Vrai par défaut — les tests headless et
+// tout appelant qui n'a pas d'UI n'ont rien à fournir.
+export function creerSourceClavier(cible, mapping = MAPPING_CLAVIER_PROVISOIRE, { interceptionActive = () => true } = {}) {
   const touchesEnfoncees = new Set();
 
   function surAppui(e) {
     touchesEnfoncees.add(e.code);
+    if (CODES_ACTION_NAVIGATEUR.has(e.code) && interceptionActive() && typeof e.preventDefault === 'function') {
+      e.preventDefault();
+    }
   }
   function surRelache(e) {
     touchesEnfoncees.delete(e.code);
@@ -70,6 +88,7 @@ export function creerSourceClavier(cible, mapping = MAPPING_CLAVIER_PROVISOIRE) 
         consume: unePresente(mapping.consume),
         interact: unePresente(mapping.interact),
         menu: unePresente(mapping.menu),
+        target_next: unePresente(mapping.target_next || []),
       };
     },
     // Exposé pour les tests : simule un événement sans vrai DOM.

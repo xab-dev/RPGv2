@@ -279,6 +279,8 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 
 | **La portée du follet est celle qu'on VOIT** : il engage un monstre qui est **dans son orbite** (distance mesurée du héros) **ou dans son aura** (distance mesurée du follet), et relâche au-delà de **orbite + aura + 12 px**. `DISTANCE_ENGAGEMENT_PX` (48 px, ni l'orbite, ni l'aura, ni leur union) est **retirée** : il n'existe plus de portée propre au follet, donc plus rien à faire diverger le jour où l'orbite ou l'aura grandiront (`Q-26`, `Q-29`) — la portée suivra toute seule. Les 12 px sont une **marge d'hystérésis fixe**, l'épaisseur du bord et non une portée : sans elle un monstre immobile pile à la frontière ferait osciller le follet d'une frame à l'autre. L'indice de commande ATTACK appelle le **prédicat d'engagement lui-même** (`companion.js#monstreEngageable`), jamais une portée recopiée. Et l'approche de la cible est **amortie comme le retour** — « mouvement fluide, jamais un flash » : l'ancien code copiait la position du monstre d'un coup, jusqu'à ~66 px en une frame. Conséquence voulue, cohérente avec `D-51` : l'aura arrive **avec** le follet, l'effet commence quand le cercle touche le monstre | 2026-09-20 | journal de session ci-dessous, fiche `docs/archives/MT_follet-engagement-relache_2026-09-20.md` |
 
+| **Le joueur choisit le monstre du follet** (`D-54`) : un verbe **« cible suivante »**, **RB** à la manette et **Tab** au clavier (le geste tactile reste à définir, `Q-40`). Les **candidats** sont les monstres vivants **en deçà de la distance de relâche** — pas seulement ceux que la règle automatique prendrait : ordonner une cible est justement le moyen d'envoyer le follet là où il n'irait pas seul. L'ordre est « le plus proche du héros d'abord » et il boucle ; la cible **choisie tient** jusqu'à sa mort ou sa relâche, parce que `mettreAJourEtat` ne choisit qu'en état `suivre` — rien n'a eu à être ajouté pour cela. Le changement passe par le **vol amorti** de `D-37`. `Tab` demande un `preventDefault` **en jeu seulement** (sinon le focus sort du canvas) : le clavier reçoit un prédicat injecté, écrit par le **seul** endroit qui sait si une UI capte les verbes (l'orchestrateur, à chaque frame) — un `keydown` n'attend pas la boucle de jeu | 2026-09-20 | journal de session ci-dessous, fiche `docs/archives/MT_follet-cible-suivante_2026-09-20.md` |
+
 (Les décisions de `05_construction-stations.md` étaient déjà actées par Xav **dans la spec elle-même** avant tout code, v1.0.0 §9 — les lignes ci-dessus n'y renvoient que pour mémoire, elles ne tranchent rien de nouveau.)
 
 ## Ce qui est dû : dettes, questions, validations
@@ -340,27 +342,60 @@ Les captures de la V1 (`docs/captures/v1/`) sont une **inspiration, jamais un ca
 
 `Q-10`, `Q-11`, `Q-12`, `Q-24` et `Q-25` restent à trancher avec Xav ; `Q-07` est gelée. La spec de la barre d'action du bas (`E-01`) est écrite par Xav lui-même et attend le chiffrage `Q-11`. **Une spec non écrite ne se commence pas** (même règle que pour une phase).
 
-## Journal de session — `D-37` : le follet engage par ce qu'on voit, relâche avec une marge, et ne se téléporte jamais (20/09)
+## Journal de session — `D-54` : « cible suivante », le joueur choisit le monstre du follet (20/09)
 
-Un ticket, un commit, branche `main` (pas de `push`). Fiche : `docs/archives/MT_follet-engagement-relache_2026-09-20.md`. 97 fichiers de test, 96 verts — le seul rouge est `D-52`, antérieur à ce ticket. Ménage fait en entrant : le journal de `D-51` est archivé (`docs/archives/JOURNAL_2026-09-20_aura-reelle.md`, ligne d'INDEX ajoutée), la fiche du ticket rangée dans `docs/archives/`.
+Un ticket, un commit, branche `main` (pas de `push`). Fiche : `docs/archives/MT_follet-cible-suivante_2026-09-20.md`.
+98 fichiers de test, 97 verts — le seul rouge est `D-52`, antérieur à ce ticket. Ménage fait en entrant : le journal de
+`D-37` est archivé (`docs/archives/JOURNAL_2026-09-20_follet-engagement-relache.md`, ligne d'INDEX ajoutée), la fiche du
+ticket rangée dans `docs/archives/`.
 
-**Ce qui restait de `D-37`, et c'est maintenant clos.** `D-51` avait traité la moitié « l'aura n'a aucun effet ». Restait la règle d'engagement : le follet partait sur un monstre à 48 px **du héros** — ni l'orbite (24), ni l'aura (30), ni leur union. Le cercle pointillé mentait donc sur la portée, et il mentait dans les deux sens.
+**Le verbe.** `target_next` est le 8ᵉ de `VERBES_BOUTON` : **RB** (bouton 5) à la manette, **Tab** au clavier, les deux
+étaient libres. `touch.js` n'a pas été touché — le geste tactile est `Q-40`, et un verbe qu'une source ignore vaut
+simplement `false` pour elle, la fusion n'a aucun cas particulier à écrire. Front montant, gameplay seulement : il se lit
+sur `etatGameplay`, déjà neutralisé sous UI par LE point de décision unique, donc il n'y a **rien** à écrire pour « ne
+rien faire quand un menu est ouvert ».
 
-**La règle livrée, telle que Xav l'a dite.** Engager : le monstre est **dans l'orbite** (distance héros → monstre ≤ 24) **ou dans l'aura** (distance follet → monstre ≤ 30). Relâcher : distance héros → monstre **> orbite + aura + 12** = 66 aujourd'hui ; à 66 il tient, à 67 il revient. Il n'existe plus de constante de portée propre au follet : `DISTANCE_ENGAGEMENT_PX` est **retirée**, et c'est le point du ticket — le jour où un talisman doublera l'aura (`Q-29`), la portée d'engagement suivra sans qu'on touche à rien. Tout passe par les deux fonctions de résolution (`resoudreOrbiteRayonPx`, `resoudreRayonAuraPx`), jamais par les constantes.
+**Les candidats, et pourquoi pas les engageables.** `companion.js#cibleSuivante` (pure) retient les monstres **vivants en
+deçà de la distance de relâche** — pas seulement ceux que `monstreEngageable` prendrait. C'est le point de la
+fonctionnalité : ordonner une cible sert justement à envoyer le follet sur un monstre que l'orbite et l'aura n'ont pas
+attrapé. Et c'est sans danger, parce que la règle de relâche, elle, est la même pour tout le monde : une cible ordonnée
+hors de portée serait lâchée à la frame suivante, donc elle n'est pas candidate.
 
-**Les 12 px sont fixes, et c'est une nature différente.** Ce n'est pas une portée, c'est l'épaisseur du bord : une hystérésis. L'ancien code engageait et relâchait au **même** seuil — un monstre immobile pile dessus faisait clignoter l'état. Orbite et aura grandiront ; cette marge, non.
+**Le tri se fait sur la distance PUIS sur l'id.** Deux monstres à égalité parfaite donneraient sinon un ordre qui dépend
+de leur position dans le tableau — position qui change quand l'un d'eux meurt. Le cycle sauterait sans raison visible.
 
-**Un garde-fou que Xav n'a pas demandé, et pourquoi il fallait le poser.** Un monstre n'est engageable que s'il est **aussi** en deçà de la distance de relâche. Sans lui : un follet qui rentre, son aura effleurant un monstre à 70 px, l'engagerait (l'aura le touche) puis le relâcherait aussitôt (la relâche, elle, se mesure du héros) — à chaque frame, indéfiniment. Marqué en commentaire à l'endroit exact de la ligne.
+**La cible choisie tient, sans qu'on ait rien ajouté.** `mettreAJourEtat` ne choisit « le plus proche » qu'en état
+`suivre` : une cible engagée, quelle que soit sa provenance, y reste jusqu'à sa mort ou sa relâche. Le test le vérifie sur
+la vraie fonction (120 frames avec un intrus plus proche), pas sur une lecture du code.
 
-**L'approche ne saute plus.** `avancerPosition` copiait la position du monstre d'un coup (`x: cible.x`) : jusqu'à ~66 px en une frame, un flash. Aller et retour suivent désormais la **même** loi amortie (2,25 px/frame au plus sur le cas mesuré, puis collé). Conséquence voulue et cohérente avec `D-51` : l'aura arrive **avec** le follet, l'effet commence quand le cercle touche le monstre, pas à l'instant de la décision.
+**L'ordre des trois appels de la frame porte deux décisions.** Règle automatique → cible ordonnée → vol. Après, parce que
+l'inverse laisserait la règle automatique reprendre la cible dans la même frame ; avant le déplacement, pour que le vol de
+cette frame-ci parte déjà vers le nouveau monstre. Un contrôle de source l'épingle : c'est la seule chose de ce ticket
+qui ne se voit pas dans une fonction pure.
 
-**Une seule source, y compris hors du module.** L'indice de commande ATTACK (`specs/04_indices-commandes.md` §3) lisait la constante ; il appelle maintenant `monstreEngageable` lui-même. L'indice apparaît donc exactement quand le follet partirait, par construction — un test de source le verrouille (`main.js` ne connaît plus le nom de l'ancienne constante).
+**`Tab`, et le seul vrai point d'architecture.** Sans `preventDefault`, le navigateur déplace le focus hors du canvas et
+le jeu ne reçoit plus rien. Mais un `keydown` arrive **hors frame** : la couche clavier ne peut pas lire `uiOuverte`, qui
+n'existe qu'au milieu de `maj()`. Plutôt que de laisser le clavier recalculer « le jeu a-t-il la main » (une deuxième
+vérité, qui divergerait), l'orchestrateur **annonce** la sienne à chaque frame (`onEtatUi`, no-op par défaut comme
+`onPremierGeste`), et `demarrerJeu` en fait le prédicat `interceptionActive` du clavier. Un seul écrivain, un seul
+lecteur. Le retard d'une frame est sans conséquence : entre l'ouverture d'un menu et l'appui suivant, il s'en écoule
+toujours plusieurs. La liste des touches interceptées (`Tab` seule aujourd'hui) ne se dérive **pas** du mapping : la
+raison d'être d'une entrée n'est pas « c'est un verbe », c'est « le navigateur en fait autre chose ».
 
-**Tests** (`tests/test_d37_engagement_relache_2026-09-20.js`, sur le **catalogue réel**) : la constante a disparu et la relâche vaut bien 24 + 30 + 12 · engagement par l'orbite seule (follet à 500 px, hors de cause) · par l'aura seule (monstre hors orbite, follet de son côté — et le même monstre non engagé quand l'aura ne le touche pas) · le garde-fou (aura collée à un monstre au-delà de la relâche → rien) · 66 tient / 67 revient · **600 frames sur un monstre pile à la frontière, un seul état vu** · plusieurs candidats → le plus proche du héros, sans dépendre de l'ordre du tableau · aucun saut de position, mais convergence · réengagement d'un second monstre pendant le retour · contrôle de source pour l'indice ATTACK. `test_phase1_companion` est migré : son point 6 épinglait « collé au monstre dès la 1ʳᵉ frame », c'est-à-dire exactement le flash que ce ticket supprime — il vérifie maintenant que le follet avance sans se téléporter **et** qu'il finit collé.
+**Trente fichiers de test mis à jour, et pourquoi ce n'est pas du bruit.** Les faux états d'input écrits à la main
+n'avaient aucun `target_next` ; le gameplay lit ses verbes en direct (`etatGameplay.attack.pressed`), sans repli. Deux
+issues : rendre les fausses données fidèles, ou faire lire le vrai code avec un défaut — c'est-à-dire accepter en
+silence un état d'input incomplet. C'est le premier verbe ajouté depuis la Phase 0 ; la leçon est que ces faux états
+ont un coût d'entretien, pas que le code doive se protéger d'eux. **`Q-42`** est ouverte pour proposer un constructeur
+d'état partagé aux tests, qui rendrait le prochain verbe gratuit.
 
-**Hors périmètre, signalé sans rien toucher.**
-- **`D-53`** (neuve) : `ORBITE_LERP = 0,15` est appliqué **par frame**, pas par seconde. Le follet est donc plus mou à 37 fps qu'à 60, et l'approche livrée ici hérite du défaut puisqu'elle reprend volontairement la même loi. Remède connu, local, une ligne (`1 - (1 - k) ** (deltaS * 60)`) — mais c'est un changement de *feel*, donc à l'œil de Xav.
-- **`D-52`** reste ouverte et rouge : `test_d34_follet_echelle_jeu` épingle `echelle_jeu === 0,75` quand le catalogue dit 0,66 depuis les réglages à la main de Xav. Antérieure à ce ticket, non touchée.
-- **`V-33`** (aura réelle) et **`V-34`** (cette règle) se regardent ensemble : même cercle, même réglage. Rappel du point de réglage signalé avec `D-51` — l'aura (30) dépasse l'orbite (24), donc elle passe **sur** le héros.
+**Choix par défaut marqué `[OUVERT]` — `Q-41`.** Le ticket dit « zéro ou un candidat : sans effet ». Retenu ici : zéro
+candidat, ou un seul **déjà ciblé**, ne font rien ; mais un appui alors que le follet n'a **aucune** cible prend le plus
+proche, plutôt que de ne pas répondre au moment où le joueur attend quelque chose. Si Xav veut la lecture stricte, c'est
+une ligne.
 
-**Ce que ce ticket n'a pas touché, et c'est voulu** : `status.js`, `vol_follet.js` (le décalage visuel du corps), les données, le rendu au-delà d'un commentaire devenu faux dans `render.js`.
+**Hors périmètre, signalé sans rien toucher.** `hints.js` : l'indice de commande du nouveau verbe est **proposé, pas
+livré** — il exige un glyphe pour les **trois** périphériques, et le tactile n'a pas de geste à montrer tant que `Q-40`
+est ouverte. `D-53` (l'amortissement par frame) et `D-52` (le test rouge) restent ouvertes, non touchées.
+
+**Ce que ce ticket n'a pas touché, et c'est voulu** : `touch.js`, `status.js`, `vol_follet.js`, les données, le rendu.

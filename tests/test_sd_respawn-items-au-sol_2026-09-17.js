@@ -183,7 +183,7 @@ const RACINE = path.join(__dirname, '..');
     const hero = orch.obtenirHero();
 
     function etat({ interact = false } = {}) {
-      return { move: { x: 0, y: 0 }, attack: { pressed: false, held: false }, skill_1: { pressed: false, held: false }, skill_2: { pressed: false, held: false }, skill_3: { pressed: false, held: false }, consume: { pressed: false, held: false }, interact: { pressed: interact, held: interact }, menu: { pressed: false, held: false } };
+      return { move: { x: 0, y: 0 }, attack: { pressed: false, held: false }, skill_1: { pressed: false, held: false }, skill_2: { pressed: false, held: false }, skill_3: { pressed: false, held: false }, consume: { pressed: false, held: false }, interact: { pressed: interact, held: interact }, menu: { pressed: false, held: false }, target_next: { pressed: false, held: false } };
     }
     function tick(ms = 16) { frames.push(etat()); orch.maj(ms); }
     function avancer(ms) { let t = 0; while (t < ms) { tick(16); t += 16; } }

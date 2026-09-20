@@ -115,7 +115,13 @@ const TYPES_LUMIERE = ['halo', 'faisceau'];
 // Verbes de gameplay (§2.4 socle technique) : liste de référence partagée par
 // hints.json/glyphes.json — jamais une 2ᵉ énumération qui pourrait diverger
 // de src/input/input.js#VERBES_BOUTON (+ 'move', qui n'est pas un bouton).
-const VERBES_GAMEPLAY = ['move', 'attack', 'skill_1', 'skill_2', 'skill_3', 'consume', 'interact', 'menu'];
+const VERBES_GAMEPLAY = [
+  'move', 'attack', 'skill_1', 'skill_2', 'skill_3', 'consume', 'interact', 'menu',
+  // `D-54` : listé ici pour que les deux énumérations restent identiques,
+  // pas parce qu'un indice ou un glyphe existe — aucun n'est livré (le
+  // glyphe tactile n'a pas de geste à montrer tant que `Q-40` est ouverte).
+  'target_next',
+];
 
 // specs/04_indices-commandes.md : un indice n'a de sens que si son verbe a un
 // glyphe déclaré pour les 3 périphériques (clavier/manette/tactile) — sinon

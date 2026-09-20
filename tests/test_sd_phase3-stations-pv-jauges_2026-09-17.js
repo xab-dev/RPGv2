@@ -132,7 +132,7 @@ const registre = construireRegistre(donnees);
   const input = { maj: () => ({
     move: { x: 0, y: 0 }, attack: { pressed: false, held: false },
     skill_1: { pressed: false, held: false }, skill_2: { pressed: false, held: false }, skill_3: { pressed: false, held: false },
-    consume: { pressed: false, held: false }, interact: { pressed: false, held: false }, menu: { pressed: false, held: false },
+    consume: { pressed: false, held: false }, interact: { pressed: false, held: false }, menu: { pressed: false, held: false }, target_next: { pressed: false, held: false },
   }) };
   const orch = creerOrchestrateurGrotte({ registre, i18n, save, store, dialogue, menu: menuFactice, input, ctxLogique: null, ctxVisible: null, canvasLogique: null });
   const scene = orch.obtenirScene();

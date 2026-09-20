@@ -12,7 +12,7 @@ import { SCHEMAS, CATEGORIES_ITEM } from './schemas.js';
 import { validerCatalogues, construireRegistre } from './registry.js';
 import { chargerCataloguesDepuisReseau, chargerLocalesDepuisReseau } from './io_navigateur.js';
 import { creerI18n, verifierJeuxDeCles } from './i18n.js';
-import { creerSourceClavier } from './input/keyboard.js';
+import { creerSourceClavier, MAPPING_CLAVIER_PROVISOIRE } from './input/keyboard.js';
 import { creerSourceManette } from './input/gamepad.js';
 import { creerSourceTactile } from './input/touch.js';
 import { creerPleinEcranTactile } from './plein_ecran.js';
@@ -47,6 +47,7 @@ import {
 } from './combat.js';
 import {
   creerFollet, mettreAJourEtat as mettreAJourFollet, avancerPosition as avancerFollet, monstreEngageable,
+  cibleSuivante as cibleSuivanteFollet,
   resoudreEchelleJeu as resoudreEchelleJeuFollet, echelleFolletEnTransition, resoudreRayonAuraPx,
 } from './companion.js';
 import { creerGenerateur, resoudreLoot } from './loot.js';
@@ -235,6 +236,13 @@ export function creerOrchestrateurGrotte({
   // celles d'ici pour les conditions en données. Vide par défaut : les tests
   // headless n'ont rien à fournir.
   valeursExternes = () => ({}),
+  // `D-54` : l'orchestrateur annonce à chaque frame si une UI capte les
+  // verbes. UN seul émetteur, LE point de décision unique existant
+  // (`uiOuverte`, plus bas) : personne d'autre n'a le droit de recalculer
+  // « le jeu a-t-il la main ». Sert au `preventDefault` de `Tab`, qui arrive
+  // hors frame (un `keydown` n'attend pas la boucle de jeu). No-op par
+  // défaut, même patron qu'onPremierGeste.
+  onEtatUi = () => {},
 }) {
   let etatModifie = false;
 
@@ -1376,6 +1384,14 @@ export function creerOrchestrateurGrotte({
     const companionDuFollet = follet ? registre.obtenir('companions', follet.companionId) : null;
     if (follet) {
       follet = mettreAJourFollet(follet, hero, monstres, companionDuFollet);
+      // `D-54` : la cible ordonnée par le joueur passe APRÈS la règle
+      // automatique (sinon celle-ci la reprendrait dans la même frame) et
+      // AVANT le déplacement, pour que le vol amorti de cette frame-ci parte
+      // déjà vers le nouveau monstre. `etatGameplay` est déjà neutralisé sous
+      // UI : rien à tester de plus ici.
+      if (etatGameplay.target_next.pressed) {
+        follet = cibleSuivanteFollet(follet, hero, monstres, companionDuFollet);
+      }
       follet = avancerFollet(follet, hero, monstres, deltaS);
     }
 
@@ -1628,6 +1644,9 @@ export function creerOrchestrateurGrotte({
       menu.estOuvert() || dialogueOuvertMaintenant || choixFolletActif() || introEtaitActive || departEtaitActif ||
       constructionActif() || menuFermeParVerbe
     );
+    // `D-54` : LE point de décision unique annonce son verdict au dehors
+    // (aujourd'hui : le `preventDefault` de `Tab`, qui arrive hors frame).
+    onEtatUi(uiOuverte);
     if (menu.estOuvert()) menu.traiterInput(etatBrut);
     else if (dialogueOuvertMaintenant) dialogue.traiterInput(dialogueVientDeSOuvrir ? etatNeutre(etatBrut) : etatBrut);
     else if (choixFolletActif()) traiterChoixFollet(etatBrut);
@@ -2455,8 +2474,16 @@ export async function demarrerJeu() {
       return versCoordonneesLogiques(clientX, clientY, rect);
     },
   });
+  // `D-54` : « le jeu a-t-il la main ? », écrit par l'orchestrateur à chaque
+  // frame (`onEtatUi`), lu par le clavier au moment du `keydown` pour décider
+  // s'il intercepte `Tab`. Un seul écrivain, une seule vérité — et le retard
+  // d'une frame est sans conséquence : entre l'ouverture d'un menu et l'appui
+  // suivant, il s'écoule toujours plusieurs frames.
+  let uiCapteLesVerbes = false;
   const input = creerCoucheInput({
-    sourceClavier: creerSourceClavier(window),
+    sourceClavier: creerSourceClavier(window, MAPPING_CLAVIER_PROVISOIRE, {
+      interceptionActive: () => !uiCapteLesVerbes,
+    }),
     sourceManette: creerSourceManette(navigator),
     sourceTactile,
   });
@@ -2608,6 +2635,8 @@ export async function demarrerJeu() {
     // La PRÉSENCE de la carte « Plein écran » est une condition de
     // `menus.json` : sans l'API, la carte tombe et sa case reste vide.
     valeursExternes: () => ({ plein_ecran_disponible: pleinEcran.disponible() ? 1 : 0 }),
+    // `D-54` : le seul écrivain du drapeau lu par le clavier (cf. plus haut).
+    onEtatUi: (ouverte) => { uiCapteLesVerbes = ouverte; },
   });
   // Dépendance circulaire résolue par un point de couture explicite (§B du
   // diagnostic) : le menu (construit avant l'orchestrateur, qui en a besoin

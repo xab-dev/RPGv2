@@ -46,7 +46,7 @@ function monter({ poche }) {
   orch.obtenirHero().x = empreinte.x - 20;
   orch.obtenirHero().y = empreinte.y + empreinte.h / 2;
   const b = (v) => ({ pressed: v, held: v });
-  frames.push({ move: { x: 0, y: 0 }, attack: b(false), skill_1: b(false), skill_2: b(false), skill_3: b(false), consume: b(false), interact: b(true), menu: b(false) });
+  frames.push({ move: { x: 0, y: 0 }, attack: b(false), skill_1: b(false), skill_2: b(false), skill_3: b(false), consume: b(false), interact: b(true), menu: b(false), target_next: b(false) });
   orch.maj(16);
   assert.ok(ouvert.obtenirEntrees, 'INTERACT à côté de l’atelier ouvre l’écran Craft');
   return { save, ouvert, entrees: () => ouvert.obtenirEntrees() };

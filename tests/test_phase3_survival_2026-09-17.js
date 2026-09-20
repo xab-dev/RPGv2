@@ -138,7 +138,7 @@ const registreDeTest = construireRegistre({
     skill_3: { pressed: false, held: false },
     consume: { pressed: false, held: false },
     interact: { pressed: false, held: false },
-    menu: { pressed: false, held: false },
+    menu: { pressed: false, held: false }, target_next: { pressed: false, held: false },
   });
   const input = { maj: () => etatNeutreInput() };
   const orch = creerOrchestrateurGrotte({ registre, i18n, save, store, dialogue, menu: menuFactice, input, ctxLogique: null, ctxVisible: null, canvasLogique: null });

@@ -43,7 +43,7 @@ function etat({ moveX = 0, moveY = 0, attack = false, skill3 = false, menu = fal
   const b = (v) => ({ pressed: v, held: v });
   return {
     move: { x: moveX, y: moveY }, attack: b(attack), skill_1: b(false), skill_2: b(false), skill_3: b(skill3),
-    consume: b(false), interact: b(false), menu: b(menu),
+    consume: b(false), interact: b(false), menu: b(menu), target_next: b(false),
   };
 }
 function creerInputScripte(frames) {

@@ -92,3 +92,59 @@ silence · le schéma exige le champ. **84 fichiers de test verts.**
 
 **Vérifié dans Chrome** (pas de capture : rien ne change à l'écran à ce commit) : le jeu démarre, aucun écran
 d'erreur, aucune erreur console ; `getComputedStyle` rend bien `#161b24` / `#f2e9d8` / `#d6409f`.
+
+---
+
+## Commit A2 — `menus.json`, son schéma, les contrôles au démarrage
+
+**Livré.**
+
+- **`data/menus.json`** : quatre écrans — `menu_racine` (Héros · Paramètres · *case 2 libre, rien n'y est déclaré* ·
+  Construction en case contextuelle), `menu_heros` (Poche · Stats — **pas de carte « Feu follet »** tant que sa
+  page n'existe pas), `menu_parametres` (Langue · Musique · Plein écran · Sauvegarde), `menu_sauvegarde`
+  (Exporter · Importer · Réinitialiser, `danger`).
+- **`src/menu_cartes.js`** (pur) : `choisirGrille`, `nombreCases`, `erreursTextesMenus`, `erreursCablageMenus`.
+- **`schemas.js`** : schéma `menus` + `validerMenu`. Et le validateur de conditions **partagé** apprend enfin
+  `{ valeur, min, max }` — `spawns.json` s'en servait depuis le palier 07-A sans jamais passer par lui.
+- **`data/visuels.json`** : 14 icônes **en primitives** (`visuel_icone_menu_*`), toutes teintables — aucun emoji.
+- **`locales/`** : 26 clés, FR et EN.
+- **`main.js#demarrerJeu`** : le contrôle des textes rejoint le chemin d'erreur de démarrage existant.
+
+**Ce que le démarrage refuse désormais**, chaque fois avec le chemin : plus de six cartes (« on crée un dossier ») ·
+une `cible` du catalogue qui n'existe pas · un écran **inatteignable** depuis la racine · zéro ou deux racines · deux
+cartes du même id · une icône inconnue · un champ qui n'a pas de sens pour le type · un `danger` sans ses deux textes
+de confirmation · une condition mal formée · une **candidate morte** (placée derrière une carte sans condition sur
+la même case) · une clé de texte absente d'une des deux langues.
+
+**Le câblage est écrit et testé ici, mais il ne sera *appelé* qu'en A4** — c'est A4 qui enregistre les fonctions.
+`erreursCablageMenus` contrôle **les deux sens** (« et inversement ») : une action enregistrée qu'aucune carte ne
+cite est une fonction que le joueur ne peut plus atteindre.
+
+### Quatre choix pris dans le périmètre, à confirmer ou réviser
+
+1. **`[OUVERT]` — « lieu » et « API présente » passent par des *valeurs nommées*.** La spec dit « le format générique
+   de `flags.js` (niveau, drapeau, lieu). Aucun nouveau format » — mais `flags.js` ne connaît **pas** de condition de
+   lieu : il connaît des drapeaux et des valeurs numériques nommées. Retenu, sans toucher à `flags.js` :
+   `{ "valeur": "stations_placables", "min": 1 }` pour la case contextuelle (un **vrai nombre** : combien de stations
+   déplaçables là où se tient le héros) et `{ "valeur": "plein_ecran_disponible", "min": 1 }` (0 ou 1 — un booléen
+   déguisé, je le dis). Si Xav préfère une forme booléenne nommée, c'est **un format de plus dans `flags.js`**, donc
+   sa décision, pas la mienne.
+2. **La confirmation d'un `danger` est construite par le composant, pas décrite écran par écran.** La carte
+   n'apporte que deux textes (`cle_confirmation`, `cle_confirmer`). Motif : « Non d'abord, focus par défaut » est une
+   règle de **sécurité** — elle ne doit pas pouvoir être oubliée par la prochaine action destructive du catalogue.
+3. **Une bascule porte un `etat`** (le nom d'un lecteur d'état injecté) **à la place de `cle_phrase`** : la spec
+   liste `cle_phrase` pour toutes les cartes, mais dit aussi qu'une bascule affiche « l'état réel ». Deux lignes sous
+   le titre ne tiennent pas à 280 px : le schéma **interdit** la phrase sur une bascule.
+4. **Les icônes `[X]` et `[←]` sont déclarées par l'écran racine** (`icone_fermer`, `icone_retour`) : aucun id de
+   catalogue n'entre dans le composant.
+
+**« Poche », pas « Poches ».** La spec écrit « Poches » ; le jeu dit « Poche » partout, y compris au titre de l'écran
+que la carte ouvre. La carte **réutilise `menu.poche`** pour ne pas annoncer un nom et en afficher un autre. Décision
+3 de Xav : renommer = une ligne par langue, et les deux changeront ensemble.
+
+**Tests** : `tests/test_d43_a2_catalogue_menus_2026-09-20.js`, neuf blocs, tous bâtis sur une **copie abîmée du
+catalogue réel** (un catalogue inventé pourrait rester vert pendant que le vrai change de forme). Le bloc 9 est le
+**test du catalogue** : « la page du follet » ajoutée en JSON seul reste valide. **85 fichiers de test verts.**
+
+**Vérifié dans Chrome** (pas de capture : rien ne change à l'écran) : le jeu démarre avec `menus.json` chargé et
+validé, aucun écran d'erreur, aucune erreur console.

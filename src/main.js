@@ -77,6 +77,7 @@ import {
 import { crediter as crediterXp } from './xp.js';
 import { initialiserMenu } from './ui/menu.js';
 import { erreursCouleursUi } from './ui/couleurs_ui.js';
+import { erreursTextesMenus } from './menu_cartes.js';
 import { dessinerHud } from './ui/hud.js';
 import { dessinerHudHints } from './ui/hud_hints.js';
 import { dessinerDialogue } from './ui/dialogue_box.js';
@@ -2165,7 +2166,11 @@ export async function demarrerJeu() {
     danger: styleRacine.getPropertyValue('--menu-danger'),
     accentNeutre: styleRacine.getPropertyValue('--menu-accent'),
   });
-  const toutesErreurs = [...erreursChargement, ...erreursValidation, ...erreursCles, ...erreursCouleurs];
+  // specs/08_menus-cartes.md §5 : toute clé de texte citée par `menus.json`
+  // existe dans les deux langues. `validerCatalogues` ne peut pas le dire —
+  // le registre ne reçoit jamais les dictionnaires.
+  const erreursTextes = erreursChargement.length ? [] : erreursTextesMenus(donnees.menus, dictionnaires);
+  const toutesErreurs = [...erreursChargement, ...erreursValidation, ...erreursCles, ...erreursCouleurs, ...erreursTextes];
 
   if (toutesErreurs.length > 0) {
     afficherErreurBoot(toutesErreurs);

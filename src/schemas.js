@@ -2,6 +2,7 @@ import { PHASES_CYCLE } from './daynight.js';
 import { empreinteParDefaut } from './structures.js';
 import { echelleVisuel } from './visuels.js';
 import { resoudreEchelleJeu } from './companion.js';
+import { TYPES_CARTE, CASES_MAX } from './menu_cartes.js';
 
 // `D-39` — « le corps ne sort jamais de son aura », vérifié AU CHARGEMENT.
 //
@@ -86,6 +87,25 @@ function erreursCondition(condition, chemin, declares) {
     if (condition.not !== undefined) return erreursCondition(condition.not, chemin, declares);
     if (Array.isArray(condition.all)) return condition.all.flatMap((c) => erreursCondition(c, chemin, declares));
     if (Array.isArray(condition.any)) return condition.any.flatMap((c) => erreursCondition(c, chemin, declares));
+    // `{ valeur, min, max }` (flags.js#comparerValeur, né du palier 07-A) :
+    // ce validateur l'ignorait — `spawns.json` s'en sert sans jamais passer
+    // par ici. `menus.json` est le premier catalogue à faire valider une
+    // telle condition ; la forme s'apprend donc ICI, une fois, plutôt que
+    // dans un second validateur qui divergerait. Seule la FORME est jugée :
+    // le NOM de la valeur est fourni à l'exécution, et c'est
+    // `menu_cartes.js#erreursCablageMenus` qui vérifie que quelqu'un la fournit.
+    if (condition.valeur !== undefined) {
+      const erreurs = [];
+      if (typeof condition.valeur !== 'string' || condition.valeur.length === 0) {
+        erreurs.push(`${chemin} > condition.valeur doit être un nom non vide`);
+      }
+      const bornes = ['min', 'max'].filter((b) => condition[b] !== undefined);
+      if (bornes.length === 0) erreurs.push(`${chemin} > condition sur valeur sans min ni max`);
+      for (const b of bornes) {
+        if (typeof condition[b] !== 'number') erreurs.push(`${chemin} > condition.${b} doit être numérique`);
+      }
+      return erreurs;
+    }
   }
   return [`${chemin} > condition mal formée : ${JSON.stringify(condition)}`];
 }
@@ -909,6 +929,140 @@ function validerVisuel(entry, catalogs, path) {
   return erreurs;
 }
 
+// specs/08_menus-cartes.md §5 : un écran de cartes. Tout ce qui se juge sur
+// le catalogue SEUL est refusé ici, au démarrage, avec son chemin — parce
+// qu'un sous-écran mal déclaré ne se verrait sinon que le jour où quelqu'un
+// l'ouvre. Ce qui demande autre chose que le catalogue (les textes des deux
+// langues, les fonctions réellement branchées) vit dans `menu_cartes.js`.
+const CHAMPS_INTERDITS_PAR_TYPE = {
+  dossier: ['action', 'etat', 'danger'],
+  bascule: ['cible', 'danger'],
+  action: ['cible', 'etat'],
+};
+
+function validerCarteMenu(carte, catalogs, chemin, flagsDeclares) {
+  const erreurs = [];
+  if (carte === null || typeof carte !== 'object') return [`${chemin} > doit être un objet`];
+  for (const champ of ['id', 'type', 'case', 'cle_titre', 'icone']) {
+    if (carte[champ] === undefined) erreurs.push(`${chemin} > champ "${champ}" manquant`);
+  }
+  if (carte.type !== undefined && !TYPES_CARTE.includes(carte.type)) {
+    erreurs.push(`${chemin} > type doit être l'un de ${TYPES_CARTE.join('/')}`);
+    return erreurs;
+  }
+  // §4.2 : plus de six cartes → « le jeu refuse de démarrer : on crée un
+  // dossier ». C'est la CASE qui porte la limite, pas le nombre d'entrées :
+  // deux candidates d'une même case contextuelle n'occupent qu'une place.
+  if (carte.case !== undefined && (!Number.isInteger(carte.case) || carte.case < 0 || carte.case >= CASES_MAX)) {
+    erreurs.push(`${chemin} > case doit être un entier de 0 à ${CASES_MAX - 1} (jamais plus de ${CASES_MAX} cartes par écran : au-delà, on crée un dossier)`);
+  }
+  if (carte.icone !== undefined && !(catalogs.visuels || []).some((v) => v.id === carte.icone)) {
+    erreurs.push(`${chemin} > icone > "${carte.icone}" introuvable dans visuels.json`);
+  }
+  for (const champ of CHAMPS_INTERDITS_PAR_TYPE[carte.type] || []) {
+    if (carte[champ] !== undefined) erreurs.push(`${chemin} > "${champ}" n'a pas de sens sur une carte de type "${carte.type}"`);
+  }
+  if (carte.type === 'dossier' && typeof carte.cible !== 'string') erreurs.push(`${chemin} > une carte dossier exige une cible`);
+  if ((carte.type === 'bascule' || carte.type === 'action') && typeof carte.action !== 'string') {
+    erreurs.push(`${chemin} > une carte ${carte.type} exige une action`);
+  }
+  // Une bascule affiche « l'état réel, relu à la source » À LA PLACE de la
+  // phrase : son lecteur d'état est donc obligatoire, et sa phrase interdite
+  // (deux lignes sous le titre ne tiennent pas dans une carte à 280 px).
+  if (carte.type === 'bascule') {
+    if (typeof carte.etat !== 'string') erreurs.push(`${chemin} > une carte bascule exige un etat (lecteur de l'état réel)`);
+    if (carte.cle_phrase !== undefined) erreurs.push(`${chemin} > une carte bascule affiche son état, pas une cle_phrase`);
+  } else if (carte.type !== undefined && typeof carte.cle_phrase !== 'string') {
+    erreurs.push(`${chemin} > champ "cle_phrase" manquant`);
+  }
+  if (carte.danger !== undefined && typeof carte.danger !== 'boolean') erreurs.push(`${chemin} > danger doit être un booléen`);
+  // `danger: true` → magenta ET écran de confirmation (§4.1). La confirmation
+  // est construite par le composant, toujours la même (« Non » d'abord, focus
+  // par défaut) ; la carte n'apporte que ses deux textes. Exigés ici : une
+  // action destructive sans question lisible est refusée au démarrage.
+  for (const champ of ['cle_confirmation', 'cle_confirmer']) {
+    if (carte.danger === true && typeof carte[champ] !== 'string') erreurs.push(`${chemin} > danger: true exige "${champ}"`);
+    if (carte.danger !== true && carte[champ] !== undefined) erreurs.push(`${chemin} > "${champ}" n'a de sens qu'avec danger: true`);
+  }
+  erreurs.push(...erreursCondition(carte.condition, chemin, flagsDeclares));
+  return erreurs;
+}
+
+function validerMenu(entry, catalogs, path) {
+  const erreurs = [];
+  const flagsDeclares = new Set((catalogs.flags || []).map((f) => f.id));
+  if (!Array.isArray(entry.cartes) || entry.cartes.length === 0) {
+    erreurs.push(`${path} > cartes doit être un tableau non vide`);
+    return erreurs;
+  }
+  entry.cartes.forEach((carte, i) => {
+    erreurs.push(...validerCarteMenu(carte, catalogs, `${path} > ${(carte && carte.id) || `cartes[${i}]`}`, flagsDeclares));
+  });
+
+  // Case contextuelle (§4.2) : plusieurs cartes peuvent viser la MÊME case —
+  // ce sont des candidates, dans l'ordre du fichier, et la première dont la
+  // condition est vraie s'affiche. Une candidate placée après une carte sans
+  // condition ne s'afficherait donc jamais : donnée morte, refusée.
+  const parCase = new Map();
+  for (const carte of entry.cartes) {
+    if (!carte || !Number.isInteger(carte.case)) continue;
+    const precedentes = parCase.get(carte.case) || [];
+    const bouchon = precedentes.find((c) => c.condition === undefined || c.condition === null);
+    if (bouchon) {
+      erreurs.push(`${path} > ${carte.id} > case ${carte.case} déjà tenue par "${bouchon.id}", qui n'a pas de condition : cette carte ne s'afficherait jamais`);
+    }
+    parCase.set(carte.case, [...precedentes, carte]);
+  }
+
+  // Les deux icônes de l'en-tête ([X] et [←], §2 décision 1) sont des
+  // références comme les autres : déclarées par l'écran racine, jamais un id
+  // de catalogue écrit dans le composant.
+  if (entry.racine !== undefined && typeof entry.racine !== 'boolean') erreurs.push(`${path} > racine doit être un booléen`);
+  for (const champ of ['icone_fermer', 'icone_retour']) {
+    if (entry.racine === true && typeof entry[champ] !== 'string') erreurs.push(`${path} > l'écran racine exige "${champ}"`);
+    if (entry[champ] !== undefined && !(catalogs.visuels || []).some((v) => v.id === entry[champ])) {
+      erreurs.push(`${path} > ${champ} > "${entry[champ]}" introuvable dans visuels.json`);
+    }
+  }
+
+  // Contrôles qui portent sur le catalogue ENTIER : faits une seule fois, en
+  // passant sur la première entrée (le registre appelle `custom` par entrée).
+  const tous = catalogs.menus || [];
+  if (tous[0] === entry) {
+    const racines = tous.filter((e) => e && e.racine === true);
+    if (racines.length !== 1) {
+      erreurs.push(`menus.json > exactement un écran doit porter racine: true (trouvé : ${racines.length})`);
+    }
+    const vus = new Map();
+    for (const ecran of tous) {
+      for (const carte of (ecran && ecran.cartes) || []) {
+        if (!carte || carte.id === undefined) continue;
+        if (vus.has(carte.id)) erreurs.push(`menus.json > ${ecran.id} > ${carte.id} > id de carte déjà utilisé dans "${vus.get(carte.id)}"`);
+        else vus.set(carte.id, ecran.id);
+      }
+    }
+    // « Tout écran est atteignable depuis la racine » : un écran orphelin est
+    // du contenu que le joueur ne verra jamais, et qu'on croira livré.
+    if (racines.length === 1) {
+      const parId = new Map(tous.map((e) => [e.id, e]));
+      const atteints = new Set([racines[0].id]);
+      const file = [racines[0]];
+      while (file.length > 0) {
+        for (const carte of file.shift().cartes || []) {
+          if (carte && parId.has(carte.cible) && !atteints.has(carte.cible)) {
+            atteints.add(carte.cible);
+            file.push(parId.get(carte.cible));
+          }
+        }
+      }
+      for (const ecran of tous) {
+        if (ecran && !atteints.has(ecran.id)) erreurs.push(`menus.json > ${ecran.id} > inatteignable depuis l'écran racine`);
+      }
+    }
+  }
+  return erreurs;
+}
+
 export const SCHEMAS = {
   elements: {
     requiredFields: ['id', 'label_key', 'icon', 'shape'],
@@ -1465,6 +1619,13 @@ export const SCHEMAS = {
   // Palier D §2.1 : table de niveaux, triée croissante par convention (non
   // imposée par le schéma, xp.js trie lui-même) — une entrée de plus
   // (niveau 11+) ne demande aucun code.
+  // specs/08_menus-cartes.md : les écrans de cartes du menu Pause.
+  menus: {
+    requiredFields: ['id', 'cle_titre', 'cartes'],
+    idField: 'id',
+    refs: [],
+    custom: validerMenu,
+  },
   levels: {
     requiredFields: ['id', 'niveau', 'xp_cumulee', 'points_stats'],
     idField: 'id',

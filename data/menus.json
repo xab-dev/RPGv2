@@ -1,0 +1,92 @@
+[
+  {
+    "id": "menu_racine",
+    "racine": true,
+    "cle_titre": "menu.titre",
+    "icone_fermer": "visuel_icone_menu_fermer",
+    "icone_retour": "visuel_icone_menu_retour",
+    "cartes": [
+      {
+        "id": "carte_heros", "case": 0, "type": "dossier",
+        "cle_titre": "menu.carte.heros", "cle_phrase": "menu.carte.heros_phrase",
+        "icone": "visuel_icone_menu_heros", "cible": "menu_heros"
+      },
+      {
+        "id": "carte_parametres", "case": 1, "type": "dossier",
+        "cle_titre": "menu.carte.parametres", "cle_phrase": "menu.carte.parametres_phrase",
+        "icone": "visuel_icone_menu_parametres", "cible": "menu_parametres"
+      },
+      {
+        "id": "carte_construction", "case": 3, "type": "dossier",
+        "cle_titre": "menu.construction", "cle_phrase": "menu.carte.construction_phrase",
+        "icone": "visuel_icone_menu_construction", "cible": "ecran_construction",
+        "condition": { "valeur": "stations_placables", "min": 1 }
+      }
+    ]
+  },
+  {
+    "id": "menu_heros",
+    "cle_titre": "menu.carte.heros",
+    "cartes": [
+      {
+        "id": "carte_poche", "case": 0, "type": "dossier",
+        "cle_titre": "menu.poche", "cle_phrase": "menu.carte.poche_phrase",
+        "icone": "visuel_icone_menu_poche", "cible": "ecran_poche"
+      },
+      {
+        "id": "carte_stats", "case": 1, "type": "dossier",
+        "cle_titre": "menu.stats", "cle_phrase": "menu.carte.stats_phrase",
+        "icone": "visuel_icone_menu_stats", "cible": "ecran_stats"
+      }
+    ]
+  },
+  {
+    "id": "menu_parametres",
+    "cle_titre": "menu.carte.parametres",
+    "cartes": [
+      {
+        "id": "carte_langue", "case": 0, "type": "bascule",
+        "cle_titre": "menu.langue", "icone": "visuel_icone_menu_langue",
+        "action": "action_basculer_langue", "etat": "etat_langue"
+      },
+      {
+        "id": "carte_musique", "case": 1, "type": "bascule",
+        "cle_titre": "menu.musique", "icone": "visuel_icone_menu_musique",
+        "action": "action_basculer_musique", "etat": "etat_musique"
+      },
+      {
+        "id": "carte_plein_ecran", "case": 2, "type": "bascule",
+        "cle_titre": "menu.plein_ecran", "icone": "visuel_icone_menu_plein_ecran",
+        "action": "action_basculer_plein_ecran", "etat": "etat_plein_ecran",
+        "condition": { "valeur": "plein_ecran_disponible", "min": 1 }
+      },
+      {
+        "id": "carte_sauvegarde", "case": 3, "type": "dossier",
+        "cle_titre": "menu.carte.sauvegarde", "cle_phrase": "menu.carte.sauvegarde_phrase",
+        "icone": "visuel_icone_menu_sauvegarde", "cible": "menu_sauvegarde"
+      }
+    ]
+  },
+  {
+    "id": "menu_sauvegarde",
+    "cle_titre": "menu.carte.sauvegarde",
+    "cartes": [
+      {
+        "id": "carte_exporter", "case": 0, "type": "action",
+        "cle_titre": "menu.carte.exporter", "cle_phrase": "menu.carte.exporter_phrase",
+        "icone": "visuel_icone_menu_exporter", "action": "action_exporter_sauvegarde"
+      },
+      {
+        "id": "carte_importer", "case": 1, "type": "action",
+        "cle_titre": "menu.carte.importer", "cle_phrase": "menu.carte.importer_phrase",
+        "icone": "visuel_icone_menu_importer", "action": "action_importer_sauvegarde"
+      },
+      {
+        "id": "carte_reinitialiser", "case": 2, "type": "action", "danger": true,
+        "cle_titre": "menu.carte.reinitialiser", "cle_phrase": "menu.carte.reinitialiser_phrase",
+        "cle_confirmation": "menu.reset_confirmation_titre", "cle_confirmer": "menu.carte.reinitialiser_oui",
+        "icone": "visuel_icone_menu_danger", "action": "action_reinitialiser_sauvegarde"
+      }
+    ]
+  }
+]

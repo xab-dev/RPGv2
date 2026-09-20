@@ -383,3 +383,12 @@ Suivi v1.19.0 : `D-43` dit le chantier livré en entier (il se clôt quand Xav a
 `CLAUDE.md` : état du dépôt, architecture (`ui/ecran_fiches.js`), une décision datée (le geste du maître-détail),
 l'ordre d'injection, le renvoi vers ce fichier. Le rapport est en tête de ce journal — y compris la correction sur
 « chacun retirable seul », vérifiée en worktree avant d'être écrite.
+
+## Fusion dans `main` — 21/09, à la demande de Xav
+
+Verbatim : « les premiers test clavier/manette sont validés. tu peux merge dans main et push pour que je puisse essayer
+sur téléphone. » **Fusion en avance rapide** (`main` n'avait pas bougé : aucun commit de fusion, l'historique commit par
+commit arrive tel quel sur `main`), suite de tests relancée sur `main` avant le `push`. **Un `push` sur `main` publie le
+jeu** : c'est fait sur instruction explicite, pour cette fois — la règle « les `push` restent à la main de Xav » n'est pas
+levée. `V-27`, `V-28`, `V-29` : annotées (« clavier et manette validés »), **laissées ouvertes** — le téléphone reste à
+faire, et c'est Xav qui les clôt.

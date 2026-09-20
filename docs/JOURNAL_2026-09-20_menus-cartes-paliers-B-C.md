@@ -106,3 +106,25 @@ l'ancien « MENU, menu ouvert = sans effet » : adapté, en le disant. **89 fich
 
 À noter pour Xav : au clavier, `MENU` est **Échap** — qui est aussi la touche par laquelle le navigateur **quitte le
 plein écran**. En plein écran, un Échap fait donc les deux. Rien à corriger ici (c'est le navigateur), mais ça se verra.
+
+## Commit OUTIL — Vérifier dans Chrome la nuit, écran verrouillé
+
+**§0 ter, cette nuit : Chrome est connecté, mais sa fenêtre n'est pas visible** (`document.visibilityState === 'hidden'` :
+écran verrouillé ou fenêtre recouverte). Conséquences mesurées : plus aucun `requestAnimationFrame` (la boucle de jeu
+est à l'arrêt, le jeu ne répond à aucune touche), et l'extension n'arrive plus à capturer l'onglet
+(`Page.captureScreenshot` expire à 30 s). Deux outils de dev, **jamais chargés par le jeu** :
+
+- **`tools/cadre_viewport.html?pas=oui`** — mode *pas à pas* : le cadre remplace le `requestAnimationFrame` du jeu par une
+  file vidée à la main (`pas.avancer(n)`, `pas.touche('Escape')`). Le jeu redevient pilotable dans un onglet masqué, dans
+  un viewport exact. Sert à **lire le DOM** après tel verbe ; ne dit rien du rythme.
+- **`tools/capture_chrome.mjs`** — lance un Chrome **sans fenêtre** (`--headless`), le pilote par son port de débogage
+  (CDP sur le WebSocket natif de Node : **zéro dépendance**), et rend de **vrais pixels** à 703 × 280 et à 1920 × 1080
+  **exactement** (plus besoin du cadre réduit du palier A, dont les captures ne prouvaient que la mise en page). Vraies
+  touches, vrais clics, `evaluer()` pour mesurer un débordement. **Profil neuf et jetable à chaque lancement : la
+  sauvegarde de Xav n'est ni lue ni touchée** ; `tools/scenarios/commun.mjs` y injecte une partie « dans la Maison ».
+
+Premier scénario, `tools/scenarios/menus_palier_b.mjs` → `docs/captures/menus-cartes-2026-09-20/palier-b/` (8 images).
+**Palier B vérifié en vrai navigateur, aux deux tailles** : le menu est identique aux captures du palier A ; Poche
+s'empile et B rend « Héros » ; depuis la confirmation du reset (profondeur 4) **Échap ferme tout**, un second Échap
+rouvre à la racine ; corps de la grille : 0 px de débordement ; **console sans erreur**. Ça dit « ça s'affiche ainsi sous
+Chrome », jamais « c'est validé » : ni manette ni doigt, et personne n'a *regardé* un écran allumé cette nuit.

@@ -18,6 +18,27 @@
   ici le dit dans son nom (`…_cadre.jpg`).
 
   http://localhost:8080/tools/cadre_viewport.html?l=1920&h=1080&src=/index.html
+
+  Mode PAS À PAS (`&pas=oui`) — pour vérifier le jeu quand la fenêtre n'est pas
+  visible (écran verrouillé, fenêtre réduite ou recouverte : une vérification de
+  nuit). Chrome ne sert alors plus aucun `requestAnimationFrame`, et bride les
+  minuteries à une par seconde, voire par minute : la boucle de jeu est à
+  l'arrêt, le jeu ne répond à rien. Dans ce mode, le cadre remplace le
+  `requestAnimationFrame` du jeu par une file que l'on vide À LA MAIN, depuis la
+  console : `pas.avancer(n)` joue n frames de 1/60 s, `pas.touche('Escape')`
+  appuie, joue deux frames, relâche, en rejoue deux. Le jeu y est écrit dans le
+  cadre (`document.write`) APRÈS la pose de la file — le charger par `src`
+  laisserait sa boucle démarrer avant, sur le vrai `requestAnimationFrame`, donc
+  jamais. Ce mode ne dit rien du rythme réel ni de la fluidité : il dit ce que
+  le jeu AFFICHE après tel verbe.
+
+  `&touches=` joue un scénario dès que la boucle du jeu existe, puis écrit
+  `pret` dans le titre : des codes de touches (`KeyboardEvent.code`) et des
+  `attendre:N` (N frames), séparés par des virgules. C'est ce qui permet une
+  CAPTURE SANS FENÊTRE, par Chrome en ligne de commande — donc sur un profil
+  neuf, partie neuve, d'où les `attendre` qui traversent l'intro :
+    chrome --headless=new --screenshot=menu.png --window-size=703,280
+           --virtual-time-budget=20000 "http://localhost:8080/tools/cadre_viewport.html?l=703&h=280&pas=oui&touches=attendre:600,Space,Escape"
 -->
 <html lang="fr">
 <head>
@@ -37,7 +58,54 @@
     const cadre = document.getElementById('cadre');
     cadre.width = largeur;
     cadre.height = hauteur;
-    cadre.src = params.get('src') || '/index.html';
+    const source = params.get('src') || '/index.html';
+    if (params.get('pas') === 'oui') demarrerPasAPas();
+    else cadre.src = source;
+
+    async function demarrerPasAPas() {
+      const html = await (await fetch(source, { cache: 'no-store' })).text();
+      const fenetre = cadre.contentWindow; // `about:blank`, même origine
+      let file = [];
+      let horloge = 0;
+      fenetre.requestAnimationFrame = (rappel) => { file.push(rappel); return file.length; };
+      // `document.open()` garde le même objet global : la file posée ci-dessus
+      // survit. L'URL du document devient celle de CE cadre, d'où le <base>.
+      const doc = cadre.contentDocument;
+      doc.open();
+      doc.write(html.replace('<head>', '<head><base href="/">'));
+      doc.close();
+      const avancer = (n = 1) => {
+        for (let i = 0; i < n; i++) {
+          const rappels = file;
+          file = [];
+          horloge += 1000 / 60;
+          for (const rappel of rappels) rappel(horloge);
+        }
+        return file.length; // 0 = la boucle ne s'est pas replanifiée (exception ?)
+      };
+      const evenement = (type, code) => fenetre.dispatchEvent(new fenetre.KeyboardEvent(type, { code, bubbles: true }));
+      window.pas = {
+        fenetre,
+        avancer,
+        touche(code, frames = 2) {
+          evenement('keydown', code);
+          avancer(frames);
+          evenement('keyup', code);
+          return avancer(frames);
+        },
+      };
+      const scenario = (params.get('touches') || '').split(',').filter(Boolean);
+      if (scenario.length === 0) return;
+      // Le démarrage du jeu est asynchrone (catalogues, sauvegarde) : on attend
+      // que sa boucle ait demandé sa première frame.
+      while (avancer(0) === 0) await new Promise((resoudre) => setTimeout(resoudre, 50));
+      for (const jeton of scenario) {
+        if (jeton.startsWith('attendre:')) avancer(Number(jeton.slice('attendre:'.length)));
+        else window.pas.touche(jeton);
+      }
+      document.title = 'pret';
+    }
+
     function ajuster() {
       // Jamais agrandi : à 703 × 280 dans une grande fenêtre, 1 px reste 1 px.
       const echelle = Math.min(1, window.innerWidth / largeur, window.innerHeight / hauteur);

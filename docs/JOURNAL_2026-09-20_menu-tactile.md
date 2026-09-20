@@ -13,8 +13,12 @@ verifie_par: —
 
 # Fichier de bord — Mini-file « menu tactile et plein écran » (20/09)
 
-Branche **`menu-tactile-2026-09-20`**, créée depuis `main`. **Aucun `push`** — et la consigne pèse plus lourd
-qu'hier : `push` sur `main` **publie le jeu** sur `https://xab-dev.github.io/RPGv2/`.
+Branche **`menu-tactile-2026-09-20`**, créée depuis `main`. Écrite sans aucun `push` — la consigne pèse
+plus lourd qu'hier, `push` sur `main` **publie le jeu** sur `https://xab-dev.github.io/RPGv2/`.
+
+**Épilogue (20/09, après rapport)** : Xav a demandé la fusion et le `push`. Avance rapide dans `main`, poussée :
+les trois commits sont **en ligne** (`b90dd7e`). C'est ce que `V-25` et `V-26` demandaient — elles ne se jouent
+que sur un vrai téléphone, par l'URL publique.
 
 Une ligne par commit, écrite **au moment du commit** (règle d'hygiène de contexte : ce qui n'est dit que dans la
 conversation se perd quand elle se résume).
@@ -305,5 +309,7 @@ propre, et les 83 fichiers de test restent verts sans lui. Le commit 1 (`D-42`),
 le commit 2 l'est d'abord** : le commit 2 touche deux lignes du test de `D-42` (le menu Pause y gagne une
 entrée). Le commit 0 est de la documentation pure et ne gêne personne dans un sens ou dans l'autre.
 
-Et le rappel qui compte plus que les autres depuis ce matin : **`push` sur `main` publie le jeu.** Les trois
-commits sont sur la branche, rien n'a été poussé.
+Et le rappel qui compte plus que les autres depuis ce matin : **`push` sur `main` publie le jeu.** La file a
+été écrite sans rien pousser ; c'est Xav qui a demandé la fusion et le `push` après lecture du rapport.
+`main` et `origin/main` pointent sur `b90dd7e`, et le jeu en ligne porte donc les deux correctifs — ce qui rend
+`V-25` et `V-26` jouables sur le téléphone dès maintenant.

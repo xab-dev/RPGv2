@@ -307,6 +307,6 @@ Les captures de la V1 (`docs/captures/v1/`) sont une **inspiration, jamais un ca
 
 ## Journal de session — Mini-file « menu tactile et plein écran » (20/09)
 
-`BRIEF_menu-tactile_2026-09-20.md` v1.0.0. Branche **`menu-tactile-2026-09-20`**, créée depuis `main` (la nuit du 20 y est fusionnée en entier) ; **aucun `push`** — et il vaut mieux le redire depuis que `push` sur `main` **publie le jeu**.
+`BRIEF_menu-tactile_2026-09-20.md` v1.0.0. Branche **`menu-tactile-2026-09-20`**, créée depuis `main`, **fusionnée en avance rapide et poussée par Xav le 20/09** (`b90dd7e`) : les trois commits sont dans `main` et **en ligne**. C'est volontaire et c'est ce que les deux validations qui restent exigent — `V-25` et `V-26` se jouent sur un vrai téléphone, **par l'URL publique**.
 
 **Le fichier de bord de cette mini-file vit sur le disque, pas ici : `docs/JOURNAL_2026-09-20_menu-tactile.md`.** Une ligne par commit, écrite au moment du commit — c'est lui qui devient le rapport.

@@ -12,13 +12,40 @@
 // freeze-musique d'`audio.js`) — il est appelé depuis `menu.traiterInput`,
 // donc depuis la boucle de jeu, qui ne se replanifie pas après une exception.
 // Une icône qui rate laisse une carte sans icône ; elle ne fige jamais le jeu.
-import { dessinerVisuel } from '../visuels.js';
+import { dessinerVisuel, echelleVisuel } from '../visuels.js';
+import { empreinteParDefaut } from '../structures.js';
 
 // Les icônes de `visuels.json` sont dessinées dans une boîte d'environ ± 6
 // unités autour de leur centre ; 14 laisse un filet d'air. C'est une
 // convention de dessin des icônes, pas un réglage de mise en page : la TAILLE
 // affichée, elle, est décidée par la feuille de style.
 const COTE_REFERENCE_ICONE = 14;
+// Filet d'air, en unités du visuel, autour d'une silhouette RECADRÉE (voir
+// `cadrer`). *Provisoire.*
+const MARGE_RECADRAGE = 2;
+
+// Où et à quelle échelle dessiner `visuel` dans un canvas carré de `cote` px.
+//
+// Les ICÔNES (menus, stats) sont dessinées pour la boîte de référence, autour
+// de leur centre : elles gardent exactement le cadrage d'avant, au pixel près.
+// Mais le palier C de specs/08 affiche aussi des silhouettes du MONDE — une
+// station ancrée par le bas, large de 22 unités — qui déborderaient d'une
+// tuile. Celles-là sont recadrées : centrées sur leur boîte englobante, et
+// réduites pour y tenir. La boîte est celle de `structures.js` (la même règle
+// que l'empreinte solide des stations) : jamais un second calcul de « quelle
+// place prend ce visuel ». Pure, exportée pour être testée sans canvas.
+export function cadrer(visuel, cote) {
+  const boite = empreinteParDefaut(visuel, echelleVisuel(visuel));
+  const demi = COTE_REFERENCE_ICONE / 2;
+  const tient = boite.x >= -demi && boite.y >= -demi && boite.x + boite.w <= demi && boite.y + boite.h <= demi;
+  if (tient) return { x: cote / 2, y: cote / 2, echelle: cote / COTE_REFERENCE_ICONE };
+  const echelle = cote / (Math.max(boite.w, boite.h) + 2 * MARGE_RECADRAGE);
+  return {
+    x: cote / 2 - (boite.x + boite.w / 2) * echelle,
+    y: cote / 2 - (boite.y + boite.h / 2) * echelle,
+    echelle,
+  };
+}
 
 // `obtenirVisuel(id)` : le registre, injecté. `fenetre` : pour le rapport de
 // pixels et `getComputedStyle` — ce module ne touche à aucun global.
@@ -43,7 +70,8 @@ export function creerDessinateurIcones({ obtenirVisuel, fenetre }) {
       const ctx = canvas.getContext('2d');
       // `dessinerVisuel` encadre sa propre transform d'un save/restore : ce
       // contexte-ci ressort de l'appel tel qu'il y est entré.
-      dessinerVisuel(ctx, visuel, cote / 2, cote / 2, { teinte, echelle: cote / COTE_REFERENCE_ICONE });
+      const cadre = cadrer(visuel, cote);
+      dessinerVisuel(ctx, visuel, cadre.x, cadre.y, { teinte, echelle: cadre.echelle });
     } catch (e) {
       console.warn('icone_canvas.js : icône non dessinée, le menu continue sans elle', e);
     }

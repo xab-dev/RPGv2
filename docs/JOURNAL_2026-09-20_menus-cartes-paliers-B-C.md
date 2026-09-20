@@ -135,3 +135,40 @@ Suivi v1.18.0 : `Q-36` annotée « **codé par défaut, à confirmer** » (jamai
 (palier B : « aucun changement visuel attendu », la liste des gestes à refaire, et la question de `MENU` qui ferme) ;
 `D-43` dit le palier B livré. `CLAUDE.md` : architecture (`menu_cartes.js`, `tools/`) et deux décisions datées (la pile
 unique ; `MENU` ferme tout). Prochains identifiants libres : `D-45`, `Q-39`, `V-29`, `R-17`.
+
+---
+
+# Palier C — les écrans de liste
+
+**La spec n'en fixe que le cadre** (« Poches, Stats, puis les grosses pages en maître-détail : grille d'objets à gauche,
+fiche à droite […] chaque écran aura son ticket »). Xav a demandé d'aller au bout : les choix ci-dessous sont donc les
+miens, **tous `[OUVERT]`**, consignés en `Q-39` — il confirme, révise, ou retire le commit qui ne lui va pas (un écran =
+un commit, chacun retirable seul ; tant qu'un écran n'est pas migré, il reste l'ancien écran de liste, qui marche).
+
+| Choix | Pourquoi |
+|---|---|
+| **Un second composant générique**, `ui/ecran_fiches.js`, pour les cinq écrans (pas un composant par écran) | Même règle que `creerEcranListeGenerique` : un écran ne fournit que son contenu. Ajouter un écran = des entrées, pas du code d'UI |
+| **Même boîte, même unité `--u`, mêmes jetons, MÊME en-tête que la grille de cartes** | La sortie est au même endroit sur tous les écrans du jeu (la mémoire du pouce) ; ajouter un follet recolore aussi ces écrans |
+| **Une tuile se SÉLECTIONNE ; c'est le bouton de la fiche qui AGIT.** Aux verbes : le stick sélectionne, A agit (A et le bouton = la même fonction) | Sur une carte du menu, tout est écrit sur la carte : l'appui peut agir. Sur une tuile il n'y a qu'une icône — au doigt, on ne verrait jamais la fiche avant d'avoir agi (dépenser un point de stat, consommer des ingrédients). *Diffère* de « un appui active directement » (§4.3, écrit pour les cartes) |
+| **4 colonnes × 3 rangées sans défiler ; au-delà la grille de tuiles défile EN ELLE-MÊME**, le défilement suit le focus ; ni l'en-tête ni la fiche (donc ni la sortie ni le bouton d'action) ne bougent jamais | « Jamais de défilement » vaut pour un écran de CARTES (≤ 6) ; un coffre n'a pas de plafond. La règle de `D-42` est tenue : la sortie ne défile pas |
+| **Un groupe (intertitre) commence sur une rangée neuve**, la fin de la rangée précédente comblée de cases vides | Ce sont les « cases vides » de la grille de cartes : `voisin()` les saute déjà, la navigation n'a rien à apprendre |
+| **`grisee` reste un indice, jamais un verrou** : le bouton retente l'action réelle | Règle des listes depuis la Phase 3, conservée telle quelle |
+
+## Commit C1 — Le composant « maître-détail », seul
+
+`src/ui/ecran_fiches.js` (une **vue** de la pile du palier B) + sa part pure dans `menu_cartes.js` (`disposerTuiles`,
+`replierFocus`, `COLONNES_TUILES`) + ses règles dans la feuille de style (aucune couleur en dur : les jetons) +
+`icone_canvas.js#cadrer` : les **silhouettes du monde** (une station ancrée par le bas, large de 22 unités) sont
+recadrées sur leur boîte englobante — celle de `structures.js`, la même règle que l'empreinte solide — pour tenir dans
+une tuile ; **aucune icône de menu ou de stat ne bouge d'un pixel** (testé sur toutes). **Rien n'est branché.**
+
+Test `test_d43_c1_ecran_fiches` : disposition et groupes · **toute tuile atteignable au stick sur 99 dispositions à deux
+groupes** · focus conservé après relecture (une pile qui part du coffre : on recule d'un cran, on ne saute pas en tête) ·
+structure DOM · le geste (clic / survol / stick = sélection ; bouton / A = action, une seule fonction) · sortie par la
+pile · liste vide · règles CSS structurelles. **90 fichiers verts.**
+
+Vu sous Chrome sans fenêtre, sur le banc (`tools/banc_menu_cartes.html?ecran=poche|coffre|vide`, scénario
+`tools/scenarios/banc_fiches.mjs`) : à **703 × 280** tuile 60 × 60 px, sortie 40 × 40 px, bouton d'action 155 × 40 px ;
+à **1920 × 1080** tuile 240 px, en-tête 96 px. **Rien ne déborde** hors de la grille de tuiles, qui défile bien en
+elle-même (22 tuiles, deux groupes) en suivant le focus. Un défaut vu et corrigé dans ce commit : le halo du focus était
+rogné au bord de la zone défilante (`scroll-padding`). Captures : `docs/captures/menus-cartes-2026-09-20/palier-c/`.

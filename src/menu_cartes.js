@@ -252,6 +252,50 @@ export function creerLecteurDirection(seuil) {
   };
 }
 
+// --- Palier C : les écrans « maître-détail » (`ui/ecran_fiches.js`) ------------
+
+// Nombre de colonnes de la grille de tuiles. *Provisoire.* Quatre tuiles de
+// 60 u et trois rangées tiennent dans le corps d'un écran (222 u) à côté d'une
+// fiche de 180 u : douze tuiles sans défilement. C'est de la GÉOMÉTRIE de
+// navigation (`voisin()` en a besoin), pas un style : le composant la pose sur
+// la grille, la feuille de style la relit.
+export const COLONNES_TUILES = 4;
+
+// Range des entrées dans une grille de `colonnes` colonnes. Rend :
+//   cases     pour chaque case de la grille, l'index de l'entrée — ou `null`
+//   sections  [{ groupe, debut }] : où commence chaque groupe (`debut` = index de case)
+// Un GROUPE (`entree.groupe`, un intertitre déjà traduit) commence toujours sur
+// une rangée neuve : la fin de la rangée précédente est comblée de cases
+// `null`. Ce sont les « cases vides » de la grille de cartes — `voisin()` les
+// saute déjà, il n'y a donc RIEN à apprendre à la navigation pour qu'un
+// intertitre coupe la grille en deux (Coffre : la poche, puis le coffre).
+export function disposerTuiles(entrees, colonnes) {
+  const cases = [];
+  const sections = [];
+  let groupeCourant = null;
+  entrees.forEach((entree, i) => {
+    const groupe = entree.groupe || null;
+    if (i === 0 || groupe !== groupeCourant) {
+      while (cases.length % colonnes !== 0) cases.push(null);
+      sections.push({ groupe, debut: cases.length });
+      groupeCourant = groupe;
+    }
+    cases.push(i);
+  });
+  return { cases, sections };
+}
+
+// Où va le focus quand la grille vient d'être relue ? Sur SA case si elle
+// porte encore une tuile ; sinon sur la tuile présente la plus proche AVANT
+// elle (la dernière pile du coffre vient de partir : on recule d'un cran, on
+// ne saute pas en tête de grille) ; sinon sur la première tuile. -1 : aucune.
+export function replierFocus(cases, focus) {
+  if (Number.isInteger(focus) && focus >= 0) {
+    for (let i = Math.min(focus, cases.length - 1); i >= 0; i--) if (cases[i] !== null) return i;
+  }
+  return premiereCasePresente(cases);
+}
+
 // LA pile du menu entier (specs/08_menus-cartes.md, palier B). Elle remplace
 // les sous-contrats que `menu.estOuvert()` OR-combinait (sept à l'origine,
 // `docs/CARTE_cycle-de-vie-ui_2026-09-17.md` §1.2) : ouvrir = empiler, retour =

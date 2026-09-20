@@ -11,6 +11,13 @@
     ?lieu=maison                 la case contextuelle s'affiche (Construction)
     ?plein_ecran=non             la carte Plein écran tombe, sa case reste vide
     ?lang=en
+    ?ecran=poche | coffre | vide ouvre directement un écran « maître-détail »
+                                 (`ui/ecran_fiches.js`, palier C) rempli d'entrées
+                                 FACTICES tirées des vrais catalogues : poche = les
+                                 objets du jeu ; coffre = deux groupes et assez de
+                                 tuiles pour faire défiler la grille ; vide = aucune.
+                                 Les cartes Poche / Stats / Construction du banc
+                                 ouvrent ces mêmes écrans, empilés sur la même pile.
 
   La feuille de style est RELUE dans `index.html` (elle y est en ligne) :
   aucune règle n'est recopiée ici, le banc montre exactement ce que le jeu
@@ -27,6 +34,8 @@
   <canvas id="jeu"></canvas>
   <script type="module">
     import { creerMenuCartes } from '../src/ui/grille_cartes.js';
+    import { creerEcranFiches } from '../src/ui/ecran_fiches.js';
+    import { creerNavigationEcrans } from '../src/menu_cartes.js';
     import { creerDessinateurIcones } from '../src/ui/icone_canvas.js';
     import { afficherEcran, SEUIL_POUSSEE_MENU } from '../src/ui/menu.js';
     import { creerI18n } from '../src/i18n.js';
@@ -37,11 +46,12 @@
     import { creerSourceManette } from '../src/input/gamepad.js';
 
     const params = new URLSearchParams(location.search);
-    const [html, menusReels, visuels, compagnons, dictionnaires] = await Promise.all([
+    const [html, menusReels, visuels, compagnons, items, dictionnaires] = await Promise.all([
       fetch('../index.html').then((r) => r.text()),
       fetch('../data/menus.json').then((r) => r.json()),
       fetch('../data/visuels.json').then((r) => r.json()),
       fetch('../data/companions.json').then((r) => r.json()),
+      fetch('../data/items.json').then((r) => r.json()),
       chargerLocalesDepuisReseau('../locales'),
     ]);
     const style = document.createElement('style');
@@ -87,7 +97,46 @@
       }
     }
 
+    // Une seule pile pour la grille et l'écran « maître-détail », comme dans le jeu.
+    const navigation = creerNavigationEcrans({
+      onFermer: () => { journal('menu fermé — il se rouvre'); setTimeout(() => ouvrirLeBanc(), 400); },
+    });
+    const rectangleJeu = () => { const r = rectangle(); return { x: r.x, y: r.y, unite: r.echelle }; };
+    const dessinerIcone = creerDessinateurIcones({ obtenirVisuel: (id) => visuels.find((v) => v.id === id), fenetre: window });
+    const racineCatalogue = menusReels.find((e) => e.racine);
+    const fiches = creerEcranFiches({
+      document, i18n, afficherEcran, seuilPoussee: SEUIL_POUSSEE_MENU,
+      couleurAccent: () => (compagnon ? compagnon.couleur_ui : null), rectangleJeu, dessinerIcone,
+      onRetour: () => navigation.retour(), aLaRacine: () => navigation.profondeur() === 1,
+      icones: { fermer: racineCatalogue.icone_fermer, retour: racineCatalogue.icone_retour },
+    });
+    // Entrées FACTICES sur les vrais objets : le banc juge une mise en page, pas
+    // une règle de jeu. Les quantités bougent pour voir la relecture.
+    const quantites = Object.fromEntries(items.map((it, i) => [it.id, 3 + i * 2]));
+    const entreeObjet = (it, extra = {}) => ({
+      titre: i18n.t(it.label_key), icone: it.render.visuel, quantite: quantites[it.id],
+      lignes: [it.categorie, 'Une ligne de détail assez longue pour se replier sur deux lignes dans la fiche.'],
+      libelleAction: 'Action (−1)', action: () => { quantites[it.id] -= 1; journal(`action : ${it.id}`); },
+      ...extra,
+    });
+    const niveauxFiches = {
+      poche: () => ({
+        vue: fiches, id: 'banc_poche', titre: i18n.t('menu.poche_titre'), sousTitre: () => 'sous-titre du banc',
+        obtenirEntrees: () => items.filter((it) => quantites[it.id] > 0).map((it, i) => entreeObjet(it, { marque: i === 2, grisee: i === 3 })),
+        texteVide: i18n.t('menu.poche_vide'),
+      }),
+      coffre: () => ({
+        vue: fiches, id: 'banc_coffre', titre: 'Coffre',
+        obtenirEntrees: () => [
+          ...items.slice(0, 5).map((it) => entreeObjet(it, { groupe: i18n.t('menu.poche') })),
+          ...[...items, ...items].map((it) => entreeObjet(it, { groupe: 'Coffre' })),
+        ],
+      }),
+      vide: () => ({ vue: fiches, id: 'banc_vide', titre: i18n.t('menu.poche_titre'), obtenirEntrees: () => [], texteVide: i18n.t('menu.poche_vide') }),
+    };
+
     const menu = creerMenuCartes({
+      navigation,
       document, i18n, menus, afficherEcran, seuilPoussee: SEUIL_POUSSEE_MENU,
       actions: {
         action_basculer_langue: () => i18n.definirLangue(i18n.langueCourante() === 'fr' ? 'en' : 'fr'),
@@ -109,26 +158,29 @@
         etat_plein_ecran: () => (etat.pleinEcran ? 'menu.etat.plein_ecran_oui' : 'menu.etat.plein_ecran_non'),
       },
       ecrans: {
-        ecran_poche: () => { journal('écran existant : Poche'); menu.reafficher(); },
-        ecran_stats: () => { journal('écran existant : Stats'); menu.reafficher(); },
-        ecran_construction: () => { journal('écran existant : Construction'); menu.reafficher(); },
+        ecran_poche: () => navigation.empiler(niveauxFiches.poche()),
+        ecran_stats: () => navigation.empiler(niveauxFiches.vide()),
+        ecran_construction: () => navigation.empiler(niveauxFiches.coffre()),
       },
       evaluerCondition: (c) => valeurs[c.valeur] >= c.min,
       couleurAccent: () => (compagnon ? compagnon.couleur_ui : null),
-      rectangleJeu: () => { const r = rectangle(); return { x: r.x, y: r.y, unite: r.echelle }; },
-      dessinerIcone: creerDessinateurIcones({ obtenirVisuel: (id) => visuels.find((v) => v.id === id), fenetre: window }),
-      onFermer: () => { journal('menu fermé — il se rouvre'); setTimeout(() => menu.ouvrir(), 400); },
+      rectangleJeu, dessinerIcone,
     });
     window.bancMenu = menu;
+    function ouvrirLeBanc() {
+      const direct = niveauxFiches[params.get('ecran')];
+      if (direct) navigation.ouvrir(direct());
+      else menu.ouvrir();
+    }
 
     const input = creerCoucheInput({
       sourceClavier: creerSourceClavier(window), sourceManette: creerSourceManette(navigator), sourceTactile: null,
     });
-    window.addEventListener('resize', () => { dessinerFond(); menu.actualiserGeometrie(); });
+    window.addEventListener('resize', () => { dessinerFond(); menu.actualiserGeometrie(); fiches.actualiserGeometrie(); });
     dessinerFond();
-    menu.ouvrir();
+    ouvrirLeBanc();
     (function boucle() {
-      menu.traiterInput(input.maj());
+      navigation.traiterInput(input.maj());
       requestAnimationFrame(boucle);
     })();
   </script>

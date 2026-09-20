@@ -49,7 +49,7 @@ async function main() {
   const profil = fs.mkdtempSync(path.join(os.tmpdir(), 'rpgv2-capture-'));
   const processus = spawn(CHROME, [
     '--headless=new', `--remote-debugging-port=${PORT}`, `--user-data-dir=${profil}`,
-    '--no-first-run', '--no-default-browser-check', '--mute-audio', '--hide-scrollbars', 'about:blank',
+    '--no-first-run', '--no-default-browser-check', '--mute-audio', 'about:blank',
   ], { stdio: 'ignore' });
 
   try {

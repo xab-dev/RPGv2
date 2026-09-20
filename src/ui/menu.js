@@ -171,29 +171,39 @@ function appliquerFocusVisuel(elements, indexFocalise) {
     const estFocalise = i === indexFocalise;
     curseur.textContent = estFocalise ? '›' : '';
     el.style.border = estFocalise ? '2px solid #fff' : '2px solid transparent';
+    // `D-42` : depuis que le corps de l'écran défile, une entrée focalisée
+    // peut être HORS de la zone visible — à la manette et au clavier, le
+    // joueur perdrait alors son curseur en descendant la liste. Le
+    // défilement suit donc le focus, et lui seul (`nearest` : on ne bouge
+    // que si c'est nécessaire, jamais de recentrage à chaque cran).
+    // `typeof` plutôt qu'un `try` : le faux DOM des tests headless n'a pas
+    // de moteur de mise en page, son absence est un cas normal.
+    if (estFocalise && typeof el.scrollIntoView === 'function') {
+      el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }
   });
 }
 
 // Cause racine du reset invisible (SD_menu-reset-invisible_2026-09-15.md) :
-// `index.html` ne stylise que `#menu` (position plein écran + fond +
-// centrage flex) ; un sous-écran plein écran construit dynamiquement n'a ni
-// règle CSS dédiée (index.html doit rester sans logique de nommage
-// d'éléments créés dynamiquement) ni style inline — `hidden=false` retirait
-// bien l'attribut, mais sans position ni display l'élément restait en flux
-// normal statique, hors du viewport visible (`body{overflow:hidden}`) :
-// invisible bien que fonctionnellement ouvert. Corrigé en donnant à CHAQUE
-// écran plein écran (confirmation, poche, craft, coffre, stats) le même
-// habillage, posé en inline depuis ce module.
-function appliquerStylePleinEcran(el) {
-  el.style.position = 'fixed';
-  el.style.inset = '0';
-  el.style.background = 'rgba(0, 0, 0, 0.85)';
-  el.style.color = '#eee';
-  el.style.fontFamily = 'sans-serif';
-  el.style.flexDirection = 'column';
-  el.style.alignItems = 'center';
-  el.style.justifyContent = 'center';
-  el.style.gap = '1rem';
+// un sous-écran plein écran construit dynamiquement n'avait ni règle CSS
+// dédiée ni style inline — `hidden=false` retirait bien l'attribut, mais sans
+// position ni display l'élément restait en flux normal statique, hors du
+// viewport visible (`body{overflow:hidden}`) : invisible bien que
+// fonctionnellement ouvert. La leçon tient toujours : CHAQUE écran plein
+// écran reçoit le même habillage, par ce seul point de passage.
+//
+// Ce qui change avec `D-42` : l'habillage n'est plus une pile de styles
+// inline, c'est UNE classe définie dans `index.html`. Le style en dur ne
+// pouvait pas exprimer ce que le ticket exige (un en-tête figé, un corps
+// défilant, une hauteur bornée à `100dvh` avec repli `100vh`) — une règle de
+// repli se déclare, elle ne se calcule pas en JS. Et le contrat reste le
+// même : `ui/menu.js` ne connaît QUE le nom des classes, jamais une valeur
+// de style ; `index.html` ne connaît que des classes, jamais un élément
+// nommé créé ici (c'est ce qui interdisait déjà d'y styliser `#menu-poche`).
+const CLASSE_ECRAN = 'ecran-ui';
+
+function appliquerClasseEcran(el) {
+  el.className = CLASSE_ECRAN;
 }
 
 // Point d'affichage/masquage unique pour tous les écrans plein écran :
@@ -222,20 +232,54 @@ function afficherEcran(el, visible) {
 // directement par INTERACT, hors du menu Pause) n'en ont pas besoin.
 function creerEcranListeGenerique(document, i18n, { onFermer } = {}) {
   const el = document.createElement('div');
-  appliquerStylePleinEcran(el);
+  appliquerClasseEcran(el);
   afficherEcran(el, false);
-  const titre = document.createElement('h2');
+  // `D-42` : le titre, l'aide et « Fermer » vivent dans un EN-TÊTE qui ne
+  // défile pas ; seules les entrées fournies par l'appelant vont dans le
+  // corps défilant. « Fermer » sort donc de la liste — c'est ce qui le rend
+  // atteignable sans défilement, sur n'importe quelle hauteur d'écran, et
+  // c'est décisif au tactile : le menu recouvre le canvas, donc les boutons
+  // tactiles (dont `skill_3`, le « retour » de la manette) sont hors
+  // d'atteinte tant qu'il est ouvert. « Fermer » n'est pas une sortie parmi
+  // trois, c'est LA sortie du doigt.
+  //
+  // Son rang dans la NAVIGATION ne bouge pas pour autant : il reste la
+  // dernière entrée du tableau d'actions (`reconstruire`), l'ordre au
+  // clavier/à la manette est celui du tableau, jamais celui du DOM.
+  const entete = document.createElement('div');
+  entete.className = 'ecran-ui-entete';
+  entete.innerHTML = `
+    <div class="ecran-ui-entete-ligne">
+      <h2 class="ecran-ui-titre"></h2>
+      <div class="menu-item" data-item="fermer">
+        <span class="menu-curseur"></span>
+        <button class="ecran-ui-fermer" type="button"></button>
+      </div>
+    </div>
+    <p class="ecran-ui-aide"></p>
+  `;
+  const titre = entete.querySelector('.ecran-ui-titre');
   // Aide optionnelle (specs/05_construction-stations.md §3 : "les touches du
   // mode sont affichées dans le menu lui-même") — vide par défaut, invisible
-  // (aucun autre écran générique n'en fournit une), un seul écran de plus ne
-  // demande aucun changement ici.
-  const aide = document.createElement('p');
-  aide.style.opacity = '0.7';
-  aide.style.fontSize = '0.85em';
+  // (`.ecran-ui-aide:empty`), un seul écran de plus ne demande aucun
+  // changement ici.
+  const aide = entete.querySelector('.ecran-ui-aide');
+  const itemFermer = entete.querySelector('.menu-item');
+  const boutonFermer = entete.querySelector('.ecran-ui-fermer');
+  const corps = document.createElement('div');
+  corps.className = 'ecran-ui-corps';
   const liste = document.createElement('div');
-  el.appendChild(titre);
-  el.appendChild(aide);
-  el.appendChild(liste);
+  liste.className = 'ecran-ui-liste';
+  corps.appendChild(liste);
+  // Le corps AVANT l'en-tête dans le DOM, l'en-tête au-dessus à l'écran
+  // (`order: -1`, feuille de style) : « Fermer » reste ainsi le dernier
+  // élément du document, comme il est le dernier cran de navigation. L'ordre
+  // du DOM n'a jamais décidé du focus ici (c'est le tableau d'actions qui le
+  // fait), mais le voir diverger serait un piège pour le prochain qui lira ce
+  // fichier — et c'est ce que vérifient, sans avoir été touchés, les tests qui
+  // exigent « Fermer toujours en dernier ».
+  el.appendChild(corps);
+  el.appendChild(entete);
   document.body.appendChild(el);
 
   // `element: el` (SD_construction-ecrans-orphelins_2026-09-17 §2) : ce
@@ -280,30 +324,53 @@ function creerEcranListeGenerique(document, i18n, { onFermer } = {}) {
   }
 
   function reconstruire() {
-    const toutes = [...fournisseurEntrees(), { texte: i18n.t('menu.fermer'), action: fermer }];
-    liste.innerHTML = toutes.map((e, i) => `
+    // « Fermer » reste la DERNIÈRE entrée de la navigation (l'ordre est celui
+    // de ce tableau) — seul son élément DOM vit ailleurs, dans l'en-tête figé
+    // (`D-42`). Les deux listes se rejoignent plus bas : `elements` suit
+    // exactement l'ordre de `toutes`.
+    const entrees = fournisseurEntrees();
+    const toutes = [...entrees, { texte: i18n.t('menu.fermer'), action: fermer }];
+    liste.innerHTML = entrees.map((e, i) => `
       <div class="menu-item" data-item="${i}">
         <span class="menu-curseur"></span>
         <button type="button" ${e.grisee ? 'disabled' : ''}>${e.texte}</button>
       </div>
     `).join('');
-    elements = Array.from(liste.querySelectorAll('.menu-item'));
-    const boutons = Array.from(liste.querySelectorAll('button'));
+    boutonFermer.textContent = i18n.t('menu.fermer');
+    elements = [...Array.from(liste.querySelectorAll('.menu-item')), itemFermer];
+    const boutonsListe = Array.from(liste.querySelectorAll('button'));
     const indexPrecedent = controleur.index();
     controleur = creerControleurMenu(toutes.map((e) => e.action), { verbeAnnuler: 'skill_3', element: el, onAnnuler: onAnnulerEcran });
     controleur.ouvrir();
     controleur.definirIndex(indexPrecedent);
-    elements.forEach((elItem, i) => {
+    // Les entrées de la liste sont des éléments NEUFS à chaque reconstruction
+    // (`liste.innerHTML` plus haut) : `addEventListener` n'y accumule rien.
+    // L'élément « Fermer », lui, SURVIT aux reconstructions — ses deux
+    // gestionnaires sont donc posés une seule fois, à la construction de
+    // l'écran (voir plus bas), par affectation plutôt qu'en empilant des
+    // écouteurs. Même raison que `el.onmouseenter =` dans
+    // `construireMenuPrincipal` : un clic sur « Fermer » aurait sinon fermé
+    // l'écran autant de fois qu'il a été reconstruit.
+    elements.slice(0, -1).forEach((elItem, i) => {
       elItem.addEventListener('mouseenter', () => {
         controleur.definirIndex(i);
         actualiserFocus();
       });
     });
-    boutons.forEach((btn, i) => {
+    boutonsListe.forEach((btn, i) => {
       btn.addEventListener('click', () => toutes[i].action());
     });
     actualiserFocus();
   }
+
+  // Les deux gestionnaires de l'entrée « Fermer » de l'en-tête (cf.
+  // `reconstruire`). Son action ne change jamais — c'est toujours `fermer` —
+  // et son rang de focus est toujours le dernier.
+  boutonFermer.addEventListener('click', fermer);
+  itemFermer.onmouseenter = () => {
+    controleur.definirIndex(elements.length - 1);
+    actualiserFocus();
+  };
 
   return {
     ouvrir(obtenirEntrees, texteTitre, texteAide = '') {
@@ -360,45 +427,59 @@ export function initialiserMenu({
 }) {
   const conteneur = document.createElement('div');
   conteneur.id = 'menu';
+  appliquerClasseEcran(conteneur);
   afficherEcran(conteneur, false);
+  // Même découpe que `creerEcranListeGenerique` (`D-42`) : un en-tête figé
+  // qui porte le titre et « Fermer », un corps qui défile et porte les huit
+  // autres entrées. `data-item` garde sa numérotation d'origine — l'ordre de
+  // navigation est celui de `ENTREES_FIXES_DEBUT`/`_FIN` plus bas, pas celui
+  // du DOM, et ce ticket n'a le droit de changer ni l'un ni l'autre.
   conteneur.innerHTML = `
-    <h2 data-cle="menu.titre"></h2>
-    <div class="menu-item" data-item="0">
-      <span class="menu-curseur"></span>
-      <label data-cle="menu.langue"></label>
-      <select id="menu-langue"><option value="fr">FR</option><option value="en">EN</option></select>
+    <div class="ecran-ui-corps">
+      <div class="ecran-ui-liste">
+        <div class="menu-item" data-item="0">
+          <span class="menu-curseur"></span>
+          <label data-cle="menu.langue"></label>
+          <select id="menu-langue"><option value="fr">FR</option><option value="en">EN</option></select>
+        </div>
+        <div class="menu-item" data-item="1">
+          <span class="menu-curseur"></span>
+          <button id="menu-musique" data-cle="menu.musique" type="button"></button>
+        </div>
+        <div class="menu-item" data-item="2">
+          <span class="menu-curseur"></span>
+          <button id="menu-poche" data-cle="menu.poche" type="button"></button>
+        </div>
+        <div class="menu-item" data-item="3">
+          <span class="menu-curseur"></span>
+          <button id="menu-stats" data-cle="menu.stats" type="button"></button>
+        </div>
+        <div class="menu-item" data-item="4">
+          <span class="menu-curseur"></span>
+          <button id="menu-construction" data-cle="menu.construction" type="button"></button>
+        </div>
+        <div class="menu-item" data-item="5">
+          <span class="menu-curseur"></span>
+          <button id="menu-exporter" data-cle="menu.exporter" type="button"></button>
+        </div>
+        <div class="menu-item" data-item="6">
+          <span class="menu-curseur"></span>
+          <input id="menu-importer" type="file" accept="application/json" />
+        </div>
+        <div class="menu-item" data-item="7">
+          <span class="menu-curseur"></span>
+          <button id="menu-reset" data-cle="menu.reset_sauvegarde" type="button"></button>
+        </div>
+      </div>
     </div>
-    <div class="menu-item" data-item="1">
-      <span class="menu-curseur"></span>
-      <button id="menu-musique" data-cle="menu.musique" type="button"></button>
-    </div>
-    <div class="menu-item" data-item="2">
-      <span class="menu-curseur"></span>
-      <button id="menu-poche" data-cle="menu.poche" type="button"></button>
-    </div>
-    <div class="menu-item" data-item="3">
-      <span class="menu-curseur"></span>
-      <button id="menu-stats" data-cle="menu.stats" type="button"></button>
-    </div>
-    <div class="menu-item" data-item="4">
-      <span class="menu-curseur"></span>
-      <button id="menu-construction" data-cle="menu.construction" type="button"></button>
-    </div>
-    <div class="menu-item" data-item="5">
-      <span class="menu-curseur"></span>
-      <button id="menu-exporter" data-cle="menu.exporter" type="button"></button>
-    </div>
-    <div class="menu-item" data-item="6">
-      <span class="menu-curseur"></span>
-      <input id="menu-importer" type="file" accept="application/json" />
-    </div>
-    <div class="menu-item" data-item="7">
-      <span class="menu-curseur"></span>
-      <button id="menu-reset" data-cle="menu.reset_sauvegarde" type="button"></button>
-    </div>
-    <div class="menu-item" data-item="8">
-      <span class="menu-curseur"></span>
-      <button id="menu-fermer" data-cle="menu.fermer" type="button"></button>
+    <div class="ecran-ui-entete">
+      <div class="ecran-ui-entete-ligne">
+        <h2 class="ecran-ui-titre" data-cle="menu.titre"></h2>
+        <div class="menu-item" data-item="8">
+          <span class="menu-curseur"></span>
+          <button id="menu-fermer" data-cle="menu.fermer" type="button"></button>
+        </div>
+      </div>
     </div>
   `;
   document.body.appendChild(conteneur);
@@ -408,17 +489,31 @@ export function initialiserMenu({
   // deux ne sont jamais visibles en même temps (cf. traiterInput plus bas).
   const confirmation = document.createElement('div');
   confirmation.id = 'menu-confirmation-reset';
-  appliquerStylePleinEcran(confirmation);
+  appliquerClasseEcran(confirmation);
   afficherEcran(confirmation, false);
+  // Même découpe que les autres écrans (`D-42`), à une différence près :
+  // « Oui » et « Non » restent ENSEMBLE dans le corps. Ici la sortie n'est
+  // pas « Fermer », c'est « Non » — et sortir l'un des deux termes d'un choix
+  // destructif de son couple rendrait la question moins lisible, pas plus.
+  // Deux entrées ne peuvent pas déborder : mesuré à 703 × 280, l'écran tient
+  // entier avec de la marge.
   confirmation.innerHTML = `
-    <h2 data-cle="menu.reset_confirmation_titre"></h2>
-    <div class="menu-item" data-item="0">
-      <span class="menu-curseur"></span>
-      <button id="menu-reset-oui" data-cle="menu.reset_oui" type="button"></button>
+    <div class="ecran-ui-corps">
+      <div class="ecran-ui-liste">
+        <div class="menu-item" data-item="0">
+          <span class="menu-curseur"></span>
+          <button id="menu-reset-oui" data-cle="menu.reset_oui" type="button"></button>
+        </div>
+        <div class="menu-item" data-item="1">
+          <span class="menu-curseur"></span>
+          <button id="menu-reset-non" data-cle="menu.reset_non" type="button"></button>
+        </div>
+      </div>
     </div>
-    <div class="menu-item" data-item="1">
-      <span class="menu-curseur"></span>
-      <button id="menu-reset-non" data-cle="menu.reset_non" type="button"></button>
+    <div class="ecran-ui-entete">
+      <div class="ecran-ui-entete-ligne">
+        <h2 class="ecran-ui-titre" data-cle="menu.reset_confirmation_titre"></h2>
+      </div>
     </div>
   `;
   document.body.appendChild(confirmation);
@@ -456,7 +551,7 @@ export function initialiserMenu({
   // navigation (`pointer-events: none`) — aucun conflit avec le routage des
   // verbes vers la machine `construction` de main.js, contrairement à
   // `ecranConstruction` ci-dessus qui, lui, capte le focus. Style déclaré
-  // explicitement (jamais `appliquerStylePleinEcran`, réservé aux écrans
+  // explicitement (jamais la classe `ecran-ui`, réservée aux écrans
   // plein écran) : un sous-écran sans style dédié est resté invisible une
   // fois déjà (`JOURNAL_2026-09-15_diagnostic-reset-invisible.md`), leçon
   // qui s'applique à tout nouvel élément partiel, pas seulement plein écran.

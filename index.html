@@ -5,14 +5,79 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>RPG V2</title>
   <style>
-    html, body { margin: 0; height: 100%; background: #000; overflow: hidden; touch-action: none; }
-    canvas { display: block; background: #000; image-rendering: pixelated; }
-    #menu {
-      position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); color: #eee;
-      font-family: sans-serif; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; gap: 1rem;
+    html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+    /* `touch-action: none` ne vise QUE le jeu : il empêche le navigateur de
+       faire défiler/zoomer la page pendant qu'un doigt pilote le joystick.
+       Posé sur `html, body` (ce qu'il était jusqu'à `D-42`), il annonce la
+       même chose pour toute la page — et un menu qui déborde n'a alors plus
+       aucun moyen d'être parcouru au doigt. Il descend donc sur sa seule
+       cible réelle, le canvas. */
+    canvas { display: block; background: #000; image-rendering: pixelated; touch-action: none; }
+
+    /* --- Écrans d'UI plein écran (`D-42`) --------------------------------
+       Menu Pause, confirmation de reset, Poche, Craft, Coffre, Stats,
+       Construction : tous la même classe, posée par `ui/menu.js` (qui ne
+       connaît que le nom de la classe, jamais une règle de style). Un seul
+       endroit décide donc de ce qu'est un écran d'UI, et le correctif ne
+       peut pas être à moitié appliqué.
+
+       Bornés à la hauteur RÉELLEMENT visible : `100dvh` suit la barre
+       d'adresse mobile qui se rétracte ; `100vh` reste le repli des
+       navigateurs qui ignorent `dvh` (l'ordre des deux déclarations fait le
+       repli, jamais un test en JS). */
+    .ecran-ui {
+      position: fixed; left: 0; top: 0; width: 100%;
+      height: 100vh; height: 100dvh;
+      background: rgba(0, 0, 0, 0.85); color: #eee; font-family: sans-serif;
+      display: flex; flex-direction: column; overflow: hidden;
     }
-    #menu[hidden] { display: none; }
+    .ecran-ui[hidden] { display: none; }
+
+    /* En-tête figé (`flex: 0 0 auto`) : il ne défile jamais. C'est lui qui
+       garantit la règle du ticket — « Fermer » est atteignable sans
+       défilement, quelle que soit la longueur de la liste.
+
+       `order: -1` : l'en-tête est le DERNIER enfant dans le DOM et le
+       PREMIER à l'écran. Ce n'est pas une coquetterie — « Fermer » reste
+       ainsi la dernière entrée du document, donc le dernier cran de
+       navigation et le dernier arrêt de la touche Tab, exactement comme
+       avant `D-42` : l'ordre du DOM continue de dire l'ordre des entrées, et
+       les tests qui vérifient « Fermer toujours en dernier » n'ont pas eu à
+       être réécrits pour ce ticket. Seule la place à l'écran change. */
+    .ecran-ui-entete { order: -1; flex: 0 0 auto; padding: 0.5rem 0.75rem 0.25rem; }
+    .ecran-ui-entete-ligne {
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    }
+    .ecran-ui-titre { margin: 0; font-size: 1.1rem; }
+    .ecran-ui-aide { margin: 0.25rem 0 0; opacity: 0.7; font-size: 0.85em; }
+    /* Vide, l'aide ne doit pas réserver de hauteur : sur un écran de 280 px,
+       une ligne perdue en vaut deux gagnées ailleurs. */
+    .ecran-ui-aide:empty { display: none; }
+
+    /* Corps défilant. `min-height: 0` est ce qui autorise un enfant de flex à
+       devenir plus petit que son contenu : sans lui la boîte grandit pour
+       tout contenir, déborde de l'écran, et rien ne défile jamais (la valeur
+       initiale `auto` d'un item de flex, piège classique). `pan-y` autorise
+       le défilement vertical au doigt, et lui seul — le geste horizontal
+       reste sans effet, comme dans le jeu. */
+    .ecran-ui-corps {
+      flex: 1 1 auto; min-height: 0;
+      overflow-y: auto; overscroll-behavior: contain;
+      touch-action: pan-y; -webkit-overflow-scrolling: touch;
+      display: flex; flex-direction: column;
+      padding: 0 0.75rem 0.75rem;
+    }
+
+    /* `margin: auto 0` plutôt que `justify-content: center` sur le parent :
+       centré tant que la liste tient, collé en haut dès qu'elle déborde.
+       Centrer un conteneur qui déborde pousse le HAUT du contenu hors de la
+       zone défilable, là où aucun défilement ne peut le ramener (`scrollTop`
+       ne descend pas sous 0) — c'est exactement ce qui cachait le titre du
+       menu à 703 × 280 (`D-42`). */
+    .ecran-ui-liste {
+      flex: 0 0 auto; margin: auto 0;
+      display: flex; flex-direction: column; align-items: center; gap: 1rem;
+    }
   </style>
 </head>
 <body>

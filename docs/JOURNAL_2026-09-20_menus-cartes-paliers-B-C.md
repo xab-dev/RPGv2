@@ -3,10 +3,10 @@ projet: RPG V2
 episode/session: Polish — menus en grille de cartes, paliers B et C (file de nuit)
 type: fichier de bord (devient le rapport)
 version: 1.0.0
-statut: en cours
+statut: complet
 catégorie: Journal
 date: 2026-09-20
-ids_suivi: [D-43, V-27, Q-36]
+ids_suivi: [D-43, D-45, D-46, V-27, V-28, V-29, Q-36, Q-39]
 genere_par: claude
 verifie_par: —
 ---
@@ -32,6 +32,60 @@ Ce que ça change, et ce que ça ne change pas :
   étape, chacun retirable seul**, et l'état de la file **sur le disque**, ici.
 
 Une ligne par commit, écrite **au moment du commit**.
+
+---
+
+## Au réveil — le rapport, en une page
+
+**Ce qui est fait.** `specs/08_menus-cartes.md` est livrée **en entier** : palier B (3 commits), palier C (7 commits),
+une passe de polish (1 commit), plus un commit d'outils et trois de documentation. Tout est sur la branche
+**`menus-cartes`, poussée en sauvegarde, non fusionnée** ; `main` n'a pas bougé, le jeu en ligne non plus.
+**94 fichiers de test verts.**
+
+**À signaler en premier** (choix pris par défaut, ou faits que tu dois connaître) :
+
+1. **Personne n'a regardé un écran allumé cette nuit, et rien n'a été joué à la manette ni au doigt.** Chrome était
+   connecté mais sa fenêtre était masquée (écran verrouillé) : plus de boucle de jeu, plus de capture. J'ai donc écrit
+   `tools/capture_chrome.mjs` (Chrome **sans fenêtre**, vrais pixels à 703 × 280 et 1920 × 1080, profil jetable : **ta
+   sauvegarde n'a pas été touchée**). Ça dit « ça s'affiche ainsi sous Chrome », jamais « c'est validé » : `V-28`, `V-29`.
+2. **`Q-36` est codée par défaut** : `MENU` (Start, Échap), menu ouvert, **ferme tout**. À confirmer. Au clavier Échap
+   est aussi la sortie du plein écran du navigateur : en plein écran, un Échap fait les deux.
+3. **Le palier C n'avait pas de spec d'écran : les choix sont les miens, en `Q-39`.** Le plus visible : dans un écran
+   maître-détail, **toucher une tuile la sélectionne, c'est le bouton de la fiche qui agit** (au stick : sélection, A :
+   action). Si c'est un appui de trop à ton goût, c'est une ligne à changer — dis-le.
+4. **`D-45`, un vrai bug trouvé et corrigé** : un transfert Poche ↔ Coffre vers une pile pleine (20) **faisait
+   disparaître l'objet**. Corrigé dans le commit du Coffre (C4), avec son test.
+5. **« Chacun retirable seul » : vrai pour le palier B et le polish, FAUX pour le palier C — vérifié, je corrige ce que
+   j'avais annoncé.** Essayé en worktree, commit par commit : `B1`, `B3`, `C7` et le polish se retirent seuls (seul ce
+   journal demande une résolution à la main, triviale) ; **`C1` à `C6` s'empilent** (mêmes fichiers de locales, même
+   instance de l'écran, mêmes tests qui comptent les écrans) et ne se retirent que **du dernier vers le premier**. Dans
+   cet ordre-là c'est propre : POLISH → C7 → … → C1 retirés un par un sans un conflit, **suite verte à l'arrivée**
+   (l'état du palier B). Retirer *un* écran du milieu serait un petit correctif vers l'avant, pas un `revert`.
+6. **Signalé sans y toucher** : `D-46` (deux fonctions pures de `ui/menu.js` n'ont plus d'appelant), la Force n'a aucune
+   stat dérivée à montrer (fiche vide — du contenu), `D-44` (langue non sauvegardée) toujours ouverte.
+
+**Ce que je te propose de regarder, dans l'ordre** : `docs/captures/menus-cartes-2026-09-20/palier-c/` (dix secondes,
+pour voir la tête des écrans) · fusionner la branche dans `main` quand ça te va · puis `V-27` à `V-29` en jeu, manette
+puis téléphone. Pour refaire les captures après une retouche de jeton :
+`node tools/capture_chrome.mjs tools/scenarios/ecrans_palier_c.mjs` (le serveur local doit tourner).
+
+| Commit | Quoi |
+|---|---|
+| `a2e49ad` | DOC ménage : journal du palier A archivé |
+| `f20740c` | **B1** la pile du menu, part pure |
+| `5905053` | **B2** une seule pile : `menu.estOuvert()` n'a plus qu'un contrat ; test d'invariant sur toutes les transitions |
+| `95ea474` | **B3** `Q-36` : `MENU` ferme tout |
+| `545b335` | OUTIL capture sans fenêtre + mode pas à pas |
+| `34ee527` | DOC palier B (`V-28`) |
+| `60f0530` | **C1** le composant maître-détail, seul |
+| `98a026e` | **C2** Poche |
+| `285c124` | **C3** Stats |
+| `8a7e525` | **C4** Coffre + **`D-45`** |
+| `9126930` | **C5** Craft |
+| `36bef6d` | **C6** Construction — plus aucun écran de liste |
+| `649fa8e` | **C7** retrait du code mort |
+| `25f959f` | **POLISH** |
+| *(ce commit)* | DOC clôture : suivi v1.19.0 (`V-29`, `Q-39`, `D-45`, `D-46`), `CLAUDE.md`, ce rapport |
 
 ---
 
@@ -319,3 +373,12 @@ palier C refaites avec le rendu final.
 ou « bon ») ; le mot à côté de `[X]` (décision 1, à essayer par lui) ; le maintien-répétition du stick dans les grilles
 (`D-18`, un ticket à part) ; la langue non sauvegardée (`D-44`) ; le contenu des fiches (la Force n'a aucune dérivée à
 montrer : c'est du contenu, pas de l'UI).
+
+## Commit DOC — Clôture
+
+Suivi v1.19.0 : `D-43` dit le chantier livré en entier (il se clôt quand Xav aura rendu `V-27`, `V-28`, `V-29`) ;
+**`D-45` close** (trouvée et corrigée en C4) ; **`D-46` ouverte** (deux fonctions pures sans appelant) ; **`Q-39` ouverte**
+(les six choix du palier C) ; **`V-29` ouverte**. Prochains identifiants libres : `D-47`, `Q-40`, `V-30`, `R-17`.
+`CLAUDE.md` : état du dépôt, architecture (`ui/ecran_fiches.js`), une décision datée (le geste du maître-détail),
+l'ordre d'injection, le renvoi vers ce fichier. Le rapport est en tête de ce journal — y compris la correction sur
+« chacun retirable seul », vérifiée en worktree avant d'être écrite.

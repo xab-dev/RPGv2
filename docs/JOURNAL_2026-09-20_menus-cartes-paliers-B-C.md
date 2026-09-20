@@ -55,9 +55,10 @@ une passe de polish (1 commit), plus un commit d'outils et trois de documentatio
    action). Si c'est un appui de trop à ton goût, c'est une ligne à changer — dis-le.
 4. **`D-45`, un vrai bug trouvé et corrigé** : un transfert Poche ↔ Coffre vers une pile pleine (20) **faisait
    disparaître l'objet**. Corrigé dans le commit du Coffre (C4), avec son test.
-5. **« Chacun retirable seul » : vrai pour le palier B et le polish, FAUX pour le palier C — vérifié, je corrige ce que
-   j'avais annoncé.** Essayé en worktree, commit par commit : `B1`, `B3`, `C7` et le polish se retirent seuls (seul ce
-   journal demande une résolution à la main, triviale) ; **`C1` à `C6` s'empilent** (mêmes fichiers de locales, même
+5. **« Chacun retirable seul » : vrai pour quatre commits, FAUX pour les autres — vérifié, je corrige ce que j'avais
+   annoncé.** Essayé en worktree, commit par commit : `B1`, `B3`, `C7` et le polish se retirent seuls (seul ce
+   journal demande une résolution à la main, triviale) ; **`B2` porte tout le palier C** (la pile unique : on ne le
+   retire qu'après lui), et **`C1` à `C6` s'empilent** (mêmes fichiers de locales, même
    instance de l'écran, mêmes tests qui comptent les écrans) et ne se retirent que **du dernier vers le premier**. Dans
    cet ordre-là c'est propre : POLISH → C7 → … → C1 retirés un par un sans un conflit, **suite verte à l'arrivée**
    (l'état du palier B). Retirer *un* écran du milieu serait un petit correctif vers l'avant, pas un `revert`.

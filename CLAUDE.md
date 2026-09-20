@@ -334,6 +334,6 @@ Les captures de la V1 (`docs/captures/v1/`) sont une **inspiration, jamais un ca
 
 ## Journal de session — Menus en cartes, paliers B et C (nuit du 20 au 21/09)
 
-`specs/08_menus-cartes.md` v1.0.0, **paliers B et C, puis une passe de polish — livrés**, en file de nuit autonome à la demande de Xav. Branche **`menus-cartes`**, un commit par étape ; **poussée en sauvegarde, jamais `main`, non fusionnée**. Retrait, vérifié en worktree : B1, B3, C7 et le polish se retirent seuls ; **C1 à C6 s'empilent** et ne se retirent que du dernier vers le premier (propre dans cet ordre, suite verte à l'arrivée). 94 fichiers de test verts.
+`specs/08_menus-cartes.md` v1.0.0, **paliers B et C, puis une passe de polish — livrés**, en file de nuit autonome à la demande de Xav. Branche **`menus-cartes`**, un commit par étape ; **poussée en sauvegarde, jamais `main`, non fusionnée**. Retrait, vérifié en worktree : B1, B3, C7 et le polish se retirent seuls ; B2 porte tout le palier C ; **C1 à C6 s'empilent** et ne se retirent que du dernier vers le premier (propre dans cet ordre, suite verte à l'arrivée). 94 fichiers de test verts.
 
 **Le fichier de bord de cette session vit sur le disque, pas ici : `docs/JOURNAL_2026-09-20_menus-cartes-paliers-B-C.md`** — il s'ouvre sur le rapport (« Au réveil »), puis une section par commit. Deux outils de dev en sont sortis (`tools/capture_chrome.mjs`, `tools/cadre_viewport.html?pas=oui`) : vérifier le jeu sous Chrome quand personne ne regarde l'écran.

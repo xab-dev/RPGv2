@@ -5,6 +5,54 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>RPG V2</title>
   <style>
+    /* --- Jetons de style des menus (specs/08_menus-cartes.md §4.5) --------
+       LE seul bloc où une couleur, un rayon ou une épaisseur de menu est
+       écrit. Tout y est *provisoire* : Xav répond « plus », « moins » ou
+       « bon » en jeu (`V-27`), et la réponse se règle ici, en une ligne.
+       Les longueurs sont des NOMBRES D'UNITÉS `--u` (1 u = hauteur de la
+       boîte du menu ÷ 270, posée par `ui/grille_cartes.js`) : le menu se
+       dessine comme s'il vivait en 480 × 270, téléphone ou grand écran.
+
+       Trois de ces jetons sont relus AU DÉMARRAGE par `main.js`
+       (`--menu-carte`, `--menu-accent`, `--menu-danger`) pour le contrôle de
+       contraste des `couleur_ui` — ils restent donc en `#rrggbb`, le seul
+       format que ce contrôle sait comparer. */
+    :root {
+      /* Noir bleuté, opaque à 92 % : le jeu se devine derrière, on reste
+         « dans » la partie — mais il ne dispute jamais la lecture aux cartes. */
+      --menu-fond: rgba(13, 16, 23, 0.92);
+      /* Un ton au-dessus du fond. C'est CONTRE lui que se juge chaque accent
+         (contraste ≥ 3:1, vérifié au démarrage). */
+      --menu-carte: #161b24;
+      /* Blanc à 10 % : sépare la carte du fond sans dessiner un cadre. Pas
+         d'ombre — sobre, et une ombre coûte cher sur un écran de 280 px. */
+      --menu-carte-bordure: rgba(255, 255, 255, 0.10);
+      --menu-carte-bordure-px: 1px;
+      --menu-carte-rayon-u: 8;
+      /* Blanc cassé et gris bleuté : deux niveaux de lecture, pas trois. */
+      --menu-texte-titre: #f4f1ea;
+      --menu-texte-phrase: #9aa3b2;
+      /* Focus « léger » (à confirmer en jeu) : jamais la couleur seule — la
+         bordure s'épaissit, un halo l'entoure ET la carte s'éclaircit. */
+      --menu-focus-bordure-px: 1.5px;
+      --menu-focus-halo-u: 3;
+      --menu-focus-halo-opacite: 18%;
+      --menu-focus-eclaircie: 4%;
+      /* Appuyé : l'inverse du focus, sans animation (un retour immédiat vaut
+         mieux qu'une transition qu'un téléphone lent ferait traîner). */
+      --menu-appuye-assombrie: 4%;
+      --menu-desactive-opacite: 0.4;
+      /* Accent NEUTRE, celui d'avant le choix du follet : blanc chaud. Dès
+         qu'un compagnon est choisi, `ui/grille_cartes.js` le remplace par sa
+         `couleur_ui` sur la boîte du menu — ce jeton-ci n'est que le défaut. */
+      --menu-accent: #f2e9d8;
+      /* Danger : magenta, en bordure et en icône, JAMAIS en aplat, toujours
+         doublé d'une icône. Aucun accent n'a le droit de lui ressembler
+         (vérifié au démarrage) : il doit rester reconnaissable quel que soit
+         le follet. */
+      --menu-danger: #d6409f;
+    }
+
     html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
     /* `touch-action: none` ne vise QUE le jeu : il empêche le navigateur de
        faire défiler/zoomer la page pendant qu'un doigt pilote le joystick.

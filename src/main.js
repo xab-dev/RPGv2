@@ -76,6 +76,7 @@ import {
 } from './survival.js';
 import { crediter as crediterXp } from './xp.js';
 import { initialiserMenu } from './ui/menu.js';
+import { erreursCouleursUi } from './ui/couleurs_ui.js';
 import { dessinerHud } from './ui/hud.js';
 import { dessinerHudHints } from './ui/hud_hints.js';
 import { dessinerDialogue } from './ui/dialogue_box.js';
@@ -2153,7 +2154,18 @@ export async function demarrerJeu() {
 
   const erreursCles = verifierJeuxDeCles(dictionnaires);
   const erreursValidation = erreursChargement.length ? [] : validerCatalogues(donnees);
-  const toutesErreurs = [...erreursChargement, ...erreursValidation, ...erreursCles];
+  // specs/08_menus-cartes.md §4.5 : chaque `couleur_ui` doit se lire sur le
+  // fond des cartes et ne jamais se confondre avec le danger. Les jetons sont
+  // RELUS sur `:root` — la feuille de style reste le seul endroit où ils sont
+  // écrits, ce contrôle n'en garde aucune copie. Il vit ici et pas dans
+  // `validerCatalogues` parce que le registre est pur : il ne voit pas le DOM.
+  const styleRacine = getComputedStyle(document.documentElement);
+  const erreursCouleurs = erreursChargement.length ? [] : erreursCouleursUi(donnees.companions, {
+    fondCarte: styleRacine.getPropertyValue('--menu-carte'),
+    danger: styleRacine.getPropertyValue('--menu-danger'),
+    accentNeutre: styleRacine.getPropertyValue('--menu-accent'),
+  });
+  const toutesErreurs = [...erreursChargement, ...erreursValidation, ...erreursCles, ...erreursCouleurs];
 
   if (toutesErreurs.length > 0) {
     afficherErreurBoot(toutesErreurs);

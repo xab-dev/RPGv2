@@ -7,7 +7,8 @@
     "echelle_jeu": 0.75,
     "rayon_aura": 40,
     "rayon_lumiere": 110,
-    "render": { "visuel": "visuel_follet_feu", "couleur": "#ff6a3d" }
+    "render": { "visuel": "visuel_follet_feu", "couleur": "#ff6a3d" },
+    "couleur_ui": "#ff6a3d"
   },
   {
     "id": "comp_follet_eau",
@@ -17,7 +18,8 @@
     "echelle_jeu": 0.75,
     "rayon_aura": 40,
     "rayon_lumiere": 110,
-    "render": { "visuel": "visuel_follet_eau", "couleur": "#3daaff" }
+    "render": { "visuel": "visuel_follet_eau", "couleur": "#3daaff" },
+    "couleur_ui": "#3daaff"
   },
   {
     "id": "comp_follet_terre",
@@ -27,6 +29,7 @@
     "echelle_jeu": 0.75,
     "rayon_aura": 40,
     "rayon_lumiere": 110,
-    "render": { "visuel": "visuel_follet_terre", "couleur": "#c2a23a" }
+    "render": { "visuel": "visuel_follet_terre", "couleur": "#c2a23a" },
+    "couleur_ui": "#c2a23a"
   }
 ]

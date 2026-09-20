@@ -661,6 +661,17 @@ function erreursCompanion(entry, catalogs, path) {
   if (entry.echelle_jeu !== undefined && (typeof entry.echelle_jeu !== 'number' || entry.echelle_jeu <= 0)) {
     erreurs.push(`${path} > echelle_jeu doit être un nombre strictement positif`);
   }
+  // specs/08_menus-cartes.md §4.5 : l'accent des menus. Ici, la FORME seule
+  // (`#rrggbb`, le seul format que le contrôle de contraste sait comparer).
+  // Le contraste lui-même se juge contre le fond des cartes, qui est un jeton
+  // de la feuille de style : ce module pur ne le connaît pas, c'est
+  // `ui/couleurs_ui.js` qui tranche au démarrage, jetons en main.
+  // Distinct de `render.couleur` à dessein : la couleur d'un follet dans le
+  // monde (sur un voile de nuit) et celle d'une bordure de carte n'ont pas à
+  // rester égales pour toujours, même si elles le sont aujourd'hui.
+  if (entry.couleur_ui !== undefined && !/^#[0-9a-f]{6}$/i.test(entry.couleur_ui)) {
+    erreurs.push(`${path} > couleur_ui doit être une couleur #rrggbb`);
+  }
   return erreurs;
 }
 
@@ -1102,7 +1113,7 @@ export const SCHEMAS = {
     custom: validerVisuel,
   },
   companions: {
-    requiredFields: ['id', 'label_key', 'element', 'synergie', 'rayon_aura', 'rayon_lumiere', 'render'],
+    requiredFields: ['id', 'label_key', 'element', 'synergie', 'rayon_aura', 'rayon_lumiere', 'render', 'couleur_ui'],
     idField: 'id',
     refs: [
       { field: 'element', catalog: 'elements' },

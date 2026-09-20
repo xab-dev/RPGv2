@@ -4,9 +4,9 @@
     "label_key": "companion.follet_feu",
     "element": "elem_feu",
     "synergie": "syn_feu",
-    "echelle_jeu": 0.75,
-    "rayon_aura": 40,
-    "rayon_lumiere": 100,
+    "echelle_jeu": 0.66,
+    "rayon_aura": 30,
+    "rayon_lumiere": 90,
     "render": { "visuel": "visuel_follet_feu", "couleur": "#ff6a3d" },
     "couleur_ui": "#ff6a3d"
   },
@@ -15,9 +15,9 @@
     "label_key": "companion.follet_eau",
     "element": "elem_eau",
     "synergie": "syn_eau",
-    "echelle_jeu": 0.75,
-    "rayon_aura": 40,
-    "rayon_lumiere": 100,
+    "echelle_jeu": 0.66,
+    "rayon_aura": 30,
+    "rayon_lumiere": 90,
     "render": { "visuel": "visuel_follet_eau", "couleur": "#3daaff" },
     "couleur_ui": "#3daaff"
   },
@@ -26,9 +26,9 @@
     "label_key": "companion.follet_terre",
     "element": "elem_terre",
     "synergie": "syn_terre",
-    "echelle_jeu": 0.75,
-    "rayon_aura": 40,
-    "rayon_lumiere": 100,
+    "echelle_jeu": 0.66,
+    "rayon_aura": 30,
+    "rayon_lumiere": 90,
     "render": { "visuel": "visuel_follet_terre", "couleur": "#c2a23a" },
     "couleur_ui": "#c2a23a"
   }

@@ -252,37 +252,6 @@ export function creerLecteurDirection(seuil) {
   };
 }
 
-// La pile de navigation LOCALE du palier A (§6 : « une pile locale minimale ;
-// les sept contrats existants ne bougent pas encore »). Elle ne connaît que
-// des écrans de cartes ; le palier B la remplacera par LA pile du menu entier.
-//
-// Ce qu'elle garantit : « Retour dépile UN écran, et rend le focus à la carte
-// qui l'avait ouvert » (§4.3). Chaque niveau mémorise donc la case focalisée
-// au moment où on l'a quitté vers le bas — c'est `focus`, tenu à jour par le
-// composant à chaque déplacement.
-export function creerPileMenus() {
-  let niveaux = [];
-  return {
-    empiler(ecran, focus) {
-      niveaux.push({ ecran, focus });
-    },
-    // Rend le niveau retiré, ou `null` si la pile était déjà vide.
-    depiler() {
-      return niveaux.pop() || null;
-    },
-    sommet() {
-      return niveaux.length > 0 ? niveaux[niveaux.length - 1] : null;
-    },
-    definirFocus(focus) {
-      if (niveaux.length > 0) niveaux[niveaux.length - 1].focus = focus;
-    },
-    profondeur: () => niveaux.length,
-    vider() {
-      niveaux = [];
-    },
-  };
-}
-
 // LA pile du menu entier (specs/08_menus-cartes.md, palier B). Elle remplace
 // les sous-contrats que `menu.estOuvert()` OR-combinait (sept à l'origine,
 // `docs/CARTE_cycle-de-vie-ui_2026-09-17.md` §1.2) : ouvrir = empiler, retour =

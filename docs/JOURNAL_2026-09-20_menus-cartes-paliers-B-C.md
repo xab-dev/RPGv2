@@ -53,3 +53,35 @@ réel, pas un booléen : un écran caché dans le dos de la pile ne gèle pas le
 
 Rien n'est branché : commit retirable seul, aucun comportement ne change. Test : `test_d43_b1_navigation_ecrans`
 (l'invariant est vérifié après **chaque** opération du fichier).
+
+## Commit B2 — Une seule pile : la grille et les cinq écrans de liste en sont les vues
+
+**Ce qui a disparu.** Les six sous-contrats que `menu.estOuvert()` OR-combinait encore (sept à l'origine, carte §1.2),
+l'ordre de `return` tenu à la main dans `menu.traiterInput`, `onFermer` / `onFermerVersMenuCartes` (« faire réapparaître »
+le menu qu'on avait masqué), `fermerSansCallback` (l'exception ajoutée pour le placement d'une station), l'ordre de
+fermeture à respecter dans `menu.ouvrir()` (« la grille D'ABORD »), et la pile locale du palier A (`creerPileMenus`).
+
+**Ce qu'il y a à la place.** `ui/menu.js` crée **une** `creerNavigationEcrans()` et la donne à la grille ; les cinq écrans
+de liste deviennent des **vues** (`montrer(niveau)` / `masquer()` / `estVisible()` / `traiterInput`). Un niveau de liste
+porte son contenu : `{ vue, id, obtenirEntrees, titre }`.
+
+- `menu.estOuvert()` = `navigation.estOuvert()` — une question, posée à un endroit.
+- `menu.traiterInput()` = `navigation.traiterInput()` — les verbes vont au sommet, et à lui seul.
+- Poche / Stats / Construction **s'empilent** sur le niveau de cartes qui les ouvre ; « Fermer » (clic) et B (verbe)
+  appellent **la même fonction**, `navigation.retour`. Craft et Coffre (INTERACT) s'ouvrent seuls dans la même pile :
+  retour → plus rien dessous → tout est fermé.
+- Placement d'une station : `navigation.masquerSommet()` — pile intacte `[racine, liste]`, menu **pas ouvert** ; le retour
+  à la liste est un `remontrerSommet()` (entrées relues à neuf).
+- La grille garde son API seule (banc d'essai, test A3 **vert sans être touché** hors du bloc « pile locale ») : sans
+  pile injectée, elle s'en crée une.
+
+**Le test que la spec exige** — `test_d43_b2_pile_unique_transitions` : vrai `ui/menu.js`, vrai orchestrateur, vrai
+catalogue, **toutes** les transitions du tableau §3 de la carte (plus dossier / bascule / action), invariant vérifié après
+**chaque** frame et **chaque** clic : `menu.estOuvert() === un écran réellement visible`, **jamais deux écrans visibles**,
+bandeau ⇔ placement, et « pile non vide sans rien de visible » n'existe **que** pendant un placement. Vérifié par
+mutation : neutraliser `masquer()` de la grille, ou le `masquerSommet()` du placement, le fait tomber.
+
+Tests adaptés : `test_d43_a4` (un écran de liste est désormais un **niveau** de la pile : on n'observe plus « la grille a
+gardé son état en se masquant » mais « B a dépilé un niveau, focus rendu à la carte ») ; `test_d43_a3` (bloc « pile
+locale » retiré, porté par `test_d43_b1`). **89 fichiers verts.** Aucun changement visuel attendu : si Xav voit une
+différence, c'est un défaut.

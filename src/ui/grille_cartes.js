@@ -1,9 +1,16 @@
 // Menus en grille de cartes (specs/08_menus-cartes.md) — le composant DOM.
 //
-// Un seul élément plein écran, qui affiche le SOMMET d'une pile d'écrans de
-// cartes. Tout ce qui se décide sans DOM vit dans `menu_cartes.js` (grille,
-// voisin, cases, pile, confirmation) ; ici, on construit des éléments, on pose
-// des classes, et on route trois verbes.
+// Un seul élément plein écran, qui affiche le niveau de cartes au SOMMET de la
+// pile du menu. Tout ce qui se décide sans DOM vit dans `menu_cartes.js`
+// (grille, voisin, cases, pile, confirmation) ; ici, on construit des éléments,
+// on pose des classes, et on route trois verbes.
+//
+// Palier B : ce composant est une VUE de LA pile du menu entier
+// (`menu_cartes.js#creerNavigationEcrans`). Il ne s'affiche ni ne se masque
+// plus lui-même : il empile, il demande un retour, et la pile appelle
+// `montrer` / `masquer`. Elle lui est injectée par `ui/menu.js`, qui y
+// empile aussi ses écrans de liste ; sans elle (le banc d'essai, les tests du
+// composant seul), il s'en crée une pour lui.
 //
 // Ce que ce module ne connaît pas, et ne doit jamais connaître :
 //   - un écran, une carte ou une action par son id (le catalogue les apporte,
@@ -16,7 +23,7 @@
 // `creerMenuCartes()`.
 import {
   resoudreCases, premiereCasePresente, voisin, choisirGrille, nombreCases,
-  creerLecteurDirection, creerPileMenus, construireConfirmation,
+  creerLecteurDirection, creerNavigationEcrans, construireConfirmation,
 } from '../menu_cartes.js';
 
 // Le faux DOM des tests headless n'a ni `setProperty` ni `setAttribute` : leur
@@ -50,11 +57,16 @@ const GRILLE_VIDE = '';
 //   afficherEcran    (el, visible) => void    LE point d'affichage de `ui/menu.js`
 //   seuilPoussee     `ui/menu.js#SEUIL_POUSSEE_MENU`
 //   onFermer         () => void               le menu entier vient de se fermer
+//                                             (sans objet si `navigation` est injectée :
+//                                             c'est elle qui prévient)
+//   navigation       LA pile du menu entier, partagée — optionnelle
 export function creerMenuCartes({
   document, i18n, menus, actions = {}, etats = {}, ecrans = {},
   evaluerCondition = () => true, couleurAccent = () => null, rectangleJeu = () => null,
   dessinerIcone = () => {}, afficherEcran, seuilPoussee, onFermer = () => {},
+  navigation = null,
 }) {
+  const nav = navigation || creerNavigationEcrans({ onFermer });
   const parId = new Map(menus.map((e) => [e.id, e]));
   const racine = menus.find((e) => e.racine === true);
 
@@ -105,7 +117,6 @@ export function creerMenuCartes({
   afficherEcran(el, false);
   document.body.appendChild(el);
 
-  const pile = creerPileMenus();
   const lecteur = creerLecteurDirection(seuilPoussee);
   let cases = []; // cases du sommet, telles qu'affichées (carte ou null)
   let elementsCases = []; // l'élément DOM de chaque case, même rang
@@ -123,16 +134,33 @@ export function creerMenuCartes({
     ].filter(Boolean).join(' ');
   }
 
+  // Le niveau de cartes affiché : le sommet de la pile, s'il est à nous. Un
+  // écran de liste peut être posé au-dessus — alors ce composant n'a rien à
+  // afficher, et rien à écrire dans un niveau qui n'est pas le sien.
+  function niveauCourant() {
+    const sommet = nav.sommet();
+    return sommet && sommet.vue === vue ? sommet : null;
+  }
+
+  // Un niveau de cartes : l'écran, et la case focalisée — c'est parce que le
+  // focus vit DANS le niveau que « Retour » le rend à la carte qui avait
+  // ouvert l'écran qu'on quitte (§4.3).
+  function niveauPour(ecran) {
+    return { vue, id: ecran.id, ecran, focus: null };
+  }
+
   function appliquerFocus() {
-    const focus = pile.sommet() ? pile.sommet().focus : -1;
+    const niveau = niveauCourant();
+    const focus = niveau ? niveau.focus : -1;
     elementsCases.forEach((elCase, i) => {
       if (cases[i]) elCase.className = classesCarte(cases[i], i === focus);
     });
   }
 
   function poserFocus(i) {
-    if (!cases[i]) return; // une case vide n'est jamais focalisable
-    pile.definirFocus(i);
+    const niveau = niveauCourant();
+    if (!niveau || !cases[i]) return; // une case vide n'est jamais focalisable
+    niveau.focus = i;
     appliquerFocus();
   }
 
@@ -191,7 +219,7 @@ export function creerMenuCartes({
   // `fullscreenchange`) : les conditions et les états sont relus, jamais
   // mémorisés.
   function rendre() {
-    const sommet = pile.sommet();
+    const sommet = niveauCourant();
     if (!sommet) return;
     const ecran = sommet.ecran;
     colonnes = choisirGrille(nombreCases(ecran)).colonnes;
@@ -202,7 +230,7 @@ export function creerMenuCartes({
       sommet.focus = premiereCasePresente(cases);
     }
 
-    const aLaRacine = pile.profondeur() === 1;
+    const aLaRacine = nav.profondeur() === 1;
     titre.textContent = i18n.t(ecran.cle_titre);
     const cleSortie = aLaRacine ? 'menu.fermer' : 'menu.retour';
     motEntete.textContent = i18n.t(cleSortie);
@@ -254,38 +282,48 @@ export function creerMenuCartes({
     poserVariable(el, '--menu-accent', couleurAccent());
   }
 
-  function montrer() {
-    actualiserAccent();
-    afficherEcran(el, true);
-    actualiserGeometrie();
-    rendre();
-  }
+  // Ce que la pile appelle. `montrer` relit TOUT (accent, géométrie, cases,
+  // états) : le joueur peut revenir d'un écran de liste, ou d'un placement de
+  // station, après que le monde a changé.
+  const vue = {
+    montrer() {
+      actualiserAccent();
+      afficherEcran(el, true);
+      actualiserGeometrie();
+      rendre();
+    },
+    masquer() {
+      afficherEcran(el, false);
+    },
+    // L'état RÉEL de l'élément : c'est lui que lit `nav.estOuvert()`.
+    estVisible: () => !el.hidden,
+    traiterInput(etat) {
+      const niveau = niveauCourant();
+      if (!niveau) return;
+      if (etat.skill_3 && etat.skill_3.pressed) {
+        retour();
+        return;
+      }
+      const direction = lecteur.lire(etat.move);
+      if (direction) {
+        poserFocus(voisin(niveau.focus, direction, colonnes, cases.length, (i) => cases[i] !== null));
+      }
+      if (etat.attack && etat.attack.pressed) activer(niveau.focus);
+    },
+  };
 
-  function fermerTout() {
-    pile.vider();
-    lecteur.reinitialiser();
-    afficherEcran(el, false);
-    onFermer();
-  }
-
-  // Retour (B, `[←]`, « Non, revenir ») : dépile UN écran. Le niveau retrouvé
-  // a gardé son focus — c'est la carte qui avait ouvert l'écran qu'on quitte.
-  // À la racine, il n'y a plus rien à dépiler : on ferme. `[X]` et B y font
-  // donc la même chose par la même fonction.
+  // Retour (B, `[←]`, « Non, revenir ») : dépile UN écran — c'est la pile qui
+  // le fait, et qui ferme tout s'il n'y a plus rien dessous. `[X]` et B à la
+  // racine font donc la même chose par la même fonction.
   function retour() {
     message.textContent = AUCUN_MESSAGE;
-    if (pile.profondeur() <= 1) {
-      fermerTout();
-      return;
-    }
-    pile.depiler();
-    rendre();
+    nav.retour();
   }
 
   // « Agit, puis ferme » (§4.1).
   function executerAction(carte) {
     actions[carte.action]();
-    fermerTout();
+    nav.fermerTout();
   }
 
   // Une bascule change un état SUR PLACE, l'écran reste ouvert. Son résultat
@@ -295,7 +333,8 @@ export function creerMenuCartes({
   // transporte une CLÉ, jamais un texte composé.
   function executerBascule(carte) {
     const conclure = (resultat) => {
-      if (pile.profondeur() === 0) return; // le menu a été fermé entre-temps
+      // Le menu a pu être fermé entre-temps, ou un écran de liste posé dessus.
+      if (!niveauCourant()) return;
       if (resultat && resultat.cleMessage) message.textContent = i18n.t(resultat.cleMessage);
       rendre();
     };
@@ -315,20 +354,21 @@ export function creerMenuCartes({
     } else if (carte.type === 'dossier') {
       const cible = parId.get(carte.cible);
       if (cible) {
-        pile.empiler(cible, null);
-        rendre();
+        nav.empiler(niveauPour(cible));
       } else {
         // Écran existant (Poche, Stats, Construction) : il est plein écran lui
-        // aussi, donc on se MASQUE sans rien dépiler — il rappellera
-        // `reafficher()` en se fermant, et le focus sera resté sur sa carte.
-        afficherEcran(el, false);
+        // aussi. Dans le jeu, la fonction enregistrée EMPILE son écran sur la
+        // même pile, qui masque alors cette grille ; le retour la remontrera,
+        // focus resté sur sa carte. On masque quand même le sommet d'abord :
+        // ce composant ne sait pas ce que fait la fonction, et un appelant
+        // sans pile partagée (le banc d'essai) rappelle `reafficher()`.
+        nav.masquerSommet();
         ecrans[carte.cible]();
       }
     } else if (carte.type === 'bascule') {
       executerBascule(carte);
     } else if (carte.danger) {
-      pile.empiler(construireConfirmation(carte, racine.icone_retour), null);
-      rendre();
+      nav.empiler(niveauPour(construireConfirmation(carte, racine.icone_retour)));
     } else {
       executerAction(carte);
     }
@@ -338,54 +378,43 @@ export function creerMenuCartes({
 
   return {
     element: el,
+    // Ouvre le menu à sa RACINE : ce qui restait dans la pile est oublié.
     ouvrir() {
-      pile.vider();
       lecteur.reinitialiser();
       message.textContent = AUCUN_MESSAGE;
-      pile.empiler(racine, null);
-      montrer();
+      nav.ouvrir(niveauPour(racine));
     },
-    // Fermeture PROGRAMMATIQUE (`menu.fermer()`) : ne rappelle pas `onFermer`,
-    // c'est l'appelant qui ferme.
+    // Fermeture PROGRAMMATIQUE : ne rappelle pas `onFermer`, c'est l'appelant
+    // qui ferme. Même point de passage que toutes les autres fermetures.
     fermer() {
-      pile.vider();
       lecteur.reinitialiser();
-      afficherEcran(el, false);
+      nav.fermerTout({ prevenir: false });
     },
-    // Même contrat que tous les contrôleurs de `ui/menu.js` : intention ET
-    // DOM réellement visible, jamais l'un sans l'autre. Pendant qu'un écran
-    // existant est ouvert par-dessus, la pile n'est pas vide mais l'élément
-    // est caché : ce composant n'est PAS « ouvert », c'est l'autre qui l'est.
-    estOuvert: () => pile.profondeur() > 0 && !el.hidden,
-    // Un écran existant vient de se fermer : on réapparaît tel qu'on était.
-    // Sans effet si le menu a été fermé entre-temps (pile vide).
+    // « Ce composant est ouvert » = le menu est ouvert ET c'est un niveau de
+    // cartes qui est au sommet. Pendant qu'un écran de liste est posé dessus,
+    // ou que le sommet est masqué, ce n'est PAS lui qui est ouvert.
+    estOuvert: () => nav.estOuvert() && niveauCourant() !== null,
+    // Pour un appelant SANS pile partagée (banc d'essai, tests du composant) :
+    // l'écran qu'une carte dossier avait ouvert vient de se fermer. Sans effet
+    // si le menu a été fermé entre-temps.
     reafficher() {
-      if (pile.profondeur() === 0) return;
-      montrer();
+      if (niveauCourant()) nav.remontrerSommet();
     },
     rafraichir() {
-      if (pile.profondeur() > 0 && !el.hidden) rendre();
+      if (nav.estOuvert() && niveauCourant()) rendre();
     },
     actualiserGeometrie,
     traiterInput(etat) {
-      if (pile.profondeur() === 0 || el.hidden) return;
-      if (etat.skill_3 && etat.skill_3.pressed) {
-        retour();
-        return;
-      }
-      const direction = lecteur.lire(etat.move);
-      if (direction) {
-        const total = cases.length;
-        poserFocus(voisin(pile.sommet().focus, direction, colonnes, total, (i) => cases[i] !== null));
-      }
-      if (etat.attack && etat.attack.pressed) activer(pile.sommet().focus);
+      nav.traiterInput(etat);
     },
     // Observation pour les tests headless (le DOM réel n'est jamais exercé) —
-    // même patron que les accesseurs de l'orchestrateur.
+    // même patron que les accesseurs de l'orchestrateur. `ecran` est l'id du
+    // SOMMET de la pile, quel qu'il soit ; `focus` et `cases` ne parlent que
+    // d'un niveau de cartes.
     obtenirEtat: () => ({
-      profondeur: pile.profondeur(),
-      ecran: pile.sommet() ? pile.sommet().ecran.id : null,
-      focus: pile.sommet() ? pile.sommet().focus : -1,
+      profondeur: nav.profondeur(),
+      ecran: nav.sommet() ? nav.sommet().id : null,
+      focus: niveauCourant() ? niveauCourant().focus : -1,
       cases: cases.map((c) => (c ? c.id : null)),
       colonnes,
     }),

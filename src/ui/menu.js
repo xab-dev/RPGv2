@@ -7,12 +7,18 @@
 // le DOM au chargement du module : tout se passe dans initialiserMenu(),
 // appelée par main.js une fois le document prêt.
 //
+// Palier B : la grille ET les cinq écrans de liste sont les VUES d'UNE seule
+// pile (`menu_cartes.js#creerNavigationEcrans`). Ouvrir = empiler, retour =
+// dépiler, « le menu est ouvert » = « la pile n'est pas vide et son sommet est
+// visible ». Plus aucun écran ne s'affiche ni ne se masque lui-même.
+//
 // creerNavigationMenu() et creerControleurMenu() sont pures (aucune
 // référence DOM, actions passées en callbacks) : c'est le patron de focus
 // que reprennent tous les écrans d'UI — écrit une fois ici, testé depuis
 // Node sans faux DOM.
 
 import { creerMenuCartes } from './grille_cartes.js';
+import { creerNavigationEcrans } from '../menu_cartes.js';
 
 // Provisoire, comme les autres mappings de gamepad.js : au-delà de ce
 // seuil, le stick/la flèche est considéré "poussé" dans une direction ;
@@ -219,12 +225,17 @@ export function afficherEcran(el, visible) {
 // reconstruit à l'ouverture ET à la demande (`rafraichir()`, appelé par
 // main.js après une action qui change l'état affiché — ex. un craft qui
 // grise la recette suivante, cf. edge case §4 de la fiche).
-// `onFermer` (optionnel) : rappelé à CHAQUE fermeture, quel que soit le
-// chemin (clic sur "Fermer", B/skill_3, ou fermeture programmatique) — Poche
-// et Stats s'en servent pour réafficher le menu principal qu'ils masquent
-// sans jamais le fermer lui-même (§3.4/§3.6) ; Craft/Coffre (ouverts
-// directement par INTERACT, hors du menu Pause) n'en ont pas besoin.
-function creerEcranListeGenerique(document, i18n, { onFermer } = {}) {
+//
+// Palier B (specs/08_menus-cartes.md) : cet écran est une VUE de la pile du
+// menu. Il ne s'ouvre ni ne se ferme plus lui-même — la pile appelle
+// `montrer(niveau)` et `masquer()` —, et ses deux sorties (« Fermer » au clic,
+// B/skill_3 au verbe) appellent LA MÊME fonction injectée, `onRetour` (le
+// `retour()` de la pile). Ce qui a disparu avec : `onFermer`, par lequel Poche
+// et Stats faisaient réapparaître le menu qu'ils avaient masqué, et
+// `fermerSansCallback`, l'exception qu'il avait fallu lui ajouter pour le
+// placement d'une station. Un niveau de liste porte son contenu :
+// `{ vue, id, obtenirEntrees, titre, aide? }`.
+function creerEcranListeGenerique(document, i18n, { onRetour }) {
   const el = document.createElement('div');
   appliquerClasseEcran(el);
   afficherEcran(el, false);
@@ -276,24 +287,16 @@ function creerEcranListeGenerique(document, i18n, { onFermer } = {}) {
   el.appendChild(entete);
   document.body.appendChild(el);
 
-  // `element: el` (SD_construction-ecrans-orphelins_2026-09-17 §2) : ce
-  // contrôleur portait déjà le ET avec le DOM, mais à l'EXTÉRIEUR
-  // (`estOuvert()` plus bas faisait `controleur.estOuvert() && !el.hidden`)
-  // — désormais porté par `creerControleurMenu` lui-même, comme les
-  // contrôleurs du menu Pause. Ne JAMAIS refaire le `&&` ici en plus (voir
-  // `estOuvert()` de l'objet retourné, plus bas).
+  // Le contrôleur ne sert plus ici qu'au FOCUS (index, front montant, verbe
+  // d'annulation) : « cet écran est-il ouvert ? » n'est plus sa question,
+  // c'est celle de la pile. `element: el` reste passé — son `traiterInput`
+  // est ainsi inerte sur un écran masqué, même si quelqu'un l'appelait.
   //
-  // `onAnnuler: onAnnulerEcran` (SD_construction-parite-clic-verbe_2026-09-19
-  // §3.2) : SEUL déclencheur de « B/skill_3 a fermé cet écran » — remplace la
-  // déduction après coup que faisait l'ancien `traiterInput` (plus bas), qui
-  // se trompait quand une ACTION (ex. choisir une station) fermait ce même
-  // contrôleur pour une autre raison (`fermerSansCallback`, qui ne doit
-  // JAMAIS rappeler `onFermer`).
-  function onAnnulerEcran() {
-    afficherEcran(el, false);
-    if (onFermer) onFermer();
-  }
-  let controleur = creerControleurMenu([], { verbeAnnuler: 'skill_3', element: el, onAnnuler: onAnnulerEcran });
+  // `onAnnuler: onRetour` (SD_construction-parite-clic-verbe_2026-09-19 §3.2,
+  // conservé) : B/skill_3 est un ÉVÉNEMENT déclaré, jamais une déduction après
+  // coup — et depuis le palier B il appelle exactement ce qu'appelle le clic
+  // sur « Fermer ».
+  let controleur = creerControleurMenu([], { verbeAnnuler: 'skill_3', element: el, onAnnuler: onRetour });
   let elements = [];
   let fournisseurEntrees = () => [];
 
@@ -301,20 +304,10 @@ function creerEcranListeGenerique(document, i18n, { onFermer } = {}) {
     appliquerFocusVisuel(elements, controleur.index());
   }
 
+  // « Fermer » : la dernière entrée de la navigation ET le bouton de
+  // l'en-tête. Un retour, rien d'autre — c'est la pile qui masque.
   function fermer() {
-    controleur.fermer();
-    afficherEcran(el, false);
-    if (onFermer) onFermer();
-  }
-
-  // MT_construction-bandeau-placement_2026-09-17 : ferme l'écran SANS
-  // rappeler `onFermer` — nécessaire quand l'appelant enchaîne lui-même sur
-  // un autre affichage (le bandeau de placement) et ne veut PAS que le menu
-  // principal réapparaisse dessous entre-temps (contrairement à `fermer()`,
-  // dont c'est précisément le rôle pour Poche/Stats/Construction).
-  function fermerSansCallback() {
-    controleur.fermer();
-    afficherEcran(el, false);
+    onRetour();
   }
 
   function reconstruire() {
@@ -334,7 +327,7 @@ function creerEcranListeGenerique(document, i18n, { onFermer } = {}) {
     elements = [...Array.from(liste.querySelectorAll('.menu-item')), itemFermer];
     const boutonsListe = Array.from(liste.querySelectorAll('button'));
     const indexPrecedent = controleur.index();
-    controleur = creerControleurMenu(toutes.map((e) => e.action), { verbeAnnuler: 'skill_3', element: el, onAnnuler: onAnnulerEcran });
+    controleur = creerControleurMenu(toutes.map((e) => e.action), { verbeAnnuler: 'skill_3', element: el, onAnnuler: onRetour });
     controleur.ouvrir();
     controleur.definirIndex(indexPrecedent);
     // Les entrées de la liste sont des éléments NEUFS à chaque reconstruction
@@ -366,30 +359,34 @@ function creerEcranListeGenerique(document, i18n, { onFermer } = {}) {
     actualiserFocus();
   };
 
+  // La vue, telle que la pile l'attend (`menu_cartes.js#creerNavigationEcrans`).
   return {
-    ouvrir(obtenirEntrees, texteTitre, texteAide = '') {
-      fournisseurEntrees = obtenirEntrees;
-      titre.textContent = texteTitre;
-      aide.textContent = texteAide;
+    // Les entrées sont relues À NEUF à chaque affichage : revenir sur la liste
+    // après la pose d'une station, c'est la retrouver à jour. Le focus, lui,
+    // est repris là où il était (`reconstruire`).
+    montrer(niveau) {
+      fournisseurEntrees = niveau.obtenirEntrees;
+      titre.textContent = niveau.titre;
+      aide.textContent = niveau.aide || '';
       afficherEcran(el, true);
       reconstruire();
     },
-    fermer,
-    fermerSansCallback,
-    // Le `&& !el.hidden` vivait ici avant SD_construction-ecrans-orphelins
-    // §2 — désormais porté par `controleur` lui-même (`element: el` passé à
-    // `creerControleurMenu` ci-dessus), jamais les deux à la fois.
-    estOuvert: () => controleur.estOuvert(),
-    rafraichir: reconstruire,
-    // SD_construction-parite-clic-verbe_2026-09-19 §3.2 : plus de branche
-    // `else` ici. Avant cette fiche, elle DÉDUISAIT « fermé par B/skill_3 » du
-    // seul fait que `controleur.estOuvert()` valait faux après
-    // `traiterInput(etat)` — or une action choisie par ATTACK peut fermer ce
-    // même contrôleur pour une tout autre raison (`fermerSansCallback`) sans
-    // jamais vouloir rappeler `onFermer`. La fermeture par B/skill_3 est
-    // désormais un événement déclaré (`onAnnuler`, câblé ci-dessus), pas une
-    // inférence : plus rien à faire ici que rafraîchir le focus si l'écran
-    // est resté ouvert.
+    masquer() {
+      controleur.fermer();
+      afficherEcran(el, false);
+    },
+    // L'état RÉEL de l'élément : c'est lui que lit la pile.
+    estVisible: () => !el.hidden,
+    // Après une action qui change ce qui est affiché (un craft, un dépôt, un
+    // point de stat). Sans effet sur un écran masqué : reconstruire rouvrirait
+    // son contrôleur dans le dos de la pile.
+    rafraichir() {
+      if (!el.hidden) reconstruire();
+    },
+    // SD_construction-parite-clic-verbe_2026-09-19 §3.2 : aucune déduction ici.
+    // B/skill_3 est un événement déclaré (`onAnnuler`) ; une action choisie par
+    // ATTACK peut elle aussi faire quitter l'écran (choisir une station). Il ne
+    // reste qu'à rafraîchir le focus si l'écran est toujours là.
     traiterInput(etat) {
       controleur.traiterInput(etat);
       if (controleur.estOuvert()) {
@@ -412,6 +409,10 @@ function creerEcranListeGenerique(document, i18n, { onFermer } = {}) {
 const ECRAN_POCHE = 'ecran_poche';
 const ECRAN_STATS = 'ecran_stats';
 const ECRAN_CONSTRUCTION = 'ecran_construction';
+// Craft et Coffre ne sont cités par aucune carte (INTERACT les ouvre depuis le
+// monde) : ces deux ids ne servent qu'à nommer leur niveau dans la pile.
+const ECRAN_CRAFT = 'ecran_craft';
+const ECRAN_COFFRE = 'ecran_coffre';
 
 // Les clés de texte que les lecteurs d'état peuvent rendre : elles ne sont
 // citées par aucune carte (c'est le code qui les choisit, selon l'état réel),
@@ -463,27 +464,26 @@ export function initialiserMenu({
   // (quantité en texte), "Équiper" n'étant une action réelle que sur la
   // nourriture (les autres lignes ont une action vide, focalisables sans
   // effet — plus simple qu'un 2e type de ligne non focalisable).
-  // Poche/Stats/Construction s'ouvrent DEPUIS une carte : la grille se masque
-  // sans se dépiler, et `onFermer` la fait réapparaître où elle était, quel
-  // que soit le chemin de fermeture (clic « Fermer » ou B/skill_3).
-  // `menuCartes` est déclarée plus bas dans ce même scope : jamais lue avant
-  // qu'un écran soit ouvert, donc jamais avant d'exister.
-  function onFermerVersMenuCartes() {
-    menuCartes.reafficher();
-  }
-  const ecranPoche = creerEcranListeGenerique(document, i18n, { onFermer: onFermerVersMenuCartes });
-  const ecranCraft = creerEcranListeGenerique(document, i18n);
-  const ecranCoffre = creerEcranListeGenerique(document, i18n);
-  const ecranStats = creerEcranListeGenerique(document, i18n, { onFermer: onFermerVersMenuCartes });
+  //
+  // LA pile du menu (palier B). Poche, Stats et Construction s'EMPILENT sur le
+  // niveau de cartes qui les ouvre ; Craft et Coffre s'ouvrent seuls, depuis
+  // le monde. Dans les deux cas « Fermer » et B/skill_3 sont un `retour()` :
+  // il reste quelque chose dessous, on y revient (focus resté sur la carte) ;
+  // il ne reste rien, tout est fermé. Plus personne ne « fait réapparaître »
+  // le menu : il n'avait pas disparu, il était sous le sommet.
+  const navigation = creerNavigationEcrans();
+  const ecranPoche = creerEcranListeGenerique(document, i18n, { onRetour: navigation.retour });
+  const ecranCraft = creerEcranListeGenerique(document, i18n, { onRetour: navigation.retour });
+  const ecranCoffre = creerEcranListeGenerique(document, i18n, { onRetour: navigation.retour });
+  const ecranStats = creerEcranListeGenerique(document, i18n, { onRetour: navigation.retour });
   // Construction (specs/05_construction-stations.md §3, précisée par
   // MT_construction-bandeau-placement_2026-09-17 v1.0.1) : ouvert DEPUIS le
-  // menu Pause (comme Poche/Stats, `onFermer` symétrique pour B/skill_3).
-  // Choisir une station dans cette liste la masque SANS callback
-  // (`fermerSansCallback`, main.js#demarrerConstruction) — le placement qui
-  // suit affiche la pièce + un bandeau, jamais cet écran plein-écran par
-  // dessus (c'était le bug du micro-ticket : le fantôme restait invisible
-  // derrière la liste).
-  const ecranConstruction = creerEcranListeGenerique(document, i18n, { onFermer: onFermerVersMenuCartes });
+  // menu Pause, comme Poche/Stats. Choisir une station dans cette liste
+  // MASQUE le sommet de la pile sans rien dépiler (`ouvrirPlacementConstruction`)
+  // — le placement qui suit affiche la pièce + un bandeau, jamais cet écran
+  // plein-écran par dessus (c'était le bug du micro-ticket : le fantôme
+  // restait invisible derrière la liste).
+  const ecranConstruction = creerEcranListeGenerique(document, i18n, { onRetour: navigation.retour });
 
   // Bandeau de placement (MT_construction-bandeau-placement_2026-09-17) : UI
   // PERMANENTE du mode (jamais via hints.js), en filigrane, SANS focus ni
@@ -552,22 +552,32 @@ export function initialiserMenu({
   // à `false` pendant le placement — ça réparait le sens ALLER, mais cassait
   // le RETOUR (SD_construction-ecrans-orphelins_2026-09-17.md, symptôme 3).
   // Cause racine RÉELLE (carte §1.2) : `menu.estOuvert()` OR-combinait deux
-  // CONTRATS différents pour « ouvert ». Avec le contrat UNIFIÉ (intention ET
-  // DOM visible, que la grille de cartes applique elle aussi), un écran
-  // masqué n'est pas « ouvert » : pendant le placement, la grille est masquée
-  // (sa pile intacte), la liste est fermée, et `menu.estOuvert()` vaut faux
-  // sans que personne ait eu à fermer puis rouvrir quoi que ce soit.
+  // CONTRATS différents pour « ouvert ». Depuis le palier B il n'y en a plus
+  // qu'un, écrit une fois dans la pile : pendant le placement son sommet est
+  // MASQUÉ (la pile intacte : racine, puis la liste), donc le menu n'est pas
+  // « ouvert », sans que personne ait eu à fermer puis rouvrir quoi que ce soit.
   function ouvrirPlacementConstruction(nomStation) {
-    ecranConstruction.fermerSansCallback();
+    navigation.masquerSommet();
     bandeauConstruction.textContent = texteBandeauConstruction(nomStation);
     afficherEcran(bandeauConstruction, true);
   }
 
+  function niveauConstruction() {
+    return {
+      vue: ecranConstruction, id: ECRAN_CONSTRUCTION,
+      obtenirEntrees: fournisseurEntreesConstruction, titre: i18n.t('menu.construction_titre'),
+    };
+  }
+
   // Retour liste (pose confirmée ou `B`, §4) : on enchaîne sans repasser par
-  // la grille — la liste réapparaît directement avec des entrées fraîches.
+  // la grille — la liste réapparaît directement avec des entrées fraîches
+  // (`montrer` les relit). Elle est déjà au sommet, masquée, quand on vient
+  // d'un placement ; un appelant qui arriverait d'ailleurs la trouve empilée.
   function reouvrirListeConstruction() {
     afficherEcran(bandeauConstruction, false);
-    ecranConstruction.ouvrir(fournisseurEntreesConstruction, i18n.t('menu.construction_titre'));
+    const sommet = navigation.sommet();
+    if (sommet && sommet.vue === ecranConstruction) navigation.remontrerSommet();
+    else navigation.empiler(niveauConstruction());
   }
 
   // Sortie propre vers le menu Pause (`MENU` pendant le placement, §4) :
@@ -661,11 +671,17 @@ export function initialiserMenu({
     etat_plein_ecran: () => (pleinEcranActif() ? 'menu.etat.plein_ecran_oui' : 'menu.etat.plein_ecran_non'),
   };
   // Les écrans EXISTANTS qu'une carte dossier peut ouvrir, inchangés (palier
-  // C). La grille s'est déjà masquée quand ces fonctions sont appelées.
+  // C) : chacun s'EMPILE sur le niveau de cartes qui l'ouvre. Les fournisseurs
+  // passent par une fonction fléchée, jamais par référence : `main.js` les
+  // remplace après coup (voir plus haut).
   const ecrans = {
-    [ECRAN_POCHE]: () => ecranPoche.ouvrir(entreesPoche, i18n.t('menu.poche_titre')),
-    [ECRAN_STATS]: () => ecranStats.ouvrir(fournisseurEntreesStats, i18n.t('menu.stats_titre')),
-    [ECRAN_CONSTRUCTION]: () => ecranConstruction.ouvrir(fournisseurEntreesConstruction, i18n.t('menu.construction_titre')),
+    [ECRAN_POCHE]: () => navigation.empiler({
+      vue: ecranPoche, id: ECRAN_POCHE, obtenirEntrees: entreesPoche, titre: i18n.t('menu.poche_titre'),
+    }),
+    [ECRAN_STATS]: () => navigation.empiler({
+      vue: ecranStats, id: ECRAN_STATS, obtenirEntrees: () => fournisseurEntreesStats(), titre: i18n.t('menu.stats_titre'),
+    }),
+    [ECRAN_CONSTRUCTION]: () => navigation.empiler(niveauConstruction()),
   };
 
   const menuCartes = creerMenuCartes({
@@ -673,29 +689,24 @@ export function initialiserMenu({
     evaluerCondition: (condition) => evaluerCondition(condition),
     couleurAccent, rectangleJeu, dessinerIcone,
     afficherEcran, seuilPoussee: SEUIL_POUSSEE_MENU,
+    navigation,
   });
   // L'id historique du menu Pause : les tests et les diagnostics le cherchent
   // sous ce nom depuis la Phase 0.
   menuCartes.element.id = 'menu';
 
   return {
+    // Le menu Pause s'ouvre toujours à sa racine : ce qui restait dans la pile
+    // (un placement quitté par MENU) est oublié, et la pile masque elle-même
+    // tout ce qui n'est pas son sommet — plus d'ordre de fermeture à respecter.
     ouvrir() {
       afficherEcran(bandeauConstruction, false);
-      // La grille D'ABORD : fermée (pile vide), elle ignore le `reafficher()`
-      // que déclenche la fermeture des trois écrans qui suivent.
-      menuCartes.fermer();
-      ecranPoche.fermer();
-      ecranStats.fermer();
-      ecranConstruction.fermer();
       menuCartes.ouvrir();
     },
+    // LE chemin de fermeture (`navigation.fermerTout`) : celui de `[X]` et de B
+    // à la racine, et d'une carte `action`.
     fermer() {
-      menuCartes.fermer();
-      ecranPoche.fermer();
-      ecranCraft.fermer();
-      ecranCoffre.fermer();
-      ecranStats.fermer();
-      ecranConstruction.fermer();
+      navigation.fermerTout();
       afficherEcran(bandeauConstruction, false);
     },
     // MT_construction-bandeau-placement_2026-09-17 : transitions de la
@@ -722,14 +733,10 @@ export function initialiserMenu({
       // placement. Le gel du jeu pendant le placement reste couvert par
       // `constructionActif()`, lu séparément côté main.js.
       //
-      // Six sous-contrats au lieu de sept : la confirmation de reset n'est
-      // plus un écran à part, c'est un niveau de la pile de la grille. Les
-      // réunir en UNE pile est le palier B — rien d'autre ne bouge ici.
-      return (
-        menuCartes.estOuvert() ||
-        ecranPoche.estOuvert() || ecranCraft.estOuvert() || ecranCoffre.estOuvert() || ecranStats.estOuvert() ||
-        ecranConstruction.estOuvert()
-      );
+      // Palier B : UNE question, posée à UN endroit. Les sept sous-contrats
+      // que cette fonction OR-combinait (carte §1.2) ont disparu — « ouvert »
+      // = la pile n'est pas vide ET son sommet est réellement visible.
+      return navigation.estOuvert();
     },
     // `D-30` : appelée par main.js sur `fullscreenchange` — le seul moment où
     // l'état réel peut changer sans que ce module ait rien demandé (Échap, un
@@ -748,6 +755,11 @@ export function initialiserMenu({
     cablage: () => ({ actions: Object.keys(actions), etats: Object.keys(etats), ecrans: Object.keys(ecrans) }),
     // Observation pour les tests headless (même patron que l'orchestrateur).
     obtenirEtatCartes: () => menuCartes.obtenirEtat(),
+    // La pile, du bas vers le sommet, par ids de niveau.
+    obtenirEtatPile: () => ({
+      profondeur: navigation.profondeur(),
+      sommet: navigation.sommet() ? navigation.sommet().id : null,
+    }),
     // Fournie par main.js : `flags.evaluate` — les conditions des cartes
     // (case contextuelle, carte absente sans API) sont relues à CHAQUE
     // affichage, jamais figées.
@@ -777,13 +789,13 @@ export function initialiserMenu({
     // l'ouverture par main.js (dépend de la station visée, donc pas fixé à
     // la construction du menu comme `fournisseurEntreesStats`).
     ouvrirCraft(obtenirEntrees, titre) {
-      ecranCraft.ouvrir(obtenirEntrees, titre);
+      navigation.ouvrir({ vue: ecranCraft, id: ECRAN_CRAFT, obtenirEntrees, titre });
     },
     rafraichirCraft() {
       ecranCraft.rafraichir();
     },
     ouvrirCoffre(obtenirEntrees, titre) {
-      ecranCoffre.ouvrir(obtenirEntrees, titre);
+      navigation.ouvrir({ vue: ecranCoffre, id: ECRAN_COFFRE, obtenirEntrees, titre });
     },
     rafraichirCoffre() {
       ecranCoffre.rafraichir();
@@ -792,22 +804,13 @@ export function initialiserMenu({
       ecranStats.rafraichir();
     },
     // Point d'entrée appelé par main.js tant que le menu est ouvert (voir
-    // la priorité UI/gameplay dans main.js#maj). Un seul écran actif à la
-    // fois, et un seul `return` par frame : un verbe consommé par un écran
-    // de liste n'est jamais revu par la grille dans la même frame (B qui
-    // ferme Stats ne dépile pas AUSSI l'écran Héros).
+    // la priorité UI/gameplay dans main.js#maj). Les verbes vont au SOMMET de
+    // la pile, et à lui seul : un verbe consommé par un écran de liste n'est
+    // jamais revu par la grille dans la même frame (B qui ferme Stats ne
+    // dépile pas AUSSI l'écran Héros) — plus par un ordre de `return` à tenir
+    // à la main, par construction.
     traiterInput(etat) {
-      if (ecranCraft.estOuvert()) { ecranCraft.traiterInput(etat); return; }
-      if (ecranCoffre.estOuvert()) { ecranCoffre.traiterInput(etat); return; }
-      // Stats/Poche/Construction : ouverts DEPUIS une carte — leur `onFermer`
-      // fait réapparaître la grille quel que soit le chemin de fermeture.
-      // Choisir une station dans Construction quitte la liste SANS ce
-      // callback (`fermerSansCallback`, main.js#demarrerConstruction ->
-      // `ouvrirPlacementConstruction`, jamais `menu.fermer()`).
-      if (ecranStats.estOuvert()) { ecranStats.traiterInput(etat); return; }
-      if (ecranPoche.estOuvert()) { ecranPoche.traiterInput(etat); return; }
-      if (ecranConstruction.estOuvert()) { ecranConstruction.traiterInput(etat); return; }
-      menuCartes.traiterInput(etat);
+      navigation.traiterInput(etat);
     },
   };
 }

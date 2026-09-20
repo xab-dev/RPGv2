@@ -25,7 +25,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  voisin, resoudreCases, premiereCasePresente, creerLecteurDirection, creerPileMenus,
+  voisin, resoudreCases, premiereCasePresente, creerLecteurDirection,
   construireConfirmation, choisirGrille, CLES_TEXTE_COMPOSANT, erreursTextesMenus,
 } from '../src/menu_cartes.js';
 import { creerMenuCartes } from '../src/ui/grille_cartes.js';
@@ -143,21 +143,10 @@ const lireLocale = (l) => JSON.parse(fs.readFileSync(path.join(RACINE, 'locales'
   console.log('OK lecteur de direction : front montant par axe, un seul cran en diagonale');
 }
 
-// --- 4. Pile et 5. confirmation -----------------------------------------------------
+// --- 4. Pile : la pile LOCALE du palier A a été remplacée au palier B par LA
+// pile du menu entier — `test_d43_b1_navigation_ecrans` en porte le contrat
+// (dont « le niveau retrouvé a gardé SON focus »). 5. Confirmation -------------
 {
-  const pile = creerPileMenus();
-  assert.equal(pile.sommet(), null);
-  assert.equal(pile.depiler(), null, 'dépiler une pile vide ne lève pas');
-  pile.empiler({ id: 'racine' }, 0);
-  pile.definirFocus(1);
-  pile.empiler({ id: 'enfant' }, 0);
-  pile.definirFocus(3);
-  assert.equal(pile.profondeur(), 2);
-  assert.equal(pile.depiler().ecran.id, 'enfant');
-  assert.deepEqual(pile.sommet(), { ecran: { id: 'racine' }, focus: 1 }, 'le niveau retrouvé a gardé SON focus : la carte qui avait ouvert l\'enfant');
-  pile.vider();
-  assert.equal(pile.profondeur(), 0);
-
   const reset = MENUS.flatMap((e) => e.cartes).find((c) => c.danger);
   const confirmation = construireConfirmation(reset, 'visuel_icone_menu_retour');
   assert.equal(confirmation.cle_titre, reset.cle_confirmation);
@@ -166,7 +155,7 @@ const lireLocale = (l) => JSON.parse(fs.readFileSync(path.join(RACINE, 'locales'
   assert.equal(confirmation.cartes[0].action, undefined, '« Non » ne porte aucune action : il dépile');
   assert.deepEqual(choisirGrille(2), { colonnes: 2, rangees: 2 });
   assert.deepEqual(erreursTextesMenus([confirmation], { fr: lireLocale('fr'), en: lireLocale('en') }, CLES_TEXTE_COMPOSANT), [], 'les textes du composant existent en FR et en EN');
-  console.log('OK pile : focus restitué au retour · confirmation : « Non » d\'abord, toujours');
+  console.log('OK confirmation : « Non » d\'abord, toujours');
 }
 
 // --- Faux DOM minimal — même gabarit que les autres tests d'UI (copié, pas

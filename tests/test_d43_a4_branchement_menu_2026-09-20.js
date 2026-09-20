@@ -239,13 +239,19 @@ function construireBanc({ dansLaMaison = true, compagnon, pleinEcranDisponible =
     assert.equal(titreListe(), titre, `${chemin.join(' → ')} ouvre l’écran existant`);
     assert.equal(el.hidden, true, 'la grille s’efface derrière lui');
     assert.equal(menu.estOuvert(), true, 'menu.estOuvert() reste vrai : un écran de menu est visible');
-    const etatAvant = menu.obtenirEtatCartes();
+    // Palier B : l'écran de liste est un NIVEAU de la même pile que les
+    // écrans de cartes (au palier A, la grille se masquait et gardait sa pile
+    // pour elle). Ce que le joueur voit n'a pas changé ; ce qui s'observe, si.
+    const ecranParent = registre.tous('menus').find((e) => e.cartes.some((c) => c.id === chemin.at(-1))).id;
+    assert.equal(menu.obtenirEtatPile().profondeur, chemin.length + 1, 'l’écran de liste est empilé sur le niveau qui l’ouvre');
     banc.jouer(etat({ skill3: true })); // B ferme l'écran de liste…
     assert.equal(listeVisible(), undefined);
     assert.equal(el.hidden, false, '…et la grille réapparaît');
-    assert.deepEqual(menu.obtenirEtatCartes(), etatAvant, 'exactement où on l’avait laissée : même écran, même focus');
+    const apres = menu.obtenirEtatCartes();
+    assert.deepEqual([apres.profondeur, apres.ecran], [chemin.length, ecranParent], 'B a dépilé UN niveau : on retrouve l’écran qui l’avait ouvert');
+    assert.equal(apres.cases[apres.focus], chemin.at(-1), 'exactement où on l’avait laissé : le focus est resté sur la carte');
   }
-  console.log('OK écrans existants : ouverts depuis leurs cartes, refermés par B sans dépiler la grille');
+  console.log('OK écrans existants : ouverts depuis leurs cartes, refermés par B — un seul niveau dépilé, focus rendu');
 }
 
 // --- 5. Les actions : agir, PUIS fermer — et Importer sans contrôle natif dans la grille

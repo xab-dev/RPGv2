@@ -336,8 +336,10 @@ function sequenceParClics() {
   declencherClic(carteDuMenu(document, 'carte_construction'));
   snaps.push(instantane(banc));
 
-  const listeA = ecranVisible(document);
-  declencherClic(boutonsDe(listeA)[0]); // 1ère station
+  // specs/08 palier C6 : la liste Construction est un maître-détail — au
+  // pointeur, on SÉLECTIONNE la tuile puis on agit par le bouton de sa fiche.
+  declencherClic(tuilesDe(ecranVisible(document))[0]); // 1ère station
+  declencherClic(boutonFicheDe(ecranVisible(document)));
   snaps.push(instantane(banc));
 
   // MOVE (déplace le fantôme) : aucun équivalent clic, verbe des deux côtés.
@@ -349,8 +351,8 @@ function sequenceParClics() {
   jouerVerbe(banc, etat({ skill3: true }));
   snaps.push(instantane(banc));
 
-  const listeB = ecranVisible(document);
-  declencherClic(boutonsDe(listeB)[1]); // 2e station
+  declencherClic(tuilesDe(ecranVisible(document))[1]); // 2e station
+  declencherClic(boutonFicheDe(ecranVisible(document)));
   snaps.push(instantane(banc));
 
   // Pose confirmée : verbe des deux côtés (pas de bouton "poser" pendant le
@@ -358,9 +360,7 @@ function sequenceParClics() {
   jouerVerbe(banc, etat({ attack: true }));
   snaps.push(instantane(banc));
 
-  const listeC = ecranVisible(document);
-  const boutonsC = boutonsDe(listeC);
-  declencherClic(boutonsC[boutonsC.length - 1]); // "Fermer" toujours en dernier
+  declencherClic(sortieDe(ecranVisible(document))); // la sortie de l'écran, dans son en-tête
   snaps.push(instantane(banc));
 
   declencherClic(boutonSortieDuMenu(document)); // [X] de l'en-tête, à la racine
@@ -395,19 +395,16 @@ function sequenceParVerbes() {
   snaps.push(instantane(banc));
 
   // A sur la 2e station (index 1) : navigation réelle avant l'ATTACK.
-  focaliserIndex(banc, 1);
+  focaliserTuile(banc, 1);
   jouerVerbe(banc, etat({ attack: true }));
   snaps.push(instantane(banc));
 
   jouerVerbe(banc, etat({ attack: true })); // pose confirmée
   snaps.push(instantane(banc));
 
-  // "Fermer" de la liste : toujours la dernière entrée. Le nombre de stations
-  // n'est pas figé ici — on le lit sur le banc lui-même via l'écran visible.
-  const listeC = ecranVisible(banc.document);
-  const nbEntreesListe = boutonsDe(listeC).length;
-  focaliserIndex(banc, nbEntreesListe - 1);
-  jouerVerbe(banc, etat({ attack: true }));
+  // Quitter la liste : B — la même fonction que la sortie de son en-tête (elle
+  // n'est plus une entrée focalisable, comme sur la grille de cartes).
+  jouerVerbe(banc, etat({ skill3: true }));
   snaps.push(instantane(banc));
 
   // Fermer le menu Pause : B à la racine — la même fonction que le [X] de
@@ -515,9 +512,10 @@ function testerCliqueVsVerbePourEcran(nomDeLEcran, ouvrir) {
 // et pour la SORTIE : clic sur le bouton d'en-tête, contre B. Les tuiles sont
 // lues dans le DOM réel, jamais codées en dur.
 // =========================================================================
-const tuilesDe = (ecran) => ecran.querySelectorAll('[data-tuile]');
-const boutonFicheDe = (ecran) => ecran.querySelectorAll('[data-action]')[0] || null;
-const sortieDe = (ecran) => ecran.querySelectorAll('[data-sortie]')[0] || null;
+// (Des déclarations de fonction, hissées : la Partie 1, plus haut, s'en sert.)
+function tuilesDe(ecran) { return ecran.querySelectorAll('[data-tuile]'); }
+function boutonFicheDe(ecran) { return ecran.querySelectorAll('[data-action]')[0] || null; }
+function sortieDe(ecran) { return ecran.querySelectorAll('[data-sortie]')[0] || null; }
 
 // Le chemin le plus court, au stick, du focus courant à la case visée.
 function focaliserTuile(banc, indexEntree) {
@@ -583,6 +581,6 @@ function testerPariteFiches(nomDeLEcran, ouvrir) {
 
 testerPariteFiches('Poche', ouvrirPoche);
 testerPariteFiches('Stats', ouvrirStats);
-testerCliqueVsVerbePourEcran('Construction (liste)', ouvrirConstructionListe);
+testerPariteFiches('Construction (liste)', ouvrirConstructionListe);
 testerPariteFiches('Craft', ouvrirCraft);
 testerPariteFiches('Coffre', ouvrirCoffre);

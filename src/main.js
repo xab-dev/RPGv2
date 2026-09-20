@@ -172,6 +172,7 @@ export function clesTexteFiches() {
     'menu.coffre_deposer', 'menu.coffre_retirer', 'menu.poche',
     'menu.fiche.fabriquer', 'menu.fiche.ingredient', 'menu.fiche.donne', 'menu.fiche.recharge',
     'menu.fiche.ingredients_manquants', 'menu.fiche.aucune_recette',
+    'menu.fiche.deplacer', 'menu.fiche.construction_vide',
     'menu.poche_equiper', 'menu.poche_vide',
   ];
 }
@@ -1005,7 +1006,17 @@ export function creerOrchestrateurGrotte({
     if (!structure) return [];
     return stationsPlacablesDeStructure(structure).map((p) => {
       const stationType = registre.obtenir('stations', p.station_type);
-      return { texte: i18n.t(stationType.label_key), action: () => demarrerConstruction(p, structure) };
+      // specs/08_menus-cartes.md, palier C6 : la tuile est la silhouette de la
+      // station (celle du monde, recadrée par `icone_canvas.js#cadrer`). Les
+      // lignes de la fiche — les touches du placement — sont ajoutées par
+      // `ui/menu.js`, qui sait déjà les écrire pour le bandeau.
+      return {
+        texte: i18n.t(stationType.label_key),
+        titre: i18n.t(stationType.label_key),
+        icone: p.render.visuel,
+        libelleAction: i18n.t('menu.fiche.deplacer'),
+        action: () => demarrerConstruction(p, structure),
+      };
     });
   }
 

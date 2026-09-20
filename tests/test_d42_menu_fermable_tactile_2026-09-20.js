@@ -293,19 +293,15 @@ function carteDuMenu(document, id) {
   assert.equal(menu.estOuvert(), true, 'la sortie de la Poche ramène au menu (un niveau), elle ne ferme pas tout');
   menu.fermer();
 
-  // Et un écran de LISTE générique (la liste Construction, le dernier à ne pas
-  // avoir migré) : « Fermer » dans l'en-tête, nulle part dans la liste défilante.
-  menu.reouvrirListeConstruction();
-  const liste = document.body.children.find((el) => el.hidden === false && el._classes.includes('ecran-ui') && el.id === '');
-  assert.ok(liste, 'la liste Construction doit être ouverte');
-  const enteteListe = liste.querySelector('.ecran-ui-entete');
-  const corpsListe = liste.querySelector('.ecran-ui-liste');
-  assert.ok(enteteListe && corpsListe, 'un en-tête et une liste');
-  assert.ok(enteteListe.querySelector('.ecran-ui-fermer'), '« Fermer » est dans l’en-tête');
-  assert.equal(corpsListe.querySelectorAll('.ecran-ui-fermer').length, 0,
-    'et nulle part dans la liste défilante');
-  menu.fermer();
-  console.log('  la sortie est hors de ce qui défile : menu Pause (grille), maître-détail (Poche) et écran de liste (Construction)');
+  // Depuis specs/08 palier C6 il n'existe plus d'écran de LISTE : les cinq
+  // (Poche, Stats, Coffre, Craft, Construction) sont ce même maître-détail.
+  // Seul dans la pile (Craft, ouvert depuis le monde), sa sortie FERME.
+  menu.ouvrirCraft(() => [{ titre: 'recette', libelleAction: 'fabriquer', action: () => {} }], 'craft');
+  const craft = document.body.children.find((el) => el.hidden === false && el._classes.includes('ecran-ui') && el.id === '');
+  assert.equal(craft, poche, 'le même écran, un autre contenu');
+  craft.querySelectorAll('[data-sortie]')[0].declencher('click');
+  assert.equal(menu.estOuvert(), false, 'rien dessous : la sortie ferme tout, sans rien avoir à faire défiler');
+  console.log('  la sortie est hors de ce qui défile : menu Pause (grille) et maître-détail (les cinq autres écrans)');
 }
 
 // --- 3. …et reste le DERNIER élément du document ---------------------------
@@ -334,8 +330,8 @@ function carteDuMenu(document, id) {
 {
   const { document } = construireMenu();
   const ecrans = document.body.children.filter((el) => el.style.pointerEvents !== 'none' && el.tagName !== 'INPUT');
-  assert.equal(ecrans.length, 3,
-    'menu Pause (grille, confirmation de reset comprise), maître-détail (Poche, Stats, Coffre et Craft, specs/08 palier C), Construction');
+  assert.equal(ecrans.length, 2,
+    'menu Pause (grille, confirmation de reset comprise) et maître-détail (Poche, Stats, Coffre, Craft, Construction — specs/08 palier C)');
   for (const el of ecrans) {
     assert.ok(el._classes.includes('ecran-ui'),
       `chaque écran porte la classe commune (${el.id || 'écran générique'})`);
@@ -345,7 +341,7 @@ function carteDuMenu(document, id) {
       + el.querySelectorAll('.fiches-tuiles').length;
     assert.equal(listes, 1, 'une liste, OU une grille de cartes, OU une grille de tuiles — et une seule');
   }
-  console.log('  les 3 écrans partagés portent le même habillage (bandeau et sélecteur de fichier exclus)');
+  console.log('  les 2 écrans partagés portent le même habillage (bandeau et sélecteur de fichier exclus)');
 }
 
 // --- 5. Le focus demande la mise en vue ----------------------------------

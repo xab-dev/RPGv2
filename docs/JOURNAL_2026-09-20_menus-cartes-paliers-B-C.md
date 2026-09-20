@@ -255,3 +255,24 @@ demande la mise en vue » et « la sortie ne ferme qu'une fois après N reconstr
 vue) ; son écran de liste témoin devient la liste Construction, la dernière à ne pas avoir migré. `test_phase3_boucle`
 (le bot fabrique par `entree.texte` / `entree.action`) : **vert sans être touché**. **94 fichiers verts.** Vu dans le jeu
 aux deux tailles : rien ne déborde, aucun texte coupé.
+
+## Commit C6 — La liste Construction en maître-détail : plus aucun écran de liste
+
+Une **tuile par station déplaçable**, à la silhouette **du monde** (la cuisine, le coffre, l'atelier — recadrés par
+`icone_canvas.js#cadrer`, c'était sa raison d'être) ; la **fiche** porte les cinq touches du placement, aux glyphes du
+périphérique actif — les mêmes lignes que le bandeau (`lignesAidePlacement`, écrites une fois) : on les lit **avant**
+d'entrer en placement. Le bouton dit « Déplacer ». Hors d'une structure : « Rien à déplacer ici ». Deux clés FR/EN.
+
+La machine du placement ne bouge pas : choisir une station **masque le sommet** de la pile (palier B), B ou une pose
+valide le **remontre** (`reouvrirListeConstruction` reconnaît désormais le niveau à son **id**, plus à sa vue — la vue
+est partagée par cinq écrans). `test_construction`, `test_sd_menu_ecrans_orphelins` et le test d'invariant du palier B :
+**verts sans être touchés**.
+
+`test_sd_construction_parite_clic_verbe` : sa séquence composée S1 → S4 est portée (pointeur = tuile puis bouton de
+fiche ; verbes = stick puis A ; quitter la liste = la sortie de l'en-tête contre B), et **les cinq écrans** passent la
+parité pointeur/verbes du maître-détail. `test_d42` : plus d'écran de liste à prendre pour témoin — deux écrans partagés
+(la grille, le maître-détail). **94 fichiers verts.** Vu dans le jeu aux deux tailles : la liste, **le placement** (rien
+de visible que le bandeau, `menu.estOuvert()` faux), et le retour à la liste par B.
+
+`creerEcranListeGenerique` n'a plus d'appelant : son retrait est le commit suivant (pour retirer C6 seul, retirer
+d'abord celui-là).

@@ -191,5 +191,7 @@
   "menu.fiche.donne": "Gives: {item} × {n}",
   "menu.fiche.recharge": "Ready in {n} s",
   "menu.fiche.ingredients_manquants": "Missing ingredients",
-  "menu.fiche.aucune_recette": "No known recipe"
+  "menu.fiche.aucune_recette": "No known recipe",
+  "menu.fiche.deplacer": "Move",
+  "menu.fiche.construction_vide": "Nothing to move here"
 }

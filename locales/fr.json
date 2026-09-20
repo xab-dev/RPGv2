@@ -191,5 +191,7 @@
   "menu.fiche.donne": "Donne : {item} × {n}",
   "menu.fiche.recharge": "Prêt dans {n} s",
   "menu.fiche.ingredients_manquants": "Ingrédients manquants",
-  "menu.fiche.aucune_recette": "Aucune recette connue"
+  "menu.fiche.aucune_recette": "Aucune recette connue",
+  "menu.fiche.deplacer": "Déplacer",
+  "menu.fiche.construction_vide": "Rien à déplacer ici"
 }

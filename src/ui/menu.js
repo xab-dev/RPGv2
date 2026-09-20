@@ -480,7 +480,6 @@ export function initialiserMenu({
   // — le placement qui suit affiche la pièce + un bandeau, jamais cet écran
   // plein-écran par dessus (c'était le bug du micro-ticket : le fantôme
   // restait invisible derrière la liste).
-  const ecranConstruction = creerEcranListeGenerique(document, i18n, { onRetour: navigation.retour });
 
   // Bandeau de placement (MT_construction-bandeau-placement_2026-09-17) : UI
   // PERMANENTE du mode (jamais via hints.js), en filigrane, SANS focus ni
@@ -533,17 +532,22 @@ export function initialiserMenu({
   // dur — construit une seule fois à l'entrée en placement (pas de hot-swap
   // manette<->clavier suivi en direct pendant le placement, simplification
   // acceptée : le bandeau est redessiné à chaque nouvelle station choisie).
-  function texteBandeauConstruction(nomStation) {
+  // Les cinq verbes du placement, glyphes du périphérique actif. Écrits UNE
+  // fois : le bandeau les met sur une ligne, la fiche d'une station (palier
+  // C6) les met l'un sous l'autre — on les lit AVANT d'entrer en placement.
+  function lignesAidePlacement() {
     const p = peripheriqueActif();
     const g = (verbe) => i18n.t(`glyphe.${p}.${verbe}`);
     return [
-      nomStation,
       `${i18n.t('menu.construction_aide_deplacer')} ${g('move')}`,
       `${i18n.t('menu.construction_aide_tourner')} ${g('skill_1')}`,
       `${i18n.t('menu.construction_aide_confirmer')} ${g('attack')}`,
       `${i18n.t('menu.construction_aide_annuler')} ${g('skill_3')}`,
       `${i18n.t('menu.construction_aide_quitter')} ${g('menu')}`,
-    ].join(' · ');
+    ];
+  }
+  function texteBandeauConstruction(nomStation) {
+    return [nomStation, ...lignesAidePlacement()].join(' · ');
   }
 
   // Transition ATOMIQUE liste -> placement (§3 invariant) : retrait de
@@ -565,10 +569,14 @@ export function initialiserMenu({
     afficherEcran(bandeauConstruction, true);
   }
 
+  // Construction (palier C6) : maître-détail. Une tuile par station déplaçable ;
+  // sa fiche porte les touches du placement. Le fournisseur passe par une
+  // fonction fléchée : `main.js` le remplace après coup.
   function niveauConstruction() {
     return {
-      vue: ecranConstruction, id: ECRAN_CONSTRUCTION,
-      obtenirEntrees: fournisseurEntreesConstruction, titre: i18n.t('menu.construction_titre'),
+      vue: ecranFiches, id: ECRAN_CONSTRUCTION, titre: i18n.t('menu.construction_titre'),
+      obtenirEntrees: () => fournisseurEntreesConstruction().map((e) => ({ ...e, lignes: lignesAidePlacement() })),
+      texteVide: i18n.t('menu.fiche.construction_vide'),
     };
   }
 
@@ -579,7 +587,7 @@ export function initialiserMenu({
   function reouvrirListeConstruction() {
     afficherEcran(bandeauConstruction, false);
     const sommet = navigation.sommet();
-    if (sommet && sommet.vue === ecranConstruction) navigation.remontrerSommet();
+    if (sommet && sommet.id === ECRAN_CONSTRUCTION) navigation.remontrerSommet();
     else navigation.empiler(niveauConstruction());
   }
 

@@ -39,6 +39,14 @@ export default async function (chrome) {
       await ouvrir(chrome);
       await chrome.capture(`${DOSSIER}/c_${nom}_${largeur}x${hauteur}.png`);
       console.log(largeur, nom, JSON.stringify(await mesurerEcrans(chrome)), JSON.stringify(await mesurerFiches(chrome)));
+      if (nom === 'construction') {
+        // Le placement : le sommet de la pile est masqué (bandeau seul), puis B ramène la liste.
+        await chrome.touche('Space');
+        await chrome.capture(`${DOSSIER}/c_construction_placement_${largeur}x${hauteur}.png`);
+        console.log(largeur, 'placement', JSON.stringify(await mesurerEcrans(chrome)));
+        await chrome.touche('Digit3');
+        console.log(largeur, 'retour à la liste', JSON.stringify(await mesurerEcrans(chrome)));
+      }
       const erreurs = chrome.erreurs();
       if (erreurs.length) console.log(largeur, nom, 'ERREURS CONSOLE', JSON.stringify(erreurs));
     }

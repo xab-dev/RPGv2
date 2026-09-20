@@ -175,5 +175,12 @@
   "menu.etat.musique_oui": "Activée",
   "menu.etat.musique_non": "Coupée",
   "menu.etat.plein_ecran_oui": "Activé",
-  "menu.etat.plein_ecran_non": "Désactivé"
+  "menu.etat.plein_ecran_non": "Désactivé",
+  "item.categorie.ressource": "Ressource",
+  "item.categorie.nourriture": "Nourriture",
+  "item.categorie.valeur": "Objet de valeur",
+  "item.categorie.outil": "Outil",
+  "menu.fiche.rend_faim": "Faim +{n} %",
+  "menu.fiche.rend_soif": "Soif +{n} %",
+  "menu.fiche.equipe": "Équipé"
 }

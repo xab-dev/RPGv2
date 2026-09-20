@@ -28,6 +28,7 @@ import { SCHEMAS } from '../src/schemas.js';
 import { validerCatalogues, construireRegistre } from '../src/registry.js';
 import { creerI18n } from '../src/i18n.js';
 import { creerDialogue } from '../src/dialogue.js';
+import { voisin, COLONNES_TUILES } from '../src/menu_cartes.js';
 import { saveNeuve, creerStoreMemoire } from '../src/save.js';
 import { creerOrchestrateurGrotte } from '../src/main.js';
 import { initialiserMenu } from '../src/ui/menu.js';
@@ -217,7 +218,15 @@ function construireBanc() {
   const store = creerStoreMemoire();
   const dialogue = creerDialogue();
   const document = creerFauxDocument();
-  const menu = initialiserMenu({ document, i18n, menus: registre.tous('menus'), exporterSauvegarde: () => {}, importerSauvegarde: () => {} });
+  const menu = initialiserMenu({
+    document, i18n, menus: registre.tous('menus'), exporterSauvegarde: () => {}, importerSauvegarde: () => {},
+    // specs/08 palier C : de quoi donner des TUILES à la Poche (sans cela elle
+    // est vide, et il n'y aurait que sa sortie à comparer).
+    listerPoche: () => [
+      { id: 'item_branche', label: 'Branche', quantite: 3, categorie: 'ressource', icone: 'visuel_branche', lignes: [] },
+      { id: 'item_fruit', label: 'Fruit', quantite: 2, categorie: 'nourriture', icone: 'visuel_fruit', lignes: [] },
+    ],
+  });
   const frames = [];
   const input = creerInputScripte(frames);
   const orchestrateur = creerOrchestrateurGrotte({
@@ -482,7 +491,85 @@ function testerCliqueVsVerbePourEcran(nomDeLEcran, ouvrir) {
   console.log(`OK parité clic/verbe : ${nomDeLEcran} (${nbEntrees} entrée(s))`);
 }
 
-testerCliqueVsVerbePourEcran('Poche', ouvrirPoche);
+// =========================================================================
+// specs/08_menus-cartes.md, palier C : les écrans « maître-détail »
+// (`ui/ecran_fiches.js`). Le geste n'y est plus « un bouton par entrée » : une
+// tuile se SÉLECTIONNE, et c'est le bouton de la fiche qui agit. L'invariant
+// de cette fiche, lui, ne bouge pas — le pointeur et les verbes doivent
+// produire le même quadruplet :
+//   pointeur : clic sur la tuile, puis clic sur le bouton de la fiche
+//   verbes   : le stick jusqu'à la tuile (par `voisin()`, la fonction même du
+//              composant), puis ATTACK
+// et pour la SORTIE : clic sur le bouton d'en-tête, contre B. Les tuiles sont
+// lues dans le DOM réel, jamais codées en dur.
+// =========================================================================
+const tuilesDe = (ecran) => ecran.querySelectorAll('[data-tuile]');
+const boutonFicheDe = (ecran) => ecran.querySelectorAll('[data-action]')[0] || null;
+const sortieDe = (ecran) => ecran.querySelectorAll('[data-sortie]')[0] || null;
+
+// Le chemin le plus court, au stick, du focus courant à la case visée.
+function focaliserTuile(banc, indexEntree) {
+  const { cases, focus } = banc.menu.obtenirEtatFiches();
+  const cible = cases.indexOf(indexEntree);
+  const presente = (i) => cases[i] !== null;
+  const precedent = new Map([[focus, null]]);
+  const file = [focus];
+  while (file.length && !precedent.has(cible)) {
+    const i = file.shift();
+    for (const direction of ['haut', 'bas', 'gauche', 'droite']) {
+      const j = voisin(i, direction, COLONNES_TUILES, cases.length, presente);
+      if (!precedent.has(j)) { precedent.set(j, [i, direction]); file.push(j); }
+    }
+  }
+  assert.ok(precedent.has(cible), `la tuile ${indexEntree} doit être atteignable au stick`);
+  const chemin = [];
+  for (let i = cible; precedent.get(i); i = precedent.get(i)[0]) chemin.unshift(precedent.get(i)[1]);
+  const pousse = { haut: { moveY: -1 }, bas: { moveY: 1 }, gauche: { moveX: -1 }, droite: { moveX: 1 } };
+  for (const direction of chemin) jouerVerbe(banc, etat(pousse[direction]));
+}
+
+function testerPariteFiches(nomDeLEcran, ouvrir) {
+  const bancSonde = construireBanc();
+  ouvrir(bancSonde);
+  const ecranSonde = ecranVisible(bancSonde.document);
+  assert.ok(ecranSonde && sortieDe(ecranSonde), `${nomDeLEcran} : un écran « maître-détail » doit être visible après ouverture`);
+  const nbTuiles = tuilesDe(ecranSonde).length;
+
+  for (let idx = 0; idx < nbTuiles; idx++) {
+    const bancClic = construireBanc();
+    ouvrir(bancClic);
+    declencherClic(tuilesDe(ecranVisible(bancClic.document))[idx]);
+    const bouton = boutonFicheDe(ecranVisible(bancClic.document));
+    if (bouton) declencherClic(bouton);
+    const snapClic = instantane(bancClic);
+    const focusClic = bancClic.menu.obtenirEtatFiches().entreeFocalisee;
+
+    const bancVerbe = construireBanc();
+    ouvrir(bancVerbe);
+    focaliserTuile(bancVerbe, idx);
+    const focusVerbe = bancVerbe.menu.obtenirEtatFiches().entreeFocalisee;
+    jouerVerbe(bancVerbe, etat({ attack: true }));
+    const snapVerbe = instantane(bancVerbe);
+
+    assert.equal(focusVerbe, focusClic, `${nomDeLEcran}, tuile ${idx} : le stick et le clic sélectionnent la même entrée`);
+    assert.deepEqual(
+      snapVerbe, snapClic,
+      `${nomDeLEcran}, tuile ${idx} : pointeur (${JSON.stringify(snapClic)}) et verbes (${JSON.stringify(snapVerbe)}) doivent produire le même quadruplet`
+    );
+  }
+
+  // La sortie : le bouton d'en-tête contre B.
+  const bancClic = construireBanc();
+  ouvrir(bancClic);
+  declencherClic(sortieDe(ecranVisible(bancClic.document)));
+  const bancVerbe = construireBanc();
+  ouvrir(bancVerbe);
+  jouerVerbe(bancVerbe, etat({ skill3: true }));
+  assert.deepEqual(instantane(bancVerbe), instantane(bancClic), `${nomDeLEcran} : la sortie au clic et B doivent mener au même endroit`);
+  console.log(`OK parité pointeur/verbes : ${nomDeLEcran} (maître-détail, ${nbTuiles} tuile(s) + la sortie)`);
+}
+
+testerPariteFiches('Poche', ouvrirPoche);
 testerCliqueVsVerbePourEcran('Stats', ouvrirStats);
 testerCliqueVsVerbePourEcran('Construction (liste)', ouvrirConstructionListe);
 testerCliqueVsVerbePourEcran('Craft', ouvrirCraft);

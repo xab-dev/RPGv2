@@ -86,9 +86,10 @@ export function creerEcranFiches({
   entete.className = 'ecran-ui-entete cartes-entete';
   const titre = document.createElement('h2');
   titre.className = 'cartes-titre';
-  // La place du message d'en-tête de la grille : ici, le sous-titre de l'écran.
+  // À la place qu'occupe le message d'en-tête sur la grille de cartes : le
+  // sous-titre de l'écran. Sa propre classe — ce n'est pas le même rôle.
   const sousTitre = document.createElement('p');
-  sousTitre.className = 'cartes-message';
+  sousTitre.className = 'fiches-sous-titre';
   const boutonEntete = document.createElement('div');
   boutonEntete.className = 'cartes-bouton-entete';
   boutonEntete.dataset.sortie = 'ecran';

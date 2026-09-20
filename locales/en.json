@@ -175,5 +175,12 @@
   "menu.etat.musique_oui": "On",
   "menu.etat.musique_non": "Off",
   "menu.etat.plein_ecran_oui": "On",
-  "menu.etat.plein_ecran_non": "Off"
+  "menu.etat.plein_ecran_non": "Off",
+  "item.categorie.ressource": "Resource",
+  "item.categorie.nourriture": "Food",
+  "item.categorie.valeur": "Valuable",
+  "item.categorie.outil": "Tool",
+  "menu.fiche.rend_faim": "Hunger +{n}%",
+  "menu.fiche.rend_soif": "Thirst +{n}%",
+  "menu.fiche.equipe": "Equipped"
 }

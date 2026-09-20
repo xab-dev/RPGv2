@@ -275,21 +275,37 @@ function carteDuMenu(document, id) {
   sortie.declencher('click');
   assert.equal(menu.estOuvert(), false, 'un appui sur la sortie ferme le menu, sans rien avoir à faire défiler');
 
-  // Même chose pour un écran générique (Poche) : c'est le même défaut, donc
-  // le même correctif — jamais écran par écran.
+  // Même chose pour les autres écrans : c'est le même défaut, donc le même
+  // correctif — jamais écran par écran.
+  // La Poche est un écran « maître-détail » depuis specs/08 palier C2 : sa
+  // grille de tuiles défile en elle-même, sa sortie vit dans l'en-tête figé.
   menu.ouvrir();
   carteDuMenu(document, 'carte_heros').declencher('click');
   carteDuMenu(document, 'carte_poche').declencher('click');
   const poche = document.body.children.find((el) => el.hidden === false && el._classes.includes('ecran-ui') && el.id === '');
   assert.ok(poche, 'la Poche doit être ouverte');
-  const entetePoche = poche.querySelector('.ecran-ui-entete');
-  const listePoche = poche.querySelector('.ecran-ui-liste');
-  assert.ok(entetePoche && listePoche, 'un en-tête et une liste');
-  const fermerPoche = entetePoche.querySelector('.ecran-ui-fermer');
-  assert.ok(fermerPoche, '« Fermer » de la Poche est dans l’en-tête');
-  assert.equal(listePoche.querySelectorAll('.ecran-ui-fermer').length, 0,
+  const sortiePoche = poche.querySelectorAll('[data-sortie]')[0];
+  assert.ok(sortiePoche, 'la Poche a une sortie');
+  assert.equal(aPourAncetre(sortiePoche, 'ecran-ui-entete'), true, 'dans l’en-tête, qui ne défile pas');
+  assert.equal(aPourAncetre(sortiePoche, 'ecran-ui-corps'), false, 'jamais dans le corps');
+  assert.equal(aPourAncetre(sortiePoche, 'fiches-tuiles'), false, 'ni dans la grille de tuiles, la seule chose qui défile');
+  sortiePoche.declencher('click');
+  assert.equal(menu.estOuvert(), true, 'la sortie de la Poche ramène au menu (un niveau), elle ne ferme pas tout');
+  menu.fermer();
+
+  // Et un écran de LISTE générique (Craft, tant qu'il n'a pas migré) :
+  // « Fermer » dans l'en-tête, nulle part dans la liste défilante.
+  menu.ouvrirCraft(() => [{ texte: 'recette', action: () => {} }], 'craft');
+  const craft = document.body.children.find((el) => el.hidden === false && el._classes.includes('ecran-ui') && el.id === '');
+  assert.ok(craft, 'Craft doit être ouvert');
+  const enteteCraft = craft.querySelector('.ecran-ui-entete');
+  const listeCraft = craft.querySelector('.ecran-ui-liste');
+  assert.ok(enteteCraft && listeCraft, 'un en-tête et une liste');
+  assert.ok(enteteCraft.querySelector('.ecran-ui-fermer'), '« Fermer » est dans l’en-tête');
+  assert.equal(listeCraft.querySelectorAll('.ecran-ui-fermer').length, 0,
     'et nulle part dans la liste défilante');
-  console.log('  la sortie est hors de ce qui défile : menu Pause (grille) et écran générique');
+  menu.fermer();
+  console.log('  la sortie est hors de ce qui défile : menu Pause (grille), maître-détail (Poche) et écran de liste (Craft)');
 }
 
 // --- 3. …et reste le DERNIER élément du document ---------------------------
@@ -319,14 +335,15 @@ function carteDuMenu(document, id) {
   const { document } = construireMenu();
   const ecrans = document.body.children.filter((el) => el.style.pointerEvents !== 'none' && el.tagName !== 'INPUT');
   assert.equal(ecrans.length, 6,
-    'menu Pause (grille, confirmation de reset comprise), Poche, Craft, Coffre, Stats, Construction');
+    'menu Pause (grille, confirmation de reset comprise), maître-détail (Poche, specs/08 palier C), Craft, Coffre, Stats, Construction');
   for (const el of ecrans) {
     assert.ok(el._classes.includes('ecran-ui'),
       `chaque écran porte la classe commune (${el.id || 'écran générique'})`);
     assert.equal(el.querySelectorAll('.ecran-ui-entete').length, 1, 'un en-tête figé, et un seul');
     assert.equal(el.querySelectorAll('.ecran-ui-corps').length, 1, 'un corps (défilant, ou filet pour la grille), et un seul');
-    const listes = el.querySelectorAll('.ecran-ui-liste').length + el.querySelectorAll('.cartes-grille').length;
-    assert.equal(listes, 1, 'une liste OU une grille, et une seule');
+    const listes = el.querySelectorAll('.ecran-ui-liste').length + el.querySelectorAll('.cartes-grille').length
+      + el.querySelectorAll('.fiches-tuiles').length;
+    assert.equal(listes, 1, 'une liste, OU une grille de cartes, OU une grille de tuiles — et une seule');
   }
   console.log('  les 6 écrans partagés portent le même habillage (bandeau et sélecteur de fichier exclus)');
 }

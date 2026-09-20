@@ -284,8 +284,12 @@ function cliquer(banc, el, contexte) {
 }
 const carte = (banc, id) => carteDuMenu(banc.document, id);
 const boutonEntete = (banc) => banc.document.body.querySelector('[data-sortie]');
-const listeVisible = (banc) => ecransVisibles(banc.document).find((el) => el.querySelector('.ecran-ui-fermer')) || null;
-const fermerDeLaListe = (banc) => listeVisible(banc).querySelector('.ecran-ui-fermer');
+// « L'écran posé sur le menu » : un écran de liste (sa sortie est `.ecran-ui-fermer`)
+// ou, depuis le palier C, un écran « maître-détail » (`[data-sortie]`, comme la
+// grille — dont il se distingue par son id : la grille est `#menu`).
+const sortieDe = (el) => el.querySelector('.ecran-ui-fermer') || (el.id !== 'menu' ? el.querySelector('[data-sortie]') : null);
+const listeVisible = (banc) => ecransVisibles(banc.document).find((el) => sortieDe(el)) || null;
+const fermerDeLaListe = (banc) => sortieDe(listeVisible(banc));
 const sommet = (banc) => banc.menu.obtenirEtatPile().sommet;
 const profondeur = (banc) => banc.menu.obtenirEtatPile().profondeur;
 

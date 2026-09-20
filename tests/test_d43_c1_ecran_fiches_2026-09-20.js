@@ -169,7 +169,8 @@ function monter({ entrees, profondeurSous = 1 }) {
   assert.equal(sortie.dataset.sortie, 'ecran');
   assert.equal(entete.querySelectorAll('.tuile').length, 0, 'l’en-tête ne contient jamais une tuile');
   assert.equal(entete.querySelectorAll('.cartes-titre')[0].textContent, 'Titre');
-  assert.equal(entete.querySelectorAll('.cartes-message')[0].textContent, 'sous-titre', 'le sous-titre de l’écran prend la place du message d’en-tête');
+  assert.equal(entete.querySelectorAll('.fiches-sous-titre')[0].textContent, 'sous-titre', 'le sous-titre de l’écran, à la place qu’occupe le message sur la grille');
+  assert.equal(entete.querySelectorAll('.cartes-message').length, 0, 'mais ce n’est PAS le message de la grille : sa propre classe');
   assert.equal(sortie.querySelectorAll('.carte-icone')[0].dataset.icone, 'icone_fleche', 'un écran dessous : la sortie est un RETOUR');
 
   const grille = corps.children[0];

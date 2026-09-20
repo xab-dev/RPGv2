@@ -1063,6 +1063,12 @@ function validerMenu(entry, catalogs, path) {
   return erreurs;
 }
 
+// Les catégories d'objets. Exportée depuis specs/08_menus-cartes.md (palier C) :
+// la fiche d'un objet affiche sa catégorie, donc chaque catégorie a une clé de
+// texte (`item.categorie.<catégorie>`) — et le contrôle de démarrage des textes
+// a besoin de la liste pour vérifier qu'aucune ne manque, en FR comme en EN.
+export const CATEGORIES_ITEM = ['ressource', 'nourriture', 'valeur', 'outil'];
+
 export const SCHEMAS = {
   elements: {
     requiredFields: ['id', 'label_key', 'icon', 'shape'],
@@ -1381,7 +1387,6 @@ export const SCHEMAS = {
       // les produit (ce sont des SORTIES), mais bien consommable comme
       // n'importe quel item par un futur système (perte, casse...) —
       // aucune règle spéciale ici, juste une catégorie de plus.
-      const CATEGORIES_ITEM = ['ressource', 'nourriture', 'valeur', 'outil'];
       if (!CATEGORIES_ITEM.includes(entry.categorie)) {
         erreurs.push(`${path} > categorie doit être l'une de ${CATEGORIES_ITEM.join('/')}`);
       }

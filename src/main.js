@@ -8,7 +8,7 @@
 // ne prouve chaque système (combat, follet, énigmes, dialogue) qu'une seule
 // fois (§1) — la généralisation viendra quand un 2ᵉ cas d'usage existera.
 
-import { SCHEMAS } from './schemas.js';
+import { SCHEMAS, CATEGORIES_ITEM } from './schemas.js';
 import { validerCatalogues, construireRegistre } from './registry.js';
 import { chargerCataloguesDepuisReseau, chargerLocalesDepuisReseau } from './io_navigateur.js';
 import { creerI18n, verifierJeuxDeCles } from './i18n.js';
@@ -146,6 +146,32 @@ const RAYON_TOIT_FOLLET_ABSENT_PX = 90;
 // arbitraire, sans effet sur le gameplay (les 3 follets sont équivalents en
 // interface) ; Xav pourra le changer librement en relisant ce tableau.
 const ORDRE_CHOIX_FOLLET = ['comp_follet_feu', 'comp_follet_eau', 'comp_follet_terre'];
+// Les lignes de la FICHE d'un objet (specs/08_menus-cartes.md, palier C) : sa
+// catégorie, puis ce qu'il rend quand on le mange — tout vient du catalogue,
+// rien n'est écrit par objet. Une seule fonction pour la Poche, le Coffre et la
+// sortie d'une recette : trois écrans qui décriraient le même objet chacun à
+// leur façon finiraient par se contredire. Pure ; exportée pour les tests.
+export function lignesFicheItem(itemDef, registre, i18n) {
+  const lignes = [i18n.t(`item.categorie.${itemDef.categorie}`)];
+  const c = itemDef.consommation;
+  if (c) {
+    if (c.faim) lignes.push(i18n.t('menu.fiche.rend_faim', { n: Math.round(c.faim * 100) }));
+    if (c.soif) lignes.push(i18n.t('menu.fiche.rend_soif', { n: Math.round(c.soif * 100) }));
+    for (const idEffet of c.effets || []) lignes.push(i18n.t(registre.obtenir('status_effects', idEffet).label_key));
+  }
+  return lignes;
+}
+
+// Les clés de texte que les fiches composent d'elles-mêmes (aucun catalogue ne
+// les cite) : passées au contrôle de démarrage des textes, avec celles des menus.
+export function clesTexteFiches() {
+  return [
+    ...CATEGORIES_ITEM.map((c) => `item.categorie.${c}`),
+    'menu.fiche.rend_faim', 'menu.fiche.rend_soif', 'menu.fiche.equipe',
+    'menu.poche_equiper', 'menu.poche_vide',
+  ];
+}
+
 const SEUIL_POUSSEE_CHOIX = 0.5; // même seuil que ui/menu.js#SEUIL_POUSSEE_MENU, axe X ici
 
 // Positions à l'écran (résolution logique 480x270) des 3 follets sur l'écran
@@ -2223,7 +2249,8 @@ export async function demarrerJeu() {
   // d'état des bascules) : aucune carte ne les cite, ce contrôle est le seul
   // à pouvoir les voir manquer.
   const erreursTextes = erreursChargement.length ? [] : erreursTextesMenus(
-    donnees.menus, dictionnaires, [...CLES_TEXTE_COMPOSANT, ...clesTexteEtats(Object.keys(dictionnaires))],
+    donnees.menus, dictionnaires,
+    [...CLES_TEXTE_COMPOSANT, ...clesTexteEtats(Object.keys(dictionnaires)), ...clesTexteFiches()],
   );
   const toutesErreurs = [...erreursChargement, ...erreursValidation, ...erreursCles, ...erreursCouleurs, ...erreursTextes];
 
@@ -2352,11 +2379,16 @@ export async function demarrerJeu() {
     // ui/menu.js ne connaît jamais items.json par id. `id`/`categorie`
     // ajoutés au Palier C (§3.3) : nécessaires pour proposer "Équiper" sur
     // la nourriture (ui/menu.js#entreesPoche).
+    // specs/08 palier C : `icone` et `lignes` — la tuile et la fiche de l'écran
+    // « maître-détail ». Résolues ICI (registre + i18n), jamais dans le menu.
     listerPoche: () => Object.entries(save.inventaire.items)
       .filter(([, quantite]) => quantite > 0)
       .map(([itemId, quantite]) => {
         const itemDef = registre.obtenir('items', itemId);
-        return { id: itemId, label: i18n.t(itemDef.label_key), quantite, categorie: itemDef.categorie };
+        return {
+          id: itemId, label: i18n.t(itemDef.label_key), quantite, categorie: itemDef.categorie,
+          icone: itemDef.render.visuel, lignes: lignesFicheItem(itemDef, registre, i18n),
+        };
       }),
     // Palier C (§3.3) : slot consommable — mutation directe de `save` (même
     // patron que basculerMusique ci-dessus, hors du chemin etatModifie de

@@ -227,7 +227,9 @@ function construireBanc({ dansLaMaison = true, compagnon, pleinEcranDisponible =
   const banc = construireBanc();
   const { menu, document, el } = banc;
   const listeVisible = () => document.body.children.find((e) => e !== el && e.tagName === 'DIV' && e.hidden === false && e._classes.includes('ecran-ui'));
-  const titreListe = () => listeVisible().querySelector('.ecran-ui-titre').textContent;
+  // Un écran de liste (`.ecran-ui-titre`) ou, depuis le palier C, un écran
+  // « maître-détail » (`.cartes-titre`, le même en-tête que la grille).
+  const titreListe = () => (listeVisible().querySelector('.ecran-ui-titre') || listeVisible().querySelector('.cartes-titre')).textContent;
 
   for (const [chemin, titre] of [
     [['carte_heros', 'carte_poche'], i18n.t('menu.poche_titre')],

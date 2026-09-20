@@ -18,6 +18,7 @@
 // Node sans faux DOM.
 
 import { creerMenuCartes } from './grille_cartes.js';
+import { creerEcranFiches } from './ecran_fiches.js';
 import { creerNavigationEcrans } from '../menu_cartes.js';
 
 // Provisoire, comme les autres mappings de gamepad.js : au-delà de ce
@@ -472,7 +473,6 @@ export function initialiserMenu({
   // il ne reste rien, tout est fermé. Plus personne ne « fait réapparaître »
   // le menu : il n'avait pas disparu, il était sous le sommet.
   const navigation = creerNavigationEcrans();
-  const ecranPoche = creerEcranListeGenerique(document, i18n, { onRetour: navigation.retour });
   const ecranCraft = creerEcranListeGenerique(document, i18n, { onRetour: navigation.retour });
   const ecranCoffre = creerEcranListeGenerique(document, i18n, { onRetour: navigation.retour });
   const ecranStats = creerEcranListeGenerique(document, i18n, { onRetour: navigation.retour });
@@ -511,16 +511,22 @@ export function initialiserMenu({
   afficherEcran(bandeauConstruction, false);
   document.body.appendChild(bandeauConstruction);
 
+  // Poche (palier C2) : une tuile par objet, sa fiche à droite. « Équiper »
+  // n'existe que sur la nourriture (§3.3 : le slot consommable) ; les autres
+  // objets n'ont PAS d'action — donc pas de bouton, plutôt qu'un bouton qui ne
+  // fait rien. L'objet équipé porte un repère sur sa tuile et le dit dans sa
+  // fiche ; le rééquiper serait sans effet, il n'a donc pas de bouton non plus
+  // (et surtout pas de tuile grisée : « équipé » n'est pas « indisponible »).
+  // Une poche vide : aucune tuile, la fiche le dit (`texteVide` du niveau).
   function entreesPoche() {
-    const entrees = listerPoche();
-    if (entrees.length === 0) return [{ texte: i18n.t('menu.poche_vide'), action: () => {} }];
-    return entrees.map((e) => {
-      const equipe = e.categorie === 'nourriture' && equipementConsommable() === e.id;
-      const suffixe = equipe ? ' ✓' : '';
-      const texte = `${e.label} × ${e.quantite}${e.categorie === 'nourriture' ? ` — ${i18n.t('menu.poche_equiper')}` : ''}${suffixe}`;
+    return listerPoche().map((e) => {
+      const equipable = e.categorie === 'nourriture';
+      const equipe = equipable && equipementConsommable() === e.id;
       return {
-        texte,
-        action: e.categorie === 'nourriture' ? () => { equiperConsommable(e.id); ecranPoche.rafraichir(); } : () => {},
+        titre: e.label, icone: e.icone || null, quantite: e.quantite, marque: equipe,
+        lignes: [...(e.lignes || []), ...(equipe ? [i18n.t('menu.fiche.equipe')] : [])],
+        libelleAction: equipable && !equipe ? i18n.t('menu.poche_equiper') : null,
+        action: equipable && !equipe ? () => equiperConsommable(e.id) : null,
       };
     });
   }
@@ -676,7 +682,8 @@ export function initialiserMenu({
   // remplace après coup (voir plus haut).
   const ecrans = {
     [ECRAN_POCHE]: () => navigation.empiler({
-      vue: ecranPoche, id: ECRAN_POCHE, obtenirEntrees: entreesPoche, titre: i18n.t('menu.poche_titre'),
+      vue: ecranFiches, id: ECRAN_POCHE, obtenirEntrees: entreesPoche, titre: i18n.t('menu.poche_titre'),
+      texteVide: i18n.t('menu.poche_vide'),
     }),
     [ECRAN_STATS]: () => navigation.empiler({
       vue: ecranStats, id: ECRAN_STATS, obtenirEntrees: () => fournisseurEntreesStats(), titre: i18n.t('menu.stats_titre'),
@@ -694,6 +701,22 @@ export function initialiserMenu({
   // L'id historique du menu Pause : les tests et les diagnostics le cherchent
   // sous ce nom depuis la Phase 0.
   menuCartes.element.id = 'menu';
+
+  // Palier C : l'écran « maître-détail » (`ui/ecran_fiches.js`). UNE instance,
+  // comme la grille de cartes : c'est le NIVEAU empilé qui porte le contenu
+  // (titre, entrées, focus), pas l'élément. Les écrans de liste y migrent un
+  // par un ; ceux qui ne l'ont pas encore fait gardent `creerEcranListeGenerique`.
+  // Créé APRÈS la grille : le menu Pause reste le premier écran du document.
+  // Les deux icônes de sortie sont celles que le catalogue donne à l'écran
+  // racine : la sortie a la même tête partout.
+  const ecranRacine = (menus || []).find((e) => e.racine === true) || {};
+  const ecranFiches = creerEcranFiches({
+    document, i18n, afficherEcran, seuilPoussee: SEUIL_POUSSEE_MENU,
+    couleurAccent, rectangleJeu, dessinerIcone,
+    onRetour: navigation.retour,
+    aLaRacine: () => navigation.profondeur() === 1,
+    icones: { fermer: ecranRacine.icone_fermer || null, retour: ecranRacine.icone_retour || null },
+  });
 
   return {
     // Le menu Pause s'ouvre toujours à sa racine : ce qui restait dans la pile
@@ -745,10 +768,13 @@ export function initialiserMenu({
     actualiserPleinEcran() {
       menuCartes.rafraichir();
     },
+    // Observation pour les tests headless : l'écran « maître-détail ».
+    obtenirEtatFiches: () => ecranFiches.obtenirEtat(),
     // La fenêtre a changé de taille : la boîte du menu se recale sur le
     // rectangle du canvas (§4.4). Appelée par main.js, qui possède l'écouteur.
     actualiserGeometrie() {
       menuCartes.actualiserGeometrie();
+      ecranFiches.actualiserGeometrie();
     },
     // Ce que ce module a réellement branché — la moitié « code » du contrôle
     // de câblage au démarrage (`menu_cartes.js#erreursCablageMenus`).

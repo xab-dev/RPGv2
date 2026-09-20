@@ -172,3 +172,29 @@ Vu sous Chrome sans fenêtre, sur le banc (`tools/banc_menu_cartes.html?ecran=po
 à **1920 × 1080** tuile 240 px, en-tête 96 px. **Rien ne déborde** hors de la grille de tuiles, qui défile bien en
 elle-même (22 tuiles, deux groupes) en suivant le focus. Un défaut vu et corrigé dans ce commit : le halo du focus était
 rogné au bord de la zone défilante (`scroll-padding`). Captures : `docs/captures/menus-cartes-2026-09-20/palier-c/`.
+
+## Commit C2 — La Poche en maître-détail
+
+`ui/menu.js` crée **une** instance de `creerEcranFiches` (comme la grille : c'est le **niveau** empilé qui porte le
+contenu) ; la carte Poche empile `{ vue: ecranFiches, titre, obtenirEntrees, texteVide }`. L'ancien écran de liste de la
+Poche disparaît ; les quatre autres ne bougent pas.
+
+- **Ce que dit la fiche vient des données** : `main.js#lignesFicheItem` (catégorie, faim, soif, effets — lus dans
+  `items.json` / `status_effects.json`), une seule fonction pour la Poche, le Coffre et la sortie d'une recette.
+  Nouvelles clés FR/EN : `item.categorie.*` (une par catégorie de `schemas.js#CATEGORIES_ITEM`, désormais exportée),
+  `menu.fiche.rend_faim|rend_soif|equipe`. Toutes passent par le **contrôle de démarrage des textes**
+  (`main.js#clesTexteFiches`) : une catégorie ajoutée sans son texte tombe au boot, dans les deux langues.
+- **« Équiper » n'existe que sur la nourriture** (comme avant) ; une ressource ou un outil n'a **pas de bouton** plutôt
+  qu'un bouton qui ne fait rien. L'objet équipé porte un **repère** sur sa tuile (un coin plein : une forme, pas un « ✓ »
+  de police) et une ligne « Équipé » dans sa fiche. Vu à la capture et corrigé dans ce commit : je l'avais d'abord
+  *grisé* — « équipé » n'est pas « indisponible ».
+- L'écran est créé **après** la grille de cartes : le menu Pause reste le premier écran du document. Le sous-titre a sa
+  propre classe (`.fiches-sous-titre`) — je l'avais d'abord posé sur `.cartes-message`, et `test_d30` lisait alors le
+  mauvais élément : ce n'est pas le même rôle, donc pas la même classe.
+
+Tests : `test_d43_c2_poche_fiches` (vrai menu, vrais catalogues). Adaptés, en le disant dans chacun :
+`test_sd_construction_parite_clic_verbe` (**la parité clic/verbe devient « tuile puis bouton de fiche » contre « stick
+puis A »**, chemin du stick calculé par `voisin()` ; + la sortie : bouton d'en-tête contre B), `test_d42` (la sortie de
+la Poche hors de ce qui défile ; l'écran de liste témoin devient Craft), `test_d43_a4`, `test_d43_b2`.
+**91 fichiers verts.** Vu dans le jeu sous Chrome sans fenêtre, aux deux tailles : rien ne déborde, aucun texte coupé,
+console sans erreur (`tools/scenarios/ecrans_palier_c.mjs`, captures `c_poche_*`).

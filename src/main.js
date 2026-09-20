@@ -75,9 +75,10 @@ import {
   calculerModulateur as calculerModulateurSurvie, configSurvie, jaugeSousLeSeuil,
 } from './survival.js';
 import { crediter as crediterXp } from './xp.js';
-import { initialiserMenu } from './ui/menu.js';
+import { initialiserMenu, clesTexteEtats } from './ui/menu.js';
+import { creerDessinateurIcones } from './ui/icone_canvas.js';
 import { erreursCouleursUi } from './ui/couleurs_ui.js';
-import { erreursTextesMenus } from './menu_cartes.js';
+import { erreursTextesMenus, erreursCablageMenus, CLES_TEXTE_COMPOSANT } from './menu_cartes.js';
 import { dessinerHud } from './ui/hud.js';
 import { dessinerHudHints } from './ui/hud_hints.js';
 import { dessinerDialogue } from './ui/dialogue_box.js';
@@ -196,6 +197,11 @@ export function creerOrchestrateurGrotte({
   // défaut (mêmes callbacks no-op que sous `?debug=fps` absent) — les tests
   // headless existants n'ont rien à fournir, même patron qu'onPremierGeste.
   moniteurPerf = creerMoniteurInactif(),
+  // specs/08_menus-cartes.md §5 : valeurs nommées que SEUL l'appelant connaît
+  // (« l'API plein écran existe-t-elle » est un fait du DOM), fusionnées à
+  // celles d'ici pour les conditions en données. Vide par défaut : les tests
+  // headless n'ont rien à fournir.
+  valeursExternes = () => ({}),
 }) {
   let etatModifie = false;
 
@@ -228,7 +234,16 @@ export function creerOrchestrateurGrotte({
       // données peuvent comparer (« niveau ≥ 5 » pour le palier 1 du Chaos).
       // Lue à chaque évaluation, jamais capturée : le seuil s'ouvre à l'instant
       // où le joueur monte de niveau, sans rien avoir à réévaluer à la main.
-      valeurs: () => ({ niveau: save.hero.niveau }),
+      //
+      // `stations_placables` (specs/08_menus-cartes.md, case contextuelle) :
+      // COMBIEN de stations le héros peut déplacer là où il se tient. Un vrai
+      // nombre, pas un booléen déguisé — « lieu » n'est pas un format de
+      // condition de `flags.js`, et la spec interdit d'en créer un.
+      valeurs: () => ({
+        niveau: save.hero.niveau,
+        stations_placables: nombreStationsPlacables(),
+        ...valeursExternes(),
+      }),
     });
   }
   let flags = construireFlags();
@@ -867,11 +882,21 @@ export function creerOrchestrateurGrotte({
   }
 
   // §3 : "disponible depuis MENU seulement quand le héros est dans la
-  // structure maison (sinon l'entrée n'apparaît pas)" — fourni à ui/menu.js
-  // via menu.definirDisponibiliteConstruction(), relu à CHAQUE ouverture du
-  // menu (jamais figé), même patron que obtenirEntreesStats.
+  // structure maison". Ce n'est plus cette fonction qui décide de la carte du
+  // menu (specs/08_menus-cartes.md : c'est une condition de `menus.json`, sur
+  // la valeur nommée `stations_placables` ci-dessous) ; elle reste exposée
+  // pour les tests du mode Construction.
   function disponibiliteConstruction() {
     return structureHeros() !== null;
+  }
+
+  // Valeur nommée `stations_placables` (voir `construireFlags`) : c'est elle,
+  // désormais, qui décide si la carte Construction s'affiche — la condition
+  // vit dans `data/menus.json`. 0 hors de toute structure, et avant que la
+  // première scène soit chargée.
+  function nombreStationsPlacables() {
+    const structure = scene ? structureHeros() : null;
+    return structure ? stationsPlacablesDeStructure(structure).length : 0;
   }
 
   // Liste des stations placable de la structure courante — fournie à
@@ -2141,6 +2166,13 @@ export function creerOrchestrateurGrotte({
     uiOuverteMaintenant: () => uiOuverteMaintenant(),
     disponibiliteConstruction: () => disponibiliteConstruction(),
     entreesConstruction: () => entreesConstruction(),
+    // specs/08_menus-cartes.md §5 : les conditions des cartes du menu passent
+    // par LE registre de flags (aucun second évaluateur). Par la fermeture,
+    // jamais par référence : `flags` est reconstruit par reinitialiserPartie().
+    evaluerCondition: (condition) => flags.evaluate(condition),
+    // Les noms des valeurs que les conditions peuvent citer — la moitié
+    // « code » du contrôle de câblage au démarrage.
+    nomsValeursConditions: () => Object.keys({ niveau: 0, stations_placables: 0, ...valeursExternes() }),
     constructionActif,
     obtenirConstruction: () => construction,
   };
@@ -2169,7 +2201,12 @@ export async function demarrerJeu() {
   // specs/08_menus-cartes.md §5 : toute clé de texte citée par `menus.json`
   // existe dans les deux langues. `validerCatalogues` ne peut pas le dire —
   // le registre ne reçoit jamais les dictionnaires.
-  const erreursTextes = erreursChargement.length ? [] : erreursTextesMenus(donnees.menus, dictionnaires);
+  // Avec eux, les textes que le CODE choisit (le composant, les lecteurs
+  // d'état des bascules) : aucune carte ne les cite, ce contrôle est le seul
+  // à pouvoir les voir manquer.
+  const erreursTextes = erreursChargement.length ? [] : erreursTextesMenus(
+    donnees.menus, dictionnaires, [...CLES_TEXTE_COMPOSANT, ...clesTexteEtats(Object.keys(dictionnaires))],
+  );
   const toutesErreurs = [...erreursChargement, ...erreursValidation, ...erreursCles, ...erreursCouleurs, ...erreursTextes];
 
   if (toutesErreurs.length > 0) {
@@ -2256,6 +2293,22 @@ export async function demarrerJeu() {
   const menu = initialiserMenu({
     document,
     i18n,
+    // specs/08_menus-cartes.md : les écrans de cartes du menu Pause.
+    menus: registre.tous('menus'),
+    // L'accent des menus = la `couleur_ui` du compagnon choisi ; `null` avant
+    // le choix (la feuille de style porte alors l'accent neutre).
+    couleurAccent() {
+      const compagnon = save.hero.companion ? registre.obtenir('companions', save.hero.companion) : null;
+      return compagnon ? compagnon.couleur_ui : null;
+    },
+    // La boîte du menu se cale sur le rectangle du CANVAS, par la même
+    // fonction pure que la présentation du jeu et le hit-test tactile. `unite`
+    // = hauteur de ce rectangle ÷ hauteur logique : c'est l'échelle entière.
+    rectangleJeu() {
+      const rect = calculerRectanglePresentation(canvasVisible.width, canvasVisible.height);
+      return { x: rect.x, y: rect.y, unite: rect.echelle };
+    },
+    dessinerIcone: creerDessinateurIcones({ obtenirVisuel: (id) => registre.obtenir('visuels', id), fenetre: window }),
     exporterSauvegarde() {
       const blob = new Blob([JSON.stringify(save, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -2301,7 +2354,6 @@ export async function demarrerJeu() {
     // `D-30` : l'entrée de menu à bascule. `ui/menu.js` ne connaît ni l'API
     // ni `document` — il demande « est-ce possible », « est-ce actif », et
     // « bascule ». L'état réel fait foi des deux côtés.
-    pleinEcranDisponible: () => pleinEcran.disponible(),
     pleinEcranActif: () => pleinEcran.estActif(),
     basculerPleinEcran: () => pleinEcran.basculer(),
   });
@@ -2311,6 +2363,9 @@ export async function demarrerJeu() {
   // se réécrit alors depuis l'état réel — c'est ce qui interdit à l'entrée de
   // mentir après une sortie que personne ici n'a provoquée.
   document.addEventListener('fullscreenchange', () => menu.actualiserPleinEcran());
+  // La boîte du menu suit le rectangle du canvas : même événement que lui.
+  // Après `ajusterTailleCanvas` (écouteur posé plus haut, donc appelé avant).
+  window.addEventListener('resize', () => menu.actualiserGeometrie());
 
   const dialogue = creerDialogue();
 
@@ -2351,6 +2406,9 @@ export async function demarrerJeu() {
     registre, i18n, save, store, dialogue, menu, input, ctxLogique, ctxVisible, canvasLogique,
     onPremierGeste: armerAudioUneFois,
     moniteurPerf,
+    // La PRÉSENCE de la carte « Plein écran » est une condition de
+    // `menus.json` : sans l'API, la carte tombe et sa case reste vide.
+    valeursExternes: () => ({ plein_ecran_disponible: pleinEcran.disponible() ? 1 : 0 }),
   });
   // Dépendance circulaire résolue par un point de couture explicite (§B du
   // diagnostic) : le menu (construit avant l'orchestrateur, qui en a besoin
@@ -2362,8 +2420,24 @@ export async function demarrerJeu() {
   menu.definirEntreesStats(orchestrateur.obtenirEntreesStats);
   // specs/05_construction-stations.md §3 : même patron de couture différée
   // (le menu ne connaît ni la scène ni la position du héros).
-  menu.definirDisponibiliteConstruction(orchestrateur.disponibiliteConstruction);
+  menu.definirEvaluateurCondition(orchestrateur.evaluerCondition);
   menu.definirEntreesConstruction(orchestrateur.entreesConstruction);
+
+  // specs/08_menus-cartes.md §5 — le câblage, dans les DEUX sens : toute carte
+  // de `menus.json` trouve sa fonction, toute fonction enregistrée a sa carte,
+  // toute valeur citée par une condition est fournie. Il ne peut se juger
+  // qu'ici : c'est le premier endroit où le menu ET l'orchestrateur existent.
+  // Avant la boucle, et par le même écran d'erreur que les catalogues — une
+  // valeur manquante ferait LEVER `flags.js` à l'ouverture du menu, donc
+  // figerait la boucle de jeu en pleine partie.
+  const erreursCablage = erreursCablageMenus(registre.tous('menus'), {
+    ...menu.cablage(),
+    valeurs: orchestrateur.nomsValeursConditions(),
+  });
+  if (erreursCablage.length > 0) {
+    afficherErreurBoot(erreursCablage);
+    return;
+  }
 
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) sauvegarder(store, save);

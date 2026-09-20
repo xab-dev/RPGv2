@@ -202,6 +202,14 @@ function auMoinsUnEcranMenuVisibleSansBandeau(document) {
   return document.body.children.some((el) => estVisibleEffectif(el) && !estLeBandeau(el));
 }
 
+// specs/08_menus-cartes.md (palier A4) : le menu Pause est devenu une grille de
+// cartes. Une entrée n'est plus un bouton `#menu-…` d'une liste, c'est une
+// carte de `data/menus.json`, retrouvée par son id (`data-carte`). Un clic
+// dessus passe par la même fonction que le verbe ATTACK.
+function carteDuMenu(document, id) {
+  return document.body.querySelectorAll('[data-carte]').find((c) => c.dataset.carte === id) || null;
+}
+
 function declencherClic(el) {
   (el._listeners.click || []).forEach((fn) => fn());
 }
@@ -237,16 +245,16 @@ function construireBanc() {
   const store = creerStoreMemoire();
   const dialogue = creerDialogue();
   const document = creerFauxDocument();
-  const menu = initialiserMenu({ document, i18n, exporterSauvegarde: () => {}, importerSauvegarde: () => {} });
+  const menu = initialiserMenu({ document, i18n, menus: registre.tous('menus'), exporterSauvegarde: () => {}, importerSauvegarde: () => {} });
   const frames = [];
   const input = creerInputScripte(frames);
   const orchestrateur = creerOrchestrateurGrotte({
     registre, i18n, save, store, dialogue, menu, input, ctxLogique: null, ctxVisible: null, canvasLogique: null,
   });
-  // Câblage réel (main.js#demarrerJeu) : sans lui, `#menu-construction`
-  // n'aurait aucune entrée à afficher et le clic ci-dessous n'ouvrirait
+  // Câblage réel (main.js#demarrerJeu) : sans lui, la carte Construction
+  // ne s'afficherait pas (condition non évaluable) et n'aurait aucune entrée à afficher et le clic ci-dessous n'ouvrirait
   // qu'une liste vide.
-  menu.definirDisponibiliteConstruction(orchestrateur.disponibiliteConstruction);
+  menu.definirEvaluateurCondition(orchestrateur.evaluerCondition);
   menu.definirEntreesConstruction(orchestrateur.entreesConstruction);
   const conteneur = document.body.querySelector('#menu');
   return { save, orchestrateur, frames, menu, document, conteneur };
@@ -281,7 +289,7 @@ function jouerVerbe(banc, etatVerbe) {
   // Clic réel sur "Construction" (équivalent souris du focus+ATTACK,
   // exerce exactement actionOuvrirConstruction()) : liste ouverte, conteneur
   // masqué.
-  declencherClic(document.body.querySelector('#menu-construction'));
+  declencherClic(carteDuMenu(document, 'carte_construction'));
   verifierInvariants(orchestrateur, menu, document);
   assert.equal(menu.estOuvert(), true, 'liste Construction ouverte : menu.estOuvert() doit rester vrai');
   assert.equal(estVisibleEffectif(conteneur), false, 'conteneur masqué au profit de la liste');
@@ -364,7 +372,7 @@ function jouerVerbe(banc, etatVerbe) {
   const { save, orchestrateur, menu, document, conteneur } = banc;
 
   jouerVerbe(banc, etat({ menu: true }));
-  declencherClic(document.body.querySelector('#menu-construction'));
+  declencherClic(carteDuMenu(document, 'carte_construction'));
   verifierInvariants(orchestrateur, menu, document);
   const entreeAtelier = orchestrateur.entreesConstruction().find((e) => e.texte === i18n.t('station.atelier'));
   entreeAtelier.action();

@@ -1,14 +1,18 @@
-// Menu minimal (§3.6) : bascule de langue FR/EN, export/import de
-// sauvegarde, Poche, Stats (Palier D) — et les écrans contextuels Craft/
-// Coffre (Palier A/E, ouverts directement par INTERACT sur une station,
-// hors du menu Pause). Rien ici ne touche le DOM au chargement du module :
-// tout se passe dans initialiserMenu(), appelée par main.js une fois le
-// document prêt.
+// Le menu du jeu. Depuis specs/08_menus-cartes.md (palier A4), le menu Pause
+// est un empilement d'écrans de CARTES (`ui/grille_cartes.js`, décrit par
+// `data/menus.json`) ; ce module garde les écrans de LISTE — Poche, Stats
+// (Palier D), Construction, et les écrans contextuels Craft/Coffre (Palier
+// A/E, ouverts directement par INTERACT sur une station, hors du menu Pause)
+// — et enregistre les actions que les cartes déclenchent. Rien ici ne touche
+// le DOM au chargement du module : tout se passe dans initialiserMenu(),
+// appelée par main.js une fois le document prêt.
 //
 // creerNavigationMenu() et creerControleurMenu() sont pures (aucune
 // référence DOM, actions passées en callbacks) : c'est le patron de focus
 // que reprennent tous les écrans d'UI — écrit une fois ici, testé depuis
 // Node sans faux DOM.
+
+import { creerMenuCartes } from './grille_cartes.js';
 
 // Provisoire, comme les autres mappings de gamepad.js : au-delà de ce
 // seuil, le stick/la flèche est considéré "poussé" dans une direction ;
@@ -129,20 +133,6 @@ export function creerControleurMenu(actions, options = {}) {
     estOuvert() {
       return ouvert && (element ? !element.hidden : true);
     },
-    // Intention brute (SD_construction-ecrans-orphelins_2026-09-17 §2) :
-    // `ouvert` seul, sans le ET DOM de `estOuvert()` ci-dessus — nécessaire
-    // au SEUL endroit qui doit distinguer « ce contrôleur a été fermé
-    // délibérément » (ex. "Oui" du reset, `actionConfirmerOui`) de « son
-    // écran est simplement masqué en ce moment » (ex. `conteneur` caché
-    // pendant que la confirmation de reset s'affiche par-dessus, alors que
-    // `controleur` du menu Pause reste volontairement ouvert dessous).
-    // `estOuvert()` seul ne peut pas trancher ce cas : au moment où on se
-    // pose la question, `element` est TOUJOURS caché (c'est justement
-    // pourquoi un autre écran est visible) — jamais utilisé ailleurs que
-    // `ui/menu.js#traiterInput` (retour de la confirmation par B/skill_3).
-    ouvertIntentionnellement() {
-      return ouvert;
-    },
     index() {
       return navigation.index();
     },
@@ -202,14 +192,6 @@ function appliquerFocusVisuel(elements, indexFocalise) {
 // même : `ui/menu.js` ne connaît QUE le nom des classes, jamais une valeur
 // de style ; `index.html` ne connaît que des classes, jamais un élément
 // nommé créé ici (c'est ce qui interdisait déjà d'y styliser `#menu-poche`).
-// L'ABSENCE de texte, pas un texte. Elle est nommée plutôt qu'écrite en
-// place pour une raison de fond et une de forme : de fond, effacer un message
-// n'est pas afficher quelque chose, donc ça n'a rien à faire dans les locales ;
-// de forme, le garde-fou d'i18n (`test_phase0_i18n`, bloc 5) refuse toute
-// chaîne littérale assignée à un `textContent` de ce fichier — et il a raison de
-// ne pas savoir faire la différence, c'est à nous de la dire ici.
-const AUCUN_MESSAGE = '';
-
 const CLASSE_ECRAN = 'ecran-ui';
 
 function appliquerClasseEcran(el) {
@@ -417,150 +399,82 @@ function creerEcranListeGenerique(document, i18n, { onFermer } = {}) {
   };
 }
 
+// Les ids sous lesquels ce module enregistre ce qu'il sait ouvrir, faire et
+// lire (specs/08_menus-cartes.md §5) : `data/menus.json` les cite, et le
+// contrôle de démarrage (`menu_cartes.js#erreursCablageMenus`) vérifie les
+// DEUX sens — toute carte trouve sa fonction, toute fonction a sa carte.
+//
+// Ce ne sont pas des ids de catalogue écrits dans un système : c'est l'autre
+// moitié du contrat. Le catalogue dit « la carte Musique appelle
+// `action_basculer_musique` » ; ce module dit « voici ce que fait
+// `action_basculer_musique` ». Ajouter une CARTE ne touche pas ce fichier ;
+// ajouter une CAPACITÉ (un nouvel écran existant, une nouvelle action), si.
+const ECRAN_POCHE = 'ecran_poche';
+const ECRAN_STATS = 'ecran_stats';
+const ECRAN_CONSTRUCTION = 'ecran_construction';
+
+// Les clés de texte que les lecteurs d'état peuvent rendre : elles ne sont
+// citées par aucune carte (c'est le code qui les choisit, selon l'état réel),
+// donc le contrôle de démarrage des textes ne les verrait pas sans cette
+// liste. `langues` : une clé `menu.etat.langue_<code>` par langue chargée.
+export function clesTexteEtats(langues) {
+  return [
+    ...langues.map((l) => `menu.etat.langue_${l}`),
+    'menu.etat.musique_oui', 'menu.etat.musique_non',
+    'menu.etat.plein_ecran_oui', 'menu.etat.plein_ecran_non',
+    'menu.plein_ecran_refuse',
+  ];
+}
+
 // 03_maison-exterieur §3.3/§3.6 + Palier A/C/D/E de 04_maison-interieur :
-// - `listerPoche()` renvoie désormais `{ id, label, quantite, categorie }[]`
-//   (le module a besoin de `categorie`/`id` pour proposer "Équiper" sur la
-//   nourriture, pas seulement afficher un texte).
+// - `listerPoche()` renvoie `{ id, label, quantite, categorie }[]` (le module a
+//   besoin de `categorie`/`id` pour proposer "Équiper" sur la nourriture).
 // - `equipementConsommable()`/`equiperConsommable(id)` : slot consommable
 //   (§3.3, hint CONSUME).
-// Tous optionnels (défauts inertes), comme le reste des callbacks
-// facultatifs déjà présents ici, au cas où un futur test construirait le
-// menu sans ces dépendances.
+// Tous optionnels (défauts inertes), au cas où un test construirait le menu
+// sans ces dépendances.
 // `peripheriqueActif` (MT_construction-bandeau-placement_2026-09-17) :
-// optionnel, défaut 'manette' — seul le bandeau de placement s'en sert
-// (glyphes du périphérique réellement actif plutôt que manette en dur), rien
-// d'autre dans ce module n'y touche ; brancher `input.js` plus largement ici
-// reste une dette assumée tant qu'un 2ᵉ besoin ne le justifie pas.
+// optionnel, défaut 'manette' — seul le bandeau de placement s'en sert.
+//
+// specs/08_menus-cartes.md, palier A4 : le menu Pause n'est plus une liste,
+// c'est un EMPILEMENT D'ÉCRANS DE CARTES (`ui/grille_cartes.js`), décrit par
+// `menus` (le catalogue `data/menus.json`). Ce module ne garde que ce qui lui
+// revient : les cinq écrans de LISTE (Poche, Stats, Construction, Craft,
+// Coffre — inchangés, ils attendent le palier C), le bandeau de placement, et
+// l'enregistrement des actions. `rectangleJeu`, `couleurAccent` et
+// `dessinerIcone` sont injectés comme le reste : ce module ne connaît ni le
+// canvas, ni les compagnons, ni `visuels.json`.
 export function initialiserMenu({
-  document, i18n, exporterSauvegarde, importerSauvegarde,
+  document, i18n, menus, exporterSauvegarde, importerSauvegarde,
   musiqueActive = () => true, basculerMusique = () => {}, listerPoche = () => [],
   equipementConsommable = () => null, equiperConsommable = () => {},
   peripheriqueActif = () => 'manette',
-  // `D-30` (rouvert le 20/09) : le plein écran est injecté comme tout le
-  // reste — ce module ne connaît ni `document.fullscreenElement`, ni
-  // `requestFullscreen`. `pleinEcranDisponible` décide si l'entrée EXISTE
-  // (une entrée qui ne peut rien faire n'a rien à faire dans le menu, même
-  // règle que Construction hors de la maison) ; `pleinEcranActif` est lu à
-  // CHAQUE affichage du libellé, jamais recopié dans un booléen d'ici.
-  pleinEcranDisponible = () => false, pleinEcranActif = () => false,
-  basculerPleinEcran = () => {},
+  // `D-30` : le plein écran est injecté comme tout le reste — ce module ne
+  // connaît ni `document.fullscreenElement`, ni `requestFullscreen`.
+  // `pleinEcranActif` est lu à CHAQUE affichage de la carte, jamais recopié
+  // dans un booléen d'ici. (La PRÉSENCE de la carte, elle, est devenue une
+  // condition du catalogue — la valeur nommée `plein_ecran_disponible`,
+  // fournie par `main.js` —, plus une fonction injectée ici.)
+  pleinEcranActif = () => false, basculerPleinEcran = () => {},
+  couleurAccent = () => null, rectangleJeu = () => null, dessinerIcone = () => {},
 }) {
-  const conteneur = document.createElement('div');
-  conteneur.id = 'menu';
-  appliquerClasseEcran(conteneur);
-  afficherEcran(conteneur, false);
-  // Même découpe que `creerEcranListeGenerique` (`D-42`) : un en-tête figé
-  // qui porte le titre et « Fermer », un corps qui défile et porte les huit
-  // autres entrées. `data-item` garde sa numérotation d'origine — l'ordre de
-  // navigation est celui de `ENTREES_FIXES_DEBUT`/`_FIN` plus bas, pas celui
-  // du DOM, et ce ticket n'a le droit de changer ni l'un ni l'autre.
-  conteneur.innerHTML = `
-    <div class="ecran-ui-corps">
-      <div class="ecran-ui-liste">
-        <div class="menu-item" data-item="0">
-          <span class="menu-curseur"></span>
-          <label data-cle="menu.langue"></label>
-          <select id="menu-langue"><option value="fr">FR</option><option value="en">EN</option></select>
-        </div>
-        <div class="menu-item" data-item="1">
-          <span class="menu-curseur"></span>
-          <button id="menu-musique" data-cle="menu.musique" type="button"></button>
-        </div>
-        <div class="menu-item" data-item="1b">
-          <span class="menu-curseur"></span>
-          <button id="menu-plein-ecran" type="button"></button>
-        </div>
-        <div class="menu-item" data-item="2">
-          <span class="menu-curseur"></span>
-          <button id="menu-poche" data-cle="menu.poche" type="button"></button>
-        </div>
-        <div class="menu-item" data-item="3">
-          <span class="menu-curseur"></span>
-          <button id="menu-stats" data-cle="menu.stats" type="button"></button>
-        </div>
-        <div class="menu-item" data-item="4">
-          <span class="menu-curseur"></span>
-          <button id="menu-construction" data-cle="menu.construction" type="button"></button>
-        </div>
-        <div class="menu-item" data-item="5">
-          <span class="menu-curseur"></span>
-          <button id="menu-exporter" data-cle="menu.exporter" type="button"></button>
-        </div>
-        <div class="menu-item" data-item="6">
-          <span class="menu-curseur"></span>
-          <input id="menu-importer" type="file" accept="application/json" />
-        </div>
-        <div class="menu-item" data-item="7">
-          <span class="menu-curseur"></span>
-          <button id="menu-reset" data-cle="menu.reset_sauvegarde" type="button"></button>
-        </div>
-      </div>
-    </div>
-    <div class="ecran-ui-entete">
-      <div class="ecran-ui-entete-ligne">
-        <h2 class="ecran-ui-titre" data-cle="menu.titre"></h2>
-        <div class="menu-item" data-item="8">
-          <span class="menu-curseur"></span>
-          <button id="menu-fermer" data-cle="menu.fermer" type="button"></button>
-        </div>
-      </div>
-      <p class="ecran-ui-aide" id="menu-message"></p>
-    </div>
-  `;
-  document.body.appendChild(conteneur);
-
-  // Écran de confirmation (§B) : sous-menu à 2 entrées, conteneur DOM séparé
-  // plutôt qu'imbriqué dans `conteneur` — masquer l'un affiche l'autre, les
-  // deux ne sont jamais visibles en même temps (cf. traiterInput plus bas).
-  const confirmation = document.createElement('div');
-  confirmation.id = 'menu-confirmation-reset';
-  appliquerClasseEcran(confirmation);
-  afficherEcran(confirmation, false);
-  // Même découpe que les autres écrans (`D-42`), à une différence près :
-  // « Oui » et « Non » restent ENSEMBLE dans le corps. Ici la sortie n'est
-  // pas « Fermer », c'est « Non » — et sortir l'un des deux termes d'un choix
-  // destructif de son couple rendrait la question moins lisible, pas plus.
-  // Deux entrées ne peuvent pas déborder : mesuré à 703 × 280, l'écran tient
-  // entier avec de la marge.
-  confirmation.innerHTML = `
-    <div class="ecran-ui-corps">
-      <div class="ecran-ui-liste">
-        <div class="menu-item" data-item="0">
-          <span class="menu-curseur"></span>
-          <button id="menu-reset-oui" data-cle="menu.reset_oui" type="button"></button>
-        </div>
-        <div class="menu-item" data-item="1">
-          <span class="menu-curseur"></span>
-          <button id="menu-reset-non" data-cle="menu.reset_non" type="button"></button>
-        </div>
-      </div>
-    </div>
-    <div class="ecran-ui-entete">
-      <div class="ecran-ui-entete-ligne">
-        <h2 class="ecran-ui-titre" data-cle="menu.reset_confirmation_titre"></h2>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(confirmation);
-
   // Poche (§3.3), Craft/Coffre (Palier A/E), Stats (Palier D) : même écran
   // générique (creerEcranListeGenerique) — Poche affiche TOUS les items
   // (quantité en texte), "Équiper" n'étant une action réelle que sur la
   // nourriture (les autres lignes ont une action vide, focalisables sans
   // effet — plus simple qu'un 2e type de ligne non focalisable).
-  // Poche/Stats masquent `conteneur` sans le fermer (§3.4/§3.6) : `onFermer`
-  // le réaffiche, quel que soit le chemin de fermeture (clic "Fermer" ou B/
-  // skill_3) — `actualiserFocusVisuel` référencée ici est une déclaration de
-  // fonction plus bas dans ce même scope (hoisted), jamais appelée avant que
-  // le menu principal soit entièrement construit.
-  function onFermerVersMenuPrincipal() {
-    afficherEcran(conteneur, true);
-    actualiserFocusVisuel();
+  // Poche/Stats/Construction s'ouvrent DEPUIS une carte : la grille se masque
+  // sans se dépiler, et `onFermer` la fait réapparaître où elle était, quel
+  // que soit le chemin de fermeture (clic « Fermer » ou B/skill_3).
+  // `menuCartes` est déclarée plus bas dans ce même scope : jamais lue avant
+  // qu'un écran soit ouvert, donc jamais avant d'exister.
+  function onFermerVersMenuCartes() {
+    menuCartes.reafficher();
   }
-  const ecranPoche = creerEcranListeGenerique(document, i18n, { onFermer: onFermerVersMenuPrincipal });
+  const ecranPoche = creerEcranListeGenerique(document, i18n, { onFermer: onFermerVersMenuCartes });
   const ecranCraft = creerEcranListeGenerique(document, i18n);
   const ecranCoffre = creerEcranListeGenerique(document, i18n);
-  const ecranStats = creerEcranListeGenerique(document, i18n, { onFermer: onFermerVersMenuPrincipal });
+  const ecranStats = creerEcranListeGenerique(document, i18n, { onFermer: onFermerVersMenuCartes });
   // Construction (specs/05_construction-stations.md §3, précisée par
   // MT_construction-bandeau-placement_2026-09-17 v1.0.1) : ouvert DEPUIS le
   // menu Pause (comme Poche/Stats, `onFermer` symétrique pour B/skill_3).
@@ -569,7 +483,7 @@ export function initialiserMenu({
   // suit affiche la pièce + un bandeau, jamais cet écran plein-écran par
   // dessus (c'était le bug du micro-ticket : le fantôme restait invisible
   // derrière la liste).
-  const ecranConstruction = creerEcranListeGenerique(document, i18n, { onFermer: onFermerVersMenuPrincipal });
+  const ecranConstruction = creerEcranListeGenerique(document, i18n, { onFermer: onFermerVersMenuCartes });
 
   // Bandeau de placement (MT_construction-bandeau-placement_2026-09-17) : UI
   // PERMANENTE du mode (jamais via hints.js), en filigrane, SANS focus ni
@@ -611,20 +525,6 @@ export function initialiserMenu({
     });
   }
 
-  function actionOuvrirPoche() {
-    // §3.6 : la poche est un écran séparé du menu principal (creerEcranListeGenerique,
-    // fixed/inset:0) — sans ce masquage explicite, `conteneur` resterait
-    // affiché EN DESSOUS (jamais fermé lui-même), superposant deux menus
-    // focalisables en même temps (même piège que Stats ci-dessous).
-    afficherEcran(conteneur, false);
-    ecranPoche.ouvrir(entreesPoche, i18n.t('menu.poche_titre'));
-  }
-
-  function actionOuvrirStats() {
-    afficherEcran(conteneur, false);
-    ecranStats.ouvrir(fournisseurEntreesStats, i18n.t('menu.stats_titre'));
-  }
-
   // Bandeau de placement (§3, v1.0.1) : nom de la station + les 5 verbes du
   // mode, résolus via le périphérique RÉELLEMENT actif (glyphes), jamais en
   // dur — construit une seule fois à l'entrée en placement (pas de hot-swap
@@ -643,32 +543,20 @@ export function initialiserMenu({
     ].join(' · ');
   }
 
-  function actionOuvrirConstruction() {
-    afficherEcran(conteneur, false);
-    ecranConstruction.ouvrir(fournisseurEntreesConstruction, i18n.t('menu.construction_titre'));
-  }
-
   // Transition ATOMIQUE liste -> placement (§3 invariant) : retrait de
   // l'écran-liste et levée du bandeau, dans la même fonction synchrone —
   // aucun état intermédiaire où ni l'un ni l'autre ne serait affiché.
   //
-  // Historique (à ne pas reproduire) : `a70a089` ajoutait ici un
-  // `controleur.fermer()` explicite pour que `menu.estOuvert()` retombe à
-  // `false` pendant le placement — ça réparait le sens ALLER, mais cassait
-  // le RETOUR (`reouvrirListeConstruction` ne rouvre jamais `controleur`,
-  // donc `onFermerVersMenuPrincipal` réaffichait `conteneur` sur un
-  // contrôleur resté fermé pour toujours — SD_construction-ecrans-
-  // orphelins_2026-09-17.md, symptôme 3). Cause racine RÉELLE (carte §1.2) :
-  // `menu.estOuvert()` OR-combinait deux CONTRATS différents pour « ouvert »
-  // (booléen pur ici, booléen ET DOM pour les écrans génériques) — un mode
-  // qui sort de la pile du menu Pause et y revient ne peut satisfaire les
-  // deux en manipulant seulement `controleur.fermer()/.ouvrir()`. Avec le
-  // contrat UNIFIÉ (`creerControleurMenu#element`, ce fichier), cacher
-  // `conteneur` suffit : `controleur.estOuvert()` retombe automatiquement à
-  // `false` (booléen interne toujours vrai, DOM caché), et réafficher
-  // `conteneur` plus tard (`onFermerVersMenuPrincipal`, déjà utilisé par
-  // Poche/Stats) le fait redevenir vrai SANS jamais rappeler `.ouvrir()` —
-  // plus besoin de fermer/rouvrir ce contrôleur explicitement ici.
+  // Historique (à ne pas reproduire) : `a70a089` ajoutait ici une fermeture
+  // explicite du contrôleur du menu Pause pour que `menu.estOuvert()` retombe
+  // à `false` pendant le placement — ça réparait le sens ALLER, mais cassait
+  // le RETOUR (SD_construction-ecrans-orphelins_2026-09-17.md, symptôme 3).
+  // Cause racine RÉELLE (carte §1.2) : `menu.estOuvert()` OR-combinait deux
+  // CONTRATS différents pour « ouvert ». Avec le contrat UNIFIÉ (intention ET
+  // DOM visible, que la grille de cartes applique elle aussi), un écran
+  // masqué n'est pas « ouvert » : pendant le placement, la grille est masquée
+  // (sa pile intacte), la liste est fermée, et `menu.estOuvert()` vaut faux
+  // sans que personne ait eu à fermer puis rouvrir quoi que ce soit.
   function ouvrirPlacementConstruction(nomStation) {
     ecranConstruction.fermerSansCallback();
     bandeauConstruction.textContent = texteBandeauConstruction(nomStation);
@@ -676,7 +564,7 @@ export function initialiserMenu({
   }
 
   // Retour liste (pose confirmée ou `B`, §4) : on enchaîne sans repasser par
-  // `conteneur` — la liste réapparaît directement avec des entrées fraîches.
+  // la grille — la liste réapparaît directement avec des entrées fraîches.
   function reouvrirListeConstruction() {
     afficherEcran(bandeauConstruction, false);
     ecranConstruction.ouvrir(fournisseurEntreesConstruction, i18n.t('menu.construction_titre'));
@@ -689,97 +577,51 @@ export function initialiserMenu({
     afficherEcran(bandeauConstruction, false);
   }
 
-  conteneur.querySelector('#menu-exporter').addEventListener('click', () => exporterSauvegarde());
-
-  const inputImporter = conteneur.querySelector('#menu-importer');
+  // Importer : le seul contrôle NATIF qui reste. Un sélecteur de fichier ne
+  // s'ouvre que par un `<input type="file">` ; il vit donc ici, hors de toute
+  // grille, invisible — la carte « Importer » le déclenche. Limite connue et
+  // inchangée : à la MANETTE (lue par sondage, donc sans geste utilisateur aux
+  // yeux du navigateur) le sélecteur peut ne pas s'ouvrir, exactement comme le
+  // plein écran (`D-30`).
+  const inputImporter = document.createElement('input');
+  inputImporter.type = 'file';
+  inputImporter.accept = 'application/json';
+  inputImporter.hidden = true;
+  inputImporter.style.display = 'none';
   inputImporter.addEventListener('change', (e) => {
     const fichier = e.target.files[0];
     if (fichier) importerSauvegarde(fichier);
   });
+  document.body.appendChild(inputImporter);
 
-  const selectLangue = conteneur.querySelector('#menu-langue');
-  selectLangue.value = i18n.langueCourante();
-  selectLangue.addEventListener('change', () => {
-    i18n.definirLangue(selectLangue.value);
-    retraduireBase();
-  });
-
+  // Langue : bascule vers la langue SUIVANTE parmi celles qui sont chargées
+  // (deux aujourd'hui ; à la troisième, la spec prévoit que la carte devienne
+  // un dossier — §8). Convention manette : ATTACK bascule.
   function actionBasculerLangue() {
-    // Convention manette (A = confirmer) appliquée à un select : un seul
-    // bouton ne peut pas "ouvrir" une liste déroulante, donc ATTACK
-    // bascule FR<->EN plutôt que de reproduire l'ouverture native — voir
-    // le parcours manuel du ticket.
-    selectLangue.value = selectLangue.value === 'fr' ? 'en' : 'fr';
-    i18n.definirLangue(selectLangue.value);
-    retraduireBase();
+    const langues = i18n.languesDisponibles ? i18n.languesDisponibles() : ['fr', 'en'];
+    const suivante = langues[(langues.indexOf(i18n.langueCourante()) + 1) % langues.length];
+    i18n.definirLangue(suivante);
   }
 
-  // Musique (§3.6) : bouton "Musique : Oui/Non" — même convention que la
-  // langue (ATTACK bascule), l'état réel (save.settings.musique) et l'effet
-  // (audio.js#definirMusiqueActive) vivent tous les deux dans main.js.
-  const boutonMusique = conteneur.querySelector('#menu-musique');
-  function actualiserBoutonMusique() {
-    const suffixe = musiqueActive() ? i18n.t('menu.musique_oui') : i18n.t('menu.musique_non');
-    boutonMusique.textContent = `${i18n.t('menu.musique')} : ${suffixe}`;
-  }
-  function actionBasculerMusique() {
-    basculerMusique();
-    actualiserBoutonMusique();
-  }
-  boutonMusique.addEventListener('click', actionBasculerMusique);
-
-  // Plein écran (`D-30`, rouvert le 20/09). Même convention que Musique :
-  // ATTACK bascule. Deux règles, et elles ne se négocient pas :
-  //
-  //   1. **Le libellé lit l'état RÉEL** (`pleinEcranActif()`, câblé sur
+  // Plein écran (`D-30`, rouvert le 20/09) — deux règles, conservées telles
+  // quelles :
+  //   1. **La carte affiche l'état RÉEL** (`pleinEcranActif()`, câblé sur
   //      `document.fullscreenElement`), jamais un booléen tenu à jour ici. Le
-  //      joueur peut sortir par Échap ou par un geste système sans que
-  //      personne ici ne soit prévenu ; un booléen local mentirait.
-  //   2. **Un refus ne change rien au libellé.** Il affiche un message, et
-  //      c'est tout — c'est exactement ce qui arrivera si Xav confirme
-  //      l'entrée à la MANETTE : une manette est lue par sondage, pas par
-  //      événement, donc le navigateur ne voit aucun geste et refuse. On ne
+  //      joueur peut sortir par Échap sans que personne ici ne soit prévenu.
+  //   2. **Un refus ne change rien à la carte.** Il s'annonce dans l'en-tête,
+  //      et c'est tout — c'est ce qui arrive à la MANETTE : lue par sondage,
+  //      elle ne produit aucun geste aux yeux du navigateur, qui refuse. On ne
   //      contourne pas ; on le dit au joueur.
-  const boutonPleinEcran = conteneur.querySelector('#menu-plein-ecran');
-  const elPleinEcran = boutonPleinEcran.parentNode;
-  const message = conteneur.querySelector('#menu-message');
-  function actualiserBoutonPleinEcran() {
-    boutonPleinEcran.textContent = pleinEcranActif()
-      ? i18n.t('menu.quitter_plein_ecran')
-      : i18n.t('menu.plein_ecran');
-  }
+  // `basculer()` rend une promesse résolue à l'état RÉEL obtenu, jamais
+  // rejetée (frontière du sous-système). Un appelant de test peut rendre un
+  // booléen nu : les deux formes sont acceptées. Le refus voyage comme une CLÉ
+  // de texte ; c'est la grille qui l'affiche.
   function actionBasculerPleinEcran() {
-    message.textContent = AUCUN_MESSAGE;
     const attendu = !pleinEcranActif();
-    // `basculer()` rend une promesse résolue à l'état RÉEL obtenu, jamais
-    // rejetée (frontière du sous-système). Un appelant de test peut rendre un
-    // booléen nu : les deux formes sont acceptées, comme partout ici.
+    const conclure = (actif) => (actif !== attendu ? { cleMessage: 'menu.plein_ecran_refuse' } : null);
     const resultat = basculerPleinEcran();
-    const conclure = (actif) => {
-      actualiserBoutonPleinEcran();
-      if (actif !== attendu) message.textContent = i18n.t('menu.plein_ecran_refuse');
-    };
-    if (resultat && typeof resultat.then === 'function') resultat.then(conclure, () => conclure(pleinEcranActif()));
-    else conclure(pleinEcranActif());
-  }
-  boutonPleinEcran.addEventListener('click', actionBasculerPleinEcran);
-
-  retraduireBase();
-
-  function retraduireBase() {
-    conteneur.querySelectorAll('[data-cle]').forEach((el) => {
-      el.textContent = i18n.t(el.dataset.cle);
-    });
-    confirmation.querySelectorAll('[data-cle]').forEach((el) => {
-      el.textContent = i18n.t(el.dataset.cle);
-    });
-    actualiserBoutonMusique();
-    actualiserBoutonPleinEcran();
-  }
-
-  function fermerMenu() {
-    controleur.fermer();
-    afficherEcran(conteneur, false);
+    if (resultat && typeof resultat.then === 'function') return resultat.then(conclure, () => conclure(pleinEcranActif()));
+    return conclure(pleinEcranActif());
   }
 
   // Fournie après coup par main.js (main.js#demarrerJeu, `menu.
@@ -793,182 +635,67 @@ export function initialiserMenu({
   // resoudre les stats/points depuis main.js, qui construit le menu.
   let fournisseurEntreesStats = () => [];
   // Même patron pour Construction (§3) : liste des stations placable de la
-  // structure où se trouve le héros — dépend de main.js (scène/position),
-  // donc fournie après coup elle aussi. `disponibiliteConstruction` décide si
-  // l'ENTRÉE elle-même apparaît dans le menu Pause (§3 : "sinon l'entrée
-  // n'apparaît pas", jamais un simple grisage comme les recettes).
+  // structure où se trouve le héros — dépend de main.js (scène/position).
   let fournisseurEntreesConstruction = () => [];
-  let disponibiliteConstruction = () => false;
+  // Et pour les conditions des cartes (`flags.evaluate`, qui vit dans
+  // l'orchestrateur). Tant qu'il n'est pas fourni, AUCUNE condition n'est
+  // vraie : une carte qu'on ne sait pas évaluer ne s'affiche pas (même
+  // discipline que `flags.js` pour une valeur inconnue).
+  let evaluerCondition = () => false;
 
-  function revenirAuMenuPrincipal() {
-    afficherEcran(confirmation, false);
-    afficherEcran(conteneur, true);
-    actualiserFocusVisuel();
-  }
+  const actions = {
+    action_basculer_langue: actionBasculerLangue,
+    action_basculer_musique: () => basculerMusique(),
+    action_basculer_plein_ecran: actionBasculerPleinEcran,
+    action_exporter_sauvegarde: () => exporterSauvegarde(),
+    action_importer_sauvegarde: () => inputImporter.click(),
+    // Par une fonction fléchée, jamais par référence : `actionReinitialiser`
+    // est remplacée après coup (voir ci-dessus).
+    action_reinitialiser_sauvegarde: () => actionReinitialiser(),
+  };
+  // L'état RÉEL de chaque bascule, relu à la source à chaque affichage. Un
+  // lecteur rend une CLÉ de texte, jamais un texte composé.
+  const etats = {
+    etat_langue: () => `menu.etat.langue_${i18n.langueCourante()}`,
+    etat_musique: () => (musiqueActive() ? 'menu.etat.musique_oui' : 'menu.etat.musique_non'),
+    etat_plein_ecran: () => (pleinEcranActif() ? 'menu.etat.plein_ecran_oui' : 'menu.etat.plein_ecran_non'),
+  };
+  // Les écrans EXISTANTS qu'une carte dossier peut ouvrir, inchangés (palier
+  // C). La grille s'est déjà masquée quand ces fonctions sont appelées.
+  const ecrans = {
+    [ECRAN_POCHE]: () => ecranPoche.ouvrir(entreesPoche, i18n.t('menu.poche_titre')),
+    [ECRAN_STATS]: () => ecranStats.ouvrir(fournisseurEntreesStats, i18n.t('menu.stats_titre')),
+    [ECRAN_CONSTRUCTION]: () => ecranConstruction.ouvrir(fournisseurEntreesConstruction, i18n.t('menu.construction_titre')),
+  };
 
-  // Index 1 = "Non" : focus par défaut sécurisé (§B — ne jamais partir sur
-  // "Oui" pour une action destructive), positionné après ouverture() puisque
-  // creerControleurMenu().ouvrir() remet toujours l'index à 0.
-  const INDEX_CONFIRMATION_NON = 1;
-
-  function actionOuvrirConfirmation() {
-    afficherEcran(conteneur, false);
-    afficherEcran(confirmation, true);
-    controleurConfirmation.ouvrir();
-    controleurConfirmation.definirIndex(INDEX_CONFIRMATION_NON);
-    actualiserFocusConfirmation();
-  }
-
-  function actionConfirmerOui() {
-    controleurConfirmation.fermer();
-    afficherEcran(confirmation, false);
-    // "Oui" referme tout le menu (pas un retour à l'écran principal) : la
-    // partie redémarre au cold open, il n'y a plus rien à afficher ici.
-    controleur.fermer();
-    afficherEcran(conteneur, false);
-    actionReinitialiser();
-  }
-
-  function actionConfirmerNon() {
-    controleurConfirmation.fermer();
-    revenirAuMenuPrincipal();
-  }
-
-  conteneur.querySelector('#menu-reset').addEventListener('click', actionOuvrirConfirmation);
-  conteneur.querySelector('#menu-fermer').addEventListener('click', fermerMenu);
-  conteneur.querySelector('#menu-poche').addEventListener('click', actionOuvrirPoche);
-  conteneur.querySelector('#menu-stats').addEventListener('click', actionOuvrirStats);
-  conteneur.querySelector('#menu-construction').addEventListener('click', actionOuvrirConstruction);
-  confirmation.querySelector('#menu-reset-oui').addEventListener('click', actionConfirmerOui);
-  confirmation.querySelector('#menu-reset-non').addEventListener('click', actionConfirmerNon);
-
-  // Ordre = ordre de navigation MOVE, aligné sur le HTML ci-dessus : langue,
-  // musique, poche, stats, [construction], exporter, importer,
-  // réinitialiser, fermer. ATTACK sur un élément déclenche exactement la même
-  // fonction que son équivalent souris (pas une copie). Construction
-  // (specs/05_construction-stations.md §3 : "sinon l'entrée n'apparaît pas")
-  // est la SEULE entrée contextuelle de ce menu — contrairement au reste
-  // (fixé une fois au chargement du module jusqu'ici), la liste focalisable
-  // et le contrôleur sont donc reconstruits à CHAQUE ouverture
-  // (construireMenuPrincipal, même patron que creerEcranListeGenerique#
-  // reconstruire), pour qu'une entrée puisse apparaître/disparaître d'une
-  // ouverture à l'autre selon la position du héros dans le monde.
-  // `.parentNode` plutôt que `.closest('.menu-item')` : chaque bouton/select
-  // ci-dessus est TOUJOURS l'enfant direct de sa `.menu-item` (gabarit
-  // innerHTML ci-dessus) — évite une API DOM (`Element.closest`) que le faux
-  // DOM minimal des tests headless (test_phase1_sd_menu_reset_invisible)
-  // n'a jamais eu besoin d'implémenter jusqu'ici.
-  const elConstruction = conteneur.querySelector('#menu-construction').parentNode;
-  const ENTREES_FIXES_DEBUT = [
-    { el: conteneur.querySelector('#menu-langue').parentNode, action: actionBasculerLangue },
-    { el: conteneur.querySelector('#menu-musique').parentNode, action: actionBasculerMusique },
-    { el: conteneur.querySelector('#menu-poche').parentNode, action: actionOuvrirPoche },
-    { el: conteneur.querySelector('#menu-stats').parentNode, action: actionOuvrirStats },
-  ];
-  const ENTREES_FIXES_FIN = [
-    { el: conteneur.querySelector('#menu-exporter').parentNode, action: () => exporterSauvegarde() },
-    { el: conteneur.querySelector('#menu-importer').parentNode, action: () => inputImporter.click() },
-    { el: conteneur.querySelector('#menu-reset').parentNode, action: actionOuvrirConfirmation },
-    { el: conteneur.querySelector('#menu-fermer').parentNode, action: fermerMenu },
-  ];
-
-  // `element: conteneur` (SD_construction-ecrans-orphelins_2026-09-17 §2) :
-  // c'est PRÉCISÉMENT ce contrôleur qui restait « ouvert » de façon invisible
-  // en Construction — `actionOuvrirConstruction`/`actionOuvrirStats`/
-  // `actionOuvrirPoche` cachent `conteneur` SANS jamais fermer `controleur`
-  // (patron voulu, pour que `onFermerVersMenuPrincipal` retrouve le focus
-  // sans le reconstruire) ; sans `element`, `.estOuvert()` restait vrai tant
-  // que rien ne rappelait explicitement `.fermer()`.
-  let controleur = creerControleurMenu([], { verbeAnnuler: 'skill_3', element: conteneur });
-  let elementsItems = [];
-
-  function actualiserFocusVisuel() {
-    appliquerFocusVisuel(elementsItems, controleur.index());
-  }
-
-  // Reconstruit la liste focalisable du menu Pause à chaque ouverture —
-  // `disponibiliteConstruction()` (fournie par main.js) décide si l'entrée
-  // Construction y figure cette fois-ci. `el.onmouseenter =` (affectation,
-  // pas addEventListener) : rebinder n'accumule jamais de gestionnaire
-  // fantôme d'une ouverture à l'autre.
-  function construireMenuPrincipal() {
-    const visible = disponibiliteConstruction();
-    elConstruction.hidden = !visible;
-    elConstruction.style.display = visible ? '' : 'none';
-    // `D-30` : seconde entrée contextuelle, même patron que Construction —
-    // absente si le navigateur n'a pas l'API (elle ne pourrait qu'échouer).
-    // Sur PC elle reste affichée : c'est le défaut retenu, F11 existe mais
-    // l'entrée ne gêne personne et rend le réglage découvrable à la souris.
-    const pleinEcranVisible = pleinEcranDisponible();
-    elPleinEcran.hidden = !pleinEcranVisible;
-    elPleinEcran.style.display = pleinEcranVisible ? '' : 'none';
-    const entrees = [
-      ...ENTREES_FIXES_DEBUT,
-      ...(pleinEcranVisible ? [{ el: elPleinEcran, action: actionBasculerPleinEcran }] : []),
-      ...(visible ? [{ el: elConstruction, action: actionOuvrirConstruction }] : []),
-      ...ENTREES_FIXES_FIN,
-    ];
-    elementsItems = entrees.map((e) => e.el);
-    controleur = creerControleurMenu(entrees.map((e) => e.action), { verbeAnnuler: 'skill_3', element: conteneur });
-    controleur.ouvrir();
-    elementsItems.forEach((el, i) => {
-      el.onmouseenter = () => {
-        controleur.definirIndex(i);
-        actualiserFocusVisuel();
-      };
-    });
-    actualiserFocusVisuel();
-  }
-
-  // Confirmation (§B) : même patron de focus, B = "Non" (index 1) — annuler
-  // ne doit jamais réinitialiser par erreur. `traiterInput()` plus bas gère
-  // le retour à l'écran principal, y compris quand B a fermé ce contrôleur
-  // sans passer par `actions[]`.
-  // `element: confirmation` — même raisonnement que `controleur` ci-dessus :
-  // rien ne fermait ce contrôleur quand `actionOuvrirConfirmation` cachait
-  // `conteneur` (cas symétrique, jamais observé en bug faute d'un mode qui en
-  // sorte et y revienne comme Construction, mais même contrat partout,
-  // §2 point 1).
-  const controleurConfirmation = creerControleurMenu([actionConfirmerOui, actionConfirmerNon], {
-    verbeAnnuler: 'skill_3', element: confirmation,
+  const menuCartes = creerMenuCartes({
+    document, i18n, menus, actions, etats, ecrans,
+    evaluerCondition: (condition) => evaluerCondition(condition),
+    couleurAccent, rectangleJeu, dessinerIcone,
+    afficherEcran, seuilPoussee: SEUIL_POUSSEE_MENU,
   });
-
-  const elementsConfirmation = Array.from(confirmation.querySelectorAll('.menu-item'));
-
-  function actualiserFocusConfirmation() {
-    appliquerFocusVisuel(elementsConfirmation, controleurConfirmation.index());
-  }
-
-  elementsConfirmation.forEach((el, i) => {
-    el.addEventListener('mouseenter', () => {
-      controleurConfirmation.definirIndex(i);
-      actualiserFocusConfirmation();
-    });
-  });
+  // L'id historique du menu Pause : les tests et les diagnostics le cherchent
+  // sous ce nom depuis la Phase 0.
+  menuCartes.element.id = 'menu';
 
   return {
     ouvrir() {
-      message.textContent = AUCUN_MESSAGE;
-      afficherEcran(conteneur, true);
-      afficherEcran(confirmation, false);
       afficherEcran(bandeauConstruction, false);
-      controleurConfirmation.fermer();
+      // La grille D'ABORD : fermée (pile vide), elle ignore le `reafficher()`
+      // que déclenche la fermeture des trois écrans qui suivent.
+      menuCartes.fermer();
       ecranPoche.fermer();
       ecranStats.fermer();
       ecranConstruction.fermer();
-      construireMenuPrincipal();
-      retraduireBase();
+      menuCartes.ouvrir();
     },
     fermer() {
-      controleur.fermer();
-      controleurConfirmation.fermer();
+      menuCartes.fermer();
       ecranPoche.fermer();
       ecranCraft.fermer();
       ecranCoffre.fermer();
       ecranStats.fermer();
       ecranConstruction.fermer();
-      afficherEcran(conteneur, false);
-      afficherEcran(confirmation, false);
       afficherEcran(bandeauConstruction, false);
     },
     // MT_construction-bandeau-placement_2026-09-17 : transitions de la
@@ -983,50 +710,58 @@ export function initialiserMenu({
     // combiné dans estOuvert() ci-dessous) : le bandeau était le seul écran
     // sans aucun accesseur (carte §1.3), rendant son état invisible à tout
     // test/invariant externe. Ne rien déduire d'autre ici : ce booléen reflète
-    // la visibilité DOM du bandeau, rien de plus — le fait qu'il coïncide
-    // avec `constructionActif()` (main.js) reste un appariement PAR
-    // CONVENTION entre les 4 fonctions qui touchent les deux à la fois,
-    // désormais vérifiable plutôt qu'implicite.
+    // la visibilité DOM du bandeau, rien de plus.
     bandeauEstOuvert() {
       return !bandeauConstruction.hidden;
     },
     estOuvert() {
       // Le bandeau n'entre PAS dans cet OR : carte §1.2/§4, SD_construction-
       // ecrans-orphelins §2 point 3 — main.js#maj() donne la priorité à
-      // `menu.estOuvert()` sur la machine `construction` dans son dispatch
-      // (jamais modifié par cette fiche, point 4) ; l'y inclure ferait gagner
-      // le (faux) routage menu pendant tout le placement, pile le bug que ce
-      // module vient de corriger. Le gel du jeu pendant le placement reste
-      // couvert par `constructionActif()`, lu séparément par
-      // `uiOuverteMaintenant()`/`uiOuverte` côté main.js.
+      // `menu.estOuvert()` sur la machine `construction` dans son dispatch ;
+      // l'y inclure ferait gagner le (faux) routage menu pendant tout le
+      // placement. Le gel du jeu pendant le placement reste couvert par
+      // `constructionActif()`, lu séparément côté main.js.
+      //
+      // Six sous-contrats au lieu de sept : la confirmation de reset n'est
+      // plus un écran à part, c'est un niveau de la pile de la grille. Les
+      // réunir en UNE pile est le palier B — rien d'autre ne bouge ici.
       return (
-        controleur.estOuvert() || controleurConfirmation.estOuvert() ||
+        menuCartes.estOuvert() ||
         ecranPoche.estOuvert() || ecranCraft.estOuvert() || ecranCoffre.estOuvert() || ecranStats.estOuvert() ||
         ecranConstruction.estOuvert()
       );
     },
     // `D-30` : appelée par main.js sur `fullscreenchange` — le seul moment où
     // l'état réel peut changer sans que ce module ait rien demandé (Échap, un
-    // geste système, ou la fin d'une bascule asynchrone). Le libellé se
-    // réécrit alors depuis l'état réel, jamais depuis ce qu'on avait demandé.
+    // geste système, ou la fin d'une bascule asynchrone). La carte se réécrit
+    // alors depuis l'état réel, jamais depuis ce qu'on avait demandé.
     actualiserPleinEcran() {
-      actualiserBoutonPleinEcran();
+      menuCartes.rafraichir();
     },
-    // Fournie par main.js (§3) : vrai si le héros est actuellement dans une
-    // structure dont au moins une station est placable — décide si l'entrée
-    // Construction apparaît, relue à CHAQUE ouverture du menu (jamais figée).
-    definirDisponibiliteConstruction(fn) {
-      disponibiliteConstruction = fn;
+    // La fenêtre a changé de taille : la boîte du menu se recale sur le
+    // rectangle du canvas (§4.4). Appelée par main.js, qui possède l'écouteur.
+    actualiserGeometrie() {
+      menuCartes.actualiserGeometrie();
     },
-    // Même patron que definirEntreesStats : liste des stations placable de la
-    // structure courante, fournie après coup (dépend de la scène/position,
-    // que ce module ne connaît pas).
+    // Ce que ce module a réellement branché — la moitié « code » du contrôle
+    // de câblage au démarrage (`menu_cartes.js#erreursCablageMenus`).
+    cablage: () => ({ actions: Object.keys(actions), etats: Object.keys(etats), ecrans: Object.keys(ecrans) }),
+    // Observation pour les tests headless (même patron que l'orchestrateur).
+    obtenirEtatCartes: () => menuCartes.obtenirEtat(),
+    // Fournie par main.js : `flags.evaluate` — les conditions des cartes
+    // (case contextuelle, carte absente sans API) sont relues à CHAQUE
+    // affichage, jamais figées.
+    definirEvaluateurCondition(fn) {
+      evaluerCondition = fn;
+    },
+    // Liste des stations placable de la structure courante, fournie après
+    // coup (dépend de la scène/position, que ce module ne connaît pas).
     definirEntreesConstruction(fn) {
       fournisseurEntreesConstruction = fn;
     },
     // Fournit l'action réelle de reinitialiserPartie() après la construction
     // de l'orchestrateur (voir commentaire sur `actionReinitialiser`
-    // ci-dessus) — jamais appelée avant, puisque le bouton qui y mène n'est
+    // ci-dessus) — jamais appelée avant, puisque la carte qui y mène n'est
     // atteignable qu'après ouverture du menu, donc après ce câblage.
     definirActionReinitialiser(fn) {
       actionReinitialiser = fn;
@@ -1058,52 +793,21 @@ export function initialiserMenu({
     },
     // Point d'entrée appelé par main.js tant que le menu est ouvert (voir
     // la priorité UI/gameplay dans main.js#maj). Un seul écran actif à la
-    // fois — la fermeture par focus cache déjà le bon conteneur ; celle par
-    // B (verbeAnnuler) ne fait que fermer le contrôleur interne, donc on
-    // resynchronise l'affichage ici dans tous les cas plutôt que de
-    // dupliquer la condition à chaque site d'appel.
+    // fois, et un seul `return` par frame : un verbe consommé par un écran
+    // de liste n'est jamais revu par la grille dans la même frame (B qui
+    // ferme Stats ne dépile pas AUSSI l'écran Héros).
     traiterInput(etat) {
-      if (controleurConfirmation.estOuvert()) {
-        controleurConfirmation.traiterInput(etat);
-        if (controleurConfirmation.estOuvert()) {
-          actualiserFocusConfirmation();
-        } else if (controleur.ouvertIntentionnellement()) {
-          // Fermé par B ou par "Non" : retour à l'écran principal. Si
-          // "Oui" a entre-temps fermé aussi `controleur`, rien à rouvrir.
-          // `ouvertIntentionnellement()` (jamais `estOuvert()` ici) : à cet
-          // instant `conteneur` est TOUJOURS caché (masqué par
-          // `actionOuvrirConfirmation`, pas encore réaffiché) — `estOuvert()`
-          // y serait donc systématiquement faux et ne distinguerait plus
-          // "Oui a fermé `controleur` pour de vrai" de "cancel normal",
-          // cassant CE retour précis (SD_construction-ecrans-
-          // orphelins_2026-09-17, régression détectée par
-          // test_phase1_sd_menu_reset_invisible_2026-09-15.js).
-          revenirAuMenuPrincipal();
-        } else {
-          afficherEcran(confirmation, false);
-        }
-        return;
-      }
       if (ecranCraft.estOuvert()) { ecranCraft.traiterInput(etat); return; }
       if (ecranCoffre.estOuvert()) { ecranCoffre.traiterInput(etat); return; }
-      // Stats/Poche/Construction (§3.4/§3.6/05_construction-stations §3) :
-      // ouverts DEPUIS le menu principal — leur `onFermer` (cf. construction
-      // ci-dessus) réaffiche `conteneur` quel que soit le chemin de
-      // fermeture, rien à faire de plus ici. Choisir une station dans
-      // Construction quitte la liste SANS ce callback
-      // (`ecranConstruction.fermerSansCallback()`, main.js#demarrerConstruction
-      // -> `ouvrirPlacementConstruction`, jamais `menu.fermer()`), ce
-      // chemin-ci ne gère donc que l'annulation (skill_3 -> retour au menu
-      // principal, comme Poche/Stats).
+      // Stats/Poche/Construction : ouverts DEPUIS une carte — leur `onFermer`
+      // fait réapparaître la grille quel que soit le chemin de fermeture.
+      // Choisir une station dans Construction quitte la liste SANS ce
+      // callback (`fermerSansCallback`, main.js#demarrerConstruction ->
+      // `ouvrirPlacementConstruction`, jamais `menu.fermer()`).
       if (ecranStats.estOuvert()) { ecranStats.traiterInput(etat); return; }
       if (ecranPoche.estOuvert()) { ecranPoche.traiterInput(etat); return; }
       if (ecranConstruction.estOuvert()) { ecranConstruction.traiterInput(etat); return; }
-      controleur.traiterInput(etat);
-      if (controleur.estOuvert()) {
-        actualiserFocusVisuel();
-      } else {
-        afficherEcran(conteneur, false);
-      }
+      menuCartes.traiterInput(etat);
     },
   };
 }

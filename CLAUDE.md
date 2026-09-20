@@ -12,7 +12,7 @@ Phases validées : 0 (Socle technique), 1 (La Grotte), 1b (polish, DA validée),
 
 **La file de la nuit du 20/09 (n° 2) est fusionnée dans `main`, en entier.** Sept commits : `D-39` (double orbite du follet : corps et aura dérivés du **même** point logique), `D-40` (le nom des monstres retiré du **dessin** seul, la donnée reste), `D-17` (bouton MENU tactile **sous** le bandeau), `D-13` (buffs au bandeau, une icône par **stat** renforcée posée sur `stats.json`), `D-30` (plein écran au premier appui tactile, `src/plein_ecran.js`). **Personne n'avait regardé l'écran** cette nuit-là (Chrome non connecté) : `V-21` à `V-25` étaient toutes dues. Xav a depuis joué sur téléphone, **en ligne**, et en a rapporté deux défauts : le menu Pause enfermait le joueur (`D-42`) et le plein écran ne se déclenchait jamais (`D-30` rouvert). **Les deux sont corrigés, en ligne, et validés par Xav sur téléphone par l'URL publique le 20/09 (« all good », `V-25` et `V-26`)** — mini-file `docs/archives/JOURNAL_2026-09-20_menu-tactile.md`. `V-21` à `V-24` restent dues. Verbatim de la nuit : `docs/archives/JOURNAL_2026-09-20_nuit-file-micro-tickets-2.md`.
 
-**Chantier en cours : `specs/08_menus-cartes.md` — les menus en grille de cartes (`D-43`).** Spec **par paliers, un palier par session**, branche `menus-cartes`, un commit par étape, chacun retirable seul. Palier A (l'écran de référence) : session du 20/09, validation due `V-27`. **Les paliers B et C ne se commencent pas avant la validation du précédent.**
+**Chantier en cours : `specs/08_menus-cartes.md` — les menus en grille de cartes (`D-43`).** Spec **par paliers, un palier par session**, branche `menus-cartes`, un commit par étape, chacun retirable seul. Palier A (l'écran de référence) : **livré le 20/09 sur la branche `menus-cartes`, non fusionnée** — validation due `V-27`. **Les paliers B et C ne se commencent pas avant la validation du précédent.**
 
 **Le volet rendu des fondations est clos sur PC, sous Chrome.** Treize relevés `?debug=fps` réels existent (§6 de `docs/DOC_suivi-dettes.md`). Le relevé qui tranche est `R-11` : **Chrome, plein écran, échelle forcée 8 — 59,9 fps, aucune frame sautée**, GPU à 14 %, aucune saccade vue par Xav en traversée. **Chrome est le navigateur de développement, de jeu et de référence** ; sous Firefox, le même PC exécute le dessin sur le fil principal et devient injouable à l'échelle 5 — ce n'était pas le jeu, c'était le navigateur (registre `docs/DOC_navigateurs.md`). Conséquences : `Q-19` close **sans plafond d'échelle** (la décision « rendu net à résolution physique » est confirmée, cette fois sur mesure), `D-01` déclassée en P2, `D-02` et `D-03` en P3.
 
@@ -147,11 +147,18 @@ rpg_v2/
 │   │                       transporte des CLÉS, l'appelant compose le texte au rendu
 │   ├── i18n.js             `t(cle, params?)` — `params` substitue les marqueurs `{n}`/`{item}` d'un
 │   │                       gabarit traduit ; le gabarit lui-même vit dans les locales, jamais en code
-│   └── ui/                 menu.js (DOM ; Langue/Musique/Poche/Stats/Construction/Export/Import/
-│                           Reset/Fermer — Construction contextuel, absent hors de la Maison,
-│                           liste reconstruite à chaque ouverture ; + écrans contextuels Craft/Coffre
-│                           ouverts par INTERACT, patron générique `creerEcranListeGenerique`
-│                           factorisé Phase 3), hud.js (+ jauges survie/niveau-XP Phase 3)
+│   ├── menu_cartes.js      specs/08 : la part PURE des menus en cartes — choix de la grille,
+│   │                       `voisin()` (navigation 2D), cases stables + case contextuelle, pile
+│   │                       locale, confirmation d'un danger, contrôles de démarrage (textes
+│   │                       FR/EN, câblage carte ↔ fonction dans les deux sens)
+│   └── ui/                 menu.js (DOM ; le menu Pause est une GRILLE DE CARTES décrite par
+│                           `data/menus.json` — ce module garde les écrans de LISTE Poche/Stats/
+│                           Construction/Craft/Coffre, patron `creerEcranListeGenerique`, et
+│                           ENREGISTRE les actions/états/écrans que les cartes citent),
+│                           grille_cartes.js (le composant : ne connaît ni un id de catalogue ni
+│                           une valeur de style), icone_canvas.js (une icône de `visuels.json`
+│                           dans un <canvas> DOM, « meilleur effort »), couleurs_ui.js (contraste
+│                           des `couleur_ui`, pur), hud.js (+ jauges survie/niveau-XP Phase 3)
 │                           + hud_hints.js + dialogue_box.js + hud_layout.js (canvas, résolution logique)
 ├── data/                   catalogues JSON (voir specs/*.md §2.1 de chaque phase)
 ├── locales/fr.json, en.json
@@ -163,7 +170,10 @@ rpg_v2/
 │                           (album de référence par jalon) + sauvegardes/ (sauvegardes réelles
 │                           exportées par Xav, servent aux migrations)
 ├── tests/                  un fichier par contrat/diagnostic, headless, `node:assert/strict`
-└── tools/run_tests.js      lance tous les tests/*.js en séquence (confort de `npm test`)
+└── tools/                  run_tests.js (lance tous les tests/*.js, = `npm test`) + deux pages de DEV
+                            jamais chargées par le jeu : banc_menu_cartes.html (le composant seul,
+                            sur le vrai catalogue) et cadre_viewport.html (viewport imposé, ex.
+                            1920 × 1080 sur un écran qui ne peut pas l'offrir en fenêtre)
 ```
 
 `registry.js`/`save.js` restent purs (aucun accès disque/réseau/DOM) : les adaptateurs (`io_node.js`/`io_navigateur.js`, `storage_indexeddb.js`/`creerStoreMemoire()`) leur fournissent des données déjà prêtes. Convention d'`id` : minuscules, `_` comme séparateur, préfixé par la catégorie au singulier (`tile_sol`, `elem_feu`). Un `id` dupliqué ou une référence croisée cassée = échec dur au boot avec le chemin exact de l'erreur.
@@ -244,6 +254,11 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 | **Une condition en données peut porter sur une *valeur nommée*, pas seulement sur un flag** : `flags.js` accepte `{ valeur: 'niveau', min: 5 }`, les valeurs étant **fournies à la création** du registre (`valeurs: () => ({ niveau })`) — le module reste pur, il ne va chercher le niveau nulle part. Conséquence voulue : le palier Nv. 10 du Chaos, et demain une condition sur l'heure ou les PV, sont des **données**. Une valeur inconnue suit la discipline d'un flag non déclaré : exception en dev, **faux** en prod (une condition qu'on ne sait pas évaluer ne doit pas débloquer) | 2026-09-19 | `docs/archives/JOURNAL_2026-09-19_nuit-file-micro-tickets.md`, palier `07-A` |
 | **Les monstres du Chaos entrent en collision**, par `resoudreDeplacement` — **la même fonction que le héros**, donc ils glissent le long des obstacles. Motif : la règle anti-blocage suppose qu'un monstre *puisse* être bloqué, et un rôdeur qui erre dans un Champ bordé de forêt doit se cogner. **Les monstres de la Grotte n'y touchent pas** : ligne droite de Phase 1, validée en jeu, on ne rouvre pas un comportement validé — seuls ceux qui portent un `spawnId` décident | 2026-09-19 | même archive, palier `07-C` |
 | **Une instance de monstre porte un id d'instance, jamais l'id de son catalogue** (`creerMonstre`, défaut = l'id de catalogue pour les scènes à un monstre). Tant qu'une scène n'a qu'un monstre de chaque type, personne ne le voit ; avec six rôdeurs identiques, frapper celui qui est à portée les blessait **tous**, où qu'ils soient (`D-38`, corrigé dans le commit du palier B — sans quoi il livrait une fonctionnalité fausse) | 2026-09-19 | même archive, palier `07-B` |
+| **Les jetons de style des menus vivent dans UN bloc de variables CSS** (`index.html`, `:root { --menu-… }`), tous *provisoires* ; le code ne connaît aucune couleur. Trois d'entre eux sont **relus au démarrage** pour vérifier que chaque `couleur_ui` de compagnon se lit sur le fond des cartes (≥ 3:1) et ne se confond pas avec le magenta du danger — ajouter un follet recolore tous les menus sans code, et un accent illisible tombe au boot | 2026-09-20 | `docs/JOURNAL_2026-09-20_menus-cartes.md`, A1 |
+| **Le menu Pause est un catalogue** (`data/menus.json`) : écrans, cartes de trois types (dossier / bascule / action), **cases stables** (une carte absente laisse sa case vide), case contextuelle = candidates ordonnées sur une même case. `ui/menu.js` n'y apporte que des fonctions **enregistrées par id**, et le démarrage contrôle le câblage **dans les deux sens** (toute carte a sa fonction, toute fonction a sa carte, toute valeur citée par une condition est fournie — une valeur inconnue ferait lever `flags.js` dans la boucle de jeu, donc la figerait) | 2026-09-20 | même journal, A2 et A4 |
+| **Une bascule affiche l'état RÉEL, relu à la source à chaque affichage** (lecteur d'état injecté qui rend une CLÉ de texte) — jamais un booléen tenu par le menu ; un refus s'annonce dans l'en-tête et laisse la carte inchangée (généralise le patron de `D-30`). **La confirmation d'un `danger` est construite par le composant**, jamais décrite écran par écran : « Non » en case 0, donc focus par défaut — une règle de sécurité ne dépend pas de l'attention de qui ajoutera la prochaine action destructive | 2026-09-20 | même journal, A2 et A3 |
+| **`voisin()` : ligne droite en sautant les cases vides, sinon la carte la plus proche dans cette direction**, jamais vers l'arrière, sans bouclage (*provisoire*). La seconde passe n'est pas du zèle : sans elle une carte devient inatteignable au stick dès que les seules cases 0 et 3 sont occupées. Garantie vérifiée exhaustivement (78 combinaisons de cases) | 2026-09-20 | même journal, A3 |
+| **Une carte de menu est un `<div>`, jamais un `<button>`** : un bouton natif garde le focus du navigateur après un clic, et Espace l'active — or Espace est `ATTACK`. Une bascule cliquée puis validée au clavier s'activerait deux fois dans la même frame | 2026-09-20 | même journal, A3 |
 | **Le signal d'une zone de Chaos est une teinte additive posée *après* le calque d'obscurité** : elle se voit à travers la nuit **sans percer le voile**, donc elle ne révèle pas le sol (principe des faisceaux de la Grotte : un faisceau éclaire l'air, un halo révèle le sol). Trois règles avec : l'intensité **suit l'obscurité de la scène** (donc nulle de jour, sans condition ajoutée) · **une table fermée ne s'annonce pas** (aucune teinte sous le seuil de niveau) · la pulsation suit `save.monde.heure`, donc elle est gelée sous UI par construction. **Aucune lueur sur les monstres** (`Q-27`, « je veux être surpris ») | 2026-09-19 | même archive, palier `07-D` |
 
 (Les décisions de `05_construction-stations.md` étaient déjà actées par Xav **dans la spec elle-même** avant tout code, v1.0.0 §9 — les lignes ci-dessus n'y renvoient que pour mémoire, elles ne tranchent rien de nouveau.)
@@ -310,6 +325,6 @@ Les captures de la V1 (`docs/captures/v1/`) sont une **inspiration, jamais un ca
 
 ## Journal de session — Menus en cartes, palier A (20/09)
 
-`specs/08_menus-cartes.md` v1.0.0, **palier A seulement** (A1 → A4). Branche **`menus-cartes`**, créée depuis `main` (`a605729`). **Aucun `push`** : `push` sur `main` publie le jeu. Le palier B n'est **pas** commencé — il attend `V-27`.
+`specs/08_menus-cartes.md` v1.0.0, **palier A seulement — livré** : cinq commits sur la branche **`menus-cartes`** (créée depuis `main`, `a605729`) : ménage, puis `A1` jetons + `couleur_ui` + contraste · `A2` `menus.json` + schéma + contrôles au démarrage · `A3` composant grille · `A4` branchement. **Ni fusionnée, ni poussée** : `push` sur `main` publie le jeu, et `V-27` se joue sur téléphone **par l'URL publique** — donc après fusion et `push` de Xav. **Le palier B n'est pas commencé.**
 
-**Le fichier de bord de cette session vit sur le disque, pas ici : `docs/JOURNAL_2026-09-20_menus-cartes.md`.** Une ligne par commit, écrite au moment du commit — c'est lui qui devient le rapport.
+**Le fichier de bord de cette session vit sur le disque, pas ici : `docs/JOURNAL_2026-09-20_menus-cartes.md`.** Une ligne par commit, écrite au moment du commit — c'est lui qui est le rapport.

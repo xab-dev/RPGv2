@@ -9,8 +9,23 @@
 // taillé pour les seuls gabarits `innerHTML` de menu.js — même esprit que
 // `creerFausseCible()` de test_phase0_input, étendu ici à un mini-arbre DOM
 // puisque menu.js a besoin de `createElement`/`innerHTML`/`querySelector`.
+//
+// specs/08_menus-cartes.md (palier A4, 2026-09-20) — CE QUE CE FICHIER EST
+// DEVENU. La confirmation du reset n'est plus un second conteneur DOM, frère du
+// menu principal : c'est un NIVEAU de la pile de la grille de cartes, affiché
+// dans le même élément `#menu`. Les hypothèses A et B de la fiche (« jamais
+// attaché au document », « enfant du conteneur qu'on masque ») n'ont donc plus
+// d'objet — il n'y a plus de second élément à oublier d'attacher ou de styler,
+// et c'est exactement ce qui rend la classe de bug impossible. Le CONTRAT,
+// lui, est conservé et revérifié à l'identique : la confirmation est
+// *effectivement* visible (pas seulement non-`hidden`), le focus par défaut
+// est sur « Non », B revient en arrière, et Poche/Stats masquent puis rendent
+// le menu quel que soit le chemin de fermeture.
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { initialiserMenu } from '../src/ui/menu.js';
+
+const MENUS = JSON.parse(fs.readFileSync(new URL('../data/menus.json', import.meta.url), 'utf8'));
 
 class ElementFactice {
   constructor(tag) {
@@ -131,9 +146,9 @@ function creerFauxI18n() {
 }
 
 // Même forme que creerCoucheInput().maj() (cf. test_menu_navigation).
-function etat({ y = 0, attack = false, skill3 = false } = {}) {
+function etat({ x = 0, y = 0, attack = false, skill3 = false } = {}) {
   return {
-    move: { x: 0, y },
+    move: { x, y },
     attack: { pressed: attack, held: attack },
     skill_1: { pressed: false, held: false },
     skill_2: { pressed: false, held: false },
@@ -159,119 +174,129 @@ function construireMenu() {
   const menu = initialiserMenu({
     document,
     i18n: creerFauxI18n(),
+    menus: MENUS,
     exporterSauvegarde: () => {},
     importerSauvegarde: () => {},
   });
   const conteneur = document.body.querySelector('#menu');
-  const confirmation = document.body.querySelector('#menu-confirmation-reset');
-  return { menu, conteneur, confirmation };
+  return { menu, conteneur };
 }
 
-// Amène le focus du menu principal sur l'entrée "Réinitialiser" par crans
-// successifs avant/après relâchement, comme le ferait réellement une
-// manette. "Réinitialiser la sauvegarde" est le 7ᵉ élément (index 6) depuis
-// Palier D de 04_maison-interieur.md (Stats insérée avant lui, ordre :
-// langue, musique, poche, stats, exporter, importer, réinitialiser, fermer).
-function focaliserReset(menu) {
-  for (let i = 0; i < 6; i++) {
-    menu.traiterInput(etat({ y: 1 }));
-    menu.traiterInput(etat({ y: 0 }));
-  }
+// Un cran de stick = une poussée, puis le retour au neutre (front montant).
+function cran(menu, x, y) {
+  menu.traiterInput(etat({ x, y }));
+  menu.traiterInput(etat());
 }
 
-// 1. Le conteneur de confirmation est bien attaché au document (élimine
-//    l'hypothèse A : `appendChild` absent).
-{
-  const { confirmation } = construireMenu();
-  assert.notEqual(confirmation, null, "l'écran de confirmation doit être attaché au document");
+// Amène le focus sur une carte de l'écran affiché, par crans réels, comme le
+// ferait une manette : sa position est LUE sur la grille (jamais un index
+// codé en dur — c'est ce qui rendait l'ancien `focaliserReset` fragile, il
+// avait dû être recompté à chaque entrée ajoutée au menu).
+function focaliserCarte(menu, id) {
+  const { cases, colonnes } = menu.obtenirEtatCartes();
+  const cible = cases.indexOf(id);
+  assert.ok(cible >= 0, `la carte "${id}" doit être affichée`);
+  for (let i = 0; i < cible % colonnes; i++) cran(menu, 1, 0);
+  for (let i = 0; i < Math.floor(cible / colonnes); i++) cran(menu, 0, 1);
+  assert.equal(menu.obtenirEtatCartes().focus, cible, `le focus doit atteindre "${id}" au stick`);
 }
-
-// 2. Le conteneur de confirmation n'est jamais un enfant du conteneur du
-//    menu principal (élimine l'hypothèse B : masquer le menu principal ne
-//    doit pas aussi masquer la confirmation).
-{
-  const { conteneur, confirmation } = construireMenu();
-  assert.notEqual(confirmation.parentNode, conteneur, 'la confirmation doit être un frère, pas un enfant, du menu principal');
-}
-
-// 3. Ouvrir le menu, focaliser "Réinitialiser", ATTACK → la confirmation
-//    devient *effectivement* visible (pas seulement non-`hidden`) et le
-//    menu principal *effectivement* invisible. C'est le test qui aurait dû
-//    être rouge avant patch : le bug réel est un défaut de style, pas
-//    seulement de logique d'ouverture (cf. commentaire estVisibleEffectif).
-{
-  const { menu, conteneur, confirmation } = construireMenu();
-  menu.ouvrir();
-  focaliserReset(menu);
+function valider(menu, id) {
+  focaliserCarte(menu, id);
   menu.traiterInput(etat({ attack: true }));
-
-  assert.equal(estVisibleEffectif(confirmation), true, "l'écran de confirmation doit être effectivement visible après ouverture");
-  assert.equal(estVisibleEffectif(conteneur), false, 'le menu principal doit être effectivement masqué pendant la confirmation');
+  menu.traiterInput(etat());
 }
 
-// 4. B (skill_3) depuis la confirmation → retour au menu principal,
-//    effectivement visible ; confirmation effectivement masquée.
-{
-  const { menu, conteneur, confirmation } = construireMenu();
+// Racine → Paramètres → Sauvegarde → Réinitialiser, à la manette seule.
+function ouvrirConfirmationReset(menu) {
   menu.ouvrir();
-  focaliserReset(menu);
-  menu.traiterInput(etat({ attack: true }));
+  valider(menu, 'carte_parametres');
+  valider(menu, 'carte_sauvegarde');
+  valider(menu, 'carte_reinitialiser');
+}
+
+// 1. Le menu est attaché au document, et il n'existe plus de second conteneur
+//    de confirmation à attacher, à styler ou à oublier.
+{
+  const document = creerFauxDocument();
+  initialiserMenu({ document, i18n: creerFauxI18n(), menus: MENUS, exporterSauvegarde: () => {}, importerSauvegarde: () => {} });
+  assert.notEqual(document.body.querySelector('#menu'), null, 'le menu doit être attaché au document');
+  assert.equal(document.body.querySelector('#menu-confirmation-reset'), null, 'plus de conteneur de confirmation séparé');
+}
+
+// 2. Ouvrir le menu, aller jusqu'à « Réinitialiser », ATTACK → la confirmation
+//    est *effectivement* visible (pas seulement non-`hidden`). C'est le test
+//    qui aurait dû être rouge avant le patch de la fiche : le bug réel était
+//    un défaut de style, pas de logique d'ouverture (cf. estVisibleEffectif).
+{
+  const { menu, conteneur } = construireMenu();
+  let reinitialisations = 0;
+  menu.definirActionReinitialiser(() => { reinitialisations += 1; });
+  ouvrirConfirmationReset(menu);
+
+  assert.equal(menu.obtenirEtatCartes().ecran, 'carte_reinitialiser#confirmation', "c'est bien l'écran de confirmation qui est affiché");
+  assert.equal(estVisibleEffectif(conteneur), true, "l'écran de confirmation doit être effectivement visible après ouverture");
+  assert.equal(menu.estOuvert(), true);
+  assert.equal(reinitialisations, 0, 'ouvrir la confirmation ne réinitialise rien');
+}
+
+// 3. B (skill_3) depuis la confirmation → retour d'UN écran, effectivement
+//    visible, focus rendu à la carte qui avait ouvert la confirmation.
+{
+  const { menu, conteneur } = construireMenu();
+  ouvrirConfirmationReset(menu);
 
   menu.traiterInput(etat({ skill3: true }));
 
-  assert.equal(estVisibleEffectif(confirmation), false, 'confirmation masquée après retour (B)');
-  assert.equal(estVisibleEffectif(conteneur), true, 'menu principal effectivement visible après retour (B)');
+  const apres = menu.obtenirEtatCartes();
+  assert.equal(apres.ecran, 'menu_sauvegarde', 'B depuis la confirmation revient à l\'écran Sauvegarde');
+  assert.equal(apres.cases[apres.focus], 'carte_reinitialiser', 'le focus revient sur la carte qui avait ouvert la confirmation');
+  assert.equal(estVisibleEffectif(conteneur), true, 'le menu reste effectivement visible après retour (B)');
 }
 
-// 5. Focus par défaut de la confirmation sur "Non" (index 1), sécurité déjà
-//    actée au diagnostic précédent — revérifié ici pour non-régression.
+// 4. Focus par défaut de la confirmation sur « Non », sécurité actée au
+//    diagnostic précédent — revérifiée ici pour non-régression. « Non » tient
+//    la case 0, et ATTACK sans bouger ne réinitialise JAMAIS.
 {
-  const { menu, confirmation } = construireMenu();
-  menu.ouvrir();
-  focaliserReset(menu);
+  const { menu } = construireMenu();
+  let reinitialisations = 0;
+  menu.definirActionReinitialiser(() => { reinitialisations += 1; });
+  ouvrirConfirmationReset(menu);
+
+  const { cases, focus } = menu.obtenirEtatCartes();
+  assert.equal(cases[focus], 'carte_reinitialiser#non', '« Non » doit être focalisé par défaut');
+  menu.traiterInput(etat({ attack: true })); // le joueur martèle A : rien ne s'efface
+  assert.equal(reinitialisations, 0, 'ATTACK sur le focus par défaut ne réinitialise jamais');
+  assert.equal(menu.obtenirEtatCartes().ecran, 'menu_sauvegarde');
+
+  // « Oui » : un cran à droite, délibéré. Réinitialise UNE fois, et ferme tout.
+  menu.traiterInput(etat());
+  valider(menu, 'carte_reinitialiser');
+  cran(menu, 1, 0);
   menu.traiterInput(etat({ attack: true }));
-
-  const curseurs = confirmation.querySelectorAll('.menu-curseur');
-  assert.equal(curseurs[0].textContent, '', '"Oui" (index 0) ne doit pas être focalisé par défaut');
-  assert.equal(curseurs[1].textContent, '›', '"Non" (index 1) doit être focalisé par défaut');
+  assert.equal(reinitialisations, 1);
+  assert.equal(menu.estOuvert(), false, '« Oui » referme tout le menu : la partie redémarre');
 }
 
-// 6. Palier D/C de 04_maison-interieur.md — Poche/Stats masquent le menu
-// principal SANS jamais le fermer (creerEcranListeGenerique) : régression
-// trouvée en revue (§ journal) — le menu principal restait superposé
-// derrière l'écran ouvert (jamais masqué) puis restait masqué APRÈS
-// fermeture (jamais réaffiché) si la fermeture passait par B (skill_3)
-// plutôt que par le clic sur "Fermer". Vérifié ici via B, le chemin qui
-// avait été oublié.
-function focaliserCran(menu, n) {
-  for (let i = 0; i < n; i++) {
-    menu.traiterInput(etat({ y: 1 }));
-    menu.traiterInput(etat({ y: 0 }));
-  }
-}
-{
+// 5. Palier D/C de 04_maison-interieur.md — Poche/Stats masquent le menu SANS
+// jamais le fermer : régression trouvée en revue (§ journal) — le menu restait
+// superposé derrière l'écran ouvert, puis restait masqué APRÈS fermeture si
+// elle passait par B (skill_3) plutôt que par le clic sur « Fermer ». Vérifié
+// ici via B, le chemin qui avait été oublié.
+for (const [idCarte, nom] of [['carte_poche', 'Poche'], ['carte_stats', 'Stats']]) {
   const { menu, conteneur } = construireMenu();
   menu.ouvrir();
-  focaliserCran(menu, 2); // langue, musique, poche (index 2)
-  menu.traiterInput(etat({ attack: true })); // ouvre Poche
+  valider(menu, 'carte_heros');
+  valider(menu, idCarte);
 
-  assert.equal(estVisibleEffectif(conteneur), false, 'le menu principal doit être masqué pendant que Poche est ouverte');
+  assert.equal(estVisibleEffectif(conteneur), false, `le menu doit être masqué pendant que ${nom} est ouvert`);
+  assert.equal(menu.estOuvert(), true, `${nom} ouvert : menu.estOuvert() reste vrai`);
 
-  menu.traiterInput(etat({ skill3: true })); // ferme Poche via B
+  menu.traiterInput(etat({ skill3: true })); // ferme l'écran via B
 
-  assert.equal(estVisibleEffectif(conteneur), true, 'le menu principal doit réapparaître après fermeture de Poche par B');
-}
-{
-  const { menu, conteneur } = construireMenu();
-  menu.ouvrir();
-  focaliserCran(menu, 3); // langue, musique, poche, stats (index 3)
-  menu.traiterInput(etat({ attack: true })); // ouvre Stats
-
-  assert.equal(estVisibleEffectif(conteneur), false, 'le menu principal doit être masqué pendant que Stats est ouvert');
-
-  menu.traiterInput(etat({ skill3: true })); // ferme Stats via B
-
-  assert.equal(estVisibleEffectif(conteneur), true, 'le menu principal doit réapparaître après fermeture de Stats par B');
+  assert.equal(estVisibleEffectif(conteneur), true, `le menu doit réapparaître après fermeture de ${nom} par B`);
+  const apres = menu.obtenirEtatCartes();
+  assert.equal(apres.ecran, 'menu_heros', 'B ferme l\'écran de liste, et lui SEUL : la grille ne dépile pas dans la même frame');
+  assert.equal(apres.cases[apres.focus], idCarte, `le focus est resté sur la carte ${nom}`);
 }
 
 console.log('OK test_phase1_sd_menu_reset_invisible');

@@ -410,75 +410,87 @@ function fausseCible() {
   const doc = faireDocument({ element });
   const pleinEcran = creerPleinEcranTactile({ element, doc });
 
+  // specs/08_menus-cartes.md (palier A4) : l'entrée « Plein écran / Quitter le
+  // plein écran » est devenue une CARTE BASCULE. Son titre ne change plus ;
+  // c'est sa ligne d'état qui dit l'état RÉEL — la règle de `D-30` est la même,
+  // elle a seulement changé de ligne. Sa présence est une CONDITION du
+  // catalogue (la valeur nommée `plein_ecran_disponible`), évaluée ici comme
+  // le fait main.js.
+  const MENUS = JSON.parse(fs.readFileSync(new URL('../data/menus.json', import.meta.url), 'utf8'));
+  const evaluateur = (pe) => (condition) => (condition.valeur === 'plein_ecran_disponible' ? pe.disponible() : false);
+  // La grille reconstruit ses cartes à chaque affichage : on RELIT toujours
+  // l'élément, on ne garde jamais une référence d'un affichage à l'autre.
+  const carte = (doc_, id) => doc_.body.querySelectorAll('.carte').find((c) => c.dataset.carte === id) || null;
+  const etatCarte = (doc_) => carte(doc_, 'carte_plein_ecran').querySelector('.carte-etat').textContent;
+  const messageDe = (doc_) => doc_.body.querySelector('.cartes-message').textContent;
+  const allerAuxParametres = (menu_, doc_) => { menu_.ouvrir(); carte(doc_, 'carte_parametres').declencher('click'); };
+
   const menu = initialiserMenu({
-    document, i18n, exporterSauvegarde: () => {}, importerSauvegarde: () => {},
-    pleinEcranDisponible: () => pleinEcran.disponible(),
+    document, i18n, menus: MENUS, exporterSauvegarde: () => {}, importerSauvegarde: () => {},
     pleinEcranActif: () => pleinEcran.estActif(),
     basculerPleinEcran: () => pleinEcran.basculer(),
   });
-  menu.ouvrir();
-  const conteneur = document.body.querySelector('#menu');
-  const bouton = conteneur.querySelector('#menu-plein-ecran');
-  const message = conteneur.querySelector('#menu-message');
+  menu.definirEvaluateurCondition(evaluateur(pleinEcran));
+  allerAuxParametres(menu, document);
 
-  assert.equal(bouton.textContent, 'menu.plein_ecran', 'hors plein écran : « Plein écran »');
-  assert.equal(bouton.parentNode.hidden, false, "l'API est là, donc l'entrée est visible");
+  assert.ok(carte(document, 'carte_plein_ecran'), "l'API est là, donc la carte est présente");
+  assert.equal(etatCarte(document), 'menu.etat.plein_ecran_non', 'hors plein écran : « Désactivé »');
 
-  bouton.declencher('click');
+  carte(document, 'carte_plein_ecran').declencher('click');
   await new Promise((r) => setTimeout(r, 0));
   menu.actualiserPleinEcran(); // ce que fait main.js sur `fullscreenchange`
   assert.equal(pleinEcran.estActif(), true);
-  assert.equal(bouton.textContent, 'menu.quitter_plein_ecran', 'en plein écran : « Quitter le plein écran »');
-  assert.equal(message.textContent, '', 'aucun message quand ça marche');
+  assert.equal(etatCarte(document), 'menu.etat.plein_ecran_oui', 'en plein écran : « Activé »');
+  assert.equal(messageDe(document), '', 'aucun message quand ça marche');
+  assert.equal(menu.obtenirEtatCartes().ecran, 'menu_parametres', 'une bascule ne ferme rien : l’écran reste ouvert');
 
-  bouton.declencher('click');
+  carte(document, 'carte_plein_ecran').declencher('click');
   await new Promise((r) => setTimeout(r, 0));
   menu.actualiserPleinEcran();
-  assert.equal(bouton.textContent, 'menu.plein_ecran', 'le retour aussi suit l’état réel');
+  assert.equal(etatCarte(document), 'menu.etat.plein_ecran_non', 'le retour aussi suit l’état réel');
 
-  // Le joueur sort par Échap : personne n'a rien demandé, le libellé suit
-  // quand même — c'est tout l'intérêt de lire l'état plutôt que de le tenir.
+  // Le joueur sort par Échap : personne n'a rien demandé, la carte suit quand
+  // même — c'est tout l'intérêt de lire l'état plutôt que de le tenir.
   doc.fullscreenElement = element;
   menu.actualiserPleinEcran();
-  assert.equal(bouton.textContent, 'menu.quitter_plein_ecran');
+  assert.equal(etatCarte(document), 'menu.etat.plein_ecran_oui');
   doc.fullscreenElement = null;
   menu.actualiserPleinEcran();
-  assert.equal(bouton.textContent, 'menu.plein_ecran');
+  assert.equal(etatCarte(document), 'menu.etat.plein_ecran_non');
 
-  // Un refus (le cas de la manette) : le libellé ne bouge pas, un message
-  // localisé apparaît. Jamais un libellé qui ment.
+  // Un refus (le cas de la manette) : la carte ne bouge pas, un message
+  // localisé apparaît dans l'en-tête. Jamais une carte qui ment.
   const document2 = { createElement: (t) => new ElementFactice(t), body: new ElementFactice('body') };
   const peRefuse = creerPleinEcranTactile({
     element: { requestFullscreen: () => Promise.reject(new TypeError('Permissions check failed')) },
     doc: faireDocument(),
   });
   const menu2 = initialiserMenu({
-    document: document2, i18n, exporterSauvegarde: () => {}, importerSauvegarde: () => {},
-    pleinEcranDisponible: () => peRefuse.disponible(),
+    document: document2, i18n, menus: MENUS, exporterSauvegarde: () => {}, importerSauvegarde: () => {},
     pleinEcranActif: () => peRefuse.estActif(),
     basculerPleinEcran: () => peRefuse.basculer(),
   });
-  menu2.ouvrir();
-  const conteneur2 = document2.body.querySelector('#menu');
-  const bouton2 = conteneur2.querySelector('#menu-plein-ecran');
-  bouton2.declencher('click');
+  menu2.definirEvaluateurCondition(evaluateur(peRefuse));
+  allerAuxParametres(menu2, document2);
+  carte(document2, 'carte_plein_ecran').declencher('click');
   await new Promise((r) => setTimeout(r, 0));
-  assert.equal(bouton2.textContent, 'menu.plein_ecran', 'un refus laisse le libellé tel quel');
-  assert.equal(conteneur2.querySelector('#menu-message').textContent, 'menu.plein_ecran_refuse',
-    'et le dit au joueur, en texte localisé');
+  assert.equal(etatCarte(document2), 'menu.etat.plein_ecran_non', 'un refus laisse la carte telle quelle');
+  assert.equal(messageDe(document2), 'menu.plein_ecran_refuse', 'et le dit au joueur, en texte localisé');
   assert.equal(menu2.estOuvert(), true, "l'état du menu reste cohérent : rien ne s'est fermé");
 
-  // Sans API, l'entrée n'existe pas dans la navigation (même patron que
-  // Construction hors de la maison).
+  // Sans API, la carte n'existe pas (même patron que Construction hors de la
+  // maison) — et sa case reste VIDE : Sauvegarde ne glisse pas à sa place.
   const document3 = { createElement: (t) => new ElementFactice(t), body: new ElementFactice('body') };
   const menu3 = initialiserMenu({
-    document: document3, i18n, exporterSauvegarde: () => {}, importerSauvegarde: () => {},
-    pleinEcranDisponible: () => false,
+    document: document3, i18n, menus: MENUS, exporterSauvegarde: () => {}, importerSauvegarde: () => {},
   });
-  menu3.ouvrir();
-  assert.equal(document3.body.querySelector('#menu-plein-ecran').parentNode.hidden, true,
-    "sans API, l'entrée est masquée : une entrée qui ne peut rien faire n'a rien à faire dans le menu");
-  console.log('  l’entrée de menu suit l’état réel ; un refus le dit sans mentir');
+  menu3.definirEvaluateurCondition(evaluateur({ disponible: () => false }));
+  allerAuxParametres(menu3, document3);
+  assert.equal(carte(document3, 'carte_plein_ecran'), null,
+    "sans API, la carte est absente : une carte qui ne peut rien faire n'a rien à faire dans le menu");
+  assert.deepEqual(menu3.obtenirEtatCartes().cases, ['carte_langue', 'carte_musique', null, 'carte_sauvegarde'],
+    'sa case reste vide, les autres cartes ne bougent pas');
+  console.log('  la carte Plein écran suit l’état réel ; un refus le dit sans mentir');
 }
 
 console.log('OK test_d30_plein_ecran_tactile');

@@ -84,6 +84,9 @@ export function creerMenuCartes({
   // voir `creerCarte`.
   const boutonEntete = document.createElement('div');
   boutonEntete.className = 'cartes-bouton-entete';
+  // Repère stable pour les tests et l'outillage (l'icône et le mot changent
+  // selon la profondeur, la classe est une affaire de style).
+  boutonEntete.dataset.sortie = 'menu';
   const iconeEntete = document.createElement('canvas');
   iconeEntete.className = 'carte-icone';
   // Le mot, à côté de l'icône. Masqué par la feuille de style : « à essayer en

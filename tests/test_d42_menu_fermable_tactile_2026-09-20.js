@@ -30,6 +30,16 @@
 // peut le ramener) ; « Fermer » à 318 px (hors écran par le bas) ;
 // `scrollTop = 200` laissait `scrollTop` à **0** — la boîte n'était pas un
 // conteneur défilant du tout.
+//
+// specs/08_menus-cartes.md (palier A4, 2026-09-20) — CE QUI A CHANGÉ ICI. Le
+// menu Pause n'est plus une liste qui peut déborder : c'est une grille de
+// quatre cartes qui tient par construction, et sa sortie n'est plus une entrée
+// « Fermer » en fin de liste mais le bouton de l'en-tête figé. La RÈGLE de
+// `D-42` (« toute interface ouvrable au tactile est fermable au tactile, sans
+// défilement ») est inchangée et reste vérifiée sur les SIX écrans : la grille
+// (blocs 2 à 4) et les cinq écrans de liste, qui défilent toujours (blocs 2, 4,
+// 5, 6). La confirmation de reset n'est plus un septième écran : c'est un
+// niveau de la pile de la grille.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -37,6 +47,7 @@ import { fileURLToPath } from 'node:url';
 import { initialiserMenu } from '../src/ui/menu.js';
 
 const RACINE = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+const MENUS = JSON.parse(fs.readFileSync(path.join(RACINE, 'data', 'menus.json'), 'utf8'));
 
 // --- Faux DOM minimal — même gabarit que les autres tests de `ui/menu.js`
 // (copié, pas partagé : convention du dépôt), plus `scrollIntoView`, qui est
@@ -183,6 +194,7 @@ function construireMenu(options = {}) {
   const menu = initialiserMenu({
     document,
     i18n: creerFauxI18n(),
+    menus: MENUS,
     exporterSauvegarde: () => {},
     importerSauvegarde: () => {},
     ...options,
@@ -240,25 +252,34 @@ function aPourAncetre(el, classe) {
   console.log('  index.html : page libérée, écran borné (100vh puis 100dvh), corps défilant au doigt');
 }
 
-// --- 2. « Fermer » est hors de la liste défilante, dans l'en-tête figé ----
+// Une carte de la grille, retrouvée par son id de catalogue.
+function carteDuMenu(document, id) {
+  const carte = document.body.querySelectorAll('.carte').find((c) => c.dataset.carte === id);
+  assert.ok(carte, `la carte "${id}" doit être affichée`);
+  return carte;
+}
+
+// --- 2. La sortie est hors de ce qui défile, dans l'en-tête figé ----------
 {
   const { document, menu } = construireMenu();
   menu.ouvrir();
 
-  const fermerMenu = document.body.querySelector('#menu-fermer');
-  assert.ok(fermerMenu, 'le menu Pause a une entrée Fermer');
-  assert.equal(aPourAncetre(fermerMenu, 'ecran-ui-liste'), false,
-    '« Fermer » ne doit plus être un enfant de la liste défilante');
-  assert.equal(aPourAncetre(fermerMenu, 'ecran-ui-entete'), true,
-    '« Fermer » vit dans l’en-tête, qui ne défile pas');
+  // Menu Pause (grille de cartes) : la sortie est le bouton de l'en-tête.
+  const sortie = document.body.querySelector('[data-sortie]');
+  assert.ok(sortie, 'le menu Pause a une sortie');
+  assert.equal(aPourAncetre(sortie, 'ecran-ui-corps'), false,
+    'la sortie ne doit pas être un enfant du corps défilant');
+  assert.equal(aPourAncetre(sortie, 'cartes-grille'), false, 'ni une carte de la grille');
+  assert.equal(aPourAncetre(sortie, 'ecran-ui-entete'), true,
+    'la sortie vit dans l’en-tête, qui ne défile pas');
+  sortie.declencher('click');
+  assert.equal(menu.estOuvert(), false, 'un appui sur la sortie ferme le menu, sans rien avoir à faire défiler');
 
   // Même chose pour un écran générique (Poche) : c'est le même défaut, donc
   // le même correctif — jamais écran par écran.
-  menu.traiterInput(etat({ y: 1 }));
-  menu.traiterInput(etat({ y: 0 }));
-  menu.traiterInput(etat({ y: 1 }));
-  menu.traiterInput(etat({ y: 0 }));
-  menu.traiterInput(etat({ attack: true })); // "Poche" (index 2)
+  menu.ouvrir();
+  carteDuMenu(document, 'carte_heros').declencher('click');
+  carteDuMenu(document, 'carte_poche').declencher('click');
   const poche = document.body.children.find((el) => el.hidden === false && el._classes.includes('ecran-ui') && el.id === '');
   assert.ok(poche, 'la Poche doit être ouverte');
   const entetePoche = poche.querySelector('.ecran-ui-entete');
@@ -268,59 +289,59 @@ function aPourAncetre(el, classe) {
   assert.ok(fermerPoche, '« Fermer » de la Poche est dans l’en-tête');
   assert.equal(listePoche.querySelectorAll('.ecran-ui-fermer').length, 0,
     'et nulle part dans la liste défilante');
-  console.log('  « Fermer » sorti de la liste : menu Pause et écran générique');
+  console.log('  la sortie est hors de ce qui défile : menu Pause (grille) et écran générique');
 }
 
-// --- 3. …et reste la DERNIÈRE entrée de la navigation --------------------
-// Le ticket interdit de changer l'ordre ou le contenu des entrées. L'ordre
-// du DOM le dit encore (l'en-tête est le dernier enfant, remonté à l'écran
-// par `order: -1`), et c'est ce que vérifient sans modification les trois
-// tests d'écrans existants ; on le réaffirme ici, explicitement.
+// --- 3. …et reste le DERNIER élément du document ---------------------------
+// L'en-tête est le dernier enfant de l'écran, remonté à l'affichage par
+// `order: -1` : la sortie reste le dernier arrêt du document, sur la grille
+// comme sur les écrans de liste. La grille, elle, n'a plus d'entrées à
+// compter : elle a des CASES, en nombre fixe.
 {
   const { document, menu } = construireMenu();
   menu.ouvrir();
   const conteneur = document.body.querySelector('#menu');
-  const items = conteneur.querySelectorAll('.menu-item');
-  const dernier = items[items.length - 1];
-  assert.ok(dernier.querySelector('#menu-fermer'),
-    '« Fermer » doit rester la dernière entrée dans l’ordre du document');
-  // 10 éléments dans le DOM : 8 entrées fixes, « Fermer », et les deux
-  // entrées CONTEXTUELLES (Construction, Plein écran) qui existent toujours
-  // mais restent masquées tant qu'elles ne peuvent rien faire — elles ne
-  // comptent alors pas dans la navigation (`construireMenuPrincipal`).
-  assert.equal(items.length, 10, 'les entrées du menu Pause, ni une de plus ni une de moins');
-  console.log('  ordre des entrées inchangé : « Fermer » toujours en dernier');
+  const dernier = conteneur.children[conteneur.children.length - 1];
+  assert.ok(dernier._classes.includes('ecran-ui-entete'), 'l’en-tête est le dernier enfant de l’écran');
+  assert.ok(dernier.querySelector('[data-sortie]'), 'et c’est lui qui porte la sortie');
+  assert.equal(dernier.querySelectorAll('.carte').length, 0, 'l’en-tête ne contient jamais une carte');
+  assert.equal(conteneur.querySelectorAll('.menu-item').length, 0, 'plus aucune entrée de liste dans le menu Pause');
+  const [grille] = conteneur.querySelectorAll('.cartes-grille');
+  assert.equal(grille.children.length, 4, 'quatre cases, ni une de plus ni une de moins : rien à faire défiler');
+  console.log('  la sortie toujours en dernier dans le document ; le menu Pause n’a plus de liste');
 }
 
-// --- 4. Les sept écrans partagés ont tous le même habillage --------------
-// Le bandeau de Construction est exclu : ce n'est pas un écran plein écran
-// (`pointer-events: none`, sans focus ni navigation — carte §1.3).
+// --- 4. Les six écrans partagés ont tous le même habillage ----------------
+// Exclus : le bandeau de Construction (`pointer-events: none`, sans focus ni
+// navigation — carte §1.3) et le sélecteur de fichier caché d'« Importer »,
+// qui ne sont pas des écrans.
 {
   const { document } = construireMenu();
-  const ecrans = document.body.children.filter((el) => el.style.pointerEvents !== 'none');
-  assert.equal(ecrans.length, 7,
-    'menu Pause, confirmation de reset, Poche, Craft, Coffre, Stats, Construction');
+  const ecrans = document.body.children.filter((el) => el.style.pointerEvents !== 'none' && el.tagName !== 'INPUT');
+  assert.equal(ecrans.length, 6,
+    'menu Pause (grille, confirmation de reset comprise), Poche, Craft, Coffre, Stats, Construction');
   for (const el of ecrans) {
     assert.ok(el._classes.includes('ecran-ui'),
       `chaque écran porte la classe commune (${el.id || 'écran générique'})`);
-    assert.equal(el.querySelectorAll('.ecran-ui-corps').length, 1, 'un corps défilant, et un seul');
-    assert.equal(el.querySelectorAll('.ecran-ui-liste').length, 1, 'une liste, et une seule');
+    assert.equal(el.querySelectorAll('.ecran-ui-entete').length, 1, 'un en-tête figé, et un seul');
+    assert.equal(el.querySelectorAll('.ecran-ui-corps').length, 1, 'un corps (défilant, ou filet pour la grille), et un seul');
+    const listes = el.querySelectorAll('.ecran-ui-liste').length + el.querySelectorAll('.cartes-grille').length;
+    assert.equal(listes, 1, 'une liste OU une grille, et une seule');
   }
-  console.log('  les 7 écrans partagés portent le même habillage (bandeau exclu)');
+  console.log('  les 6 écrans partagés portent le même habillage (bandeau et sélecteur de fichier exclus)');
 }
 
 // --- 5. Le focus demande la mise en vue ----------------------------------
-// Depuis que le corps défile, une entrée focalisée peut être hors de la zone
-// visible : à la manette et au clavier, le curseur s'y perdrait.
+// Un écran de LISTE défile toujours : une entrée focalisée peut être hors de
+// la zone visible, et à la manette comme au clavier le curseur s'y perdrait.
+// (La grille, elle, ne défile jamais — elle n'a rien à ramener en vue.)
 {
   const { document, menu } = construireMenu();
-  menu.ouvrir();
-  const conteneur = document.body.querySelector('#menu');
-  // Les entrées contextuelles masquées (Construction hors de la maison, Plein
-  // écran sans l'API) sont dans le DOM mais hors de la navigation : c'est la
-  // liste des entrées RÉELLEMENT navigables qu'on suit ici.
-  const navigables = conteneur.querySelectorAll('.menu-item').filter((el) => !el.hidden);
-  assert.ok(navigables.length >= 8, 'le menu Pause a au moins ses 8 entrées non contextuelles');
+  const entrees = Array.from({ length: 12 }, (_, i) => ({ texte: `recette ${i}`, action: () => {} }));
+  menu.ouvrirCraft(() => entrees, 'craft');
+  const craft = document.body.children.find((el) => el.hidden === false && el._classes.includes('ecran-ui'));
+  const navigables = craft.querySelectorAll('.menu-item');
+  assert.equal(navigables.length, 13, 'douze recettes et « Fermer »');
   assert.ok(navigables.some((el) => el.misEnVue > 0), 'le focus initial est déjà mis en vue');
 
   // Trois crans vers le bas : à chaque fois, c'est l'entrée focalisée — et

@@ -217,15 +217,16 @@ function construireBanc() {
   const store = creerStoreMemoire();
   const dialogue = creerDialogue();
   const document = creerFauxDocument();
-  const menu = initialiserMenu({ document, i18n, exporterSauvegarde: () => {}, importerSauvegarde: () => {} });
+  const menu = initialiserMenu({ document, i18n, menus: registre.tous('menus'), exporterSauvegarde: () => {}, importerSauvegarde: () => {} });
   const frames = [];
   const input = creerInputScripte(frames);
   const orchestrateur = creerOrchestrateurGrotte({
     registre, i18n, save, store, dialogue, menu, input, ctxLogique: null, ctxVisible: null, canvasLogique: null,
   });
-  // Câblage réel (main.js#demarrerJeu) : sans lui, `#menu-construction`
-  // n'aurait aucune entrée à afficher.
-  menu.definirDisponibiliteConstruction(orchestrateur.disponibiliteConstruction);
+  // Câblage réel (main.js#demarrerJeu) : sans lui, la carte Construction ne
+  // s'afficherait pas (sa condition ne serait pas évaluable) et n'aurait
+  // aucune entrée à afficher.
+  menu.definirEvaluateurCondition(orchestrateur.evaluerCondition);
   menu.definirEntreesConstruction(orchestrateur.entreesConstruction);
   const conteneur = document.body.querySelector('#menu');
   return { save, orchestrateur, frames, menu, document, conteneur };
@@ -240,6 +241,33 @@ function jouerVerbe(banc, etatVerbe) {
   banc.orchestrateur.maj(16);
 }
 
+// specs/08_menus-cartes.md (palier A4) : le menu Pause est devenu une grille de
+// cartes. Une entrée n'est plus un bouton `#menu-…` d'une liste, c'est une
+// carte de `data/menus.json`, retrouvée par son id (`data-carte`) ; la sortie
+// n'est plus l'entrée « Fermer » en fin de liste, c'est le bouton de
+// l'en-tête figé (`data-sortie`) — et, au verbe, B à la racine.
+function carteDuMenu(document, id) {
+  const carte = document.body.querySelectorAll('[data-carte]').find((c) => c.dataset.carte === id);
+  assert.ok(carte, `la carte "${id}" doit être affichée`);
+  return carte;
+}
+function boutonSortieDuMenu(document) {
+  return document.body.querySelector('[data-sortie]');
+}
+
+// Amène le focus de la grille sur une carte, uniquement par MOVE réel, en DEUX
+// dimensions : depuis la case 0 (focus à l'ouverture d'un écran), autant de
+// crans à droite que sa colonne, puis autant vers le bas que sa rangée. La
+// position est LUE sur la grille affichée, jamais codée en dur.
+function focaliserCarte(banc, id) {
+  const { cases, colonnes } = banc.menu.obtenirEtatCartes();
+  const cible = cases.indexOf(id);
+  assert.ok(cible >= 0, `la carte "${id}" doit être dans la grille affichée`);
+  for (let i = 0; i < cible % colonnes; i++) jouerVerbe(banc, etat({ moveX: 1 }));
+  for (let i = 0; i < Math.floor(cible / colonnes); i++) jouerVerbe(banc, etat({ moveY: 1 }));
+  assert.equal(banc.menu.obtenirEtatCartes().focus, cible, `le focus doit avoir atteint "${id}" au stick`);
+}
+
 // Navigue jusqu'à l'index `cible` d'un écran déjà ouvert, uniquement par MOVE
 // réel (front montant par cran, `creerNavigationMenu`) — jamais
 // `definirIndex()`, réservé au survol souris.
@@ -249,9 +277,8 @@ function focaliserIndex(banc, cible) {
   }
 }
 
-function nomEcran(el, conteneur, confirmation) {
+function nomEcran(el, conteneur) {
   if (el === conteneur) return 'conteneur';
-  if (el === confirmation) return 'confirmation';
   if (estLeBandeau(el)) return 'bandeau';
   const h2 = el.querySelector('h2');
   return h2 ? `ecran:${h2.textContent}` : 'ecran-inconnu';
@@ -265,11 +292,10 @@ function nomEcran(el, conteneur, confirmation) {
 // mesure indépendante, donc pas dupliqué ici.
 function instantane(banc) {
   const { document, orchestrateur, menu, conteneur } = banc;
-  const confirmation = document.body.querySelector('#menu-confirmation-reset');
   return {
     ecransVisibles: document.body.children
       .filter((el) => estVisibleEffectif(el))
-      .map((el) => nomEcran(el, conteneur, confirmation))
+      .map((el) => nomEcran(el, conteneur))
       .sort(),
     menuOuvert: menu.estOuvert(),
     constructionActif: orchestrateur.constructionActif(),
@@ -294,7 +320,7 @@ function sequenceParClics() {
   jouerVerbe(banc, etat({ menu: true }));
   snaps.push(instantane(banc));
 
-  declencherClic(document.body.querySelector('#menu-construction'));
+  declencherClic(carteDuMenu(document, 'carte_construction'));
   snaps.push(instantane(banc));
 
   const listeA = ecranVisible(document);
@@ -324,7 +350,7 @@ function sequenceParClics() {
   declencherClic(boutonsC[boutonsC.length - 1]); // "Fermer" toujours en dernier
   snaps.push(instantane(banc));
 
-  declencherClic(document.body.querySelector('#menu-fermer'));
+  declencherClic(boutonSortieDuMenu(document)); // [X] de l'en-tête, à la racine
   snaps.push(instantane(banc));
 
   return snaps;
@@ -336,12 +362,10 @@ function sequenceParVerbes() {
   jouerVerbe(banc, etat({ menu: true }));
   const snaps = [instantane(banc)];
 
-  // Focus par défaut = index 0 après ouverture ; #menu-construction est
-  // l'entrée juste après langue/musique/poche/stats (ordre de
-  // ENTREES_FIXES_DEBUT, ui/menu.js) — lu depuis le markup réel plutôt que
-  // codé en dur, au cas où l'ordre bougerait un jour.
-  const idxConstruction = Number(banc.document.body.querySelector('#menu-construction').parentNode.dataset.item);
-  focaliserIndex(banc, idxConstruction);
+  // Focus par défaut = case 0 après ouverture ; la carte Construction tient
+  // la case contextuelle — sa position est lue sur la grille affichée plutôt
+  // que codée en dur, au cas où le catalogue bougerait un jour.
+  focaliserCarte(banc, 'carte_construction');
   jouerVerbe(banc, etat({ attack: true }));
   snaps.push(instantane(banc));
 
@@ -373,10 +397,10 @@ function sequenceParVerbes() {
   jouerVerbe(banc, etat({ attack: true }));
   snaps.push(instantane(banc));
 
-  // Fermer le menu Pause (dernière entrée du menu principal).
-  const idxFermerMenu = Number(banc.document.body.querySelector('#menu-fermer').parentNode.dataset.item);
-  focaliserIndex(banc, idxFermerMenu);
-  jouerVerbe(banc, etat({ attack: true }));
+  // Fermer le menu Pause : B à la racine — la même fonction que le [X] de
+  // l'en-tête (la sortie a quitté la grille, elle n'est plus une entrée
+  // focalisable).
+  jouerVerbe(banc, etat({ skill3: true }));
   snaps.push(instantane(banc));
 
   return snaps;
@@ -411,15 +435,17 @@ function sequenceParVerbes() {
 
 function ouvrirPoche(banc) {
   jouerVerbe(banc, etat({ menu: true }));
-  declencherClic(banc.document.body.querySelector('#menu-poche'));
+  declencherClic(carteDuMenu(banc.document, 'carte_heros'));
+  declencherClic(carteDuMenu(banc.document, 'carte_poche'));
 }
 function ouvrirStats(banc) {
   jouerVerbe(banc, etat({ menu: true }));
-  declencherClic(banc.document.body.querySelector('#menu-stats'));
+  declencherClic(carteDuMenu(banc.document, 'carte_heros'));
+  declencherClic(carteDuMenu(banc.document, 'carte_stats'));
 }
 function ouvrirConstructionListe(banc) {
   jouerVerbe(banc, etat({ menu: true }));
-  declencherClic(banc.document.body.querySelector('#menu-construction'));
+  declencherClic(carteDuMenu(banc.document, 'carte_construction'));
 }
 function ouvrirCraft(banc) {
   banc.menu.ouvrirCraft(() => [{ texte: 'Fabriquer (test)', action: () => {} }], 'Craft (test)');

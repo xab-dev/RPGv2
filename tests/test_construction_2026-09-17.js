@@ -486,14 +486,17 @@ function estVisibleEffectif(el) {
   const store = creerStoreMemoire();
   const dialogue = creerDialogue();
   const document = creerFauxDocument();
-  const menu = initialiserMenu({ document, i18n, exporterSauvegarde: () => {}, importerSauvegarde: () => {} });
+  const menu = initialiserMenu({ document, i18n, menus: registre.tous('menus'), exporterSauvegarde: () => {}, importerSauvegarde: () => {} });
   const conteneur = document.body.querySelector('#menu');
   const frames = [];
   const input = creerInputScripte(frames);
   const orchestrateur = creerOrchestrateurGrotte({
     registre, i18n, save, store, dialogue, menu, input, ctxLogique: null, ctxVisible: null, canvasLogique: null,
   });
-  menu.definirDisponibiliteConstruction(orchestrateur.disponibiliteConstruction);
+  // specs/08_menus-cartes.md (A4) : la carte Construction s'affiche sur une
+  // CONDITION de `menus.json`, évaluée par le registre de flags — plus par une
+  // fonction de disponibilité dédiée.
+  menu.definirEvaluateurCondition(orchestrateur.evaluerCondition);
   menu.definirEntreesConstruction(orchestrateur.entreesConstruction);
 
   // MENU (ouvre le menu Pause réel) -> clic RÉEL sur "Construction"
@@ -504,7 +507,10 @@ function estVisibleEffectif(el) {
   // `entreeAtelier.action()` est exactement l'action que l'écran-liste réel
   // invoquerait).
   menu.ouvrir();
-  const boutonConstruction = document.body.querySelector('#menu-construction');
+  // La carte `carte_construction` (grille de cartes, specs/08 A4) a remplacé
+  // le bouton `#menu-construction` de l'ancienne liste.
+  const boutonConstruction = document.body.querySelectorAll('[data-carte]').find((c) => c.dataset.carte === 'carte_construction');
+  assert.ok(boutonConstruction, 'dans la Maison, la case contextuelle porte la carte Construction');
   (boutonConstruction._listeners.click || []).forEach((fn) => fn());
   const entreeAtelier = orchestrateur.entreesConstruction().find((e) => e.texte === i18n.t('station.atelier'));
   entreeAtelier.action();

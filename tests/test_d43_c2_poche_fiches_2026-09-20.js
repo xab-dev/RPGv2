@@ -134,12 +134,16 @@ class ElementFactice {
   // La nourriture : « Équiper ». Sélectionner ne fait rien ; le bouton équipe.
   tuiles()[1].declencher('click');
   assert.equal(equipe, null, 'sélectionner une tuile n’équipe rien');
-  assert.deepEqual([fiche().titre, fiche().bouton.textContent], ['Fruit', i18n.t('menu.poche_equiper')]);
+  assert.deepEqual([fiche().titre, fiche().bouton.querySelector('.fiche-action-libelle').textContent], ['Fruit', i18n.t('menu.poche_equiper')]);
+  assert.equal(fiche().bouton.querySelector('.fiche-action-glyphe').textContent, i18n.t('glyphe.manette.attack'), 'le glyphe du périphérique actif (la manette, par défaut)');
   fiche().bouton.declencher('click');
   assert.equal(equipe, 'item_fruit');
   // L'écran s'est relu : l'objet équipé se VOIT, et le dit.
   assert.deepEqual(tuiles().map((t) => t.querySelectorAll('.tuile-marque').length), [0, 1, 0, 0], 'un repère sur la tuile équipée, et elle seule');
-  assert.deepEqual(fiche().lignes, ['Nourriture', 'Faim +15 %', 'Soif +5 %', i18n.t('menu.fiche.equipe')]);
+  assert.deepEqual(fiche().lignes, [
+    'Nourriture', 'Faim +15 %', 'Soif +5 %', i18n.t('menu.fiche.equipe'),
+    i18n.t('menu.fiche.manger', { glyphe: i18n.t('glyphe.manette.consume') }),
+  ], 'équipé : la fiche dit aussi comment le manger, au glyphe du périphérique actif');
   assert.equal(fiche().bouton, null, 'rééquiper serait sans effet : plus de bouton');
   assert.equal(tuiles()[1]._classes.includes('tuile-grisee'), false, '« équipé » n’est pas « indisponible » : la tuile n’est pas grisée');
   assert.equal(menu.obtenirEtatFiches().entreeFocalisee, 'Fruit', 'le focus n’a pas bougé pendant la relecture');

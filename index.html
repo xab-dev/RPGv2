@@ -152,6 +152,10 @@
       margin: 0; flex: 1 1 auto; min-width: 0; text-align: right;
       font-size: calc(8 * var(--u)); color: var(--menu-texte-phrase);
     }
+    /* Le sous-titre d'un écran « maître-détail » porte une information qu'on
+       vient lire (les points de stats à dépenser) : un cran plus gros que le
+       message de la grille, qui n'est qu'un avis passager. */
+    .fiches-sous-titre { font-size: calc(9.5 * var(--u)); }
     .cartes-bouton-entete {
       --carte-trait: var(--menu-accent);
       flex: 0 0 auto; box-sizing: border-box; cursor: pointer;
@@ -351,6 +355,15 @@
       background: var(--menu-carte);
       border: var(--menu-focus-bordure-px) solid var(--menu-accent);
       border-radius: calc(var(--menu-carte-rayon-u) * var(--u));
+    }
+    /* Le glyphe du verbe qui actionne le bouton (manette, clavier) : une
+       pastille discrète devant le libellé — un contour, jamais un aplat. */
+    .fiche-action { gap: calc(6 * var(--u)); }
+    .fiche-action-glyphe {
+      flex: 0 0 auto; padding: 0 calc(4 * var(--u)); line-height: 1.5;
+      font-size: calc(8.5 * var(--u)); font-weight: 700; color: var(--menu-texte-phrase);
+      border: var(--menu-carte-bordure-px) solid var(--menu-carte-bordure);
+      border-radius: calc(4 * var(--u));
     }
     /* Désactivé (§4.5) : texte à 40 %, aucune bordure d'accent. */
     .fiche-action-grisee { color: var(--menu-texte-titre); border-color: var(--menu-carte-bordure); }

@@ -127,7 +127,7 @@ function etatInput({ x = 0, y = 0, attack = false, skill3 = false } = {}) {
   return { move: { x, y }, attack: b(attack), skill_1: b(false), skill_2: b(false), skill_3: b(skill3), consume: b(false), interact: b(false), menu: b(false) };
 }
 
-function monter({ entrees, profondeurSous = 1 }) {
+function monter({ entrees, profondeurSous = 1, glyphe = 'A' }) {
   const document = creerFauxDocument();
   const journal = [];
   const nav = creerNavigationEcrans({ onFermer: () => journal.push('FERME') });
@@ -139,6 +139,7 @@ function monter({ entrees, profondeurSous = 1 }) {
     onRetour: () => nav.retour(),
     aLaRacine: () => nav.profondeur() === 1,
     icones: { fermer: 'icone_x', retour: 'icone_fleche' },
+    glypheAction: () => glyphe,
   });
   // Un écran quelconque SOUS celui-ci, pour que « retour » ait où revenir.
   const dessous = { montrer() {}, masquer() {}, estVisible: () => true, traiterInput() {} };
@@ -189,7 +190,9 @@ function monter({ entrees, profondeurSous = 1 }) {
   assert.equal(fiche.querySelectorAll('.fiche-titre')[0].textContent, 'Branche', 'la fiche est celle de la tuile focalisée : la première');
   assert.deepEqual(fiche.querySelectorAll('.fiche-ligne').map((l) => l.textContent), ['ressource']);
   const bouton = fiche.querySelectorAll('.fiche-action')[0];
-  assert.deepEqual([bouton.tagName, bouton.textContent], ['DIV', 'Déposer']);
+  assert.deepEqual([bouton.tagName, bouton.querySelectorAll('.fiche-action-libelle')[0].textContent], ['DIV', 'Déposer']);
+  // Le glyphe du verbe qui actionne le bouton (polish) : ce banc en injecte un.
+  assert.equal(bouton.querySelectorAll('.fiche-action-glyphe')[0].textContent, 'A', 'à la manette : « ce bouton, c’est A »');
   assert.ok(banc.journal.includes('icone:visuel_branche') && banc.journal.includes('icone:icone_fleche'), 'tuiles, fiche et en-tête : les icônes sont dessinées');
   console.log('OK structure DOM : sortie dans l’en-tête figé, groupes, cases de remplissage inertes, fiche de la tuile focalisée');
 
@@ -239,6 +242,11 @@ function monter({ entrees, profondeurSous = 1 }) {
 
 // --- 8. Seul dans la pile (Craft, Coffre) : la sortie FERME ; liste vide -------------
 {
+  // Au doigt, pas de glyphe : le bouton se touche, il n'a pas de verbe à annoncer.
+  const tactile = monter({ entrees: () => [{ titre: 'x', libelleAction: 'agir', action: () => {} }], glyphe: null });
+  assert.equal(tactile.el.querySelectorAll('.fiche-action-glyphe').length, 0);
+  assert.equal(tactile.el.querySelectorAll('.fiche-action-libelle')[0].textContent, 'agir');
+
   const banc = monter({ entrees: () => [], profondeurSous: 0 });
   const [corps, entete] = banc.el.children;
   assert.equal(entete.children.at(-1).querySelectorAll('.carte-icone')[0].dataset.icone, 'icone_x', 'rien dessous : la sortie est une FERMETURE');

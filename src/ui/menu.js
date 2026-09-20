@@ -306,7 +306,13 @@ export function initialiserMenu({
       const equipe = equipable && equipementConsommable() === e.id;
       return {
         titre: e.label, icone: e.icone || null, quantite: e.quantite, marque: equipe,
-        lignes: [...(e.lignes || []), ...(equipe ? [i18n.t('menu.fiche.equipe')] : [])],
+        // Équipé : la fiche dit aussi COMMENT le manger — le verbe CONSUME, au
+        // glyphe du périphérique actif (le joueur vient peut-être de l'équiper
+        // pour la première fois).
+        lignes: [...(e.lignes || []), ...(equipe ? [
+          i18n.t('menu.fiche.equipe'),
+          i18n.t('menu.fiche.manger', { glyphe: i18n.t(`glyphe.${peripheriqueActif()}.consume`) }),
+        ] : [])],
         libelleAction: equipable && !equipe ? i18n.t('menu.poche_equiper') : null,
         action: equipable && !equipe ? () => equiperConsommable(e.id) : null,
       };
@@ -511,6 +517,8 @@ export function initialiserMenu({
     onRetour: navigation.retour,
     aLaRacine: () => navigation.profondeur() === 1,
     icones: { fermer: ecranRacine.icone_fermer || null, retour: ecranRacine.icone_retour || null },
+    // Au doigt le bouton de la fiche se touche : pas de verbe à annoncer.
+    glypheAction: () => (peripheriqueActif() === 'tactile' ? null : i18n.t(`glyphe.${peripheriqueActif()}.attack`)),
   });
 
   return {

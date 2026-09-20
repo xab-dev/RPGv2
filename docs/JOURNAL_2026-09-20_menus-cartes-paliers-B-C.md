@@ -290,3 +290,32 @@ tailles, console sans erreur, aucun texte coupé. **94 fichiers verts.**
 historique ; les garder, c'est du code mort testé. Ce n'est pas à moi de trancher à 5 h du matin : ligne au suivi.
 
 Pour retirer C6 seul : retirer d'abord ce commit-ci.
+
+---
+
+# Passe de polish (tous les tests verts)
+
+## Commit POLISH — Trois retouches, pas une de plus
+
+Xav : « Si tous les tests sont vert quand tu as terminé les menus, tu peux leur faire une passe de polish. » J'ai relu
+toutes les captures aux deux tailles avant de toucher à quoi que ce soit. **Rien à reprendre dans la mise en page**
+(aucun débordement, aucun texte coupé, la sortie au même endroit partout). Trois retouches, chacune parce qu'un joueur
+s'y serait arrêté :
+
+1. **Le bouton de la fiche porte le glyphe du verbe qui l'actionne** (« A », « Espace ») à la manette et au clavier — à
+   ces périphériques le bouton n'est pas focalisable (c'est la tuile qui l'est), et rien ne disait « ce bouton, c'est
+   A ». Au doigt : rien (le bouton se touche). Injecté (`glypheAction`) : le composant ne connaît toujours ni les
+   périphériques ni les glyphes.
+2. **La fiche de l'objet équipé dit comment le manger** (« Manger : RT »), au glyphe du périphérique actif — on vient
+   peut-être de l'équiper pour la première fois, et le verbe CONSUME n'a son indice qu'une fois par partie.
+3. **Le sous-titre des écrans maître-détail passe de 8 u à 9,5 u** : il porte une information qu'on vient lire (les
+   points de stats à dépenser), pas un avis passager.
+
+Une clé FR/EN (`menu.fiche.manger`), contrôlée au démarrage. `test_d43_c1` et `test_d43_c2` lisent désormais le libellé
+dans son `<span>` et vérifient le glyphe (présent à la manette, absent au doigt). **94 fichiers verts.** Captures du
+palier C refaites avec le rendu final.
+
+**Ce que je n'ai PAS touché, exprès** : les jetons de style (tous *provisoires*, c'est à Xav de dire « plus », « moins »
+ou « bon ») ; le mot à côté de `[X]` (décision 1, à essayer par lui) ; le maintien-répétition du stick dans les grilles
+(`D-18`, un ticket à part) ; la langue non sauvegardée (`D-44`) ; le contenu des fiches (la Force n'a aucune dérivée à
+montrer : c'est du contenu, pas de l'UI).

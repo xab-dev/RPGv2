@@ -172,7 +172,7 @@ export function clesTexteFiches() {
     'menu.coffre_deposer', 'menu.coffre_retirer', 'menu.poche',
     'menu.fiche.fabriquer', 'menu.fiche.ingredient', 'menu.fiche.donne', 'menu.fiche.recharge',
     'menu.fiche.ingredients_manquants', 'menu.fiche.aucune_recette',
-    'menu.fiche.deplacer', 'menu.fiche.construction_vide',
+    'menu.fiche.deplacer', 'menu.fiche.construction_vide', 'menu.fiche.manger',
     'menu.poche_equiper', 'menu.poche_vide',
   ];
 }

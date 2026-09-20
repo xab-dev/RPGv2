@@ -193,5 +193,6 @@
   "menu.fiche.ingredients_manquants": "Ingrédients manquants",
   "menu.fiche.aucune_recette": "Aucune recette connue",
   "menu.fiche.deplacer": "Déplacer",
-  "menu.fiche.construction_vide": "Rien à déplacer ici"
+  "menu.fiche.construction_vide": "Rien à déplacer ici",
+  "menu.fiche.manger": "Manger : {glyphe}"
 }

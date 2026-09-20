@@ -63,10 +63,14 @@ const VIDE = '';
 //   onRetour        () => void   le `retour()` de la pile — `[←]` et B l'appellent tous les deux
 //   aLaRacine       () => bool   rien sous cet écran dans la pile : la sortie FERME (`[X]`)
 //   icones          { fermer, retour }   ids de `visuels.json`, lus sur l'écran racine du catalogue
+//   glypheAction    () => chaîne | null  le glyphe du verbe qui actionne le bouton de la fiche
+//                                        (« A », « Espace ») ; null = ne rien afficher (au doigt,
+//                                        le bouton se touche : il n'a pas de verbe à annoncer)
 export function creerEcranFiches({
   document, i18n, afficherEcran, seuilPoussee,
   couleurAccent = () => null, rectangleJeu = () => null, dessinerIcone = () => {},
   onRetour, aLaRacine = () => false, icones = { fermer: null, retour: null },
+  glypheAction = () => null,
 }) {
   // Même découpe que tous les écrans depuis `D-42`, même ordre dans le DOM :
   // le corps d'abord, l'en-tête (donc la sortie) en dernier enfant, remonté à
@@ -177,7 +181,20 @@ export function creerEcranFiches({
       bouton.className = entree.grisee ? 'fiche-action fiche-action-grisee' : 'fiche-action';
       bouton.dataset.action = 'fiche';
       poserAttribut(bouton, 'role', 'button');
-      bouton.textContent = entree.libelleAction;
+      // À la manette et au clavier le bouton n'est pas focalisable — c'est la
+      // TUILE qui l'est, et A agit. Le glyphe du verbe, posé sur le bouton,
+      // fait le lien : « ce bouton, c'est A ».
+      const glyphe = glypheAction();
+      if (glyphe) {
+        const elGlyphe = document.createElement('span');
+        elGlyphe.className = 'fiche-action-glyphe';
+        elGlyphe.textContent = glyphe;
+        bouton.appendChild(elGlyphe);
+      }
+      const libelle = document.createElement('span');
+      libelle.className = 'fiche-action-libelle';
+      libelle.textContent = entree.libelleAction;
+      bouton.appendChild(libelle);
       bouton.addEventListener('click', () => activer());
       fiche.appendChild(bouton);
     }

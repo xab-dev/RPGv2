@@ -193,5 +193,6 @@
   "menu.fiche.ingredients_manquants": "Missing ingredients",
   "menu.fiche.aucune_recette": "No known recipe",
   "menu.fiche.deplacer": "Move",
-  "menu.fiche.construction_vide": "Nothing to move here"
+  "menu.fiche.construction_vide": "Nothing to move here",
+  "menu.fiche.manger": "Eat: {glyphe}"
 }

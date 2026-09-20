@@ -473,7 +473,6 @@ export function initialiserMenu({
   // il ne reste rien, tout est fermé. Plus personne ne « fait réapparaître »
   // le menu : il n'avait pas disparu, il était sous le sommet.
   const navigation = creerNavigationEcrans();
-  const ecranCraft = creerEcranListeGenerique(document, i18n, { onRetour: navigation.retour });
   // Construction (specs/05_construction-stations.md §3, précisée par
   // MT_construction-bandeau-placement_2026-09-17 v1.0.1) : ouvert DEPUIS le
   // menu Pause, comme Poche/Stats. Choisir une station dans cette liste
@@ -818,11 +817,15 @@ export function initialiserMenu({
     // (Palier A/E, hors du menu Pause) — `obtenirEntrees` est fourni à
     // l'ouverture par main.js (dépend de la station visée, donc pas fixé à
     // la construction du menu comme `fournisseurEntreesStats`).
-    ouvrirCraft(obtenirEntrees, titre) {
-      navigation.ouvrir({ vue: ecranCraft, id: ECRAN_CRAFT, obtenirEntrees, titre });
+    // Craft (palier C5) : maître-détail, même forme que le Coffre.
+    ouvrirCraft(obtenirEntrees, titre, options = {}) {
+      navigation.ouvrir({
+        vue: ecranFiches, id: ECRAN_CRAFT, obtenirEntrees, titre,
+        sousTitre: options.sousTitre || null, texteVide: options.texteVide || '',
+      });
     },
     rafraichirCraft() {
-      ecranCraft.rafraichir();
+      ecranFiches.rafraichir();
     },
     // Coffre (palier C4) : maître-détail. `options` : `sousTitre` (la capacité)
     // et `texteVide`, que seul main.js sait écrire.

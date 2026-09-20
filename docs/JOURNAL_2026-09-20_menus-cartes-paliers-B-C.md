@@ -239,3 +239,19 @@ sens), avec « coffre plein » exercé sur le vrai catalogue à capacité rédui
 Parité pointeur/verbes du Coffre passée au maître-détail (deux groupes). **93 fichiers verts.** Vu dans le jeu aux deux
 tailles : rien ne déborde hors de la grille de tuiles ; avec deux intertitres, la 3ᵉ rangée est coupée au bord — c'est
 le signe « il y en a d'autres », et le focus la ramène en vue.
+
+## Commit C5 — Craft en maître-détail
+
+Une **tuile par recette connue** de la station (une recette verrouillée reste absente : narration diffuse), à l'image de
+l'objet **produit**. La fiche dit **ce que la recette demande et ce qu'on a en poche** (« Branche : 6 / 2 », relu à
+chaque affichage), **ce qu'elle donne**, puis la fiche de l'objet produit (`lignesFicheItem`, la même que dans la Poche
+et le Coffre), et la **raison d'un refus probable** : ingrédients manquants, pile pleine, ou « Prêt dans 42 s ». Le
+bouton dit « Fabriquer » ; grisé, il **retente quand même** (le résultat fait foi — testé pendant la recharge).
+`menu.ouvrirCraft(entrees, titre, { texteVide })`. Six clés FR/EN de plus, contrôlées au démarrage.
+
+Tests : `test_d43_c5_craft_fiches` (vrai orchestrateur, INTERACT à côté de l'atelier). `test_d42` : ses blocs « le focus
+demande la mise en vue » et « la sortie ne ferme qu'une fois après N reconstructions » exerçaient la liste de Craft —
+**portés sur la grille de tuiles** (vingt recettes, cinq rangées : à chaque cran, seule la tuile focalisée est ramenée en
+vue) ; son écran de liste témoin devient la liste Construction, la dernière à ne pas avoir migré. `test_phase3_boucle`
+(le bot fabrique par `entree.texte` / `entree.action`) : **vert sans être touché**. **94 fichiers verts.** Vu dans le jeu
+aux deux tailles : rien ne déborde, aucun texte coupé.

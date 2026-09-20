@@ -185,5 +185,11 @@
   "menu.fiche.equipe": "Equipped",
   "menu.fiche.coffre_plein": "Chest full",
   "menu.fiche.pile_pleine": "Stack full",
-  "menu.fiche.coffre_piles": "Stacks: {n} / {max}"
+  "menu.fiche.coffre_piles": "Stacks: {n} / {max}",
+  "menu.fiche.fabriquer": "Craft",
+  "menu.fiche.ingredient": "{item}: {possede} / {n}",
+  "menu.fiche.donne": "Gives: {item} × {n}",
+  "menu.fiche.recharge": "Ready in {n} s",
+  "menu.fiche.ingredients_manquants": "Missing ingredients",
+  "menu.fiche.aucune_recette": "No known recipe"
 }

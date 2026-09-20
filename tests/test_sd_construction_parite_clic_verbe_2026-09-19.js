@@ -461,7 +461,11 @@ function ouvrirConstructionListe(banc) {
   declencherClic(carteDuMenu(banc.document, 'carte_construction'));
 }
 function ouvrirCraft(banc) {
-  banc.menu.ouvrirCraft(() => [{ texte: 'Fabriquer (test)', action: () => {} }], 'Craft (test)');
+  // specs/08 palier C5 : Craft est un maître-détail — des entrées à TUILES.
+  banc.menu.ouvrirCraft(() => [
+    { titre: 'Hache (test)', libelleAction: 'Fabriquer (test)', action: () => {} },
+    { titre: 'Pioche (test)', libelleAction: 'Fabriquer (test)', grisee: true, action: () => {} },
+  ], 'Craft (test)');
 }
 function ouvrirCoffre(banc) {
   // specs/08 palier C4 : le Coffre est un maître-détail — des entrées à TUILES, en deux groupes.
@@ -580,5 +584,5 @@ function testerPariteFiches(nomDeLEcran, ouvrir) {
 testerPariteFiches('Poche', ouvrirPoche);
 testerPariteFiches('Stats', ouvrirStats);
 testerCliqueVsVerbePourEcran('Construction (liste)', ouvrirConstructionListe);
-testerCliqueVsVerbePourEcran('Craft', ouvrirCraft);
+testerPariteFiches('Craft', ouvrirCraft);
 testerPariteFiches('Coffre', ouvrirCoffre);

@@ -293,19 +293,19 @@ function carteDuMenu(document, id) {
   assert.equal(menu.estOuvert(), true, 'la sortie de la Poche ramène au menu (un niveau), elle ne ferme pas tout');
   menu.fermer();
 
-  // Et un écran de LISTE générique (Craft, tant qu'il n'a pas migré) :
-  // « Fermer » dans l'en-tête, nulle part dans la liste défilante.
-  menu.ouvrirCraft(() => [{ texte: 'recette', action: () => {} }], 'craft');
-  const craft = document.body.children.find((el) => el.hidden === false && el._classes.includes('ecran-ui') && el.id === '');
-  assert.ok(craft, 'Craft doit être ouvert');
-  const enteteCraft = craft.querySelector('.ecran-ui-entete');
-  const listeCraft = craft.querySelector('.ecran-ui-liste');
-  assert.ok(enteteCraft && listeCraft, 'un en-tête et une liste');
-  assert.ok(enteteCraft.querySelector('.ecran-ui-fermer'), '« Fermer » est dans l’en-tête');
-  assert.equal(listeCraft.querySelectorAll('.ecran-ui-fermer').length, 0,
+  // Et un écran de LISTE générique (la liste Construction, le dernier à ne pas
+  // avoir migré) : « Fermer » dans l'en-tête, nulle part dans la liste défilante.
+  menu.reouvrirListeConstruction();
+  const liste = document.body.children.find((el) => el.hidden === false && el._classes.includes('ecran-ui') && el.id === '');
+  assert.ok(liste, 'la liste Construction doit être ouverte');
+  const enteteListe = liste.querySelector('.ecran-ui-entete');
+  const corpsListe = liste.querySelector('.ecran-ui-liste');
+  assert.ok(enteteListe && corpsListe, 'un en-tête et une liste');
+  assert.ok(enteteListe.querySelector('.ecran-ui-fermer'), '« Fermer » est dans l’en-tête');
+  assert.equal(corpsListe.querySelectorAll('.ecran-ui-fermer').length, 0,
     'et nulle part dans la liste défilante');
   menu.fermer();
-  console.log('  la sortie est hors de ce qui défile : menu Pause (grille), maître-détail (Poche) et écran de liste (Craft)');
+  console.log('  la sortie est hors de ce qui défile : menu Pause (grille), maître-détail (Poche) et écran de liste (Construction)');
 }
 
 // --- 3. …et reste le DERNIER élément du document ---------------------------
@@ -334,8 +334,8 @@ function carteDuMenu(document, id) {
 {
   const { document } = construireMenu();
   const ecrans = document.body.children.filter((el) => el.style.pointerEvents !== 'none' && el.tagName !== 'INPUT');
-  assert.equal(ecrans.length, 4,
-    'menu Pause (grille, confirmation de reset comprise), maître-détail (Poche, Stats et Coffre, specs/08 palier C), Craft, Construction');
+  assert.equal(ecrans.length, 3,
+    'menu Pause (grille, confirmation de reset comprise), maître-détail (Poche, Stats, Coffre et Craft, specs/08 palier C), Construction');
   for (const el of ecrans) {
     assert.ok(el._classes.includes('ecran-ui'),
       `chaque écran porte la classe commune (${el.id || 'écran générique'})`);
@@ -345,57 +345,57 @@ function carteDuMenu(document, id) {
       + el.querySelectorAll('.fiches-tuiles').length;
     assert.equal(listes, 1, 'une liste, OU une grille de cartes, OU une grille de tuiles — et une seule');
   }
-  console.log('  les 4 écrans partagés portent le même habillage (bandeau et sélecteur de fichier exclus)');
+  console.log('  les 3 écrans partagés portent le même habillage (bandeau et sélecteur de fichier exclus)');
 }
 
 // --- 5. Le focus demande la mise en vue ----------------------------------
-// Un écran de LISTE défile toujours : une entrée focalisée peut être hors de
-// la zone visible, et à la manette comme au clavier le curseur s'y perdrait.
-// (La grille, elle, ne défile jamais — elle n'a rien à ramener en vue.)
+// Ce qui défile, c'est la GRILLE DE TUILES d'un écran « maître-détail » (Craft
+// depuis specs/08 palier C5) : une tuile focalisée peut être hors de la zone
+// visible, et à la manette comme au clavier le curseur s'y perdrait.
+// (La grille de cartes, elle, ne défile jamais — elle n'a rien à ramener en vue.)
 {
   const { document, menu } = construireMenu();
-  const entrees = Array.from({ length: 12 }, (_, i) => ({ texte: `recette ${i}`, action: () => {} }));
+  const entrees = Array.from({ length: 20 }, (_, i) => ({ titre: `recette ${i}`, libelleAction: 'fabriquer', action: () => {} }));
   menu.ouvrirCraft(() => entrees, 'craft');
   const craft = document.body.children.find((el) => el.hidden === false && el._classes.includes('ecran-ui'));
-  const navigables = craft.querySelectorAll('.menu-item');
-  assert.equal(navigables.length, 13, 'douze recettes et « Fermer »');
-  assert.ok(navigables.some((el) => el.misEnVue > 0), 'le focus initial est déjà mis en vue');
+  const tuiles = () => craft.querySelectorAll('[data-tuile]');
+  assert.equal(tuiles().length, 20, 'vingt recettes : cinq rangées, deux de plus que ce qui tient');
+  assert.ok(tuiles().some((el) => el.misEnVue > 0), 'le focus initial est déjà mis en vue');
 
-  // Trois crans vers le bas : à chaque fois, c'est l'entrée focalisée — et
-  // elle seule — qui demande à être ramenée dans la zone visible.
+  // Trois crans vers le bas (une rangée = quatre tuiles) : à chaque fois, c'est
+  // la tuile focalisée — et elle seule — qui demande à être ramenée en vue.
   for (let i = 0; i < 3; i += 1) {
-    const avant = navigables.map((el) => el.misEnVue);
+    const avant = tuiles().map((el) => el.misEnVue);
     menu.traiterInput(etat({ y: 1 }));
     menu.traiterInput(etat({ y: 0 }));
-    const bouges = navigables.map((el, k) => (el.misEnVue - avant[k] > 0 ? k : -1)).filter((k) => k >= 0);
-    assert.deepEqual(bouges, [i + 1], `cran ${i + 1} : seule l’entrée focalisée est mise en vue`);
+    const bouges = tuiles().map((el, k) => (el.misEnVue - avant[k] > 0 ? k : -1)).filter((k) => k >= 0);
+    assert.deepEqual(bouges, [(i + 1) * 4], `cran ${i + 1} : seule la tuile focalisée est mise en vue`);
   }
-  console.log('  le focus ramène l’entrée sélectionnée dans la zone visible (manette/clavier)');
+  console.log('  le focus ramène la tuile sélectionnée dans la zone visible (manette/clavier)');
 }
 
-// --- 6. « Fermer » ne ferme qu'une fois, même après N reconstructions -----
-// Son élément DOM SURVIT désormais aux reconstructions de la liste (il est
-// dans l'en-tête, qui n'est pas réécrit) : y empiler un écouteur à chaque
-// `rafraichir()` aurait fermé l'écran autant de fois qu'il a été reconstruit.
-// Craft est l'écran qui expose publiquement les deux (`ouvrirCraft`,
-// `rafraichirCraft`) — c'est aussi le plus reconstruit en jeu, une recette
-// craftée grisant la suivante.
+// --- 6. La sortie ne ferme qu'une fois, même après N reconstructions ------
+// Son élément DOM SURVIT aux reconstructions de l'écran (il est dans l'en-tête,
+// qui n'est pas réécrit) : y empiler un écouteur à chaque `rafraichir()` aurait
+// fermé l'écran autant de fois qu'il a été reconstruit. Craft est l'écran qui
+// expose publiquement les deux (`ouvrirCraft`, `rafraichirCraft`) — c'est aussi
+// le plus reconstruit en jeu, une recette craftée grisant la suivante.
 {
   const { document, menu } = construireMenu();
-  menu.ouvrirCraft(() => [{ texte: 'recette', action: () => {} }], 'craft');
+  menu.ouvrirCraft(() => [{ titre: 'recette', libelleAction: 'fabriquer', action: () => {} }], 'craft');
   const craft = document.body.children.find((el) => el.hidden === false && el._classes.includes('ecran-ui'));
-  const boutonFermer = craft.querySelector('.ecran-ui-fermer');
-  assert.ok(boutonFermer, 'l’écran Craft a son « Fermer » dans l’en-tête');
+  const boutonFermer = craft.querySelectorAll('[data-sortie]')[0];
+  assert.ok(boutonFermer, 'l’écran Craft a sa sortie dans l’en-tête');
 
   for (let i = 0; i < 5; i += 1) menu.rafraichirCraft();
   assert.equal(boutonFermer._listeners.click.length, 1,
-    'un seul écouteur de clic sur « Fermer », quel que soit le nombre de reconstructions');
+    'un seul écouteur de clic sur la sortie, quel que soit le nombre de reconstructions');
 
   boutonFermer.declencher('click');
   assert.equal(craft.hidden, true, 'un clic referme l’écran');
   assert.equal(menu.estOuvert(), false,
     'et l’invariant tient : plus aucun écran de menu ouvert');
-  console.log('  « Fermer » garde un seul écouteur, même après plusieurs reconstructions');
+  console.log('  la sortie garde un seul écouteur, même après plusieurs reconstructions');
 }
 
 console.log('OK test_d42_menu_fermable_tactile');

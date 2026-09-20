@@ -185,5 +185,11 @@
   "menu.fiche.equipe": "Équipé",
   "menu.fiche.coffre_plein": "Coffre plein",
   "menu.fiche.pile_pleine": "Pile pleine",
-  "menu.fiche.coffre_piles": "Piles : {n} / {max}"
+  "menu.fiche.coffre_piles": "Piles : {n} / {max}",
+  "menu.fiche.fabriquer": "Fabriquer",
+  "menu.fiche.ingredient": "{item} : {possede} / {n}",
+  "menu.fiche.donne": "Donne : {item} × {n}",
+  "menu.fiche.recharge": "Prêt dans {n} s",
+  "menu.fiche.ingredients_manquants": "Ingrédients manquants",
+  "menu.fiche.aucune_recette": "Aucune recette connue"
 }

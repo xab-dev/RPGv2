@@ -170,6 +170,8 @@ export function clesTexteFiches() {
     'menu.fiche.rend_faim', 'menu.fiche.rend_soif', 'menu.fiche.equipe',
     'menu.fiche.coffre_plein', 'menu.fiche.pile_pleine', 'menu.fiche.coffre_piles',
     'menu.coffre_deposer', 'menu.coffre_retirer', 'menu.poche',
+    'menu.fiche.fabriquer', 'menu.fiche.ingredient', 'menu.fiche.donne', 'menu.fiche.recharge',
+    'menu.fiche.ingredients_manquants', 'menu.fiche.aucune_recette',
     'menu.poche_equiper', 'menu.poche_vide',
   ];
 }
@@ -778,7 +780,9 @@ export function creerOrchestrateurGrotte({
   function essayerStation(puzzle) {
     const station = registre.obtenir('stations', puzzle.station_type);
     if (station.role === 'craft') {
-      menu.ouvrirCraft(() => entreesCraft(station), i18n.t(station.label_key));
+      menu.ouvrirCraft(() => entreesCraft(station), i18n.t(station.label_key), {
+        texteVide: i18n.t('menu.fiche.aucune_recette'),
+      });
       return;
     }
     if (station.role === 'stockage') {
@@ -822,8 +826,33 @@ export function creerOrchestrateurGrotte({
         } else if (verdict.raison === 'poche_pleine') {
           suffixe = ` (${i18n.t('menu.poche_pleine')})`;
         }
+        // specs/08_menus-cartes.md, palier C5 : la tuile est celle de l'objet
+        // PRODUIT ; la fiche dit ce que la recette demande (avec ce qu'on a en
+        // poche, relu à chaque affichage), ce qu'elle donne — l'objet produit
+        // est décrit par `lignesFicheItem`, comme dans la Poche et le Coffre —,
+        // et la raison d'un refus probable.
+        const itemSortie = registre.obtenir('items', r.sortie.item);
+        const raisons = {
+          cooldown: () => i18n.t('menu.fiche.recharge', {
+            n: Math.ceil(tempsRestantMs(save.cooldowns, r.id, r.cooldown_ms ?? 60000, heureMs) / 1000),
+          }),
+          ingredients: () => i18n.t('menu.fiche.ingredients_manquants'),
+          poche_pleine: () => i18n.t('menu.fiche.pile_pleine'),
+        };
         return {
           texte: `${i18n.t(r.label_key)}${suffixe}`,
+          titre: i18n.t(r.label_key),
+          icone: itemSortie.render.visuel,
+          quantite: r.sortie.qte > 1 ? r.sortie.qte : null,
+          lignes: [
+            ...r.entrees.map((e) => i18n.t('menu.fiche.ingredient', {
+              item: i18n.t(registre.obtenir('items', e.item).label_key), n: e.qte, possede: save.inventaire.items[e.item] || 0,
+            })),
+            i18n.t('menu.fiche.donne', { item: i18n.t(itemSortie.label_key), n: r.sortie.qte }),
+            ...lignesFicheItem(itemSortie, registre, i18n),
+            ...(raisons[verdict.raison] ? [raisons[verdict.raison]()] : []),
+          ],
+          libelleAction: i18n.t('menu.fiche.fabriquer'),
           grisee: !verdict.ok,
           action: () => {
             const itemDefSortie = registre.obtenir('items', r.sortie.item);

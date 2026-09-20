@@ -6,8 +6,15 @@
 // Chrome lancé en `--headless`, lui, rend ses frames sans écran. Ce script le
 // lance, le pilote par son port de débogage (protocole CDP, sur le WebSocket
 // natif de Node — aucune dépendance), et rend de VRAIS pixels, à la taille de
-// viewport demandée, exactement (703 × 280, 1920 × 1080 : les deux tailles de
-// `specs/08_menus-cartes.md` §7).
+// viewport demandée, exactement.
+//
+// TROIS profils (`tools/scenarios/commun.mjs#PROFILS`) : les deux tailles de
+// `specs/08_menus-cartes.md` §7 (703 × 280 et 1920 × 1080, DPR 1) et, depuis
+// `D-48`, un **téléphone** (780 × 360 px CSS, DPR 3). Motif : à DPR 1, px CSS
+// et px physiques sont le même nombre, donc aucun profil ne pouvait voir la
+// classe de défaut « une grandeur physique lue là où on attend une grandeur
+// logique » — celle qui affichait la mise en page 1080p dans 360 px CSS de
+// haut sur le téléphone de Xav. Un profil à DPR ≠ 1 la voit du premier coup.
 //
 // Ce que ça prouve, et ce que ça ne prouve pas : « ça s'affiche ainsi sous
 // Chrome », jamais « c'est réussi » — le verdict reste une validation de Xav,
@@ -16,7 +23,7 @@
 //
 // Usage : node tools/capture_chrome.mjs <scenario.mjs>
 // Un scénario exporte `default async function (chrome) { … }` et reçoit :
-//   chrome.taille(l, h)            viewport exact, en px CSS (DPR 1)
+//   chrome.taille(l, h, dpr = 1)   viewport exact, en px CSS, au DPR demandé
 //   chrome.ouvrir(url)             navigue et attend le chargement
 //   chrome.touche(code, ms = 80)   appui réel (keydown, attente, keyup) — `KeyboardEvent.code`
 //   chrome.clic(x, y)              clic souris réel, en px CSS
@@ -90,8 +97,11 @@ async function main() {
 
     const chrome = {
       attendre,
-      async taille(largeur, hauteur) {
-        await envoyer('Emulation.setDeviceMetricsOverride', { width: largeur, height: hauteur, deviceScaleFactor: 1, mobile: false });
+      // `dpr` : `deviceScaleFactor` de CDP, donc `window.devicePixelRatio` dans
+      // la page. Le viewport reste exprimé en px CSS (c'est ce que voit la
+      // mise en page) ; seule la densité change, comme sur un vrai téléphone.
+      async taille(largeur, hauteur, dpr = 1) {
+        await envoyer('Emulation.setDeviceMetricsOverride', { width: largeur, height: hauteur, deviceScaleFactor: dpr, mobile: dpr !== 1 });
       },
       async ouvrir(url) {
         evenements.length = 0;

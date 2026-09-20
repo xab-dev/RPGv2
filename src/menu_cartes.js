@@ -7,6 +7,40 @@
 // Test du catalogue (règle d'architecture directrice) : ajouter la page du
 // follet, le jardinage ou un écran d'indices = ajouter une entrée à
 // `menus.json`. Rien ici ne nomme un écran, une carte ni une action.
+import { calculerRectanglePresentation } from './render.js';
+
+// --- La géométrie de la boîte de menu, en pixels CSS (`D-48`) -----------------
+
+// LE calcul de l'unité `--u` et de l'origine de la boîte — un seul endroit,
+// appelé par TOUS les chemins (ouverture d'un niveau, `resize`, changement
+// d'orientation, `fullscreenchange`), via `main.js#rectangleJeu`.
+//
+// Pourquoi il existe : `calculerRectanglePresentation` rend des pixels
+// PHYSIQUES (c'est son contrat : elle place l'image dans le backing store du
+// canvas). Une variable CSS, elle, se lit en pixels CSS. À DPR 1 les deux
+// nombres sont le même, et c'est exactement ce qui a caché le défaut : sur le
+// téléphone de Xav (DPR 3) le menu s'ouvrait à `--u` = 4 px là où la fenêtre
+// n'en fait que 360 de haut — la mise en page 1080p dans un écran de 360.
+// Même famille que « dialogues invisibles » (15/09) : une grandeur physique
+// lue là où on attend une grandeur logique.
+//
+// La division est faite ICI et pas dans `render.js` : le rendu, lui, a raison
+// de travailler en pixels physiques (c'est ce qui rend l'image nette). Ce
+// n'est pas une deuxième formule — c'est la même, convertie une fois, au seul
+// endroit qui a besoin de l'autre unité. Pure : aucun DOM, aucun `window`,
+// l'appelant fournit les trois nombres.
+//
+// Ce que la boîte vaut alors : exactement le rectangle du jeu à l'écran, en px
+// CSS. `unite` peut être décimale (4 / 3 sur un téléphone DPR 3) — c'est
+// voulu, la boîte doit recouvrir l'image du jeu, pas un multiple entier d'elle.
+export function rectangleMenuCss({ largeurCss, hauteurCss, dpr = 1 }) {
+  const facteur = Number.isFinite(dpr) && dpr > 0 ? dpr : 1;
+  const rect = calculerRectanglePresentation(
+    Math.round(largeurCss * facteur),
+    Math.round(hauteurCss * facteur),
+  );
+  return { x: rect.x / facteur, y: rect.y / facteur, unite: rect.echelle / facteur };
+}
 
 // Les trois types de cartes (§4.1). Une liste fermée, et c'est voulu : un
 // type de plus change ce que fait un appui, donc le composant — ce n'est pas

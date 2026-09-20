@@ -152,7 +152,8 @@ rpg_v2/
 │   │                       du menu entier (`creerNavigationEcrans` : des niveaux portés par des
 │   │                       vues, une seule visible, un seul chemin de fermeture), confirmation
 │   │                       d'un danger, contrôles de démarrage (textes FR/EN, câblage carte ↔
-│   │                       fonction dans les deux sens)
+│   │                       fonction dans les deux sens), et `rectangleMenuCss` : LE calcul de
+│   │                       l'unité `--u` et de l'origine de la boîte, en pixels **CSS** (`D-48`)
 │   └── ui/                 menu.js (DOM ; possède LA pile du menu et y ENREGISTRE ce que les
 │                           cartes de `data/menus.json` citent : actions, états, écrans — plus le
 │                           bandeau de placement), grille_cartes.js (les écrans de CARTES) et
@@ -178,8 +179,10 @@ rpg_v2/
                             sur le vrai catalogue), cadre_viewport.html (viewport imposé ; `&pas=oui`
                             = boucle de jeu avancée à la main, pour un onglet masqué) et
                             capture_chrome.mjs + scenarios/ (Chrome SANS FENÊTRE piloté par CDP,
-                            zéro dépendance : vrais pixels à 703 × 280 et 1920 × 1080, profil
-                            jetable — la sauvegarde de Xav n'est jamais touchée)
+                            zéro dépendance : vrais pixels sous les TROIS profils de
+                            `scenarios/commun.mjs#PROFILS` — 703 × 280 et 1920 × 1080 à DPR 1, plus
+                            `telephone` 780 × 360 à **DPR 3** (`D-48`) ; profil Chrome jetable —
+                            la sauvegarde de Xav n'est jamais touchée)
 ```
 
 `registry.js`/`save.js` restent purs (aucun accès disque/réseau/DOM) : les adaptateurs (`io_node.js`/`io_navigateur.js`, `storage_indexeddb.js`/`creerStoreMemoire()`) leur fournissent des données déjà prêtes. Convention d'`id` : minuscules, `_` comme séparateur, préfixé par la catégorie au singulier (`tile_sol`, `elem_feu`). Un `id` dupliqué ou une référence croisée cassée = échec dur au boot avec le chemin exact de l'erreur.
@@ -269,6 +272,7 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 | **`MENU`, menu ouvert, ferme tout** (`Q-36`, retenu par défaut par la spec — *à confirmer par Xav*) : la branche vit dans `main.js#maj`, seul endroit qui sait que `MENU` vient d'OUVRIR le menu dans la même frame ; la frame de fermeture reste une frame d'UI (aucun verbe n'atteint le gameplay) | 2026-09-20 | même journal, B3 |
 | **Un écran « maître-détail » : une tuile se SÉLECTIONNE, c'est le bouton de la fiche qui AGIT** (au stick : sélection ; A : action — A et le bouton sont la même fonction). *Diffère* de la grille de cartes, où l'appui agit : sur une carte tout est écrit, sur une tuile il n'y a qu'une icône, et au doigt on ne lirait jamais la fiche avant d'avoir agi. La grille de tuiles défile **en elle-même** au-delà de 4 × 3 ; ni l'en-tête ni la fiche ne bougent. **Ce que dit une fiche vient des données** (`main.js#lignesFicheItem`, les dérivées de `stats_derivees.json`, les entrées de `recipes.json`), et tout texte composé passe par le contrôle de démarrage FR/EN (`clesTexteFiches`). *Retenu par défaut, à confirmer* (`Q-39`) | 2026-09-20 | `docs/JOURNAL_2026-09-20_menus-cartes-paliers-B-C.md`, palier C |
 | **Le signal d'une zone de Chaos est une teinte additive posée *après* le calque d'obscurité** : elle se voit à travers la nuit **sans percer le voile**, donc elle ne révèle pas le sol (principe des faisceaux de la Grotte : un faisceau éclaire l'air, un halo révèle le sol). Trois règles avec : l'intensité **suit l'obscurité de la scène** (donc nulle de jour, sans condition ajoutée) · **une table fermée ne s'annonce pas** (aucune teinte sous le seuil de niveau) · la pulsation suit `save.monde.heure`, donc elle est gelée sous UI par construction. **Aucune lueur sur les monstres** (`Q-27`, « je veux être surpris ») | 2026-09-19 | même archive, palier `07-D` |
+| **Une variable CSS se lit en pixels CSS — et le rectangle de présentation du jeu est en pixels PHYSIQUES.** La conversion (÷ DPR) se fait **une seule fois**, dans une fonction pure (`menu_cartes.js#rectangleMenuCss`) que TOUS les chemins traversent (ouverture d'un écran, `resize`, `orientationchange`, `fullscreenchange`) ; le menu ne lit plus `canvasVisible.width`, un nombre qui a deux écritures et deux sens. Née de `D-48` : sur téléphone (DPR 3) le menu s'ouvrait à `--u` = 4 px dans une fenêtre de 360 px CSS — la mise en page 1080p dans un écran de 360 — et un pivot la remettait à 1 px. Corollaire de test : **un profil à DPR 1 ne peut pas voir cette classe de défaut** (px CSS et px physiques y sont le même nombre), d'où le profil `telephone` de `tools/capture_chrome.mjs` | 2026-09-20 | journal de session ci-dessous, fiche `docs/archives/MT_menu-echelle-dpr_2026-09-20.md` |
 
 (Les décisions de `05_construction-stations.md` étaient déjà actées par Xav **dans la spec elle-même** avant tout code, v1.0.0 §9 — les lignes ci-dessus n'y renvoient que pour mémoire, elles ne tranchent rien de nouveau.)
 
@@ -321,7 +325,7 @@ la session précédente a révélées, clos celles qu'elle a livrées.
 3. ~~`specs/07_chaos-nocturne.md` (A, B, C, D)~~ — **les quatre paliers sont livrés et fusionnés**. Le relevé de nuit sous Chrome, comparé à `R-03`, reste dû (`V-18`).
 4. ~~`D-36` — follet « aérien »~~ — **proposé et conservé** par Xav ; réglage et verdict final à l'œil (`V-20`).
 5. ~~**La nuit du 20/09** (file autonome n° 2)~~ — **les cinq tickets sont livrés et fusionnés** (`D-39`, `D-40`, `D-17`, `D-13`, `D-30`). Le playtest téléphone qui a suivi en a rouvert deux, `D-42` et `D-30` : ~~mini-file « menu tactile »~~ — **livrée, en ligne, validée par Xav** (`V-25`, `V-26`).
-5 bis. ~~**`specs/08_menus-cartes.md`** (`D-43`)~~ — **les trois paliers et le polish sont livrés, fusionnés dans `main` et en ligne** (21/09, clavier et manette validés par Xav). Restent à Xav : le téléphone (`V-27`, `V-28`, `V-29`), et confirmer ou réviser `Q-36` et `Q-39`.
+5 bis. ~~**`specs/08_menus-cartes.md`** (`D-43`)~~ — **les trois paliers et le polish sont livrés, fusionnés dans `main` et en ligne** (21/09, clavier et manette validés par Xav). Restent à Xav : le téléphone (`V-27`, `V-28`, `V-29`), et confirmer ou réviser `Q-36` et `Q-39`. **Premier retour téléphone, 20/09 midi : les menus s'ouvraient à l'échelle 1080p** — `D-48`, corrigé et mesuré le jour même (une seule fonction, en px CSS) ; verdict en jeu dû `V-31`.
 6. `D-01` (défilement incrémental du calque), `D-16` (puits), puis reprise de `Q-07`.
 7. Ce que Xav doit trancher avant d'aller plus loin sur le contenu : `Q-33` (apparitions de ressources) et `Q-34` (lisibilité de la première nuit dangereuse) — nées du constat d'équilibrage du 19/09 au soir.
 
@@ -332,8 +336,33 @@ Les captures de la V1 (`docs/captures/v1/`) sont une **inspiration, jamais un ca
 `Q-10`, `Q-11`, `Q-12`, `Q-24` et `Q-25` restent à trancher avec Xav ; `Q-07` est gelée. La spec de la barre d'action du bas (`E-01`) est écrite par Xav lui-même et attend le chiffrage `Q-11`. **Une spec non écrite ne se commence pas** (même règle que pour une phase).
 
 
-## Journal de session — Menus en cartes, paliers B et C (nuit du 20 au 21/09)
+## Journal de session — `D-48` : le menu s'ouvrait à l'échelle 1080p sur téléphone (20/09)
 
-`specs/08_menus-cartes.md` v1.0.0, **paliers B et C, puis une passe de polish — livrés**, en file de nuit autonome à la demande de Xav. Branche **`menus-cartes`**, un commit par étape ; **fusionnée dans `main` (avance rapide, l'historique commit par commit est conservé) et poussée le 21/09, sur demande de Xav**. Retrait, vérifié en worktree : B1, B3, C7 et le polish se retirent seuls ; B2 porte tout le palier C ; **C1 à C6 s'empilent** et ne se retirent que du dernier vers le premier (propre dans cet ordre, suite verte à l'arrivée). 94 fichiers de test verts.
+Un ticket, un commit, branche `main` (pas de `push`). Fiche : `docs/archives/MT_menu-echelle-dpr_2026-09-20.md`. 95 fichiers de test verts.
 
-**Le fichier de bord de cette session vit sur le disque, pas ici : `docs/JOURNAL_2026-09-20_menus-cartes-paliers-B-C.md`** — il s'ouvre sur le rapport (« Au réveil »), puis une section par commit. Deux outils de dev en sont sortis (`tools/capture_chrome.mjs`, `tools/cadre_viewport.html?pas=oui`) : vérifier le jeu sous Chrome quand personne ne regarde l'écran.
+**L'hypothèse du ticket était juste, et elle a été mesurée avant qu'une ligne de correctif soit écrite** (§3 de la fiche l'exigeait). Nouveau scénario `tools/scenarios/diagnostic_unite_dpr.mjs`, sous Chrome sans fenêtre, qui relève `--u` telle que le navigateur la calcule vraiment, à trois moments : ouverture d'un niveau, après un `resize`, entrée dans un sous-écran.
+
+| Profil | ouverture | après `resize` | sous-écran |
+|---|---|---|---|
+| `pc` 703 × 280, DPR 1 | 1 px | 1 px | 1 px |
+| `grand` 1920 × 1080, DPR 1 | 4 px | 4 px | 4 px |
+| **`telephone` 780 × 360, DPR 3** | **4 px** | **1 px** | **4 px** |
+
+Tuile de la Poche au téléphone : **240 × 240 px CSS dans une fenêtre de 360 px de haut** — « on ne voit qu'une tuile et demie », mot pour mot le constat de Xav, et le ×4 qu'il avait mesuré sur ses deux captures. Captures `docs/captures/diagnostic-unite-dpr/avant_*.png` et `apres_*.png`.
+
+**Cause racine.** `main.js#rectangleJeu` posait dans les variables CSS du menu le rectangle de `render.js#calculerRectanglePresentation`, dont le contrat est d'être en pixels **PHYSIQUES** (c'est ce qui rend l'image nette, et c'est juste). Une variable CSS, elle, se lit en pixels CSS. Pire : il le lisait sur `canvasVisible.width`, un nombre qui a **deux écritures et deux sens** — `presenter()` y met des px physiques à chaque frame, `ajusterTailleCanvas` des px CSS à chaque `resize`. D'où le symptôme entier : chaque `montrer()` d'un niveau relisait la valeur physique, et un pivot d'appareil rendait la main à l'autre écriture pendant une frame. À DPR 1 les deux nombres sont le même : ni le PC, ni les deux profils de capture d'alors, ni aucun test ne pouvaient le voir. Même famille que « dialogues invisibles » du 15/09.
+
+**Correctif.** Une seule fonction, pure : `menu_cartes.js#rectangleMenuCss({ largeurCss, hauteurCss, dpr })` — elle appelle la même `calculerRectanglePresentation` (jamais une deuxième formule) et divise une fois par le DPR. `rectangleJeu()` ne lit plus le canvas du tout, seulement la géométrie de la fenêtre, qui n'a qu'un sens. Tous les chemins la traversent : ouverture d'un écran, `resize`, `orientationchange` (ajouté), `fullscreenchange` (ajouté — il ne recalait que le libellé de la bascule). L'ordre des écouteurs vis-à-vis de `ajusterTailleCanvas`, dont le code d'avant dépendait par accident, n'entre plus en jeu.
+
+Après correctif : `--u` = **4/3 px aux trois moments** sur le téléphone, `--jeu-x` 70 px / `--jeu-y` 0 — la boîte recouvre **exactement** l'image du jeu (640 × 360 px CSS), tuile de la Poche 80 × 80. **PC inchangé au pixel près** aux deux profils DPR 1. Aucune erreur console.
+
+**Ce qui a été livré avec.**
+- `tests/test_d48_unite_menu_px_css_2026-09-20.js` — échoue avec l'ancien calcul (« la boîte (1080 px) doit tenir dans 360 px CSS », vérifié en remettant l'ancien comportement), passe après. Il garde le témoin chiffré du défaut, la non-régression PC au pixel près, et le repli sur DPR 1 pour un `devicePixelRatio` absent ou absurde (une division par zéro ferait disparaître le menu).
+- `tools/capture_chrome.mjs` : `chrome.taille(l, h, dpr)`, et **trois profils** dans `tools/scenarios/commun.mjs#PROFILS`, un seul endroit. Motif consigné dans les deux fichiers : à DPR 1, cette classe de défaut est invisible.
+- `tools/banc_menu_cartes.html` alignée sur la même fonction — c'était le second endroit qui calculait la boîte du menu, et il aurait menti dès qu'on le regarde à DPR ≠ 1.
+
+**Dans le périmètre, retenu par défaut.** L'unité ne peut pas devenir du CSS pur (piste ouverte par le §4.1 de la fiche) : elle dérive d'une échelle **entière** calculée sur les pixels physiques, puis divisée par le DPR — CSS n'a ni `floor()` ni accès au `devicePixelRatio` dans un `calc()`. Un `min(100vw/480, 100vh/270)` perdrait l'arrondi entier et la boîte ne recouvrirait plus l'image du jeu. Le calcul reste donc en JS, en un seul point.
+
+**Hors périmètre, signalé sans rien toucher.** `ajusterTailleCanvas` (`main.js`) écrit `canvasVisible.width = window.innerWidth` — des px CSS dans un backing store que `presenter()` réécrit en px physiques à la frame suivante. Plus personne ne lit ce nombre-là entre les deux depuis ce ticket, donc ce n'est plus un défaut actif ; c'est un reste de l'avant-rendu-net, et un piège pour le prochain lecteur. Le ticket interdisait d'y toucher (« ne pas toucher : le dimensionnement du canvas »), et c'est bien ainsi : ça mérite son propre ticket — ouvert sous **`D-49`** (P3).
+
+**Reste dû : `V-31`** — Xav, sur téléphone, par l'URL publique, **sans jamais pivoter** : ouvrir le menu puis chaque sous-écran. La mesure dit que la taille est juste ; elle ne dit pas si c'est agréable au doigt.

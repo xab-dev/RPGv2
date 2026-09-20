@@ -35,12 +35,11 @@
   <script type="module">
     import { creerMenuCartes } from '../src/ui/grille_cartes.js';
     import { creerEcranFiches } from '../src/ui/ecran_fiches.js';
-    import { creerNavigationEcrans } from '../src/menu_cartes.js';
+    import { creerNavigationEcrans, rectangleMenuCss } from '../src/menu_cartes.js';
     import { creerDessinateurIcones } from '../src/ui/icone_canvas.js';
     import { afficherEcran, SEUIL_POUSSEE_MENU } from '../src/ui/menu.js';
     import { creerI18n } from '../src/i18n.js';
     import { chargerLocalesDepuisReseau } from '../src/io_navigateur.js';
-    import { calculerRectanglePresentation } from '../src/render.js';
     import { creerCoucheInput } from '../src/input/input.js';
     import { creerSourceClavier } from '../src/input/keyboard.js';
     import { creerSourceManette } from '../src/input/gamepad.js';
@@ -81,8 +80,14 @@
     const compagnon = compagnons.find((c) => c.id === `comp_follet_${params.get('follet')}`);
 
     const canvasJeu = document.getElementById('jeu');
+    // La MÊME fonction que le jeu (`D-48`), donc en px CSS : le banc montrerait
+    // sinon un menu d'une autre taille que celui du jeu dès que le DPR n'est
+    // pas 1 — c'est-à-dire sur tout téléphone, et sous l'émulation de
+    // `tools/capture_chrome.mjs`.
     function rectangle() {
-      return calculerRectanglePresentation(window.innerWidth, window.innerHeight);
+      return rectangleMenuCss({
+        largeurCss: window.innerWidth, hauteurCss: window.innerHeight, dpr: window.devicePixelRatio,
+      });
     }
     function dessinerFond() {
       canvasJeu.width = window.innerWidth;
@@ -92,7 +97,7 @@
       for (let y = 0; y < 270; y += 15) {
         for (let x = 0; x < 480; x += 15) {
           ctx.fillStyle = ((x + y) / 15) % 2 === 0 ? '#3f7a4a' : '#2f6a8a';
-          ctx.fillRect(r.x + x * r.echelle, r.y + y * r.echelle, 15 * r.echelle, 15 * r.echelle);
+          ctx.fillRect(r.x + x * r.unite, r.y + y * r.unite, 15 * r.unite, 15 * r.unite);
         }
       }
     }
@@ -101,7 +106,7 @@
     const navigation = creerNavigationEcrans({
       onFermer: () => { journal('menu fermé — il se rouvre'); setTimeout(() => ouvrirLeBanc(), 400); },
     });
-    const rectangleJeu = () => { const r = rectangle(); return { x: r.x, y: r.y, unite: r.echelle }; };
+    const rectangleJeu = rectangle;
     const dessinerIcone = creerDessinateurIcones({ obtenirVisuel: (id) => visuels.find((v) => v.id === id), fenetre: window });
     const racineCatalogue = menusReels.find((e) => e.racine);
     const fiches = creerEcranFiches({

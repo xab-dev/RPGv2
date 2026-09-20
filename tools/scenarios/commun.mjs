@@ -10,6 +10,20 @@ import { chargerScene } from '../../src/scene.js';
 export const ORIGINE = process.env.RPG_URL || 'http://localhost:8080';
 const TILE = 32;
 
+// Les profils d'écran sous lesquels on regarde le jeu — un seul endroit, pour
+// qu'un scénario ne redécrive jamais une taille de son côté.
+//   `pc` et `grand` : les deux tailles de `specs/08_menus-cartes.md` §7.
+//   `telephone` (`D-48`) : 780 × 360 px CSS à DPR 3, c'est-à-dire 2340 × 1080
+//   px PHYSIQUES — la forme du Galaxy de Xav, paysage. Il existe parce que les
+//   deux autres sont à DPR 1 : là, px CSS et px physiques sont le MÊME nombre,
+//   et une grandeur physique lue à la place d'une grandeur logique ne se voit
+//   pas. Tout écran de menu doit tenir dans `hauteur` px CSS sous ce profil.
+export const PROFILS = [
+  { nom: 'pc', largeur: 703, hauteur: 280, dpr: 1 },
+  { nom: 'grand', largeur: 1920, hauteur: 1080, dpr: 1 },
+  { nom: 'telephone', largeur: 780, hauteur: 360, dpr: 3 },
+];
+
 // Une partie déjà lancée, héros DANS la Maison (pour que la carte contextuelle
 // Construction existe), follet choisi, quelques objets en poche et au coffre.
 export function saveDansLaMaison({ compagnon = 'comp_follet_eau' } = {}) {
@@ -32,8 +46,8 @@ export function saveDansLaMaison({ compagnon = 'comp_follet_eau' } = {}) {
 // sans fenêtre, puis ouvre le jeu. L'écriture se fait depuis une page de la
 // même origine qui NE charge PAS le jeu : depuis le jeu lui-même, sa propre
 // sauvegarde automatique (`visibilitychange`) pourrait repasser par-dessus.
-export async function ouvrirLeJeu(chrome, { largeur, hauteur, save = null, requete = '' }) {
-  await chrome.taille(largeur, hauteur);
+export async function ouvrirLeJeu(chrome, { largeur, hauteur, dpr = 1, save = null, requete = '' }) {
+  await chrome.taille(largeur, hauteur, dpr);
   if (save) {
     await chrome.ouvrir(`${ORIGINE}/tools/cadre_viewport.html?src=about:blank`);
     await chrome.evaluer(`new Promise((resoudre, rejeter) => {

@@ -23,7 +23,7 @@ import { genererDecor } from './decor.js';
 import {
   creerBoucle, dessinerScene, dessinerObscurite, dessinerSignalZones, dessinerPaupieres, dessinerTextesFlottants, presenter,
   RESOLUTION_LOGIQUE, calculerRectanglePresentation, versCoordonneesLogiques, AURA_TRAIT,
-  definirEchelleForcee,
+  definirEchelleForcee, dimensionsEcranPhysiquesActuelles,
 } from './render.js';
 import { creerStoreIndexedDB } from './storage_indexeddb.js';
 import {
@@ -78,7 +78,9 @@ import { crediter as crediterXp } from './xp.js';
 import { initialiserMenu, clesTexteEtats } from './ui/menu.js';
 import { creerDessinateurIcones } from './ui/icone_canvas.js';
 import { erreursCouleursUi } from './ui/couleurs_ui.js';
-import { erreursTextesMenus, erreursCablageMenus, CLES_TEXTE_COMPOSANT } from './menu_cartes.js';
+import {
+  erreursTextesMenus, erreursCablageMenus, CLES_TEXTE_COMPOSANT, rectangleMenuCss,
+} from './menu_cartes.js';
 import { dessinerHud } from './ui/hud.js';
 import { dessinerHudHints } from './ui/hud_hints.js';
 import { dessinerDialogue } from './ui/dialogue_box.js';
@@ -2443,12 +2445,22 @@ export async function demarrerJeu() {
       const compagnon = save.hero.companion ? registre.obtenir('companions', save.hero.companion) : null;
       return compagnon ? compagnon.couleur_ui : null;
     },
-    // La boîte du menu se cale sur le rectangle du CANVAS, par la même
-    // fonction pure que la présentation du jeu et le hit-test tactile. `unite`
-    // = hauteur de ce rectangle ÷ hauteur logique : c'est l'échelle entière.
+    // La boîte du menu se cale sur le rectangle du jeu à l'écran — mais en
+    // pixels CSS, parce que c'est dans cette unité-là qu'une variable CSS se
+    // lit (`D-48`). UN seul calcul (`menu_cartes.js#rectangleMenuCss`, pur),
+    // que TOUS les chemins traversent : ouverture d'un niveau, `resize`,
+    // changement d'orientation, `fullscreenchange`.
+    //
+    // Ce qu'on ne lit plus, et pourquoi : `canvasVisible.width`. Ce nombre a
+    // DEUX écritures et deux sens — `presenter()` y met des pixels PHYSIQUES à
+    // chaque frame, `ajusterTailleCanvas` des pixels CSS à chaque `resize`.
+    // Lire le canvas, c'était donc lire l'un ou l'autre selon le moment :
+    // 4 px à l'ouverture d'un écran, 1 px après un pivot du téléphone, sur le
+    // même appareil et la même fenêtre (relevé du 20/09, profil `telephone`).
+    // La géométrie de la fenêtre, elle, n'a qu'un sens.
     rectangleJeu() {
-      const rect = calculerRectanglePresentation(canvasVisible.width, canvasVisible.height);
-      return { x: rect.x, y: rect.y, unite: rect.echelle };
+      const { largeurCss, hauteurCss, dpr } = dimensionsEcranPhysiquesActuelles();
+      return rectangleMenuCss({ largeurCss, hauteurCss, dpr });
     },
     dessinerIcone: creerDessinateurIcones({ obtenirVisuel: (id) => registre.obtenir('visuels', id), fenetre: window }),
     exporterSauvegarde() {
@@ -2509,10 +2521,18 @@ export async function demarrerJeu() {
   // Échap, un geste système, ou la fin d'une bascule asynchrone. Le libellé
   // se réécrit alors depuis l'état réel — c'est ce qui interdit à l'entrée de
   // mentir après une sortie que personne ici n'a provoquée.
-  document.addEventListener('fullscreenchange', () => menu.actualiserPleinEcran());
-  // La boîte du menu suit le rectangle du canvas : même événement que lui.
-  // Après `ajusterTailleCanvas` (écouteur posé plus haut, donc appelé avant).
-  window.addEventListener('resize', () => menu.actualiserGeometrie());
+  // Les moments où la fenêtre change de forme sans que le menu le sache.
+  // `orientationchange` est redondant avec `resize` sous Chrome Android, et
+  // c'est sans importance : le recalage est idempotent (il relit la fenêtre,
+  // il ne cumule rien). L'ordre vis-à-vis de `ajusterTailleCanvas` n'entre
+  // plus en jeu depuis `D-48` — `rectangleJeu()` ne lit plus le canvas.
+  const recalerGeometrieMenu = () => menu.actualiserGeometrie();
+  window.addEventListener('resize', recalerGeometrieMenu);
+  window.addEventListener('orientationchange', recalerGeometrieMenu);
+  document.addEventListener('fullscreenchange', () => {
+    menu.actualiserPleinEcran();
+    recalerGeometrieMenu();
+  });
 
   const dialogue = creerDialogue();
 

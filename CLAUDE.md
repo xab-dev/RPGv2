@@ -399,3 +399,6 @@ livré** — il exige un glyphe pour les **trois** périphériques, et le tactil
 est ouverte. `D-53` (l'amortissement par frame) et `D-52` (le test rouge) restent ouvertes, non touchées.
 
 **Ce que ce ticket n'a pas touché, et c'est voulu** : `touch.js`, `status.js`, `vol_follet.js`, les données, le rendu.
+
+**Validé et mis en ligne.** Xav, 20/09, en jeu : « all good » — `V-35` **close**, et il a demandé le `push` dans la foulée. Trois commits partent donc en ligne d'un coup : `D-51` (l'aura réelle), `D-37` (engagement et relâche) et `D-54` (cible suivante). `V-33` et `V-34` n'ont pas été nommées dans ce verdict-là : elles **restent ouvertes**, à regarder sur le même cercle.
+

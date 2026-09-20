@@ -36,10 +36,11 @@
 // `element` : la racine du jeu à passer en plein écran. `ecran` : l'objet
 // `screen` du navigateur. `doc` : le `document`, dont on ne lit qu'une chose —
 // **l'état réel** (`fullscreenElement`) — et dont on n'appelle qu'une chose,
-// `exitFullscreen`. Les trois sont injectés, jamais lus en global (le module
-// doit s'exécuter sous Node), et les trois peuvent être absents : c'est un cas
-// normal, pas une erreur.
-export function creerPleinEcranTactile({ element = null, ecran = null, doc = null } = {}) {
+// `exitFullscreen`. `nav` : le `navigator`, dont on n'utilise que `keyboard`
+// (Keyboard Lock, plus bas). Les quatre sont injectés, jamais lus en global
+// (le module doit s'exécuter sous Node), et les quatre peuvent être absents :
+// c'est un cas normal, pas une erreur.
+export function creerPleinEcranTactile({ element = null, ecran = null, doc = null, nav = null } = {}) {
   // Le loquet est posé sur la TENTATIVE, jamais sur le résultat. Deux raisons,
   // et la seconde est la consigne explicite du ticket :
   //   - un refus du navigateur relancerait sinon une demande à chaque doigt
@@ -105,6 +106,48 @@ export function creerPleinEcranTactile({ element = null, ecran = null, doc = nul
     }
   }
 
+  // ÉCHAP COURT / ÉCHAP LONG. Constat de Xav au clavier (20/09) : en plein
+  // écran, un seul Échap fermait le menu **et** quittait le plein écran. Le
+  // navigateur intercepte Échap avant la page — c'est lui qui décide, et
+  // c'est aussi lui qui offre de différer cette sortie.
+  //
+  // `navigator.keyboard.lock(['Escape'])` : tant que le plein écran demandé
+  // par le JEU est actif, Échap est livré à la page ; le navigateur garde
+  // pour lui la sortie, sur appui **maintenu** (~2 s), et l'annonce de
+  // lui-même. L'appui long n'est donc **pas codé ici** — aucun minuteur,
+  // aucune mesure de durée, rien à apprendre pour `ui/menu.js` ni pour la
+  // couche d'input : ils reçoivent un Échap comme d'habitude.
+  //
+  // Amélioration progressive, échec silencieux, comme tout ce module :
+  // Firefox et Safari n'exposent pas l'API, un contexte non sécurisé la
+  // refuse, la promesse peut être rejetée. Dans tous ces cas rien ne change —
+  // Échap continue de faire les deux, exactement comme avant ce ticket. Ni
+  // erreur en console, ni message au joueur.
+  //
+  // On lit l'ÉTAT RÉEL plutôt qu'un booléen tenu ici, pour la même raison que
+  // partout ailleurs dans ce fichier : la sortie du plein écran peut venir du
+  // joueur ou du système. Verrouiller hors plein écran ne servirait à rien
+  // (le navigateur ne livre Échap qu'en plein écran) et brouillerait la
+  // lecture du prochain lecteur, donc on ne le fait jamais.
+  function synchroniserVerrouillageEchap() {
+    try {
+      const clavier = nav && nav.keyboard;
+      if (!clavier) return;
+      if (estActif()) {
+        if (typeof clavier.lock !== 'function') return;
+        const promesse = clavier.lock(['Escape']);
+        if (promesse && typeof promesse.catch === 'function') promesse.catch(() => {});
+        return;
+      }
+      if (typeof clavier.unlock !== 'function') return;
+      // `unlock()` est sans effet si rien n'était verrouillé : on peut
+      // l'appeler à chaque sortie sans tenir le compte des verrous posés.
+      clavier.unlock();
+    } catch {
+      // Muet, par contrat.
+    }
+  }
+
   function sortir() {
     try {
       const fn = doc && (doc.exitFullscreen || doc.webkitExitFullscreen);
@@ -142,6 +185,10 @@ export function creerPleinEcranTactile({ element = null, ecran = null, doc = nul
     },
 
     estActif,
+    // Appelée par l'appelant sur `fullscreenchange` — le seul moment où
+    // l'état réel change, qu'il vienne du menu, d'Échap ou du système. Un
+    // seul point d'appel, donc un seul endroit où se tromper.
+    synchroniserVerrouillageEchap,
     // Décide si l'entrée de menu existe : une entrée qui ne peut rien faire
     // n'a rien à faire dans le menu (même règle que Construction hors de la
     // maison, §3 de `05_construction-stations.md`).

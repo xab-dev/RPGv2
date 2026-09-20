@@ -2416,6 +2416,10 @@ export async function demarrerJeu() {
     // `doc` : l'ÉTAT RÉEL (`fullscreenElement`) et la sortie
     // (`exitFullscreen`). Le sous-système ne tient aucun booléen de son côté.
     doc: document,
+    // `nav` : pour la seule API Keyboard Lock (Échap court / Échap long en
+    // plein écran). Absente sous Firefox et Safari : le module s'en arrange
+    // en silence.
+    nav: typeof navigator !== 'undefined' ? navigator : null,
   });
   const sourceTactile = creerSourceTactile(canvasVisible, {
     surRelachement: () => pleinEcran.demanderUneFois(),
@@ -2532,6 +2536,11 @@ export async function demarrerJeu() {
   document.addEventListener('fullscreenchange', () => {
     menu.actualiserPleinEcran();
     recalerGeometrieMenu();
+    // En plein écran, Échap doit arriver JUSQU'AU jeu (fermer le menu) sans
+    // en sortir du même appui ; la sortie reste au navigateur, sur appui
+    // maintenu. Décidé ici parce que c'est ici qu'on apprend que l'état réel
+    // a changé — le sous-système, lui, ne s'abonne à rien.
+    pleinEcran.synchroniserVerrouillageEchap();
   });
 
   const dialogue = creerDialogue();

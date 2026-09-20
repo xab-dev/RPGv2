@@ -2,11 +2,11 @@
 projet: RPG V2
 episode/session: Fondations — compatibilité des navigateurs
 type: registre (document vivant)
-version: 1.1.0
+version: 1.2.0
 statut: brouillon
 catégorie: Doc
-date: 2026-09-19
-ids_suivi: [Q-19, Q-20, Q-24, Q-25, A-04, A-06, D-01, D-02, D-14]
+date: 2026-09-20
+ids_suivi: [Q-19, Q-20, Q-24, Q-25, A-04, A-06, D-01, D-02, D-14, D-50]
 genere_par: claude
 verifie_par: xav
 ---
@@ -39,6 +39,8 @@ Conséquence pour l'instrument : sous Chrome, `dessiner()` ne mesure que l'enreg
 | **Safari** (Mac) | WebKit | inconnu | — | Autre moteur, canvas accéléré en principe. Points à surveiller le jour du test : audio, plein écran, sauvegarde |
 | **Tout navigateur sur iPhone / iPad** | WebKit | inconnu | — | Sur iOS, Chrome et Firefox sont des habillages de Safari. Il faudra un testeur équipé |
 | Internet Explorer | Trident | sans objet | **ne démarre pas** | Retiré par Microsoft en 2022. Ne sait pas charger les modules JavaScript du jeu. Aucune action |
+
+**Écart de comportement connu : Échap en plein écran (20/09, `D-50`).** En plein écran, le navigateur intercepte Échap avant la page. Sous **Chromium** (Chrome, Edge, Opera, Brave, Vivaldi), le jeu demande l'API *Keyboard Lock* : un Échap **court** lui est livré (il ferme le menu, le plein écran reste), la sortie du plein écran demande un appui **maintenu** (~2 s), que le navigateur annonce lui-même. **Ailleurs** (Firefox, Safari, et tout iOS), l'API n'existe pas : un Échap fait **les deux à la fois** — le menu se ferme et le plein écran se quitte, comme avant ce ticket. Ce n'est pas un défaut à corriger, c'est l'amélioration progressive assumée : rien n'est perdu là où l'API manque. Deux limites qui valent partout : ça ne concerne que le plein écran demandé par le jeu (**pas F11**), et il faut un contexte sécurisé (HTTPS ou `localhost` — le jeu en ligne et le dev local).
 
 **Cas transversal : l'accélération matérielle désactivée.** Un Chrome ou un Edge dont l'utilisateur a coupé « Utiliser l'accélération graphique » se comporte comme le Firefox de Xav. Vérifiable dans `chrome://gpu`, ligne « Canvas ».
 

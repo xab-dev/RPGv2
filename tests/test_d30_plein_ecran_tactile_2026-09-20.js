@@ -37,6 +37,16 @@
 //   8. le redimensionnement qui suit passe par le chemin existant : l'échelle
 //      change (3 -> 4), tous les calques la relisent, et le hit-test tactile
 //      suit — un appui sur un bouton reste un appui sur ce bouton.
+//
+// AJOUT DU 20/09 (Échap court / Échap long). Constat de Xav au clavier : en
+// plein écran, un seul Échap fermait le menu ET quittait le plein écran. Le
+// navigateur offre de différer sa propre sortie — `navigator.keyboard.lock`
+// livre Échap à la page et garde la sortie sur appui MAINTENU, qu'il annonce
+// lui-même. Prouvé ici (point 10) : le verrou suit l'**état réel** et rien
+// d'autre, il n'est jamais posé hors plein écran, il est rendu à la sortie,
+// et son absence comme son refus ne se voient nulle part — ni exception, ni
+// console, ni changement de comportement. L'appui long n'est pas testé : il
+// n'est pas codé, il appartient au navigateur.
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import fs from 'node:fs';
@@ -491,6 +501,122 @@ function fausseCible() {
   assert.deepEqual(menu3.obtenirEtatCartes().cases, ['carte_langue', 'carte_musique', null, 'carte_sauvegarde'],
     'sa case reste vide, les autres cartes ne bougent pas');
   console.log('  la carte Plein écran suit l’état réel ; un refus le dit sans mentir');
+}
+
+// --- 10. Échap court / Échap long : le verrou suit l'état réel -----------
+// Le ticket du 20/09. Ce qui est prouvé ici, c'est le CONTRAT : le verrou est
+// posé quand le jeu est en plein écran, rendu quand il n'y est plus, et
+// jamais posé autrement. L'appui maintenu lui-même appartient au navigateur —
+// il n'y a aucun minuteur à tester parce qu'il n'y en a aucun à écrire.
+{
+  function faireNavigateur(journal, { lock, unlock } = {}) {
+    return {
+      keyboard: {
+        lock: lock || ((touches) => { journal.push(`lock:${touches.join(',')}`); return Promise.resolve(); }),
+        unlock: unlock || (() => { journal.push('unlock'); }),
+      },
+    };
+  }
+
+  // a) L'aller-retour nominal, piloté par l'état réel du document.
+  {
+    const journal = [];
+    const element = elementQuiAccepte(journal);
+    const doc = faireDocument({ element });
+    const pleinEcran = creerPleinEcranTactile({ element, doc, nav: faireNavigateur(journal) });
+
+    pleinEcran.synchroniserVerrouillageEchap();
+    assert.deepEqual(journal, ['unlock'],
+      'hors plein écran : on ne verrouille JAMAIS — on rend ce qui traînerait');
+
+    journal.length = 0;
+    await pleinEcran.basculer();
+    assert.equal(pleinEcran.estActif(), true);
+    pleinEcran.synchroniserVerrouillageEchap();   // ce que fait main.js sur `fullscreenchange`
+    assert.deepEqual(journal, ['plein-ecran', 'lock:Escape'],
+      'en plein écran : Échap est demandé à la page, et lui seul (jamais le clavier entier)');
+
+    journal.length = 0;
+    await pleinEcran.basculer();                  // sortie par le menu
+    assert.equal(pleinEcran.estActif(), false);
+    pleinEcran.synchroniserVerrouillageEchap();
+    assert.deepEqual(journal, ['unlock'], 'sorti : le verrou est rendu, et rien n’est reverrouillé');
+  }
+
+  // b) Une sortie que PERSONNE ici n'a demandée (Échap maintenu, geste
+  //    système) : c'est l'état réel qui tranche, jamais un booléen tenu de
+  //    notre côté — la raison d'être de tout ce module.
+  {
+    const journal = [];
+    const element = elementQuiAccepte(journal);
+    const doc = faireDocument({ element });
+    const pleinEcran = creerPleinEcranTactile({ element, doc, nav: faireNavigateur(journal) });
+    await pleinEcran.basculer();
+    journal.length = 0;
+    doc.fullscreenElement = null;                 // le navigateur est sorti tout seul
+    pleinEcran.synchroniserVerrouillageEchap();
+    assert.deepEqual(journal, ['unlock'], 'l’état réel fait foi, même quand la sortie vient du navigateur');
+  }
+
+  // c) Amélioration progressive : API absente (Firefox, Safari), partielle,
+  //    contexte non sécurisé. Rien ne doit se voir — pas même une exception
+  //    qui remonterait jusqu'à l'écouteur `fullscreenchange` de main.js.
+  {
+    const element = elementQuiAccepte([]);
+    const doc = faireDocument({ element });
+    doc.fullscreenElement = element;              // en plein écran, cas le plus exigeant
+    for (const nav of [null, {}, { keyboard: null }, { keyboard: {} }, { keyboard: { lock: 'pas une fonction' } }]) {
+      assert.doesNotThrow(() => creerPleinEcranTactile({ element, doc, nav }).synchroniserVerrouillageEchap(),
+        'API absente ou partielle : silence complet, le jeu continue exactement comme avant');
+    }
+    doc.fullscreenElement = null;
+    for (const nav of [null, {}, { keyboard: {} }, { keyboard: { unlock: 42 } }]) {
+      assert.doesNotThrow(() => creerPleinEcranTactile({ element, doc, nav }).synchroniserVerrouillageEchap(),
+        'à la sortie non plus, une API absente ne casse rien');
+    }
+  }
+
+  // d) L'API est là mais elle refuse : promesse rejetée, exception synchrone,
+  //    retour qui n'est pas une promesse, `unlock` qui lève. Quatre refus,
+  //    quatre silences — et surtout aucun rejet NON RATTRAPÉ, qui salirait la
+  //    console du joueur sans rien lui apprendre.
+  {
+    const element = elementQuiAccepte([]);
+    const doc = faireDocument({ element });
+    doc.fullscreenElement = element;
+
+    const clavier = (lock, unlock = () => {}) => ({ keyboard: { lock, unlock } });
+
+    const rejet = creerPleinEcranTactile({ element, doc, nav: clavier(() => Promise.reject(new Error('refusé'))) });
+    assert.doesNotThrow(() => rejet.synchroniserVerrouillageEchap(), 'promesse rejetée : rattrapée à la frontière');
+
+    const leve = creerPleinEcranTactile({ element, doc, nav: clavier(() => { throw new TypeError('contexte non sécurisé'); }) });
+    assert.doesNotThrow(() => leve.synchroniserVerrouillageEchap(), 'exception synchrone : rattrapée aussi');
+
+    const sansPromesse = creerPleinEcranTactile({ element, doc, nav: clavier(() => undefined) });
+    assert.doesNotThrow(() => sansPromesse.synchroniserVerrouillageEchap(), 'un retour qui n’est pas une promesse ne casse rien');
+
+    doc.fullscreenElement = null;
+    const unlockQuiLeve = creerPleinEcranTactile({
+      element, doc, nav: clavier(() => Promise.resolve(), () => { throw new Error('non'); }),
+    });
+    assert.doesNotThrow(() => unlockQuiLeve.synchroniserVerrouillageEchap(), 'même `unlock` a le droit d’échouer');
+  }
+
+  // e) « `ui/menu.js` et l'input n'apprennent rien » (§4.3 du ticket) : ils
+  //    reçoivent un Échap comme d'habitude. Un seul module connaît cette API,
+  //    et c'est celui qui connaît déjà le plein écran.
+  for (const fichier of ['src/ui/menu.js', 'src/input/input.js', 'src/input/keyboard.js', 'src/ui/grille_cartes.js']) {
+    const source = fs.readFileSync(path.join(RACINE, fichier), 'utf8');
+    assert.ok(!/keyboard\s*\.\s*(lock|unlock)|navigator\.keyboard/.test(source),
+      `${fichier} ne doit rien savoir du verrouillage clavier : c’est l’affaire de plein_ecran.js`);
+  }
+
+  // Laisse une microtâche aux promesses rejetées ci-dessus : un rejet non
+  // rattrapé ferait tomber le processus, et c'est exactement ce qu'on refuse
+  // d'infliger à la console du joueur.
+  await Promise.resolve();
+  console.log('  Échap court / Échap long : le verrou suit l’état réel, et son absence ne se voit pas');
 }
 
 console.log('OK test_d30_plein_ecran_tactile');

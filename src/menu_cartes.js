@@ -283,6 +283,132 @@ export function creerPileMenus() {
   };
 }
 
+// LA pile du menu entier (specs/08_menus-cartes.md, palier B). Elle remplace
+// les sous-contrats que `menu.estOuvert()` OR-combinait (sept à l'origine,
+// `docs/CARTE_cycle-de-vie-ui_2026-09-17.md` §1.2) : ouvrir = empiler, retour =
+// dépiler, et « le menu est ouvert » = « la pile n'est pas vide ET son sommet
+// est visible ». Craft et Coffre, ouverts par INTERACT, y passent comme les
+// autres.
+//
+// Pure : elle ne connaît aucun élément DOM, seulement des VUES. Une vue est
+// ce qui sait afficher un niveau — la grille de cartes (une seule vue pour
+// tous les écrans de cartes), ou un écran de liste :
+//   vue.montrer(niveau)             affiche ce niveau (contenu relu à neuf)
+//   vue.masquer()                   disparaît ; idempotent
+//   vue.estVisible()                l'état RÉEL de l'affichage, jamais un booléen tenu ici
+//   vue.traiterInput(etat, niveau)  les verbes de la frame
+// Un niveau est un objet libre qui porte au moins `vue` ; ce que la vue y
+// range d'autre (l'écran de cartes et son focus, le fournisseur d'entrées
+// d'une liste) ne regarde qu'elle. C'est là que vit « Retour rend le focus à
+// la carte qui avait ouvert l'écran » (§4.3) : le focus est une propriété du
+// NIVEAU, il survit donc à tout ce qui s'empile au-dessus.
+//
+// Deux garanties, par construction et non transition par transition :
+//   1. UNE SEULE vue visible à la fois, et c'est celle du sommet —
+//      `synchroniser()` masque toutes les autres AVANT de montrer celle-là, à
+//      chaque changement. Il n'existe pas d'autre endroit qui affiche ou masque.
+//   2. UN SEUL chemin de fermeture : `fermerTout()`. `[X]` à la racine, B à la
+//      racine, une carte `action`, le verbe MENU (`Q-36`) et la fermeture
+//      programmatique y passent tous — plus de parité clic/verbe à surveiller
+//      (`SD_construction-parite-clic-verbe_2026-09-19`).
+//
+// `onFermer` : le menu entier vient de se fermer (jamais rappelé si la pile
+// était déjà vide, ni si l'appelant dit `prevenir: false` — c'est lui qui ferme).
+export function creerNavigationEcrans({ onFermer = () => {} } = {}) {
+  let niveaux = [];
+  // Le sommet peut être masqué SANS être dépilé : un écran qui n'appartient
+  // pas au menu prend la main un instant (le placement d'une station, dont
+  // les verbes vont à `main.js`), et la pile doit se retrouver telle quelle
+  // ensuite. Pendant ce temps le menu n'est PAS ouvert — c'est exactement la
+  // clause « ET son sommet est visible » de la spec.
+  let sommetMasque = false;
+  // Toute vue déjà empilée une fois : ce sont elles qu'on masque. Jamais
+  // purgé — il en existe une poignée, créées une fois au démarrage.
+  const vues = new Set();
+
+  function sommet() {
+    return niveaux.length > 0 ? niveaux[niveaux.length - 1] : null;
+  }
+
+  function synchroniser() {
+    const s = sommet();
+    const visible = s && !sommetMasque ? s.vue : null;
+    // Masquer D'ABORD : aucun instant où deux écrans seraient affichés.
+    for (const vue of vues) if (vue !== visible) vue.masquer();
+    if (visible) visible.montrer(s);
+  }
+
+  function empiler(niveau) {
+    vues.add(niveau.vue);
+    niveaux.push(niveau);
+    sommetMasque = false;
+    synchroniser();
+  }
+
+  function fermerTout({ prevenir = true } = {}) {
+    const etaitOuverte = niveaux.length > 0;
+    niveaux = [];
+    sommetMasque = false;
+    synchroniser();
+    if (etaitOuverte && prevenir) onFermer();
+  }
+
+  function estOuvert() {
+    const s = sommet();
+    return s !== null && s.vue.estVisible();
+  }
+
+  return {
+    // Ouvre le menu SUR ce niveau : ce qui restait dans la pile est oublié
+    // (le menu Pause s'ouvre toujours à sa racine ; Craft et Coffre, ouverts
+    // depuis le monde, ne sont jamais posés sur un reste).
+    ouvrir(niveau) {
+      niveaux = [];
+      empiler(niveau);
+    },
+    empiler,
+    // Retour (B, `[←]`, « Fermer » d'une liste, « Non, revenir ») : dépile UN
+    // niveau. À la racine il n'y a plus rien à dépiler : on ferme — `[X]` et B
+    // y font donc la même chose par la même fonction.
+    retour() {
+      if (niveaux.length <= 1) {
+        fermerTout();
+        return;
+      }
+      niveaux.pop();
+      sommetMasque = false;
+      synchroniser();
+    },
+    fermerTout,
+    masquerSommet() {
+      if (niveaux.length === 0) return;
+      sommetMasque = true;
+      synchroniser();
+    },
+    // Sans effet si tout a été fermé entre-temps : on ne ressuscite rien.
+    remontrerSommet() {
+      if (niveaux.length === 0) return;
+      sommetMasque = false;
+      synchroniser();
+    },
+    sommet,
+    profondeur: () => niveaux.length,
+    // Intention ET affichage réel, jamais l'un sans l'autre (le contrat unique
+    // de `SD_construction-ecrans-orphelins_2026-09-17`, désormais écrit UNE
+    // fois). On interroge la vue plutôt que `sommetMasque` : si quelqu'un
+    // masque un élément dans le dos de la pile, le jeu ne reste pas gelé
+    // derrière un menu invisible.
+    estOuvert,
+    // Les verbes vont au sommet, et à lui seul : un verbe consommé par un
+    // écran n'est jamais revu par celui d'en dessous dans la même frame.
+    traiterInput(etat) {
+      if (!estOuvert()) return;
+      const s = sommet();
+      s.vue.traiterInput(etat, s);
+    },
+  };
+}
+
 // Textes que le composant affiche DE LUI-MÊME (aucune carte du catalogue ne
 // les cite) : listés ici pour passer par le même contrôle de démarrage que
 // les textes du catalogue (`erreursTextesMenus`, troisième argument).

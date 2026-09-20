@@ -39,3 +39,17 @@ Une ligne par commit, écrite **au moment du commit**.
 
 Le journal du palier A part dans `docs/archives/` avec sa ligne d'INDEX ; `CLAUDE.md` ne garde qu'un renvoi vers ce
 fichier-ci. Suivi v1.17.0 : `V-27` annotée du message de Xav (**restée ouverte**), `D-43` dit que B et C sont demandés.
+
+## Commit B1 — La pile du menu entier, dans sa part pure
+
+`menu_cartes.js#creerNavigationEcrans` : une pile de **niveaux**, chacun porté par une **vue** (`montrer` / `masquer` /
+`estVisible` / `traiterInput`). Deux garanties **par construction** : une seule vue visible à la fois (`synchroniser()`
+masque toutes les autres *avant* de montrer le sommet — aucun autre endroit n'affiche ni ne masque), et un seul chemin
+de fermeture (`fermerTout()`). « Ouvert » = pile non vide **ET** `sommet.vue.estVisible()` — on interroge l'affichage
+réel, pas un booléen : un écran caché dans le dos de la pile ne gèle pas le jeu.
+
+`masquerSommet()` / `remontrerSommet()` : la clause « ET son sommet est visible » de la spec a un usage réel, le
+**placement d'une station** (les verbes partent à `main.js`, la pile doit se retrouver intacte ensuite).
+
+Rien n'est branché : commit retirable seul, aucun comportement ne change. Test : `test_d43_b1_navigation_ecrans`
+(l'invariant est vérifié après **chaque** opération du fichier).

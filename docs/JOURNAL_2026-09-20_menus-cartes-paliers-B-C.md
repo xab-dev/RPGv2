@@ -128,3 +128,10 @@ Premier scénario, `tools/scenarios/menus_palier_b.mjs` → `docs/captures/menus
 s'empile et B rend « Héros » ; depuis la confirmation du reset (profondeur 4) **Échap ferme tout**, un second Échap
 rouvre à la racine ; corps de la grille : 0 px de débordement ; **console sans erreur**. Ça dit « ça s'affiche ainsi sous
 Chrome », jamais « c'est validé » : ni manette ni doigt, et personne n'a *regardé* un écran allumé cette nuit.
+
+## Commit DOC — Palier B livré
+
+Suivi v1.18.0 : `Q-36` annotée « **codé par défaut, à confirmer** » (jamais close par initiative) ; **`V-28` ouverte**
+(palier B : « aucun changement visuel attendu », la liste des gestes à refaire, et la question de `MENU` qui ferme) ;
+`D-43` dit le palier B livré. `CLAUDE.md` : architecture (`menu_cartes.js`, `tools/`) et deux décisions datées (la pile
+unique ; `MENU` ferme tout). Prochains identifiants libres : `D-45`, `Q-39`, `V-29`, `R-17`.

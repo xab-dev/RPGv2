@@ -148,9 +148,11 @@ rpg_v2/
 │   ├── i18n.js             `t(cle, params?)` — `params` substitue les marqueurs `{n}`/`{item}` d'un
 │   │                       gabarit traduit ; le gabarit lui-même vit dans les locales, jamais en code
 │   ├── menu_cartes.js      specs/08 : la part PURE des menus en cartes — choix de la grille,
-│   │                       `voisin()` (navigation 2D), cases stables + case contextuelle, pile
-│   │                       locale, confirmation d'un danger, contrôles de démarrage (textes
-│   │                       FR/EN, câblage carte ↔ fonction dans les deux sens)
+│   │                       `voisin()` (navigation 2D), cases stables + case contextuelle, LA pile
+│   │                       du menu entier (`creerNavigationEcrans` : des niveaux portés par des
+│   │                       vues, une seule visible, un seul chemin de fermeture), confirmation
+│   │                       d'un danger, contrôles de démarrage (textes FR/EN, câblage carte ↔
+│   │                       fonction dans les deux sens)
 │   └── ui/                 menu.js (DOM ; le menu Pause est une GRILLE DE CARTES décrite par
 │                           `data/menus.json` — ce module garde les écrans de LISTE Poche/Stats/
 │                           Construction/Craft/Coffre, patron `creerEcranListeGenerique`, et
@@ -170,10 +172,13 @@ rpg_v2/
 │                           (album de référence par jalon) + sauvegardes/ (sauvegardes réelles
 │                           exportées par Xav, servent aux migrations)
 ├── tests/                  un fichier par contrat/diagnostic, headless, `node:assert/strict`
-└── tools/                  run_tests.js (lance tous les tests/*.js, = `npm test`) + deux pages de DEV
-                            jamais chargées par le jeu : banc_menu_cartes.html (le composant seul,
-                            sur le vrai catalogue) et cadre_viewport.html (viewport imposé, ex.
-                            1920 × 1080 sur un écran qui ne peut pas l'offrir en fenêtre)
+└── tools/                  run_tests.js (lance tous les tests/*.js, = `npm test`) + des outils de DEV
+                            jamais chargés par le jeu : banc_menu_cartes.html (le composant seul,
+                            sur le vrai catalogue), cadre_viewport.html (viewport imposé ; `&pas=oui`
+                            = boucle de jeu avancée à la main, pour un onglet masqué) et
+                            capture_chrome.mjs + scenarios/ (Chrome SANS FENÊTRE piloté par CDP,
+                            zéro dépendance : vrais pixels à 703 × 280 et 1920 × 1080, profil
+                            jetable — la sauvegarde de Xav n'est jamais touchée)
 ```
 
 `registry.js`/`save.js` restent purs (aucun accès disque/réseau/DOM) : les adaptateurs (`io_node.js`/`io_navigateur.js`, `storage_indexeddb.js`/`creerStoreMemoire()`) leur fournissent des données déjà prêtes. Convention d'`id` : minuscules, `_` comme séparateur, préfixé par la catégorie au singulier (`tile_sol`, `elem_feu`). Un `id` dupliqué ou une référence croisée cassée = échec dur au boot avec le chemin exact de l'erreur.
@@ -259,6 +264,8 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 | **Une bascule affiche l'état RÉEL, relu à la source à chaque affichage** (lecteur d'état injecté qui rend une CLÉ de texte) — jamais un booléen tenu par le menu ; un refus s'annonce dans l'en-tête et laisse la carte inchangée (généralise le patron de `D-30`). **La confirmation d'un `danger` est construite par le composant**, jamais décrite écran par écran : « Non » en case 0, donc focus par défaut — une règle de sécurité ne dépend pas de l'attention de qui ajoutera la prochaine action destructive | 2026-09-20 | même journal, A2 et A3 |
 | **`voisin()` : ligne droite en sautant les cases vides, sinon la carte la plus proche dans cette direction**, jamais vers l'arrière, sans bouclage (*provisoire*). La seconde passe n'est pas du zèle : sans elle une carte devient inatteignable au stick dès que les seules cases 0 et 3 sont occupées. Garantie vérifiée exhaustivement (78 combinaisons de cases) | 2026-09-20 | même journal, A3 |
 | **Une carte de menu est un `<div>`, jamais un `<button>`** : un bouton natif garde le focus du navigateur après un clic, et Espace l'active — or Espace est `ATTACK`. Une bascule cliquée puis validée au clavier s'activerait deux fois dans la même frame | 2026-09-20 | même journal, A3 |
+| **Le menu entier est UNE pile** (`menu_cartes.js#creerNavigationEcrans`) : la grille de cartes et les cinq écrans de liste en sont les **vues** ; ouvrir = empiler, retour = dépiler, **« ouvert » = pile non vide ET sommet réellement visible** (on interroge l'affichage, jamais un booléen : un écran caché dans le dos de la pile ne gèle pas le jeu). Deux garanties **par construction** : une seule vue visible (la pile masque toutes les autres avant de montrer le sommet — plus aucun écran ne s'affiche ni ne se masque lui-même) et **un seul chemin de fermeture** (`fermerTout` : `[X]`, B à la racine, une carte action, le verbe `MENU`). Le placement d'une station **masque le sommet sans dépiler**. *Remplace* les sept sous-contrats de `menu.estOuvert()` et clôt la classe de bug des écrans orphelins et de la parité clic/verbe | 2026-09-20 | `docs/JOURNAL_2026-09-20_menus-cartes-paliers-B-C.md`, B1 et B2 |
+| **`MENU`, menu ouvert, ferme tout** (`Q-36`, retenu par défaut par la spec — *à confirmer par Xav*) : la branche vit dans `main.js#maj`, seul endroit qui sait que `MENU` vient d'OUVRIR le menu dans la même frame ; la frame de fermeture reste une frame d'UI (aucun verbe n'atteint le gameplay) | 2026-09-20 | même journal, B3 |
 | **Le signal d'une zone de Chaos est une teinte additive posée *après* le calque d'obscurité** : elle se voit à travers la nuit **sans percer le voile**, donc elle ne révèle pas le sol (principe des faisceaux de la Grotte : un faisceau éclaire l'air, un halo révèle le sol). Trois règles avec : l'intensité **suit l'obscurité de la scène** (donc nulle de jour, sans condition ajoutée) · **une table fermée ne s'annonce pas** (aucune teinte sous le seuil de niveau) · la pulsation suit `save.monde.heure`, donc elle est gelée sous UI par construction. **Aucune lueur sur les monstres** (`Q-27`, « je veux être surpris ») | 2026-09-19 | même archive, palier `07-D` |
 
 (Les décisions de `05_construction-stations.md` étaient déjà actées par Xav **dans la spec elle-même** avant tout code, v1.0.0 §9 — les lignes ci-dessus n'y renvoient que pour mémoire, elles ne tranchent rien de nouveau.)

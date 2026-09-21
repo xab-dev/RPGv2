@@ -164,6 +164,7 @@ export function creerCurseur({
     disponible: () => false,
     avancer() {},
     dessiner() {},
+    definirEffets() {},
     retirer() {},
   };
   if (!doc || !fenetre || !config || !visuelOrbe || typeof dessinerVisuel !== 'function') return inerte;
@@ -189,7 +190,7 @@ export function creerCurseur({
   // `stick` (la tête est dessinée sur le calque, comme les étincelles). Le
   // dernier qui bouge gagne — aucune bascule à faire à la main.
   let mode = 'souris';
-  const sillage = configSillage && visuelSillage ? creerPoussiere(configSillage) : null;
+  let sillage = configSillage && visuelSillage ? creerPoussiere(configSillage) : null;
 
   // --- La tête, en CSS ------------------------------------------------------
 
@@ -426,6 +427,21 @@ export function creerCurseur({
 
   return {
     disponible: () => tetePosee,
+    // Palier D de `specs/09_reglages-graphiques.md` (§4.5) : le curseur suit
+    // le changement de preset comme le reste, sans recharger. Deux
+    // configurations, rien d'autre — ce module ne saura jamais qu'un preset
+    // existe, il reçoit des nombres déjà multipliés. La tête n'est pas
+    // redessinée : sa silhouette ne dépend d'aucun levier, et la regénérer
+    // ferait clignoter le pointeur pour rien.
+    definirEffets(nouvelleConfig, nouvelleConfigSillage) {
+      try {
+        if (nouvelleConfig) config = nouvelleConfig;
+        configSillage = nouvelleConfigSillage || configSillage;
+        // Recréée, donc VIDÉE : même geste qu'à l'entrée en scène — une
+        // traînée dessinée à l'ancienne capacité n'a rien à faire là.
+        sillage = configSillage && visuelSillage ? creerPoussiere(configSillage) : null;
+      } catch { /* muet, par contrat */ }
+    },
     // Enrobage « meilleur effort » à la frontière de l'API publique, jamais
     // chez l'appelant : un curseur ne doit pas pouvoir coûter une frame de jeu
     // (la boucle y survit depuis `D-71`, mais une frame perdue reste une frame

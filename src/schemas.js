@@ -2075,6 +2075,15 @@ SCHEMAS.graphismes = {
         erreurs.push(`${chemin} > leviers manquant (seul le palier par défaut "${entry.defaut}" s'en passe : il se résout)`);
         continue;
       }
+      // Palier D : un palier réel a DEUX textes, parce qu'il s'affiche dans
+      // deux situations — choisi par le joueur (« Bas ») ou résolu par Auto
+      // (« Auto (Bas) »). Exiger la seconde clé ici, et pas seulement la
+      // première, c'est refuser qu'un preset ajouté demain fasse afficher
+      // « Auto () » à la carte de Paramètres. La composition reste dans les
+      // locales : aucun code n'écrit de parenthèses.
+      if (typeof palier.cle_etat_auto !== 'string') {
+        erreurs.push(`${chemin} > cle_etat_auto manquante (le texte affiché quand "${entry.defaut}" résout ce palier)`);
+      }
       for (const levier of entry.leviers) {
         const valeur = palier.leviers[levier];
         if (typeof valeur !== 'number' || !Number.isFinite(valeur) || valeur < 0) {

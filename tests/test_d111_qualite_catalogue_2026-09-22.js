@@ -16,7 +16,7 @@ import { validerCatalogues, construireRegistre } from '../src/registry.js';
 import { SCHEMAS } from '../src/schemas.js';
 import { resoudreGraphismes, signauxAppareil } from '../src/main.js';
 import {
-  resoudrePreset, valeurLevier, presetInferieur, doitDescendre, clesEtat, leviersNonNeutres,
+  resoudrePreset, valeurLevier, presetInferieur, doitDescendre, cleEtatCarte, leviersNonNeutres,
 } from '../src/qualite.js';
 import {
   conserverReglagesAppareil, REGLAGES_APPAREIL, saveNeuve, creerStoreMemoire,
@@ -132,10 +132,24 @@ assert.ok(config, 'graphismes.json doit déclarer graphismes_presets');
       );
     }
   }
-  // `auto` affiche le palier qu'il a résolu (« Auto (Bas) »), donc deux clés.
-  const cles = clesEtat(config, 'auto', 'bas');
-  assert.equal(cles.choix, config.paliers.find((p) => p.id === 'auto').cle_etat);
-  assert.equal(cles.resolu, config.paliers.find((p) => p.id === 'bas').cle_etat);
+  // `auto` affiche le palier qu'il a RÉSOLU (« Auto (Bas) »), jamais « Auto »
+  // seul — et par une clé unique, parce qu'un lecteur d'état rend une clé et
+  // que composer « Auto (…) » en code figerait la ponctuation de toutes les
+  // langues (palier D).
+  assert.equal(
+    cleEtatCarte(config, 'auto', 'bas'),
+    config.paliers.find((p) => p.id === 'bas').cle_etat_auto,
+  );
+  assert.equal(
+    cleEtatCarte(config, undefined, 'moyen'),
+    config.paliers.find((p) => p.id === 'moyen').cle_etat_auto,
+    "un réglage absent, c'est Auto : même affichage",
+  );
+  assert.equal(
+    cleEtatCarte(config, 'haut', 'haut'),
+    config.paliers.find((p) => p.id === 'haut').cle_etat,
+    'choisi par le joueur : son nom seul, sans « Auto »',
+  );
 }
 
 // 7. `role` est requis sur CHAQUE effet, sans repli — c'est lui qui décide ce

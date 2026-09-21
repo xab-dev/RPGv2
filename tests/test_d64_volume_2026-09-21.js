@@ -121,7 +121,7 @@ const REGLAGE = registre.obtenir('audio', 'audio_volume_musique');
   // Les cases restent uniques et contiguës à partir de 0 : une carte de plus
   // ne doit pas créer de trou ni de collision.
   const cases = parametres.cartes.map((c) => c.case).sort((a, b) => a - b);
-  assert.deepEqual(cases, [0, 1, 2, 3, 4], 'cases 0 à 4, sans trou ni doublon');
+  assert.deepEqual(cases, [0, 1, 2, 3, 4, 5], 'cases 0 à 5, sans trou ni doublon');
   console.log('OK une carte de plus dans un écran existant, et rien d\'autre');
 }
 

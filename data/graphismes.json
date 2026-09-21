@@ -9,16 +9,19 @@
       {
         "id": "bas",
         "cle_etat": "menu.etat.graphismes_bas",
+        "cle_etat_auto": "menu.etat.graphismes_auto_bas",
         "leviers": { "grain_sol": 0, "densite_decor": 0, "particules": 0 }
       },
       {
         "id": "moyen",
         "cle_etat": "menu.etat.graphismes_moyen",
+        "cle_etat_auto": "menu.etat.graphismes_auto_moyen",
         "leviers": { "grain_sol": 1, "densite_decor": 1, "particules": 1 }
       },
       {
         "id": "haut",
         "cle_etat": "menu.etat.graphismes_haut",
+        "cle_etat_auto": "menu.etat.graphismes_auto_haut",
         "leviers": { "grain_sol": 1, "densite_decor": 1, "particules": 2 }
       }
     ],

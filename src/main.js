@@ -25,7 +25,7 @@ import { genererDecor } from './decor.js';
 import {
   creerBoucle, dessinerScene, dessinerObscurite, dessinerSignalZones, dessinerPaupieres, dessinerTextesFlottants, presenter,
   RESOLUTION_LOGIQUE, calculerRectanglePresentation, versCoordonneesLogiques, AURA_TRAIT,
-  definirEchelleForcee, dimensionsEcranPhysiquesActuelles,
+  definirEchelleForcee, dimensionsEcranPhysiquesActuelles, invaliderCoucheStatique,
 } from './render.js';
 import { creerStoreIndexedDB } from './storage_indexeddb.js';
 import {
@@ -42,6 +42,7 @@ import {
 } from './texte_flottant.js';
 import {
   resoudrePreset, valeurLevier, appliquerParticules, appliquerGrainSol, lirePresetForce,
+  cleEtatCarte, presetSuivant,
 } from './qualite.js';
 import { creerRegistreFlags } from './flags.js';
 import { calculerStatsPrimaires, calculerStatsDerivees, appliquerModulateurSurvie } from './stats.js';
@@ -386,6 +387,13 @@ export function creerOrchestrateurGrotte({
   // Les leviers sont lus UNE fois, ici : au-delà de cette ligne, plus personne
   // ne connaît le mot « bas ». Chaque système reçoit un nombre.
   const multiplicateurParticules = valeurLevier(graphismes.config, graphismes.preset, 'particules');
+  // LE point de lecture des leviers de tout l'orchestrateur : au-delà de
+  // cette ligne, plus personne ne connaît le mot « bas », chaque système
+  // reçoit un nombre. Mutable depuis le palier D, parce que le joueur peut
+  // changer de preset en cours de partie (§4.5) — mais toujours un seul
+  // endroit qui lit, donc un seul endroit à relire quand ça change.
+  let graphismesActuels = graphismes;
+  const levier = (nom) => valeurLevier(graphismesActuels.config, graphismesActuels.preset, nom);
   let etatModifie = false;
 
   // Silhouettes de tuiles (03_maison-exterieur §3.3) : résolu UNE fois (pas
@@ -398,20 +406,24 @@ export function creerOrchestrateurGrotte({
   // silhouette *est* le monde (§4.3). Et un grain réduit à rien n'entre pas
   // dans la table du tout : le rendu ne le cherche même plus, donc il ne
   // coûte plus une ligne (« 0 = ne dessine pas », pris au mot).
-  const grainSol = valeurLevier(graphismes.config, graphismes.preset, 'grain_sol');
-  const densiteDecor = valeurLevier(graphismes.config, graphismes.preset, 'densite_decor');
-  const visuelsTuiles = new Map(
-    registre
-      .tous('tiles')
-      .filter((t) => t.render && t.render.visuel)
-      .map((t) => [
-        t.id,
-        t.solid
-          ? registre.obtenir('visuels', t.render.visuel)
-          : appliquerGrainSol(registre.obtenir('visuels', t.render.visuel), grainSol),
-      ])
-      .filter(([, visuel]) => visuel !== null)
-  );
+  // Reconstruite, et non recalculée par frame : au démarrage, et une fois de
+  // plus à chaque changement de preset (§4.5).
+  function construireTableGrains() {
+    const grainSol = levier('grain_sol');
+    return new Map(
+      registre
+        .tous('tiles')
+        .filter((t) => t.render && t.render.visuel)
+        .map((t) => [
+          t.id,
+          t.solid
+            ? registre.obtenir('visuels', t.render.visuel)
+            : appliquerGrainSol(registre.obtenir('visuels', t.render.visuel), grainSol),
+        ])
+        .filter(([, visuel]) => visuel !== null)
+    );
+  }
+  let visuelsTuiles = construireTableGrains();
 
   // Extrait en fonction (plutôt qu'un simple `const`) : reinitialiserPartie()
   // (diagnostic SD_grotte-blocage-choix-follet_2026-09-15.md, §B) doit
@@ -461,6 +473,42 @@ export function creerOrchestrateurGrotte({
   // valeur-là et rien d'autre ; aucun autre seuil du jeu n'en dépend
   // (orbite du follet, seuil d'interaction, portées d'arme, rayon
   // d'effacement du toit sont tous indépendants — inventaire de la fiche).
+  // Palier C, levier `densite_decor` : `decor.js` reçoit un nombre, pas un
+  // preset. Le décor réduit est le PRÉFIXE du décor complet, donc un motif
+  // présent en Bas est au même endroit en Moyen et en Haut — le décor ne se
+  // réarrange pas quand on change de réglage (§4.3). Appelé à l'entrée en
+  // scène, et une fois de plus à chaque changement de preset.
+  function regenererDecor() {
+    decor = genererDecor(scene, levier('densite_decor'))
+      .map((d) => ({ ...d, visuel: registre.obtenir('visuels', d.visuel) }));
+  }
+
+  // §4.5 — changer de preset EN JEU, sans recharger. Ce qui bouge, et rien
+  // d'autre : la table des grains, le décor de la scène courante, les
+  // réserves de particules (recréées à la nouvelle capacité, donc VIDÉES —
+  // même geste qu'à l'entrée en scène), et le calque statique, invalidé UNE
+  // fois. La position du héros, l'heure, les monstres, la sauvegarde : rien.
+  //
+  // Le preset arrive déjà RÉSOLU : c'est `demarrerJeu` qui a la fenêtre et
+  // l'URL, et l'orchestrateur doit rester importable depuis Node.
+  function appliquerGraphismes(resolu) {
+    graphismesActuels = resolu;
+    visuelsTuiles = construireTableGrains();
+    effetPoussiere = appliquerParticules(
+      effetPoussiereCatalogue, levier('particules'), { capacite: CAPACITE_RESERVE },
+    );
+    poussiere = creerPoussiere(effetPoussiere);
+    effetSillage = appliquerParticules(
+      effetSillageCatalogue, levier('particules'), { capacite: CAPACITE_RESERVE },
+    );
+    sillageFollet = creerPoussiere(effetSillage);
+    if (scene) regenererDecor();
+    // Sans ça, l'ancien sol resterait à l'écran jusqu'au prochain
+    // franchissement de tuile : la signature du calque (scène, échelle,
+    // portes) n'a pas bougé, et c'est normal — ce n'est pas elle qui a changé.
+    invaliderCoucheStatique();
+  }
+
   function rayonHeros() {
     return RAYON_HERO_BASE_PX * echelleVisuel(registre.obtenir('visuels', VISUEL_HEROS_ID));
   }
@@ -472,13 +520,12 @@ export function creerOrchestrateurGrotte({
   // le défaut (8) appartient toujours à `poussiere.js` — il est passé, jamais
   // recopié ici. À zéro, la réserve est vide : rien ne naît, rien n'est
   // dessiné, et `avancerPoussiere` n'a pas une ligne de plus.
-  const effetPoussiere = appliquerParticules(
-    registre.obtenir('effets', 'effet_poussiere'),
-    multiplicateurParticules,
-    { capacite: CAPACITE_RESERVE },
+  const effetPoussiereCatalogue = registre.obtenir('effets', 'effet_poussiere');
+  const visuelPoussiere = registre.obtenir('visuels', effetPoussiereCatalogue.visuel);
+  let effetPoussiere = appliquerParticules(
+    effetPoussiereCatalogue, levier('particules'), { capacite: CAPACITE_RESERVE },
   );
-  const visuelPoussiere = registre.obtenir('visuels', effetPoussiere.visuel);
-  const poussiere = creerPoussiere(effetPoussiere);
+  let poussiere = creerPoussiere(effetPoussiere);
 
   // `D-36` (proposition) : le follet « aérien ». Deux effets, tous deux
   // PUREMENT VISUELS et tous deux en données.
@@ -499,13 +546,12 @@ export function creerOrchestrateurGrotte({
   // Initialisé à sa valeur à t = 0, et non à zéro : sinon la toute première
   // frame ferait sauter le corps de son centre à son orbite.
   let corpsFollet = decalageCorpsFollet(0, configVolFollet);
-  const effetSillage = appliquerParticules(
-    registre.obtenir('effets', 'effet_sillage_follet'),
-    multiplicateurParticules,
-    { capacite: CAPACITE_RESERVE },
+  const effetSillageCatalogue = registre.obtenir('effets', 'effet_sillage_follet');
+  const visuelSillage = registre.obtenir('visuels', effetSillageCatalogue.visuel);
+  let effetSillage = appliquerParticules(
+    effetSillageCatalogue, levier('particules'), { capacite: CAPACITE_RESERVE },
   );
-  const visuelSillage = registre.obtenir('visuels', effetSillage.visuel);
-  const sillageFollet = creerPoussiere(effetSillage);
+  let sillageFollet = creerPoussiere(effetSillage);
 
   // MT_texte-flottant_2026-09-19 (`D-05`) : même patron exactement — réglages
   // en données (tous PROVISOIRES, à régler au ressenti par Xav) et réserve
@@ -914,11 +960,7 @@ export function creerOrchestrateurGrotte({
     // que des id (visuel: string) — résolus ici une seule fois, à l'entrée en
     // scène (le décor est statique, jamais recalculé par frame), même
     // patron que monstresAffiches/puzzlesAffiches dans dessiner().
-    // Palier C, levier `densite_decor` : `decor.js` reçoit un nombre, pas un
-    // preset. Le décor réduit est le PRÉFIXE du décor complet, donc un motif
-    // présent en Bas est au même endroit en Moyen et en Haut — le décor ne se
-    // réarrange pas quand on change de réglage (§4.3).
-    decor = genererDecor(scene, densiteDecor).map((d) => ({ ...d, visuel: registre.obtenir('visuels', d.visuel) }));
+    regenererDecor();
 
     const pos = positionInitialePx || {
       x: (scene.spawn.x + 0.5) * scene.tileSize,
@@ -2787,6 +2829,10 @@ export function creerOrchestrateurGrotte({
     // allège le sol sans toucher une silhouette solide. On rend la VRAIE
     // table, jamais une recopie qui pourrait diverger (`D-72`).
     obtenirVisuelsTuiles: () => visuelsTuiles,
+    // Palier D (§4.5) : changer de preset en jeu. Le preset arrive déjà
+    // résolu — `demarrerJeu` a la fenêtre et l'URL, pas l'orchestrateur.
+    appliquerGraphismes,
+    obtenirGraphismes: () => graphismesActuels,
     // Palier C (`D-114`) : le décor réellement généré pour la scène courante.
     // Même raison que la table ci-dessus — prouver l'inclusion Bas ⊂ Moyen ⊂
     // Haut demande le vrai décor, pas une régénération refaite côté test.
@@ -2895,8 +2941,13 @@ export function resoudreGraphismes(registre, save, fenetre, search = null) {
   return {
     config,
     preset,
-    // Un preset forcé n'est pas « choisi par Auto » : la carte de Paramètres
-    // ne doit pas annoncer « Auto (Bas) » pour un palier venu de l'URL.
+    // Le choix TEL QU'IL FAIT FOI, et non tel qu'il est enregistré : sous
+    // `?qualite=`, c'est le paramètre d'URL qui commande, donc c'est lui que
+    // la carte de Paramètres doit afficher. Sans ce champ, la carte dirait
+    // « Auto (Bas) » pendant que le jeu rend en Haut — un mensonge, et le
+    // genre d'écart qu'on passe une soirée à ne pas comprendre.
+    choix: force.preset || save.settings.graphismes,
+    // Un preset forcé n'est pas « choisi par Auto ».
     auto: force.preset ? false : resolu.auto,
     avertissement: [resolu.avertissement, force.avertissement].filter(Boolean).join(' · ') || null,
   };
@@ -3137,6 +3188,32 @@ export async function demarrerJeu() {
     // Les paliers et leurs libellés viennent de `data/audio.json` : le menu
     // ne sait pas combien il y en a, et ajouter un cran (ou un volume
     // d'effets sonores) ne touchera pas une ligne de code.
+    // Palier D de `specs/09_reglages-graphiques.md` : les réglages
+    // graphiques. Même patron que le volume — l'état réel vit dans
+    // `save.settings`, l'effet dans l'orchestrateur, et le menu ne connaît ni
+    // l'un ni l'autre. Le cycle (`auto → bas → moyen → haut → auto`) est
+    // l'ordre du catalogue : ajouter un preset ne touche pas une ligne ici.
+    //
+    // L'état est relu à la SOURCE, et la source est l'orchestrateur — pas
+    // `save.settings`. La différence compte sous `?qualite=` : c'est alors
+    // l'URL qui commande, et la carte doit dire ce que le jeu rend, jamais ce
+    // qui est enregistré.
+    graphismesCourant() {
+      const courant = orchestrateur.obtenirGraphismes();
+      return cleEtatCarte(courant.config, courant.choix, courant.preset);
+    },
+    cyclerGraphismes() {
+      // Le cycle part du choix ENREGISTRÉ, pas du preset forcé : un
+      // `?qualite=` dans l'URL ne doit pas détourner le réglage du joueur.
+      save.settings.graphismes = presetSuivant(graphismes.config, save.settings.graphismes);
+      const resolu = resoudreGraphismes(registre, save, window, window.location.search);
+      if (resolu.avertissement) console.warn(resolu.avertissement);
+      orchestrateur.appliquerGraphismes(resolu);
+      // Le curseur n'est pas dans la scène, mais ses étincelles sont des
+      // particules cosmétiques comme les autres : les laisser derrière ferait
+      // un Bas à moitié appliqué, visible à la souris.
+      curseur.definirEffets(effetsCurseur().config, effetsCurseur().sillage);
+    },
     volumeCourant: () => cleEtatVolume(),
     cyclerVolume() {
       const reglage = registre.obtenir('audio', 'audio_volume_musique');
@@ -3301,20 +3378,26 @@ export async function demarrerJeu() {
   // `D-108` : le curseur du jeu. Il se construit ICI parce que c'est le premier
   // endroit où le registre existe — les deux silhouettes et les deux réglages
   // viennent des catalogues, ce module n'invente ni forme ni couleur.
+  // Les deux effets du curseur, passés au levier `particules` du preset EN
+  // COURS. Une seule fonction, appelée au démarrage et à chaque changement de
+  // preset : la décision n'est écrite qu'une fois (`D-72`).
+  function effetsCurseur() {
+    const courant = orchestrateur.obtenirGraphismes();
+    const multiplicateur = valeurLevier(courant.config, courant.preset, 'particules');
+    return {
+      config: appliquerParticules(registre.obtenir('effets', 'effet_curseur'), multiplicateur),
+      sillage: appliquerParticules(registre.obtenir('effets', 'effet_curseur_sillage'), multiplicateur),
+    };
+  }
+
   const curseur = creerCurseur({
     doc: document,
     fenetre: window,
-    config: appliquerParticules(
-      registre.obtenir('effets', 'effet_curseur'),
-      valeurLevier(graphismes.config, graphismes.preset, 'particules'),
-    ),
+    config: effetsCurseur().config,
     // La traînée est une 3ᵉ instance de `poussiere.js` : même mécanique que
     // celle du héros et que le sillage du follet, une entrée de catalogue de
     // plus et rien d'autre.
-    configSillage: appliquerParticules(
-      registre.obtenir('effets', 'effet_curseur_sillage'),
-      valeurLevier(graphismes.config, graphismes.preset, 'particules'),
-    ),
+    configSillage: effetsCurseur().sillage,
     visuelOrbe: registre.obtenir('visuels', 'visuel_curseur'),
     visuelParticule: registre.obtenir('visuels', 'visuel_curseur_eclat'),
     visuelSillage: registre.obtenir('visuels', 'visuel_curseur_sillage'),

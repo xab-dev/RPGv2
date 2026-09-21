@@ -332,6 +332,17 @@ export function statsCoucheStatique() {
   return coucheStatique ? { largeur: coucheStatique.canvas.width, hauteur: coucheStatique.canvas.height } : null;
 }
 
+// Jette le calque : la prochaine frame le reconstruit, UNE fois (§4.5 du
+// palier D de `specs/09_reglages-graphiques.md`). Il existe parce qu'un
+// changement de preset modifie ce qu'on DESSINE sur le calque sans rien
+// changer à ce que sa signature observe (scène, échelle, portes) : sans cet
+// appel, l'ancien sol resterait affiché jusqu'au prochain franchissement de
+// tuile. Un `null`, et rien d'autre — pas un drapeau « à refaire » qui
+// pourrait rester allumé et reconstruire à chaque frame.
+export function invaliderCoucheStatique() {
+  coucheStatique = null;
+}
+
 // Fenêtre de tuiles à dessiner pour couvrir le viewport logique courant, avec
 // une marge (tuiles partiellement visibles au bord). Pure, testée
 // (03_maison-exterieur §2.2 : bornée par le viewport, jamais par la taille de

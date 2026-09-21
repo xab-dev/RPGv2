@@ -104,17 +104,40 @@ export function doitDescendre(deltasMs, { fenetre_ms, part_frames_lentes, seuil_
   };
 }
 
-// La clé de texte d'un palier — jamais un nom composé en code, jamais un id
-// affiché tel quel. `auto` affiche le preset qu'il a résolu (§5 : la carte dit
-// « Auto (Bas) », jamais « Auto » seul), d'où deux clés rendues et non une :
-// l'appelant les assemble avec son gabarit de locale.
-export function clesEtat(config, choix, presetResolu) {
-  const duChoix = palierParId(config, choix === undefined || choix === null ? config.defaut : choix);
-  const duResolu = palierParId(config, presetResolu);
-  return {
-    choix: duChoix ? duChoix.cle_etat : null,
-    resolu: duResolu ? duResolu.cle_etat : null,
-  };
+// La clé de texte que la carte de Paramètres affiche, et UNE seule — jamais
+// deux clés qu'un gabarit assemblerait en code (§6 : « un lecteur d'état rend
+// une CLÉ de texte, jamais un texte composé »).
+//
+// Le cas qui impose cette forme est Auto : la carte doit dire « Auto (Bas) »
+// et jamais « Auto » seul (§5), or « Auto (…) » composé ici figerait l'ordre
+// des mots et les parenthèses dans du code, pour toutes les langues. Chaque
+// palier réel porte donc DEUX clés en données — `cle_etat` quand le joueur
+// l'a choisi, `cle_etat_auto` quand Auto l'a résolu. Ajouter un preset reste
+// une entrée de catalogue et deux lignes de locales par langue.
+export function cleEtatCarte(config, choix, presetResolu) {
+  const effectif = choix === undefined || choix === null ? config.defaut : choix;
+  if (effectif === config.defaut) {
+    const resolu = palierParId(config, presetResolu);
+    return resolu ? resolu.cle_etat_auto : null;
+  }
+  const choisi = palierParId(config, effectif);
+  return choisi ? choisi.cle_etat : null;
+}
+
+// Le choix suivant dans le cycle de la carte : `auto → bas → moyen → haut →
+// auto`. L'ordre est celui du CATALOGUE, `auto` compris cette fois (il est un
+// choix du joueur, même s'il n'est pas un palier) — insérer un preset au bon
+// endroit du tableau suffit à l'ajouter au cycle, sans une ligne de code.
+//
+// Un choix inconnu (sauvegarde d'une version future, ou faute de frappe)
+// renvoie au premier du cycle plutôt que de bloquer la carte : ici, à la
+// différence de `resoudrePreset`, il n'y a rien à taire — le joueur appuie,
+// et il obtient un réglage valide qu'il voit aussitôt.
+export function presetSuivant(config, choix) {
+  const cycle = (config.paliers || []).map((p) => p.id);
+  if (cycle.length === 0) return null;
+  const index = cycle.indexOf(choix === undefined || choix === null ? config.defaut : choix);
+  return cycle[(index + 1) % cycle.length];
 }
 
 // Le contrat de non-régression du palier B, énoncé une fois ici plutôt que

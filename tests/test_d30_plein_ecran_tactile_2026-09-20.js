@@ -502,7 +502,7 @@ function fausseCible() {
   // case 4 — donc la grille passe de 2 × 2 à 3 × 2, et la 6ᵉ case reste vide.
   // Ce qui est éprouvé ici ne change pas : une carte absente laisse sa case
   // VIDE, elle ne fait glisser personne.
-  assert.deepEqual(menu3.obtenirEtatCartes().cases, ['carte_langue', 'carte_musique', null, 'carte_volume', 'carte_sauvegarde', null],
+  assert.deepEqual(menu3.obtenirEtatCartes().cases, ['carte_langue', 'carte_musique', null, 'carte_volume', 'carte_sauvegarde', 'carte_graphismes'],
     'sa case reste vide, les autres cartes ne bougent pas');
   console.log('  la carte Plein écran suit l’état réel ; un refus le dit sans mentir');
 }

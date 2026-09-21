@@ -113,7 +113,7 @@ const lireLocale = (l) => JSON.parse(fs.readFileSync(path.join(RACINE, 'locales'
   // case 4 — donc la grille passe de 2 × 2 à 3 × 2, et la 6ᵉ case reste vide.
   // Ce qui est éprouvé ici ne change pas : une carte absente laisse sa case
   // VIDE, elle ne fait glisser personne.
-  assert.deepEqual(resoudreCases(parametres, () => false).map((c) => c && c.id), ['carte_langue', 'carte_musique', null, 'carte_volume', 'carte_sauvegarde', null]);
+  assert.deepEqual(resoudreCases(parametres, () => false).map((c) => c && c.id), ['carte_langue', 'carte_musique', null, 'carte_volume', 'carte_sauvegarde', 'carte_graphismes']);
 
   // Case contextuelle : des candidates ORDONNÉES, la première vraie gagne.
   const ecran = { cartes: [
@@ -227,6 +227,7 @@ function monter({ vraies = ['stations_placables', 'plein_ecran_disponible'] } = 
       etat_musique: () => (monde.musique ? 'menu.etat.musique_oui' : 'menu.etat.musique_non'),
       etat_plein_ecran: () => (monde.pleinEcran ? 'menu.etat.plein_ecran_oui' : 'menu.etat.plein_ecran_non'),
       etat_volume: () => `menu.etat.volume_${monde.volume}`,
+      etat_graphismes: () => 'menu.etat.graphismes_auto_moyen',
     },
     ecrans: {
       ecran_poche: () => journal.push('ouvre:poche'),

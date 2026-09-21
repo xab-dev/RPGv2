@@ -244,6 +244,13 @@ export function initialiserMenu({
   // avance d'un palier. Les paliers eux-mêmes vivent dans `data/audio.json`,
   // et ce module ne les voit jamais — il ne sait même pas combien il y en a.
   volumeCourant = () => 'menu.etat.volume_100', cyclerVolume = () => {},
+  // Palier D de `specs/09_reglages-graphiques.md` : les réglages graphiques,
+  // très exactement le même patron que le volume — `graphismesCourant` rend
+  // une CLÉ (« Bas », ou « Auto (Bas) » quand Auto a résolu : la carte ne dit
+  // jamais « Auto » seul, §5), `cyclerGraphismes` avance d'un cran. Les
+  // paliers et le cycle vivent dans `data/graphismes.json` ; ce module ne
+  // sait ni combien il y en a, ni lequel est le plus léger.
+  graphismesCourant = () => 'menu.etat.graphismes_auto', cyclerGraphismes = () => {},
   // `D-66` (T5) : un seul point d'équipement, quel que soit l'emplacement —
   // `equiper(slot, itemId)`. Remplace `equiperConsommable`, qui figeait un
   // emplacement dans le nom d'une fonction d'UI.
@@ -479,6 +486,7 @@ export function initialiserMenu({
     action_basculer_langue: actionBasculerLangue,
     action_basculer_musique: () => basculerMusique(),
     action_cycler_volume: () => cyclerVolume(),
+    action_cycler_graphismes: () => cyclerGraphismes(),
     action_basculer_plein_ecran: actionBasculerPleinEcran,
     action_exporter_sauvegarde: () => exporterSauvegarde(),
     action_importer_sauvegarde: () => inputImporter.click(),
@@ -492,6 +500,7 @@ export function initialiserMenu({
     etat_langue: () => `menu.etat.langue_${i18n.langueCourante()}`,
     etat_musique: () => (musiqueActive() ? 'menu.etat.musique_oui' : 'menu.etat.musique_non'),
     etat_volume: () => volumeCourant(),
+    etat_graphismes: () => graphismesCourant(),
     etat_plein_ecran: () => (pleinEcranActif() ? 'menu.etat.plein_ecran_oui' : 'menu.etat.plein_ecran_non'),
   };
   // Les écrans EXISTANTS qu'une carte dossier peut ouvrir, inchangés (palier

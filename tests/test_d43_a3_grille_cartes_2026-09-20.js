@@ -109,7 +109,11 @@ const lireLocale = (l) => JSON.parse(fs.readFileSync(path.join(RACINE, 'locales'
 
   // Plein écran sans API : sa case reste vide, Sauvegarde ne remonte pas.
   const parametres = MENUS.find((e) => e.id === 'menu_parametres');
-  assert.deepEqual(resoudreCases(parametres, () => false).map((c) => c && c.id), ['carte_langue', 'carte_musique', null, 'carte_sauvegarde']);
+  // `D-64` (T7) : la carte Volume s'intercale en case 3, Sauvegarde passe en
+  // case 4 — donc la grille passe de 2 × 2 à 3 × 2, et la 6ᵉ case reste vide.
+  // Ce qui est éprouvé ici ne change pas : une carte absente laisse sa case
+  // VIDE, elle ne fait glisser personne.
+  assert.deepEqual(resoudreCases(parametres, () => false).map((c) => c && c.id), ['carte_langue', 'carte_musique', null, 'carte_volume', 'carte_sauvegarde', null]);
 
   // Case contextuelle : des candidates ORDONNÉES, la première vraie gagne.
   const ecran = { cartes: [
@@ -199,7 +203,7 @@ function etatInput({ x = 0, y = 0, attack = false, skill3 = false } = {}) {
 function monter({ vraies = ['stations_placables', 'plein_ecran_disponible'] } = {}) {
   const document = creerFauxDocument();
   const journal = [];
-  const monde = { musique: true, pleinEcran: false, refuser: false };
+  const monde = { musique: true, pleinEcran: false, refuser: false, volume: 50 };
   const conditions = { vraies };
   const menu = creerMenuCartes({
     document, i18n: { t: (cle) => `«${cle}»` }, menus: MENUS, afficherEcran, seuilPoussee: SEUIL_POUSSEE_MENU,
@@ -215,11 +219,14 @@ function monter({ vraies = ['stations_placables', 'plein_ecran_disponible'] } = 
       action_exporter_sauvegarde: () => journal.push('exporter'),
       action_importer_sauvegarde: () => journal.push('importer'),
       action_reinitialiser_sauvegarde: () => journal.push('REINITIALISER'),
+      // `D-64` (T7) : la carte Volume, qui cycle des paliers.
+      action_cycler_volume: () => { monde.volume = (monde.volume + 25) % 125; },
     },
     etats: {
       etat_langue: () => 'menu.etat.langue_fr',
       etat_musique: () => (monde.musique ? 'menu.etat.musique_oui' : 'menu.etat.musique_non'),
       etat_plein_ecran: () => (monde.pleinEcran ? 'menu.etat.plein_ecran_oui' : 'menu.etat.plein_ecran_non'),
+      etat_volume: () => `menu.etat.volume_${monde.volume}`,
     },
     ecrans: {
       ecran_poche: () => journal.push('ouvre:poche'),
@@ -310,7 +317,9 @@ function monter({ vraies = ['stations_placables', 'plein_ecran_disponible'] } = 
   appuyer({ attack: true }); // « Non, revenir » : dépile UN écran
   assert.deepEqual([menu.obtenirEtat().ecran, menu.obtenirEtat().focus], ['menu_sauvegarde', 2], 'retour sur Sauvegarde, focus rendu à Réinitialiser');
   appuyer({ skill3: true }); // B : dépile UN écran
-  assert.deepEqual([menu.obtenirEtat().ecran, menu.obtenirEtat().focus], ['menu_parametres', 3], 'focus rendu à la carte Sauvegarde');
+  // `D-64` (T7) : Sauvegarde est passée en case 4, la carte Volume occupant
+  // la 3. Le focus rendu suit la carte, pas un numéro de case appris par cœur.
+  assert.deepEqual([menu.obtenirEtat().ecran, menu.obtenirEtat().focus], ['menu_parametres', 4], 'focus rendu à la carte Sauvegarde');
   appuyer({ skill3: true });
   assert.deepEqual([menu.obtenirEtat().ecran, menu.obtenirEtat().focus], ['menu_racine', 1], 'focus rendu à la carte Paramètres');
   assert.ok(!journal.includes('FERME'));

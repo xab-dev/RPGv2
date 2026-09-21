@@ -389,6 +389,17 @@
     ]
   },
   {
+    "id": "visuel_icone_menu_volume",
+    "ancre": "centre",
+    "teintable": true,
+    "primitives": [
+      { "forme": "rect", "dx": -3.4, "dy": 0, "w": 2.6, "h": 4, "couleur": "#f2e9d8", "teinte": true },
+      { "forme": "polygone", "dx": 0, "dy": 0, "points": [[-2.2, -2], [1.6, -5], [1.6, 5], [-2.2, 2]], "couleur": "#f2e9d8", "teinte": true },
+      { "forme": "ligne", "dx": 0, "dy": 0, "points": [[3, -2.4], [3, 2.4]], "couleur": "#f2e9d8", "epaisseur": 1.2, "teinte": true },
+      { "forme": "ligne", "dx": 0, "dy": 0, "points": [[5, -3.8], [5, 3.8]], "couleur": "#f2e9d8", "epaisseur": 1.2, "teinte": true }
+    ]
+  },
+  {
     "id": "visuel_icone_menu_musique",
     "ancre": "centre",
     "teintable": true,

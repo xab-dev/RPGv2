@@ -47,7 +47,10 @@ function refuse(abimer, motif, message) {
   assert.deepEqual(racine.cartes.map((c) => c.case), [0, 1, 3], 'Héros · Paramètres · (case 2 libre, rien n\'y est déclaré) · contextuelle');
   assert.equal(carte(donnees.menus, 'carte_construction').condition !== undefined, true, 'la carte contextuelle porte une condition');
   assert.deepEqual(ecran(donnees.menus, 'menu_heros').cartes.map((c) => c.cible), ['ecran_poche', 'ecran_stats'], 'pas de carte « Feu follet » tant que sa page n\'existe pas');
-  assert.deepEqual(ecran(donnees.menus, 'menu_parametres').cartes.map((c) => c.type), ['bascule', 'bascule', 'bascule', 'dossier']);
+  // 'D-64' (T7) : une 4e bascule, le Volume. L'ecran passe de 2x2 a 3x2 —
+  // la STRUCTURE des menus est gelee depuis le 21/09, une carte de plus dans
+  // un ecran existant ne la touche pas.
+  assert.deepEqual(ecran(donnees.menus, 'menu_parametres').cartes.map((c) => c.type), ['bascule', 'bascule', 'bascule', 'bascule', 'dossier']);
   const reset = carte(donnees.menus, 'carte_reinitialiser');
   assert.equal(reset.danger, true);
   assert.deepEqual(donnees.menus.flatMap((e) => e.cartes).filter((c) => c.danger).map((c) => c.id), ['carte_reinitialiser'], 'une seule action destructive');

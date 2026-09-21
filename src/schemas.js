@@ -1414,6 +1414,46 @@ export const SCHEMAS = {
   // est référence — un dialogue, un flag, des scènes, des phases — parce que
   // c'est exactement là qu'une faute de frappe se traduirait par une ligne
   // qui ne se déclenche jamais, sans que rien ne le signale.
+  // Réglages audio (`D-64`, T7). Un seul aujourd'hui — le volume de la
+  // musique —, mais c'est bien un catalogue : un volume d'effets sonores
+  // sera une entrée de plus, pas un second mécanisme.
+  //
+  // `paliers` et `cles_etat` sont appariés un à un, et le contrôle le VÉRIFIE :
+  // une liste plus courte que l'autre afficherait « undefined » au menu, ou
+  // afficherait 50 % en jouant à 75. `defaut` doit être l'un des paliers,
+  // sinon le premier appui sur la carte sauterait à une valeur sans rapport.
+  audio: {
+    requiredFields: ['id', 'paliers', 'defaut', 'cles_etat'],
+    idField: 'id',
+    refs: [],
+    custom(entry, catalogs, path) {
+      const erreurs = [];
+      if (!Array.isArray(entry.paliers) || entry.paliers.length < 2) {
+        erreurs.push(`${path} > paliers doit être un tableau d'au moins deux valeurs`);
+        return erreurs;
+      }
+      for (const palier of entry.paliers) {
+        if (typeof palier !== 'number' || palier < 0 || palier > 1) {
+          erreurs.push(`${path} > palier ${JSON.stringify(palier)} doit être un nombre entre 0 et 1`);
+        }
+      }
+      // Croissants : la carte les parcourt dans l'ordre, et « monter le son »
+      // doit monter le son.
+      for (let i = 1; i < entry.paliers.length; i += 1) {
+        if (entry.paliers[i] <= entry.paliers[i - 1]) {
+          erreurs.push(`${path} > paliers doit être strictement croissant (${entry.paliers.join(', ')})`);
+          break;
+        }
+      }
+      if (!Array.isArray(entry.cles_etat) || entry.cles_etat.length !== entry.paliers.length) {
+        erreurs.push(`${path} > cles_etat doit avoir exactement autant d'entrées que paliers`);
+      }
+      if (!entry.paliers.includes(entry.defaut)) {
+        erreurs.push(`${path} > defaut (${entry.defaut}) doit être l'un des paliers`);
+      }
+      return erreurs;
+    },
+  },
   ambiances: {
     requiredFields: ['id', 'dialogue', 'flag'],
     idField: 'id',

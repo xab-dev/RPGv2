@@ -1,0 +1,14 @@
+[
+  {
+    "id": "audio_volume_musique",
+    "paliers": [0, 0.25, 0.5, 0.75, 1],
+    "defaut": 0.5,
+    "cles_etat": [
+      "menu.etat.volume_0",
+      "menu.etat.volume_25",
+      "menu.etat.volume_50",
+      "menu.etat.volume_75",
+      "menu.etat.volume_100"
+    ]
+  }
+]

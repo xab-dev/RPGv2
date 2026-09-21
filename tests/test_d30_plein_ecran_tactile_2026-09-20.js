@@ -498,7 +498,11 @@ function fausseCible() {
   allerAuxParametres(menu3, document3);
   assert.equal(carte(document3, 'carte_plein_ecran'), null,
     "sans API, la carte est absente : une carte qui ne peut rien faire n'a rien à faire dans le menu");
-  assert.deepEqual(menu3.obtenirEtatCartes().cases, ['carte_langue', 'carte_musique', null, 'carte_sauvegarde'],
+  // `D-64` (T7) : la carte Volume s'intercale en case 3, Sauvegarde passe en
+  // case 4 — donc la grille passe de 2 × 2 à 3 × 2, et la 6ᵉ case reste vide.
+  // Ce qui est éprouvé ici ne change pas : une carte absente laisse sa case
+  // VIDE, elle ne fait glisser personne.
+  assert.deepEqual(menu3.obtenirEtatCartes().cases, ['carte_langue', 'carte_musique', null, 'carte_volume', 'carte_sauvegarde', null],
     'sa case reste vide, les autres cartes ne bougent pas');
   console.log('  la carte Plein écran suit l’état réel ; un refus le dit sans mentir');
 }

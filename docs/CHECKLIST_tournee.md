@@ -37,6 +37,7 @@ le rendu. Celle-ci est la liste de ce qu'on **joue**.
 | V-39 | Nv. 5, tombée de nuit : une ligne, une seule fois | `pas vu` |
 | V-41 | Barre du bas : une seule case, puis le consommable | `pas vu` |
 | V-40 | Craft : les 3 recettes d'origine, rien de plus, rien de « ??? » | `pas vu` |
+| V-42 | Paramètres › Volume : cycle, s'entend, se retient | `pas vu` |
 | V-27 | Menu et Sauvegarde : manette, souris, doigt, deux tailles | `pas vu` |
 | V-11 | Le puits : mâts au sol, perspective de trois quarts | `non` (→ `D-16`) |
 

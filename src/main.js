@@ -71,7 +71,7 @@ import { calculerOpaciteToit, distanceAuRectangle, empreinteAbsoluePuzzle } from
 import { dansRectangleTuile, poseValide } from './placement.js';
 import { avancerHeure, opaciteAHeure, phaseAHeure, PHASES_CYCLE } from './daynight.js';
 import { ambianceADeclencher } from './ambiances.js';
-import { armerAudio, definirMusiqueActive } from './audio.js';
+import { armerAudio, definirMusiqueActive, definirVolumeMaitre, palierSuivant } from './audio.js';
 import { creerEtatIndices } from './hints.js';
 import { estExpire, poserCooldown, tempsRestantMs } from './cooldowns.js';
 import { peutFabriquer, fabriquer, recettesDeStation } from './recipes.js';
@@ -2723,6 +2723,26 @@ export async function demarrerJeu() {
     sourceTactile,
   });
 
+  // `D-64` : le volume retenu, ou le DÉFAUT DU CATALOGUE tant que le joueur
+  // n'y a pas touché. Le défaut vit donc en données, à un seul endroit, et
+  // une sauvegarde d'avant ce ticket n'a rien à migrer — champ absent veut
+  // dire « je n'ai jamais choisi », pas « zéro ».
+  function volumeMusique() {
+    const reglage = registre.obtenir('audio', 'audio_volume_musique');
+    const retenu = save.settings.volume;
+    return typeof retenu === 'number' ? retenu : reglage.defaut;
+  }
+
+  // La clé de texte du palier courant. Les clés sont appariées aux paliers
+  // dans le catalogue (le schéma vérifie que les deux listes ont la même
+  // longueur) : aucun pourcentage n'est composé en code, et traduire « 50 % »
+  // autrement en anglais ne demande qu'une locale.
+  function cleEtatVolume() {
+    const reglage = registre.obtenir('audio', 'audio_volume_musique');
+    const index = reglage.paliers.indexOf(volumeMusique());
+    return reglage.cles_etat[index >= 0 ? index : 0];
+  }
+
   const menu = initialiserMenu({
     document,
     i18n,
@@ -2772,6 +2792,19 @@ export async function demarrerJeu() {
     basculerMusique() {
       save.settings.musique = !(save.settings.musique !== false);
       definirMusiqueActive(save.settings.musique);
+    },
+    // `D-64` (T7) : le volume. Même patron exactement que la musique —
+    // l'état réel vit dans `save.settings`, l'effet dans `audio.js`, et le
+    // menu ne connaît ni l'un ni l'autre.
+    //
+    // Les paliers et leurs libellés viennent de `data/audio.json` : le menu
+    // ne sait pas combien il y en a, et ajouter un cran (ou un volume
+    // d'effets sonores) ne touchera pas une ligne de code.
+    volumeCourant: () => cleEtatVolume(),
+    cyclerVolume() {
+      const reglage = registre.obtenir('audio', 'audio_volume_musique');
+      save.settings.volume = palierSuivant(reglage.paliers, volumeMusique());
+      definirVolumeMaitre(save.settings.volume);
     },
     // §3.3 : liste déjà résolue/traduite (main.js a le registre + i18n) —
     // ui/menu.js ne connaît jamais items.json par id. `id`/`categorie`
@@ -2841,6 +2874,10 @@ export async function demarrerJeu() {
     // défaut et son repli synthétisé dans le catalogue complet — main.js ne
     // connaît qu'un id, jamais la logique de repli (cf. audio.js).
     armerAudio(registre.tous('music'), 'music_piano_solo', save.settings.musique !== false);
+    // APRÈS l'armement : c'est lui qui crée l'élément/le gain, donc il n'y
+    // aurait rien à régler avant. Le réglage retenu s'applique ainsi dès la
+    // première note, jamais au volume de catalogue puis corrigé.
+    definirVolumeMaitre(volumeMusique());
   }
   window.addEventListener('keydown', armerAudioUneFois, { once: true });
   window.addEventListener('pointerdown', armerAudioUneFois, { once: true });

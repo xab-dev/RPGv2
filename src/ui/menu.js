@@ -235,6 +235,12 @@ export function clesTexteEtats(langues) {
 export function initialiserMenu({
   document, i18n, menus, exporterSauvegarde, importerSauvegarde,
   musiqueActive = () => true, basculerMusique = () => {}, listerPoche = () => [],
+  // `D-64` (T7) : le volume. `volumeCourant` rend la CLÉ de texte du palier
+  // en cours (jamais un pourcentage composé ici : un lecteur d'état rend une
+  // clé, c'est le contrat des bascules depuis `D-43`) ; `cyclerVolume`
+  // avance d'un palier. Les paliers eux-mêmes vivent dans `data/audio.json`,
+  // et ce module ne les voit jamais — il ne sait même pas combien il y en a.
+  volumeCourant = () => 'menu.etat.volume_100', cyclerVolume = () => {},
   equipementConsommable = () => null, equiperConsommable = () => {},
   peripheriqueActif = () => 'manette',
   // `D-30` : le plein écran est injecté comme tout le reste — ce module ne
@@ -460,6 +466,7 @@ export function initialiserMenu({
   const actions = {
     action_basculer_langue: actionBasculerLangue,
     action_basculer_musique: () => basculerMusique(),
+    action_cycler_volume: () => cyclerVolume(),
     action_basculer_plein_ecran: actionBasculerPleinEcran,
     action_exporter_sauvegarde: () => exporterSauvegarde(),
     action_importer_sauvegarde: () => inputImporter.click(),
@@ -472,6 +479,7 @@ export function initialiserMenu({
   const etats = {
     etat_langue: () => `menu.etat.langue_${i18n.langueCourante()}`,
     etat_musique: () => (musiqueActive() ? 'menu.etat.musique_oui' : 'menu.etat.musique_non'),
+    etat_volume: () => volumeCourant(),
     etat_plein_ecran: () => (pleinEcranActif() ? 'menu.etat.plein_ecran_oui' : 'menu.etat.plein_ecran_non'),
   };
   // Les écrans EXISTANTS qu'une carte dossier peut ouvrir, inchangés (palier

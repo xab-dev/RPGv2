@@ -61,7 +61,12 @@
         "condition": { "valeur": "plein_ecran_disponible", "min": 1 }
       },
       {
-        "id": "carte_sauvegarde", "case": 3, "type": "dossier",
+        "id": "carte_volume", "case": 3, "type": "bascule",
+        "cle_titre": "menu.volume", "icone": "visuel_icone_menu_volume",
+        "action": "action_cycler_volume", "etat": "etat_volume"
+      },
+      {
+        "id": "carte_sauvegarde", "case": 4, "type": "dossier",
         "cle_titre": "menu.carte.sauvegarde", "cle_phrase": "menu.carte.sauvegarde_phrase",
         "icone": "visuel_icone_menu_sauvegarde", "cible": "menu_sauvegarde"
       }

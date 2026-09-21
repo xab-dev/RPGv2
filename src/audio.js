@@ -11,6 +11,10 @@
 const SEMITONES_DEPUIS_DO = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 
 let elementFichier = null;
+// Le volume PROPRE de la piste fichier en cours : `elementFichier.volume` porte
+// déjà le produit par le maître, on ne peut donc pas le relire pour le
+// recalculer — il faut garder le facteur d'origine.
+let volumeFichierPropre = 1;
 let contexteSynthese = null; // AudioContext Web Audio, créé au premier geste seulement
 let gainSynthese = null;
 let minuteurPhraseSynthese = null;
@@ -18,6 +22,16 @@ let modeActuel = null; // 'fichier' | 'synthese' | null (aucune piste résolue)
 let pisteSyntheseActuelle = null; // données (notes/tempo/volume) de la synthèse en cours
 let actifCourant = false; // dernier état "Musique" demandé (armement initial ou menu)
 let armee = false;
+// `D-64` (T7) : le volume MAÎTRE, un facteur 0..1 appliqué par-dessus le
+// volume propre de la piste. Deux réglages, et c'est voulu : la piste dit
+// son équilibre (la synthèse est naturellement plus forte qu'un piano
+// enregistré), le joueur dit combien fort il veut du tout. Les multiplier
+// garde l'équilibre entre pistes quel que soit le curseur.
+//
+// Verdict de Xav le 21/09 (`V-04`) : il coupait le son systématiquement,
+// donc l'ambiance n'était de fait jamais entendue. Entre « fort » et
+// « rien », il n'existait aucun cran.
+let volumeMaitre = 1;
 
 // Résolution pure de la piste de secours déclarée sur une piste (`repli`,
 // un id du même catalogue music.json) — aucune AudioContext, testable
@@ -113,6 +127,46 @@ function jouerPhraseSynthese(piste) {
 // du `requestAnimationFrame`). En faisant de la reprise un simple rappel de
 // cette même fonction (création paresseuse si besoin), le bascule devient
 // un geste utilisateur comme un autre, exactement comme le premier geste.
+// Le palier suivant, en boucle — PUR, et testé. Séparé du reste parce que
+// c'est la seule part de ce module qui n'a rien à voir avec le son : c'est
+// la mécanique d'une carte de menu qui cycle des valeurs.
+//
+// Une valeur courante hors liste (sauvegarde bricolée, palier retiré du
+// catalogue depuis) repart du PREMIER palier plutôt que de planter ou de
+// rester coincée : le joueur récupère la main au premier appui.
+export function palierSuivant(paliers, courant) {
+  const index = paliers.indexOf(courant);
+  if (index < 0) return paliers[0];
+  return paliers[(index + 1) % paliers.length];
+}
+
+// Le volume effectif d'une piste : son équilibre propre, mis à l'échelle du
+// maître. Une seule formule, lue par les deux modes (fichier et synthèse) —
+// sans quoi monter le son ne ferait pas la même chose selon la piste en cours.
+function volumeEffectif(piste) {
+  const propre = piste && typeof piste.volume === 'number' ? piste.volume : 1;
+  return Math.max(0, Math.min(1, propre * volumeMaitre));
+}
+
+// Change le volume maître et l'applique à ce qui joue DÉJÀ — sans rien
+// recréer, exactement comme `definirMusiqueActive`. Même contrat « meilleur
+// effort » : le menu (donc, à la manette, la boucle de jeu) ne doit jamais
+// hériter d'une exception d'ici.
+export function definirVolumeMaitre(valeur) {
+  volumeMaitre = Math.max(0, Math.min(1, Number(valeur) || 0));
+  try {
+    if (modeActuel === 'fichier' && elementFichier) {
+      elementFichier.volume = volumeEffectif({ volume: volumeFichierPropre });
+    } else if (modeActuel === 'synthese' && gainSynthese && actifCourant) {
+      gainSynthese.gain.setTargetAtTime(
+        volumeEffectif(pisteSyntheseActuelle), contexteSynthese.currentTime, 0.05,
+      );
+    }
+  } catch (erreur) {
+    console.warn('audio.js : changement de volume en échec, le jeu continue', erreur);
+  }
+}
+
 function demarrerSynthese(piste) {
   if (!contexteSynthese) {
     contexteSynthese = new (window.AudioContext || window.webkitAudioContext)();
@@ -122,7 +176,7 @@ function demarrerSynthese(piste) {
   // Un seul minuteur de phrase à la fois : un double appel (ex. double clic)
   // ne doit jamais superposer deux boucles.
   clearTimeout(minuteurPhraseSynthese);
-  gainSynthese.gain.setTargetAtTime(piste.volume, contexteSynthese.currentTime, 0.05);
+  gainSynthese.gain.setTargetAtTime(volumeEffectif(piste), contexteSynthese.currentTime, 0.05);
   // Repart du début de la phrase plutôt que de sa position exacte avant
   // coupure : le ticket ne demande pas de conserver la position, et ne
   // jamais faire vivre un "curseur" au-delà d'un cycle démarrer/couper
@@ -167,7 +221,8 @@ export function armerAudio(catalogueMusic, idPisteDefaut, actif) {
 
     const pisteRepli = resoudrePisteRepli(pisteDefaut, catalogueMusic);
     modeActuel = 'fichier';
-    elementFichier = creerElementFichier(pisteDefaut.fichier, pisteDefaut.boucle, pisteDefaut.volume, () => {
+    volumeFichierPropre = pisteDefaut.volume;
+    elementFichier = creerElementFichier(pisteDefaut.fichier, pisteDefaut.boucle, volumeEffectif(pisteDefaut), () => {
       try {
         elementFichier.pause();
         modeActuel = pisteRepli ? 'synthese' : null;
@@ -216,6 +271,8 @@ export function reinitialiserPourTests() {
   armee = false;
   actifCourant = false;
   elementFichier = null;
+  volumeFichierPropre = 1;
+  volumeMaitre = 1;
   contexteSynthese = null;
   gainSynthese = null;
   clearTimeout(minuteurPhraseSynthese);

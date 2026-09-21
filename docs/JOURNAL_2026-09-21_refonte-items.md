@@ -177,3 +177,21 @@ plans qui se coupent, et les arêtes doivent se voir.
 2. Huit sommets, angles francs ; la fissure devient un **coin** qui part du
    point de rencontre des facettes.
 
+### `D-86` — le bois
+
+**Diagnostic** : un rectangle brun plat et deux ellipses aux bouts, **plus
+sombres que le fût** — donc lues comme des trous percés dans une planche.
+
+**Conceptualisation** : la lecture s'inverse en inversant la valeur. Le bout
+arrière reste sombre, mais celui de devant devient la **section de coupe** :
+aubier clair et cernes concentriques. C'est l'accent, et c'est aussi ce qui dit
+« bûche fendue » plutôt que « planche ».
+
+**Application, deux itérations** :
+
+1. Trois bandes + section à cernes + deux entailles d'écorce. À ras du
+   rectangle, l'ellipse arrière se réduisait à un liseré : la bûche finissait
+   sur une **coupe droite**, comme une carte posée à plat.
+2. Fût raccourci de 0,6 unité pour que l'ellipse arrière **déborde** et fasse
+   un bout rond.
+

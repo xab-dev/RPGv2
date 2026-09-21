@@ -334,6 +334,8 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 | **Une vignette de tuile rend son sol à l'objet** : l'ombre portée d'un item est dessinée *dans* son canvas, et sur le fond uni d'une tuile elle ne porte plus — une **flaque d'ombre** en fond de vignette, centrée à 72 % de la hauteur (au milieu, elle entourerait l'objet et le ferait flotter davantage). La vignette de la **fiche** ne la prend pas : sur un grand panneau, ce serait une tache | 2026-09-22 | `D-101` |
 
 (Les décisions de `05_construction-stations.md` étaient déjà actées par Xav **dans la spec elle-même** avant tout code, v1.0.0 §9 — les lignes ci-dessus n'y renvoient que pour mémoire, elles ne tranchent rien de nouveau.)
+| **Le héros est un personnage encapuchonné vu de trois quarts, et la couleur du follet est son VISAGE** (*révise* le corps entier teinté de la Phase 1) : une boule lumineuse logée dans l'ombre de la capuche, avec un glow serré — une lueur, jamais une aura qui éclairerait le sol. Ce qui rend une silhouette lisible à 14 px n'est pas son vêtement mais son **contraste** : un point lumineux dans une masse noire. Et une relation à ne plus contredire : **le héros n'est jamais plus large que ce qui entre en collision** — contrairement à une station, sa hitbox ne dérive PAS du dessin (`RAYON_HERO_BASE_PX × echelle`), donc redessiner ne déplace aucun mur, mais l'ourlet du manteau est calé sur la demi-boîte ; en hauteur il la dépasse librement, la boîte étant son emprise au sol et non sa taille | 2026-09-22 | `D-104`, `docs/JOURNAL_2026-09-22_heros-silhouette.md` |
+| **Une silhouette de personnage se juge dans la scène, pas au banc — et la scène lui prête ses couleurs.** Le manteau du héros prend la teinte de la **lumière du follet** (rayon 100 px) : brun chaud avec le feu, gris-bleu avec l'eau. Personne ne l'a codé, c'est le calque de lumière existant. Corollaire : une capture de silhouette de personnage se prend **par compagnon**, sinon elle ne montre qu'un tiers de la vérité (`tools/scenarios/heros_scene.mjs`) | 2026-09-22 | même journal |
 
 ## Ce qui est dû : dettes, questions, validations
 
@@ -394,52 +396,45 @@ Les captures de la V1 (`docs/captures/v1/`) sont une **inspiration, jamais un ca
 
 `Q-10`, `Q-11`, `Q-12`, `Q-24` et `Q-25` restent à trancher avec Xav ; `Q-07` est gelée. La spec de la barre d'action du bas (`E-01`) est écrite par Xav lui-même et attend le chiffrage `Q-11`. **Une spec non écrite ne se commence pas** (même règle que pour une phase).
 
-## Journal de session — passe de polish de l'INTERFACE (22/09)
+## Journal de session — la silhouette du HÉROS (22/09)
 
-Session **autonome supervisée**, **file de micro-tickets** sur la branche
-`polish-interface-2026-09-22`, **un commit par ticket**, chacun retirable seul. Fichier de
-bord : `docs/JOURNAL_2026-09-22_polish-interface.md`. Consigne de Xav : « il ne reste pas
-grand-chose pour une harmonie générale — la grotte est verrouillée, les stations sont
-verrouillées, les items sont faits. Il reste l'interface. » Cibles nommées : l'**arme mains
-nues** (« le pouce n'est pas dans le bon sens », et trop simpliste à côté de la pomme), les
-**éclats**, les **jauges de survie**, la **barre de vie** (« par rapport aux feux follets,
-elle peut être améliorée »), les **icônes de buff**. Périmètre confirmé en début de session :
-**ni le menu ni les fonctionnalités** — la structure des menus reste gelée (21/09) ; côté
-**DOM**, deux surfaces en *look* seulement, les **jetons de style** des cartes/fiches et les
-**tuiles d'icônes**. La référence, citée par Xav, est le **follet** : des valeurs
-superposées, un accent, du grain — ce que la charte d'item du 21/09 dit déjà autrement.
+Session **autonome supervisée**, **un ticket** (`D-104`), un commit, branche
+`heros-silhouette-2026-09-22`. Fichier de bord : `docs/JOURNAL_2026-09-22_heros-silhouette.md`.
 
-**Les sept tickets sont livrés** : `D-94` les **mains nues** (un poing de trois quarts, et la
-case n'impose plus sa couleur), `D-95` **LA barre** du bandeau (une seule fonction pour les PV,
-la faim et la soif, en quatre valeurs), `D-96` les **icônes du bandeau** passées en **données**,
-`D-98` les **quatre icônes de stats** (donc les buffs) mises en volume **en alpha pur**, `D-99`
-les **cases d'action** qui prennent enfin une couleur à elles, `D-100` le **relief** des
-surfaces du menu en jetons, `D-101` les **vignettes** des tuiles, posées. Outils neufs :
-`tools/scenarios/hud_polish.mjs` (avec une **loupe** sur une zone du canvas en unités
-logiques — le bandeau fait 20 unités de haut, on n'y voit rien à la taille d'une capture),
-`tools/scenarios/banc_visuel.mjs` et `tools/remplacer_visuel.mjs`. Album :
-`docs/captures/hud-2026-09-22/`.
+Le héros était **le dernier objet vu du dessus dans un monde de trois quarts** : trois
+cercles concentriques, un pion de jeu de dames, là où le puits, les quatre stations et les
+dix items ont tous reçu la facture du 21/09. Xav a donné une photo de référence — une capuche
+noire dont seul un fil de lumière dessine la forme — et la consigne : **un personnage
+encapuchonné, vu de trois quarts, dont le visage est une boule lumineuse**, avec un glow
+léger. La couleur du follet quitte donc le corps et se concentre là.
 
-**Ce qui commande la session** : une icône d'UI vit dans **deux régimes de couleur** (le HUD
-la dessine à ses couleurs d'auteur, le DOM lui impose la couleur CSS du canvas) et une surface
-de menu dans **trois états** (repos, focus, appui). Une facette écrite en couleur fixe jure
-dans l'un d'eux ; le volume se pose donc en **alpha pur** — noir pour l'ombre, blanc pour la
-lumière —, qui tient par-dessus n'importe quelle teinte et n'a pas à être réécrit par état.
+**Livré en données seules**, aucune ligne de code du jeu. Treize primitives, et **aucune
+forme nouvelle** (leçon des stations) : tout s'obtient en glissant ou en réduisant la même
+forme — le bord éclairé de la capuche est une ellipse pâle que l'ellipse noire du creux
+recouvre aux trois quarts. `echelle` **inchangée** (0,643) : la hitbox est identique au pixel
+près. Trois itérations, chacune nommée au journal (capuche trop conique → un œil de Sauron ;
+épaules en socle à angles vifs ; le liseré remonté d'un cran pour reprendre à son compte le
+« contour clair » que `save.js` documente depuis la Phase 1).
 
-**Relevés en passant, sans y toucher** : `D-97` (un niveau au-delà de `levels.json` rend
-l'écran Stats inouvrable — **rattaché par Xav au futur ticket « déblocage des niveaux 10 →
-30 »**, puisque c'est ce chantier-là qui allongera la table), `Q-49` (les éclats n'ont aucune
-entrée de catalogue, donc l'id de leur silhouette vit dans `main.js`) et `Q-50` (la fiche de
-Force et d'Esprit est vide), que Xav a mise **hors-scope**.
+**Vérifications** : test neuf **avec témoin** (le disque d'avant échoue aux deux premières
+assertions), qui n'épingle que des **relations** (règle `D-52`) ; 112 fichiers verts ;
+scénario de capture neuf `tools/scenarios/heros_scene.mjs` — les trois teintes de compagnon
+en plein jour, la nuit, et la Grotte d'une partie **neuve** —, album
+`docs/captures/heros-2026-09-22/`.
 
-**Verdicts de Xav, 22/09** : les **sept tickets sont validés un par un** (« good » pour
-chacun), mais `V-53` — l'effet d'ensemble, manette en main — reçoit **« trop léger, pas
-vu »** : la ligne **reste ouverte**, et une ligne `pas vu` n'est jamais close par le silence.
-Le mot à retenir pour la suite est *trop léger* : si la passe doit se voir davantage, c'est un
-ticket neuf (contrastes plus francs, reliefs plus marqués), jamais une reprise en passant.
+**Une itération de plus, demandée par Xav après l'avoir vu en jeu** (« le reste on garde,
+c'est très bon ») : le **visage grossit** d'environ 1,5 px — la boule, son halo et
+l'ouverture ensemble, sinon la boule aurait mangé son creux — et la **pointe** de la capuche
+s'arrondit, elle seule. Effet de bord qui a demandé une seconde retouche : une pointe vive
+cachait la bande de contour sombre qui couronne la capuche ; arrondie, elle devenait un
+**ergot noir** au sommet.
 
-**Et un bug rapporté au ressenti, à ne pas corriger** : `D-102`, la vitesse de déplacement au
-clavier **paraît cumulative en diagonale**. Lecture du code (pas une mesure) : la couleur du
-défaut est réelle — les deux axes sont bornés **séparément** puis reçoivent chacun la vitesse
-entière, donc une diagonale vaut √2, soit **≈ 41 % plus vite**, là où Xav ressent le double.
-Il le garde comme *exploit de dev* et demande une **session de diagnostic** dédiée.
+**Validé en jeu par Xav le jour même** (`V-54`, « parfait »), avec un relevé `?debug=fps`
+pris dans la foulée (`R-17`) : **59,9 fps, 0/600 frame sautée**, `dessiner()` 0,77 ms, à
+**6 monstres, 4 interactifs et 21 objets au sol** — les treize primitives du héros ne se
+voient pas dans la mesure. `push` demandé, donc **en ligne**. Le point que je signalais
+comme le plus discutable (le héros très sombre dans la Grotte, avant le choix du follet)
+n'a pas été relevé : il reste tel quel.
+
+**Relevé sans y toucher** : `Q-51` — le héros ne regarde toujours nulle part (aucune
+orientation en données), hors périmètre annoncé avant le go.

@@ -164,6 +164,30 @@ for (const { visuel: id, pieces, contacts } of ASSEMBLAGES) {
   console.log('OK les deux mâts débordent du cylindre, leur pied se voit');
 }
 
+// --- 2 ter. Le bord LATÉRAL du fût est au niveau du pied des mâts ---------
+// Consigne de Xav, 21/09 (deux fois plutôt qu'une, parce que j'avais lu
+// « base du fût » comme son point le plus BAS) : ce qui doit coïncider avec
+// le pied des mâts, c'est le bord du fût là où il les longe — son point le
+// plus large, qui en trois quarts est la HAUTEUR DU CENTRE de l'ellipse de
+// base. Le point le plus bas du fût, lui, passe alors sous cette ligne :
+// c'est l'avant du cylindre, plus près de l'œil. Sans cette règle, un fût
+// « posé à y = 0 » paraît flotter au-dessus des mâts.
+{
+  const puits = visuels.get('visuel_puits');
+  const base = puits.primitives[2];
+  const piedMat = boitePrimitive(puits.primitives[0]).maxY;
+  assert.equal(
+    base.dy || 0,
+    piedMat,
+    'le bord latéral du fût (centre de son ellipse de base) doit être au niveau du pied des mâts',
+  );
+  assert.ok(
+    boitePrimitive(base).maxY > piedMat,
+    "l'avant du fût doit descendre SOUS cette ligne : c'est ce qui donne la perspective de trois quarts",
+  );
+  console.log('OK le bord latéral du fût coïncide avec le pied des mâts, son avant passe dessous');
+}
+
 // --- 3. L'empreinte solide n'a rien GAGNÉ --------------------------------
 // La fiche du 19/09 exigeait une empreinte *inchangée*, et `D-16` prévient
 // qu'en trois quarts elle change. Ce qui compte n'est pas qu'elle soit égale,

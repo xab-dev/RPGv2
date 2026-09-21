@@ -112,3 +112,31 @@ d'avant. 111 fichiers de test verts.
 Ouvert au passage, sans y toucher : **`Q-48`** (les outils font 17-18 unités
 contre 6 à 10 pour le reste — une décision de jeu, pas de dessin).
 
+### `D-83` — la branche
+
+**Diagnostic** : deux primitives, dont un trait brun de 3 unités d'épaisseur.
+Un parallélogramme plat ; à la taille du monde, le rameau se confond avec le fût.
+
+**Conceptualisation** : un fût **conique** (le bois n'a pas la même grosseur aux
+deux bouts), les trois valeurs obtenues en glissant le **même** fût le long de
+sa perpendiculaire, et pour accent la **cassure** au talon — l'aubier clair, qui
+dit « arrachée à un arbre » et non « bâton taillé ».
+
+**Application, deux itérations** :
+
+1. Fût + rameau + écorce + cassure. La fourche n'écartait que de 18° : le rameau
+   se lisait comme une **écharde** en train de se détacher.
+2. Fourche portée à ~40°, ombre resserrée (12,2 × 2,7 au lieu de 13,4 × 3,2,
+   qui dominait la vignette au cadrage de la Poche).
+
+**Note d'outillage écrite en chemin** : la comparaison d'enveloppe du test a dû
+changer de mesure. `structures.js#boitePrimitive` **ignore l'épaisseur d'une
+ligne** — la branche d'origine couvrait 1,5 unité de plus que sa boîte de chaque
+côté. Comparer les boîtes officielles aurait fait passer pour un agrandissement
+le simple fait de redessiner un trait épais en polygone, **à pixels
+identiques**. Le test compare donc l'étendue **réellement peinte**
+(`boiteDessinee`, locale au test), et le contrôle de cadrage de la tuile de
+Poche est devenu un **régime relevé** (`CADRAGE_COMMUN_AVANT`) : huit items sur
+dix partagent le cadrage commun, la hache et la pioche sont recadrées — le
+constat qui a ouvert `Q-48`.
+

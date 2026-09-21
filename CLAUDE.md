@@ -476,4 +476,11 @@ diagonale plein stick √2 fois trop vite.
 menus reste au stick gauche — c'est exactement ce que Xav a demandé, et la
 question du clic est consignée sans être commencée (`Q-54`).
 
-Dû : **`V-57`** (vitesse 900 px CSS/s, courbe 1,6 — les deux en données).
+**Validé en jeu par Xav le jour même** : le visuel d'abord (« le visuel est
+validé par xav »), puis l'ensemble manette en main après le stick droit
+(« all good ») — `V-56` et `V-57` closes, et la vitesse comme la courbe sont
+gardées telles quelles. Les quatre commits sont **fusionnés dans `main` et en
+ligne**, à sa demande.
+
+Reste ouverte, consignée sans être commencée : `Q-54` — **le curseur ne clique
+pas**, la navigation des menus reste au stick gauche.

@@ -206,3 +206,18 @@ qui gagne quand les deux sticks désignent deux cartes différentes.
 
 Dû : **`V-57`** — vitesse 900 px CSS/s et courbe 1,6, les deux `[OUVERT]` et
 réglables dans `data/effets.json#effet_curseur`.
+
+---
+
+## Verdict (22/09)
+
+**Validé en jeu par Xav le jour même**, en deux temps : le visuel d'abord
+(« le visuel est validé par xav »), puis l'ensemble manette en main après le
+stick droit — **« all good »**. `V-56` et `V-57` sont closes sur sa parole ;
+**la vitesse (900 px CSS/s) et la courbe (1,6) sont gardées telles quelles** et
+cessent d'être `[OUVERT]`, sans cesser d'être réglables en données.
+
+Les quatre commits sont **fusionnés dans `main` et poussés**, à sa demande
+explicite — donc **en ligne**.
+
+Reste ouverte, et elle n'a pas été commencée : `Q-54`, le clic au curseur.

@@ -140,3 +140,23 @@ Poche est devenu un **régime relevé** (`CADRAGE_COMMUN_AVANT`) : huit items su
 dix partagent le cadrage commun, la hache et la pioche sont recadrées — le
 constat qui a ouvert `Q-48`.
 
+### `D-84` — le caillou
+
+**Diagnostic** : un polygone gris + une facette pâle en `alpha`. Deux valeurs,
+aucun contact au sol — et surtout, **rien ne le distingue de la pierre** que sa
+taille.
+
+**Conceptualisation** : le second défaut commande le premier. Le caillou devient
+un **galet** (lisse, rond, gris **chaud**) et la pierre restera un **rocher**
+(anguleux, froid, facetté). Ce qui les sépare cesse d'être une affaire de taille.
+Les trois valeurs s'obtiennent en **réduisant le même contour** autour de son
+centre (`reduire`) : jamais trois silhouettes dessinées à la main, qui
+divergeraient à la première retouche.
+
+**Application, deux itérations** :
+
+1. Silhouette + corps + facette + éclat + deux grains sombres pleins. Les deux
+   grains, contrastés et posés sous un éclat clair, se lisaient comme des
+   **yeux** : le galet avait une tête.
+2. Grains passés en `alpha` (0,4-0,45) et aplatis, déplacés de part et d'autre.
+

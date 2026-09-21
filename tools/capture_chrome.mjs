@@ -30,6 +30,8 @@
 //   chrome.attendre(ms)
 //   chrome.evaluer(expression)     rend la valeur (JSON) de l'expression, `await` permis
 //   chrome.capture(chemin)         PNG du viewport
+//   chrome.bridageCpu(facteur)     ralentit le CPU d'autant (1 = normal, 6 = proxy
+//                                  d'appareil faible) — le coût du calque est CPU
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -102,6 +104,14 @@ async function main() {
       // mise en page) ; seule la densité change, comme sur un vrai téléphone.
       async taille(largeur, hauteur, dpr = 1) {
         await envoyer('Emulation.setDeviceMetricsOverride', { width: largeur, height: hauteur, deviceScaleFactor: dpr, mobile: dpr !== 1 });
+      },
+      // Ralentisseur de CPU de Chrome (CDP). Sert de proxy d'appareil faible :
+      // le coût du calque statique suit le NOMBRE DE PRIMITIVES, donc le CPU,
+      // et non les pixels (`R-12` -> `R-13` : diviser les pixels par 9 sur
+      // l'A04 ne rend que 3,6 fps). Un facteur n'est pas un appareil : il
+      // compare deux exécutions du même scénario, rien de plus.
+      async bridageCpu(facteur) {
+        await envoyer('Emulation.setCPUThrottlingRate', { rate: facteur });
       },
       async ouvrir(url) {
         evenements.length = 0;

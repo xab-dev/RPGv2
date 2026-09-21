@@ -13,6 +13,11 @@
 // est sans fenêtre : les fps n'ont pas de sens (pas de vsync à honorer), seul
 // le **coût d'un recalcul** est comparable d'une exécution à l'autre, à
 // condition de comparer deux exécutions du même scénario.
+//
+// `RPG_BRIDAGE=6 node tools/capture_chrome.mjs …` ralentit le CPU d'autant
+// (`specs/09` palier A, étape 1 : proxy d'appareil faible — le coût du calque
+// est CPU, pas pixels). Un facteur n'est pas un appareil : il sert à comparer
+// deux exécutions du même scénario, jamais à prédire un téléphone.
 import { ouvrirLeJeu, saveDansLaMaison } from './commun.mjs';
 
 const TILE = 32;
@@ -26,9 +31,12 @@ export default async function (chrome) {
   save.hero.y = (56 + 0.5) * TILE;
   save.monde.heure = PLEIN_JOUR;
   await ouvrirLeJeu(chrome, { largeur: 1920, hauteur: 1080, save, requete: '?debug=fps' });
+  const bridage = Number(process.env.RPG_BRIDAGE) || 1;
+  if (bridage !== 1) await chrome.bridageCpu(bridage);
 
   for (let i = 0; i < 24; i++) await chrome.touche('KeyD', 420);
 
   const releve = await chrome.evaluer(`document.querySelector('#debug-perf').textContent`);
+  console.log(`bridage CPU : x${bridage}`);
   console.log(releve);
 }

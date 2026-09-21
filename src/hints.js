@@ -47,6 +47,23 @@ export function creerEtatIndices(registre) {
     if (actif && actif.hint.verbe === verbe) actif = null;
   }
 
+  // Une annonce du JEU, et non d'un verbe (palier E de
+  // `specs/09_reglages-graphiques.md` : « Graphismes allégés… »). Même
+  // bannière, même durée de vie, même fondu — mais aucun glyphe (il n'y a
+  // rien à appuyer) et aucun flag (ça ne s'apprend pas, ça se dit une fois,
+  // et c'est l'appelant qui sait combien de fois « une fois » veut dire).
+  //
+  // Rend `true` quand l'annonce a PRIS la bannière, `false` quand un indice
+  // l'occupait déjà. Ce faux n'est pas un échec : c'est le même contrat que
+  // `declencherVerbeUtile`, dont l'appelant rappelle la demande chaque frame
+  // tant qu'elle tient. Un premier indice de commande vaut mieux qu'une
+  // annonce de confort — il enseigne le jeu, elle ne fait que l'expliquer.
+  function annoncer(cleTexte, dureeMs) {
+    if (actif) return false;
+    actif = { hint: { verbe: null, label_key: cleTexte, duree_ms: dureeMs }, resteMs: dureeMs };
+    return true;
+  }
+
   // Compte à rebours — l'appelant ne le tique que hors UI (§4 : "indice actif
   // quand une UI s'ouvre : masqué, reprend au retour", même point de décision
   // unique que le reste du gameplay).
@@ -74,5 +91,5 @@ export function creerEtatIndices(registre) {
     };
   }
 
-  return { declencherVerbeUtile, verbeEmis, maj, indiceAffiche };
+  return { declencherVerbeUtile, verbeEmis, annoncer, maj, indiceAffiche };
 }

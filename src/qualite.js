@@ -9,6 +9,25 @@
 // les signaux d'appareil — qui sont lus une seule fois, au démarrage, par
 // `main.js`.
 
+// Le tampon circulaire pré-alloué et la définition d'une « frame lente »
+// viennent de l'instrument de mesure (`debug_perf.js`), et ne sont pas
+// redéfinis ici : Auto et le relevé `?debug=fps` doivent parler de la MÊME
+// chose, sans quoi Xav lirait « 0/600 frames > 20 ms » sur un jeu qu'Auto
+// vient de juger trop lent. Les deux modules restent purs.
+import {
+  creerTamponCirculaire, ajouterAuTampon, viderTampon, SEUIL_FRAME_LENTE_MS,
+} from './debug_perf.js';
+
+// La frame la plus courte qu'on accepte de compter, pour dimensionner le
+// tampon de la fenêtre. 4 ms = 240 Hz, au-delà de tout écran qu'on vise.
+// Pourquoi ce calcul plutôt que les 600 cases de `debug_perf.js` : 600 frames
+// ne font 10 s qu'à 60 fps PILE. À 62 fps — un Chrome sans fenêtre, un écran
+// à 120 Hz — le tampon plein ne totaliserait jamais les 10 s demandées, et
+// Auto n'évaluerait plus rien. L'oubli serait sans conséquence (une machine
+// fluide ne descend pas de toute façon), donc invisible, donc à écrire
+// maintenant plutôt qu'à découvrir le jour où la fenêtre changera de durée.
+const DUREE_FRAME_MIN_MS = 4;
+
 // La valeur d'un levier qui ne change rien. Elle vit en DONNÉES
 // (`valeur_neutre`) parce que c'est elle qui définit Moyen : « Moyen =
 // l'état actuel » est le contrat de non-régression du palier B, pas un
@@ -92,11 +111,24 @@ export function presetInferieur(config, presetId) {
 //
 // `deltasMs` est déjà filtré, dans l'ordre chronologique. Rend toujours la
 // même forme, pour que l'appelant sache aussi POURQUOI ça ne descend pas.
-export function doitDescendre(deltasMs, { fenetre_ms, part_frames_lentes, seuil_frame_lente_ms }) {
-  const total = deltasMs.reduce((s, d) => s + d, 0);
-  if (total < fenetre_ms) return { descendre: false, motif: 'fenêtre incomplète', part: 0 };
-  const lentes = deltasMs.filter((d) => d > seuil_frame_lente_ms).length;
-  const part = deltasMs.length === 0 ? 0 : lentes / deltasMs.length;
+export function doitDescendre(deltasMs, seuils) {
+  return doitDescendreAgrege({
+    totalMs: deltasMs.reduce((s, d) => s + d, 0),
+    framesLentes: deltasMs.filter((d) => d > seuils.seuil_frame_lente_ms).length,
+    framesTotales: deltasMs.length,
+  }, seuils);
+}
+
+// LA décision, énoncée une seule fois — sur des agrégats, pas sur la liste.
+// `doitDescendre` ci-dessus n'est que la même chose pour qui tient le tampon
+// en main (les tests, un futur outil d'analyse) ; en jeu, c'est cette
+// forme-ci qui sert, parce que relire 600 deltas à chaque frame pour en
+// refaire la somme allouerait un tableau par frame — exactement ce que le
+// tampon circulaire pré-alloué de `debug_perf.js` existe pour éviter.
+// Deux appelants, une seule règle : c'est la leçon de `D-71`/`D-72`.
+export function doitDescendreAgrege({ totalMs, framesLentes, framesTotales }, { fenetre_ms, part_frames_lentes }) {
+  if (totalMs < fenetre_ms) return { descendre: false, motif: 'fenêtre incomplète', part: 0 };
+  const part = framesTotales === 0 ? 0 : framesLentes / framesTotales;
   return {
     descendre: part > part_frames_lentes,
     motif: part > part_frames_lentes ? 'trop de frames lentes' : 'assez fluide',
@@ -237,4 +269,76 @@ export function appliquerGrainSol(visuel, fraction) {
   const gardees = Math.max(0, Math.min(total, Math.round(total * fraction)));
   if (gardees === 0) return null;
   return { ...visuel, primitives: visuel.primitives.slice(0, gardees) };
+}
+
+// L'état d'Auto pour UNE session de jeu (§5.2 de la spec) : la fenêtre
+// glissante des frames qui comptent, et la mémoire de ce qui a déjà été fait.
+// Aucune horloge, aucun DOM, aucun accès au catalogue au-delà de ce qu'on lui
+// passe — la durée de la fenêtre est la SOMME des deltas, donc un test n'a
+// rien à simuler.
+//
+// Ce que ce module ne décide PAS, et c'est volontaire : quelles frames
+// comptent. « Ne comptent pas : UI ouverte, onglet caché, cinématique d'intro,
+// les 5 s qui suivent une entrée en scène » sont des faits que seul
+// l'orchestrateur connaît ; ici, une frame qui arrive est une frame qui
+// compte. C'est aussi ce qui rend la règle testable sans monter un jeu entier.
+//
+// Les compteurs sont tenus À L'INSERTION (somme courante, nombre de frames
+// lentes courant), en retirant ce que le tampon plein évince : zéro allocation
+// par frame, et la décision reste `doitDescendreAgrege`, la même que celle des
+// tests.
+export function creerDescenteAuto(config, seuilFrameLenteMs = SEUIL_FRAME_LENTE_MS) {
+  const seuils = { ...config.auto, seuil_frame_lente_ms: seuilFrameLenteMs };
+  const tampon = creerTamponCirculaire(Math.ceil(seuils.fenetre_ms / DUREE_FRAME_MIN_MS));
+  let sommeMs = 0;
+  let framesLentes = 0;
+  // « La descente est dite UNE fois » : le message est le même à chaque cran,
+  // le répéter serait du bruit. Session seulement — rien n'est persisté, parce
+  // qu'un réglage d'appareil n'a rien à faire dans la sauvegarde (`D-111`).
+  // « Au plus une descente par niveau », lui, est tenu par construction :
+  // chaque descente change de niveau et rien ne remonte jamais, donc aucun
+  // niveau ne se présente deux fois.
+  let annonceFaite = false;
+
+  function vider() {
+    viderTampon(tampon);
+    sommeMs = 0;
+    framesLentes = 0;
+  }
+
+  return {
+    // Une frame qui compte. Rend `null` tant qu'il n'y a rien à faire, ou la
+    // descente à appliquer : { preset, annoncer, part }. L'appelant n'a aucune
+    // règle à réécrire, seulement à obéir.
+    observer(deltaMs, presetActuel) {
+      if (tampon.compte === tampon.capacite) {
+        const sortant = tampon.valeurs[tampon.curseur];
+        sommeMs -= sortant;
+        if (sortant > seuils.seuil_frame_lente_ms) framesLentes -= 1;
+      }
+      ajouterAuTampon(tampon, deltaMs);
+      sommeMs += deltaMs;
+      if (deltaMs > seuils.seuil_frame_lente_ms) framesLentes += 1;
+
+      const verdict = doitDescendreAgrege(
+        { totalMs: sommeMs, framesLentes, framesTotales: tampon.compte }, seuils,
+      );
+      if (!verdict.descendre) return null;
+
+      // La fenêtre repart de zéro DANS LES DEUX CAS — y compris au plancher,
+      // où il n'y a plus rien à descendre. Sans ça, un Bas qui rame ferait
+      // reverdir le verdict à chaque frame et brûlerait un calcul pour rien.
+      vider();
+      const inferieur = presetInferieur(config, presetActuel);
+      if (inferieur === null) return null;
+      const annoncer = !annonceFaite;
+      annonceFaite = true;
+      return { preset: inferieur, annoncer, part: verdict.part };
+    },
+    // Une frame qui ne compte pas n'a rien à faire ici : l'appelant n'appelle
+    // simplement pas `observer`. Cette méthode-ci existe pour le seul cas où
+    // la fenêtre doit être JETÉE — un changement de preset, quelle qu'en soit
+    // la cause : les frames d'avant mesuraient un autre jeu.
+    reinitialiserFenetre: vider,
+  };
 }

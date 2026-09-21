@@ -32,6 +32,8 @@
 //   chrome.capture(chemin)         PNG du viewport
 //   chrome.bridageCpu(facteur)     ralentit le CPU d'autant (1 = normal, 6 = proxy
 //                                  d'appareil faible) — le coût du calque est CPU
+//   chrome.messages(type = null)   ce que la console a dit (`log`, `info`, `warn`…)
+//   chrome.erreurs()               erreurs et exceptions vues par la console
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -147,6 +149,16 @@ async function main() {
         fs.mkdirSync(path.dirname(chemin), { recursive: true });
         fs.writeFileSync(chemin, Buffer.from(r.data, 'base64'));
         console.log(`capture : ${chemin}`);
+      },
+      // Tout ce que la console a DIT depuis la dernière navigation, filtré
+      // par type (`log`, `info`, `warn`…). Sert à observer ce qui n'a pas de
+      // trace dans le DOM : la bannière d'Auto passe en trois secondes et vit
+      // sur le canvas, donc aucun sélecteur ne la verra jamais — mais la
+      // descente, elle, se journalise.
+      messages(type = null) {
+        return evenements
+          .filter((e) => e.method === 'Runtime.consoleAPICalled' && (type === null || e.params.type === type))
+          .map((e) => e.params.args.map((a) => a.value ?? a.description).join(' '));
       },
       // Erreurs et exceptions vues par la console depuis la dernière navigation.
       erreurs() {

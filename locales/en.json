@@ -183,6 +183,7 @@
   "monde.gain_item": "+{n}",
   "monde.gain_xp": "+{n}xp",
   "hud.niveau_prefixe": "Lv.",
+  "hud.graphismes_alleges": "Graphics lowered to keep the game smooth.",
   "menu.construction": "Building",
   "menu.construction_titre": "Building",
   "menu.construction_aide_deplacer": "Move:",

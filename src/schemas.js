@@ -2105,7 +2105,7 @@ SCHEMAS.graphismes = {
     // une fenêtre nulle descendrait à chaque frame.
     const auto = entry.auto;
     if (!auto || typeof auto !== 'object') {
-      erreurs.push(`${path} > auto doit être un objet { fenetre_ms, part_frames_lentes, delai_entree_scene_ms }`);
+      erreurs.push(`${path} > auto doit être un objet { fenetre_ms, part_frames_lentes, delai_entree_scene_ms, cle_annonce, annonce_duree_ms }`);
       return erreurs;
     }
     if (typeof auto.fenetre_ms !== 'number' || auto.fenetre_ms <= 0) {
@@ -2116,6 +2116,16 @@ SCHEMAS.graphismes = {
     }
     if (typeof auto.delai_entree_scene_ms !== 'number' || auto.delai_entree_scene_ms < 0) {
       erreurs.push(`${path} > auto.delai_entree_scene_ms doit être un nombre >= 0`);
+    }
+    // Palier E : ce qu'Auto DIT au joueur quand il descend. La clé est exigée
+    // ici — donc au démarrage — parce qu'une annonce muette ne se verrait
+    // qu'au moment précis où le jeu rame, c'est-à-dire au pire moment pour
+    // découvrir un bug, et sur la machine de quelqu'un d'autre.
+    if (typeof auto.cle_annonce !== 'string') {
+      erreurs.push(`${path} > auto.cle_annonce manquante (le texte de la descente vit dans les locales, jamais en code)`);
+    }
+    if (typeof auto.annonce_duree_ms !== 'number' || auto.annonce_duree_ms <= 0) {
+      erreurs.push(`${path} > auto.annonce_duree_ms doit être un nombre strictement positif (durée de la bannière)`);
     }
     return erreurs;
   },

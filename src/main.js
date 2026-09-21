@@ -42,7 +42,7 @@ import {
 } from './texte_flottant.js';
 import {
   resoudrePreset, valeurLevier, appliquerParticules, appliquerGrainSol, lirePresetForce,
-  cleEtatCarte, presetSuivant,
+  cleEtatCarte, presetSuivant, creerDescenteAuto,
 } from './qualite.js';
 import { creerRegistreFlags } from './flags.js';
 import { calculerStatsPrimaires, calculerStatsDerivees, appliquerModulateurSurvie } from './stats.js';
@@ -383,6 +383,15 @@ export function creerOrchestrateurGrotte({
   // headless n'a donc rien à fournir et traverse quand même la VRAIE fonction
   // de résolution, jamais une décision recopiée dans un harnais (`D-72`).
   graphismes = resoudreGraphismes(registre, save, null),
+  // Palier E : ce qu'un changement de preset entraîne HORS de la scène — le
+  // curseur du jeu, qui vit sur son propre calque DOM et dont les étincelles
+  // sont des particules cosmétiques comme les autres. L'orchestrateur ne le
+  // connaît pas (il doit rester importable depuis Node), mais il est le seul
+  // à savoir QUAND le preset change : Auto peut le changer tout seul, au
+  // milieu d'une frame, sans que personne ait cliqué. Un seul point de
+  // notification, donc un seul endroit à relire — jamais une ligne recopiée
+  // derrière chaque appelant (`D-72`). No-op par défaut, comme `onEtatUi`.
+  onGraphismesAppliques = () => {},
 }) {
   // Les leviers sont lus UNE fois, ici : au-delà de cette ligne, plus personne
   // ne connaît le mot « bas ». Chaque système reçoit un nombre.
@@ -394,6 +403,18 @@ export function creerOrchestrateurGrotte({
   // endroit qui lit, donc un seul endroit à relire quand ça change.
   let graphismesActuels = graphismes;
   const levier = (nom) => valeurLevier(graphismesActuels.config, graphismesActuels.preset, nom);
+  // §5.2 — l'état d'Auto pour CETTE session : la fenêtre glissante des frames
+  // qui comptent, et la mémoire de ce qui a déjà été dit. La règle elle-même
+  // vit dans `qualite.js`, pure et testée sans horloge ; ici on ne fait que
+  // décider quelles frames lui sont données, et obéir à son verdict.
+  const descenteAuto = creerDescenteAuto(graphismesActuels.config);
+  // Les premières secondes d'une scène ne comptent pas : c'est le temps que le
+  // calque statique se construise, et le juger là reviendrait à faire
+  // descendre Auto sur le coût d'un chargement.
+  let msDepuisEntreeScene = 0;
+  // L'annonce attend son tour si un indice de commande occupe la bannière
+  // (`hints.js#annoncer` rend faux) — jamais perdue, jamais forcée.
+  let annoncePendante = null;
   let etatModifie = false;
 
   // Silhouettes de tuiles (03_maison-exterieur §3.3) : résolu UNE fois (pas
@@ -507,6 +528,64 @@ export function creerOrchestrateurGrotte({
     // franchissement de tuile : la signature du calque (scène, échelle,
     // portes) n'a pas bougé, et c'est normal — ce n'est pas elle qui a changé.
     invaliderCoucheStatique();
+    // Palier E : les frames d'avant mesuraient un AUTRE jeu — les garder
+    // ferait juger Bas sur les frames de Moyen, et descendre deux fois de
+    // suite sur une seule mauvaise passe. Vaut pour les deux causes d'un
+    // changement, le joueur comme Auto : la fenêtre est jetée ici, une fois.
+    descenteAuto.reinitialiserFenetre();
+    onGraphismesAppliques(resolu);
+  }
+
+  // §5.2 — Auto descend d'un cran, et jamais ne remonte. Trois gestes, pas un
+  // de plus : savoir si cette frame compte, la donner à la décision, obéir.
+  // La règle (la fenêtre, la part de frames lentes, le palier inférieur, « une
+  // seule annonce ») est tout entière dans `qualite.js` ; ce qui est ICI est
+  // ce que ce module est seul à savoir — quelles frames sont du vrai jeu.
+  function majDescenteAuto(deltaMs, uiOuverte) {
+    msDepuisEntreeScene += deltaMs;
+    // Une annonce que la bannière a refusée est rappelée jusqu'à ce qu'elle
+    // passe : même contrat que `declencherVerbeUtile`, dont l'appelant répète
+    // la demande tant qu'elle tient. Un premier indice de commande a la
+    // priorité — il apprend le jeu, l'annonce ne fait que l'expliquer.
+    if (annoncePendante && !uiOuverte
+      && indices.annoncer(annoncePendante.cle, annoncePendante.dureeMs)) {
+      annoncePendante = null;
+    }
+    // « Un choix manuel du joueur coupe Auto jusqu'à ce qu'il re-choisisse
+    // Auto » — et un `?qualite=` n'est pas davantage un choix d'Auto. Les deux
+    // sont déjà dits par le même champ, résolu au démarrage.
+    if (!graphismesActuels.auto) return;
+    // Ce qui ne compte pas : une UI ouverte — donc aussi l'intro, le dialogue,
+    // le menu, la construction, puisque c'est LE point de décision unique qui
+    // le dit — et les premières secondes d'une scène. Un onglet caché, lui, ne
+    // produit aucune frame ; celle du retour est plafonnée à 100 ms par
+    // `render.js`, soit UNE frame lente sur 600, très loin des 15 % qu'il
+    // faudrait pour descendre. Il n'y a donc rien à écrire pour elle — et
+    // rien qui puisse se tromper.
+    if (uiOuverte) return;
+    if (msDepuisEntreeScene < graphismesActuels.config.auto.delai_entree_scene_ms) return;
+
+    const descente = descenteAuto.observer(deltaMs, graphismesActuels.preset);
+    if (!descente) return;
+    // Dit en console, et pas seulement à l'écran : la bannière passe en trois
+    // secondes, or c'est exactement l'information qu'on voudra relire quand
+    // Xav rapportera « le jeu s'est allégé tout seul » depuis une autre
+    // machine. C'est aussi ce que le scénario headless observe.
+    console.info(
+      `graphismes : Auto descend de « ${graphismesActuels.preset} » à « ${descente.preset} » `
+      + `(${Math.round(descente.part * 100)} % de frames lentes sur la fenêtre)`,
+    );
+    // Le preset RÉSOLU change ; le CHOIX, lui, reste « auto » — donc rien
+    // n'est écrit dans la sauvegarde (§5.3), et la carte de Paramètres passera
+    // d'elle-même à « Auto (Bas) » sans qu'on ait à l'en avertir : elle relit
+    // la source, et la source est l'orchestrateur.
+    appliquerGraphismes({ ...graphismesActuels, preset: descente.preset });
+    if (descente.annoncer) {
+      annoncePendante = {
+        cle: graphismesActuels.config.auto.cle_annonce,
+        dureeMs: graphismesActuels.config.auto.annonce_duree_ms,
+      };
+    }
   }
 
   function rayonHeros() {
@@ -956,6 +1035,9 @@ export function creerOrchestrateurGrotte({
     // qu'on quitte n'a rien à faire flottant dans la suivante.
     viderTextesFlottants(textesFlottants);
     scene = chargerScene(registre, sceneId, resoudreOverridesStations(sceneId));
+    // Palier E : le calque statique de la scène neuve est à construire, et
+    // cette construction n'est pas une saccade de jeu — Auto ne la juge pas.
+    msDepuisEntreeScene = 0;
     // Décor (§3.4 03_grotte-polish) : genererDecor() reste pur et ne connaît
     // que des id (visuel: string) — résolus ici une seule fois, à l'entrée en
     // scène (le décor est statique, jamais recalculé par frame), même
@@ -2097,6 +2179,9 @@ export function creerOrchestrateurGrotte({
     // (aujourd'hui : le `preventDefault` de `Tab`, qui arrive hors frame).
     onEtatUi(uiOuverte);
     onVerbesActions(verbesActionsVisibles());
+    // Auto (§5.2) : lu sur la MÊME frame et le MÊME `uiOuverte` que tout le
+    // reste — jamais un second calcul de « le jeu a-t-il la main ».
+    majDescenteAuto(deltaMs, uiOuverte);
     if (menu.estOuvert()) menu.traiterInput(etatBrut);
     else if (dialogueOuvertMaintenant) dialogue.traiterInput(dialogueVientDeSOuvrir ? etatNeutre(etatBrut) : etatBrut);
     else if (choixFolletActif()) traiterChoixFollet(etatBrut);
@@ -3208,11 +3293,8 @@ export async function demarrerJeu() {
       save.settings.graphismes = presetSuivant(graphismes.config, save.settings.graphismes);
       const resolu = resoudreGraphismes(registre, save, window, window.location.search);
       if (resolu.avertissement) console.warn(resolu.avertissement);
+      // Le curseur suit par `onGraphismesAppliques`, câblé une fois plus bas.
       orchestrateur.appliquerGraphismes(resolu);
-      // Le curseur n'est pas dans la scène, mais ses étincelles sont des
-      // particules cosmétiques comme les autres : les laisser derrière ferait
-      // un Bas à moitié appliqué, visible à la souris.
-      curseur.definirEffets(effetsCurseur().config, effetsCurseur().sillage);
     },
     volumeCourant: () => cleEtatVolume(),
     cyclerVolume() {
@@ -3337,6 +3419,12 @@ export async function demarrerJeu() {
     // `D-54` : le seul écrivain du drapeau lu par le clavier (cf. plus haut).
     onEtatUi: (ouverte) => { uiCapteLesVerbes = ouverte; },
     onVerbesActions: (verbes) => { verbesActionsDebloques = verbes; },
+    // Le curseur n'est pas dans la scène, mais ses étincelles sont des
+    // particules cosmétiques comme les autres : les laisser derrière ferait un
+    // Bas à moitié appliqué, visible à la souris. Ici, et pas derrière chaque
+    // appelant — parce que depuis le palier E, le preset peut changer sans que
+    // personne ait cliqué (`descenteAuto`).
+    onGraphismesAppliques: () => curseur.definirEffets(effetsCurseur().config, effetsCurseur().sillage),
   });
   // Dépendance circulaire résolue par un point de couture explicite (§B du
   // diagnostic) : le menu (construit avant l'orchestrateur, qui en a besoin

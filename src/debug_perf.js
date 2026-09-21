@@ -79,6 +79,17 @@ export function ajouterAuTampon(tampon, valeur) {
 // Valeurs dans l'ordre chronologique (plus ancien -> plus récent). Tant que
 // le tampon n'a jamais bouclé (compte < capacite), tout part de l'indice 0 ;
 // une fois plein, le plus ancien occupé est justement `curseur`.
+// Remet le tampon à vide SANS réallouer : `compte = 0` suffit, les cases
+// restées écrites ne sont plus jamais lues (valeursTampon ne lit que les
+// cases occupées). Né du palier E de `specs/09_reglages-graphiques.md` : après
+// une descente d'Auto, « la fenêtre repart de zéro » — et elle repart de zéro
+// au milieu d'une partie, donc sans allouer un Float64Array de plus.
+export function viderTampon(tampon) {
+  tampon.curseur = 0;
+  tampon.compte = 0;
+  return tampon;
+}
+
 export function valeursTampon(tampon) {
   const resultat = new Array(tampon.compte);
   const depart = tampon.compte < tampon.capacite ? 0 : tampon.curseur;

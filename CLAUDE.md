@@ -357,6 +357,8 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 | **Le stick droit pilote le curseur, et il sort de la couche d'input par un accesseur SÉPARÉ** (`input.pointeurManette()`), jamais dans l'état de verbes : `etat` garde sa forme move + verbes dont `etatNeutre()` dérive génériquement, et c'est ce qui **garantit qu'aucun système de jeu ne lira jamais ce stick** — un pointeur analogique n'est pas un verbe. Conséquence à ne pas manquer : **une page ne peut pas déplacer le curseur du système** (aucune API, et tant mieux), donc au stick l'orbe est dessiné **sur le calque** et la variable CSS passe à `none` — même silhouette, même fonction de dessin, seul le **porteur** change, et le dernier périphérique qui bouge gagne dans les deux sens. Enfin, un déplacement au stick divise la direction par la norme BRUTE et la vitesse par la norme **bornée à 1** : confondre les deux fait aller une diagonale √2 fois trop vite (c'est `D-102` côté clavier, ici corrigeable sans toucher au gameplay) | 2026-09-22 | `D-109`, `docs/JOURNAL_2026-09-22_curseur.md` |
 | **La taille de la réserve d'un système de particules suit la VITESSE de ce qu'il suit.** Les 8 bouffées de `poussiere.js` sont calibrées sur un héros à 75 px/s ; une souris les vide en quatre frames, et la traînée devient une grappe clignotante. `capacite` passe donc en données (absente = 8, héros et follet identiques au pixel près). Et l'émission est **interpolée le long du segment parcouru** : toutes les bouffées d'une même frame naissaient au point d'ARRIVÉE, invisible à 1 px par frame, ruineux à 60 — ce qui rend enfin vraie la promesse déjà écrite dans ce module, « l'émission se fait à la distance parcourue » | 2026-09-22 | `D-108` |
 | **Le clic droit se verrouille sur le DOCUMENT, jamais sur le seul canvas** : les écrans d'UI sont des éléments DOM posés à côté du canvas (même raison qui fait passer `document.documentElement` en plein écran), donc un garde posé sur le canvas est un garde à moitié posé — et la moitié qui manque est celle où la souris sert. Effet de bord voulu au tactile : l'appui **maintenu** déclenche lui aussi `contextmenu`, donc la bulle « copier / partager » disparaît avec, sans toucher `input/touch.js`. La porte de secours `?souris=libre` ne pose **aucun** écouteur, plutôt qu'un écouteur qui laisse passer | 2026-09-22 | `D-107` |
+| **Auto mesure du TEMPS DE JEU, et c'est l'orchestrateur — et lui seul — qui dit quelles frames en sont.** La règle de descente est pure et sans horloge (la durée de la fenêtre est la **somme des deltas**, donc un test donne des nombres au lieu de simuler une horloge) ; ce qu'elle ignore volontairement, c'est *quelles* frames lui arrivent. Une UI ouverte n'en produit aucune, et **par le point de décision unique existant** (`uiOuverte`) — ce qui couvre l'intro, le dialogue, le menu et la construction sans une ligne de plus ; les premières secondes d'une scène non plus (le calque s'y construit : le juger ferait descendre Auto sur un chargement). L'onglet caché, lui, n'a demandé **rien du tout** — il ne produit aucune frame, et celle du retour est plafonnée à 100 ms, soit **une** frame lente sur 600 quand il en faudrait 90. Vérifié à la cause plutôt que traité par précaution : une machinerie pour un problème qui n'existe pas est une machinerie qui se trompera un jour | 2026-09-22 | `D-117`, palier E de `specs/09_reglages-graphiques.md` |
+| **Une décision lue par frame ne se lit pas sur une liste.** La même règle existe en deux formes — `doitDescendre` prend les 600 deltas (tests, outillage), `doitDescendreAgrege` prend les compteurs courants (le jeu) — parce que refaire la somme à chaque frame allouerait un tableau par frame, exactement ce que le tampon circulaire pré-alloué existe pour éviter. Deux formes, **une** règle, et un test qui refuse qu'elles divergent : c'est `D-71`/`D-72` appliqué *avant* le bug plutôt qu'après. Corollaire de dimensionnement, trouvé en écrivant : le tampon se calcule **depuis la fenêtre**, jamais depuis les 600 cases de l'instrument — 600 frames ne font 10 s qu'à 60 fps *pile*, et à 62 fps la fenêtre ne se serait jamais complétée. Auto n'aurait plus rien évalué, **sans conséquence visible** (une machine fluide ne descend pas de toute façon), donc sans que personne le découvre | 2026-09-22 | `D-117` |
 | **Une silhouette de personnage se juge dans la scène, pas au banc — et la scène lui prête ses couleurs.** Le manteau du héros prend la teinte de la **lumière du follet** (rayon 100 px) : brun chaud avec le feu, gris-bleu avec l'eau. Personne ne l'a codé, c'est le calque de lumière existant. Corollaire : une capture de silhouette de personnage se prend **par compagnon**, sinon elle ne montre qu'un tiers de la vérité (`tools/scenarios/heros_scene.mjs`) | 2026-09-22 | même journal |
 
 ## Ce qui est dû : dettes, questions, validations
@@ -409,19 +411,20 @@ la session précédente a révélées, clos celles qu'elle a livrées.
 4. ~~`D-36` — follet « aérien »~~ — **proposé et conservé** par Xav ; réglage et verdict final à l'œil (`V-20`).
 5. ~~**La nuit du 20/09** (file autonome n° 2)~~ — **les cinq tickets sont livrés et fusionnés** (`D-39`, `D-40`, `D-17`, `D-13`, `D-30`). Le playtest téléphone qui a suivi en a rouvert deux, `D-42` et `D-30` : ~~mini-file « menu tactile »~~ — **livrée, en ligne, validée par Xav** (`V-25`, `V-26`).
 5 bis. ~~**`specs/08_menus-cartes.md`** (`D-43`)~~ — **les trois paliers et le polish sont livrés, fusionnés dans `main` et en ligne** (21/09, clavier et manette validés par Xav). Restent à Xav : le téléphone (`V-27`, `V-28`, `V-29`), et confirmer ou réviser `Q-36` et `Q-39`. **Premier retour téléphone, 20/09 midi : les menus s'ouvraient à l'échelle 1080p** — `D-48`, corrigé et mesuré le jour même (une seule fonction, en px CSS) ; verdict en jeu dû `V-31`.
-6. `D-01` — **palier A livré le 22/09** (`specs/09_reglages-graphiques.md`) : le calque se reconstruit quand la vue sort de la zone pré-rendue, reconstructions et frames lentes **divisées par deux**. Le **défilement incrémental** (remède n° 2, le seul qui baisse le pic) attend la décision de Xav au vu des chiffres. **Paliers B, C et D livrés le 22/09** (`D-111` catalogue + résolution + sauvegarde ; `D-112`/`D-113`/`D-114` les trois leviers, un commit chacun ; `D-115` la carte dans Paramètres et le changement à chaud) ; reste E (Auto). `D-16` (puits) est **close**. Puis reprise de `Q-07`.
+6. `D-01` — **palier A livré le 22/09** (`specs/09_reglages-graphiques.md`) : le calque se reconstruit quand la vue sort de la zone pré-rendue, reconstructions et frames lentes **divisées par deux**. Le **défilement incrémental** (remède n° 2, le seul qui baisse le pic) attend la décision de Xav au vu des chiffres. **Paliers B, C et D livrés le 22/09** (`D-111` catalogue + résolution + sauvegarde ; `D-112`/`D-113`/`D-114` les trois leviers, un commit chacun ; `D-115` la carte dans Paramètres et le changement à chaud ; `D-117` le mode Auto, palier E). **La spec est livrée en entier** ; il ne reste d'elle que ce qui revient à Xav : `V-58` à `V-61` et les questions ouvertes (`Q-55` à `Q-61`). `D-16` (puits) est **close**. Puis reprise de `Q-07`.
 7. Ce que Xav doit trancher avant d'aller plus loin sur le contenu : `Q-33` (apparitions de ressources) et `Q-34` (lisibilité de la première nuit dangereuse) — nées du constat d'équilibrage du 19/09 au soir.
 
 Les sept tickets de code du 19/09 (`D-22`, `D-21`, `D-20` A et B, `D-05`, `D-23`) sont livrés — détail et validations restantes dans `docs/DOC_suivi-dettes.md`. En parallèle, côté Xav : `A-06` (Firefox `about:support`, 2 min). `A-07` (profil USB de l'A04) **tombe sans objet** avec `D-31`.
 
 Les captures de la V1 (`docs/captures/v1/`) sont une **inspiration, jamais un cahier des charges** : aucun ticket ne les lit tant que `E-03` (une ligne d'intention par capture) n'est pas rempli.
 
-`Q-10`, `Q-11`, `Q-12`, `Q-24` et `Q-25` restent à trancher avec Xav ; `Q-07` est gelée. La spec de la barre d'action du bas (`E-01`) est écrite par Xav lui-même et attend le chiffrage `Q-11`. **Une spec non écrite ne se commence pas** (même règle que pour une phase).## Journal de session — `specs/09_reglages-graphiques.md`, PALIERS A À D (22/09)
+`Q-10`, `Q-11`, `Q-12`, `Q-24` et `Q-25` restent à trancher avec Xav ; `Q-07` est gelée. La spec de la barre d'action du bas (`E-01`) est écrite par Xav lui-même et attend le chiffrage `Q-11`. **Une spec non écrite ne se commence pas** (même règle que pour une phase).## Journal de session — `specs/09_reglages-graphiques.md`, PALIERS A À E (22/09)
 
-Quatre paliers de `specs/09_reglages-graphiques.md` (arrivée écrite et
+Les **cinq** paliers de `specs/09_reglages-graphiques.md` (arrivée écrite et
 décidée, §3), branche `reglages-graphiques`, **un commit par palier** — et
 **un par levier** au palier C, comme la spec le demande —, validation de Xav
-entre deux.
+entre deux. La spec est **livrée en entier** ; ce qui reste d'elle est du
+ressort de Xav : `V-58` à `V-61`, et les questions qu'elle a ouvertes.
 
 ### Palier A — `D-01` : le calque ne se refait plus à chaque tuile
 
@@ -602,4 +605,45 @@ c'est-à-dire `E-04` — que la spec avait justement prévu comme son réceptacl
 Premier levier disponible : `densite_decor` au-delà de 1, **bloqué par
 `D-106`** (sans lui, décupler la densité sème de l'herbe sur le chemin).
 
-Reste le palier E : Auto — signal de départ, descente mesurée, annonce.
+### Palier E — Auto (`D-117`), et le chantier est fini
+
+Le signal de départ existait depuis le palier B (`pointer: coarse` → Bas,
+sinon Moyen, et **jamais Haut** : Auto ne suppose pas, il n'offre pas). Ce
+palier livre la **descente** et ce qu'on en dit.
+
+Les quatre promesses de §5.2 sont tenues **par construction** plus que par
+surveillance. « Au plus une descente par niveau » n'a demandé aucun compteur :
+chaque descente change de niveau et rien ne remonte jamais, donc aucun niveau
+ne se présente deux fois. « Jamais de remontée » n'a demandé aucun garde : il
+n'existe aucun chemin qui rende un preset au-dessus du courant. Ce qui a
+demandé du soin, c'est l'inverse — les frames qu'il ne faut **pas** compter.
+
+L'**annonce** passe par la bannière d'indice, à qui on apprend à dire une
+phrase du jeu et non d'un verbe : pas de glyphe, pas de flag. Elle **cède le
+pas** à un premier indice de commande et se represente jusqu'à ce qu'elle
+passe — un indice enseigne le jeu, l'annonce ne fait que l'expliquer. Elle est
+aussi journalisée : la bannière dure trois secondes, or c'est exactement ce
+qu'on voudra relire le jour où un « le jeu s'est allégé tout seul » arrivera
+d'une autre machine.
+
+Trois passes dans un vrai Chrome (`tools/scenarios/auto_graphismes.mjs`) :
+
+| | carte Paramètres après 25 s de marche | descentes |
+|---|---|---|
+| bridage ×20, Auto | « Auto (Moyen) » → **« Auto (Bas) »** | **1** |
+| sans bridage, Auto | « Auto (Moyen) » | 0 |
+| bridage ×20, **`haut` choisi à la main** | « Haut » | 0 |
+
+La deuxième passe n'est pas du zèle : sans elle, la première ne prouverait
+rien — un Auto qui descendrait toujours la passerait aussi.
+
+Et une mesure que personne n'avait demandée, qui devient `Q-61` : sous bridage
+**×2, ×3 et ×6**, Auto **ne descend jamais**. Le ×6 est pourtant le proxy
+d'appareil faible du palier A. Le seuil de 15 % n'est donc pas nerveux — il
+est peut-être trop lâche. C'est structurel : 20 ms, c'est 50 fps, donc une
+machine à 60 fps régulier passe et une machine à 45 fps régulier échoue à
+**100 %**. Conséquence à regarder en face : la saccade au franchissement de
+tuile (~1,3 % de frames lentes) ne déclenchera **jamais** Auto, alors que
+c'est justement la gêne que Bas soigne le mieux. Rien n'est changé — les trois
+seuils sont ceux que la spec a fixés, ils vivent en données, et c'est `V-61`
+sur les vraies machines qui doit parler avant qu'on touche un chiffre.

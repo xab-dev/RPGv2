@@ -28,7 +28,9 @@
     "auto": {
       "fenetre_ms": 10000,
       "part_frames_lentes": 0.15,
-      "delai_entree_scene_ms": 5000
+      "delai_entree_scene_ms": 5000,
+      "cle_annonce": "hud.graphismes_alleges",
+      "annonce_duree_ms": 3500
     }
   }
 ]

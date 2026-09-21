@@ -195,3 +195,17 @@ aubier clair et cernes concentriques. C'est l'accent, et c'est aussi ce qui dit
 2. Fût raccourci de 0,6 unité pour que l'ellipse arrière **déborde** et fasse
    un bout rond.
 
+### `D-87` — le fruit
+
+**Diagnostic** : un disque rouge, une pastille claire, un trait vert. Et le vrai
+défaut, le même couple que caillou/pierre : **rien ne le sépare du fruit cuit**
+qu'une teinte.
+
+**Conceptualisation** : la couleur d'identité (`#d94a3d`) est conservée — c'est
+elle qu'on reconnaît de loin ; ce qui s'ajoute, ce sont trois **signes** que le
+fruit cuit n'aura pas : une **feuille** (seul vert du dessin, et l'accent), une
+peau tendue, un éclat net.
+
+**Application, une itération** (plus un recalage de 0,08 unité demandé par le
+test : la masse ombrée sortait par le bas).
+

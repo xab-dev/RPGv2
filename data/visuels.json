@@ -641,5 +641,40 @@
     "primitives": [
       { "forme": "polygone", "dx": 0, "dy": 0, "points": [[-5.8, 0], [-1, -4.4], [-1, -1.1], [5.8, -1.1], [5.8, 1.1], [-1, 1.1], [-1, 4.4]], "couleur": "#f2e9d8", "teinte": true }
     ]
+  },
+  {
+    "id": "visuel_icone_eclat",
+    "ancre": "centre",
+    "primitives": [
+      {"forme":"polygone","dx":0,"dy":0,"points":[[0,-5],[3.3,0],[0,5],[-3.3,0]],"couleur":"#3a566e"},
+      {"forme":"polygone","dx":0,"dy":0,"points":[[0,-4.3],[2.7,0],[0,4.3],[-2.7,0]],"couleur":"#7fa6c4"},
+      {"forme":"polygone","dx":0,"dy":0,"points":[[0,-4.3],[0,4.3],[-2.7,0]],"couleur":"#cfe6f7"},
+      {"forme":"polygone","dx":0,"dy":0,"points":[[0,-4.3],[-1.3,-0.6],[0,0.6]],"couleur":"#ffffff","alpha":0.75},
+      {"forme":"polygone","dx":0,"dy":0,"points":[[0,4.3],[1.4,0.6],[2.7,0]],"couleur":"#26405a","alpha":0.55}
+    ]
+  },
+  {
+    "id": "visuel_icone_faim",
+    "ancre": "centre",
+    "primitives": [
+      {"forme":"polygone","dx":0,"dy":0,"points":[[0,-4.8],[4.3,4.2],[-4.3,4.2]],"couleur":"#5e3f14"},
+      {"forme":"polygone","dx":0,"dy":0,"points":[[0,-3.9],[3.5,3.5],[-3.5,3.5]],"couleur":"#c2952f"},
+      {"forme":"polygone","dx":-0.3,"dy":-0.2,"points":[[0,-2.6],[2.3,2.5],[-2.5,2.5]],"couleur":"#e8c96a"},
+      {"forme":"rect","dx":0,"dy":3.6,"w":7.6,"h":1.3,"couleur":"#7d5719"},
+      {"forme":"rect","dx":0,"dy":3.1,"w":7.6,"h":0.5,"couleur":"#b98c2c"},
+      {"forme":"polygone","dx":0,"dy":0,"points":[[-0.6,-3],[0.4,-1.4],[-1.4,-1.4]],"couleur":"#fff1c4","alpha":0.7}
+    ]
+  },
+  {
+    "id": "visuel_icone_soif",
+    "ancre": "centre",
+    "primitives": [
+      {"forme":"cercle","dx":0,"dy":1.6,"w":7.8,"h":7.8,"couleur":"#1b4266"},
+      {"forme":"polygone","dx":0,"dy":0,"points":[[0,-5.2],[-3,1.4],[3,1.4]],"couleur":"#1b4266"},
+      {"forme":"cercle","dx":-0.5,"dy":1.1,"w":6.9,"h":6.9,"couleur":"#3f8fd0"},
+      {"forme":"polygone","dx":-0.35,"dy":-0.4,"points":[[0,-4.4],[-2.5,1.4],[2.5,1.4]],"couleur":"#3f8fd0"},
+      {"forme":"ellipse","dx":-1.4,"dy":0.6,"w":1.7,"h":2.6,"rotation":-22,"couleur":"#bfe6ff","alpha":0.72},
+      {"forme":"ellipse","dx":-1.7,"dy":-1.5,"w":0.9,"h":1.3,"rotation":-22,"couleur":"#eaf7ff","alpha":0.5}
+    ]
   }
 ]

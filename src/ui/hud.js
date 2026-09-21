@@ -8,7 +8,7 @@
 
 import {
   boutonsTactilesVisibles, JOYSTICK, BANDEAU_HAUT, elementsBandeauHaut, echelleIconeArme,
-  placerIconesBuffs, alphaPulsationBuff, echelleIconeBuff, ICONE_BUFF,
+  placerIconesBuffs, alphaPulsationBuff, echelleIconeBuff, ICONE_BUFF, echelleIconeBandeau,
 } from './hud_layout.js';
 import { RESOLUTION_LOGIQUE } from '../render.js';
 import { dessinerVisuel, TAILLE_REFERENCE_FOLLET_PX } from '../visuels.js';
@@ -50,14 +50,12 @@ const COULEUR_SLOT_GRISE = 'rgba(255,255,255,0.15)';
 // icônes distinctes PAR FORME (P4② — jamais la couleur seule), un triangle
 // (faim, pain/blé stylisé) et une goutte (soif), jamais deux disques
 // identiques repeints d'une autre couleur.
-// Les deux couleurs d'ICÔNE des jauges de survie restent distinctes de leur
-// palette de barre : une icône pleine se lit sur le bandeau sombre, un corps
-// de barre se lit dans son creux — ce ne sont pas les mêmes contrastes.
-const COULEUR_FAIM = '#d9bb45';
-const COULEUR_SOIF = '#4a9ad9';
 const JAUGE_LARGEUR = 40;
 const JAUGE_HAUTEUR = 6;
-const JAUGE_ICONE_TAILLE = 6;
+const JAUGE_ICONE_TAILLE = 8;
+// Le cristal des éclats, un peu plus petit que la hauteur du bandeau pour que
+// le nombre reste la pièce principale de son groupe.
+const TAILLE_ICONE_ECLAT = 9;
 // MT_hud-ligne-haute_2026-09-19 : COULEUR_XP et tout le cartouche
 // haut-gauche (CARTOUCHE_X/Y/LARGEUR/HAUTEUR/PADDING/RAYON, BARRE_PV_HAUTEUR)
 // ont disparu avec la colonne de gauche — la barre d'XP quitte le HUD
@@ -166,28 +164,17 @@ function dessinerSlotsBas(ctx, resolution, iconesSlots, verbesActions) {
   });
 }
 
-// Triangle (faim, forme distincte du disque PV/de la goutte soif) — pointe
-// vers le haut, centré sur (x, y).
-function dessinerIconeFaim(ctx, x, y, taille) {
-  ctx.beginPath();
-  ctx.moveTo(x, y - taille / 2);
-  ctx.lineTo(x + taille / 2, y + taille / 2);
-  ctx.lineTo(x - taille / 2, y + taille / 2);
-  ctx.closePath();
-  ctx.fillStyle = COULEUR_FAIM;
-  ctx.fill();
-}
-
-// Goutte (soif) — cercle + pointe, forme distincte du triangle ci-dessus.
-function dessinerIconeSoif(ctx, x, y, taille) {
-  const r = taille / 2;
-  ctx.beginPath();
-  ctx.moveTo(x, y - r * 1.4);
-  ctx.quadraticCurveTo(x + r, y, x, y + r);
-  ctx.quadraticCurveTo(x - r, y, x, y - r * 1.4);
-  ctx.closePath();
-  ctx.fillStyle = COULEUR_SOIF;
-  ctx.fill();
+// `D-96` : les icônes du bandeau (faim, soif, éclats) ne sont plus tracées
+// ici à coups de `moveTo`/`quadraticCurveTo`. Ce sont des entrées de
+// `data/visuels.json` comme tout le reste du jeu, résolues par main.js (qui a
+// le registre) et reçues déjà prêtes — même patron que `visuelFollet`,
+// `iconesSlots` et les buffs. Deux gains, et le second est le vrai : un
+// triangle plein et une goutte pleine ne pouvaient pas avoir trois valeurs
+// sans que ce fichier devienne un second `visuels.js` ; et la prochaine
+// retouche de ces trois icônes se fera **en données**, sans toucher au HUD.
+function dessinerIconeBandeau(ctx, visuel, x, y, taille) {
+  if (!visuel) return;
+  dessinerVisuel(ctx, visuel, x, y, { echelle: echelleIconeBandeau(taille) });
 }
 
 // `D-95` — LA barre du bandeau. Les PV, la faim et la soif la traversent
@@ -232,8 +219,8 @@ function dessinerBarre(ctx, rect, ratio, palette) {
 }
 
 // Une jauge de survie = icône (forme) + la barre ci-dessus.
-function dessinerJauge(ctx, x, y, ratio, palette, dessinerIcone) {
-  dessinerIcone(ctx, x + JAUGE_ICONE_TAILLE / 2, y + JAUGE_HAUTEUR / 2, JAUGE_ICONE_TAILLE);
+function dessinerJauge(ctx, x, y, ratio, palette, visuelIcone) {
+  dessinerIconeBandeau(ctx, visuelIcone, x + JAUGE_ICONE_TAILLE / 2, y + JAUGE_HAUTEUR / 2, JAUGE_ICONE_TAILLE);
   dessinerBarre(
     ctx,
     { x: x + JAUGE_ICONE_TAILLE + 4, y, largeur: JAUGE_LARGEUR, hauteur: JAUGE_HAUTEUR },
@@ -250,6 +237,11 @@ export function dessinerHud(ctx, {
   // `visuelArme` unique, qui obligeait le HUD à savoir que seule l'attaque
   // porte une icône.
   iconesSlots = {}, survie = null, niveau = null, eclatNiveau = 0,
+  // `D-96` : `{ eclats, faim, soif }` — les silhouettes du bandeau, résolues
+  // par main.js depuis `survival.json#icone` pour les deux jauges. Absente =
+  // rien de dessiné, jamais une erreur : c'est le même contrat que les autres
+  // tables d'icônes de ce module.
+  iconesBandeau = {},
   // `D-13` : buffs actifs, dans l'ordre d'activation. Chaque entrée est
   // { visuel, resteMs } — la silhouette est DÉJÀ résolue par main.js (qui a
   // le registre), exactement comme `visuelFollet` et `iconesSlots`. Ce module
@@ -321,19 +313,25 @@ export function dessinerHud(ctx, {
   ctx.fillStyle = '#fff';
   ctx.fillText(texte, b.x + b.largeur / 2, b.y + b.hauteur / 2 + 1);
 
-  // Éclats : le losange porte le sens, pas la couleur (P4②).
+  // Éclats : la silhouette porte le sens, pas la couleur (P4②). Le losange
+  // était un GLYPHE de la police (`◆`) : il dépendait de la fonte du système
+  // et ne pouvait porter aucune valeur. C'est maintenant un cristal de
+  // `visuels.json`, comme les deux jauges.
+  const zoneEclats = zones.eclats;
+  const milieuEclats = zoneEclats.y + zoneEclats.hauteur / 2;
+  dessinerIconeBandeau(ctx, iconesBandeau.eclats, zoneEclats.x + TAILLE_ICONE_ECLAT / 2, milieuEclats, TAILLE_ICONE_ECLAT);
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
   ctx.font = '9px monospace';
   ctx.fillStyle = '#fff';
-  ctx.fillText(`◆ ${eclats}`, zones.eclats.x, zones.eclats.y + zones.eclats.hauteur / 2);
+  ctx.fillText(`${eclats}`, zoneEclats.x + TAILLE_ICONE_ECLAT + 4, milieuEclats);
 
   if (survie) {
     // Cause racine (SD_phase3-stations-pv-jauges_2026-09-17.md, sujet 3) :
     // `save.survie` porte les clés de survival.json (`jauge_faim`/
     // `jauge_soif`, cf. save.js/survival.js), jamais `faim`/`soif`.
-    dessinerJauge(ctx, zones.faim.x, zones.faim.y, survie.jauge_faim, PALETTE_JAUGES.faim, dessinerIconeFaim);
-    dessinerJauge(ctx, zones.soif.x, zones.soif.y, survie.jauge_soif, PALETTE_JAUGES.soif, dessinerIconeSoif);
+    dessinerJauge(ctx, zones.faim.x, zones.faim.y, survie.jauge_faim, PALETTE_JAUGES.faim, iconesBandeau.faim);
+    dessinerJauge(ctx, zones.soif.x, zones.soif.y, survie.jauge_soif, PALETTE_JAUGES.soif, iconesBandeau.soif);
   }
 
   if (zones.niveau) {

@@ -27,7 +27,19 @@ function rendre(e) {
 }
 
 const ancre = texte.indexOf(`"id": "${id}"`);
-if (ancre < 0) throw new Error(`id introuvable : ${id}`);
+// Id absent = entrée NEUVE, ajoutée en fin de catalogue. Un outil qui
+// refuserait d'ajouter obligerait à éditer 600 lignes de JSON à la main pour
+// une icône, ce qui est exactement la façon de casser le reste.
+if (ancre < 0) {
+  const fermeture = texte.lastIndexOf(']');
+  const avant = texte.slice(0, fermeture).replace(/\s*$/, '');
+  writeFileSync(chemin, `${avant},
+${rendre(entree)}
+]
+`, 'utf8');
+  console.log(`${id} AJOUTÉ (${entree.primitives.length} primitives)`);
+  process.exit(0);
+}
 const debut = texte.lastIndexOf('\n  {', ancre) + 1;
 // Fin = l'accolade fermante de MÊME indentation qui suit l'ancre.
 const fin = texte.indexOf('\n  }', ancre) + '\n  }'.length;

@@ -2629,6 +2629,19 @@ export function creerOrchestrateurGrotte({
         if (!icone) return [];
         return [{ visuel: registre.obtenir('visuels', icone), resteMs }];
       }),
+      // `D-96` : les trois silhouettes du bandeau, résolues ICI comme tout ce
+      // que le HUD dessine — c'est cet orchestrateur qui a le registre, pas
+      // `ui/hud.js`, qui ne connaît aucun id de catalogue. Les deux jauges
+      // déclarent la leur dans `survival.json` (donc les changer est une
+      // affaire de données) ; les éclats n'ont pas d'entrée de catalogue —
+      // c'est une monnaie que `main.js` traite déjà comme un cas à part
+      // (`save.inventaire.eclats`), et son id de silhouette vit ici en
+      // attendant qu'ils en aient une (`Q-49`).
+      iconesBandeau: {
+        eclats: registre.obtenir('visuels', 'visuel_icone_eclat'),
+        faim: registre.obtenir('visuels', registre.obtenir('survival', 'jauge_faim').icone),
+        soif: registre.obtenir('visuels', registre.obtenir('survival', 'jauge_soif').icone),
+      },
       // Palier C/D (§3.9) : discret, un chiffre — jamais affiché avant le
       // premier calcul des jauges/XP (cinématique d'ouverture).
       survie: save.survie,

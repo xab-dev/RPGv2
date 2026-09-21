@@ -160,3 +160,20 @@ divergeraient à la première retouche.
    **yeux** : le galet avait une tête.
 2. Grains passés en `alpha` (0,4-0,45) et aplatis, déplacés de part et d'autre.
 
+### `D-85` — la pierre
+
+**Diagnostic** : le caillou en plus gros, au sommet près.
+
+**Conceptualisation** : l'autre moitié du parti pris de `D-84`. Rocher
+**anguleux, froid, facetté** contre galet lisse, rond, chaud. Les facettes sont
+dessinées **à la main** — `reduire` donne un volume *lisse*, or ici ce sont des
+plans qui se coupent, et les arêtes doivent se voir.
+
+**Application, deux itérations** :
+
+1. Dix sommets rapprochés : le contour redevenait celui d'un galet, et les
+   facettes ne s'expliquaient plus. Fissure en **trait** posée au milieu de la
+   pierre : bouts arrondis, isolée de tout — une **lame plantée là**.
+2. Huit sommets, angles francs ; la fissure devient un **coin** qui part du
+   point de rencontre des facettes.
+

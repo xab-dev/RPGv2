@@ -83,5 +83,17 @@ export default async function (chrome) {
   await cliquer(chrome, '[data-carte="carte_stats"]');
   await chrome.attendre(400);
   await chrome.capture(`${DOSSIER}/ecran_stats_1920x1080.png`);
+
+  // Et la Poche : c'est l'écran qui montre le plus de tuiles d'un coup, donc
+  // le seul où le cadrage d'une vignette se juge (`ui/icone_canvas.js`).
+  await chrome.touche('Escape');
+  await chrome.attendre(300);
+  await chrome.touche('Escape');
+  await chrome.attendre(300);
+  await cliquer(chrome, '[data-carte="carte_heros"]');
+  await chrome.attendre(250);
+  await cliquer(chrome, '[data-carte="carte_poche"]');
+  await chrome.attendre(400);
+  await chrome.capture(`${DOSSIER}/ecran_poche_1920x1080.png`);
   console.log('menu', chrome.erreurs().length ? `ERREURS ${JSON.stringify(chrome.erreurs())}` : 'ok');
 }

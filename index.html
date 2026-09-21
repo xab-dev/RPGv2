@@ -38,8 +38,14 @@
          second la lueur qui descend et s'éteint à mi-hauteur. Toujours pas
          d'ombre portée : la décision de sobriété d'origine tient, et un
          dégradé ne coûte aucun flou. */
-      --menu-carte-lisere: 0.09;
-      --menu-carte-relief: 0.045;
+      --menu-carte-lisere: rgba(255, 255, 255, 0.09);
+      --menu-carte-relief: rgba(255, 255, 255, 0.045);
+      /* `D-101` : la flaque d'ombre sous une vignette de tuile, et l'arête
+         sombre du coin « équipé ». Des jetons, eux aussi — la règle du 20/09
+         vaut pour toute la feuille, et un test la fait respecter dans le bloc
+         des écrans maître-détail. */
+      --menu-vignette-ombre: rgba(0, 0, 0, 0.34);
+      --menu-marque-arete: rgba(0, 0, 0, 0.35);
       --menu-carte-bordure-px: 1px;
       --menu-carte-rayon-u: 8;
       /* Blanc cassé et gris bleuté : deux niveaux de lecture, pas trois. */
@@ -245,10 +251,10 @@
     .carte, .cartes-bouton-entete, .tuile, .fiche, .fiche-action {
       background-image: linear-gradient(
         180deg,
-        rgba(255, 255, 255, var(--menu-carte-lisere)) 0,
-        rgba(255, 255, 255, var(--menu-carte-lisere)) 1px,
-        rgba(255, 255, 255, var(--menu-carte-relief)) 1px,
-        rgba(255, 255, 255, 0) 55%
+        var(--menu-carte-lisere) 0,
+        var(--menu-carte-lisere) 1px,
+        var(--menu-carte-relief) 1px,
+        transparent 55%
       );
     }
     /* Une carte vide n'est pas une carte : elle ne prend pas le relief. */
@@ -338,7 +344,20 @@
       background: color-mix(in srgb, var(--menu-carte), black var(--menu-appuye-assombrie));
     }
     .tuile-vide { min-width: 0; height: calc(60 * var(--u)); }
-    .tuile .tuile-icone { width: calc(28 * var(--u)); height: calc(28 * var(--u)); }
+    /* `D-101` : la vignette est un peu plus grande (28 u -> 31 u) et POSÉE.
+       Le fond est une flaque d'ombre sous l'objet, pas un cadre : les
+       silhouettes de `visuels.json` portent déjà leur ombre propre (charte
+       d'item du 21/09), mais elle est dessinée DANS le canvas et se perd sur
+       le fond uni d'une tuile. Cette flaque-ci lui rend son sol.
+       Elle est centrée à 72 % de la hauteur, là où repose le bas d'un objet,
+       et non au milieu : une ombre qui entoure l'objet le ferait flotter. */
+    .tuile .tuile-icone {
+      width: calc(31 * var(--u)); height: calc(31 * var(--u));
+      background: radial-gradient(ellipse at 50% 72%, var(--menu-vignette-ombre) 0, transparent 62%);
+    }
+    /* La vignette de la FICHE, elle, est déjà grande et posée sur un panneau
+       large : la même flaque y serait une tache. Elle garde le fond neutre
+       de `.carte-icone`. */
     .tuile-nom {
       max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
       font-size: calc(8.5 * var(--u)); line-height: 1.2; color: var(--menu-texte-titre);
@@ -351,8 +370,21 @@
        seule, et pas un caractère (aucun emoji, aucune coche de police). */
     .tuile-marque {
       position: absolute; top: 0; left: 0; width: 0; height: 0;
-      border-top: calc(14 * var(--u)) solid var(--carte-trait);
-      border-right: calc(14 * var(--u)) solid transparent;
+      border-top: calc(12 * var(--u)) solid var(--carte-trait);
+      border-right: calc(12 * var(--u)) solid transparent;
+    }
+    /* `D-101` : l'arête du coin, un trait sombre le long de l'hypoténuse. Le
+       coin plein tombait sinon directement dans le fond de la tuile, et sa
+       diagonale se lisait comme une coupure de la carte plutôt que comme une
+       pièce posée dessus. Deuxième triangle, décalé d'un pixel — la même
+       astuce que « glisser la même forme » de la charte d'item. */
+    .tuile-marque::after {
+      content: ''; position: absolute; top: calc(-12 * var(--u)); left: 0;
+      width: 0; height: 0;
+      border-top: calc(12 * var(--u)) solid var(--menu-marque-arete);
+      border-right: calc(12 * var(--u)) solid transparent;
+      transform: translate(1px, 1px);
+      z-index: -1;
     }
     /* Grisée : un indice, pas un verrou (l'action est retentée quand même). */
     .tuile-grisee .tuile-icone, .tuile-grisee .tuile-nom, .tuile-grisee .tuile-quantite { opacity: var(--menu-desactive-opacite); }

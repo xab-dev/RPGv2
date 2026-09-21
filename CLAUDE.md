@@ -422,5 +422,8 @@ fruit/fruit cuit) sont désormais séparées par un **parti pris opposé**.
 
 **Session close et validée le 21/09** : `V-52` rendue **ok** par Xav, après avoir fait le tour des dix (« c'est bien mieux que ce à quoi je m'attendais » ; et le piège nommé est levé — « fruit et fruit cuit, on fait la différence au premier coup d'œil »). Poussée sur `main` à sa demande, donc **en ligne**. La session ne laisse **aucune validation due**. Ouvertes sans y
 toucher : **`Q-48`** (les outils font 17-18 unités contre 6 à 10 pour le reste des items — une
-décision de jeu) et **`D-92`** (un id d'arme inconnu dans la sauvegarde vide la case d'attaque
-**en silence**, et rien ne distingue « pas d'arme » de « arme introuvable »).
+décision de jeu), **`D-92`** et **`D-93`**. Ces deux dernières sont **de la même famille — un slot garde un
+id que plus rien ne revalide — et Xav a demandé qu'elles soient traitées ENSEMBLE, dans un ticket qui prenne le
+sujet en entier** (21/09) : `D-92`, un id d'arme absent du catalogue n'est rattrapé nulle part (au repos rien ne se
+voit, mais le premier ATTACK lève, et le héros ne peut plus frapper) ; `D-93`, le fruit reste dessiné dans la case
+du bas quand la poche est vide — la *case* qui reste est voulue (loquet assumé), l'*icône* dedans ne l'est pas.

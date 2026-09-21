@@ -427,8 +427,19 @@ dans l'un d'eux ; le volume se pose donc en **alpha pur** — noir pour l'ombre,
 lumière —, qui tient par-dessus n'importe quelle teinte et n'a pas à être réécrit par état.
 
 **Relevés en passant, sans y toucher** : `D-97` (un niveau au-delà de `levels.json` rend
-l'écran Stats inouvrable — **même famille que `D-92`/`D-93`**, à traiter avec eux), `Q-49`
-(les éclats n'ont aucune entrée de catalogue, donc l'id de leur silhouette vit dans
-`main.js`), `Q-50` (la fiche de Force et d'Esprit est vide : ces deux stats n'ont aucune
-dérivée). **La validation en jeu est due : `V-53`** — et un point y est nommé que les captures
-n'ont pas pu montrer, le nombre des PV **quand la barre descend**.
+l'écran Stats inouvrable — **rattaché par Xav au futur ticket « déblocage des niveaux 10 →
+30 »**, puisque c'est ce chantier-là qui allongera la table), `Q-49` (les éclats n'ont aucune
+entrée de catalogue, donc l'id de leur silhouette vit dans `main.js`) et `Q-50` (la fiche de
+Force et d'Esprit est vide), que Xav a mise **hors-scope**.
+
+**Verdicts de Xav, 22/09** : les **sept tickets sont validés un par un** (« good » pour
+chacun), mais `V-53` — l'effet d'ensemble, manette en main — reçoit **« trop léger, pas
+vu »** : la ligne **reste ouverte**, et une ligne `pas vu` n'est jamais close par le silence.
+Le mot à retenir pour la suite est *trop léger* : si la passe doit se voir davantage, c'est un
+ticket neuf (contrastes plus francs, reliefs plus marqués), jamais une reprise en passant.
+
+**Et un bug rapporté au ressenti, à ne pas corriger** : `D-102`, la vitesse de déplacement au
+clavier **paraît cumulative en diagonale**. Lecture du code (pas une mesure) : la couleur du
+défaut est réelle — les deux axes sont bornés **séparément** puis reçoivent chacun la vitesse
+entière, donc une diagonale vaut √2, soit **≈ 41 % plus vite**, là où Xav ressent le double.
+Il le garde comme *exploit de dev* et demande une **session de diagnostic** dédiée.

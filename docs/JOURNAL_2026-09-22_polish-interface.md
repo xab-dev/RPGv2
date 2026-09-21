@@ -50,3 +50,12 @@ coin avaient d'abord été écrites en `rgba(...)` directement dans les règles.
 `test_d43_c1_ecran_fiches` l'a refusé — « aucune couleur en dur : les jetons, et eux seuls ».
 C'est la règle du 20/09 qui tient toute seule, un an de méthode plus tard : les quatre couleurs
 nouvelles de cette passe (les deux du relief, les deux de la vignette) sont des **jetons**.
+
+## Clôture (22/09)
+
+Xav valide les **sept tickets un par un** (« good » pour chacun) et rend `V-53` — l'effet
+d'ensemble en jeu — **« trop léger, pas vu »** : la ligne reste ouverte. Il rattache `D-97` au
+futur ticket « déblocage des niveaux 10 → 30 », met `Q-50` hors-scope, et rapporte un bug
+**à ne pas corriger** : `D-102`, la vitesse de déplacement au clavier qui paraît cumulative en
+diagonale, à traiter en **session de diagnostic** (il s'en sert comme exploit de dev en
+attendant). Branche fusionnée dans `main` et **poussée à sa demande**, donc en ligne.

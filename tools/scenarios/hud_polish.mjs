@@ -5,7 +5,7 @@
 //   node tools/capture_chrome.mjs tools/scenarios/hud_polish.mjs
 // Ce que ça prouve : « ça s'affiche ainsi sous Chrome ». Le verdict reste une
 // validation de Xav, en jeu.
-import { ouvrirLeJeu, saveDansLaMaison } from './commun.mjs';
+import { ouvrirLeJeu, saveDansLaMaison, cliquer } from './commun.mjs';
 
 const DOSSIER = process.env.RPG_DOSSIER_CAPTURES || 'docs/captures/hud-2026-09-22';
 const TILE = 32;
@@ -19,7 +19,11 @@ function saveChargee() {
   save.hero.x = (85 + 0.5) * TILE;
   save.hero.y = (49 + 0.5) * TILE;
   save.hero.pv = 1; // +delta de pv_max au chargement : la barre finit à mi-course, ce qui est le but
-  save.hero.niveau = 12;
+  // Niveau 9 et l'XP qui va avec : au-delà de la dernière entrée de
+  // `levels.json` (10), l'écran Stats lève (`D-97`) — un niveau qu'aucune
+  // partie ne peut atteindre, mais qu'une sauvegarde bricolée porte très bien.
+  save.hero.niveau = 9;
+  save.hero.xp = 240;
   save.survie = { jauge_faim: 0.42, jauge_soif: 0.66 };
   save.hero.buffs_actifs = { buff_repas: 120000, buff_force: 9000, buff_agilite: 1400 };
   return save;
@@ -69,5 +73,15 @@ export default async function (chrome) {
   await chrome.touche('Escape');
   await chrome.attendre(300);
   await chrome.capture(`${DOSSIER}/menu_pause_1920x1080.png`);
+
+  // Jusqu'à l'écran Stats : c'est le seul endroit où les quatre icônes de
+  // stats se voient toutes, et **teintées par le CSS** (`ui/icone_canvas.js`
+  // prend la couleur calculée du canvas). Une icône qui tient au HUD peut ne
+  // pas tenir là : ce ne sont pas les mêmes couleurs.
+  await cliquer(chrome, '[data-carte="carte_heros"]');
+  await chrome.attendre(300);
+  await cliquer(chrome, '[data-carte="carte_stats"]');
+  await chrome.attendre(400);
+  await chrome.capture(`${DOSSIER}/ecran_stats_1920x1080.png`);
   console.log('menu', chrome.erreurs().length ? `ERREURS ${JSON.stringify(chrome.erreurs())}` : 'ok');
 }

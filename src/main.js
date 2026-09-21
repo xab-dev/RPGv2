@@ -161,6 +161,11 @@ const ORDRE_CHOIX_FOLLET = ['comp_follet_feu', 'comp_follet_eau', 'comp_follet_t
 // leur façon finiraient par se contredire. Pure ; exportée pour les tests.
 export function lignesFicheItem(itemDef, registre, i18n) {
   const lignes = [i18n.t(`item.categorie.${itemDef.categorie}`)];
+  // `D-60` : la ligne de LORE, quand l'objet en porte une. Elle vient avant
+  // les effets parce qu'un objet qui en a une n'a souvent rien d'autre à
+  // dire — c'est le cas de la Plume, qui ne sert à rien et dont c'est tout
+  // l'intérêt.
+  if (itemDef.description_key) lignes.push(i18n.t(itemDef.description_key));
   const c = itemDef.consommation;
   if (c) {
     if (c.faim) lignes.push(i18n.t('menu.fiche.rend_faim', { n: Math.round(c.faim * 100) }));
@@ -725,6 +730,18 @@ export function creerOrchestrateurGrotte({
     // aucune zone de spawn en commun avec un item (la grotte) obtient un
     // `itemsSol` vide, sans erreur.
     itemsSol = remplirItemsSol(scene, registre.tous('items'), save.monde.items_sol[sceneId] || {}, compteurRamassages, tuilesAtteignables);
+    // `D-60` (la Plume) : les objets uniques de la scène, posés à leur place
+    // exacte tant que leur flag n'est pas levé. APRÈS `remplirItemsSol` et
+    // hors du tirage du jour : ils n'ont pas de bloc `spawn`, donc ni l'un ni
+    // l'autre ne les connaît — c'est ce qui les garde là où la main les a
+    // mis. Une sauvegarde ancienne les retrouve donc au sol, puisque son
+    // flag n'est pas posé : aucune migration à écrire.
+    for (const objet of scene.objetsUniques) {
+      if (flags.has(objet.flag)) continue;
+      const position = { x: (objet.x + 0.5) * scene.tileSize, y: (objet.y + 0.5) * scene.tileSize };
+      const dejaLa = (itemsSol[objet.item] || []).some((p) => p.x === position.x && p.y === position.y);
+      if (!dejaLa) itemsSol = { ...itemsSol, [objet.item]: [...(itemsSol[objet.item] || []), position] };
+    }
     save.monde.items_sol[sceneId] = itemsSol;
     // Respawns différés (Palier B §3.2) : repris tels quels (continuent de
     // courir en temps actif même après un rechargement de page).
@@ -823,6 +840,11 @@ export function creerOrchestrateurGrotte({
           respawnsEnAttente = planifierRespawn(respawnsEnAttente, itemProche.itemId, respawnMs);
           save.monde.respawns_en_attente[scene.id] = respawnsEnAttente;
         }
+        // `D-60` : un objet unique ramassé ne revient jamais — son flag le dit,
+        // et c'est le flag qui fait foi, pas la liste des objets au sol (qui,
+        // elle, est rebattue à chaque aube).
+        const objetUnique = scene.objetsUniques.find((o) => o.item === itemProche.itemId);
+        if (objetUnique) flags.set(objetUnique.flag);
         if (!flags.has('flag_premier_ramassage')) {
           flags.set('flag_premier_ramassage');
           dialogue.ouvrir(resoudreLignes('dlg_premier_ramassage', registre, i18n, save.hero.companion));

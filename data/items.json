@@ -1,5 +1,14 @@
 [
   {
+    "id": "item_plume",
+    "label_key": "item.plume",
+    "description_key": "item.plume.description",
+    "categorie": "valeur",
+    "stack_max": 1,
+    "xp": 1,
+    "render": { "visuel": "visuel_plume" }
+  },
+  {
     "id": "item_branche",
     "xp": 1,
     "label_key": "item.branche",

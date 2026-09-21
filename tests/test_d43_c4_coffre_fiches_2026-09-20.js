@@ -110,7 +110,13 @@ function monter({ poche, coffre, registre: registreDuBanc = registre }) {
   // le même catalogue avec une capacité de 2 — une DONNÉE, le code ne change pas.
   const capacite = 2;
   const petit = construireRegistre({ ...donnees, stations: donnees.stations.map((st) => (st.role === 'stockage' ? { ...st, capacite } : st)) });
-  const tous = registre.tous('items').map((it) => it.id);
+  // Les objets sont choisis sur leur PROPRIÉTÉ, jamais sur leur rang dans le
+  // catalogue : `tous[0]` a changé de sens le jour où `item_plume` (`D-60`,
+  // pile de 1) est arrivé en tête, et le test s'est mis à éprouver « pile
+  // pleine » en croyant éprouver « coffre plein ». Ici il faut un objet
+  // empilable, pour que seule la limite de PILES du coffre soit en jeu.
+  const tous = registre.tous('items').filter((it) => it.stack_max > 1).map((it) => it.id);
+  assert.ok(tous.length > capacite, "il faut plus d'objets empilables que la capacité pour remplir le coffre");
   const remplissage = Object.fromEntries(tous.slice(0, capacite).map((id) => [id, 1]));
   const nouveau = tous[capacite];
   const connu = tous[0];

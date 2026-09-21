@@ -133,6 +133,18 @@
     ]
   },
   {
+    "id": "visuel_plume",
+    "ancre": "centre",
+    "primitives": [
+      { "forme": "ligne", "dx": 0, "dy": 0, "points": [[-4, 5], [3, -5]], "couleur": "#d8d2c4", "epaisseur": 2 },
+      { "forme": "ligne", "dx": 0, "dy": 0, "points": [[-2, 2], [-5, 0]], "couleur": "#eae5da", "epaisseur": 1 },
+      { "forme": "ligne", "dx": 0, "dy": 0, "points": [[-1, 0], [-4, -2]], "couleur": "#eae5da", "epaisseur": 1 },
+      { "forme": "ligne", "dx": 0, "dy": 0, "points": [[0, -2], [-2, -4]], "couleur": "#eae5da", "epaisseur": 1 },
+      { "forme": "ligne", "dx": 0, "dy": 0, "points": [[-1, 3], [2, 2]], "couleur": "#c9c2b2", "epaisseur": 1 },
+      { "forme": "ligne", "dx": 0, "dy": 0, "points": [[0, 1], [3, 0]], "couleur": "#c9c2b2", "epaisseur": 1 }
+    ]
+  },
+  {
     "id": "visuel_branche",
     "ancre": "centre",
     "primitives": [

@@ -521,6 +521,62 @@ function validerScene(entry, catalogs, path) {
     }
   });
 
+  // points_ressources (`D-59`) : { itemId: [[tx, ty], ...] }, la liste de
+  // points candidats posée à la main. Un id d'item inconnu, une coordonnée
+  // hors carte ou une tuile solide doivent tomber AU BOOT : ce sont des
+  // coordonnées écrites à la main, donc exactement le genre de donnée où une
+  // faute de frappe ne se voit jamais autrement qu'en jouant.
+  if (entry.points_ressources !== undefined) {
+    const items = new Set((catalogs.items || []).map((i) => i.id));
+    for (const [itemId, liste] of Object.entries(entry.points_ressources)) {
+      if (!items.has(itemId)) {
+        erreurs.push(`${path} > points_ressources : item "${itemId}" introuvable dans items.json`);
+        continue;
+      }
+      if (!Array.isArray(liste) || liste.length === 0) {
+        erreurs.push(`${path} > points_ressources.${itemId} doit être un tableau non vide de [tx, ty]`);
+        continue;
+      }
+      for (const point of liste) {
+        if (!Array.isArray(point) || point.length !== 2 || !point.every((n) => Number.isInteger(n))) {
+          erreurs.push(`${path} > points_ressources.${itemId} : point ${JSON.stringify(point)} doit être [tx, ty] entiers`);
+          continue;
+        }
+        const [tx, ty] = point;
+        if (tx < 0 || ty < 0 || tx >= largeur || ty >= hauteur) {
+          erreurs.push(`${path} > points_ressources.${itemId} : point (${tx},${ty}) hors de la carte`);
+        }
+      }
+    }
+  }
+
+  // objets_uniques (`D-60`, la Plume) : [{ item, x, y, flag }] — un objet
+  // posé à un endroit fixe, une seule fois dans toute la partie, retiré pour
+  // de bon par son flag. Le `flag` est une RÉFÉRENCE : un flag non déclaré
+  // laisserait l'objet réapparaître à chaque entrée en scène, sans erreur.
+  if (entry.objets_uniques !== undefined) {
+    const items = new Set((catalogs.items || []).map((i) => i.id));
+    const flags = new Set((catalogs.flags || []).map((f) => f.id));
+    if (!Array.isArray(entry.objets_uniques)) {
+      erreurs.push(`${path} > objets_uniques doit être un tableau`);
+    } else {
+      for (const objet of entry.objets_uniques) {
+        const ou = `${path} > objets_uniques[${objet && objet.item}]`;
+        if (!objet || !items.has(objet.item)) {
+          erreurs.push(`${ou} : item introuvable dans items.json`);
+          continue;
+        }
+        if (!flags.has(objet.flag)) {
+          erreurs.push(`${ou} : flag "${objet.flag}" non déclaré dans flags.json`);
+        }
+        if (!Number.isInteger(objet.x) || !Number.isInteger(objet.y)
+          || objet.x < 0 || objet.y < 0 || objet.x >= largeur || objet.y >= hauteur) {
+          erreurs.push(`${ou} : position (${objet.x},${objet.y}) hors de la carte`);
+        }
+      }
+    }
+  }
+
   // cycle_jour_nuit (03_maison-exterieur §2.1/§3.5) : simple interrupteur,
   // les phases/durées vivent en constantes centralisées dans daynight.js
   // (pas un catalogue extensible — il n'y a qu'un seul cycle dans tout le
@@ -1438,6 +1494,12 @@ export const SCHEMAS = {
       }
       erreurs.push(...erreursRenderVisuel(entry, catalogs, path));
       erreurs.push(...erreursXpOptionnel(entry, path));
+      // `description_key` (`D-60`) : une ligne de texte de plus dans la fiche
+      // de l'objet, pour ce qui n'est ni une stat ni un effet — le lore. Clé
+      // de locale comme le reste, jamais une chaîne.
+      if (entry.description_key !== undefined && typeof entry.description_key !== 'string') {
+        erreurs.push(`${path} > description_key doit être une clé de locale (chaîne) si présent`);
+      }
       // spawn optionnel (§2.1 : "spawn optionnel") : un item purement de
       // craft n'a pas besoin d'exister au sol.
       if (entry.spawn !== undefined) {

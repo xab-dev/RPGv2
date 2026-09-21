@@ -6,6 +6,7 @@
   { "id": "flag_grotte_sortie", "label_key": "flag.grotte_sortie" },
   { "id": "flag_maison_decouverte", "label_key": "flag.maison_decouverte" },
   { "id": "flag_premier_ramassage", "label_key": "flag.premier_ramassage" },
+  { "id": "flag_plume_ramassee", "label_key": "flag.plume_ramassee" },
   { "id": "flag_jardin_decouvert", "label_key": "flag.jardin_decouvert" },
   { "id": "flag_hint_move", "label_key": "flag.hint_move" },
   { "id": "flag_hint_interact", "label_key": "flag.hint_interact" },

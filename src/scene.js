@@ -194,6 +194,12 @@ export function chargerScene(registre, sceneId, overridesInteractifs = {}) {
     // scène n'en déclare pas, et ses objets au sol tombent alors dans leurs
     // zones comme avant (la Grotte n'en a aucun).
     pointsRessources: donnees.points_ressources || null,
+    // `D-60` (la Plume) : objets posés à un endroit FIXE, une seule fois dans
+    // toute la partie — hors du tirage du jour, et retirés pour de bon par
+    // leur flag une fois ramassés. Le mécanisme est générique (rien ne parle
+    // de plume ici), mais il n'est pas un système : c'est une liste de
+    // curiosités posées à la main, comme le layout de la carte.
+    objetsUniques: donnees.objets_uniques || [],
     structures: donnees.structures || [],
     cycleJourNuit: !!donnees.cycle_jour_nuit,
     // Exposé pour le calque statique de render.js (signature d'invalidation

@@ -38,7 +38,7 @@
     "montee_px": 16,
     "fondu_depuis": 0.5,
     "styles": {
-      "gain": { "taille_px": 9, "couleur": "#f2e6b8" },
+      "gain": { "taille_px": 9, "couleur": "#f2e6b8", "offset_y_px": -9 },
       "xp": { "taille_px": 6, "couleur": "#9fd0f0" }
     },
     "contour": "#101418",
@@ -50,7 +50,7 @@
   {
     "id": "effet_clignement_respawn",
     "type": "clignement",
-    "ouvertures_ms": [220, 520],
-    "noir_ms": 180
+    "ouvertures_ms": [600, 900, 1400],
+    "noir_ms": 400
   }
 ]

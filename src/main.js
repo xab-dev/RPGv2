@@ -478,9 +478,11 @@ export function creerOrchestrateurGrotte({
   //
   // `null` = personne ne vient de mourir. Une horloge de plus, mais pas une
   // seconde implémentation : la FORME du clignement est celle de l'intro
-  // (`intro.js#ouverturePaupieres`), seules les durées changent, et elles
-  // vivent en données. Total ici : ~0,9 s, largement sous les ~4 s du
-  // respawn mesuré — le ticket interdit de l'allonger.
+  // (`intro.js#ouverturePaupieres`), et les durées vivent en données.
+  // Xav, 21/09 : le clignement de mort était « trop rapide » — il reprend
+  // donc EXACTEMENT les durées de l'intro (3 ouvertures, ~3,7 s), pour que
+  // mourir se lise comme un réveil, pas comme un téléport. *Révise* la
+  // contrainte du ticket `D-65` (~0,9 s, « ne pas allonger »).
   //
   // C'est un effet PUREMENT visuel : il ne gèle rien, ne capte aucun verbe,
   // et un joueur pressé peut repartir avant la fin. Le rideau de l'intro,
@@ -2585,14 +2587,31 @@ export function creerOrchestrateurGrotte({
       // `D-63` : résolu ici, comme `visuelArme` et `visuelFollet` — `hud.js`
       // ne connaît ni catalogue ni flag.
       verbesActions: verbesActionsVisibles(),
-      // D-20 B : icône de l'arme ÉQUIPÉE, résolue ici (main.js a le registre)
-      // exactement comme visuelFollet au-dessus — ui/hud.js ne reçoit qu'une
-      // silhouette et ignore de quelle arme elle vient. Même résolution
-      // d'arme que les dégâts et l'anneau, jamais une seconde.
-      visuelArme: (() => {
-        const arme = resoudreArmeEquipee(registre, save.hero.equipement.arme);
-        return arme && arme.icone ? registre.obtenir('visuels', arme.icone) : null;
-      })(),
+      // D-20 B : ce que dessine chaque case, résolu ici (main.js a le
+      // registre) exactement comme visuelFollet au-dessus — ui/hud.js ne
+      // reçoit que des silhouettes et ignore de quoi elles viennent.
+      //   - `attack` : l'ARME équipée. Même résolution d'arme que les dégâts
+      //     et l'anneau, jamais une seconde.
+      //   - `consume` : le CONSOMMABLE équipé, et c'est sa silhouette de
+      //     monde (`render.visuel` de l'item) — aucune donnée nouvelle à
+      //     écrire. Si elle se lit mal réduite à la case, le remède sera une
+      //     entrée d'icône dédiée en données, comme pour l'épée : toujours
+      //     pas de code (essai en cours, Xav 21/09).
+      // Un `skill_N` s'ajoutera ici, et nulle part ailleurs.
+      iconesSlots: {
+        attack: (() => {
+          const arme = resoudreArmeEquipee(registre, save.hero.equipement.arme);
+          return arme && arme.icone ? registre.obtenir('visuels', arme.icone) : null;
+        })(),
+        consume: (() => {
+          const idConsommable = save.hero.equipement.consommable;
+          if (!idConsommable) return null;
+          const item = registre.obtenir('items', idConsommable);
+          return item && item.render && item.render.visuel
+            ? registre.obtenir('visuels', item.render.visuel)
+            : null;
+        })(),
+      },
       // `D-13` : les buffs actifs du bandeau. On LIT la table tenue par
       // status.js (`save.hero.buffs_actifs`), on ne la recalcule pas — c'est
       // la même table qui alimente `modificateursBuffsActifs` plus haut, donc

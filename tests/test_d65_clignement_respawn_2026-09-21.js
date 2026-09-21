@@ -40,19 +40,22 @@ const CLIGNEMENT = registre.obtenir('effets', 'effet_clignement_respawn');
 const INTRO = registre.obtenir('scenes', 'scene_grotte_salle_1').intro.clignements;
 const DUREE = dureeClignements(CLIGNEMENT);
 
-// --- 1. Les durées vivent en données, et la version est courte ---------
+// --- 1. Les durées vivent en données, et ce sont CELLES DE L'INTRO ----
 {
   assert.ok(Array.isArray(CLIGNEMENT.ouvertures_ms) && CLIGNEMENT.ouvertures_ms.length > 0);
   const dureeIntro = dureeClignements(INTRO);
-  assert.ok(
-    DUREE < dureeIntro,
-    `la version du respawn (${DUREE} ms) doit être plus courte que celle de l'intro (${dureeIntro} ms)`,
+  // Xav, 21/09 : « le clignement des yeux est trop rapide » à la mort — on
+  // rejoue l'intro (sauf le choix du follet). Ce qui se teste n'est donc PAS
+  // un nombre de millisecondes (un réglage appartient à Xav, `D-52`), c'est
+  // la RELATION : mourir rouvre les yeux comme la première fois.
+  // *Révise* la contrainte d'origine de `D-65` (« plus court que l'intro »).
+  assert.deepEqual(
+    CLIGNEMENT.ouvertures_ms, INTRO.ouvertures_ms,
+    "le clignement du respawn doit rejouer les ouvertures de l'intro",
   );
-  // « Respawn mesuré aujourd'hui : ~4 s, à ne pas allonger. » Le clignement
-  // ne gèle rien (contrat 4 ci-dessous), mais il doit de toute façon tenir
-  // très largement à l'intérieur : personne ne doit attendre après lui.
-  assert.ok(DUREE <= 1500, `le clignement du respawn doit rester court (${DUREE} ms)`);
-  console.log(`OK durées en données : ${DUREE} ms au respawn contre ${dureeIntro} ms à l'intro`);
+  assert.equal(CLIGNEMENT.noir_ms, INTRO.noir_ms);
+  assert.equal(DUREE, dureeIntro);
+  console.log(`OK durées en données, et identiques à l'intro : ${DUREE} ms`);
 }
 
 // --- 2. C'est la MÊME séquence, pas une seconde implémentation ---------

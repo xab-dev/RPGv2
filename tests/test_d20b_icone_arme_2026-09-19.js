@@ -117,4 +117,27 @@ function chevauchement(a, b) {
   assert.ok(!code.includes('weapon_'), 'ui/hud.js ne doit citer aucun id de weapons.json');
 }
 
+// 9. La case du consommable (Xav, 21/09) : `ui/hud.js` ne traite plus
+// l'attaque à part — il dessine `iconesSlots[verbe]`, quel que soit le verbe.
+// C'est ce qui rendra la case d'une compétence gratuite le jour venu. On
+// éprouve donc l'ABSENCE de cas particulier, pas le dessin (jamais headless).
+{
+  const code = fs.readFileSync('src/ui/hud.js', 'utf8').replace(/\/\/[^\n]*/g, '');
+  assert.ok(!/===\s*'attack'\s*\)\s*\{/.test(code), "ui/hud.js ne doit plus brancher le DESSIN d'une case sur un verbe précis");
+  assert.ok(code.includes('iconesSlots['), 'ui/hud.js doit lire la table verbe → visuel');
+}
+
+// 10. Et la case ne peut pas rester vide par accident : tout item équipable
+// au slot consommable porte une silhouette, qui existe dans visuels.json.
+// Une nourriture ajoutée demain sans `render.visuel` tomberait ici plutôt
+// qu'au premier équipement en jeu.
+{
+  const nourritures = donnees.items.filter((i) => i.categorie === 'nourriture');
+  assert.ok(nourritures.length > 0, 'au moins une nourriture doit exister pour éprouver le contrat');
+  for (const item of nourritures) {
+    assert.ok(item.render && item.render.visuel, `${item.id} doit déclarer un render.visuel`);
+    assert.ok(visuels.has(item.render.visuel), `${item.render.visuel} doit exister dans visuels.json`);
+  }
+}
+
 console.log('OK test_d20b_icone_arme');

@@ -1383,6 +1383,11 @@ export const SCHEMAS = {
             if (typeof style.couleur !== 'string') {
               erreurs.push(`${path} > styles.${nom}.couleur doit être une couleur (chaîne)`);
             }
+            // Décalage vertical propre au style (optionnel) : ce qui sépare à
+            // l'écran deux textes émis au même point.
+            if (style.offset_y_px !== undefined && typeof style.offset_y_px !== 'number') {
+              erreurs.push(`${path} > styles.${nom}.offset_y_px doit être un nombre si présent`);
+            }
           }
         }
         if (!Number.isInteger(entry.capacite) || entry.capacite <= 0) {

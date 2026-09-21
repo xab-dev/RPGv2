@@ -906,7 +906,12 @@ export function dessinerTextesFlottants(ctx, { textes, camera, config }) {
     ctx.font = `bold ${style.taille_px}px monospace`;
     ctx.globalAlpha = t.alpha;
     const x = t.x - camera.x;
-    const y = t.y - camera.y + decalageY;
+    // Décalage propre au style, en plus du décalage global : deux gains émis
+    // au MÊME point (« +1 » et « +1xp » d'une récolte) se chevauchaient et
+    // devenaient illisibles. Le nombre vit en données, comme tout réglage —
+    // et il est constant dans le temps, donc les deux textes montent ensemble
+    // en gardant leur écart (demande de Xav, 21/09).
+    const y = t.y - camera.y + decalageY + (style.offset_y_px || 0);
     // Contour d'abord, remplissage ensuite : le texte reste lisible aussi
     // bien sur le sol clair du Jardin que sur le voile de nuit, sans
     // cartouche opaque qui masquerait la scène (§ "se lit sans gêner").

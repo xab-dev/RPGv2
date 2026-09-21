@@ -71,20 +71,23 @@ const SLOT_ECART = 4;
 const ICONE_PART_DE_LA_CASE = 0.72;
 const ICONE_PART_DU_BOUTON = 1.15;
 
-// D-20 B : la case d'attaque dessine l'icône de l'ARME ÉQUIPÉE, résolue par
-// main.js (qui a le registre) et reçue ici comme une simple entrée de visuel
-// — ce module ignore qu'il s'agit d'une main, et dessinera le symbole d'une
-// épée ou d'un arc sans une ligne de plus. `null` (arme sans icône) = case
-// vide, jamais une erreur : c'est un cas normal, pas une donnée manquante.
-function dessinerIconeArme(ctx, visuelArme, cx, cy, taille) {
-  if (!visuelArme) return;
-  dessinerVisuel(ctx, visuelArme, cx, cy, {
+// D-20 B : une case dessine l'icône de ce qui l'occupe — l'ARME ÉQUIPÉE
+// pour l'attaque, le CONSOMMABLE ÉQUIPÉ pour `consume`, et demain la
+// compétence d'un `skill_N`. Les silhouettes sont résolues par main.js (qui
+// a le registre) et reçues ici dans une table `verbe → visuel` : ce module
+// ignore qu'il s'agit d'une main, d'un fruit ou d'un sort, et n'a donc plus
+// aucun cas particulier par verbe. Absent ou `null` = case vide, jamais une
+// erreur : c'est un cas normal (une arme peut n'avoir pas d'icône, un slot
+// débloqué peut n'avoir rien d'équipé), pas une donnée manquante.
+function dessinerIconeSlot(ctx, visuel, cx, cy, taille) {
+  if (!visuel) return;
+  dessinerVisuel(ctx, visuel, cx, cy, {
     teinte: COULEUR_SLOT_ACTIF,
     echelle: echelleIconeArme(taille),
   });
 }
 
-function dessinerBoutonsTactiles(ctx, visuelArme, verbesActions) {
+function dessinerBoutonsTactiles(ctx, iconesSlots, verbesActions) {
   for (const bouton of boutonsTactilesVisibles(verbesActions)) {
     ctx.beginPath();
     ctx.arc(bouton.cx, bouton.cy, bouton.rayon, 0, Math.PI * 2);
@@ -95,9 +98,7 @@ function dessinerBoutonsTactiles(ctx, visuelArme, verbesActions) {
     ctx.fill();
     ctx.strokeStyle = 'rgba(255,255,255,0.6)';
     ctx.stroke();
-    if (bouton.verbe === 'attack') {
-      dessinerIconeArme(ctx, visuelArme, bouton.cx, bouton.cy, bouton.rayon * ICONE_PART_DU_BOUTON);
-    }
+    dessinerIconeSlot(ctx, iconesSlots[bouton.verbe], bouton.cx, bouton.cy, bouton.rayon * ICONE_PART_DU_BOUTON);
   }
 
   ctx.beginPath();
@@ -108,7 +109,7 @@ function dessinerBoutonsTactiles(ctx, visuelArme, verbesActions) {
 
 // Ligne statique en bas au centre (§4), même liste de verbes que les boutons
 // tactiles mais jamais leurs positions (celles-ci n'ont de sens qu'au doigt).
-function dessinerSlotsBas(ctx, resolution, visuelArme, verbesActions) {
+function dessinerSlotsBas(ctx, resolution, iconesSlots, verbesActions) {
   if (verbesActions.length === 0) return;
   // La barre se RESSERRE sur ce qui existe, elle ne laisse pas de cases
   // vides : au tactile les boutons gardent leurs positions (le placement est
@@ -127,9 +128,7 @@ function dessinerSlotsBas(ctx, resolution, visuelArme, verbesActions) {
     ctx.fillRect(x, y, SLOT_TAILLE, SLOT_TAILLE);
     ctx.strokeStyle = verbe === 'attack' ? '#ffffff' : 'rgba(255,255,255,0.4)';
     ctx.strokeRect(x, y, SLOT_TAILLE, SLOT_TAILLE);
-    if (verbe === 'attack') {
-      dessinerIconeArme(ctx, visuelArme, x + SLOT_TAILLE / 2, y + SLOT_TAILLE / 2, SLOT_TAILLE * ICONE_PART_DE_LA_CASE);
-    }
+    dessinerIconeSlot(ctx, iconesSlots[verbe], x + SLOT_TAILLE / 2, y + SLOT_TAILLE / 2, SLOT_TAILLE * ICONE_PART_DE_LA_CASE);
   });
 }
 
@@ -173,10 +172,15 @@ function dessinerJauge(ctx, x, y, ratio, couleur, dessinerIcone) {
 
 export function dessinerHud(ctx, {
   i18n, pv, pvMax, eclats, companion, visuelFollet, tactileActif,
-  visuelArme = null, survie = null, niveau = null, eclatNiveau = 0,
+  // `verbe → visuel` : ce qu'il faut dessiner dans chaque case (arme équipée,
+  // consommable équipé, plus tard une compétence). Table résolue par main.js,
+  // comme `visuelFollet` — un verbe absent = case vide. *Remplace* le
+  // `visuelArme` unique, qui obligeait le HUD à savoir que seule l'attaque
+  // porte une icône.
+  iconesSlots = {}, survie = null, niveau = null, eclatNiveau = 0,
   // `D-13` : buffs actifs, dans l'ordre d'activation. Chaque entrée est
   // { visuel, resteMs } — la silhouette est DÉJÀ résolue par main.js (qui a
-  // le registre), exactement comme `visuelFollet` et `visuelArme`. Ce module
+  // le registre), exactement comme `visuelFollet` et `iconesSlots`. Ce module
   // ne sait pas ce qu'est un status_effect, et ne recalcule rien : la table
   // des buffs est tenue par status.js, il la LIT.
   buffs = [],
@@ -298,12 +302,12 @@ export function dessinerHud(ctx, {
 
   // §4 : jamais les deux à la fois. Sur tactile, les boutons SONT les slots.
   if (tactileActif) {
-    dessinerBoutonsTactiles(ctx, visuelArme, verbesActions);
+    dessinerBoutonsTactiles(ctx, iconesSlots, verbesActions);
   } else {
     // Diagnostic SD_dialogues-invisibles_2026-09-15 : même défaut que
     // dialogue_box.js — `ctx.canvas.width/height` est la taille PHYSIQUE
     // depuis le MT rendu-net, jamais la résolution logique sous laquelle ce
     // dessin est réellement placé (transform f encore active).
-    dessinerSlotsBas(ctx, RESOLUTION_LOGIQUE, visuelArme, verbesActions);
+    dessinerSlotsBas(ctx, RESOLUTION_LOGIQUE, iconesSlots, verbesActions);
   }
 }

@@ -3,46 +3,66 @@
      rendue AUX TAILLES RÉELLES du jeu, puis agrandie au plus proche voisin.
      Agrandir la transform (echelle 32) mentirait : l'épaisseur des traits
      grandirait avec, et on jugerait une image que personne ne voit.
-     Ouvrir avec ?id=visuel_plume -->
+     Ouvrir avec ?id=visuel_plume — et &echelle=2.1 pour une station, dont le
+     jeu n'affiche JAMAIS l'échelle 1 (puzzles.json la déclare par entrée). -->
 <html lang="fr"><head><meta charset="utf-8"><title>Banc visuel</title>
 <style>
   body { background:#1b1f24; color:#d8d2c4; font:12px monospace; margin:0; padding:14px; }
-  figure { display:inline-block; margin:0 10px 0 0; text-align:center; vertical-align:middle; }
+  figure { display:inline-block; margin:0 10px 0 0; text-align:center; vertical-align:bottom; }
   canvas { background:#2b3138; display:block; }
   figcaption { opacity:.65; margin-top:4px }
 </style></head><body>
 <div id="bancs"></div>
 <script type="module">
   import { dessinerVisuel } from '../src/visuels.js';
-  const ids = (new URLSearchParams(location.search).get('id') || 'visuel_plume').split(',');
+  import { boitePrimitive } from '../src/structures.js';
+  const params = new URLSearchParams(location.search);
+  const ids = (params.get('id') || 'visuel_plume').split(',');
+  // Échelle PROPRE à l'usage (une station vaut 2,1 : voir puzzles.json). Elle
+  // se compose avec les échelles de rendu ci-dessous, comme en jeu.
+  const echelleUsage = Number(params.get('echelle')) || 1;
   const visuels = await (await fetch('../data/visuels.json')).json();
 
   // (échelle de rendu, agrandissement de la loupe, légende)
   const CAS = [
-    [1, 5, 'monde, DPR 1 (×1)'],
-    [3, 4, 'monde, DPR 3 (×3)'],
-    [9, 2, 'tuile de la Poche (≈ ×9)'],
+    [1, 'monde, DPR 1 (×1)'],
+    [3, 'monde, DPR 3 (×3)'],
+    [9, 'tuile de la Poche (≈ ×9)'],
   ];
+  // Hauteur de confort d'une vignette. La loupe s'en déduit au lieu d'être
+  // écrite par cas : sans ça, une grande silhouette (le puits) sort de
+  // l'écran et les trois vues ne se comparent plus d'un coup d'œil.
+  const HAUTEUR_VIGNETTE_PX = 230;
   const hote = document.getElementById('bancs');
   for (const id of ids) {
   const v = visuels.find((e) => e.id === id);
   const ligne = document.createElement('div');
   hote.append(ligne);
-  for (const [echelle, loupe, legende] of CAS) {
-    const cote = Math.round(24 * echelle);
+  // Le cadre suit la silhouette plutôt qu'un nombre fixe : un cadre trop
+  // court rogne la pièce qu'on est justement venu juger (le toit du puits
+  // dépasse les 24 unités d'origine), et l'ancre `bas` place le sol en bas.
+  const boites = v.primitives.map((p) => boitePrimitive(p));
+  const bas = Math.max(0, ...boites.map((b) => b.maxY)) + 2;
+  const haut = Math.min(0, ...boites.map((b) => b.minY)) - 2;
+  const large = Math.max(...boites.map((b) => Math.max(-b.minX, b.maxX))) + 2;
+  for (const [echelle, legende] of CAS) {
+    const e = echelle * echelleUsage;
+    const cote = Math.round(2 * large * e);
+    const hauteur = Math.round((bas - haut) * e);
+    const loupe = Math.max(1, Math.round(HAUTEUR_VIGNETTE_PX / hauteur));
     const source = document.createElement('canvas');
-    source.width = cote; source.height = cote;
-    dessinerVisuel(source.getContext('2d'), v, cote / 2, cote / 2, { echelle });
+    source.width = cote; source.height = hauteur;
+    dessinerVisuel(source.getContext('2d'), v, cote / 2, -haut * e, { echelle: e });
 
     const fig = document.createElement('figure');
     const vue = document.createElement('canvas');
-    vue.width = cote * loupe; vue.height = cote * loupe;
+    vue.width = cote * loupe; vue.height = hauteur * loupe;
     const ctx = vue.getContext('2d');
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(source, 0, 0, vue.width, vue.height);
     fig.append(vue, Object.assign(document.createElement('figcaption'), { textContent: legende }));
     ligne.append(fig);
   }
-  ligne.insertAdjacentHTML('beforeend', `<span>${id} — ${v.primitives.length} primitives</span>`);
+  ligne.insertAdjacentHTML('beforeend', `<span>${id} — ${v.primitives.length} primitives, ×${echelleUsage}</span>`);
   }
 </script></body></html>

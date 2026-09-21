@@ -255,14 +255,19 @@
     "ancre": "bas",
     "ombre": { "dy": 1, "w": 22, "h": 6, "alpha": 0.3 },
     "primitives": [
-      { "forme": "cercle", "dx": 0, "dy": -6, "w": 20, "h": 20, "couleur": "#7a5c3e" },
-      { "forme": "ellipse", "dx": 0, "dy": -6, "w": 14, "h": 10, "couleur": "#2f6f9f" },
-      { "forme": "rect", "dx": 0, "dy": -16, "w": 1, "h": 5, "couleur": "#cbbb9a" },
-      { "forme": "rect", "dx": 0, "dy": -12, "w": 5.5, "h": 4.5, "couleur": "#8a6b4a" },
-      { "forme": "rect", "dx": -7, "dy": -16, "w": 3, "h": 18, "couleur": "#5a4530" },
-      { "forme": "rect", "dx": 7, "dy": -16, "w": 3, "h": 18, "couleur": "#5a4530" },
-      { "forme": "rect", "dx": 0, "dy": -19, "w": 15, "h": 2.5, "couleur": "#6b5238" },
-      { "forme": "rect", "dx": 0, "dy": -24, "w": 22, "h": 3, "couleur": "#5a4530" }
+      { "forme": "rect", "dx": -9.6, "dy": -7.5, "w": 2.6, "h": 17, "couleur": "#5a4530" },
+      { "forme": "rect", "dx": 9.6, "dy": -7.5, "w": 2.6, "h": 17, "couleur": "#5a4530" },
+      { "forme": "ellipse", "dx": 0, "dy": -1, "w": 18, "h": 5, "couleur": "#63492f" },
+      { "forme": "rect", "dx": 0, "dy": -4, "w": 18, "h": 6, "couleur": "#6b5038" },
+      { "forme": "ellipse", "dx": 0, "dy": -7, "w": 18, "h": 5.5, "couleur": "#8a6b4a" },
+      { "forme": "ellipse", "dx": 0, "dy": -6.7, "w": 12.6, "h": 3.8, "couleur": "#3a2c20" },
+      { "forme": "ellipse", "dx": 0, "dy": -6.3, "w": 10.6, "h": 3, "couleur": "#2f6f9f" },
+      { "forme": "ellipse", "dx": -2.2, "dy": -6.7, "w": 3.4, "h": 1, "couleur": "#6fa8cf", "alpha": 0.8 },
+      { "forme": "rect", "dx": 0, "dy": -12.6, "w": 19, "h": 2.4, "couleur": "#6b5238" },
+      { "forme": "rect", "dx": 0, "dy": -12.2, "w": 1, "h": 3.6, "couleur": "#cbbb9a" },
+      { "forme": "rect", "dx": 0, "dy": -9.2, "w": 4.4, "h": 3.2, "couleur": "#8a6b4a" },
+      { "forme": "rect", "dx": 0, "dy": -15.6, "w": 22, "h": 1.6, "couleur": "#6b5238" },
+      { "forme": "polygone", "dx": 0, "dy": 0, "points": [[-11, -15.6], [0, -21], [11, -15.6]], "couleur": "#5a4530" }
     ]
   },
   {

@@ -2,6 +2,17 @@
 // se désolidarise — « les pièces ne tiennent plus ensemble, les mâts en bois
 // sont trop courts » (Xav, 2026-09-19).
 //
+// RÉVISÉ le 2026-09-21 par `D-16` (consigne de Xav, session de polish en
+// direct) : le correctif du 19/09 avait rapproché les mâts pour les faire
+// reposer SUR la margelle — c'était le mauvais sens. Un mât de puits est
+// planté dans le SOL, de part et d'autre, et la margelle est un cylindre vu
+// de trois quarts (règle du décor : cylindre + ellipses + ombre), pas un
+// disque vu du dessus. Deux sections de ce fichier changent donc de contrat,
+// volontairement — §2 (le pied ne repose plus sur la margelle mais touche le
+// sol) et §3 (l'empreinte n'est plus « inchangée » mais « incluse »).
+// Conformément à `D-52`, aucune des deux n'épingle un nombre : la première
+// compare le pied au sol, la seconde la boîte d'aujourd'hui à celle d'avant.
+//
 // CAUSE RACINE (établie avant tout correctif, voir journal) : ce sont les
 // DONNÉES, pas l'interprète. `visuels.js#dessinerVisuel` applique un unique
 // `ctx.scale(e, e)` : longueurs, positions ET épaisseurs de trait suivent donc
@@ -44,26 +55,38 @@ const ASSEMBLAGES = [
   {
     visuel: 'visuel_puits',
     pieces: {
-      margelle: 0,
-      eau: 1,
-      corde: 2,
-      seau: 3,
-      mat_gauche: 4,
-      mat_droit: 5,
-      treuil: 6,
-      toit: 7,
+      mat_gauche: 0,
+      mat_droit: 1,
+      base: 2,
+      paroi: 3,
+      rebord: 4,
+      ouverture: 5,
+      eau: 6,
+      reflet: 7,
+      treuil: 8,
+      corde: 9,
+      seau: 10,
+      bandeau_toit: 11,
+      toit: 12,
     },
     // « margelle, deux mâts qui montent jusqu'au toit, toit posé sur les
-    // mâts, seau » (§Attendu de la fiche).
+    // mâts, seau » (§Attendu de la fiche) — plus, depuis `D-16`, le cylindre
+    // lui-même : base, paroi et rebord doivent rester UNE pièce à l'œil.
     contacts: [
-      ['mat_gauche', 'margelle'],
-      ['mat_droit', 'margelle'],
-      ['mat_gauche', 'toit'],
-      ['mat_droit', 'toit'],
+      ['mat_gauche', 'paroi'],
+      ['mat_droit', 'paroi'],
+      ['mat_gauche', 'bandeau_toit'],
+      ['mat_droit', 'bandeau_toit'],
+      ['bandeau_toit', 'toit'],
       ['mat_gauche', 'treuil'],
       ['mat_droit', 'treuil'],
       ['treuil', 'corde'],
       ['corde', 'seau'],
+      ['base', 'paroi'],
+      ['paroi', 'rebord'],
+      ['rebord', 'ouverture'],
+      ['ouverture', 'eau'],
+      ['eau', 'reflet'],
     ],
   },
 ];
@@ -98,51 +121,73 @@ for (const { visuel: id, pieces, contacts } of ASSEMBLAGES) {
   console.log(`OK ${id} : ${contacts.length} contacts tenus aux échelles ${ECHELLES.join(', ')}`);
 }
 
-// --- 2. Le pied des mâts repose VRAIMENT sur la margelle ------------------
-// La boîte d'un cercle ment : le disque est bien plus étroit que son carré
-// englobant dès qu'on s'éloigne de son centre. C'est exactement ce qui avait
-// échappé à l'œil — un test qui ne regarderait que les boîtes resterait vert
-// sur l'ancienne version.
+// --- 2. Le pied des mâts touche le SOL -----------------------------------
+// `D-16` : c'est LA consigne de Xav — « les mâts doivent partir du sol
+// (niveau de l'ombre), et non reposer sur le rebord où ils flottent d'une
+// demi-tuile ». Le sol d'une silhouette `ancre: bas` est y = 0, et l'ombre
+// portée est la seule pièce qui le matérialise : on compare donc le pied au
+// SOL, jamais à une hauteur écrite ici (règle `D-52`). Avant ce ticket, le
+// pied s'arrêtait à y = -7 — 7 unités de vide, 14,7 px à l'échelle ×2,1.
 {
   const puits = visuels.get('visuel_puits');
-  const margelle = puits.primitives[0];
-  assert.equal(margelle.forme, 'cercle', 'la margelle est bien le disque de référence');
-  const rayon = margelle.w / 2;
-  const cx = margelle.dx || 0;
-  const cy = margelle.dy || 0;
-
-  for (const indexMat of [4, 5]) {
-    const mat = puits.primitives[indexMat];
-    const b = boitePrimitive(mat);
-    const yPied = b.maxY;
-    const dy = yPied - cy;
-    const demiLargeurDisque = Math.sqrt(Math.max(0, rayon * rayon - dy * dy));
-    const appui =
-      Math.min(b.maxX, cx + demiLargeurDisque) - Math.max(b.minX, cx - demiLargeurDisque);
-    const largeurMat = b.maxX - b.minX;
+  const solMax = (puits.ombre.dy || 0) + puits.ombre.h / 2;
+  for (const indexMat of [0, 1]) {
+    const b = boitePrimitive(puits.primitives[indexMat]);
     assert.ok(
-      appui >= largeurMat - 1e-9,
-      `le pied du mât (primitive ${indexMat}) doit reposer sur TOUTE sa largeur : ${appui.toFixed(2)} px d'appui pour ${largeurMat.toFixed(2)} px de mât`,
+      b.maxY >= 0,
+      `le pied du mât (primitive ${indexMat}) doit atteindre le sol (y=0), il s'arrête à ${b.maxY}`,
+    );
+    assert.ok(
+      b.maxY <= solMax,
+      `le pied du mât (primitive ${indexMat}) ne doit pas s'enfoncer sous l'ombre (${b.maxY} > ${solMax})`,
     );
   }
-  console.log('OK le pied de chaque mât repose sur toute sa largeur (disque réel, pas la boîte)');
+  console.log("OK le pied de chaque mât est planté au sol, dans l'ombre portée");
 }
 
-// --- 3. L'empreinte solide n'a PAS changé ---------------------------------
-// La fiche l'exige : si elle changeait, il faudrait vérifier que le puits ne
-// mord ni sur un chemin ni sur la zone de réapparition du fruit. Elle ne
-// change pas — ce test le verrouille, donc la question ne se pose pas.
+// --- 2 bis. Le pied des mâts reste VISIBLE de part et d'autre du cylindre --
+// Planter les mâts ne suffit pas : s'ils passaient entièrement derrière la
+// margelle, le joueur reverrait exactement le défaut d'origine (des mâts qui
+// sortent de nulle part). C'est une RELATION — le mât déborde du cylindre —
+// pas une position.
 {
   const puits = visuels.get('visuel_puits');
-  const attendue = { x: -11, y: -25.5, w: 22, h: 29.5 }; // mesurée sur la version d'avant le correctif
+  const paroi = boitePrimitive(puits.primitives[3]);
+  for (const [indexMat, cote] of [[0, 'gauche'], [1, 'droit']]) {
+    const b = boitePrimitive(puits.primitives[indexMat]);
+    const deborde = cote === 'gauche' ? paroi.minX - b.minX : b.maxX - paroi.maxX;
+    assert.ok(
+      deborde > 0,
+      `le mât ${cote} doit déborder du cylindre pour que son pied se voie (débord ${deborde})`,
+    );
+  }
+  console.log('OK les deux mâts débordent du cylindre, leur pied se voit');
+}
+
+// --- 3. L'empreinte solide n'a rien GAGNÉ --------------------------------
+// La fiche du 19/09 exigeait une empreinte *inchangée*, et `D-16` prévient
+// qu'en trois quarts elle change. Ce qui compte n'est pas qu'elle soit égale,
+// c'est qu'aucune tuile ne devienne solide : on vérifie donc l'INCLUSION dans
+// la boîte d'avant le ticket. Tant qu'elle tient, la question « le puits
+// mord-il sur un chemin ou sur la zone du fruit ? » ne se pose pas — la
+// réponse d'hier vaut encore. Elle rétrécit en fait d'une rangée de tuiles,
+// le toit ne bloquant plus le passage derrière le puits.
+//
+// Poser une empreinte explicite sur la seule BASE (l'`empreinte` en données
+// que suggère `D-16`) reste OUVERT : cela changerait où le héros peut se
+// tenir, donc c'est une décision de jeu, pas un détail de dessin.
+{
+  const puits = visuels.get('visuel_puits');
+  const avant = { x: -11, y: -25.5, w: 22, h: 29.5 }; // mesurée avant `D-16`
   for (const echelle of ECHELLES) {
     const e = empreinteParDefaut(puits, echelle);
-    assert.ok(Math.abs(e.x - attendue.x * echelle) < 1e-9, `empreinte x inchangée à l'échelle ${echelle}`);
-    assert.ok(Math.abs(e.y - attendue.y * echelle) < 1e-9, `empreinte y inchangée à l'échelle ${echelle}`);
-    assert.ok(Math.abs(e.w - attendue.w * echelle) < 1e-9, `empreinte largeur inchangée à l'échelle ${echelle}`);
-    assert.ok(Math.abs(e.h - attendue.h * echelle) < 1e-9, `empreinte hauteur inchangée à l'échelle ${echelle}`);
+    const a = { x: avant.x * echelle, y: avant.y * echelle, w: avant.w * echelle, h: avant.h * echelle };
+    assert.ok(e.x >= a.x - 1e-9, `empreinte : bord gauche à l'échelle ${echelle}`);
+    assert.ok(e.y >= a.y - 1e-9, `empreinte : bord haut à l'échelle ${echelle}`);
+    assert.ok(e.x + e.w <= a.x + a.w + 1e-9, `empreinte : bord droit à l'échelle ${echelle}`);
+    assert.ok(e.y + e.h <= a.y + a.h + 1e-9, `empreinte : bord bas à l'échelle ${echelle}`);
   }
-  console.log("OK l'empreinte solide du puits est strictement inchangée (aucun risque chemin/fruit)");
+  console.log("OK l'empreinte solide du puits ne déborde plus de celle d'avant (aucune tuile gagnée)");
 }
 
 // --- 4. Aucune pièce orpheline dans les 4 stations ------------------------

@@ -29,6 +29,8 @@ Ce fichier est l'état de la session sur le disque, écrit au fil des modifs —
 
 | 5 | « les angles du carré dépassent vachement de la bulle […] réduire la taille du feu follet jaune, mais pas en entier : juste les carrés jaunes, pas la bulle et la déco. » | `visuel_follet_terre` : le carré passe de 14 à **11,6** et son reflet de 6 à 5 (décalé −1,7 au lieu de −2, pour garder la même place relative). Motif mesurable : la demi-diagonale d'un carré de 14 vaut **9,9** alors que la bulle a un rayon de **8,5** — les quatre coins sortaient. À 11,6 elle vaut 8,2, le carré est inscrit et la bulle réapparaît aux quatre coins, comme les pointes du triangle de feu. **Bulle, étincelles et halo inchangés**, et l'encombrement à l'écran ne bouge pas (c'est la bulle de 17 qui le fixe). Aucun effet de jeu : l'aura et la lumière viennent de `companions.json`, et l'échelle de dessin d'une constante (`TAILLE_REFERENCE_FOLLET_PX`), jamais de la taille du carré. | `data/visuels.json` | à faire |
 
+| 6 | « la silhouette [du puits] est cassée depuis l'agrandissement des proportions, j'aimerais qu'on la reprenne comme on vient de faire avec la plume : diagnostic visuel chrome/tools puis itération » (`D-16`) | Mesuré d'abord : le pied des mâts s'arrêtait à `y −7` pour un sol à `y 0` — **7 unités de vide**, soit 14,7 px à l'échelle ×2,1, la demi-tuile signalée ; et la margelle était un **disque** (−16..+4) avec l'eau en son centre, d'où le « pot ». Reconstruite en **cylindre vu de trois quarts** (règle du décor : base + paroi + rebord, trois pièces, l'ellipse de base dessinée SOUS la paroi pour ne pas la barrer d'un arc), mâts **plantés au sol** et débordant du cylindre pour que leur pied se voie, toit en deux pentes au lieu de la planche plate qui faisait un portique. Treuil, corde et seau conservés (`Q-03`). Défaut d'assemblage attrapé au passage par le test : la corde ne touchait plus le seau de 0,1 unité. | `data/visuels.json`, `tests/test_sd_puits_silhouette_…`, `tools/banc_visuel.html` | à faire |
+
 ## Décisions prises en séance
 
 - **Le clignement de mort rejoue celui de l'intro** — *révise* la contrainte d'origine de `D-65`
@@ -42,6 +44,18 @@ Ce fichier est l'état de la session sur le disque, écrit au fil des modifs —
   mal réduite à la case, le remède est une entrée d'icône dédiée **en données**, comme
   `visuel_icone_epee_bois` pour l'épée — toujours pas de code (décision de Xav : « après test on
   fera si c'est trop moche »).
+
+- **L'empreinte du puits ne GAGNE aucune tuile, elle en perd une.** `D-16` prévenait
+  que la boîte englobante changerait ; elle est en fait **strictement incluse** dans
+  celle d'avant (le toit, plus bas, libère la rangée `y = 55`). La question « le puits
+  mord-il sur un chemin ou sur la zone du fruit ? » ne se pose donc pas, et le test
+  n'épingle plus une boîte mais cette **inclusion** (règle `D-52`). Poser une empreinte
+  explicite sur la seule **base**, comme `D-16` le suggère, reste **ouvert** : cela
+  changerait où le héros peut se tenir — une décision de jeu, pas un détail de dessin.
+- **Le banc visuel cadre désormais sur la silhouette**, et prend l'échelle d'usage
+  (`&echelle=2.1` pour une station). Motif : à 24 unités fixes il **coupait le toit du
+  puits**, c'est-à-dire précisément la pièce à juger — et il ne montrait que l'échelle 1,
+  que le jeu n'affiche jamais pour une station.
 
 ## Relevé hors consigne — signalé, pas corrigé
 
@@ -59,6 +73,12 @@ Ce fichier est l'état de la session sur le disque, écrit au fil des modifs —
 - **Le clignement de respawn ne gèle rien** (c'est son contrat depuis `D-65`) : à ~0,9 s personne
   ne le voyait, à ~3,7 s le joueur peut se déplacer un long moment derrière ses paupières. À l'œil
   de Xav.
+
+- **`Q-43` est tranchée par Xav (21/09), pas encore appliquée** : « on n'a pas vraiment
+  de gourde, donc si la soif est supérieure à 75 % de la jauge, ça ne donne pas d'XP ».
+  Soit : soif < 75 % → le puits remplit **et** rapporte son XP ; soif ≥ 75 % → le puits
+  remplit à 100 % et rapporte **0 XP**. C'est une **autre modif** (une consigne = une
+  modif) : elle attend son tour.
 
 ## Report dans les documents (fait le 21/09, à la demande de Xav)
 

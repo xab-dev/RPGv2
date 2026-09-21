@@ -153,10 +153,23 @@ function xpDuCircuit() {
     `au dernier palier, le circuit doit valoir moins de la moitié de sa part initiale `
     + `(${parts[0].part.toFixed(2)} → ${dernier.part.toFixed(2)})`,
   );
-  // `Q-44` : la table s'arrête au Nv.10, alors que la clôture de la Région
-  // Maison se joue au Nv.30. Ce test ne peut donc rien dire au-delà — il le
-  // DIT plutôt que de laisser croire qu'il l'a vérifié.
-  assert.equal(niveaux.length, 10, "levels.json s'arrête au Nv.10 (`Q-44`) : au-delà, rien n'est prouvé ici");
+  // `Q-44` : ce test ne peut rien dire au-delà de la table, et la clôture de
+  // la Région Maison se joue au **Nv.30**. Il exigeait donc que la table
+  // aille jusque-là — elle s'arrêtait au Nv.10, et il l'ÉPINGLAIT pour ne pas
+  // laisser croire qu'il avait vérifié la suite. Depuis le 22/09 elle va
+  // jusqu'au Nv.30, et tout ce qui précède (décroissance, moitié de la part
+  // initiale) est donc prouvé sur la course entière.
+  //
+  // Ce qui reste écrit ici est un CONTRAT, pas une valeur d'équilibrage
+  // (règle `D-52`) : la table doit couvrir le niveau où se joue la clôture.
+  // Allonger la courbe ne casse rien ; la raccourcir sous le critère, si.
+  const NIVEAU_CLOTURE_REGION_MAISON = 30;
+  const plafond = Math.max(...niveaux.map((n) => n.niveau));
+  assert.ok(
+    plafond >= NIVEAU_CLOTURE_REGION_MAISON,
+    `levels.json doit monter au moins au Nv.${NIVEAU_CLOTURE_REGION_MAISON} `
+    + `(critère de clôture de la Région Maison) — il s'arrête au Nv.${plafond}`,
+  );
   console.log(
     `OK la part du circuit décroît seule : Nv.1 ${parts[0].part.toFixed(2)} niveau `
     + `→ Nv.${dernier.n} ${dernier.part.toFixed(2)} niveau`,

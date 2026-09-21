@@ -439,3 +439,36 @@ boutons quelconques.
 à distance n'était nécessaire** — Xav regardait l'écran à chaque étape et a clos lui-même
 (« non c'est bon »).
 
+## Puis : la table de niveaux prolongée jusqu'au Nv.30 (`Q-44`)
+
+Second ticket de la session, demandé par Xav pour **ses tests de développeur** : « ce sera
+plus simple pour moi de visualiser le contenu à mettre et quand le mettre ». Livré en
+**données seules**, quatre fichiers, aucune ligne de code de jeu.
+
+**Consigne explicite : on ne touche pas à la courbe d'XP** — « justement, je veux voir où
+elle amène, en combien de temps ». La table n'est donc pas ré-équilibrée : elle est
+**prolongée par sa propre règle**, celle qu'elle suit depuis le Nv.5 — le coût d'un palier
+augmente de 5 XP à chaque niveau (50 pour le Nv.10, 55, 60… 150 pour le Nv.30). Aucune
+entrée existante n'a changé d'un point.
+
+Ce qu'il fallait toucher, et pourquoi c'était trois fichiers et pas un :
+`data/levels.json` (20 entrées), `data/flags.json` (`flag_niveau_11..30` — `main.js` pose un
+flag par niveau franchi et `flags.js` **lève** sur un flag non déclaré, donc sans eux le
+passage au Nv.11 coûtait une frame à chaque fois), et les deux locales (zéro chaîne en dur).
+
+Où elle amène : **2 340 XP cumulés au Nv.30**, soit ~67 rôdeurs à 35 XP, et **29 points de
+stats** sur la course entière.
+
+Un test a dû changer, et c'est la règle `D-52` en action : `test_t1_xp_recolte_equilibrage`
+**épinglait la longueur de la table** (`niveaux.length === 10`) pour avouer qu'il ne
+prouvait rien au-delà. Il vérifie désormais un **contrat** — la table doit couvrir le niveau
+où se joue la clôture de la Région Maison (30) —, si bien que la décroissance de la part de
+la récolte est prouvée sur toute la course (1,30 niveau au Nv.1 → 0,17 au Nv.29).
+
+**Pas de `push` : la version en ligne reste volontairement bloquée au Nv.10.**
+
+`D-97` (un niveau hors table rend l'écran Stats inouvrable) **reste ouverte** : la table plus
+longue ne la traite pas, elle déplace seulement la question de « au-dessus de 10 » à
+« au-dessus de 30 ». Et ce qui manque pour *jouer* ces vingt niveaux n'est pas touché ici :
+une seule table d'apparition (Nv.5, nuit), un seul monstre hors Grotte — les paliers Nv.10
+et Nv.15 de `specs/07_chaos-nocturne.md` restent à écrire.

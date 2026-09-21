@@ -46,10 +46,10 @@ le rendu. Celle-ci est la liste de ce qu'on **joue**.
 | V-43 | Mourir : les yeux se rouvrent comme à l'intro (corrigé, à rejouer) | `pas vu` |
 | V-44 | Nv. 10 : l'épée apparaît à l'Atelier, se craft, s'équipe | `pas vu` |
 | V-27 | Menu et Sauvegarde : manette, souris, doigt, deux tailles | `ok` |
-| V-49 | La plume : au sol à la sortie de la Grotte, puis en Poche | `pas vu` |
-| V-50 | Écran de choix : le carré jaune tient dans sa bulle | `pas vu` |
-| V-47 | « +1 » au-dessus de « +1xp », les deux lisibles jusqu'au bout | `pas vu` |
-| V-48 | Barre du bas : la case du consommable dessine le fruit équipé | `pas vu` |
+| V-49 | La plume : au sol à la sortie de la Grotte, puis en Poche | `ok` (21/09, en direct) |
+| V-50 | Écran de choix : le carré jaune tient dans sa bulle | `ok` (21/09, en direct) |
+| V-47 | « +1 » au-dessus de « +1xp », les deux lisibles jusqu'au bout | `ok` (21/09, en direct) |
+| V-48 | Barre du bas : la case du consommable dessine le fruit équipé | `ok` (21/09, en direct) |
 | V-11 | Le puits : mâts au sol, perspective de trois quarts | `ok` (21/09, après `D-16`) |
 
 *(Une ligne par validation encore due. Chaque ticket de la file Nv.0 → Nv.10 ajoute la sienne au

@@ -382,10 +382,11 @@ celui de l'intro — *révise* `D-65`), `D-75` (le consommable équipé dans la 
 `Q-46` (ce qui reste à trancher sur la mort — le clignement ne gèle rien, le rythme, et le levier
 de la salle 1 qui ne se rejoue pas). Outil né de la session : `tools/banc_visuel.html`.
 
-**Session close le 21/09**, les neuf commits **poussés sur `main` à la demande de Xav, donc en
-ligne**. `D-16` et `V-11` sont closes : Xav a suivi les trois passes du puits **au fil de l'eau**,
-Chrome ouvert à côté du terminal. **Restent dues** : `V-43` (à rejouer) et `V-47` à `V-50` — elles
-sont en ligne sans verdict, et `pas vu` ne se clôt jamais par le silence.
+**Session close le 21/09**, poussée sur `main` à la demande de Xav, donc **en ligne**. Xav a suivi
+la session **au fil de l'eau**, Chrome ouvert à côté du terminal : `V-11` et `V-47` à `V-50` sont
+donc **closes sur sa parole**, en même temps que les six lignes `D-`. **Reste due la seule `V-43`**
+— elle demande de **mourir**, ce qui ne se voit pas en regardant l'écran ; `pas vu` ne se clôt
+jamais par le silence.
 
 ## Journal de session précédent — file de micro-tickets « Nv.0 → Nv.10 » (21/09)
 

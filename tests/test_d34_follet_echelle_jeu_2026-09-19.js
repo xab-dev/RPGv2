@@ -28,8 +28,22 @@ import { creerDepart, avancerDepart, etatRenduDepart, avancementDepart } from '.
 
 const RACINE = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-const ECHELLE_JEU_ATTENDUE = 0.75; // décision Xav (`D-34`), *provisoire*
+// `D-52` : ce fichier épinglait `0,75`, l'échelle que Xav avait décidée le
+// 19/09. Il est devenu rouge le jour où Xav l'a réglée à la main à 0,66 dans
+// `data/companions.json` — c'est-à-dire le jour où il a fait exactement ce
+// que l'architecture lui demande de faire. Le test avait tort, pas la valeur.
+//
+// Un test n'apprend pas par cœur un nombre que Xav ajuste à l'œil. Il vérifie
+// le CONTRAT : que l'échelle vit en données, qu'elle est résolue par une
+// fonction pure, qu'une valeur dégénérée tombe au boot, et que le follet est
+// bien plus petit en jeu qu'à la cinématique — ce que `D-34` voulait. Le
+// chiffre exact reste à Xav, et il peut le changer sans rien casser.
 const ORBITE_ATTENDUE_PX = 24; // valeur d'avant le ticket : elle ne bouge pas (`Q-26`)
+// Taille du follet à l'écran de choix, dérivée des deux constantes de rendu
+// (`TAILLE_FOLLET_SELECTIONNE_PX / TAILLE_REFERENCE_FOLLET_PX`). Au niveau
+// module parce que DEUX blocs s'en servent désormais : celui du contrat
+// (« plus petit en jeu qu'à la cinématique ») et celui de la transition.
+const ECHELLE_CINEMATIQUE = 20 / 7;
 
 async function cataloguesDuJeu() {
   const { donnees, erreurs } = await chargerCataloguesDepuisDisque(
@@ -44,18 +58,36 @@ async function cataloguesDuJeu() {
 {
   const catalogues = await cataloguesDuJeu();
   for (const companion of catalogues.companions) {
+    // Le champ EXISTE et il est jouable — c'est le contrat. Sa valeur est à
+    // Xav (`D-52`).
     assert.equal(
-      companion.echelle_jeu,
-      ECHELLE_JEU_ATTENDUE,
+      typeof companion.echelle_jeu, 'number',
       `${companion.id} déclare son échelle de jeu en données`,
     );
-    assert.equal(resoudreEchelleJeu(companion), ECHELLE_JEU_ATTENDUE);
+    assert.ok(companion.echelle_jeu > 0, `${companion.id} : une échelle nulle rendrait le follet invisible`);
+    // La résolution passe par la fonction pure, et rend EXACTEMENT ce que les
+    // données disent : c'est ça qu'on vérifie, pas le chiffre.
+    assert.equal(
+      resoudreEchelleJeu(companion), companion.echelle_jeu,
+      `${companion.id} : la résolution doit rendre la valeur du catalogue, telle quelle`,
+    );
+    // L'intention de `D-34` : le follet est plus PETIT en jeu qu'à l'écran de
+    // choix. Une relation, pas un nombre — elle survit à tous les réglages.
+    assert.ok(
+      companion.echelle_jeu < ECHELLE_CINEMATIQUE,
+      `${companion.id} : le follet doit être plus petit en jeu (${companion.echelle_jeu}) `
+      + `qu'à la cinématique (${ECHELLE_CINEMATIQUE.toFixed(3)})`,
+    );
   }
 
   // Un compagnon sans le champ garde 1 : le catalogue d'avant reste valide.
   assert.equal(resoudreEchelleJeu({ id: 'comp_sans_echelle' }), 1);
   assert.equal(resoudreEchelleJeu(null), 1);
-  console.log('OK échelle de jeu du follet déclarée en données (0,75), défaut 1');
+  console.log(
+    'OK échelle de jeu déclarée en données ('
+    + catalogues.companions.map((c) => `${c.id.replace('comp_follet_', '')} ${c.echelle_jeu}`).join(', ')
+    + '), défaut 1',
+  );
 
   // Une échelle dégénérée est refusée au boot, comme celle du héros : elle
   // rendrait le compagnon invisible, et personne ne le verrait avant de jouer.
@@ -90,16 +122,28 @@ async function cataloguesDuJeu() {
 }
 
 // --- 3. Frontière cinématique -> jeu : aucune discontinuité ---
+// L'échelle d'arrivée est LUE dans le catalogue, jamais épinglée (`D-52`) :
+// la continuité doit tenir pour la valeur que Xav a réglée, pas pour celle
+// qu'un test aurait apprise par cœur.
 {
-  const ECHELLE_CINEMATIQUE = 20 / 7; // TAILLE_FOLLET_SELECTIONNE_PX / TAILLE_REFERENCE_FOLLET_PX
+  const echelleJeu = resoudreEchelleJeu((await cataloguesDuJeu()).companions[0]);
 
   // Bornes exactes : on part de la taille de l'écran de choix, on arrive à la
   // taille de jeu. Sans ça, la transition serait douce mais fausse.
-  assert.equal(echelleFolletEnTransition(ECHELLE_CINEMATIQUE, ECHELLE_JEU_ATTENDUE, 0), ECHELLE_CINEMATIQUE);
-  assert.equal(echelleFolletEnTransition(ECHELLE_CINEMATIQUE, ECHELLE_JEU_ATTENDUE, 1), ECHELLE_JEU_ATTENDUE);
+  assert.equal(echelleFolletEnTransition(ECHELLE_CINEMATIQUE, echelleJeu, 0), ECHELLE_CINEMATIQUE);
+  // À TOLÉRANCE, pas à l'égalité stricte : `a + (b - a) * 1` ne rend pas
+  // exactement `b` en virgule flottante. Avec 0,75 ça tombait juste par
+  // chance de représentation binaire ; avec 0,66, l'écart est de 1e-16 —
+  // invisible, et le contrat n'a jamais été « au bit près », il est « aucun
+  // saut visible ». Épingler l'égalité stricte revenait à épingler la valeur.
+  const arriveSur = (avancement, cible) => assert.ok(
+    Math.abs(echelleFolletEnTransition(ECHELLE_CINEMATIQUE, echelleJeu, avancement) - cible) < 1e-9,
+    `avancement ${avancement} doit arriver sur ${cible}`,
+  );
+  arriveSur(1, echelleJeu);
   // Un avancement hors bornes ne renvoie jamais une taille hors bornes.
-  assert.equal(echelleFolletEnTransition(ECHELLE_CINEMATIQUE, ECHELLE_JEU_ATTENDUE, -3), ECHELLE_CINEMATIQUE);
-  assert.equal(echelleFolletEnTransition(ECHELLE_CINEMATIQUE, ECHELLE_JEU_ATTENDUE, 12), ECHELLE_JEU_ATTENDUE);
+  assert.equal(echelleFolletEnTransition(ECHELLE_CINEMATIQUE, echelleJeu, -3), ECHELLE_CINEMATIQUE);
+  arriveSur(12, echelleJeu);
 
   // Déroulé réel de l'étape de départ, frame à frame à 60 Hz : l'échelle
   // décroît sans jamais sauter. Le seuil est calculé depuis l'amplitude
@@ -107,12 +151,12 @@ async function cataloguesDuJeu() {
   // 10 % du chemin (à 60 Hz sur 1 s, la plus grosse frame en vaut ~5 %).
   const config = { depart_ms: 1000, convergence_ms: 3500, levitation: { amplitude_px: 3, periode_ms: 900 } };
   let depart = creerDepart(config, 0);
-  const amplitude = Math.abs(ECHELLE_CINEMATIQUE - ECHELLE_JEU_ATTENDUE);
-  let precedente = echelleFolletEnTransition(ECHELLE_CINEMATIQUE, ECHELLE_JEU_ATTENDUE, avancementDepart(depart));
+  const amplitude = Math.abs(ECHELLE_CINEMATIQUE - echelleJeu);
+  let precedente = echelleFolletEnTransition(ECHELLE_CINEMATIQUE, echelleJeu, avancementDepart(depart));
   let sautMax = 0;
   while (!depart.terminee) {
     depart = avancerDepart(depart, 1000 / 60);
-    const courante = echelleFolletEnTransition(ECHELLE_CINEMATIQUE, ECHELLE_JEU_ATTENDUE, avancementDepart(depart));
+    const courante = echelleFolletEnTransition(ECHELLE_CINEMATIQUE, echelleJeu, avancementDepart(depart));
     assert.ok(courante <= precedente + 1e-9, 'la taille ne remonte jamais pendant la transition');
     sautMax = Math.max(sautMax, Math.abs(courante - precedente));
     precedente = courante;
@@ -122,11 +166,11 @@ async function cataloguesDuJeu() {
     `plus gros saut d'une frame à l'autre : ${sautMax.toFixed(4)} (amplitude ${amplitude.toFixed(4)})`,
   );
   assert.ok(
-    Math.abs(precedente - ECHELLE_JEU_ATTENDUE) < 1e-9,
+    Math.abs(precedente - echelleJeu) < 1e-9,
     "la transition finit exactement sur l'échelle de jeu",
   );
   console.log(
-    `OK frontière continue : ${ECHELLE_CINEMATIQUE.toFixed(3)} -> ${ECHELLE_JEU_ATTENDUE} en ${config.depart_ms} ms, plus gros saut ${sautMax.toFixed(4)}`,
+    `OK frontière continue : ${ECHELLE_CINEMATIQUE.toFixed(3)} -> ${echelleJeu} en ${config.depart_ms} ms, plus gros saut ${sautMax.toFixed(4)}`,
   );
 }
 

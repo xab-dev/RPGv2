@@ -599,6 +599,43 @@ export function creerOrchestrateurGrotte({
     }
   }
 
+  // `D-66` (T5) : ce que l'écran Poche doit savoir d'un objet équipable —
+  // dans quel emplacement il va, s'il y est déjà, et ce que ça change. `null`
+  // pour tout le reste.
+  //
+  // C'est ICI que se décide « quelle catégorie va dans quel emplacement »,
+  // et nulle part ailleurs : l'écran n'a plus à connaître « nourriture » ni
+  // « arme », et une armure sera une ligne de plus dans cette table.
+  const SLOT_PAR_CATEGORIE = { nourriture: 'consommable', arme: 'arme' };
+  function equipementDeLItem(itemDef) {
+    const slot = SLOT_PAR_CATEGORIE[itemDef.categorie];
+    if (!slot) return null;
+    // Pour une arme, l'emplacement retient l'id de l'ARME, pas celui de
+    // l'objet de poche — d'où la comparaison par `itemDef.arme`.
+    const attendu = slot === 'arme' ? itemDef.arme : itemDef.id;
+    const deja = save.hero.equipement[slot] === attendu;
+    return {
+      slot,
+      deja,
+      // Ce que l'objet équipé apporte, dit dans sa fiche. Pour le
+      // consommable, le verbe qui s'en sert (au glyphe du périphérique
+      // actif) ; pour une arme, son bonus, lu sur l'arme.
+      lignes: slot === 'consommable'
+        ? [i18n.t('menu.fiche.manger', { glyphe: i18n.t(`glyphe.${input.peripheriqueActif()}.consume`) })]
+        : lignesBonusArme(itemDef.arme),
+    };
+  }
+
+  // Les modificateurs d'une arme, en clair. Lus sur `weapons.json`, donc une
+  // arme qui donnerait Agilité +2 s'annoncerait toute seule.
+  function lignesBonusArme(armeId) {
+    const arme = registre.obtenir('weapons', armeId);
+    return Object.entries(arme.modificateurs || {}).map(([statId, delta]) => i18n.t('menu.fiche.bonus_stat', {
+      stat: i18n.t(registre.obtenir('stats', statId).label_key),
+      n: delta > 0 ? `+${delta}` : `${delta}`,
+    }));
+  }
+
   // `D-63` (T9) : les verbes de la barre d'actions réellement débloqués, dans
   // l'ordre du catalogue. Décision de Xav (21/09) : sur une partie neuve,
   // **seule la case d'attaque de base est là** ; une case apparaît quand son
@@ -1044,7 +1081,7 @@ export function creerOrchestrateurGrotte({
     // n'est pas dans la liste, donc elle ne peut pas être comptée.
     return entreesVisibles(recettesDeStation(registre, station.id), flags)
       .map((r) => {
-        const verdict = peutFabriquer(r, save.inventaire.items, flags, save.cooldowns, heureMs);
+        const verdict = peutFabriquer(r, save.inventaire.items, flags, save.cooldowns, heureMs, save.inventaire.eclats);
         let suffixe = '';
         if (verdict.raison === 'cooldown') {
           const resteS = Math.ceil(tempsRestantMs(save.cooldowns, r.id, r.cooldown_ms ?? 60000, heureMs) / 1000);
@@ -1053,6 +1090,12 @@ export function creerOrchestrateurGrotte({
           suffixe = ` (${i18n.t('menu.craft_manque')})`;
         } else if (verdict.raison === 'poche_pleine') {
           suffixe = ` (${i18n.t('menu.poche_pleine')})`;
+        } else if (verdict.raison === 'eclats') {
+          // `D-66` : un refus se DIT, comme les trois autres. Sans cette
+          // ligne, la recette serait grisée sans raison affichée — et la
+          // règle « le résultat fait foi » retenterait un craft impossible
+          // en silence.
+          suffixe = ` (${i18n.t('menu.craft_manque_eclats')})`;
         }
         // specs/08_menus-cartes.md, palier C5 : la tuile est celle de l'objet
         // PRODUIT ; la fiche dit ce que la recette demande (avec ce qu'on a en
@@ -1065,6 +1108,7 @@ export function creerOrchestrateurGrotte({
             n: Math.ceil(tempsRestantMs(save.cooldowns, r.id, r.cooldown_ms ?? 60000, heureMs) / 1000),
           }),
           ingredients: () => i18n.t('menu.fiche.ingredients_manquants'),
+          eclats: () => i18n.t('menu.fiche.eclats_manquants'),
           poche_pleine: () => i18n.t('menu.fiche.pile_pleine'),
         };
         return {
@@ -1076,6 +1120,9 @@ export function creerOrchestrateurGrotte({
             ...r.entrees.map((e) => i18n.t('menu.fiche.ingredient', {
               item: i18n.t(registre.obtenir('items', e.item).label_key), n: e.qte, possede: save.inventaire.items[e.item] || 0,
             })),
+            ...(r.cout_eclats ? [i18n.t('menu.fiche.cout_eclats', {
+              n: r.cout_eclats, possede: save.inventaire.eclats,
+            })] : []),
             i18n.t('menu.fiche.donne', { item: i18n.t(itemSortie.label_key), n: r.sortie.qte }),
             ...lignesFicheItem(itemSortie, registre, i18n),
             ...(raisons[verdict.raison] ? [raisons[verdict.raison]()] : []),
@@ -1086,9 +1133,13 @@ export function creerOrchestrateurGrotte({
             const itemDefSortie = registre.obtenir('items', r.sortie.item);
             const resultat = fabriquer(r, {
               poche: save.inventaire.items, flags, cooldowns: save.cooldowns, heureMs: save.monde.heure, itemDefSortie,
+              eclats: save.inventaire.eclats,
             });
             if (resultat.ok) {
               save.inventaire.items = resultat.poche;
+              // `D-66` : les éclats reviennent d'un module pur, on les repose
+              // ici — au même endroit et au même moment que la poche.
+              save.inventaire.eclats = resultat.eclats;
               save.cooldowns = resultat.cooldowns;
               crediterXpHeros(resultat.xp);
               flags.set('flag_premier_craft');
@@ -1389,7 +1440,18 @@ export function creerOrchestrateurGrotte({
   // partagent ce même calcul, jamais deux sources qui pourraient diverger.
   function resoudreModificateursHeros() {
     const modificateurs = {};
-    for (const source of [modificateursHeros(registre, save.hero.companion), modificateursBuffsActifs(registre, save.hero.buffs_actifs)]) {
+    // `D-66` (T5) : l'ARME équipée est la 3ᵉ source de modificateurs, après le
+    // compagnon et les buffs — et elle emprunte exactement leur forme,
+    // `{ statId: delta }`. Le calcul des stats n'apprend rien : il additionne
+    // une source de plus. Décision de Xav du 21/09 : l'épée en bois donne
+    // Force +1, et ce +1 vit sur l'ARME, jamais dans une stat ni une
+    // constante (même discipline que la portée, décision verrouillée).
+    const arme = resoudreArmeEquipee(registre, save.hero.equipement.arme);
+    for (const source of [
+      modificateursHeros(registre, save.hero.companion),
+      modificateursBuffsActifs(registre, save.hero.buffs_actifs),
+      (arme && arme.modificateurs) || {},
+    ]) {
       for (const [statId, delta] of Object.entries(source)) {
         modificateurs[statId] = (modificateurs[statId] || 0) + delta;
       }
@@ -2864,15 +2926,20 @@ export async function demarrerJeu() {
         return {
           id: itemId, label: i18n.t(itemDef.label_key), quantite, categorie: itemDef.categorie,
           icone: itemDef.render.visuel, lignes: lignesFicheItem(itemDef, registre, i18n),
+          equipement: equipementDeLItem(itemDef),
         };
       }),
-    // Palier C (§3.3) : slot consommable — mutation directe de `save` (même
-    // patron que basculerMusique ci-dessus, hors du chemin etatModifie de
+    // Palier C (§3.3) + `D-66` (T5) : UN point d'équipement, quel que soit
+    // l'emplacement. Mutation directe de `save` (même patron que
+    // basculerMusique ci-dessus, hors du chemin etatModifie de
     // l'orchestrateur, cf. journal : persistance au prochain autosave/
     // visibilitychange, comme les réglages).
-    equipementConsommable: () => save.hero.equipement.consommable,
-    equiperConsommable: (itemId) => {
-      save.hero.equipement.consommable = itemId;
+    equiper: (slot, itemId) => {
+      const itemDef = registre.obtenir('items', itemId);
+      // L'arme équipée est un id de `weapons.json`, pas l'objet de poche :
+      // c'est `items.json > arme` qui fait le pont, et le reste du jeu
+      // (portée, icône, modificateurs) continue de ne connaître que l'arme.
+      save.hero.equipement[slot] = slot === 'arme' ? itemDef.arme : itemId;
     },
     // MT_construction-bandeau-placement_2026-09-17 : glyphes du bandeau
     // résolus sur le périphérique réellement actif, jamais manette en dur.

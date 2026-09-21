@@ -1,5 +1,13 @@
 [
   {
+    "id": "item_epee_bois",
+    "label_key": "item.epee_bois",
+    "categorie": "arme",
+    "stack_max": 1,
+    "arme": "weapon_epee_bois",
+    "render": { "visuel": "visuel_icone_epee_bois" }
+  },
+  {
     "id": "item_plume",
     "label_key": "item.plume",
     "description_key": "item.plume.description",

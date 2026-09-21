@@ -913,6 +913,25 @@ function validerWeapon(entry, catalogs, path) {
   if (!p || typeof p.min !== 'number' || typeof p.max !== 'number' || p.min < 0 || p.min > p.max) {
     erreurs.push(`${path} > portee doit être { min, max } en tuiles, 0 <= min <= max`);
   }
+  // `modificateurs` (`D-66`, T5) : { statId: delta }, optionnel. Décision de
+  // Xav du 21/09 — l'épée en bois donne **Force +1**. C'est la 3ᵉ source de
+  // modificateurs de stats après le compagnon et les buffs, et elle emprunte
+  // exactement la même forme : le calcul des stats n'apprend rien, il
+  // additionne une source de plus.
+  //
+  // Un id de stat inconnu tombe au boot : sinon le bonus serait simplement
+  // ignoré, et « mon épée ne sert à rien » serait indébuggable en jeu.
+  if (entry.modificateurs !== undefined) {
+    const stats = new Set((catalogs.stats || []).map((st) => st.id));
+    for (const [statId, delta] of Object.entries(entry.modificateurs)) {
+      if (!stats.has(statId)) {
+        erreurs.push(`${path} > modificateurs : stat "${statId}" introuvable dans stats.json`);
+      }
+      if (typeof delta !== 'number' || !Number.isFinite(delta)) {
+        erreurs.push(`${path} > modificateurs.${statId} doit être un nombre fini`);
+      }
+    }
+  }
   return erreurs;
 }
 
@@ -1151,7 +1170,10 @@ function validerMenu(entry, catalogs, path) {
 // la fiche d'un objet affiche sa catégorie, donc chaque catégorie a une clé de
 // texte (`item.categorie.<catégorie>`) — et le contrôle de démarrage des textes
 // a besoin de la liste pour vérifier qu'aucune ne manque, en FR comme en EN.
-export const CATEGORIES_ITEM = ['ressource', 'nourriture', 'valeur', 'outil'];
+// `arme` ajoutée par `D-66` (T5) : une arme se fabrique, se range en poche et
+// s'équipe. C'est la PREMIÈRE fois qu'un objet de poche pointe vers un autre
+// catalogue — d'où le champ `arme` validé en référence ci-dessous.
+export const CATEGORIES_ITEM = ['ressource', 'nourriture', 'valeur', 'outil', 'arme'];
 
 export const SCHEMAS = {
   elements: {
@@ -1603,6 +1625,21 @@ export const SCHEMAS = {
       }
       erreurs.push(...erreursRenderVisuel(entry, catalogs, path));
       erreurs.push(...erreursXpOptionnel(entry, path));
+      // `arme` (`D-66`, T5) : l'objet de poche qui, une fois équipé, DEVIENT
+      // cette arme. Une référence, pas un booléen : c'est elle qui fait le
+      // pont entre `items.json` (ce qu'on possède) et `weapons.json` (ce que
+      // frappe le combat). Un id inconnu tombe au boot — sans ce contrôle,
+      // équiper l'objet lèverait en pleine partie, dans le menu.
+      if (entry.arme !== undefined) {
+        if (!(catalogs.weapons || []).some((w) => w.id === entry.arme)) {
+          erreurs.push(`${path} > arme "${entry.arme}" introuvable dans weapons.json`);
+        }
+        if (entry.categorie !== 'arme') {
+          erreurs.push(`${path} > un item qui porte "arme" doit être de catégorie "arme"`);
+        }
+      } else if (entry.categorie === 'arme') {
+        erreurs.push(`${path} > un item de catégorie "arme" doit dire QUELLE arme (champ "arme")`);
+      }
       // `description_key` (`D-60`) : une ligne de texte de plus dans la fiche
       // de l'objet, pour ce qui n'est ni une stat ni un effet — le lore. Clé
       // de locale comme le reste, jamais une chaîne.
@@ -1699,6 +1736,15 @@ export const SCHEMAS = {
       }
       if (entry.cooldown_ms !== undefined && (typeof entry.cooldown_ms !== 'number' || entry.cooldown_ms <= 0)) {
         erreurs.push(`${path} > cooldown_ms doit être un nombre positif si présent`);
+      }
+      // `cout_eclats` (`D-66`, T5) : les éclats ne sont PAS un item de poche
+      // (ils vivent dans `save.inventaire.eclats`, une monnaie), donc ils ne
+      // peuvent pas figurer dans `entrees`. Un champ à part le dit, plutôt
+      // qu'un faux item qui aurait obligé à migrer la sauvegarde, le HUD et
+      // les tables de butin.
+      if (entry.cout_eclats !== undefined
+        && (!Number.isInteger(entry.cout_eclats) || entry.cout_eclats < 0)) {
+        erreurs.push(`${path} > cout_eclats doit être un entier >= 0 si présent`);
       }
       // `D-62` (T4) : `connue_au_depart` et `deblocage` ont été remplacés par
       // le `visible_si` générique, validé pour TOUS les catalogues dans

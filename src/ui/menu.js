@@ -215,10 +215,13 @@ export function clesTexteEtats(langues) {
 }
 
 // 03_maison-exterieur §3.3/§3.6 + Palier A/C/D/E de 04_maison-interieur :
-// - `listerPoche()` renvoie `{ id, label, quantite, categorie }[]` (le module a
-//   besoin de `categorie`/`id` pour proposer "Équiper" sur la nourriture).
-// - `equipementConsommable()`/`equiperConsommable(id)` : slot consommable
-//   (§3.3, hint CONSUME).
+// - `listerPoche()` renvoie `{ id, label, quantite, icone, lignes, equipement }[]`.
+//   `equipement` (`D-66`, T5) est `null` ou `{ slot, deja, lignes }` : c'est
+//   `main.js` qui dit si l'objet s'équipe et OÙ. Cet écran ne connaît plus
+//   aucune catégorie d'item — il en connaissait une (« nourriture »), et la
+//   deuxième arme aurait fait la troisième.
+// - `equiper(slot, itemId)` : un seul point d'équipement, quel que soit
+//   l'emplacement (§3.3, hint CONSUME pour le consommable).
 // Tous optionnels (défauts inertes), au cas où un test construirait le menu
 // sans ces dépendances.
 // `peripheriqueActif` (MT_construction-bandeau-placement_2026-09-17) :
@@ -241,7 +244,10 @@ export function initialiserMenu({
   // avance d'un palier. Les paliers eux-mêmes vivent dans `data/audio.json`,
   // et ce module ne les voit jamais — il ne sait même pas combien il y en a.
   volumeCourant = () => 'menu.etat.volume_100', cyclerVolume = () => {},
-  equipementConsommable = () => null, equiperConsommable = () => {},
+  // `D-66` (T5) : un seul point d'équipement, quel que soit l'emplacement —
+  // `equiper(slot, itemId)`. Remplace `equiperConsommable`, qui figeait un
+  // emplacement dans le nom d'une fonction d'UI.
+  equiper = () => {},
   peripheriqueActif = () => 'manette',
   // `D-30` : le plein écran est injecté comme tout le reste — ce module ne
   // connaît ni `document.fullscreenElement`, ni `requestFullscreen`.
@@ -306,21 +312,27 @@ export function initialiserMenu({
   // fiche ; le rééquiper serait sans effet, il n'a donc pas de bouton non plus
   // (et surtout pas de tuile grisée : « équipé » n'est pas « indisponible »).
   // Une poche vide : aucune tuile, la fiche le dit (`texteVide` du niveau).
+  // `D-66` (T5) : l'épée en bois est le 2ᵉ objet équipable du jeu, et elle ne
+  // va pas dans le même emplacement que la nourriture. Plutôt qu'un second
+  // `e.categorie === '…'` écrit ici — un troisième suivrait avec l'armure —,
+  // c'est `main.js` qui dit désormais, par objet, s'il s'équipe et où :
+  // `e.equipement = { slot, deja, lignes }`. Cet écran redevient ce qu'il
+  // doit être : il ne connaît **aucune** catégorie d'item.
   function entreesPoche() {
     return listerPoche().map((e) => {
-      const equipable = e.categorie === 'nourriture';
-      const equipe = equipable && equipementConsommable() === e.id;
+      const eq = e.equipement || null;
+      const equipe = Boolean(eq && eq.deja);
       return {
         titre: e.label, icone: e.icone || null, quantite: e.quantite, marque: equipe,
-        // Équipé : la fiche dit aussi COMMENT le manger — le verbe CONSUME, au
-        // glyphe du périphérique actif (le joueur vient peut-être de l'équiper
-        // pour la première fois).
+        // Équipé : la fiche dit aussi ce que ça change — quel verbe s'en
+        // sert, ou ce que l'objet apporte. Les lignes viennent de `main.js`,
+        // qui a le registre et i18n ; le menu ne compose plus rien.
         lignes: [...(e.lignes || []), ...(equipe ? [
           i18n.t('menu.fiche.equipe'),
-          i18n.t('menu.fiche.manger', { glyphe: i18n.t(`glyphe.${peripheriqueActif()}.consume`) }),
+          ...((eq && eq.lignes) || []),
         ] : [])],
-        libelleAction: equipable && !equipe ? i18n.t('menu.poche_equiper') : null,
-        action: equipable && !equipe ? () => equiperConsommable(e.id) : null,
+        libelleAction: eq && !equipe ? i18n.t('menu.poche_equiper') : null,
+        action: eq && !equipe ? () => equiper(eq.slot, e.id) : null,
       };
     });
   }

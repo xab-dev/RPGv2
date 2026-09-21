@@ -139,9 +139,17 @@ const RECETTE_SECRETE = {
 
   const haut = monterPartie({ niveau: 10, recetteEnPlus: RECETTE_SECRETE });
   const entreesHaut = haut.entreesCraft();
+  // Le compte se juge à niveau ÉGAL, avec et sans la recette factice : depuis
+  // `D-66` (T5), l'épée en bois est elle aussi cachée derrière le niveau 10,
+  // et comparer le niveau 1 au niveau 10 mesurerait les deux à la fois.
+  const memeNiveauSansSecrete = monterPartie({ niveau: 10 }).entreesCraft();
   assert.equal(
-    entreesHaut.length, entreesBas.length + 1,
+    entreesHaut.length, memeNiveauSansSecrete.length + 1,
     'au niveau 10, la recette apparaît — et le COMPTE change avec elle',
+  );
+  assert.ok(
+    memeNiveauSansSecrete.length > entreesBas.length,
+    "et le catalogue réel a lui aussi de quoi s'ouvrir au niveau 10 (`D-66`)",
   );
   assert.ok(
     entreesHaut.some((e) => e.titre === haut.i18n.t(RECETTE_SECRETE.label_key)),

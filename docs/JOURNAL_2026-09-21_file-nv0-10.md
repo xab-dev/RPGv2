@@ -46,3 +46,22 @@ file, la session ne le tient pas de mémoire.
 | T9 | La barre d'actions : anti-spoil des touches | (ce commit) | État des lieux ci-dessus · `action_slots.json` enfin lu, avec un `visible_si` par slot (**même filtre que T4**) · rendu et input reçoivent la liste, aucun des deux ne sait ce qu'est un slot · tactile branché par le patron `onVerbesActions` (`D-54`) : un bouton masqué n'est plus cliquable, **et aucun n'a bougé** · `INTERACT`/`MENU` hors catalogue, donc immasquables | clôt `D-63` ; `E-01` sans objet ; ouvre `V-41` |
 | T7 | Le volume | (ce commit) | `data/audio.json` (paliers 0/25/50/75/100, défaut **50 %**, une clé de texte par palier) · volume **maître** dans `audio.js`, multiplié par le volume propre de la piste, appliqué à ce qui joue déjà · **aucune migration** : champ absent = défaut du catalogue · une carte de plus dans Paramètres, structure des menus intacte | clôt `D-64` ; ouvre `V-42` |
 | T8 | Le clignement au respawn | (ce commit) | `intro.js#ouverturePaupieres` **exportée** et réutilisée telle quelle (contrôle de source : le modèle n'est pas réécrit) · durées en données, 4ᵉ genre d'effet `clignement` · **920 ms** contre 3 700 à l'intro · purement visuel : le héros est déjà revenu, rien n'est retardé · gelé sous UI, repart de zéro à chaque mort | clôt `D-65` ; ouvre `V-43` |
+
+## T5 — l'épée en bois, et le verdict des fondations
+
+Le ticket exigeait la liste de **chaque fichier hors `data/` et `locales/`** touché, et pourquoi.
+**Verdict : quatre fichiers. Les fondations ne sont PAS validées pour les armes et l'équipement.**
+Rien n'a été contourné pour obtenir zéro — chacun de ces quatre points est une capacité que le jeu
+n'avait tout simplement pas.
+
+| Fichier | Pourquoi il a fallu y toucher | Ligne ouverte |
+|---|---|---|
+| `src/schemas.js` | Quatre capacités neuves à déclarer : la catégorie d'item **`arme`**, le champ **`arme`** sur un item (la référence qui fait le pont poche → `weapons.json`), les **`modificateurs`** d'une arme, et le **`cout_eclats`** d'une recette. Un schéma qui ne connaît pas un champ le laisse passer **sans rien dire** : le bonus serait ignoré et l'épée « ne servirait à rien », sans message | `D-67` |
+| `src/recipes.js` | **Les éclats ne sont pas un item de poche.** Ils vivent dans `save.inventaire.eclats` — une monnaie — donc ils ne peuvent pas figurer dans `entrees`, qui référence `items.json`. `peutFabriquer`/`fabriquer` ont appris un coût en monnaie (paramètre **optionnel**, défaut 0 : les appelants d'avant n'ont pas bougé) | `D-68` |
+| `src/main.js` | Trois raisons distinctes : reposer les éclats rendus par le module pur ; ajouter l'**arme équipée** comme 3ᵉ source de modificateurs de stats (elle emprunte la forme exacte du compagnon et des buffs — le calcul n'apprend rien, il additionne une source de plus) ; et décider **quelle catégorie va dans quel emplacement** (`SLOT_PAR_CATEGORIE`) | `D-69` |
+| `src/ui/menu.js` | L'écran Poche testait `e.categorie === 'nourriture'` **en dur**. L'épée aurait fait un deuxième cas, l'armure un troisième. Il reçoit désormais `equipement = { slot, deja, lignes }` et ne connaît **plus aucune catégorie d'item** — c'est un gain, mais c'est bien du code de système modifié | `D-70` |
+
+**Ce qui, en revanche, n'a rien coûté** — et c'est la moitié utile du verdict : la recette elle-même,
+son `visible_si` niveau ≥ 10 (offert par T4), la portée `[0 ; 0,75]`, l'icône, les textes. Quatre
+entrées JSON et six clés de locale.
+

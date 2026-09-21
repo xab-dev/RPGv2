@@ -28,5 +28,20 @@
     "categorie": "nourriture",
     "xp": 10,
     "cooldown_ms": 60000
+  },
+  {
+    "id": "rec_epee_bois",
+    "label_key": "recipe.epee_bois",
+    "station": "station_type_atelier",
+    "entrees": [
+      { "item": "item_bois", "qte": 1 },
+      { "item": "item_branche", "qte": 1 }
+    ],
+    "cout_eclats": 15,
+    "sortie": { "item": "item_epee_bois", "qte": 1 },
+    "categorie": "arme",
+    "xp": 40,
+    "cooldown_ms": 60000,
+    "visible_si": { "valeur": "niveau", "min": 10 }
   }
 ]

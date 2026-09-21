@@ -26,13 +26,22 @@ const registre = construireRegistre(donnees);
   assert.equal(arme.id, 'weapon_mains_nues');
 }
 
-// 2. La portée des mains nues est la moitié de celle de l'épée en bois
-// (valeur provisoire du ticket) — lue dans les vrais catalogues, jamais
-// recopiée ici : ce test casse si l'équilibrage bouge en JSON.
+// 2. L'épée en bois porte plus loin que les mains nues — lu dans les vrais
+// catalogues, jamais recopié ici.
+//
+// `D-66` (T5) : le rapport exact n'est PLUS la moitié. Xav a tranché le
+// 21/09 : l'épée passe de 1 tuile à **0,75**, « à mi-chemin entre les mains
+// nues et l'ancienne valeur », pour « faire plus de dégâts de zone au corps
+// à corps sans donner un avantage trop gros avant la suite du jeu ». Ce que
+// ce test doit garantir, c'est la RELATION (une arme porte plus loin que les
+// poings), pas un ratio d'équilibrage qui appartient à Xav.
 {
   const mainsNues = registre.obtenir('weapons', 'weapon_mains_nues');
   const epee = registre.obtenir('weapons', 'weapon_epee_bois');
-  assert.equal(mainsNues.portee.max, epee.portee.max / 2);
+  assert.ok(
+    epee.portee.max > mainsNues.portee.max,
+    `l'épée (${epee.portee.max}) doit porter plus loin que les mains nues (${mainsNues.portee.max})`,
+  );
   assert.equal(mainsNues.portee.min, epee.portee.min);
 }
 
@@ -41,7 +50,10 @@ const registre = construireRegistre(donnees);
 // aucune stat, aucune constante de combat.js n'intervient.
 {
   const hero = creerHeros({ x: 0, y: 0, rayon: 10, pvMax: 20 });
-  const monstre = creerMonstre({ id: 'm', pv: 5 }, { x: TILE_SIZE * 0.75, y: 0 });
+  // Entre les deux portées, et strictement : à 0,75 tuile pile, le monstre
+  // serait exactement SUR le bord de l'épée depuis `D-66`, et ce test
+  // dépendrait d'un « <= » contre un « < ».
+  const monstre = creerMonstre({ id: 'm', pv: 5 }, { x: TILE_SIZE * 0.6, y: 0 });
   const mainsNues = registre.obtenir('weapons', 'weapon_mains_nues');
   const epee = registre.obtenir('weapons', 'weapon_epee_bois');
 

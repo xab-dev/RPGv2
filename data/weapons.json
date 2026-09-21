@@ -1,4 +1,4 @@
 [
   { "id": "weapon_mains_nues", "label_key": "weapon.mains_nues", "portee": { "min": 0, "max": 0.5 }, "icone": "visuel_icone_main" },
-  { "id": "weapon_epee_bois", "label_key": "weapon.epee_bois", "portee": { "min": 0, "max": 1 } }
+  { "id": "weapon_epee_bois", "label_key": "weapon.epee_bois", "portee": { "min": 0, "max": 0.75 }, "modificateurs": { "stat_force": 1 }, "icone": "visuel_icone_epee_bois" }
 ]

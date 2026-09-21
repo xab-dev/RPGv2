@@ -35,9 +35,15 @@ function chevauchement(a, b) {
 }
 
 // 2. Une arme SANS icône reste valide : la case se dessine vide, ce n'est pas
-// une erreur (exigence du ticket). `weapon_epee_bois` en est le cas réel.
+// une erreur (exigence du ticket).
+//
+// `D-66` (T5) : l'épée en bois n'est plus ce cas réel — elle est devenue
+// craftable, donc elle a sa silhouette. Le contrat ne change pas pour
+// autant : on l'éprouve sur une arme factice, ce qui est d'ailleurs plus
+// honnête (il ne dépend plus de ce qu'une arme du jeu se trouve avoir).
 {
-  assert.equal(armes.get('weapon_epee_bois').icone, undefined);
+  const sansIcone = { ...donnees, weapons: [...donnees.weapons, { id: 'weapon_test_sans_icone', label_key: 'weapon.epee_bois', portee: { min: 0, max: 1 } }] };
+  assert.deepEqual(validerCatalogues(sansIcone), [], 'une arme sans icône doit rester valide');
   assert.equal(validerCatalogues(donnees).length, 0);
 }
 

@@ -30,8 +30,14 @@ export function recetteDecouverte(recette, flags) {
   return estVisible(recette, flags);
 }
 
-export function peutFabriquer(recette, poche, flags, cooldowns, heureMs) {
+// `D-66` (T5) : `eclats` est la monnaie du joueur (`save.inventaire.eclats`),
+// pas un item de poche — elle ne peut donc pas figurer dans `entrees`. Le
+// paramètre est OPTIONNEL et vaut 0 par défaut : une recette sans
+// `cout_eclats` ne le regarde jamais, et tous les appelants d'avant ce ticket
+// continuent de fonctionner tels quels.
+export function peutFabriquer(recette, poche, flags, cooldowns, heureMs, eclats = 0) {
   if (!recetteDecouverte(recette, flags)) return { ok: false, raison: 'verrouillee' };
+  if ((recette.cout_eclats || 0) > eclats) return { ok: false, raison: 'eclats' };
   const dureeMs = recette.cooldown_ms ?? COOLDOWN_DEFAUT_MS;
   if (!estExpire(cooldowns, recette.id, dureeMs, heureMs)) {
     return { ok: false, raison: 'cooldown' };
@@ -45,13 +51,13 @@ export function peutFabriquer(recette, poche, flags, cooldowns, heureMs) {
 // Fabrique une recette : retire les entrées, ajoute la sortie, crédite l'XP,
 // pose le cooldown. §4 edge case : la sortie qui ne rentre pas dans la poche
 // (stack_max) est un refus AVANT toute consommation — rien n'est modifié.
-export function fabriquer(recette, { poche, flags, cooldowns, heureMs, itemDefSortie }) {
-  const verdict = peutFabriquer(recette, poche, flags, cooldowns, heureMs);
-  if (!verdict.ok) return { ok: false, raison: verdict.raison, poche, cooldowns };
+export function fabriquer(recette, { poche, flags, cooldowns, heureMs, itemDefSortie, eclats = 0 }) {
+  const verdict = peutFabriquer(recette, poche, flags, cooldowns, heureMs, eclats);
+  if (!verdict.ok) return { ok: false, raison: verdict.raison, poche, cooldowns, eclats };
 
   const dejaPossede = poche[recette.sortie.item] || 0;
   if (dejaPossede + recette.sortie.qte > itemDefSortie.stack_max) {
-    return { ok: false, raison: 'poche_pleine', poche, cooldowns };
+    return { ok: false, raison: 'poche_pleine', poche, cooldowns, eclats };
   }
 
   let pocheFinale = poche;
@@ -64,6 +70,10 @@ export function fabriquer(recette, { poche, flags, cooldowns, heureMs, itemDefSo
     ok: true,
     raison: null,
     poche: pocheFinale,
+    // Les éclats sont RENDUS, pas mutés : ce module reste pur, comme il l'est
+    // pour la poche et les cooldowns. C'est l'appelant qui les repose dans la
+    // sauvegarde, au même endroit et au même moment que le reste.
+    eclats: eclats - (recette.cout_eclats || 0),
     cooldowns: poserCooldown(cooldowns, recette.id, heureMs),
     xp: recette.xp || 0,
   };

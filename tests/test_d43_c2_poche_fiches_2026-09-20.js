@@ -100,12 +100,25 @@ class ElementFactice {
   const menu = initialiserMenu({
     document, i18n, menus: registre.tous('menus'), exporterSauvegarde: () => {}, importerSauvegarde: () => {},
     // Exactement ce que fait `main.js#demarrerJeu`.
+    // `D-66` (T5) : c'est `main.js` qui dit désormais si un objet s'équipe et
+    // dans quel emplacement (`equipement`) — l'écran ne connaît plus aucune
+    // catégorie d'item. On reproduit ici la même décision pour le seul
+    // emplacement que ce test regarde, le consommable.
     listerPoche: () => Object.entries(poche).filter(([, q]) => q > 0).map(([id, quantite]) => {
       const def = registre.obtenir('items', id);
-      return { id, label: i18n.t(def.label_key), quantite, categorie: def.categorie, icone: def.render.visuel, lignes: lignesFicheItem(def, registre, i18n) };
+      return {
+        id, label: i18n.t(def.label_key), quantite, categorie: def.categorie,
+        icone: def.render.visuel, lignes: lignesFicheItem(def, registre, i18n),
+        equipement: def.categorie === 'nourriture'
+          ? {
+            slot: 'consommable',
+            deja: equipe === id,
+            lignes: [i18n.t('menu.fiche.manger', { glyphe: i18n.t('glyphe.manette.consume') })],
+          }
+          : null,
+      };
     }),
-    equipementConsommable: () => equipe,
-    equiperConsommable: (id) => { equipe = id; },
+    equiper: (slot, id) => { equipe = id; },
   });
   menu.definirEvaluateurCondition(() => false);
   const carte = (id) => document.body.querySelectorAll('[data-carte]').find((c) => c.dataset.carte === id);

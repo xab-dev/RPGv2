@@ -389,6 +389,15 @@
     ]
   },
   {
+    "id": "visuel_icone_epee_bois",
+    "ancre": "centre",
+    "primitives": [
+      { "forme": "rect", "dx": 0, "dy": -1.5, "w": 1.8, "h": 8, "couleur": "#c9a97a" },
+      { "forme": "rect", "dx": 0, "dy": 3, "w": 5, "h": 1.4, "couleur": "#8a6b45" },
+      { "forme": "rect", "dx": 0, "dy": 4.6, "w": 1.6, "h": 2.4, "couleur": "#6b4f30" }
+    ]
+  },
+  {
     "id": "visuel_icone_menu_volume",
     "ancre": "centre",
     "teintable": true,

@@ -147,6 +147,12 @@ rpg_v2/
 │   │                       main.js et placement.js)
 │   ├── daynight.js         cycle jour/nuit en 4 phases (constantes) ; `save.monde.heure` sert aussi
 │   │                       d'horloge "temps actif" partagée (cooldowns/survie), gelée sous UI
+│   ├── souris.js           `D-107` : ce que la souris fait faire au NAVIGATEUR et qu'on lui
+│   │                       retire (clic droit), posé sur le document — « meilleur effort »
+│   ├── curseur.js          `D-108` : le curseur du jeu. Parts pures (boîte du bitmap dérivée du
+│   │                       dessin, géométrie de l'orbite, union de rectangles) + la part DOM :
+│   │                       la TÊTE est un `cursor: url()` généré au boot depuis `visuels.json`,
+│   │                       les particules et la traînée vivent sur un calque de recouvrement
 │   ├── audio.js            musique en boucle, armée au premier verbe abstrait (DOM)
 │   ├── dialogue.js         file de lignes, machine à écrire + armement anti-spam, résolution locuteur
 │   ├── hints.js            indices de commande (specs/04_indices-commandes.md) : un seul affiché
@@ -341,6 +347,9 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 
 (Les décisions de `05_construction-stations.md` étaient déjà actées par Xav **dans la spec elle-même** avant tout code, v1.0.0 §9 — les lignes ci-dessus n'y renvoient que pour mémoire, elles ne tranchent rien de nouveau.)
 | **Le héros est un personnage encapuchonné vu de trois quarts, et la couleur du follet est son VISAGE** (*révise* le corps entier teinté de la Phase 1) : une boule lumineuse logée dans l'ombre de la capuche, avec un glow serré — une lueur, jamais une aura qui éclairerait le sol. Ce qui rend une silhouette lisible à 14 px n'est pas son vêtement mais son **contraste** : un point lumineux dans une masse noire. Et une relation à ne plus contredire : **le héros n'est jamais plus large que ce qui entre en collision** — contrairement à une station, sa hitbox ne dérive PAS du dessin (`RAYON_HERO_BASE_PX × echelle`), donc redessiner ne déplace aucun mur, mais l'ourlet du manteau est calé sur la demi-boîte ; en hauteur il la dépasse librement, la boîte étant son emprise au sol et non sa taille | 2026-09-22 | `D-104`, `docs/JOURNAL_2026-09-22_heros-silhouette.md` |
+| **Ce qui doit être exact est exact, ce qui a le droit de traîner traîne.** Un curseur animé se partage en deux : la **tête** est un vrai `cursor: url(…)`, dessiné une fois au démarrage depuis `visuels.json` — donc **exactement** sous le pointeur, vivant **par-dessus les menus DOM** (là où la souris sert) et gratuit par frame ; les **particules et la traînée** vivent sur un calque de recouvrement (`pointer-events: none`), qui a le droit d'être en retard d'une frame puisque c'est une traînée. Deux bénéfices tombent tout seuls de ce découpage : l'orbe **occulte la moitié lointaine de son orbite** sans une ligne de tri de profondeur (le curseur système est composé par-dessus la page), et le calque passe **au-dessus des écrans d'UI**, ce qu'un dessin dans le canvas du jeu ne peut pas faire. Corollaire de lecture : **une capture d'écran ne contient jamais le curseur** — la vignette de l'album est une simulation collée à la main | 2026-09-22 | `D-108`, `docs/JOURNAL_2026-09-22_curseur.md` |
+| **La taille de la réserve d'un système de particules suit la VITESSE de ce qu'il suit.** Les 8 bouffées de `poussiere.js` sont calibrées sur un héros à 75 px/s ; une souris les vide en quatre frames, et la traînée devient une grappe clignotante. `capacite` passe donc en données (absente = 8, héros et follet identiques au pixel près). Et l'émission est **interpolée le long du segment parcouru** : toutes les bouffées d'une même frame naissaient au point d'ARRIVÉE, invisible à 1 px par frame, ruineux à 60 — ce qui rend enfin vraie la promesse déjà écrite dans ce module, « l'émission se fait à la distance parcourue » | 2026-09-22 | `D-108` |
+| **Le clic droit se verrouille sur le DOCUMENT, jamais sur le seul canvas** : les écrans d'UI sont des éléments DOM posés à côté du canvas (même raison qui fait passer `document.documentElement` en plein écran), donc un garde posé sur le canvas est un garde à moitié posé — et la moitié qui manque est celle où la souris sert. Effet de bord voulu au tactile : l'appui **maintenu** déclenche lui aussi `contextmenu`, donc la bulle « copier / partager » disparaît avec, sans toucher `input/touch.js`. La porte de secours `?souris=libre` ne pose **aucun** écouteur, plutôt qu'un écouteur qui laisse passer | 2026-09-22 | `D-107` |
 | **Une silhouette de personnage se juge dans la scène, pas au banc — et la scène lui prête ses couleurs.** Le manteau du héros prend la teinte de la **lumière du follet** (rayon 100 px) : brun chaud avec le feu, gris-bleu avec l'eau. Personne ne l'a codé, c'est le calque de lumière existant. Corollaire : une capture de silhouette de personnage se prend **par compagnon**, sinon elle ne montre qu'un tiers de la vérité (`tools/scenarios/heros_scene.mjs`) | 2026-09-22 | même journal |
 
 ## Ce qui est dû : dettes, questions, validations
@@ -402,42 +411,46 @@ Les captures de la V1 (`docs/captures/v1/`) sont une **inspiration, jamais un ca
 
 `Q-10`, `Q-11`, `Q-12`, `Q-24` et `Q-25` restent à trancher avec Xav ; `Q-07` est gelée. La spec de la barre d'action du bas (`E-01`) est écrite par Xav lui-même et attend le chiffrage `Q-11`. **Une spec non écrite ne se commence pas** (même règle que pour une phase).
 
-## Journal de session — LE GRAIN DU SOL (22/09)
+## Journal de session — LE CURSEUR (22/09)
 
-Session en deux temps, comme Xav l'a demandée. D'abord un **topo** sur le canevas de la
-map, la dernière surface du jeu sans passe graphique : où on en est, et ce que coûteraient
-des modifications — « on ne touche à rien pour l'instant ». Puis, sur son go : **on fait ce
-qui est gratuit, on note le reste.**
+Session en deux temps, comme la précédente : un **topo** (« qu'est-ce que ça
+implique, qu'est-ce que ça coûte »), puis le code sur le go de Xav. Deux
+tickets, deux commits retirables seuls, branche `curseur-2026-09-22`.
 
-Ce que le topo a établi, chiffres en main : **il n'y a pas de mur de performance sur PC.**
-Le sol n'est pas dessiné à chaque frame mais pré-rendu par secteur (187 tuiles, ~190
-primitives) et reconstruit au seul franchissement d'une tuile — 0,37 ms de moyenne au
-dernier relevé réel (`R-17`), soit 2 % du budget d'une frame sur 7 % des frames. Il faudrait
-multiplier les primitives par ~40 pour qu'une reconstruction mange une frame. La contrainte
-qui compte n'était donc pas le coût, mais **ce que les données savent exprimer**.
+Ce que le topo a établi, vérifié et non supposé : **aucun curseur personnalisé
+nulle part** (`cursor` n'apparaissait que quatre fois dans `index.html`, en
+`pointer` sur les cartes de menu), **la souris n'est pas un périphérique de
+jeu** (`src/input/` ne connaît que clavier, manette, tactile — le constat de
+Xav est structurel), et **le clic droit n'était bloqué nulle part**.
 
-Livré : `D-105`, **données seules, aucune ligne de code du jeu** — grain sur l'herbe, le
-chemin, la terre et le parquet, variantes de couleur calmées. La découverte qui commande le
-résultat, et qui a corrigé mon propre topo : un motif de tuile est **identique sur chaque
-tuile**, donc la première version (trois brins au milieu de la cellule) a donné une
-tapisserie pire que le damier qu'elle remplaçait. Les deux issues — motif continu d'une
-cellule à l'autre, ou champ dense de petites marques — sont désormais au tableau des
-décisions ci-dessus. Le parquet est la réussite la plus nette : ce qui est un défaut sur
-l'herbe (la périodicité) est une qualité sur un plancher.
+J'ai recommandé de **masquer** le curseur manette en main. **Xav a choisi
+l'inverse** — un curseur toujours visible — et a précisé le dessin : thème du
+vif d'or, sphère, deux particules en orbite, la même traînée que le follet,
+argenté neutre. Consigné, pas rejoué : sa demande a changé la route technique,
+d'où la route **hybride** au tableau des décisions ci-dessus.
 
-Vérifications : 113 fichiers verts (un test neuf, avec témoins, qui a attrapé **deux fuites
-d'un demi-pixel** avant la première capture) ; coût mesuré avant/après en marche (1,02 →
-3,47 ms par reconstruction, 0/600 frame > 20 ms des deux côtés) ; album de dix paires
-`avant_`/`apres_` sous `docs/captures/sol-2026-09-22/`, sur cinq postes d'observation
-**calculés** depuis les catalogues.
+Livré : `D-107` (clic droit verrouillé sur le document, porte `?souris=libre`)
+et `D-108` (`src/curseur.js`, trois silhouettes et deux effets en données, dont
+un **5ᵉ type d'effet** validé au boot ; la traînée est une **3ᵉ instance de
+`poussiere.js`**, pas un système nouveau ; la boîte du bitmap et son point chaud
+**dérivent du dessin**, comme l'empreinte d'une station).
 
-Relevé sans y toucher, comme demandé : `Q-52` (les **transitions** entre surfaces — à mon
-avis le défaut le plus visible qui reste, et le grain le rend *plus* voyant ; c'est un
-chantier avec une spec), `D-106` (le décor ne sait pas sur quelle surface il pousse — de
-l'herbe dans le salon, connu de Xav, remède = code), `Q-53` (monter la densité du décor,
-payable mais **bloquée par `D-106`**), et `D-01`, dont l'hypothèse de 19/09 est vérifiée :
-la fenêtre se reconstruit à **chaque tuile franchie**, donc sa marge d'une tuile ne sert pas
-d'amortisseur.
+La leçon de la session : **115 tests verts ne disent rien d'un défaut de
+composition.** Deux défauts n'ont été trouvés qu'à la capture — le calque
+héritait du `background: #000` de la règle `canvas` et noircissait tout l'écran,
+et la traînée était une grappe clignotante (réserve de 8 bouffées vidée en
+quatre frames par une souris, émission au point d'arrivée). Le second a été
+traité **à la cause**, dans le module partagé, à défaut inchangé.
 
-Dû : `V-55`, et il porte la seule question que les captures ne peuvent pas trancher —
-**en marchant, est-ce qu'on attrape la répétition ?**
+Mesures : `dessiner()` 0,91 → 0,97 ms entre souris immobile et souris en
+mouvement continu, traînée pleine, 0/600 frame > 20 ms
+(`tools/scenarios/cout_curseur.mjs`) ; à DPR 3 la déclaration passe en
+`image-set(… 3x)` et l'orbe fait 63 px, sous le plafond de 128 au-delà duquel un
+navigateur ignore un curseur **en silence**. Album :
+`docs/captures/curseur-2026-09-22/`.
+
+Dû : **`V-56`**. Tout y est réglable en données (rayon 11 px, période 1400 ms,
+aplatissement 0,45, échelle 1, réserve 28) — « plus, moins ou bon ». Et une
+réserve honnête : si l'orbe finit par gêner manette en main, le masquage
+automatique reste à écrire, et il est court (`input.js` tient déjà le loquet du
+périphérique actif, il lui manque un cas « souris »).

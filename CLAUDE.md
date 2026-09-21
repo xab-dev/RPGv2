@@ -14,6 +14,16 @@ Phases validées : 0 (Socle technique), 1 (La Grotte), 1b (polish, DA validée),
 
 **Chantier en cours : `specs/08_menus-cartes.md` — les menus en grille de cartes (`D-43`).** Spec **par paliers, un palier par session**, branche `menus-cartes`, un commit par étape, chacun retirable seul. Palier A (l'écran de référence) : livré le 20/09 ; Xav l'a regardé le soir même (« tout à l'air bon ») et a **demandé d'aller au bout de la spec dans la nuit**. **Les trois paliers sont livrés, et la branche `menus-cartes` est FUSIONNÉE dans `main` et en ligne depuis le 21/09 — à la demande explicite de Xav, après ses premiers tests clavier/manette (« validés »), pour essayer sur téléphone** : B (une seule pile pour tout le menu, `MENU` ferme tout), C (Poche, Stats, Coffre, Craft et Construction en « maître-détail » : il n'existe plus d'écran de liste), puis une passe de polish. La nuit elle-même s'est faite sans écran allumé (vérifié sous Chrome sans fenêtre, aux deux tailles) ; **reste dû : le téléphone et le doigt** — `V-27`, `V-28`, `V-29` restent ouvertes ; choix de conception à confirmer `Q-36`, `Q-39`.
 
+**Les quatre stations ont la même facture, et c'est en ligne (21/09).** Refonte **graphique**
+des trois placeholders de la Phase 2 sur le modèle du puits refait la veille : Cuisine
+(`D-78`), Coffre (`D-79`), Atelier (`D-80`) — **en données seules, aucune ligne de code**. La
+règle qui a commandé toute la session, et qui vaut pour la suite : **l'empreinte solide d'une
+station EST la boîte englobante de ses primitives de dessin**, donc redessiner, c'est déplacer
+un mur — chaque silhouette est refaite **dans** l'enveloppe d'avant, inclusion prouvée par test
+aux trois échelles. Validé en jeu par Xav le jour même (`V-51`, « j'ai tout testé, all good »),
+et `Q-47` tranchée dans la foulée : **les stations gardent leur taille**. Détail :
+`docs/JOURNAL_2026-09-21_refonte-stations.md`.
+
 **Le volet rendu des fondations est clos sur PC, sous Chrome.** Treize relevés `?debug=fps` réels existent (§6 de `docs/DOC_suivi-dettes.md`). Le relevé qui tranche est `R-11` : **Chrome, plein écran, échelle forcée 8 — 59,9 fps, aucune frame sautée**, GPU à 14 %, aucune saccade vue par Xav en traversée. **Chrome est le navigateur de développement, de jeu et de référence** ; sous Firefox, le même PC exécute le dessin sur le fil principal et devient injouable à l'échelle 5 — ce n'était pas le jeu, c'était le navigateur (registre `docs/DOC_navigateurs.md`). Conséquences : `Q-19` close **sans plafond d'échelle** (la décision « rendu net à résolution physique » est confirmée, cette fois sur mesure), `D-01` déclassée en P2, `D-02` et `D-03` en P3.
 
 **Côté mobile, le plancher est à nommer — mais l'A04 n'est plus la question.** Le Galaxy A04 rend ~37 fps à l'échelle naturelle et ~40 à l'échelle 1 (`R-12`, `R-13`) : diviser les pixels par 9 ne rend que 3,6 fps, donc **l'échelle n'y est pour rien** ; servi **en ligne** plutôt que par le Wi-Fi local, il rend exactement pareil (`R-16`, 37,3 fps), donc **le réseau n'y était pour rien** non plus. Restaient ≈ 18 ms par frame que l'instrument ne voyait pas : **`D-31` est close le 20/09 par décision de Xav — « ça vient du matériel »**, son téléphone n'est plus une cible (« juste bon à changer »). Conséquences : `A-07` (profil USB) tombe **sans objet**, `D-02` et `D-03` sont **dégelées** (P3, rien à y corriger aujourd'hui), et le **plancher mobile est revu à la hausse** — sa définition reste `[OUVERT]`, elle se fixera sur le téléphone du neveu (`Q-20`, `D-14`). Point de comparaison bas déjà connu, déclaratif : un portable Windows 7 **sans GPU** tient 56 à 58 fps sous Chrome, jouable. Les **deux relevés de base sous Chrome** sont **pris** (`A-03` close) : `R-14` de jour et `R-03` de nuit, **59,9 fps et zéro frame sautée** à l'échelle naturelle, `dessiner()` 0,33 ms, `maj()` 0,06 ms. `specs/07_chaos-nocturne.md` a donc son point de comparaison : après chaque palier, le même relevé de nuit, comparé à `R-03`.
@@ -311,6 +321,8 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 | **Le trois quarts ne demande aucune forme nouvelle** : un **polygone** trapézoïdal pour une face supérieure, l'**ordre de dessin** pour n'exposer que l'arc haut d'une ellipse (le couvercle du Coffre est une ellipse entière, dont le corps recouvre la moitié basse), et une **paire de pièces décalées** — arrière plus courte et plus sombre, avant plus longue et plus claire — pour des pieds. `visuels.json` avait déjà tout ce qu'il fallait | 2026-09-21 | même journal |
 | **Le banc visuel ne peut pas dire si une silhouette se détache du décor.** Il la juge sur un fond neutre *choisi* ; la scène la pose sur la terre de la Maison. L'établi de l'Atelier a passé **trois itérations** au banc avant de se révéler **noyé dans le sol** à la première capture de jeu. Une silhouette de monde se clôt donc par une capture **en scène** (`tools/scenarios/stations_maison.mjs` : un poste d'observation par station, calculé depuis les vrais catalogues, jamais une position recopiée) — le banc reste l'outil d'itération, pas celui du verdict | 2026-09-21 | même journal |
 
+| **Les stations gardent leur taille** (`Q-47`, tranchée par Xav le 21/09 : « on ne touche à rien, c'est très bien comme ça »). Elles font 12 unités de haut contre 29,5 au puits, et cela **reste** ainsi : leur empreinte solide ne bouge pas. Conséquence pour la suite : la présence d'une station ne se gagne pas en l'agrandissant — elle se gagne par ce qu'on met **autour** (décor, sol, lumière) ou par une station **nouvelle**, dessinée d'emblée à sa taille (scierie, ferronnerie, feu de camp) | 2026-09-21 | `Q-47`, journal de session ci-dessous |
+
 (Les décisions de `05_construction-stations.md` étaient déjà actées par Xav **dans la spec elle-même** avant tout code, v1.0.0 §9 — les lignes ci-dessus n'y renvoient que pour mémoire, elles ne tranchent rien de nouveau.)
 
 ## Ce qui est dû : dettes, questions, validations
@@ -379,6 +391,8 @@ stations doivent avoir le même standing [que le puits] et une identité visuell
 touche pas aux fonctionnalités**, ni au code déjà en place : c'est une refonte **graphique
 uniquement** ». Fichier de bord : `docs/JOURNAL_2026-09-21_refonte-stations.md`.
 
+**Session close et validée le 21/09** : `V-51` rendue **ok** par Xav (« j'ai tout testé, all good »), `Q-47` **tranchée** (« on ne touche à rien »). Poussée sur `main` à sa demande, donc **en ligne**. La session ne laisse **aucune validation due** ; seule `D-81` reste ouverte, et ce n'est pas un correctif attendu.
+
 Livré, **en données seules** (aucune ligne de code touchée) : `D-78` la **Cuisine** (table de
 trois quarts, marmite au bouillon orange, planche à découper), `D-79` le **Coffre** (couvercle
 bombé obtenu par l'**ordre de dessin**, joint sombre, ferrures, serrure dorée), `D-80`
@@ -392,9 +406,9 @@ redessiner une station, c'est déplacer un mur. Chaque silhouette est refaite **
 mesurée avant le ticket, et l'inclusion est **prouvée par test** aux trois échelles
 (`tests/test_d78_stations_silhouettes_2026-09-21.js`).
 
-Ouvertes sans y toucher : **`Q-47`** (les trois stations font 12 unités de haut contre 29,5 au
-puits — leur donner sa présence demande d'agrandir leur empreinte, c'est une **décision de jeu**)
-et **`D-81`** (un `cercle` a une hauteur **nulle** dans `boitePrimitive`, aujourd'hui sans
-conséquence parce que les deux cercles de stations déclarent un `h`). Verdict en jeu dû :
-**`V-51`**. Hors scope, annoncé par Xav : de nouvelles stations (scierie, ferronnerie,
-feu de camp…).
+Ouvertes au passage : **`Q-47`** — les trois stations font 12 unités de haut contre 29,5 au
+puits — **tranchée le jour même par Xav** (« on ne touche à rien, c'est très bien comme ça ») ;
+et **`D-81`**, la seule ligne que la session laisse ouverte : un `cercle` a une hauteur **nulle**
+dans `boitePrimitive`, aujourd'hui sans conséquence parce que les deux cercles de stations
+déclarent un `h`, mais le corriger **changerait des empreintes existantes** — donc un ticket à
+part. Hors scope, annoncé par Xav : de nouvelles stations (scierie, ferronnerie, feu de camp…).

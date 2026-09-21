@@ -302,3 +302,23 @@ Ouverte en écrivant ce scénario, sans y toucher : **`D-92`** — un id d'arme
 inconnu dans la sauvegarde vide la case d'attaque **en silence**, et rien ne
 distingue « pas d'arme » de « arme introuvable ».
 
+
+---
+
+## Clôture
+
+Dix items, dix commits, **aucune ligne de code du jeu touchée**. 111 fichiers de
+test verts. Enveloppes toutes **incluses** dans celles d'avant, régimes de
+cadrage de tuile tous inchangés.
+
+**Rien n'est validé.** `V-52` est ouverte et `pas vu` : le verdict est à Xav, au
+sol et en Poche.
+
+Ouvertes par la session, sans y toucher :
+
+- **`Q-48`** — les outils font 17-18 unités de haut contre 6 à 10 pour le reste
+  des items. Décision de jeu, pas de dessin.
+- **`D-92`** — un id d'arme inconnu dans la sauvegarde vide la case d'attaque
+  **en silence** ; rien ne distingue « pas d'arme » de « arme introuvable ».
+
+Hors scope, non touché comme demandé : le menu, les fonctionnalités, le code.

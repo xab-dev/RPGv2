@@ -322,6 +322,11 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 | **Le banc visuel ne peut pas dire si une silhouette se détache du décor.** Il la juge sur un fond neutre *choisi* ; la scène la pose sur la terre de la Maison. L'établi de l'Atelier a passé **trois itérations** au banc avant de se révéler **noyé dans le sol** à la première capture de jeu. Une silhouette de monde se clôt donc par une capture **en scène** (`tools/scenarios/stations_maison.mjs` : un poste d'observation par station, calculé depuis les vrais catalogues, jamais une position recopiée) — le banc reste l'outil d'itération, pas celui du verdict | 2026-09-21 | même journal |
 
 | **Les stations gardent leur taille** (`Q-47`, tranchée par Xav le 21/09 : « on ne touche à rien, c'est très bien comme ça »). Elles font 12 unités de haut contre 29,5 au puits, et cela **reste** ainsi : leur empreinte solide ne bouge pas. Conséquence pour la suite : la présence d'une station ne se gagne pas en l'agrandissant — elle se gagne par ce qu'on met **autour** (décor, sol, lumière) ou par une station **nouvelle**, dessinée d'emblée à sa taille (scierie, ferronnerie, feu de camp) | 2026-09-21 | `Q-47`, journal de session ci-dessous |
+| **Un item de poche n'a pas d'empreinte solide — mais sa boîte décide quand même de deux choses visibles** : la place qu'il prend au sol, et le **cadrage de sa tuile** dans la Poche (`ui/icone_canvas.js#cadrer` bascule d'un cadrage commun à un recadrage dès que la boîte sort de la boîte de référence de 14 unités). Grossir un item est donc une décision de **jeu**, pas de dessin — même raisonnement que `Q-47` pour les stations, et même discipline : chaque silhouette est refaite **dans** son enveloppe d'avant. Corollaire de mesure, né de la branche : `structures.js#boitePrimitive` **ignore l'épaisseur d'une ligne**, donc comparer les boîtes officielles ferait passer pour un agrandissement le simple fait de redessiner un trait épais en polygone, **à pixels identiques** — ce qui se compare est l'étendue **réellement peinte** | 2026-09-21 | `D-82`, `docs/JOURNAL_2026-09-21_refonte-items.md` |
+| **La charte d'item**, arrêtée sur la plume et appliquée aux neuf autres : (1) **l'objet est posé** — une `ombre` portée, qui sépare un objet au sol d'une vignette qui flotte · (2) **trois valeurs au moins** — un fond sombre qui sert de contour, un corps, une facette éclairée ; deux valeurs font une tache, trois font un volume · (3) **un accent, un seul** — la couleur qui dit ce que l'objet *est* (l'aubier d'un bois coupé, le fil d'acier d'un outil, la feuille d'un fruit) · (4) **le trois quarts sans forme nouvelle** (leçon des stations). Les trois valeurs d'un fût ou d'un galet s'obtiennent en **glissant ou en réduisant la même forme**, jamais en dessinant trois contours qui divergeraient à la première retouche | 2026-09-21 | même journal |
+| **Ce qui distingue deux items voisins n'est ni leur taille ni leur teinte : c'est un parti pris opposé.** Le caillou devient un **galet** (lisse, rond, gris chaud) et la pierre un **rocher** (anguleux, froid, facetté) ; le fruit cuit **perd** un par un les trois signes du cru (feuille, peau tendue, éclat net) et gagne les siens (fente, brûlé). Une nuance de gris ou de rouge ne survit pas à la taille du monde — un parti pris, oui | 2026-09-21 | `D-84`, `D-85`, `D-87`, `D-88` |
+| **On ne régénère pas un dessin déjà validé en jeu.** La refonte de la plume a commencé par régénérer ses barbes : à 19 barbes courtes et serrées le fan se referme en masse et la plume se lit comme une **truelle**. Les barbes de `D-76` (validées `V-49`) ont été reprises à l'identique, et le ticket n'a ajouté que la charte. Un ticket de *standing* ne rouvre pas un dessin que Xav a déjà vu et accepté | 2026-09-21 | `D-82` |
+| **Une silhouette d'item se vérifie à trois endroits, pas un** : au **banc** (itération), **au sol dans la scène** (le banc juge sur un fond neutre choisi, la scène pose l'objet sur la vraie terre) et **dans la barre du bas**, réduite à une case de 12 unités — la seule vue qui pouvait dire si l'ombre portée de la charte gêne à cette taille. `tools/scenarios/items_poche.mjs`. Deux pièges d'une capture d'étalage, nommés une fois pour toutes : poser les items **hors des stations**, et **geler le repos du jour** (`jour_items_sol`), sans quoi le tirage redistribue au hasard tout item qui a un bloc `spawn` | 2026-09-21 | `D-91` |
 
 (Les décisions de `05_construction-stations.md` étaient déjà actées par Xav **dans la spec elle-même** avant tout code, v1.0.0 §9 — les lignes ci-dessus n'y renvoient que pour mémoire, elles ne tranchent rien de nouveau.)
 
@@ -384,31 +389,38 @@ Les captures de la V1 (`docs/captures/v1/`) sont une **inspiration, jamais un ca
 
 `Q-10`, `Q-11`, `Q-12`, `Q-24` et `Q-25` restent à trancher avec Xav ; `Q-07` est gelée. La spec de la barre d'action du bas (`E-01`) est écrite par Xav lui-même et attend le chiffrage `Q-11`. **Une spec non écrite ne se commence pas** (même règle que pour une phase).
 
-## Journal de session — refonte graphique des stations (21/09)
+## Journal de session — refonte graphique des items de la poche (21/09)
 
-Session **autonome**, branche `main`, **un commit par station**. Consigne de Xav : « toutes les
-stations doivent avoir le même standing [que le puits] et une identité visuelle propre. On **ne
-touche pas aux fonctionnalités**, ni au code déjà en place : c'est une refonte **graphique
-uniquement** ». Fichier de bord : `docs/JOURNAL_2026-09-21_refonte-stations.md`.
+Session **autonome supervisée**, branche `main`, **un commit par item**. Consigne de Xav :
+« refonte graphique des items de l'inventaire. On **ne touche pas au menu**, on ne touche pas
+aux fonctionnalités, on ne touche pas au code déjà présent. Tous les items doivent être
+améliorés, **y compris la plume, qui va être la première et qui servira de référence** pour les
+autres. Le but étant de coller aux standings actuels des stations et du jeu en général. »
+Procédure imposée par item : **diagnostic** (Chrome + `tools/`) → **conceptualisation** →
+**application itérative**, trois itérations au plus. Fichier de bord :
+`docs/JOURNAL_2026-09-21_refonte-items.md`.
 
-**Session close et validée le 21/09** : `V-51` rendue **ok** par Xav (« j'ai tout testé, all good »), `Q-47` **tranchée** (« on ne touche à rien »). Poussée sur `main` à sa demande, donc **en ligne**. La session ne laisse **aucune validation due** ; seule `D-81` reste ouverte, et ce n'est pas un correctif attendu.
+**Les dix items sont livrés, en données seules — aucune ligne de code du jeu touchée.**
+`D-82` la **plume** (qui fixe la charte), `D-83` la **branche**, `D-84` le **caillou**,
+`D-85` la **pierre**, `D-86` le **bois**, `D-87` le **fruit**, `D-88` le **fruit cuit**,
+`D-89` la **hache**, `D-90` la **pioche**, `D-91` l'**épée en bois**. Un outil neuf :
+`tools/scenarios/items_poche.mjs` et son album `docs/captures/items-2026-09-21/`.
 
-Livré, **en données seules** (aucune ligne de code touchée) : `D-78` la **Cuisine** (table de
-trois quarts, marmite au bouillon orange, planche à découper), `D-79` le **Coffre** (couvercle
-bombé obtenu par l'**ordre de dessin**, joint sombre, ferrures, serrure dorée), `D-80`
-l'**Atelier** (un établi : panneau d'outils, étau, planche en travail — le gris pur `#5a5a5a`
-disparaît), puis une passe de contraste sur ce dernier. Nouveaux outils : le scénario de capture
-`tools/scenarios/stations_maison.mjs` et son album `docs/captures/stations-2026-09-21/`.
+**Ce qui commande toute la session** : un item n'a pas d'empreinte solide, mais sa boîte décide
+de la place qu'il prend au sol **et** du cadrage de sa tuile de Poche — grossir un item est donc
+une décision de **jeu**, pas de dessin (`Q-47` étendue). Chaque silhouette est refaite **dans**
+son enveloppe d'avant, inclusion prouvée par test aux trois échelles
+(`tests/test_d82_items_silhouettes_2026-09-21.js`), régime de cadrage de tuile relevé et
+inchangé. La mesure a dû changer en chemin : `boitePrimitive` ignore l'épaisseur d'une ligne, et
+la branche d'origine était un trait de 3 unités — ce qui se compare est l'étendue **réellement
+peinte**.
 
-**La contrainte qui commande toute la refonte** : l'empreinte solide d'une station **est** la
-boîte englobante de ses primitives de dessin (`structures.js#empreinteParDefaut`), donc
-redessiner une station, c'est déplacer un mur. Chaque silhouette est refaite **dans** l'enveloppe
-mesurée avant le ticket, et l'inclusion est **prouvée par test** aux trois échelles
-(`tests/test_d78_stations_silhouettes_2026-09-21.js`).
+Deux corrections de défaut au passage, toutes deux graphiques : la **hache était décentrée**
+(x de −1 à 5, elle se serait posée entièrement à droite de son point logique) — recentrée ; et
+les deux **paires qui ne se distinguaient que par la taille ou la teinte** (caillou/pierre,
+fruit/fruit cuit) sont désormais séparées par un **parti pris opposé**.
 
-Ouvertes au passage : **`Q-47`** — les trois stations font 12 unités de haut contre 29,5 au
-puits — **tranchée le jour même par Xav** (« on ne touche à rien, c'est très bien comme ça ») ;
-et **`D-81`**, la seule ligne que la session laisse ouverte : un `cercle` a une hauteur **nulle**
-dans `boitePrimitive`, aujourd'hui sans conséquence parce que les deux cercles de stations
-déclarent un `h`, mais le corriger **changerait des empreintes existantes** — donc un ticket à
-part. Hors scope, annoncé par Xav : de nouvelles stations (scierie, ferronnerie, feu de camp…).
+**Aucune validation de Xav n'est acquise** : `V-52` est ouverte et `pas vu`. Ouvertes sans y
+toucher : **`Q-48`** (les outils font 17-18 unités contre 6 à 10 pour le reste des items — une
+décision de jeu) et **`D-92`** (un id d'arme inconnu dans la sauvegarde vide la case d'attaque
+**en silence**, et rien ne distingue « pas d'arme » de « arme introuvable »).

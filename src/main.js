@@ -180,6 +180,53 @@ export function lignesFicheItem(itemDef, registre, i18n) {
   return lignes;
 }
 
+// --- Équipement : quelle catégorie va dans quel emplacement (`D-72`) ------
+//
+// `SLOT_PAR_CATEGORIE` est le SEUL endroit du jeu qui sache qu'une nourriture
+// va au consommable et une arme à l'arme (`D-66`, T5) : l'écran Poche, lui,
+// ne connaît plus aucune catégorie d'item. Une armure y sera une ligne.
+//
+// POURQUOI AU NIVEAU MODULE, et pas dans une des deux grandes fonctions :
+// `D-72`. Ces deux fonctions ont d'abord été écrites DANS
+// `creerOrchestrateurGrotte`, alors que leur seul appelant, le câblage du
+// menu, vit dans `demarrerJeu` — deux fonctions sœurs. Le nom n'existait pas
+// là où on l'appelait, et l'écran Poche levait un `ReferenceError` à chaque
+// rendu. Ici, il n'y a plus de portée à laquelle se tromper, et — c'est
+// l'autre moitié du remède — elles deviennent **testables**, donc le test de
+// la Poche appelle enfin la vraie fonction au lieu d'en recopier la logique.
+export const SLOT_PAR_CATEGORIE = { nourriture: 'consommable', arme: 'arme' };
+
+// Ce que l'écran Poche doit savoir d'un objet équipable : dans quel
+// emplacement il va, s'il y est déjà, et ce que ça change. `null` pour tout
+// le reste. PURE : tout ce dont elle a besoin lui est donné.
+export function equipementDeLItem(itemDef, { equipementHero, registre, traduire, peripherique }) {
+  const slot = SLOT_PAR_CATEGORIE[itemDef.categorie];
+  if (!slot) return null;
+  // Pour une arme, l'emplacement retient l'id de l'ARME, pas celui de l'objet
+  // de poche — d'où la comparaison par `itemDef.arme`.
+  const attendu = slot === 'arme' ? itemDef.arme : itemDef.id;
+  return {
+    slot,
+    deja: equipementHero[slot] === attendu,
+    // Ce que l'objet équipé apporte, dit dans sa fiche. Pour le consommable,
+    // le verbe qui s'en sert (au glyphe du périphérique actif) ; pour une
+    // arme, son bonus, lu sur l'arme.
+    lignes: slot === 'consommable'
+      ? [traduire('menu.fiche.manger', { glyphe: traduire(`glyphe.${peripherique}.consume`) })]
+      : lignesBonusArme(itemDef.arme, { registre, traduire }),
+  };
+}
+
+// Les modificateurs d'une arme, en clair. Lus sur `weapons.json`, donc une
+// arme qui donnerait Agilité +2 s'annoncerait toute seule.
+export function lignesBonusArme(armeId, { registre, traduire }) {
+  const arme = registre.obtenir('weapons', armeId);
+  return Object.entries(arme.modificateurs || {}).map(([statId, delta]) => traduire('menu.fiche.bonus_stat', {
+    stat: traduire(registre.obtenir('stats', statId).label_key),
+    n: delta > 0 ? `+${delta}` : `${delta}`,
+  }));
+}
+
 // --- Textes flottants : la jointure module → rendu (`D-71`) ---------------
 //
 // CE QUI S'EST PASSÉ, et pourquoi ce code existe : `dessiner()` reconstruisait
@@ -656,43 +703,6 @@ export function creerOrchestrateurGrotte({
       const { x, y, w, h } = zone.rect;
       if (tx >= x && tx < x + w && ty >= y && ty < y + h) flags.set(flagId);
     }
-  }
-
-  // `D-66` (T5) : ce que l'écran Poche doit savoir d'un objet équipable —
-  // dans quel emplacement il va, s'il y est déjà, et ce que ça change. `null`
-  // pour tout le reste.
-  //
-  // C'est ICI que se décide « quelle catégorie va dans quel emplacement »,
-  // et nulle part ailleurs : l'écran n'a plus à connaître « nourriture » ni
-  // « arme », et une armure sera une ligne de plus dans cette table.
-  const SLOT_PAR_CATEGORIE = { nourriture: 'consommable', arme: 'arme' };
-  function equipementDeLItem(itemDef) {
-    const slot = SLOT_PAR_CATEGORIE[itemDef.categorie];
-    if (!slot) return null;
-    // Pour une arme, l'emplacement retient l'id de l'ARME, pas celui de
-    // l'objet de poche — d'où la comparaison par `itemDef.arme`.
-    const attendu = slot === 'arme' ? itemDef.arme : itemDef.id;
-    const deja = save.hero.equipement[slot] === attendu;
-    return {
-      slot,
-      deja,
-      // Ce que l'objet équipé apporte, dit dans sa fiche. Pour le
-      // consommable, le verbe qui s'en sert (au glyphe du périphérique
-      // actif) ; pour une arme, son bonus, lu sur l'arme.
-      lignes: slot === 'consommable'
-        ? [i18n.t('menu.fiche.manger', { glyphe: i18n.t(`glyphe.${input.peripheriqueActif()}.consume`) })]
-        : lignesBonusArme(itemDef.arme),
-    };
-  }
-
-  // Les modificateurs d'une arme, en clair. Lus sur `weapons.json`, donc une
-  // arme qui donnerait Agilité +2 s'annoncerait toute seule.
-  function lignesBonusArme(armeId) {
-    const arme = registre.obtenir('weapons', armeId);
-    return Object.entries(arme.modificateurs || {}).map(([statId, delta]) => i18n.t('menu.fiche.bonus_stat', {
-      stat: i18n.t(registre.obtenir('stats', statId).label_key),
-      n: delta > 0 ? `+${delta}` : `${delta}`,
-    }));
   }
 
   // `D-63` (T9) : les verbes de la barre d'actions réellement débloqués, dans
@@ -2991,7 +3001,12 @@ export async function demarrerJeu() {
         return {
           id: itemId, label: i18n.t(itemDef.label_key), quantite, categorie: itemDef.categorie,
           icone: itemDef.render.visuel, lignes: lignesFicheItem(itemDef, registre, i18n),
-          equipement: equipementDeLItem(itemDef),
+          equipement: equipementDeLItem(itemDef, {
+            equipementHero: save.hero.equipement,
+            registre,
+            traduire: i18n.t,
+            peripherique: input.peripheriqueActif(),
+          }),
         };
       }),
     // Palier C (§3.3) + `D-66` (T5) : UN point d'équipement, quel que soit

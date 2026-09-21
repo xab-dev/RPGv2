@@ -11,7 +11,7 @@ import { chargerCataloguesDepuisDisque, chargerLocalesDepuisDisque } from '../sr
 import { SCHEMAS, CATEGORIES_ITEM } from '../src/schemas.js';
 import { validerCatalogues, construireRegistre } from '../src/registry.js';
 import { creerI18n } from '../src/i18n.js';
-import { lignesFicheItem, clesTexteFiches } from '../src/main.js';
+import { equipementDeLItem, lignesFicheItem, clesTexteFiches } from '../src/main.js';
 import { initialiserMenu } from '../src/ui/menu.js';
 
 const RACINE = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -100,22 +100,25 @@ class ElementFactice {
   const menu = initialiserMenu({
     document, i18n, menus: registre.tous('menus'), exporterSauvegarde: () => {}, importerSauvegarde: () => {},
     // Exactement ce que fait `main.js#demarrerJeu`.
-    // `D-66` (T5) : c'est `main.js` qui dit désormais si un objet s'équipe et
-    // dans quel emplacement (`equipement`) — l'écran ne connaît plus aucune
-    // catégorie d'item. On reproduit ici la même décision pour le seul
-    // emplacement que ce test regarde, le consommable.
+    // `D-66` (T5) : c'est `main.js` qui dit si un objet s'équipe et dans quel
+    // emplacement (`equipement`) — l'écran ne connaît plus aucune catégorie
+    // d'item.
+    //
+    // `D-72` : ce harnais RECOPIAIT cette décision, sous un commentaire qui
+    // affirmait « exactement ce que fait main.js ». Il ne l'était pas — et
+    // c'est précisément pour ça que le `ReferenceError` de l'écran Poche est
+    // passé. On appelle désormais **la vraie fonction**, celle que le jeu
+    // appelle. Un harnais qui réimplémente ce qu'il prétend éprouver ne
+    // prouve que sa propre cohérence.
     listerPoche: () => Object.entries(poche).filter(([, q]) => q > 0).map(([id, quantite]) => {
       const def = registre.obtenir('items', id);
       return {
         id, label: i18n.t(def.label_key), quantite, categorie: def.categorie,
         icone: def.render.visuel, lignes: lignesFicheItem(def, registre, i18n),
-        equipement: def.categorie === 'nourriture'
-          ? {
-            slot: 'consommable',
-            deja: equipe === id,
-            lignes: [i18n.t('menu.fiche.manger', { glyphe: i18n.t('glyphe.manette.consume') })],
-          }
-          : null,
+        equipement: equipementDeLItem(def, {
+          equipementHero: { consommable: equipe, arme: null },
+          registre, traduire: i18n.t, peripherique: 'manette',
+        }),
       };
     }),
     equiper: (slot, id) => { equipe = id; },

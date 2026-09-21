@@ -108,3 +108,25 @@ jetables** : avec la recopie champ par champ, le test tombe sur « dessin après
 la boucle d'avant, il tombe sur « panne simulée de dessin ». Un test qui passe des deux côtés ne
 vaut rien.
 
+
+## Après-coup — `D-72` : la Poche affichait un autre écran
+
+Deuxième régression de la file trouvée par Xav en jeu. Cause : `equipementDeLItem` déclarée dans
+`creerOrchestrateurGrotte`, appelée depuis `demarrerJeu` — deux fonctions **sœurs**. `ReferenceError`
+à chaque rendu de la Poche. J'avais posé le code sur une **ancre textuelle** (un commentaire de T9)
+sans regarder dans quelle fonction elle tombait.
+
+Le déguisement, qui a coûté le plus de temps à lire : les cinq écrans maître-détail partagent **une
+seule vue**, et `rendre()` demandait ses entrées **avant** d'effacer — donc l'écran précédent
+restait, sous le bon titre.
+
+**Le même angle mort que `D-71`, un cran plus haut.** `D-71` a couvert `dessiner()` ; personne ne
+couvre `demarrerJeu`, où vit tout le câblage du menu. Et pour la **deuxième fois en deux bugs**, une
+recopie à la main d'une charge utile réelle a masqué le défaut : hier le `.map()` du rendu,
+aujourd'hui le harnais de `test_d43_c2`, qui affirmait en commentaire faire « exactement ce que fait
+`main.js` ». Les deux fois, le remède est le même : **extraire la vraie fonction et l'appeler des
+deux côtés**.
+
+Le garde-fou statique (`test_d72_portees_main`) a été vérifié par témoin : remise en place, la faute
+d'origine le fait tomber.
+

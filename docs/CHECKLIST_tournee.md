@@ -32,6 +32,7 @@ le rendu. Celle-ci est la liste de ce qu'on **joue**.
 | Id | Quoi regarder | Verdict |
 |---|---|---|
 | V-45 | **D'abord** : ramasser un objet, le jeu ne fige plus | `pas vu` |
+| V-46 | Poche → Stats → Poche : chacun montre le sien | `pas vu` |
 | V-38 | La Plume visible à la sortie de la Grotte ; son texte en Poche | `pas vu` |
 | V-36 | « +1 » et « +1xp » montent ensemble, lisibles à la taille | `pas vu` |
 | V-37 | Ressources trouvables en marchant ; semis qui change à l'aube | `pas vu` |

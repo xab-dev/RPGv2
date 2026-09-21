@@ -254,13 +254,28 @@ export function creerEcranFiches({
   // dépôt au coffre.
   function rendre() {
     if (!niveau) return;
+    // `D-72` : on EFFACE d'abord, on remplit ensuite. Les cinq écrans
+    // maître-détail (Poche, Stats, Coffre, Craft, Construction) partagent
+    // cette vue — un seul élément DOM. Tant que `obtenirEntrees()` était la
+    // première ligne, une exception laissait l'écran PRÉCÉDENT affiché sous
+    // le nom du nouveau : on ouvrait la Poche et on voyait les Stats, ou
+    // Construction. Un défaut de câblage se déguisait en défaut de menu, et
+    // c'est ce déguisement qui a coûté le plus de temps à lire.
+    //
+    // Désormais, si ça lève, on voit un écran VIDE portant le bon titre :
+    // manifestement cassé, et cassé au bon endroit. Rien n'est rattrapé ici
+    // — l'exception continue de remonter, elle est seulement lisible.
+    grille.innerHTML = VIDE;
+    // Le sous-titre aussi : `niveau.sousTitre()` est fourni par l'appelant et
+    // peut lever tout autant que `obtenirEntrees()`.
+    sousTitre.textContent = VIDE;
+    const racine = aLaRacine();
+    titre.textContent = niveau.titre;
+
     entrees = niveau.obtenirEntrees();
     const disposition = disposerTuiles(entrees, COLONNES_TUILES);
     cases = disposition.cases;
-
-    const racine = aLaRacine();
-    titre.textContent = niveau.titre;
-    sousTitre.textContent = niveau.sousTitre ? niveau.sousTitre() : VIDE;
+    if (niveau.sousTitre) sousTitre.textContent = niveau.sousTitre();
     const cleSortie = racine ? 'menu.fermer' : 'menu.retour';
     motEntete.textContent = i18n.t(cleSortie);
     poserAttribut(boutonEntete, 'aria-label', i18n.t(cleSortie));
@@ -269,7 +284,6 @@ export function creerEcranFiches({
     niveau.focus = replierFocus(cases, niveau.focus);
 
     poserVariable(grille, '--tuiles-colonnes', String(COLONNES_TUILES));
-    grille.innerHTML = VIDE;
     const debuts = new Map(disposition.sections.map((s) => [s.debut, s.groupe]));
     elementsCases = cases.map((indexEntree, i) => {
       if (debuts.get(i)) {

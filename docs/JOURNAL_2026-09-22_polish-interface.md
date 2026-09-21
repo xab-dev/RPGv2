@@ -37,3 +37,4 @@ se lisent comme une **moufle gauche**.
 
 | # | Ticket | Ce qui change | Commit |
 |---|---|---|---|
+| 1 | `D-94` | **Les mains nues.** Un **poing de trois quarts** (jointures vers l'œil, pouce replié en travers, bracelet de cuir à boucle d'or) remplace la moufle de face, à la charte d'item du 21/09 : posé (ombre portée), trois valeurs au moins, **un** accent. Et la cause de fond : la case **n'impose plus sa couleur** à ce qu'elle contient — la main était le dernier visuel `teintable` de la barre, donc plat par construction, quand l'épée et le fruit y étaient déjà à leurs vraies couleurs. Le repère d'or passe dans le **contour** de la case. Test de `D-20 B` repris : il n'épingle plus « teintable » mais « **aucune** icône d'arme n'est teintable ». Deux itérations au banc (la première trop large et le pouce noyé dans la masse) | à venir |

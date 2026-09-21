@@ -79,12 +79,18 @@ const ICONE_PART_DU_BOUTON = 1.15;
 // aucun cas particulier par verbe. Absent ou `null` = case vide, jamais une
 // erreur : c'est un cas normal (une arme peut n'avoir pas d'icône, un slot
 // débloqué peut n'avoir rien d'équipé), pas une donnée manquante.
+//
+// La case n'impose plus sa couleur à ce qu'elle contient (*révise* le
+// `[OUVERT]` de `D-20 B`, « l'icône est teintable, la case garde son repère
+// jaune ») : l'épée de bois et le fruit équipé s'y dessinaient déjà à leurs
+// propres couleurs, seule la main restait un aplat doré — c'est cette
+// exception que Xav a vue (« ça dénote avec le standing de la pomme »), et
+// une teinte unique interdisait par construction les trois valeurs de la
+// charte. Le repère de couleur survit là où il ne peut rien écraser : le
+// contour de la case (ci-dessous) et, dans la silhouette, un accent d'auteur.
 function dessinerIconeSlot(ctx, visuel, cx, cy, taille) {
   if (!visuel) return;
-  dessinerVisuel(ctx, visuel, cx, cy, {
-    teinte: COULEUR_SLOT_ACTIF,
-    echelle: echelleIconeArme(taille),
-  });
+  dessinerVisuel(ctx, visuel, cx, cy, { echelle: echelleIconeArme(taille) });
 }
 
 function dessinerBoutonsTactiles(ctx, iconesSlots, verbesActions) {
@@ -126,7 +132,10 @@ function dessinerSlotsBas(ctx, resolution, iconesSlots, verbesActions) {
     // actif, et ça ne dépend pas de l'arme.
     ctx.fillStyle = COULEUR_SLOT_GRISE;
     ctx.fillRect(x, y, SLOT_TAILLE, SLOT_TAILLE);
-    ctx.strokeStyle = verbe === 'attack' ? '#ffffff' : 'rgba(255,255,255,0.4)';
+    // Le repère de couleur de la case d'attaque, passé du blanc à l'or : il
+    // vit désormais dans le CONTOUR, le seul endroit où il ne peut pas écraser
+    // la silhouette qu'il désigne (cf. `dessinerIconeSlot`).
+    ctx.strokeStyle = verbe === 'attack' ? COULEUR_SLOT_ACTIF : 'rgba(255,255,255,0.4)';
     ctx.strokeRect(x, y, SLOT_TAILLE, SLOT_TAILLE);
     dessinerIconeSlot(ctx, iconesSlots[verbe], x + SLOT_TAILLE / 2, y + SLOT_TAILLE / 2, SLOT_TAILLE * ICONE_PART_DE_LA_CASE);
   });

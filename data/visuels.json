@@ -205,13 +205,24 @@
   {
     "id": "visuel_table",
     "ancre": "bas",
-    "ombre": { "dy": 1, "w": 20, "h": 5, "alpha": 0.3 },
+    "ombre": { "dy": 0.5, "w": 18.5, "h": 3.6, "alpha": 0.32 },
     "primitives": [
-      { "forme": "rect", "dx": 0, "dy": -6, "w": 22, "h": 10, "couleur": "#8a6a45" },
-      { "forme": "rect", "dx": -9, "dy": -1, "w": 3, "h": 4, "couleur": "#5a4530" },
-      { "forme": "rect", "dx": 9, "dy": -1, "w": 3, "h": 4, "couleur": "#5a4530" }
-    ]
-  },
+      { "forme": "rect", "dx": -7.4, "dy": -2, "w": 1.9, "h": 3.2, "couleur": "#46341f" },
+      { "forme": "rect", "dx": 7.4, "dy": -2, "w": 1.9, "h": 3.2, "couleur": "#46341f" },
+      { "forme": "rect", "dx": -8.8, "dy": -1.4, "w": 2.6, "h": 4.8, "couleur": "#5a4530" },
+      { "forme": "rect", "dx": 8.8, "dy": -1.4, "w": 2.6, "h": 4.8, "couleur": "#5a4530" },
+      { "forme": "polygone", "dx": 0, "dy": 0,
+        "points": [[-9, -8.4], [9, -8.4], [11, -5.2], [-11, -5.2]], "couleur": "#96754d" },
+      { "forme": "rect", "dx": 0, "dy": -4.4, "w": 22, "h": 2.2, "couleur": "#6b5038" },
+      { "forme": "rect", "dx": 0, "dy": -6.9, "w": 16.5, "h": 0.9, "couleur": "#81653f", "alpha": 0.6 },
+      { "forme": "ellipse", "dx": -4.8, "dy": -8.8, "w": 7.6, "h": 4.2, "couleur": "#3a332e" },
+      { "forme": "ellipse", "dx": -4.8, "dy": -10, "w": 6.2, "h": 1.9, "couleur": "#241f1c" },
+      { "forme": "ellipse", "dx": -4.8, "dy": -9.9, "w": 4.8, "h": 1.2, "couleur": "#b06a2f" },
+      { "forme": "ellipse", "dx": -5.9, "dy": -10.05, "w": 1.9, "h": 0.9, "couleur": "#dba66a", "alpha": 0.85 },
+      { "forme": "polygone", "dx": 0, "dy": 0,
+        "points": [[1.6, -7.6], [8.2, -7.6], [9.4, -5.9], [2.8, -5.9]], "couleur": "#a88a62" },
+      { "forme": "cercle", "dx": 6, "dy": -6.9, "w": 2.2, "h": 2.2, "couleur": "#7a9a45" }
+    ]  },
   {
     "id": "visuel_coffre",
     "ancre": "bas",

@@ -1344,6 +1344,16 @@ export const SCHEMAS = {
         if (typeof entry.phase_rad !== 'number' || !Number.isFinite(entry.phase_rad)) {
           erreurs.push(`${path} > phase_rad doit être un nombre fini`);
         }
+        // `D-109` : le stick droit pilote le curseur. Une vitesse nulle le
+        // rendrait immobile sans que rien ne le dise, et une courbe nulle ou
+        // négative inverserait la réponse du stick (plus on pousse, moins ça
+        // va) — deux réglages qu'on veut voir tomber au boot.
+        if (typeof entry.vitesse_stick_px_s !== 'number' || entry.vitesse_stick_px_s <= 0) {
+          erreurs.push(`${path} > vitesse_stick_px_s doit être un nombre strictement positif (px CSS par seconde)`);
+        }
+        if (typeof entry.courbe_stick !== 'number' || entry.courbe_stick <= 0) {
+          erreurs.push(`${path} > courbe_stick doit être un nombre strictement positif (1 = réponse linéaire)`);
+        }
         // Les deux silhouettes sont REQUISES ici, alors que le schéma générique
         // les rend seulement facultatives (l'effet `texte` n'en a pas) : un
         // curseur sans orbe serait un curseur invisible, et personne ne ferait

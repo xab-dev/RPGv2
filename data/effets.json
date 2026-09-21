@@ -64,7 +64,9 @@
     "aplatissement": 0.45,
     "periode_ms": 1400,
     "sens": -1,
-    "phase_rad": 0
+    "phase_rad": 0,
+    "vitesse_stick_px_s": 900,
+    "courbe_stick": 1.6
   },
   {
     "id": "effet_curseur_sillage",

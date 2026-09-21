@@ -3203,7 +3203,11 @@ export async function demarrerJeu() {
     // décision unique (`uiOuverte`) : ce n'est pas du gameplay, il ne se gèle
     // pas quand un menu s'ouvre. Il rattrape ses propres erreurs à sa
     // frontière (cf. curseur.js), donc il ne peut pas coûter une frame.
-    maj: (delta) => { orchestrateur.maj(delta); curseur.avancer(delta); },
+    // `D-109` : le stick droit pilote le curseur. Lu APRÈS `orchestrateur.maj`,
+    // qui est l'endroit où la couche d'input est rafraîchie — on lit donc la
+    // valeur de cette frame-ci, jamais celle d'avant. Et c'est un accesseur
+    // à part, pas un verbe : aucun système de jeu ne voit ce stick.
+    maj: (delta) => { orchestrateur.maj(delta); curseur.avancer(delta, input.pointeurManette()); },
     dessiner: () => { orchestrateur.dessiner(); curseur.dessiner(); },
     surFrame: moniteurPerf.actif ? moniteurPerf.surFrame : undefined,
   }).demarrer();

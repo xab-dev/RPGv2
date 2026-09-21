@@ -57,10 +57,10 @@ export const PADDING_BITMAP_PX = 2;
 export const TAILLE_MAX_CURSEUR_PX = 128;
 
 // Marge d'effacement autour de ce qui a été dessiné la frame d'avant. Elle
-// doit couvrir la plus grande silhouette du calque (la particule d'orbite avec
-// son halo, ~5 unités) : trop petite, elle laisserait des bavures permanentes
-// à l'écran.
-export const MARGE_EFFACEMENT_PX = 12;
+// doit couvrir la plus grande silhouette du calque : au stick (`D-109`) c'est
+// l'orbe lui-même, 17 unités de large, et non plus la seule particule d'orbite.
+// Trop petite, elle laisserait des bavures permanentes à l'écran.
+export const MARGE_EFFACEMENT_PX = 16;
 
 // Côté lointain de l'ellipse d'orbite : la particule s'éloigne, donc elle
 // rapetisse et pâlit. Deux nombres *provisoires*, à l'œil de Xav.
@@ -111,6 +111,32 @@ export function positionsOrbite(config, tMs) {
   return positions;
 }
 
+// Déplacement du curseur pour une frame, au stick droit (`D-109`). Pur.
+//
+// Deux choses qu'une simple multiplication ne donnerait pas. D'abord la
+// NORME est bornée à 1 : sans ça, une diagonale plein stick irait √2 fois plus
+// vite qu'un déplacement droit (c'est exactement le défaut relevé en `D-102`
+// pour le clavier, sauf qu'ici on peut le corriger sans toucher au gameplay).
+// Ensuite la COURBE : le stick rend une position, pas une vitesse, et un
+// rapport linéaire donne un curseur nerveux au centre et sans finesse — un
+// exposant > 1 rend le début de course lent, donc le pointage précis dans un
+// menu, sans rien coûter à la vitesse de traversée.
+export function deplacementStick(pointeur, config, deltaMs) {
+  const { vitesse_stick_px_s: vitesse, courbe_stick: courbe } = config;
+  if (!pointeur) return { dx: 0, dy: 0 };
+  // Deux longueurs distinctes, et les confondre est le piège : `brut` sert à
+  // donner la DIRECTION (on divise par lui, donc plein stick en diagonale
+  // pointe bien à 45° sans être 1,41 fois plus long), `norme` sert à donner
+  // la VITESSE (bornée à 1 : un stick carré rend jusqu'à 1,41 sur la
+  // diagonale). Le premier jet divisait par `norme` et la diagonale allait
+  // √2 fois trop vite — le test l'a attrapé.
+  const brut = Math.hypot(pointeur.x || 0, pointeur.y || 0);
+  if (!(brut > 0)) return { dx: 0, dy: 0 };
+  const norme = Math.min(1, brut);
+  const distance = (norme ** courbe) * vitesse * (deltaMs / 1000);
+  return { dx: (pointeur.x / brut) * distance, dy: (pointeur.y / brut) * distance };
+}
+
 // Rectangle à effacer : l'union de deux boîtes, la seconde étant souvent
 // `null` (première frame, ou rien dessiné). Pur, et c'est ce qui rend le
 // calque quasi gratuit — on n'efface jamais l'écran entier.
@@ -154,6 +180,15 @@ export function creerCurseur({
   let yPrec = null;
   let tMs = 0;
   let rectPrecedent = null;
+  // La déclaration CSS de l'orbe, retenue telle quelle : passer au stick la
+  // remplace par `none` (sinon le curseur système resterait planté où la
+  // souris l'a laissé, et on en verrait deux), et revenir à la souris la
+  // repose — sans régénérer le bitmap, qui n'a pas changé.
+  let declarationTete = null;
+  // Qui tient le pointeur : `souris` (la tête est le curseur système) ou
+  // `stick` (la tête est dessinée sur le calque, comme les étincelles). Le
+  // dernier qui bouge gagne — aucune bascule à faire à la main.
+  let mode = 'souris';
   const sillage = configSillage && visuelSillage ? creerPoussiere(configSillage) : null;
 
   // --- La tête, en CSS ------------------------------------------------------
@@ -201,6 +236,7 @@ export function creerCurseur({
       const valeur = multiple === 1
         ? `url("${url}") ${chaud}, auto`
         : `image-set(url("${url}") ${multiple}x) ${chaud}, auto`;
+      declarationTete = valeur;
       doc.documentElement.style.setProperty('--curseur-jeu', valeur);
       dprPose = dpr;
       return true;
@@ -259,9 +295,24 @@ export function creerCurseur({
   function surMouvement(evenement) {
     const genre = evenement && evenement.pointerType;
     if (genre && genre !== 'mouse' && genre !== 'pen') return;
+    passerEnMode('souris');
     x = evenement.clientX;
     y = evenement.clientY;
     if (xPrec === null) { xPrec = x; yPrec = y; }
+  }
+
+  // `D-109` : le seul endroit qui décide qui porte la tête. En mode stick, la
+  // variable vaut `none` — c'est-à-dire que la feuille de style continue de
+  // décider, y compris au-dessus d'une carte de menu (qui retomberait sinon
+  // sur son `pointer`), et le code ne connaît toujours aucune valeur de style
+  // qu'il n'ait pas fabriquée lui-même.
+  function passerEnMode(nouveau) {
+    if (mode === nouveau) return;
+    mode = nouveau;
+    try {
+      if (nouveau === 'stick') doc.documentElement.style.setProperty('--curseur-jeu', 'none');
+      else if (declarationTete) doc.documentElement.style.setProperty('--curseur-jeu', declarationTete);
+    } catch { /* muet, par contrat */ }
   }
 
   // Pointeur sorti de la fenêtre : la traînée s'éteint plutôt que de rester
@@ -282,7 +333,24 @@ export function creerCurseur({
     // Contrat « meilleur effort » : la tête CSS, elle, est déjà posée.
   }
 
-  function avancer(deltaMs) {
+  function avancer(deltaMs, pointeur = null) {
+    const { dx: dxStick, dy: dyStick } = deplacementStick(pointeur, config, deltaMs);
+    if (dxStick !== 0 || dyStick !== 0) {
+      passerEnMode('stick');
+      // Le stick réveille le curseur au CENTRE de la fenêtre quand aucune
+      // souris n'a jamais bougé : c'est la seule position qui ne suppose rien
+      // (un coin ferait croire à un bug, et l'origine est hors de l'écran).
+      if (x === null) {
+        x = (calque ? calque.clientWidth : 0) / 2;
+        y = (calque ? calque.clientHeight : 0) / 2;
+        xPrec = x;
+        yPrec = y;
+      }
+      // Borné à la fenêtre, comme l'est un vrai curseur : sans ça il part
+      // dans le décor et on ne le retrouve qu'en traversant l'écran.
+      x = Math.max(0, Math.min(calque ? calque.clientWidth : x, x + dxStick));
+      y = Math.max(0, Math.min(calque ? calque.clientHeight : y, y + dyStick));
+    }
     if (x === null || !sillage) return;
     tMs += deltaMs;
     const dx = x - xPrec;
@@ -327,6 +395,18 @@ export function creerCurseur({
       }
     }
 
+    // En mode stick, l'orbe est dessiné ICI : le curseur du système ne peut pas
+    // être déplacé par la page (aucune API ne le permet, et c'est très bien
+    // ainsi), donc c'est le calque qui le porte. Même silhouette, même
+    // fonction de dessin, même échelle — rien de ce que Xav a validé ne
+    // change, seul le porteur change. Dessiné AVANT les étincelles pour que
+    // celles du premier plan passent devant, comme le compositeur du
+    // navigateur le fait pour l'autre mode.
+    if (x !== null && mode === 'stick') {
+      dessinerVisuel(ctx, visuelOrbe, x, y, { echelle: config.echelle });
+      noter(x, y);
+    }
+
     if (x !== null && visuelParticule) {
       for (const p of positionsOrbite(config, tMs)) {
         // Côté lointain de l'ellipse : plus petite et plus pâle. C'est la
@@ -350,7 +430,7 @@ export function creerCurseur({
     // chez l'appelant : un curseur ne doit pas pouvoir coûter une frame de jeu
     // (la boucle y survit depuis `D-71`, mais une frame perdue reste une frame
     // perdue).
-    avancer(deltaMs) { try { avancer(deltaMs); } catch { /* muet, par contrat */ } },
+    avancer(deltaMs, pointeur) { try { avancer(deltaMs, pointeur); } catch { /* muet, par contrat */ } },
     dessiner() { try { dessiner(); } catch { /* muet, par contrat */ } },
     retirer() {
       try {

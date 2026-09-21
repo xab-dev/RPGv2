@@ -348,6 +348,7 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 (Les décisions de `05_construction-stations.md` étaient déjà actées par Xav **dans la spec elle-même** avant tout code, v1.0.0 §9 — les lignes ci-dessus n'y renvoient que pour mémoire, elles ne tranchent rien de nouveau.)
 | **Le héros est un personnage encapuchonné vu de trois quarts, et la couleur du follet est son VISAGE** (*révise* le corps entier teinté de la Phase 1) : une boule lumineuse logée dans l'ombre de la capuche, avec un glow serré — une lueur, jamais une aura qui éclairerait le sol. Ce qui rend une silhouette lisible à 14 px n'est pas son vêtement mais son **contraste** : un point lumineux dans une masse noire. Et une relation à ne plus contredire : **le héros n'est jamais plus large que ce qui entre en collision** — contrairement à une station, sa hitbox ne dérive PAS du dessin (`RAYON_HERO_BASE_PX × echelle`), donc redessiner ne déplace aucun mur, mais l'ourlet du manteau est calé sur la demi-boîte ; en hauteur il la dépasse librement, la boîte étant son emprise au sol et non sa taille | 2026-09-22 | `D-104`, `docs/JOURNAL_2026-09-22_heros-silhouette.md` |
 | **Ce qui doit être exact est exact, ce qui a le droit de traîner traîne.** Un curseur animé se partage en deux : la **tête** est un vrai `cursor: url(…)`, dessiné une fois au démarrage depuis `visuels.json` — donc **exactement** sous le pointeur, vivant **par-dessus les menus DOM** (là où la souris sert) et gratuit par frame ; les **particules et la traînée** vivent sur un calque de recouvrement (`pointer-events: none`), qui a le droit d'être en retard d'une frame puisque c'est une traînée. Deux bénéfices tombent tout seuls de ce découpage : l'orbe **occulte la moitié lointaine de son orbite** sans une ligne de tri de profondeur (le curseur système est composé par-dessus la page), et le calque passe **au-dessus des écrans d'UI**, ce qu'un dessin dans le canvas du jeu ne peut pas faire. Corollaire de lecture : **une capture d'écran ne contient jamais le curseur** — la vignette de l'album est une simulation collée à la main | 2026-09-22 | `D-108`, `docs/JOURNAL_2026-09-22_curseur.md` |
+| **Le stick droit pilote le curseur, et il sort de la couche d'input par un accesseur SÉPARÉ** (`input.pointeurManette()`), jamais dans l'état de verbes : `etat` garde sa forme move + verbes dont `etatNeutre()` dérive génériquement, et c'est ce qui **garantit qu'aucun système de jeu ne lira jamais ce stick** — un pointeur analogique n'est pas un verbe. Conséquence à ne pas manquer : **une page ne peut pas déplacer le curseur du système** (aucune API, et tant mieux), donc au stick l'orbe est dessiné **sur le calque** et la variable CSS passe à `none` — même silhouette, même fonction de dessin, seul le **porteur** change, et le dernier périphérique qui bouge gagne dans les deux sens. Enfin, un déplacement au stick divise la direction par la norme BRUTE et la vitesse par la norme **bornée à 1** : confondre les deux fait aller une diagonale √2 fois trop vite (c'est `D-102` côté clavier, ici corrigeable sans toucher au gameplay) | 2026-09-22 | `D-109`, `docs/JOURNAL_2026-09-22_curseur.md` |
 | **La taille de la réserve d'un système de particules suit la VITESSE de ce qu'il suit.** Les 8 bouffées de `poussiere.js` sont calibrées sur un héros à 75 px/s ; une souris les vide en quatre frames, et la traînée devient une grappe clignotante. `capacite` passe donc en données (absente = 8, héros et follet identiques au pixel près). Et l'émission est **interpolée le long du segment parcouru** : toutes les bouffées d'une même frame naissaient au point d'ARRIVÉE, invisible à 1 px par frame, ruineux à 60 — ce qui rend enfin vraie la promesse déjà écrite dans ce module, « l'émission se fait à la distance parcourue » | 2026-09-22 | `D-108` |
 | **Le clic droit se verrouille sur le DOCUMENT, jamais sur le seul canvas** : les écrans d'UI sont des éléments DOM posés à côté du canvas (même raison qui fait passer `document.documentElement` en plein écran), donc un garde posé sur le canvas est un garde à moitié posé — et la moitié qui manque est celle où la souris sert. Effet de bord voulu au tactile : l'appui **maintenu** déclenche lui aussi `contextmenu`, donc la bulle « copier / partager » disparaît avec, sans toucher `input/touch.js`. La porte de secours `?souris=libre` ne pose **aucun** écouteur, plutôt qu'un écouteur qui laisse passer | 2026-09-22 | `D-107` |
 | **Une silhouette de personnage se juge dans la scène, pas au banc — et la scène lui prête ses couleurs.** Le manteau du héros prend la teinte de la **lumière du follet** (rayon 100 px) : brun chaud avec le feu, gris-bleu avec l'eau. Personne ne l'a codé, c'est le calque de lumière existant. Corollaire : une capture de silhouette de personnage se prend **par compagnon**, sinon elle ne montre qu'un tiers de la vérité (`tools/scenarios/heros_scene.mjs`) | 2026-09-22 | même journal |
@@ -411,7 +412,7 @@ Les captures de la V1 (`docs/captures/v1/`) sont une **inspiration, jamais un ca
 
 `Q-10`, `Q-11`, `Q-12`, `Q-24` et `Q-25` restent à trancher avec Xav ; `Q-07` est gelée. La spec de la barre d'action du bas (`E-01`) est écrite par Xav lui-même et attend le chiffrage `Q-11`. **Une spec non écrite ne se commence pas** (même règle que pour une phase).
 
-## Journal de session — LE CURSEUR (22/09)
+## Journal de session — LE CURSEUR, PUIS LE STICK DROIT (22/09)
 
 Session en deux temps, comme la précédente : un **topo** (« qu'est-ce que ça
 implique, qu'est-ce que ça coûte »), puis le code sur le go de Xav. Deux
@@ -450,7 +451,29 @@ navigateur ignore un curseur **en silence**. Album :
 `docs/captures/curseur-2026-09-22/`.
 
 Dû : **`V-56`**. Tout y est réglable en données (rayon 11 px, période 1400 ms,
-aplatissement 0,45, échelle 1, réserve 28) — « plus, moins ou bon ». Et une
-réserve honnête : si l'orbe finit par gêner manette en main, le masquage
-automatique reste à écrire, et il est court (`input.js` tient déjà le loquet du
-périphérique actif, il lui manque un cas « souris »).
+aplatissement 0,45, échelle 1, réserve 28) — « plus, moins ou bon ».
+
+**Puis Xav a vu le curseur, l'a validé (« le visuel est validé par xav ») et a
+tranché la réserve que je gardais pour plus tard, autrement que je ne le
+proposais** : pas de masquage, mais **le stick droit pilote le curseur**
+(`D-109`) — « il n'a pas d'utilité jusque là, ça ne sert à rien à part à faire
+joli, s'amuser avec, et naviguer dans les menus. joystick droit = curseur,
+c'est tout ». Le stick droit était libre depuis toujours (la croix
+directionnelle est réservée depuis le 15/09).
+
+Trois pièces, et rien d'autre touché : `gamepad.js` lit les axes 2/3 avec la
+**même zone morte** que le stick gauche · `input.js` les expose par un
+**accesseur séparé**, jamais dans l'état de verbes — c'est ce qui garantit
+qu'aucun système de jeu ne lira ce stick · `curseur.js` gagne une fonction
+**pure** de déplacement. Le point à ne pas manquer : **une page ne peut pas
+déplacer le curseur du système**, donc au stick l'orbe est dessiné sur le
+calque et le curseur système passe à `none` — même silhouette, même fonction de
+dessin, **rien de ce qui est validé ne change, seul le porteur change**. Un
+défaut attrapé par le test au passage : le premier jet faisait aller une
+diagonale plein stick √2 fois trop vite.
+
+**Rien d'autre n'est livré** : le curseur ne clique pas, la navigation des
+menus reste au stick gauche — c'est exactement ce que Xav a demandé, et la
+question du clic est consignée sans être commencée (`Q-54`).
+
+Dû : **`V-57`** (vitesse 900 px CSS/s, courbe 1,6 — les deux en données).

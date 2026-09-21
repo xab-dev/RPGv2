@@ -19,6 +19,12 @@ export const MAPPING_MANETTE_PROVISOIRE = {
   },
   axeX: 0,
   axeY: 1,
+  // `D-109` : le stick DROIT pilote le curseur, et rien d'autre. Il était
+  // libre — la croix directionnelle est réservée (décision du 15/09) et le
+  // stick droit n'avait jamais servi. Ce n'est pas un verbe de gameplay :
+  // c'est un pointeur analogique, exposé à part (cf. input.js).
+  axeXDroit: 2,
+  axeYDroit: 3,
   seuilMort: 0.2, // évite la dérive au repos du stick
 };
 
@@ -62,8 +68,20 @@ export function creerSourceManette(nav, mapping = MAPPING_MANETTE_PROVISOIRE) {
       if (Math.abs(x) < mapping.seuilMort) x = 0;
       if (Math.abs(y) < mapping.seuilMort) y = 0;
 
+      // Même zone morte que le stick gauche : une manette usée dérive des
+      // deux côtés, et un curseur qui part tout seul se remarque plus qu'un
+      // héros qui avance tout seul.
+      let viseX = gp.axes[mapping.axeXDroit] || 0;
+      let viseY = gp.axes[mapping.axeYDroit] || 0;
+      if (Math.abs(viseX) < mapping.seuilMort) viseX = 0;
+      if (Math.abs(viseY) < mapping.seuilMort) viseY = 0;
+
       return {
         move: { x, y },
+        // `pointeur` n'est PAS un verbe : il ne traverse pas `etat`, il sort
+        // par un accesseur à part (cf. input.js). Le gameplay ne le voit
+        // jamais — seul le curseur le lit.
+        pointeur: { x: viseX, y: viseY },
         attack: brut(mapping.boutons.attack),
         skill_1: brut(mapping.boutons.skill_1),
         skill_2: brut(mapping.boutons.skill_2),

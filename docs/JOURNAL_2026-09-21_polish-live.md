@@ -60,8 +60,22 @@ Ce fichier est l'état de la session sur le disque, écrit au fil des modifs —
   ne le voyait, à ~3,7 s le joueur peut se déplacer un long moment derrière ses paupières. À l'œil
   de Xav.
 
-## À faire avant de clore la session
+## Report dans les documents (fait le 21/09, à la demande de Xav)
 
-- Les trois modifs sont **à valider en jeu par Xav** (aucune n'est exerçable headless : texte
-  flottant, paupières et HUD sont du rendu canvas).
-- Reporter dans `docs/DOC_suivi-dettes.md` ce qui en relève une fois les verdicts rendus.
+- `docs/DOC_suivi-dettes.md` : cinq lignes **closes** pour les cinq consignes — `D-73` (le
+  chevauchement des textes), `D-74` (le clignement de mort), `D-75` (le consommable dans la barre
+  du bas), `D-76` (la plume), `D-77` (le follet jaune). Quatre validations **nouvelles**, `V-47` à
+  `V-50`, et `V-43` **rouverte à `pas vu`** : son verdict `non` du 21/09 est traité, la ligne est à
+  rejouer et son libellé (« court, ~0,9 s ») ne voulait plus rien dire. `Q-46` ouverte pour ce que
+  Xav a explicitement **différé** sur la mort.
+- `docs/CHECKLIST_tournee.md` v1.1.0 : `V-40` **réécrite** — Xav ne l'avait pas comprise, et le
+  mode d'emploi dit désormais que « pas compris » n'est pas un verdict mais un défaut de la
+  checklist. Les quatre nouvelles lignes sont insérées **dans l'ordre d'une partie**, pas à la fin.
+- `CLAUDE.md` : `tools/banc_visuel.html` ajouté à l'arborescence, quatre décisions datées ajoutées,
+  et le journal de session pointe désormais sur cette page.
+
+## À faire
+
+- Les cinq modifs sont **à valider en jeu par Xav** (aucune n'est exerçable headless : texte
+  flottant, paupières, HUD et silhouettes sont du rendu canvas).
+- `Q-46` attend une décision, pas un correctif.

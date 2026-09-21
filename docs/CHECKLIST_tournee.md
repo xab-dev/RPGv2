@@ -2,7 +2,7 @@
 projet: RPG V2
 episode/session: Tournée de validation — lignes `V-` ouvertes
 type: checklist (document vivant)
-version: 1.0.0
+version: 1.1.0
 statut: en cours
 catégorie: Doc
 date: 2026-09-21
@@ -20,6 +20,9 @@ d'une partie**, pour une tournée d'un seul trait, manette (ou doigt) en main. D
 le détail est dans le suivi, sous le même identifiant.
 
 **Comment s'en servir.** Une colonne, trois valeurs : **`ok`** · **`non`** · **`pas vu`**.
+Il en manque une quatrième, et c'est volontaire : **« pas compris » n'est pas un verdict, c'est un
+défaut de cette page**. Si une ligne ne se comprend pas manette en main, c'est elle qu'on réécrit
+(arrivé le 21/09 à `V-40`) — jamais au lecteur de deviner.
 `pas vu` est un état à part entière : **une ligne `pas vu` n'est jamais close par le silence** —
 elle reste due jusqu'à un `ok` ou un `non` dit. Un `non` n'a pas besoin d'être argumenté ici : une
 ligne `D-` sera ouverte à partir de lui.
@@ -38,11 +41,15 @@ le rendu. Celle-ci est la liste de ce qu'on **joue**.
 | V-37 | Ressources trouvables en marchant ; semis qui change à l'aube | `ok` |
 | V-39 | Nv. 5, tombée de nuit : une ligne, une seule fois | `ok` |
 | V-41 | Barre du bas : une seule case, puis le consommable | `ok` |
-| V-40 | Craft : les 3 recettes d'origine, rien de plus, rien de « ??? » | `pas compris` |
+| V-40 | Atelier + Cuisine : **rien n'a bougé** (3 recettes, comme avant) | `pas vu` |
 | V-42 | Paramètres › Volume : cycle, s'entend, se retient | `ok` |
-| V-43 | Mourir : les yeux se rouvrent, court, sans retarder | `non` |
+| V-43 | Mourir : les yeux se rouvrent comme à l'intro (corrigé, à rejouer) | `pas vu` |
 | V-44 | Nv. 10 : l'épée apparaît à l'Atelier, se craft, s'équipe | `pas vu` |
 | V-27 | Menu et Sauvegarde : manette, souris, doigt, deux tailles | `ok` |
+| V-49 | La plume : au sol à la sortie de la Grotte, puis en Poche | `pas vu` |
+| V-50 | Écran de choix : le carré jaune tient dans sa bulle | `pas vu` |
+| V-47 | « +1 » au-dessus de « +1xp », les deux lisibles jusqu'au bout | `pas vu` |
+| V-48 | Barre du bas : la case du consommable dessine le fruit équipé | `pas vu` |
 | V-11 | Le puits : mâts au sol, perspective de trois quarts | `non` (→ `D-16`) |
 
 *(Une ligne par validation encore due. Chaque ticket de la file Nv.0 → Nv.10 ajoute la sienne au

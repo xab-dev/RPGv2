@@ -182,7 +182,12 @@ rpg_v2/
                             zéro dépendance : vrais pixels sous les TROIS profils de
                             `scenarios/commun.mjs#PROFILS` — 703 × 280 et 1920 × 1080 à DPR 1, plus
                             `telephone` 780 × 360 à **DPR 3** (`D-48`) ; profil Chrome jetable —
-                            la sauvegarde de Xav n'est jamais touchée)
+                            la sauvegarde de Xav n'est jamais touchée) et banc_visuel.html
+                            (`?id=a,b,c` : une ou plusieurs entrées de `data/visuels.json` rendues
+                            AUX TAILLES RÉELLES du jeu — monde à DPR 1 et 3, tuile de la Poche —
+                            puis agrandies au plus proche voisin ; agrandir la transform
+                            épaissirait les traits avec, et ferait juger une image que personne ne
+                            voit)
 ```
 
 `registry.js`/`save.js` restent purs (aucun accès disque/réseau/DOM) : les adaptateurs (`io_node.js`/`io_navigateur.js`, `storage_indexeddb.js`/`creerStoreMemoire()`) leur fournissent des données déjà prêtes. Convention d'`id` : minuscules, `_` comme séparateur, préfixé par la catégorie au singulier (`tile_sol`, `elem_feu`). Un `id` dupliqué ou une référence croisée cassée = échec dur au boot avec le chemin exact de l'erreur.
@@ -295,6 +300,11 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 
 | **Un test n'épingle jamais une valeur de réglage : il vérifie un contrat.** Les nombres d'équilibrage — taille, portée, vitesse, échelle — appartiennent à Xav, qui les ajuste **à la main dans `data/`**, comme l'architecture le lui demande. Un test qui mémorise son dernier choix devient rouge le jour où il fait son travail, et le rouge ne veut alors rien dire. Ce qui se teste : que la valeur **vit en données**, qu'elle est **résolue par une seule fonction** qui la rend telle quelle, qu'une valeur dégénérée **tombe au boot**, et que l'**intention** du ticket tient — en *relation* (« l'épée porte plus loin que les poings », « le follet est plus petit en jeu qu'à la cinématique »), jamais en chiffre. Deux tests l'avaient oublié et sont corrigés : `D-20` (mains nues = la moitié de l'épée) et `D-52` (échelle du follet = 0,75) | 2026-09-21 | `docs/DOC_suivi-dettes.md` `D-52` |
 
+| **Une silhouette se juge à la taille où le jeu la montre, jamais agrandie.** `dessinerVisuel` met le trait à l'échelle avec le reste : regarder une entrée de `visuels.json` à `echelle: 32` donne des barres de 32 px là où le joueur verra un cheveu — on juge alors une image qui n'existe pas. L'outil `tools/banc_visuel.html` rend donc aux tailles réelles (monde à DPR 1 et 3, tuile de la Poche) **puis** agrandit le bitmap au plus proche voisin. Né de la plume (`D-76`) : le premier jet, jugé agrandi, passait pour un pâté ; le vrai défaut était ailleurs (le **galbe** des barbes, pas leur nombre) | 2026-09-21 | `docs/JOURNAL_2026-09-21_polish-live.md`, `D-76` |
+| **Mourir rejoue le réveil de l'intro** — le clignement du respawn reprend **exactement** les durées de l'intro (~3,7 s), au lieu de la version courte de ~0,9 s. *Révise* la contrainte d'origine de `D-65` (« plus court que l'intro, à ne pas allonger »), sur verdict `non` de Xav en jeu. Aucune ligne de code : `intro.js#ouverturePaupieres` était déjà la seule implémentation, seules les données changent. Corollaire de test, tiré de `D-52` : le test n'épingle plus une durée mais la **relation** (respawn = intro) | 2026-09-21 | `D-74`, `Q-46` (ce qui reste à trancher sur la mort) |
+| **Une case de la barre du bas dessine ce qui l'occupe, quel que soit le verbe** : `ui/hud.js` reçoit une table `verbe → visuel` et n'a plus de branche `if (verbe === 'attack')`. L'arme équipée et le consommable équipé y passent par la même ligne, et une compétence s'y branchera **sans code de HUD nouveau** — seul `main.js`, qui a le registre, sait de quoi vient une silhouette | 2026-09-21 | `D-75` |
+| **« Pas compris » n'est pas un verdict de tournée, c'est un défaut de la checklist** : quand une ligne `V-` ne se comprend pas manette en main, c'est la ligne qu'on réécrit, jamais au lecteur de deviner. Né de `V-40` le 21/09 | 2026-09-21 | `docs/CHECKLIST_tournee.md` v1.1.0 |
+
 (Les décisions de `05_construction-stations.md` étaient déjà actées par Xav **dans la spec elle-même** avant tout code, v1.0.0 §9 — les lignes ci-dessus n'y renvoient que pour mémoire, elles ne tranchent rien de nouveau.)
 
 ## Ce qui est dû : dettes, questions, validations
@@ -356,7 +366,21 @@ Les captures de la V1 (`docs/captures/v1/`) sont une **inspiration, jamais un ca
 
 `Q-10`, `Q-11`, `Q-12`, `Q-24` et `Q-25` restent à trancher avec Xav ; `Q-07` est gelée. La spec de la barre d'action du bas (`E-01`) est écrite par Xav lui-même et attend le chiffrage `Q-11`. **Une spec non écrite ne se commence pas** (même règle que pour une phase).
 
-## Journal de session — file de micro-tickets « Nv.0 → Nv.10 » (21/09)
+## Journal de session — polish en direct (21/09, après la file « Nv.0 → Nv.10 »)
+
+Session **en direct** : Xav joue, énonce une consigne, la modif est faite, il rejoue. Règle posée
+par lui à l'ouverture : **une consigne = une modif**, on ne touche qu'à l'item ou à la scène
+nommés. Branche `main`, aucun `push`. Fichier de bord :
+`docs/JOURNAL_2026-09-21_polish-live.md` — une ligne par consigne, écrite au moment de la modif.
+
+Livré : `D-73` (le « +1 » ne chevauche plus le « +1xp »), `D-74` (le clignement de mort rejoue
+celui de l'intro — *révise* `D-65`), `D-75` (le consommable équipé dans la barre du bas), `D-76`
+(la plume redessinée, deux passes) et `D-77` (le carré du follet jaune tient dans sa bulle).
+Tout est **à valider en jeu** : `V-43` (à rejouer) et `V-47` à `V-50`. Ouvert au passage :
+`Q-46` (ce qui reste à trancher sur la mort — le clignement ne gèle rien, le rythme, et le levier
+de la salle 1 qui ne se rejoue pas). Outil né de la session : `tools/banc_visuel.html`.
+
+## Journal de session précédent — file de micro-tickets « Nv.0 → Nv.10 » (21/09)
 
 File longue autonome, branche `main`, **un commit par ticket**, chacun retirable seul. Brief :
 `docs/BRIEF_file-nv0-10_2026-09-20.md` v1.2.0. **L'état de la file vit sur le disque** :

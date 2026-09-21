@@ -17,6 +17,7 @@ import { creerSourceManette } from './input/gamepad.js';
 import { creerSourceTactile } from './input/touch.js';
 import { creerPleinEcranTactile } from './plein_ecran.js';
 import { verrouillerMenuContextuel } from './souris.js';
+import { creerCurseur } from './curseur.js';
 import { creerCoucheInput, etatNeutre } from './input/input.js';
 import { chargerScene, resoudreDeplacement, portailFranchi, trouverPositionLibrePlusProche } from './scene.js';
 import { calculerCamera } from './camera.js';
@@ -3180,9 +3181,30 @@ export async function demarrerJeu() {
   // creerBoucle() ne lit `performance.now()` que si `surFrame` est fourni,
   // donc passer un no-op quand même coûterait 3 lectures d'horloge par frame
   // pour rien (§ livrable : "aucun coût" hors `?debug=fps`).
+  // `D-108` : le curseur du jeu. Il se construit ICI parce que c'est le premier
+  // endroit où le registre existe — les deux silhouettes et les deux réglages
+  // viennent des catalogues, ce module n'invente ni forme ni couleur.
+  const curseur = creerCurseur({
+    doc: document,
+    fenetre: window,
+    config: registre.obtenir('effets', 'effet_curseur'),
+    // La traînée est une 3ᵉ instance de `poussiere.js` : même mécanique que
+    // celle du héros et que le sillage du follet, une entrée de catalogue de
+    // plus et rien d'autre.
+    configSillage: registre.obtenir('effets', 'effet_curseur_sillage'),
+    visuelOrbe: registre.obtenir('visuels', 'visuel_curseur'),
+    visuelParticule: registre.obtenir('visuels', 'visuel_curseur_eclat'),
+    visuelSillage: registre.obtenir('visuels', 'visuel_curseur_sillage'),
+    dessinerVisuel,
+  });
+
   creerBoucle({
-    maj: orchestrateur.maj,
-    dessiner: orchestrateur.dessiner,
+    // Le curseur est avancé et dessiné APRÈS le jeu, et HORS de son point de
+    // décision unique (`uiOuverte`) : ce n'est pas du gameplay, il ne se gèle
+    // pas quand un menu s'ouvre. Il rattrape ses propres erreurs à sa
+    // frontière (cf. curseur.js), donc il ne peut pas coûter une frame.
+    maj: (delta) => { orchestrateur.maj(delta); curseur.avancer(delta); },
+    dessiner: () => { orchestrateur.dessiner(); curseur.dessiner(); },
     surFrame: moniteurPerf.actif ? moniteurPerf.surFrame : undefined,
   }).demarrer();
 }

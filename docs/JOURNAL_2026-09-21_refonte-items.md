@@ -227,3 +227,26 @@ deux détails :
    Toujours ramassé, il se lisait alors comme un **haricot** posé dessus.
 3. Brûlé devenu une ombre large et très diluée (4,6 × 2,7, `alpha` 0,22).
 
+### `D-89` — la hache
+
+**Diagnostic** : un trait brun surmonté d'un quadrilatère gris — un **couperet**.
+Et un second défaut, mesuré au passage : la silhouette est **décentrée**, x de
+−1 à 5. Posée au sol, elle se tiendrait entièrement à droite de son point
+logique. (Invisible aujourd'hui : la hache ne s'y pose pas, elle se fabrique, et
+dans la Poche `cadrer` la recentre déjà sur sa boîte. Recentrée quand même —
+c'est un piège en moins.)
+
+**Conceptualisation, et c'est elle qui a coûté trois itérations** : la lecture
+« hache » ne tient ni à l'œil, ni au tranchant. Elle tient à **une lame en
+croissant qui descend le long du manche**, tranchant vers l'extérieur, rattachée
+par un collier. Un fer aussi haut que large et centré sur le manche donne un
+maillet, quels que soient les détails qu'on y ajoute.
+
+**Application, trois itérations** (le plafond) :
+
+1. Fer quasi carré + œil + tranchant → **maillet**, l'œil lu comme une panne
+   fendue de marteau.
+2. Fer évasé, plus large que haut → toujours un maillet : il restait **posé
+   sur** le manche.
+3. Lame en croissant **le long** du manche + collier → hache.
+

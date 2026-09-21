@@ -61,7 +61,11 @@ const EMPREINTES_AVANT = {
   visuel_caillou: { x: -4, y: -3, w: 8, h: 6 },
   visuel_fruit: { x: -4, y: -6.5, w: 8, h: 10.5 },
   visuel_fruit_cuit: { x: -4, y: -6.5, w: 8, h: 10.5 },
-  visuel_hache: { x: -1, y: -11, w: 6, h: 18 },
+  // `D-89` : la hache était DÉCENTRÉE (elle occupait x = -1 à 5, manche sur
+  // l'axe et fer entièrement à droite). Le ticket la recentre, ce qui est la
+  // correction d'un défaut et non un agrandissement : sa boîte de référence
+  // est donc la même, recentrée. Les DIMENSIONS, elles, ne bougent pas.
+  visuel_hache: { x: -3, y: -11, w: 6, h: 18 },
   visuel_pioche: { x: -6, y: -12, w: 12, h: 19 },
   visuel_bois: { x: -6.5, y: -3, w: 13, h: 6 },
   visuel_pierre: { x: -6, y: -5, w: 12, h: 10 },
@@ -106,7 +110,7 @@ function etendueDessinee(visuel, echelle) {
 
 // Seuls les items DÉJÀ refondus entrent dans la boucle : la file avance item
 // par item (un commit chacun), et un ticket ne juge pas le travail d'un autre.
-const REFONDUS = ['visuel_plume', 'visuel_branche', 'visuel_caillou', 'visuel_pierre', 'visuel_bois', 'visuel_fruit', 'visuel_fruit_cuit'];
+const REFONDUS = ['visuel_plume', 'visuel_branche', 'visuel_caillou', 'visuel_pierre', 'visuel_bois', 'visuel_fruit', 'visuel_fruit_cuit', 'visuel_hache'];
 
 const { donnees, erreurs } = await chargerCataloguesDepuisDisque(
   path.join(RACINE, 'data'),

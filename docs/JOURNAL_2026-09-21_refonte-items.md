@@ -250,3 +250,21 @@ maillet, quels que soient les détails qu'on y ajoute.
    sur** le manche.
 3. Lame en croissant **le long** du manche + collier → hache.
 
+### `D-90` — la pioche
+
+**Diagnostic** : un losange gris posé à plat sur un manche — une pelle, ou un
+diamant.
+
+**Conceptualisation** : il manque le fer **cintré à deux bouts**, l'arc passant
+au-dessus du manche. Une **pointe** d'un côté, un **tranchant plat** de l'autre :
+c'est leur *différence* qui dit lequel pique et lequel taille. L'arc est
+construit par une fonction qui prend la demi-épaisseur en trois points de
+repère, donc les trois valeurs sont trois appels du **même** parcours.
+
+**Application, deux itérations** :
+
+1. Fer trop mince (0,95 unité au milieu), passe éclairée couvrant presque tout :
+   un fil de fer tendu, un **arc de tir**, avec deux carrés blancs à côté.
+2. Fer épaissi (1,45), passe éclairée réduite au tiers, bouts fondus dans l'arc,
+   collier resserré.
+

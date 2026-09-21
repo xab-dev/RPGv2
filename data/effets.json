@@ -2,6 +2,7 @@
   {
     "id": "effet_poussiere",
     "type": "particules",
+    "role": "cosmetique",
     "visuel": "visuel_poussiere",
     "duree_ms": 350,
     "intervalle_px": 14,
@@ -14,6 +15,7 @@
   {
     "id": "effet_vol_follet",
     "type": "vol",
+    "role": "cosmetique",
     "rayon_px": 6,
     "periode_ms": 1400,
     "sens": -1,
@@ -22,6 +24,7 @@
   {
     "id": "effet_sillage_follet",
     "type": "particules",
+    "role": "cosmetique",
     "visuel": "visuel_sillage_follet",
     "duree_ms": 420,
     "intervalle_px": 9,
@@ -34,12 +37,20 @@
   {
     "id": "effet_texte_gain",
     "type": "texte",
+    "role": "information",
     "duree_ms": 900,
     "montee_px": 16,
     "fondu_depuis": 0.5,
     "styles": {
-      "gain": { "taille_px": 9, "couleur": "#f2e6b8", "offset_y_px": -9 },
-      "xp": { "taille_px": 6, "couleur": "#9fd0f0" }
+      "gain": {
+        "taille_px": 9,
+        "couleur": "#f2e6b8",
+        "offset_y_px": -9
+      },
+      "xp": {
+        "taille_px": 6,
+        "couleur": "#9fd0f0"
+      }
     },
     "contour": "#101418",
     "contour_px": 2,
@@ -50,12 +61,18 @@
   {
     "id": "effet_clignement_respawn",
     "type": "clignement",
-    "ouvertures_ms": [600, 900, 1400],
+    "role": "information",
+    "ouvertures_ms": [
+      600,
+      900,
+      1400
+    ],
     "noir_ms": 400
   },
   {
     "id": "effet_curseur",
     "type": "curseur",
+    "role": "cosmetique",
     "visuel": "visuel_curseur",
     "visuel_particule": "visuel_curseur_eclat",
     "echelle": 1,
@@ -71,6 +88,7 @@
   {
     "id": "effet_curseur_sillage",
     "type": "particules",
+    "role": "cosmetique",
     "visuel": "visuel_curseur_sillage",
     "duree_ms": 420,
     "intervalle_px": 11,

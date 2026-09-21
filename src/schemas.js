@@ -1279,7 +1279,13 @@ export const SCHEMAS = {
     // un effet de type `texte` n'a pas de silhouette, il a un gabarit de
     // localisation. Il reste une RÉFÉRENCE quand il est présent (id inconnu =
     // échec dur au boot avec son chemin exact, cf. registry.js).
-    requiredFields: ['id', 'type'],
+    // `role` est REQUIS depuis `specs/09_reglages-graphiques.md` §4.2, et sans
+    // aucun repli : c'est lui qui décide ce que le preset Bas a le droit de
+    // retirer. Un repli (« absent = cosmétique ») ferait disparaître en Bas le
+    // prochain effet qu'on oublierait de classer — or ce qui se retire est
+    // justement ce qui ne dit rien au joueur. Ajouter un effet, c'est déclarer
+    // son rôle, sinon le jeu ne démarre pas.
+    requiredFields: ['id', 'type', 'role'],
     idField: 'id',
     refs: [
       { field: 'visuel', catalog: 'visuels' },
@@ -1312,6 +1318,15 @@ export const SCHEMAS = {
       if (!TYPES.includes(entry.type)) {
         erreurs.push(`${path} > type doit valoir ${TYPES.map((t) => `"${t}"`).join(' ou ')}`);
         return erreurs;
+      }
+
+      // `specs/09` §4.2 : deux rôles, et pas un troisième. « cosmetique » = le
+      // preset Bas a le droit de le retirer · « information » = il dit quelque
+      // chose au joueur (le « +1 » qui enseigne la boucle, les paupières), il
+      // reste dans tous les presets.
+      const ROLES = ['cosmetique', 'information'];
+      if (!ROLES.includes(entry.role)) {
+        erreurs.push(`${path} > role doit valoir ${ROLES.map((r) => `"${r}"`).join(' ou ')} (ce que Bas a le droit de retirer)`);
       }
 
       if (entry.type === 'curseur') {
@@ -2000,6 +2015,92 @@ export const SCHEMAS = {
       }
       return erreurs;
     },
+  },
+};
+
+// `specs/09_reglages-graphiques.md` palier B : les trois niveaux de facture
+// graphique (+ `auto`) et les seuils de la descente automatique. Une entrée de
+// configuration dans son catalogue, même patron que `survie_config` et
+// `audio_volume_musique`.
+//
+// Le contrat que ce schéma fait tenir, et qui est l'objet du ticket : **chaque
+// palier réel donne une valeur à CHAQUE levier déclaré**. Sans lui, ajouter un
+// levier laisserait un preset muet, et le système qui le lit recevrait
+// `undefined` en pleine partie — le genre de faute qui doit tomber au
+// démarrage avec son chemin, jamais se voir à l'œil trois sessions plus tard.
+SCHEMAS.graphismes = {
+  requiredFields: ['id'],
+  idField: 'id',
+  refs: [],
+  custom(entry, catalogs, path) {
+    const erreurs = [];
+    if (entry.id !== 'graphismes_presets') return erreurs;
+
+    if (!Array.isArray(entry.leviers) || entry.leviers.length === 0) {
+      erreurs.push(`${path} > leviers doit être un tableau non vide de noms de leviers`);
+      return erreurs;
+    }
+    // La valeur « qui ne change rien » est en données parce que c'est elle qui
+    // définit Moyen : « Moyen = l'état actuel » n'est pas un réglage d'auteur,
+    // c'est le contrat de non-régression du palier B.
+    if (typeof entry.valeur_neutre !== 'number') {
+      erreurs.push(`${path} > valeur_neutre doit être un nombre (la valeur d'un levier qui ne change rien)`);
+    }
+    if (!Array.isArray(entry.paliers) || entry.paliers.length === 0) {
+      erreurs.push(`${path} > paliers doit être un tableau non vide`);
+      return erreurs;
+    }
+
+    const ids = new Set();
+    for (const palier of entry.paliers) {
+      const chemin = `${path} > paliers > "${palier && palier.id}"`;
+      if (typeof palier.id !== 'string') { erreurs.push(`${chemin} > id manquant`); continue; }
+      if (ids.has(palier.id)) erreurs.push(`${chemin} > id en double`);
+      ids.add(palier.id);
+      if (typeof palier.cle_etat !== 'string') {
+        erreurs.push(`${chemin} > cle_etat manquante (le texte du palier vit dans les locales, jamais en code)`);
+      }
+      // `auto` n'a pas de leviers : il se RÉSOUT en un palier réel, il n'en
+      // est pas un. Lui en donner ferait croire qu'on peut jouer « en auto ».
+      if (palier.id === entry.defaut && palier.leviers === undefined) continue;
+      if (palier.leviers === undefined) {
+        erreurs.push(`${chemin} > leviers manquant (seul le palier par défaut "${entry.defaut}" s'en passe : il se résout)`);
+        continue;
+      }
+      for (const levier of entry.leviers) {
+        const valeur = palier.leviers[levier];
+        if (typeof valeur !== 'number' || !Number.isFinite(valeur) || valeur < 0) {
+          erreurs.push(`${chemin} > leviers.${levier} doit être un nombre fini >= 0 (chaque palier donne une valeur à chaque levier)`);
+        }
+      }
+      for (const levier of Object.keys(palier.leviers)) {
+        if (!entry.leviers.includes(levier)) {
+          erreurs.push(`${chemin} > leviers.${levier} n'est pas un levier déclaré — faute de frappe, ou levier à ajouter à "leviers"`);
+        }
+      }
+    }
+    if (typeof entry.defaut !== 'string' || !ids.has(entry.defaut)) {
+      erreurs.push(`${path} > defaut doit être l'id d'un palier déclaré`);
+    }
+
+    // Seuils de la descente automatique (§5.2), tous PROVISOIRES — mais leur
+    // type et leur domaine tombent ici : une part > 1 ne descendrait jamais,
+    // une fenêtre nulle descendrait à chaque frame.
+    const auto = entry.auto;
+    if (!auto || typeof auto !== 'object') {
+      erreurs.push(`${path} > auto doit être un objet { fenetre_ms, part_frames_lentes, delai_entree_scene_ms }`);
+      return erreurs;
+    }
+    if (typeof auto.fenetre_ms !== 'number' || auto.fenetre_ms <= 0) {
+      erreurs.push(`${path} > auto.fenetre_ms doit être un nombre strictement positif`);
+    }
+    if (typeof auto.part_frames_lentes !== 'number' || auto.part_frames_lentes <= 0 || auto.part_frames_lentes > 1) {
+      erreurs.push(`${path} > auto.part_frames_lentes doit être une fraction dans ]0, 1]`);
+    }
+    if (typeof auto.delai_entree_scene_ms !== 'number' || auto.delai_entree_scene_ms < 0) {
+      erreurs.push(`${path} > auto.delai_entree_scene_ms doit être un nombre >= 0`);
+    }
+    return erreurs;
   },
 };
 

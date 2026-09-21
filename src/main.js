@@ -38,6 +38,7 @@ import { decalageCorpsFollet } from './vol_follet.js';
 import {
   creerTextesFlottants, emettreTexte, avancerTextesFlottants, textesVisibles, viderTextesFlottants,
 } from './texte_flottant.js';
+import { resoudrePreset, valeurLevier } from './qualite.js';
 import { creerRegistreFlags } from './flags.js';
 import { calculerStatsPrimaires, calculerStatsDerivees, appliquerModulateurSurvie } from './stats.js';
 import {
@@ -2796,6 +2797,44 @@ export function creerOrchestrateurGrotte({
   };
 }
 
+// `specs/09_reglages-graphiques.md` §5.1 : les signaux d'appareil sont lus UNE
+// FOIS, au démarrage, ici — jamais dans un module pur, jamais par frame. Un
+// seul signal, volontairement : le pointeur grossier (téléphone, tablette).
+// Ni mémoire, ni nombre de cœurs, ni nom de navigateur — le portable Pentium
+// sans GPU, 2 Go, joue à 58 fps en Moyen, et une heuristique mémoire l'aurait
+// classé Bas à tort.
+//
+// Déclarée au NIVEAU MODULE (règle née de `D-72`) : `demarrerJeu` et
+// `creerOrchestrateurGrotte` sont deux fonctions sœurs, et ce que les deux
+// peuvent avoir à lire ne vit dans ni l'une ni l'autre. C'est aussi ce qui la
+// rend testable depuis Node, où `demarrerJeu` n'est jamais exécuté.
+export function signauxAppareil(fenetre) {
+  const mediaQuery = fenetre && typeof fenetre.matchMedia === 'function' ? fenetre.matchMedia : null;
+  if (!mediaQuery) return { pointeurGrossier: false };
+  try {
+    return { pointeurGrossier: !!mediaQuery.call(fenetre, '(pointer: coarse)').matches };
+  } catch {
+    // `matchMedia` absent ou capricieux : on ne devine pas, on prend le cas
+    // qui ne retire rien au joueur (Moyen).
+    return { pointeurGrossier: false };
+  }
+}
+
+// Résolution du réglage graphique au démarrage. Rend le preset RÉEL (jamais
+// « auto », qui n'est pas un palier) et ce qu'il faut en dire. Le preset
+// résolu n'est jamais persisté : seul le choix du joueur l'est (§5.3).
+//
+// Les leviers sont relus un par un juste après : le schéma garantit déjà que
+// chaque palier les couvre, mais une faute de frappe dans `leviers` ferait
+// lever `valeurLevier` en pleine partie, au premier système qui le demande —
+// ici, elle tombe au boot, avec le nom du levier.
+export function resoudreGraphismes(registre, save, fenetre) {
+  const config = registre.obtenir('graphismes', 'graphismes_presets');
+  const resolu = resoudrePreset(save.settings.graphismes, signauxAppareil(fenetre), config);
+  for (const levier of config.leviers) valeurLevier(config, resolu.preset, levier);
+  return { config, ...resolu };
+}
+
 export async function demarrerJeu() {
   const noms = Object.keys(SCHEMAS);
   const [dictionnaires, { donnees, erreurs: erreursChargement }] = await Promise.all([
@@ -2847,6 +2886,14 @@ export async function demarrerJeu() {
   const store = creerStoreIndexedDB();
   const { payload: save } = await chargerSave(store);
   i18n.definirLangue(save.settings.lang);
+
+  // `specs/09_reglages-graphiques.md` palier B : le réglage graphique est
+  // RÉSOLU au démarrage, et rien n'en dépend encore — les leviers se branchent
+  // au palier C. Ce qui est déjà vrai : le catalogue est validé, un réglage
+  // inconnu venu d'une sauvegarde est signalé plutôt que remplacé en silence,
+  // et le choix du joueur ne quitte jamais `save.settings`.
+  const graphismes = resoudreGraphismes(registre, save, window);
+  if (graphismes.avertissement) console.warn(graphismes.avertissement);
 
   // Une sauvegarde d'une session antérieure peut pointer vers une scène qui
   // n'existe plus (ex. scene_salle_test de la Phase 0, remplacée par la

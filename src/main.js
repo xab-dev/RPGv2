@@ -399,6 +399,7 @@ export function creerOrchestrateurGrotte({
   // dans la table du tout : le rendu ne le cherche même plus, donc il ne
   // coûte plus une ligne (« 0 = ne dessine pas », pris au mot).
   const grainSol = valeurLevier(graphismes.config, graphismes.preset, 'grain_sol');
+  const densiteDecor = valeurLevier(graphismes.config, graphismes.preset, 'densite_decor');
   const visuelsTuiles = new Map(
     registre
       .tous('tiles')
@@ -913,7 +914,11 @@ export function creerOrchestrateurGrotte({
     // que des id (visuel: string) — résolus ici une seule fois, à l'entrée en
     // scène (le décor est statique, jamais recalculé par frame), même
     // patron que monstresAffiches/puzzlesAffiches dans dessiner().
-    decor = genererDecor(scene).map((d) => ({ ...d, visuel: registre.obtenir('visuels', d.visuel) }));
+    // Palier C, levier `densite_decor` : `decor.js` reçoit un nombre, pas un
+    // preset. Le décor réduit est le PRÉFIXE du décor complet, donc un motif
+    // présent en Bas est au même endroit en Moyen et en Haut — le décor ne se
+    // réarrange pas quand on change de réglage (§4.3).
+    decor = genererDecor(scene, densiteDecor).map((d) => ({ ...d, visuel: registre.obtenir('visuels', d.visuel) }));
 
     const pos = positionInitialePx || {
       x: (scene.spawn.x + 0.5) * scene.tileSize,
@@ -2782,6 +2787,10 @@ export function creerOrchestrateurGrotte({
     // allège le sol sans toucher une silhouette solide. On rend la VRAIE
     // table, jamais une recopie qui pourrait diverger (`D-72`).
     obtenirVisuelsTuiles: () => visuelsTuiles,
+    // Palier C (`D-114`) : le décor réellement généré pour la scène courante.
+    // Même raison que la table ci-dessus — prouver l'inclusion Bas ⊂ Moyen ⊂
+    // Haut demande le vrai décor, pas une régénération refaite côté test.
+    obtenirDecor: () => decor,
     obtenirFollet: () => follet,
     obtenirScene: () => scene,
     obtenirMonstres: () => monstres,

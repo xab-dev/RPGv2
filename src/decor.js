@@ -30,7 +30,21 @@ export function mulberry32(graine) {
 // leviers.
 const ROTATION_MAX_DEG = 10; // provisoire : "légère" variation (§3.4), pas une rotation aléatoire visible
 
-export function genererDecor(scene) {
+// `multiplicateurDensite` (palier C de `specs/09_reglages-graphiques.md`) :
+// un NOMBRE, rien d'autre. Ce module ne lit aucun catalogue de presets et ne
+// connaît pas le mot « bas » — il reçoit de combien la densité déclarée par
+// la scène doit être multipliée, comme il recevait déjà sa graine.
+//
+// CONTRAT À NE PAS CASSER, c'est lui qui rend le décor réduit inclus dans le
+// décor complet : **chaque itération consomme un nombre CONSTANT de tirages**
+// (position, motif, décalage x, décalage y, inclinaison). Le décor à densité
+// réduite est alors exactement le PRÉFIXE de celui à densité pleine — un
+// caillou présent en Bas est au même endroit en Moyen et en Haut, sans qu'il
+// ait fallu changer une seule position. Ajouter ici un tirage conditionnel
+// (« si tel motif, alors un tirage de plus ») décalerait toute la suite et
+// ferait se réarranger le décor à chaque changement de preset ; c'est
+// `tests/test_d114_levier_densite_decor_2026-09-22.js` qui refuse cela.
+export function genererDecor(scene, multiplicateurDensite = 1) {
   const config = scene.decor;
   if (!config || !Array.isArray(config.motifs) || config.motifs.length === 0) return [];
 
@@ -44,7 +58,7 @@ export function genererDecor(scene) {
     }
   }
 
-  const nombreMotifs = Math.floor(positionsSol.length * config.densite);
+  const nombreMotifs = Math.floor(positionsSol.length * config.densite * multiplicateurDensite);
   const decor = [];
   for (let i = 0; i < nombreMotifs; i++) {
     const position = positionsSol[Math.floor(alea() * positionsSol.length)];

@@ -13,8 +13,11 @@ const recetteHache = {
   id: 'rec_hache', label_key: 'x', station: 'station_type_atelier',
   entrees: [{ item: 'item_branche', qte: 2 }, { item: 'item_caillou', qte: 1 }],
   sortie: { item: 'item_hache', qte: 1 }, categorie: 'outil', xp: 15,
-  cooldown_ms: 60000, connue_au_depart: true, deblocage: null,
+  cooldown_ms: 60000,
 };
+// `D-62` (T4) : plus de `connue_au_depart`/`deblocage`. Une recette sans
+// `visible_si` est VISIBLE — l'inverse de l'ancien couple, et c'est ce qui
+// garantit que l'existant ne bouge pas quand un catalogue adopte le champ.
 
 const flagsFactice = { evaluate: () => false };
 const flagsQuiDebloquentTout = { evaluate: () => true };
@@ -26,15 +29,15 @@ const flagsQuiDebloquentTout = { evaluate: () => true };
   assert.equal(verdict.raison, 'ingredients');
 }
 
-// 2. Ingrédients suffisants, recette connue au départ -> ok.
+// 2. Ingrédients suffisants, recette sans `visible_si` (donc visible) -> ok.
 {
   const verdict = peutFabriquer(recetteHache, { item_branche: 2, item_caillou: 1 }, flagsFactice, {}, 0);
   assert.deepEqual(verdict, { ok: true, raison: null });
 }
 
-// 3. Recette verrouillée (non connue au départ, deblocage jamais vrai).
+// 3. Recette verrouillée : `visible_si` qui n'est jamais vrai (`D-62`).
 {
-  const recetteVerrouillee = { ...recetteHache, connue_au_depart: false, deblocage: { all: ['flag_niveau_10'] } };
+  const recetteVerrouillee = { ...recetteHache, visible_si: { all: ['flag_niveau_10'] } };
   assert.equal(recetteDecouverte(recetteVerrouillee, flagsFactice), false);
   const verdict = peutFabriquer(recetteVerrouillee, { item_branche: 2, item_caillou: 1 }, flagsFactice, {}, 0);
   assert.equal(verdict.raison, 'verrouillee');
@@ -103,8 +106,8 @@ const flagsQuiDebloquentTout = { evaluate: () => true };
   donnees.recipes = [{
     id: 'rec_corde', label_key: 'x', station: 'station_type_atelier',
     entrees: [{ item: 'item_branche', qte: 2 }], sortie: { item: 'item_corde', qte: 1 },
-    categorie: 'materiau', xp: 5, cooldown_ms: 30000, connue_au_depart: false,
-    deblocage: { all: ['flag_niveau_3'] },
+    categorie: 'materiau', xp: 5, cooldown_ms: 30000,
+    visible_si: { all: ['flag_niveau_3'] },
   }];
   const erreurs = validerCatalogues(donnees);
   assert.deepEqual(erreurs, [], `4ᵉ recette rejetée :\n${erreurs.join('\n')}`);

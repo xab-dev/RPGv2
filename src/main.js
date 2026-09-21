@@ -74,7 +74,8 @@ import { ambianceADeclencher } from './ambiances.js';
 import { armerAudio, definirMusiqueActive } from './audio.js';
 import { creerEtatIndices } from './hints.js';
 import { estExpire, poserCooldown, tempsRestantMs } from './cooldowns.js';
-import { peutFabriquer, fabriquer, recettesDeStation, recetteDecouverte } from './recipes.js';
+import { peutFabriquer, fabriquer, recettesDeStation } from './recipes.js';
+import { entreesVisibles } from './visibilite.js';
 import {
   decroitre as decroitreSurvie, consommer as consommerSurvie, appliquerMalusRespawn,
   calculerModulateur as calculerModulateurSurvie, configSurvie, jaugeSousLeSeuil,
@@ -971,8 +972,12 @@ export function creerOrchestrateurGrotte({
   // au clic/à la manette.
   function entreesCraft(station) {
     const heureMs = save.monde.heure;
-    return recettesDeStation(registre, station.id)
-      .filter((r) => recetteDecouverte(r, flags))
+    // `D-62` (T4) : LE point unique du filtre anti-spoil. Tout écran qui
+    // liste un catalogue passe par `entreesVisibles` — jamais un `.filter()`
+    // écrit sur place, qui finirait par diverger de celui d'à côté. Une
+    // entrée verrouillée n'est pas grisée ni remplacée par « ??? » : elle
+    // n'est pas dans la liste, donc elle ne peut pas être comptée.
+    return entreesVisibles(recettesDeStation(registre, station.id), flags)
       .map((r) => {
         const verdict = peutFabriquer(r, save.inventaire.items, flags, save.cooldowns, heureMs);
         let suffixe = '';

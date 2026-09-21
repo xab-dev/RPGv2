@@ -78,6 +78,14 @@ function schemaMinimal() {
 // plusieurs catalogues (scenes.portails[].condition, scenes.spawns[]
 // .condition) : un seul validateur de forme, réutilisé partout, pour ne
 // jamais faire diverger la définition d'une condition valide.
+// `D-62` (T4) : la même vérification, offerte au validateur générique de
+// `registry.js` pour le champ `visible_si`, que N'IMPORTE quel catalogue peut
+// porter. On passe les catalogues plutôt que l'ensemble des flags déjà
+// extrait : l'appelant n'a pas à savoir de quoi une condition est faite.
+export function erreursConditionVisibilite(condition, chemin, catalogs) {
+  return erreursCondition(condition, chemin, new Set((catalogs.flags || []).map((f) => f.id)));
+}
+
 function erreursCondition(condition, chemin, declares) {
   if (condition === undefined || condition === null) return [];
   if (typeof condition === 'string') {
@@ -1599,7 +1607,7 @@ export const SCHEMAS = {
   // instance positionnée) : plusieurs stations du même type partagent les
   // mêmes recettes, sans duplication.
   recipes: {
-    requiredFields: ['id', 'label_key', 'station', 'entrees', 'sortie', 'categorie', 'connue_au_depart'],
+    requiredFields: ['id', 'label_key', 'station', 'entrees', 'sortie', 'categorie'],
     idField: 'id',
     refs: [{ field: 'station', catalog: 'stations' }],
     custom(entry, catalogs, path) {
@@ -1630,10 +1638,16 @@ export const SCHEMAS = {
       if (entry.cooldown_ms !== undefined && (typeof entry.cooldown_ms !== 'number' || entry.cooldown_ms <= 0)) {
         erreurs.push(`${path} > cooldown_ms doit être un nombre positif si présent`);
       }
-      if (typeof entry.connue_au_depart !== 'boolean') {
-        erreurs.push(`${path} > connue_au_depart doit être un booléen`);
+      // `D-62` (T4) : `connue_au_depart` et `deblocage` ont été remplacés par
+      // le `visible_si` générique, validé pour TOUS les catalogues dans
+      // `registry.js`. On refuse explicitement les anciens champs plutôt que
+      // de les ignorer : laissés dans une fiche, ils n'auraient plus aucun
+      // effet, et une recette censée être cachée s'afficherait en silence.
+      for (const perime of ['connue_au_depart', 'deblocage']) {
+        if (entry[perime] !== undefined) {
+          erreurs.push(`${path} > "${perime}" n'existe plus (\`D-62\`) : utiliser "visible_si" (absent = visible)`);
+        }
       }
-      erreurs.push(...erreursCondition(entry.deblocage, path, new Set((catalogs.flags || []).map((f) => f.id))));
       return erreurs;
     },
   },

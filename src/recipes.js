@@ -4,6 +4,7 @@
 
 import { estExpire, poserCooldown } from './cooldowns.js';
 import { ajouterItem, retirerItem } from './inventory.js';
+import { estVisible } from './visibilite.js';
 
 const COOLDOWN_DEFAUT_MS = 60000; // §10 : "règle anti-spam", 60 s par recette.
 
@@ -11,14 +12,22 @@ export function recettesDeStation(registre, stationTypeId) {
   return registre.tous('recipes').filter((r) => r.station === stationTypeId);
 }
 
-// Découverte (§3.1, D9③) : connue d'emblée, ou débloquée par une condition
-// de flags — une recette non découverte n'est même pas listée (narration
-// diffuse, jamais montrer ce qu'il faut atteindre), filtre appliqué par
-// l'appelant (menu Craft), pas ici.
+// Découverte (§3.1, D9③) : une recette non découverte n'est même pas listée
+// — narration diffuse, jamais montrer ce qu'il faut atteindre.
+//
+// `D-62` (T4) : ce n'est plus une règle propre aux recettes. Le couple
+// `connue_au_depart` / `deblocage` a été remplacé par le `visible_si`
+// GÉNÉRIQUE de `visibilite.js`, que les armes et, plus tard, les compétences
+// partagent. Deux changements de sens, tous deux voulus :
+//   - un champ ABSENT rend désormais l'entrée VISIBLE (l'ancien couple la
+//     cachait) — c'est ce qui garantit que l'existant ne bouge pas quand un
+//     nouveau catalogue adopte le champ ;
+//   - il n'y a plus deux façons de cacher une entrée, donc plus rien à faire
+//     diverger.
+// La fonction reste, sous son nom de métier : `peutFabriquer` parle de
+// recettes, pas de visibilité de catalogue.
 export function recetteDecouverte(recette, flags) {
-  if (recette.connue_au_depart) return true;
-  if (!recette.deblocage) return false;
-  return flags.evaluate(recette.deblocage);
+  return estVisible(recette, flags);
 }
 
 export function peutFabriquer(recette, poche, flags, cooldowns, heureMs) {

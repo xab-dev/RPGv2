@@ -6,7 +6,7 @@
 // effectif (fetch en jeu, fs dans les tests) vit dans des modules d'I/O
 // séparés — cf. src/io_navigateur.js et src/io_node.js.
 
-import { SCHEMAS } from './schemas.js';
+import { SCHEMAS, erreursConditionVisibilite } from './schemas.js';
 
 // Valide l'ensemble des catalogues : présence, JSON déjà valide (parsé en
 // amont), champs obligatoires, unicité des id (au sein du catalogue et entre
@@ -69,6 +69,14 @@ export function validerCatalogues(donnees) {
           erreurs.push(`${cheminId} > ${ref.field} > "${valeur}" introuvable dans ${ref.catalog}.json`);
         }
       }
+
+      // `visible_si` (`D-62`, T4) : le filtre anti-spoil est GÉNÉRIQUE, donc
+      // sa validation l'est aussi — n'importe quel catalogue peut porter le
+      // champ, et une condition mal écrite doit tomber au boot dans tous.
+      // Le contrôle vit ici, une fois, plutôt que d'être recopié dans chaque
+      // `custom()` : c'est le même raisonnement que la fonction unique de
+      // filtrage côté jeu.
+      erreurs.push(...erreursConditionVisibilite(entree.visible_si, `${cheminId} > visible_si`, donnees));
 
       if (schema.custom) {
         erreurs.push(...schema.custom(entree, donnees, cheminId));

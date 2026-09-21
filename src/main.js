@@ -70,6 +70,7 @@ import {
 import { calculerOpaciteToit, distanceAuRectangle, empreinteAbsoluePuzzle } from './structures.js';
 import { dansRectangleTuile, poseValide } from './placement.js';
 import { avancerHeure, opaciteAHeure, phaseAHeure, PHASES_CYCLE } from './daynight.js';
+import { ambianceADeclencher } from './ambiances.js';
 import { armerAudio, definirMusiqueActive } from './audio.js';
 import { creerEtatIndices } from './hints.js';
 import { estExpire, poserCooldown, tempsRestantMs } from './cooldowns.js';
@@ -570,6 +571,32 @@ export function creerOrchestrateurGrotte({
       const { x, y, w, h } = zone.rect;
       if (tx >= x && tx < x + w && ty >= y && ty < y + h) flags.set(flagId);
     }
+  }
+
+  // `D-61` (T3, `Q-34`) : les lignes d'ambiance par palier. Le CHOIX est dans
+  // `ambiances.js` (pur) ; ici, seulement de quoi le nourrir et quoi faire du
+  // résultat — poser le flag, ouvrir le dialogue.
+  //
+  // Appelée dans le bloc de gameplay, donc gelée sous UI par LE point de
+  // décision unique : une ligne ne peut pas naître pendant qu'une autre est
+  // à l'écran. C'est ce qui rend inutile toute file d'attente ici.
+  //
+  // Le flag est posé AVANT d'ouvrir le dialogue, pas après : si le joueur
+  // sauvegarde pendant la réplique, la ligne ne doit pas revenir au
+  // rechargement. « Une seule fois » veut dire une seule fois, même
+  // interrompue.
+  function verifierLignesAmbiance() {
+    if (dialogue.estOuvert()) return;
+    const ambiance = ambianceADeclencher(registre.tous('ambiances'), {
+      sceneId: scene.id,
+      phase: phaseAHeure(save.monde.heure),
+      aDejaVu: flags.has,
+      evaluerCondition: flags.evaluate,
+    });
+    if (!ambiance) return;
+    flags.set(ambiance.flag);
+    dialogue.ouvrir(resoudreLignes(ambiance.dialogue, registre, i18n, save.hero.companion));
+    etatModifie = true;
   }
 
   // specs/05_construction-stations.md §3/§4 : résout les poses sauvegardées
@@ -1846,6 +1873,7 @@ export function creerOrchestrateurGrotte({
       verifierEntreesDeZone();
       indices.maj(deltaMs);
       verifierIndicesNiveau();
+      verifierLignesAmbiance();
 
       // Horloge "temps de jeu actif" (daynight.js#avancerHeure) : avancée
       // dans TOUTES les scènes désormais (Palier A/C, specs/04_maison-

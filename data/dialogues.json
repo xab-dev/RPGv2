@@ -111,5 +111,10 @@
     "lignes": [
       { "locuteur": "follet", "text_key": "dlg.premiere_faim.1" }
     ]
+  },
+  {
+    "id": "dlg_ambiance_vent_cendre",
+    "declencheur": "ambiance_vent_cendre",
+    "lignes": [{ "locuteur": "narrateur", "text_key": "dlg.ambiance.vent_cendre" }]
   }
 ]

@@ -1401,6 +1401,45 @@ export const SCHEMAS = {
   // boot ce qui ne se verrait sinon qu'en jouant, de nuit, au bon niveau :
   // une zone d'apparition qui chevauche une zone sûre, un id de zone inconnu,
   // une phase qui n'existe pas dans le cycle.
+  // Lignes d'ambiance par palier (`D-61`, T3, `Q-34`). Le motif générique :
+  // `palier atteint + condition -> une ligne de texte, une seule fois`. Tout
+  // est référence — un dialogue, un flag, des scènes, des phases — parce que
+  // c'est exactement là qu'une faute de frappe se traduirait par une ligne
+  // qui ne se déclenche jamais, sans que rien ne le signale.
+  ambiances: {
+    requiredFields: ['id', 'dialogue', 'flag'],
+    idField: 'id',
+    refs: [{ field: 'dialogue', catalog: 'dialogues' }],
+    custom(entry, catalogs, path) {
+      const erreurs = [];
+      if (!(catalogs.flags || []).some((f) => f.id === entry.flag)) {
+        erreurs.push(`${path} > flag "${entry.flag}" non déclaré dans flags.json`);
+      }
+      if (entry.scenes !== undefined) {
+        if (!Array.isArray(entry.scenes) || entry.scenes.length === 0) {
+          erreurs.push(`${path} > scenes doit être un tableau non vide d'ids de scène (ou absent = partout)`);
+        } else {
+          for (const sceneId of entry.scenes) {
+            if (!(catalogs.scenes || []).some((sc) => sc.id === sceneId)) {
+              erreurs.push(`${path} > scenes : "${sceneId}" introuvable dans scenes.json`);
+            }
+          }
+        }
+      }
+      if (entry.phases !== undefined) {
+        if (!Array.isArray(entry.phases) || entry.phases.length === 0) {
+          erreurs.push(`${path} > phases doit être un tableau non vide de noms de phase (ou absent = à toute heure)`);
+        } else {
+          for (const phase of entry.phases) {
+            if (!NOMS_PHASES_CYCLE.includes(phase)) {
+              erreurs.push(`${path} > phase "${phase}" inconnue (attendu : ${NOMS_PHASES_CYCLE.join('/')})`);
+            }
+          }
+        }
+      }
+      return erreurs;
+    },
+  },
   spawns: {
     requiredFields: [
       'id', 'scene', 'zone_apparition', 'enemy', 'phases', 'max_simultanes', 'intervalle_ms',

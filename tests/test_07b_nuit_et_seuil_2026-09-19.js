@@ -58,7 +58,13 @@ function bot({ niveau, heure, menuOuvert = false }) {
   save.hero.scene = 'scene_maison_exterieur';
   save.hero.companion = 'comp_follet_eau';
   save.hero.niveau = niveau;
-  save.flags = { flag_follet_choisi: true, flag_grotte_sortie: true };
+  // `D-61` : la ligne d'ambiance « le vent du nord-est sent la cendre » se
+  // déclenche exactement ici — niveau ≥ 5, tombée de nuit — et ouvre un
+  // dialogue, qui gèle le gameplay tant que le joueur ne l'a pas fermé. En
+  // jeu c'est voulu (c'est tout l'intérêt : on le lit avant que ça commence).
+  // Ce test-ci mesure les APPARITIONS : on la marque déjà vue pour ne pas
+  // éprouver deux choses à la fois. Elle a son propre test.
+  save.flags = { flag_follet_choisi: true, flag_grotte_sortie: true, flag_ambiance_vent_cendre: true };
   save.monde.heure = heure;
   const menuFactice = { estOuvert: () => menuOuvert, traiterInput: () => {}, ouvrir: () => {} };
   const orch = creerOrchestrateurGrotte({

@@ -34,6 +34,7 @@ le rendu. Celle-ci est la liste de ce qu'on **joue**.
 | V-38 | La Plume visible à la sortie de la Grotte ; son texte en Poche | `pas vu` |
 | V-36 | « +1 » et « +1xp » montent ensemble, lisibles à la taille | `pas vu` |
 | V-37 | Ressources trouvables en marchant ; semis qui change à l'aube | `pas vu` |
+| V-39 | Nv. 5, tombée de nuit : une ligne, une seule fois | `pas vu` |
 | V-27 | Menu et Sauvegarde : manette, souris, doigt, deux tailles | `pas vu` |
 | V-11 | Le puits : mâts au sol, perspective de trois quarts | `non` (→ `D-16`) |
 

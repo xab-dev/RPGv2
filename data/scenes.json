@@ -8,7 +8,7 @@
     "spawn": { "x": 2, "y": 6 },
     "obscurite": { "opacite": 0.72 },
     "lumieres": [
-      { "x": 80, "y": 208, "rayon": 140 },
+      { "x": 210, "y": 208, "rayon": 180 },
       { "type": "faisceau", "x": 224, "y": 32, "angle": -8, "ouverture": 12, "longueur": 170, "alpha": 0.14 },
       { "type": "faisceau", "x": 480, "y": 32, "angle": 6, "ouverture": 10, "longueur": 150, "alpha": 0.12 }
     ],
@@ -132,7 +132,7 @@
       {
         "x": 2752,
         "y": 1824,
-        "rayon": 90
+        "rayon": 210
       }
     ],
     "decor": {

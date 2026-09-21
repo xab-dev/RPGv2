@@ -63,7 +63,10 @@ import {
 import { creerComportement, avancerComportement } from './comportement_monstres.js';
 import { peutRecolter, trouverRessourceProche } from './resources.js';
 import { ajouterItem, retirerItem } from './inventory.js';
-import { remplirItemsSol, trouverItemProche, ramasser, planifierRespawn, tickRespawns, calculerTuilesAtteignables } from './ground_items.js';
+import {
+  remplirItemsSol, trouverItemProche, ramasser, planifierRespawn, tickRespawns,
+  calculerTuilesAtteignables, reposerItemsDuJour,
+} from './ground_items.js';
 import { calculerOpaciteToit, distanceAuRectangle, empreinteAbsoluePuzzle } from './structures.js';
 import { dansRectangleTuile, poseValide } from './placement.js';
 import { avancerHeure, opaciteAHeure, phaseAHeure, PHASES_CYCLE } from './daynight.js';
@@ -127,7 +130,6 @@ const CLE_TEXTE_GAIN_XP = 'monde.gain_xp';
 // Respawn différé des items au sol (Palier B §3.2) : défaut appliqué quand
 // l'item ne surcharge pas `spawn.respawn_ms` — même esprit que
 // cooldown_ms par défaut de recipes.js.
-const RESPAWN_ITEM_DEFAUT_MS = 60000;
 // Cooldown du puits (Palier C §3.3, §10 "règle anti-spam") : pas de champ
 // dédié dans stations.json (un seul rôle "eau" existe), donc un seuil
 // unique ici plutôt qu'un catalogue à une seule entrée.
@@ -614,6 +616,40 @@ export function creerOrchestrateurGrotte({
     return overrides;
   }
 
+  // `D-59` (T2, `Q-33`) : repose les objets au sol de la scène COURANTE
+  // selon le tirage du jour, et une seule fois par jour et par scène. Deux
+  // moments l'appellent : la fin de l'aube (l'horloge repasse par zéro) et
+  // l'entrée en scène (revenir le matin dans une carte quittée la veille).
+  //
+  // Le repos est SEC : ce qui traînait disparaît, et les respawns en attente
+  // de cette scène sont vidés. Sinon un objet ramassé hier reviendrait à sa
+  // place d'hier, et le tirage du jour ne se verrait qu'au tout premier
+  // matin d'une partie.
+  //
+  // `jour_items_sol` retient le jour du dernier repos PAR SCÈNE : sans lui,
+  // traverser un portail deux fois dans la même journée rebattrait les
+  // cartes à chaque passage — exactement ce que la Phase 2 interdisait déjà
+  // (« recharger la page ne rebat pas les cartes »).
+  function reposerItemsSolSiJourNouveau() {
+    if (!scene) return;
+    if (save.monde.jour_items_sol[scene.id] === save.monde.jour) return;
+    const poses = reposerItemsDuJour(scene, registre.tous('items'), save.monde.jour);
+    // Une scène sans liste de points (la Grotte) obtient un objet vide : on
+    // note quand même la journée, sinon la fonction retournerait chaque
+    // frame de l'aube.
+    const existant = save.monde.items_sol[scene.id] || {};
+    const suivant = { ...existant };
+    for (const [itemId, positions] of Object.entries(poses)) suivant[itemId] = positions;
+    save.monde.items_sol[scene.id] = suivant;
+    itemsSol = suivant;
+    if (Object.keys(poses).length > 0) {
+      save.monde.respawns_en_attente[scene.id] = {};
+      respawnsEnAttente = {};
+    }
+    save.monde.jour_items_sol[scene.id] = save.monde.jour;
+    etatModifie = true;
+  }
+
   function entrerDansScene(sceneId, positionInitialePx) {
     // MT_trainee-poussiere_2026-09-19 : une traînée laissée dans la scène
     // qu'on quitte n'a rien à faire dans la suivante (le héros y est
@@ -665,6 +701,11 @@ export function creerOrchestrateurGrotte({
           id: `${s.enemy}#${compteurMonstresNes}`,
         });
       });
+    // `D-59` : le tirage du jour s'applique aussi à l'arrivée en scène — un
+    // joueur qui a passé la nuit dans la Maison et ressort au matin doit
+    // trouver une carte re-semée, pas celle d'hier.
+    reposerItemsSolSiJourNouveau();
+
     // Les monstres nocturnes ne traversent pas un changement de scène : on
     // repart de la nuit en cours, plafond vide (palier B, « non persistés »).
     accumulateursSpawn = {};
@@ -765,9 +806,23 @@ export function creerOrchestrateurGrotte({
         // ou le défaut de catalogue.
         itemsSol = ramasser(itemsSol, itemProche.itemId, itemProche.index);
         save.monde.items_sol[scene.id] = itemsSol;
-        const respawnMs = (itemDef.spawn && itemDef.spawn.respawn_ms) || RESPAWN_ITEM_DEFAUT_MS;
-        respawnsEnAttente = planifierRespawn(respawnsEnAttente, itemProche.itemId, respawnMs);
-        save.monde.respawns_en_attente[scene.id] = respawnsEnAttente;
+        // `D-59` : un objet ne repousse dans la journée que s'il DÉCLARE un
+        // `respawn_ms`. C'est la conséquence directe du tirage à l'aube :
+        // si la branche ramassée revenait 60 s plus tard ailleurs, le semis
+        // du jour ne voudrait plus rien dire, et le joueur n'aurait aucune
+        // raison de parcourir la carte. Le fruit, lui, garde sa repousse —
+        // c'est l'arbre fruitier qui le porte, pas le hasard du matin (le
+        // vocabulaire de la Région Maison le dit déjà : « Jardin = puits,
+        // arbre fruitier, réapparition du fruit »).
+        //
+        // Le défaut de 60 s a disparu avec cette décision : il rendait la
+        // question indécidable en données, alors que c'est exactement là
+        // qu'elle doit se trancher.
+        const respawnMs = itemDef.spawn && itemDef.spawn.respawn_ms;
+        if (respawnMs) {
+          respawnsEnAttente = planifierRespawn(respawnsEnAttente, itemProche.itemId, respawnMs);
+          save.monde.respawns_en_attente[scene.id] = respawnsEnAttente;
+        }
         if (!flags.has('flag_premier_ramassage')) {
           flags.set('flag_premier_ramassage');
           dialogue.ouvrir(resoudreLignes('dlg_premier_ramassage', registre, i18n, save.hero.companion));
@@ -1778,7 +1833,18 @@ export function creerOrchestrateurGrotte({
       // Grotte (survie et cooldowns s'y appliquent aussi). Le rendu du voile
       // jour/nuit, lui, reste conditionné à `scene.cycleJourNuit` (dessiner()
       // plus bas) — seule l'avance de l'horloge devient inconditionnelle.
+      // `D-59` : le NUMÉRO DU JOUR, qui sert de graine au tirage des objets
+      // au sol. Il ne peut se déduire de `save.monde.heure`, qui boucle : on
+      // le compte au moment où l'horloge repasse par zéro, c'est-à-dire à la
+      // fin de l'aube — le début d'une journée neuve. Une seconde horloge ?
+      // Non : un compteur de tours de CELLE-CI, dérivé d'elle, jamais avancé
+      // de son côté.
+      const heureAvant = save.monde.heure;
       save.monde.heure = avancerHeure(save.monde.heure, deltaMs);
+      if (save.monde.heure < heureAvant) {
+        save.monde.jour += 1;
+        reposerItemsSolSiJourNouveau();
+      }
       etatModifie = true;
 
       // Vol et sillage du follet (`D-36`) : dans ce bloc, donc gelés sous UI

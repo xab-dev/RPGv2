@@ -120,17 +120,35 @@ function fabriquerViaMenu(labelKey) {
   entree.action();
 }
 
-// --- Ramassage réel (SD_respawn-items-au-sol §"trou du bot") : le stock
-// initial de la scène (2 branches + 2 cailloux, cf. data/items.json) suffit
-// pile pour la hache (2 branches + 1 caillou), pas pour la pioche (1 branche
-// + 2 cailloux) — il faut un respawn entre les deux, exactement le chemin
-// que Xav a signalé cassé. ---
+// --- Ramassage réel (SD_respawn-items-au-sol §"trou du bot") --------------
+// `D-59` a changé ce que cette étape éprouve, et il faut le dire. AVANT, la
+// scène posait 2 branches + 2 cailloux : de quoi faire la hache (2 branches
+// + 1 caillou) mais pas la pioche (1 branche + 2 cailloux), et la boucle
+// passait obligatoirement par un RESPAWN — le chemin que Xav avait signalé
+// cassé. Depuis le tirage du jour, le matin pose dix branches et dix
+// cailloux, et un objet ramassé ne repousse plus dans la journée : le
+// respawn n'est plus sur le chemin critique de la boucle 5 minutes.
+//
+// Ce qui est éprouvé ici reste donc : ramasser pour de vrai, fabriquer les
+// deux outils, et vérifier que la poche compte juste. Le respawn, lui, a
+// son propre test (`test_sd_respawn-items-au-sol`), où il est vérifié sur
+// l'item qui le déclare — et où un témoin épingle que les autres ne
+// repoussent PAS.
+const stockBranches = save.monde.items_sol[scene.id].item_branche.length;
+const stockCailloux = save.monde.items_sol[scene.id].item_caillou.length;
+assert.ok(stockBranches >= 3, `le tirage du jour doit poser de quoi jouer (${stockBranches} branches)`);
+assert.ok(stockCailloux >= 3, `le tirage du jour doit poser de quoi jouer (${stockCailloux} cailloux)`);
+
 ramasserItem('item_branche');
 ramasserItem('item_branche');
 ramasserItem('item_caillou');
 ramasserItem('item_caillou');
 assert.equal(save.inventaire.items.item_branche, 2, '2 branches ramassées au sol');
 assert.equal(save.inventaire.items.item_caillou, 2, '2 cailloux ramassés au sol');
+assert.equal(
+  save.monde.items_sol[scene.id].item_branche.length, stockBranches - 2,
+  'le compte au sol baisse immédiatement',
+);
 
 // --- Atelier : hache puis pioche ---
 allerA('station_atelier');
@@ -140,28 +158,17 @@ assert.equal(save.inventaire.items.item_branche, 0, '2 branches consommées sur 
 assert.equal(save.inventaire.items.item_caillou, 1, '1 caillou consommé sur 2');
 assert.equal(save.flags.flag_premier_craft, true);
 
-// La pioche demande 1 branche + 2 cailloux : il n'y a plus de branche du
-// tout, et 1 seul caillou — la boucle 5 minutes de la spec attend ici un
-// respawn (Palier B §3.2, `respawn_ms` de l'item, ici le défaut catalogue).
-assert.equal((save.monde.items_sol[scene.id].item_branche || []).length, 0, 'plus de branche au sol juste après le ramassage initial');
-assert.equal((save.monde.items_sol[scene.id].item_caillou || []).length, 0, 'plus de caillou au sol juste après le ramassage initial');
-const respawnMsBranche = registre.obtenir('items', 'item_branche').spawn.respawn_ms || 60000;
-const respawnMsCaillou = registre.obtenir('items', 'item_caillou').spawn.respawn_ms || 60000;
-avancerTempsActif(Math.max(respawnMsBranche, respawnMsCaillou) + 1000);
-assert.equal((save.monde.items_sol[scene.id].item_branche || []).length, 2, 'les 2 branches ont respawné (SD_respawn-items-au-sol, correction appliquée)');
-assert.equal((save.monde.items_sol[scene.id].item_caillou || []).length, 2, 'les 2 cailloux ont respawné (SD_respawn-items-au-sol, correction appliquée)');
-
+// La pioche demande 1 branche + 2 cailloux : il faut retourner en ramasser.
 ramasserItem('item_branche');
 ramasserItem('item_caillou');
-ramasserItem('item_caillou');
-assert.equal(save.inventaire.items.item_branche, 1, '1 branche ramassée après respawn');
-assert.equal(save.inventaire.items.item_caillou, 3, '2 cailloux ramassés après respawn, + 1 déjà en poche');
+assert.equal(save.inventaire.items.item_branche, 1, '1 branche ramassée pour la pioche');
+assert.equal(save.inventaire.items.item_caillou, 2, '1 caillou de plus, + 1 déjà en poche');
 
 allerA('station_atelier');
 fabriquerViaMenu('recipe.pioche');
 assert.equal(save.inventaire.items.item_pioche, 1, 'pioche fabriquée');
 assert.equal(save.inventaire.items.item_branche, 0);
-assert.equal(save.inventaire.items.item_caillou, 1);
+assert.equal(save.inventaire.items.item_caillou, 0);
 
 // XP créditée par les 2 crafts (rec_hache.xp + rec_pioche.xp, cf.
 // data/recipes.json) : niveau doit avoir progressé.

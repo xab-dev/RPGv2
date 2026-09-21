@@ -187,6 +187,13 @@ export function chargerScene(registre, sceneId, overridesInteractifs = {}) {
     // déclencheurs d'entrée de zone) et structures (rendu du toit) — vides
     // pour toute scène qui n'en déclare pas (grotte inchangée).
     zones: donnees.zones || [],
+    // `D-59` : points candidats des objets au sol, POSÉS À LA MAIN dans le
+    // JSON de scène ({ itemId: [[tx, ty], ...] }) — c'est leur répartition
+    // qui fait le gradient « dense le long du chemin et autour du Jardin,
+    // clairsemé au loin », jamais une formule évaluée en jeu. Absent = la
+    // scène n'en déclare pas, et ses objets au sol tombent alors dans leurs
+    // zones comme avant (la Grotte n'en a aucun).
+    pointsRessources: donnees.points_ressources || null,
     structures: donnees.structures || [],
     cycleJourNuit: !!donnees.cycle_jour_nuit,
     // Exposé pour le calque statique de render.js (signature d'invalidation

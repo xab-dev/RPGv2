@@ -61,26 +61,36 @@ const xpStation = (id) => xpDeCatalogue(registre.obtenir('stations', id));
 // donc `res_bois`/`res_pierre` ne comptent pas : avant la première nuit, la
 // récolte, c'est le RAMASSAGE et le puits.
 //
-//   - un passage complet ramasse tout ce qui est au sol (`spawn.nb_au_sol`) ;
-//   - les objets repoussent (60 s), mais un débutant ne fait pas la navette :
-//     il découvre. On compte **2 repasses** sur le chemin et **3** sur le
-//     Jardin, qu'il traverse plus souvent (il y a le puits et l'arbre) ;
-//   - il boit **2 fois** au puits sur la journée (le cooldown en permettrait
+//   - un passage complet ramasse tout ce qui est au sol, c'est-à-dire le
+//     TIRAGE DU JOUR (`spawn.nb_au_sol`) — et il n'y en a pas d'autre :
+//     depuis `D-59`, un objet ramassé ne repousse pas dans la journée, sauf
+//     s'il déclare un `respawn_ms`. C'est ce qui rend le modèle simple et
+//     honnête : le joueur ramasse ce que le matin a posé, une fois ;
+//   - le fruit, lui, déclare sa repousse (l'arbre fruitier). On compte
+//     `PASSAGES_AU_FRUIT` cueillettes sur la journée — il repousse en 60 s,
+//     le joueur ne campe pas dessous ;
+//   - il boit `GORGEES_AU_PUITS` fois au puits (le cooldown en permettrait
 //     bien plus ; on compte ce qu'un joueur fait, pas ce qu'il pourrait).
 //
-// La Plume (T6) n'est pas comptée : elle n'existe pas encore quand ce test
-// s'écrit, et une cible d'équilibrage ne doit pas dépendre d'un objet unique.
-const REPASSES_CHEMIN = 2;
-const REPASSES_JARDIN = 3;
+// Ce modèle a CHANGÉ avec T2, et c'est la bonne raison de le dire ici : la
+// version de T1 comptait des « repasses » pour ramasser ce qui avait
+// repoussé. Le tirage à l'aube a supprimé cette repousse ; le modèle la
+// perd donc aussi, plutôt que de continuer à compter une XP qui n'existe
+// plus. Ce qui compense, c'est le nombre d'objets posés le matin.
+//
+// La Plume (T6) n'est pas comptée : une cible d'équilibrage ne doit pas
+// dépendre d'un objet unique, ramassable une seule fois dans toute la partie.
+const PASSAGES_AU_FRUIT = 4;
 const GORGEES_AU_PUITS = 2;
 
 function xpDuCircuit() {
   let total = 0;
   for (const item of registre.tous('items')) {
     if (!item.spawn) continue;
-    const auJardin = (item.spawn.zones || []).includes('jardin');
-    const passages = 1 + (auJardin ? REPASSES_JARDIN : REPASSES_CHEMIN);
-    total += xpItem(item.id) * item.spawn.nb_au_sol * passages;
+    // Un item qui déclare `respawn_ms` se cueille plusieurs fois par jour ;
+    // les autres, une seule. C'est la DONNÉE qui décide, pas ce test.
+    const cueillettes = item.spawn.respawn_ms ? PASSAGES_AU_FRUIT : 1;
+    total += xpItem(item.id) * item.spawn.nb_au_sol * cueillettes;
   }
   return total + xpStation('station_type_puits') * GORGEES_AU_PUITS;
 }

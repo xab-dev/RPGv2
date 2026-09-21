@@ -160,8 +160,16 @@ const RACINE = path.join(__dirname, '..');
   assert.deepEqual(erreursChargement, []);
   assert.deepEqual(validerCatalogues(donnees), []);
   const registre = construireRegistre(donnees);
-  const itemsAvecSpawn = registre.tous('items').filter((i) => i.spawn);
-  assert.ok(itemsAvecSpawn.length > 0, 'au moins un item catalogue avec spawn (sinon ce test ne prouve rien)');
+  // `D-59` : seuls les items qui DÉCLARENT un `respawn_ms` repoussent dans
+  // la journée — les autres sont posés par le tirage de l'aube et ne
+  // reviennent pas. Ce test porte sur la repousse : il ne garde donc que les
+  // premiers, et vérifie explicitement plus bas que les seconds ne
+  // repoussent PAS (sans ce témoin, retirer la repousse à tout le monde
+  // ferait simplement rétrécir la boucle, en silence).
+  const itemsAvecSpawn = registre.tous('items').filter((i) => i.spawn && i.spawn.respawn_ms);
+  const itemsSansRepousse = registre.tous('items').filter((i) => i.spawn && !i.spawn.respawn_ms);
+  assert.ok(itemsAvecSpawn.length > 0, 'au moins un item catalogue qui repousse (sinon ce test ne prouve rien)');
+  assert.ok(itemsSansRepousse.length > 0, 'au moins un item posé par le tirage du jour, sans repousse');
 
   for (const itemDef of itemsAvecSpawn) {
     const i18n = creerI18n(dictionnaires, 'fr');
@@ -195,7 +203,7 @@ const RACINE = path.join(__dirname, '..');
     frames.push(etat({ interact: true })); orch.maj(16);
     frames.push(etat()); orch.maj(16);
 
-    const respawnMs = itemDef.spawn.respawn_ms || 60000;
+    const respawnMs = itemDef.spawn.respawn_ms;
     const avantCount = (save.monde.items_sol[scene.id][itemDef.id] || []).length;
 
     // Pas avant l'échéance (marge de sécurité 500ms).
@@ -231,6 +239,48 @@ const RACINE = path.join(__dirname, '..');
     const atteignables = calculerTuilesAtteignables(scene, heroTx, heroTy);
     assert.ok(atteignables.has(`${tx},${ty}`), `${itemDef.id} : nouvelle position (${tx},${ty}) doit être atteignable`);
   }
+
+  // Témoin de `D-59` : un item sans `respawn_ms` ramassé ne revient pas dans
+  // la journée, et rien n'est mis en attente pour lui.
+  for (const itemDef of itemsSansRepousse) {
+    const i18n = creerI18n(dictionnaires, 'fr');
+    const store = creerStoreMemoire();
+    const save = saveNeuve();
+    save.hero.scene = 'scene_maison_exterieur';
+    save.hero.companion = 'comp_follet_eau';
+    save.hero.pv = 40;
+    save.flags = {
+      flag_follet_choisi: true, flag_grotte_sortie: true, flag_grotte_sequence: true,
+      flag_grotte_monstre_tue: true, flag_levier_salle1: true, flag_premier_ramassage: true,
+    };
+    const menu = { estOuvert: () => false, traiterInput: () => {}, ouvrir: () => {}, ouvrirCraft: () => {}, rafraichirCraft: () => {}, ouvrirCoffre: () => {}, rafraichirCoffre: () => {}, rafraichirStats: () => {} };
+    const dialogue = creerDialogue();
+    const frames = [];
+    const input = { maj: () => frames[frames.length - 1] };
+    const orch = creerOrchestrateurGrotte({ registre, i18n, save, store, dialogue, menu, input, ctxLogique: null, ctxVisible: null, canvasLogique: null });
+    const scene = orch.obtenirScene();
+    const hero = orch.obtenirHero();
+    const etat = () => ({ move: { x: 0, y: 0 }, attack: { pressed: false, held: false }, skill_1: { pressed: false, held: false }, skill_2: { pressed: false, held: false }, skill_3: { pressed: false, held: false }, consume: { pressed: false, held: false }, interact: { pressed: false, held: false }, menu: { pressed: false, held: false }, target_next: { pressed: false, held: false } });
+
+    const positions = save.monde.items_sol[scene.id][itemDef.id];
+    assert.ok(positions && positions.length > 0, `${itemDef.id} : le tirage du jour doit en poser`);
+    hero.x = positions[0].x; hero.y = positions[0].y;
+    frames.push({ ...etat(), interact: { pressed: true, held: true } }); orch.maj(16);
+    const apresRamassage = (save.monde.items_sol[scene.id][itemDef.id] || []).length;
+    assert.equal(apresRamassage, positions.length - 1, `${itemDef.id} : le ramassage doit retirer l'exemplaire`);
+
+    // Deux minutes de temps actif : bien au-delà de l'ancien défaut de 60 s.
+    for (let t = 0; t < 120000; t += 16) { frames.push(etat()); orch.maj(16); }
+    assert.equal(
+      (save.monde.items_sol[scene.id][itemDef.id] || []).length, apresRamassage,
+      `${itemDef.id} : sans respawn_ms, il ne doit PAS revenir dans la journée`,
+    );
+    assert.ok(
+      !(save.monde.respawns_en_attente[scene.id] || {})[itemDef.id],
+      `${itemDef.id} : aucun délai de repousse ne doit être mis en attente`,
+    );
+  }
+  console.log('OK sans respawn_ms, un objet ramassé ne revient pas dans la journée');
 }
 
 console.log('OK test_sd_respawn-items-au-sol');

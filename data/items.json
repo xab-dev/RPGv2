@@ -6,7 +6,7 @@
     "categorie": "ressource",
     "stack_max": 20,
     "render": { "visuel": "visuel_branche" },
-    "spawn": { "nb_au_sol": 2, "zones": ["foret", "campagne"], "zones_exclues": ["maison", "jardin"] }
+    "spawn": { "nb_au_sol": 10, "zones": ["foret", "campagne"], "zones_exclues": ["maison", "jardin"] }
   },
   {
     "id": "item_caillou",
@@ -15,11 +15,11 @@
     "categorie": "ressource",
     "stack_max": 20,
     "render": { "visuel": "visuel_caillou" },
-    "spawn": { "nb_au_sol": 2, "zones": ["foret", "campagne"], "zones_exclues": ["maison", "jardin"] }
+    "spawn": { "nb_au_sol": 10, "zones": ["foret", "campagne"], "zones_exclues": ["maison", "jardin"] }
   },
   {
     "id": "item_fruit",
-    "xp": 2,
+    "xp": 1,
     "label_key": "item.fruit",
     "categorie": "nourriture",
     "stack_max": 10,

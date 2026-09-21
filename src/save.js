@@ -3,7 +3,7 @@
 // valeur) } — IndexedDB en jeu (src/storage_indexeddb.js), un store en
 // mémoire dans les tests (creerStoreMemoire ci-dessous).
 
-export const VERSION_SCHEMA_COURANTE = 5;
+export const VERSION_SCHEMA_COURANTE = 6;
 const CLE_ACTUELLE = 'save_current';
 const CLE_SUIVANTE = 'save_next';
 
@@ -81,7 +81,10 @@ export function saveNeuve() {
     // réapparition en cours par scène, Palier B §3.2) et heure (cycle
     // jour/nuit ET horloge "temps actif" partagée par cooldowns/survie,
     // §3.5/§6).
-    monde: { items_sol: {}, respawns_en_attente: {}, heure: 0 },
+    // `jour` (`D-59`) : numéro du jour de jeu, compté au moment où l'horloge
+    // du cycle repasse par zéro. C'est la GRAINE du tirage des objets au sol,
+    // et `jour_items_sol` retient le jour du dernier repos PAR SCÈNE.
+    monde: { items_sol: {}, respawns_en_attente: {}, heure: 0, jour: 0, jour_items_sol: {} },
     puzzles: {},
     flags: {},
     settings: { lang: 'fr', musique: true },
@@ -209,10 +212,39 @@ function migrer_4_vers_5(payload) {
   };
 }
 
+// Migration 5 -> 6 (`D-59`, file Nv.0 → Nv.10, T2) : ajoute le numéro du jour
+// et le jour du dernier repos par scène, et **vide les objets au sol**.
+//
+// Vider est le point de la migration, pas un effet de bord. Les positions
+// persistées d'une v5 viennent de l'ancien tirage LIBRE dans les zones : si
+// on les gardait, elles resteraient à leur place d'origine jusqu'à la
+// première aube jouée, et un joueur qui reprend sa partie en pleine nuit ne
+// verrait rien du nouveau semis. Les respawns en attente partent avec elles,
+// pour la même raison — un délai qui court pointe vers l'ancien monde.
+//
+// C'est la classe de bug que le projet connaît déjà (`CLAUDE.md` : « un
+// renommage/retrait de contenu de catalogue n'est jamais couvert par la
+// migration de schéma ») prise dans l'autre sens : ici la DONNÉE reste
+// valide, c'est sa provenance qui est périmée.
+function migrer_5_vers_6(payload) {
+  return {
+    ...payload,
+    schema_version: 6,
+    monde: {
+      ...payload.monde,
+      items_sol: {},
+      respawns_en_attente: {},
+      jour: 0,
+      jour_items_sol: {},
+    },
+  };
+}
+
 // Chaîne de migrations, une fonction par palier. Un paramètre permet aux
 // tests d'injecter une chaîne fictive sans toucher à la table de production.
 const MIGRATIONS_PRODUCTION = {
   1: migrer_1_vers_2, 2: migrer_2_vers_3, 3: migrer_3_vers_4, 4: migrer_4_vers_5,
+  5: migrer_5_vers_6,
 };
 
 export function migrer(payload, versionCible = VERSION_SCHEMA_COURANTE, migrations = MIGRATIONS_PRODUCTION) {

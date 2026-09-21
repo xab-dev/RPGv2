@@ -61,6 +61,52 @@ function avancerVers(orchestrateur, frames, cible, { seuil = 4, maxFrames = 1500
   return false;
 }
 
+// `avancerVers` s'arrête dès qu'un dialogue s'ouvre, et rend `true` : la
+// convention est bonne (c'est à l'appelant de décider quoi en faire), mais
+// elle suppose que l'appelant ATTENDAIT ce dialogue. Depuis `D-59`, les
+// trajets se sont allongés — dix branches éparpillées au lieu de deux près
+// du chemin — assez pour que la survie passe sous son seuil EN CHEMIN et
+// ouvre `dlg_premiere_faim` n'importe où. Un bot qui ne le ferme pas reste
+// planté là, et rend `true` en croyant être arrivé.
+//
+// Ce marcheur-ci fait donc ce qu'un joueur ferait : il ferme ce qui s'ouvre
+// et reprend sa route. Il ne rend `true` que s'il est VRAIMENT à portée.
+//
+// Il se DÉCOINCE aussi. Le marcheur en ligne droite se bloque dès que
+// l'obstacle est exactement dans l'axe : une poussée plein nord contre un
+// arbre ne glisse pas, faute de composante latérale. Après le ramassage près
+// du rocher, le héros se retrouve justement dans une poche de ce genre —
+// arbres au nord, rocher au sud. Un pas de côté de quelques dizaines de
+// frames suffit à retrouver une diagonale, et le glissement de `scene.js`
+// fait le reste.
+function marcherJusqua(orchestrateur, frames, cible, options = {}) {
+  const { seuil = 4 } = options;
+  let precedente = null;
+  for (let essai = 0; essai < 6; essai += 1) {
+    avancerVers(orchestrateur, frames, cible, options);
+    const hero = orchestrateur.obtenirHero();
+    if (Math.hypot(cible.x - hero.x, cible.y - hero.y) < seuil) return true;
+    if (orchestrateur.dialogueOuvert()) {
+      fermerDialogue(orchestrateur, frames);
+      continue;
+    }
+    const bloque = precedente && Math.hypot(hero.x - precedente.x, hero.y - precedente.y) < 2;
+    precedente = { x: hero.x, y: hero.y };
+    if (!bloque && essai > 0) return false; // il avance, mais pas jusqu'au bout : ce n'est pas un blocage
+    // Pas de côté, perpendiculaire à la direction voulue, alterné à chaque
+    // essai pour tenter les deux bords de l'obstacle.
+    const dx = cible.x - hero.x;
+    const dy = cible.y - hero.y;
+    const norme = Math.hypot(dx, dy) || 1;
+    const signe = essai % 2 === 0 ? 1 : -1;
+    for (let i = 0; i < 40; i += 1) {
+      frames.push(etat({ moveX: (-dy / norme) * signe, moveY: (dx / norme) * signe }));
+      orchestrateur.maj(16);
+    }
+  }
+  return false;
+}
+
 function fermerDialogue(orchestrateur, frames) {
   let garde = 0;
   while (orchestrateur.dialogueOuvert() && garde++ < 30) {
@@ -193,46 +239,89 @@ const DISTANCE_INTERACT_PX = 28; // même seuil que main.js — dupliqué ici, n
   fermerDialogue(orchestrateur, frames);
 }
 
-// --- Ramassage d'une branche (§3.3) : cible la plus proche du chemin parmi
-// les 2 exemplaires, pour rester dans le corridor testable ci-dessus. ---
+// --- Ramassage d'une branche (§3.3) ---------------------------------------
+// `D-59` a changé le décor de cette étape : le tirage du jour pose désormais
+// DIX branches réparties sur toute la carte selon la liste de points
+// candidats, au lieu de deux tombées près du chemin. On garde l'intention
+// d'origine — rester dans le CORRIDOR testable, c'est-à-dire la bande du
+// chemin, à l'OUEST de la maison : ce que cette étape prouve, c'est qu'un
+// ramassage réel marche sur la carte réelle, pas que le marcheur en ligne
+// droite de ce bot sache traverser une forêt.
+//
+// Les branches hors corridor ne sont pas « injouables » pour autant : le
+// test `D-59` vérifie par un BFS que chaque point candidat est atteignable.
+// C'est le bot, pas la carte, qui a besoin d'un couloir.
 {
   const itemsSolAvant = save.monde.items_sol['scene_maison_exterieur'];
   const branches = itemsSolAvant.item_branche;
-  const branche = branches.reduce((a, b) => (Math.abs(a.y - px(0, 57).y) < Math.abs(b.y - px(0, 57).y) ? a : b));
-  const txCible = Math.floor(branche.x / TILE);
-  const tyCible = Math.floor(branche.y / TILE);
-  const tyPath = tyCible <= 57 ? 56 : 58; // rejoint le chemin par le côté le plus proche
-  const txApproche = trouverColonneApproche(scene, txCible, tyPath, tyCible);
-  // Repasse d'abord par la ligne 57 (coeur du chemin, garanti dégagé sur
-  // toute la largeur x=4..168) avant de filer horizontalement vers la
-  // colonne d'approche — évite de couper en diagonale à travers la forêt
-  // encore proche (arbre/rocher) sur le trajet vers la branche, lointaine.
-  const heroCourant = orchestrateur.obtenirHero();
-  avancerVers(orchestrateur, frames, px(Math.floor(heroCourant.x / TILE), 57), { maxFrames: 300 });
-  avancerVers(orchestrateur, frames, px(txApproche, 57), { maxFrames: 4000 });
-  avancerVers(orchestrateur, frames, branche, { seuil: 20, maxFrames: 900 });
+  const heroAvant = orchestrateur.obtenirHero();
+  const dansLeCorridor = (p) => {
+    const tx = Math.floor(p.x / TILE);
+    const ty = Math.floor(p.y / TILE);
+    return tx < 70 && Math.abs(ty - 57) <= 8;
+  };
+  const candidates = branches.filter(dansLeCorridor)
+    .sort((a, b) => (
+      Math.hypot(a.x - heroAvant.x, a.y - heroAvant.y) - Math.hypot(b.x - heroAvant.x, b.y - heroAvant.y)
+    ));
+  etape('Le tirage du jour pose au moins une branche dans le corridor du chemin', candidates.length > 0);
+
+  let branche = null;
+  for (const candidate of candidates) {
+    const txCible = Math.floor(candidate.x / TILE);
+    const tyCible = Math.floor(candidate.y / TILE);
+    const tyPath = tyCible <= 57 ? 56 : 58; // rejoint le chemin par le côté le plus proche
+    const txApproche = trouverColonneApproche(scene, txCible, tyPath, tyCible);
+    // Repasse d'abord par la ligne 57 (coeur du chemin, garanti dégagé sur
+    // toute la largeur x=4..168) avant de filer horizontalement vers la
+    // colonne d'approche — évite de couper en diagonale à travers la forêt.
+    const heroCourant = orchestrateur.obtenirHero();
+    marcherJusqua(orchestrateur, frames, px(Math.floor(heroCourant.x / TILE), 57), { maxFrames: 900 });
+    marcherJusqua(orchestrateur, frames, px(txApproche, 57), { maxFrames: 3000 });
+    if (marcherJusqua(orchestrateur, frames, candidate, { seuil: 20, maxFrames: 1200 })) {
+      branche = candidate;
+      break;
+    }
+  }
+  etape('Le bot atteint une branche du tirage du jour', branche !== null);
+
   frames.push(etat({ interact: true })); orchestrateur.maj(16);
   etape('Branche ramassée (poche)', save.inventaire.items.item_branche === 1, JSON.stringify(save.inventaire.items));
   etape('flag_premier_ramassage posé', save.flags.flag_premier_ramassage === true);
   etape('Dialogue de premier ramassage ouvert', orchestrateur.dialogueOuvert());
   fermerDialogue(orchestrateur, frames);
-  // Palier B (§3.2) : le compte baisse immédiatement, la régénération est
-  // désormais différée de respawn_ms (jamais plus un tirage immédiat).
+  // Palier B (§3.2) : le compte baisse immédiatement. `D-59` : il ne remonte
+  // plus dans la journée — la branche ne déclare pas de `respawn_ms`.
   const itemsSolApres = save.monde.items_sol['scene_maison_exterieur'];
-  etape('Le compte au sol baisse immédiatement (régénération différée)', itemsSolApres.item_branche.length === branches.length - 1);
+  etape('Le compte au sol baisse immédiatement', itemsSolApres.item_branche.length === branches.length - 1);
 }
 
 // --- Entrée dans la maison (via le chemin, qui traverse la porte ouest) ---
 {
-  const arrivePorte = avancerVers(orchestrateur, frames, px(80, 57), { maxFrames: 3000 });
+  // `D-59` : le détour par une branche a pu emmener le héros à l'autre bout
+  // de la carte — on repasse d'abord par le chemin, puis on marche vers la
+  // porte, avec une marge de frames à la mesure des 170 tuiles de largeur.
+  const heroCourant = orchestrateur.obtenirHero();
+  avancerVers(orchestrateur, frames, px(Math.floor(heroCourant.x / TILE), 57), { maxFrames: 1200 });
+  const arrivePorte = marcherJusqua(orchestrateur, frames, px(80, 57), { maxFrames: 8000 });
   etape('Marche jusqu\'à l\'intérieur de la maison', arrivePorte);
   etape('flag_maison_decouverte posé en entrant', save.flags.flag_maison_decouverte === true);
 }
 
 // --- Sortie côté jardin (porte est) puis zone "jardin" ---
 {
-  const arriveJardin = avancerVers(orchestrateur, frames, px(100, 57), { maxFrames: 3000 });
-  etape('Marche jusqu\'au jardin', arriveJardin);
+  const arriveJardin = marcherJusqua(orchestrateur, frames, px(100, 57), { maxFrames: 4000 });
+  etape("Marche jusqu'au jardin", arriveJardin);
+  // Le trajet est devenu assez long (`D-59` : dix branches éparpillées, donc
+  // un détour possible d'un bout à l'autre de la carte) pour que la survie
+  // passe sous son seuil en chemin et ouvre `dlg_premiere_faim`. Un dialogue
+  // ouvert gèle le gameplay — donc aussi la découverte de zone, par LE point
+  // de décision unique. C'est le comportement voulu ; le bot fait ce qu'un
+  // joueur ferait : il ferme, puis avance d'une frame.
+  if (orchestrateur.dialogueOuvert()) {
+    fermerDialogue(orchestrateur, frames);
+    frames.push(etat()); orchestrateur.maj(16);
+  }
   etape('flag_jardin_decouvert posé en entrant', save.flags.flag_jardin_decouvert === true);
 }
 
@@ -246,7 +335,7 @@ const DISTANCE_INTERACT_PX = 28; // même seuil que main.js — dupliqué ici, n
 // à cette distance. Boire remplit la soif silencieusement (aucun dialogue) ;
 // un second INTERACT immédiat, en cooldown, ouvre dlg_puits_cooldown.
 {
-  const arrivePuits = avancerVers(orchestrateur, frames, px(106, 57), { seuil: 36, maxFrames: 900 });
+  const arrivePuits = marcherJusqua(orchestrateur, frames, px(106, 57), { seuil: 36, maxFrames: 900 });
   etape('Marche vers le puits (jusqu\'à son empreinte solide)', arrivePuits);
   frames.push(etat({ interact: true })); orchestrateur.maj(16);
   // Tolérance : la même frame fait aussi avancer la décroissance de survie
@@ -265,7 +354,7 @@ const DISTANCE_INTERACT_PX = 28; // même seuil que main.js — dupliqué ici, n
 {
   const itemsSolAvant = save.monde.items_sol['scene_maison_exterieur'];
   const fruitAvant = itemsSolAvant.item_fruit[0];
-  const arriveFruit = avancerVers(orchestrateur, frames, fruitAvant, { maxFrames: 1500 });
+  const arriveFruit = marcherJusqua(orchestrateur, frames, fruitAvant, { maxFrames: 4000 });
   etape('Marche vers le fruit', arriveFruit);
   frames.push(etat({ interact: true })); orchestrateur.maj(16);
   etape('Fruit ramassé (poche)', save.inventaire.items.item_fruit === 1, JSON.stringify(save.inventaire.items));

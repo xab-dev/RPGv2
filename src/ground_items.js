@@ -142,6 +142,34 @@ export function planifierRespawn(enAttente, itemId, respawnMs) {
 // par l'appelant pour rester unique dans toute la session) et l'ajoute à
 // itemsSol. Zones saturées au moment précis de l'échéance (rare, carte
 // pleine) : le délai est réessayé à la frame suivante plutôt que perdu.
+// Position d'une repousse en cours de journée. Deux chemins, et le premier
+// gagne : la LISTE de points de la scène si elle existe (on reprend un point
+// non occupé, dans l'ordre du tirage du jour), sinon l'ancien tirage libre
+// dans les zones — qui reste le comportement de toute scène sans liste.
+function positionDeRepousse(scene, item, dejaOccupees, graine, tuilesAtteignables) {
+  const liste = (scene.pointsRessources || {})[item.id];
+  if (liste && liste.length > 0) {
+    const alea = mulberry32((scene.seed ^ graine) >>> 0);
+    const depart = Math.floor(alea() * liste.length);
+    for (let k = 0; k < liste.length; k += 1) {
+      const [tx, ty] = liste[(depart + k) % liste.length];
+      const tuile = scene.tuileA(tx, ty);
+      if (!tuile || tuile.solid) continue;
+      if (tuilesAtteignables && !tuilesAtteignables.has(`${tx},${ty}`)) continue;
+      const occupee = dejaOccupees.some(
+        (p) => Math.floor(p.x / scene.tileSize) === tx && Math.floor(p.y / scene.tileSize) === ty
+      );
+      if (occupee) continue;
+      return { x: (tx + 0.5) * scene.tileSize, y: (ty + 0.5) * scene.tileSize };
+    }
+    return null; // liste saturée : l'appelant reporte, jamais de repli hors liste
+  }
+  return tirerPositionLibre(
+    scene, zonesDuType(scene, item.spawn.zones), zonesDuType(scene, item.spawn.zones_exclues),
+    dejaOccupees, graine, tuilesAtteignables,
+  );
+}
+
 export function tickRespawns(scene, items, itemsSol, enAttente, deltaMs, compteurDepart, tuilesAtteignables = null) {
   let compteur = compteurDepart;
   const itemsSolSuivant = { ...itemsSol };
@@ -155,10 +183,12 @@ export function tickRespawns(scene, items, itemsSol, enAttente, deltaMs, compteu
         continue;
       }
       const item = items.find((i) => i.id === itemId);
-      const zonesAutorisees = zonesDuType(scene, item.spawn.zones);
-      const zonesExclues = zonesDuType(scene, item.spawn.zones_exclues);
       compteur += 1;
-      const position = tirerPositionLibre(scene, zonesAutorisees, zonesExclues, itemsSolSuivant[itemId] || [], compteur, tuilesAtteignables);
+      // `D-59` : si la scène déclare des points candidats pour cet item, la
+      // repousse s'y tient elle aussi — sinon le fruit reviendrait dans un
+      // coin de Jardin qu'aucune main n'a choisi, et la liste ne dirait plus
+      // la vérité sur où les choses se trouvent.
+      const position = positionDeRepousse(scene, item, itemsSolSuivant[itemId] || [], compteur, tuilesAtteignables);
       if (position) {
         itemsSolSuivant[itemId] = [...(itemsSolSuivant[itemId] || []), position];
       } else {
@@ -169,4 +199,82 @@ export function tickRespawns(scene, items, itemsSol, enAttente, deltaMs, compteu
     if (restants.length > 0) enAttenteSuivant[itemId] = restants;
   }
   return { itemsSol: itemsSolSuivant, enAttente: enAttenteSuivant, compteur };
+}
+
+// --- Tirage du jour (`D-59`, file Nv.0 → Nv.10, T2) ----------------------
+// Décision de Xav (21/09, `Q-33`) : les objets au sol ne tombent plus
+// n'importe où dans leur zone. Chaque scène porte, POUR CHAQUE ITEM, une
+// liste de points candidats posés à la main (~3 fois le nombre d'objets
+// présents) ; à chaque aube, on en retient `nb_au_sol`, tirés avec le
+// NUMÉRO DU JOUR pour graine.
+//
+// Pourquoi une liste plutôt qu'un tirage libre dans la zone : le gradient.
+// « Dense le long du chemin et autour du Jardin, clairsemé au loin » n'est
+// pas une règle qu'on évalue en jeu, c'est une propriété de l'endroit où les
+// points ont été posés — donc une donnée que Xav peut corriger point par
+// point, sans toucher à une formule.
+//
+// Pourquoi le numéro du jour : « semi-aléatoire » veut dire que le joueur ne
+// sait pas où chercher aujourd'hui, PAS que le monde est imprévisible. Deux
+// parties au même jour posent les mêmes objets aux mêmes endroits ; c'est ce
+// qui rend le tirage testable et une sauvegarde rejouable.
+
+// Mêle l'id de l'item à la graine : sans lui, deux items qui partagent une
+// liste tireraient les mêmes indices, et se retrouveraient chaque jour
+// exactement au même endroit.
+function grainePourItem(sceneSeed, jour, itemId) {
+  let hachage = 0;
+  for (let i = 0; i < itemId.length; i += 1) hachage = (hachage * 31 + itemId.charCodeAt(i)) >>> 0;
+  return (sceneSeed ^ (jour * 2654435761) ^ hachage) >>> 0;
+}
+
+// `nb` points distincts pris dans `points`, mélange de Fisher-Yates à graine
+// fixe. On mélange plutôt que de tirer `nb` fois au hasard : tirer avec
+// remise poserait deux objets sur la même tuile, et retirer les doublons
+// après coup biaiserait le tirage sans que personne le voie.
+export function tirerPointsDuJour(scene, itemId, nb, jour) {
+  const liste = (scene.pointsRessources || {})[itemId];
+  if (!liste || liste.length === 0) return null;
+  const alea = mulberry32(grainePourItem(scene.seed, jour, itemId));
+  const melange = [...liste];
+  for (let i = melange.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(alea() * (i + 1));
+    [melange[i], melange[j]] = [melange[j], melange[i]];
+  }
+  const retenus = [];
+  for (const [tx, ty] of melange) {
+    if (retenus.length >= nb) break;
+    // Un point candidat écrit à la main peut être devenu solide (une station
+    // déplacée, un arbre de la forêt procédurale si la graine change) : on
+    // le saute, on n'échoue pas. La liste est plus longue que le besoin
+    // exactement pour ça.
+    const tuile = scene.tuileA(tx, ty);
+    if (!tuile || tuile.solid) continue;
+    retenus.push({ x: (tx + 0.5) * scene.tileSize, y: (ty + 0.5) * scene.tileSize });
+  }
+  return retenus;
+}
+
+// Repose TOUS les objets au sol de la scène selon le tirage du jour. Appelé
+// à chaque aube, et à l'entrée en scène si le jour a changé depuis la
+// dernière visite.
+//
+// Le repos est SEC : ce qui traînait au sol disparaît, et les respawns en
+// attente sont vidés par l'appelant. C'est voulu — un objet ramassé hier ne
+// doit pas revenir au même endroit qu'hier, sinon le tirage du jour ne se
+// verrait qu'au premier matin d'une partie.
+//
+// Un item dont la scène ne déclare AUCUN point garde son comportement
+// d'avant (tirage libre dans ses zones, `remplirItemsSol`) : rien ne casse
+// pour une scène qui n'a pas de liste.
+export function reposerItemsDuJour(scene, items, jour) {
+  const resultat = {};
+  for (const item of items) {
+    if (!item.spawn) continue;
+    if (zonesDuType(scene, item.spawn.zones).length === 0) continue;
+    const points = tirerPointsDuJour(scene, item.id, item.spawn.nb_au_sol, jour);
+    if (points === null) continue; // pas de liste : laissé à remplirItemsSol
+    resultat[item.id] = points;
+  }
+  return resultat;
 }

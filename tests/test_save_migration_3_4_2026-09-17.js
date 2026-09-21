@@ -59,7 +59,7 @@ function payloadV3() {
 // valide telle quelle en appelant migrer(..., 4) explicitement partout
 // ci-dessus.
 {
-  assert.equal(VERSION_SCHEMA_COURANTE, 5);
+  assert.equal(VERSION_SCHEMA_COURANTE, 6);
 }
 
 // 3. Cycle complet écrire/relire d'une v3 migrée automatiquement au

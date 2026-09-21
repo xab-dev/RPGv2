@@ -46,7 +46,7 @@ function payloadV4() {
 
 // 2. La version courante du module est bien 5.
 {
-  assert.equal(VERSION_SCHEMA_COURANTE, 5);
+  assert.equal(VERSION_SCHEMA_COURANTE, 6);
 }
 
 // 3. Cycle complet écrire/relire d'une v4 migrée automatiquement au chargement.

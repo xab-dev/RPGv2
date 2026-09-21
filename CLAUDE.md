@@ -307,6 +307,10 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 | **Le puits est refait, et son empreinte solide n'a rien gagné** : elle est strictement **incluse** dans celle d'avant (le toit, plus bas, libère une rangée de tuiles). Un ticket de silhouette qui craint pour la collision n'a donc pas à mesurer le chemin et la zone du fruit : il lui suffit de prouver l'**inclusion**. Poser une `empreinte` sur la seule base reste `[OUVERT]` — cela change où le héros peut se tenir, donc c'est une décision de jeu | 2026-09-21 | `D-16` |
 | **« Pas compris » n'est pas un verdict de tournée, c'est un défaut de la checklist** : quand une ligne `V-` ne se comprend pas manette en main, c'est la ligne qu'on réécrit, jamais au lecteur de deviner. Né de `V-40` le 21/09 | 2026-09-21 | `docs/CHECKLIST_tournee.md` v1.1.0 |
 
+| **Redessiner une station, c'est déplacer un mur** : son empreinte solide **est** la boîte englobante de ses primitives de dessin (`structures.js#empreinteParDefaut`). Une refonte purement graphique se fait donc **dans** l'enveloppe mesurée avant le ticket, et l'inclusion se **prouve par test** aux trois échelles — jamais « à peu près la même taille ». Corollaire de conception, né des trois stations : le « même standing » que le puits se joue sur la **facture** (volume de trois quarts, échelle de valeurs, ombre posée sur le contact, **un** accent de couleur qui dit ce que l'objet est), pas sur la présence — leur donner sa hauteur est une décision de jeu (`Q-47`), pas de dessin | 2026-09-21 | `D-78`, `D-79`, `D-80`, journal de session ci-dessous |
+| **Le trois quarts ne demande aucune forme nouvelle** : un **polygone** trapézoïdal pour une face supérieure, l'**ordre de dessin** pour n'exposer que l'arc haut d'une ellipse (le couvercle du Coffre est une ellipse entière, dont le corps recouvre la moitié basse), et une **paire de pièces décalées** — arrière plus courte et plus sombre, avant plus longue et plus claire — pour des pieds. `visuels.json` avait déjà tout ce qu'il fallait | 2026-09-21 | même journal |
+| **Le banc visuel ne peut pas dire si une silhouette se détache du décor.** Il la juge sur un fond neutre *choisi* ; la scène la pose sur la terre de la Maison. L'établi de l'Atelier a passé **trois itérations** au banc avant de se révéler **noyé dans le sol** à la première capture de jeu. Une silhouette de monde se clôt donc par une capture **en scène** (`tools/scenarios/stations_maison.mjs` : un poste d'observation par station, calculé depuis les vrais catalogues, jamais une position recopiée) — le banc reste l'outil d'itération, pas celui du verdict | 2026-09-21 | même journal |
+
 (Les décisions de `05_construction-stations.md` étaient déjà actées par Xav **dans la spec elle-même** avant tout code, v1.0.0 §9 — les lignes ci-dessus n'y renvoient que pour mémoire, elles ne tranchent rien de nouveau.)
 
 ## Ce qui est dû : dettes, questions, validations
@@ -368,34 +372,29 @@ Les captures de la V1 (`docs/captures/v1/`) sont une **inspiration, jamais un ca
 
 `Q-10`, `Q-11`, `Q-12`, `Q-24` et `Q-25` restent à trancher avec Xav ; `Q-07` est gelée. La spec de la barre d'action du bas (`E-01`) est écrite par Xav lui-même et attend le chiffrage `Q-11`. **Une spec non écrite ne se commence pas** (même règle que pour une phase).
 
-## Journal de session — polish en direct (21/09, après la file « Nv.0 → Nv.10 »)
+## Journal de session — refonte graphique des stations (21/09)
 
-Session **en direct** : Xav joue, énonce une consigne, la modif est faite, il rejoue. Règle posée
-par lui à l'ouverture : **une consigne = une modif**, on ne touche qu'à l'item ou à la scène
-nommés. Branche `main`, aucun `push`. Fichier de bord :
-`docs/JOURNAL_2026-09-21_polish-live.md` — une ligne par consigne, écrite au moment de la modif.
+Session **autonome**, branche `main`, **un commit par station**. Consigne de Xav : « toutes les
+stations doivent avoir le même standing [que le puits] et une identité visuelle propre. On **ne
+touche pas aux fonctionnalités**, ni au code déjà en place : c'est une refonte **graphique
+uniquement** ». Fichier de bord : `docs/JOURNAL_2026-09-21_refonte-stations.md`.
 
-Livré : `D-73` (le « +1 » ne chevauche plus le « +1xp »), `D-74` (le clignement de mort rejoue
-celui de l'intro — *révise* `D-65`), `D-75` (le consommable équipé dans la barre du bas), `D-76`
-(la plume redessinée, deux passes), `D-77` (le carré du follet jaune tient dans sa bulle) et
-`D-16` (le puits repris en cylindre vu de trois quarts, trois passes). Ouvert au passage :
-`Q-46` (ce qui reste à trancher sur la mort — le clignement ne gèle rien, le rythme, et le levier
-de la salle 1 qui ne se rejoue pas). Outil né de la session : `tools/banc_visuel.html`.
+Livré, **en données seules** (aucune ligne de code touchée) : `D-78` la **Cuisine** (table de
+trois quarts, marmite au bouillon orange, planche à découper), `D-79` le **Coffre** (couvercle
+bombé obtenu par l'**ordre de dessin**, joint sombre, ferrures, serrure dorée), `D-80`
+l'**Atelier** (un établi : panneau d'outils, étau, planche en travail — le gris pur `#5a5a5a`
+disparaît), puis une passe de contraste sur ce dernier. Nouveaux outils : le scénario de capture
+`tools/scenarios/stations_maison.mjs` et son album `docs/captures/stations-2026-09-21/`.
 
-**Session close le 21/09**, poussée sur `main` à la demande de Xav, donc **en ligne**. Xav a suivi
-la session **au fil de l'eau**, Chrome ouvert à côté du terminal : `V-11` et `V-47` à `V-50` sont
-donc **closes sur sa parole**, en même temps que les six lignes `D-`. `V-43` l'est aussi : il est
-allé mourir **deux fois** (de nuit au nord-est sur une partie en cours, puis sauvegarde neuve en
-Grotte salle 2), « all good » aux deux. **La session ne laisse aucune validation due** ; seule
-`Q-46` attend, et c'est une décision, pas un correctif.
+**La contrainte qui commande toute la refonte** : l'empreinte solide d'une station **est** la
+boîte englobante de ses primitives de dessin (`structures.js#empreinteParDefaut`), donc
+redessiner une station, c'est déplacer un mur. Chaque silhouette est refaite **dans** l'enveloppe
+mesurée avant le ticket, et l'inclusion est **prouvée par test** aux trois échelles
+(`tests/test_d78_stations_silhouettes_2026-09-21.js`).
 
-## Journal de session précédent — file de micro-tickets « Nv.0 → Nv.10 » (21/09)
-
-File longue autonome, branche `main`, **un commit par ticket**, chacun retirable seul. Brief :
-`docs/BRIEF_file-nv0-10_2026-09-20.md` v1.2.0. **L'état de la file vit sur le disque** :
-`docs/JOURNAL_2026-09-21_file-nv0-10.md`, une ligne écrite au moment de chaque commit — c'est ce
-fichier de bord qui sera archivé, pas la mémoire de la session.
-
-Ménage d'entrée fait : le journal de `D-54` est archivé
-(`docs/archives/JOURNAL_2026-09-20_follet-cible-suivante.md`, ligne d'INDEX ajoutée), `D-54` et
-`D-43` sont clos, et les treize lignes `D-` déjà closes sont descendues en §8 du suivi.
+Ouvertes sans y toucher : **`Q-47`** (les trois stations font 12 unités de haut contre 29,5 au
+puits — leur donner sa présence demande d'agrandir leur empreinte, c'est une **décision de jeu**)
+et **`D-81`** (un `cercle` a une hauteur **nulle** dans `boitePrimitive`, aujourd'hui sans
+conséquence parce que les deux cercles de stations déclarent un `h`). Verdict en jeu dû :
+**`V-51`**. Hors scope, annoncé par Xav : de nouvelles stations (scierie, ferronnerie,
+feu de camp…).

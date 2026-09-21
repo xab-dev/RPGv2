@@ -120,6 +120,8 @@ donc **en ligne**, à sa demande explicite.
 
 - **Rien**, côté livraison : les six consignes sont validées par Xav en direct (`V-47` à `V-50`
   et `V-11` closes sur sa parole, `D-73` à `D-77` et `D-16` closes).
-- **Sauf `V-43`**, qui demande de **mourir** : elle ne se voit pas en regardant l'écran, il faut
-  se faire tuer. Elle reste `pas vu`, et `pas vu` ne se clôt jamais par le silence.
+- **`V-43` aussi est close** : Xav est allé mourir, par **deux chemins** — partie chargée de nuit,
+  zone nord-est, tué par un rôdeur ; puis sauvegarde réinitialisée, Grotte salle 2, tué par le
+  rampant. « All good » aux deux. La seconde est celle qui compte le plus : c'est le **premier**
+  retour de mort d'une partie neuve, quand le joueur vient de voir l'intro et peut comparer.
 - `Q-46` attend une décision, pas un correctif.

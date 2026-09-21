@@ -43,7 +43,7 @@ le rendu. Celle-ci est la liste de ce qu'on **joue**.
 | V-41 | Barre du bas : une seule case, puis le consommable | `ok` |
 | V-40 | Atelier + Cuisine : **rien n'a bougé** (3 recettes, comme avant) | `pas vu` |
 | V-42 | Paramètres › Volume : cycle, s'entend, se retient | `ok` |
-| V-43 | Mourir : les yeux se rouvrent comme à l'intro (corrigé, à rejouer) | `pas vu` |
+| V-43 | Mourir : les yeux se rouvrent comme à l'intro (corrigé, à rejouer) | `ok` (21/09, en direct, deux chemins) |
 | V-44 | Nv. 10 : l'épée apparaît à l'Atelier, se craft, s'équipe | `pas vu` |
 | V-27 | Menu et Sauvegarde : manette, souris, doigt, deux tailles | `ok` |
 | V-49 | La plume : au sol à la sortie de la Grotte, puis en Poche | `ok` (21/09, en direct) |

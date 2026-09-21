@@ -384,9 +384,10 @@ de la salle 1 qui ne se rejoue pas). Outil né de la session : `tools/banc_visue
 
 **Session close le 21/09**, poussée sur `main` à la demande de Xav, donc **en ligne**. Xav a suivi
 la session **au fil de l'eau**, Chrome ouvert à côté du terminal : `V-11` et `V-47` à `V-50` sont
-donc **closes sur sa parole**, en même temps que les six lignes `D-`. **Reste due la seule `V-43`**
-— elle demande de **mourir**, ce qui ne se voit pas en regardant l'écran ; `pas vu` ne se clôt
-jamais par le silence.
+donc **closes sur sa parole**, en même temps que les six lignes `D-`. `V-43` l'est aussi : il est
+allé mourir **deux fois** (de nuit au nord-est sur une partie en cours, puis sauvegarde neuve en
+Grotte salle 2), « all good » aux deux. **La session ne laisse aucune validation due** ; seule
+`Q-46` attend, et c'est une décision, pas un correctif.
 
 ## Journal de session précédent — file de micro-tickets « Nv.0 → Nv.10 » (21/09)
 

@@ -31,18 +31,18 @@ le rendu. Celle-ci est la liste de ce qu'on **joue**.
 
 | Id | Quoi regarder | Verdict |
 |---|---|---|
-| V-45 | **D'abord** : ramasser un objet, le jeu ne fige plus | `pas vu` |
-| V-46 | Poche → Stats → Poche : chacun montre le sien | `pas vu` |
-| V-38 | La Plume visible à la sortie de la Grotte ; son texte en Poche | `pas vu` |
-| V-36 | « +1 » et « +1xp » montent ensemble, lisibles à la taille | `pas vu` |
-| V-37 | Ressources trouvables en marchant ; semis qui change à l'aube | `pas vu` |
-| V-39 | Nv. 5, tombée de nuit : une ligne, une seule fois | `pas vu` |
-| V-41 | Barre du bas : une seule case, puis le consommable | `pas vu` |
-| V-40 | Craft : les 3 recettes d'origine, rien de plus, rien de « ??? » | `pas vu` |
-| V-42 | Paramètres › Volume : cycle, s'entend, se retient | `pas vu` |
-| V-43 | Mourir : les yeux se rouvrent, court, sans retarder | `pas vu` |
+| V-45 | **D'abord** : ramasser un objet, le jeu ne fige plus | `ok` |
+| V-46 | Poche → Stats → Poche : chacun montre le sien | `ok` |
+| V-38 | La Plume visible à la sortie de la Grotte ; son texte en Poche | `ok` |
+| V-36 | « +1 » et « +1xp » montent ensemble, lisibles à la taille | `ok` |
+| V-37 | Ressources trouvables en marchant ; semis qui change à l'aube | `ok` |
+| V-39 | Nv. 5, tombée de nuit : une ligne, une seule fois | `ok` |
+| V-41 | Barre du bas : une seule case, puis le consommable | `ok` |
+| V-40 | Craft : les 3 recettes d'origine, rien de plus, rien de « ??? » | `pas compris` |
+| V-42 | Paramètres › Volume : cycle, s'entend, se retient | `ok` |
+| V-43 | Mourir : les yeux se rouvrent, court, sans retarder | `non` |
 | V-44 | Nv. 10 : l'épée apparaît à l'Atelier, se craft, s'équipe | `pas vu` |
-| V-27 | Menu et Sauvegarde : manette, souris, doigt, deux tailles | `pas vu` |
+| V-27 | Menu et Sauvegarde : manette, souris, doigt, deux tailles | `ok` |
 | V-11 | Le puits : mâts au sol, perspective de trois quarts | `non` (→ `D-16`) |
 
 *(Une ligne par validation encore due. Chaque ticket de la file Nv.0 → Nv.10 ajoute la sienne au

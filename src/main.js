@@ -16,6 +16,7 @@ import { creerSourceClavier, MAPPING_CLAVIER_PROVISOIRE } from './input/keyboard
 import { creerSourceManette } from './input/gamepad.js';
 import { creerSourceTactile } from './input/touch.js';
 import { creerPleinEcranTactile } from './plein_ecran.js';
+import { verrouillerMenuContextuel } from './souris.js';
 import { creerCoucheInput, etatNeutre } from './input/input.js';
 import { chargerScene, resoudreDeplacement, portailFranchi, trouverPositionLibrePlusProche } from './scene.js';
 import { calculerCamera } from './camera.js';
@@ -2891,6 +2892,13 @@ export async function demarrerJeu() {
   // `document.body`, à côté du canvas. Mettre le seul canvas en plein écran
   // les rendrait tous invisibles — un menu inaccessible sur téléphone, et
   // personne pour faire le lien avec ce ticket-ci.
+  // `D-107` : le clic droit n'ouvre plus le menu du navigateur. Posé sur le
+  // DOCUMENT, donc valable aussi au-dessus des écrans d'UI, qui sont des
+  // éléments DOM posés à côté du canvas — un garde sur le seul canvas serait
+  // un garde à moitié posé. Sous-système « meilleur effort » : il rattrape
+  // ses propres erreurs, rien à faire ici (cf. souris.js).
+  verrouillerMenuContextuel(document, { search: window.location.search });
+
   const pleinEcran = creerPleinEcranTactile({
     element: document.documentElement,
     ecran: typeof screen !== 'undefined' ? screen : null,

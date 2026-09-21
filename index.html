@@ -27,6 +27,19 @@
       /* Blanc à 10 % : sépare la carte du fond sans dessiner un cadre. Pas
          d'ombre — sobre, et une ombre coûte cher sur un écran de 280 px. */
       --menu-carte-bordure: rgba(255, 255, 255, 0.10);
+      /* `D-100` : le relief d'une carte. Deux opacités de BLANC, jamais deux
+         couleurs — un voile clair posé sur le haut de la surface tient
+         par-dessus n'importe quel fond (la carte au repos, la carte
+         éclaircie du focus, la carte assombrie de l'appui), donc le relief
+         ne se dédouble pas par état. C'est la même idée que les facettes en
+         alpha pur des icônes de stats (`D-98`), et la raison est la même :
+         une seule écriture pour plusieurs régimes de couleur.
+         Le premier jeton est le liseré d'un pixel sur l'arête haute, le
+         second la lueur qui descend et s'éteint à mi-hauteur. Toujours pas
+         d'ombre portée : la décision de sobriété d'origine tient, et un
+         dégradé ne coûte aucun flou. */
+      --menu-carte-lisere: 0.09;
+      --menu-carte-relief: 0.045;
       --menu-carte-bordure-px: 1px;
       --menu-carte-rayon-u: 8;
       /* Blanc cassé et gris bleuté : deux niveaux de lecture, pas trois. */
@@ -221,6 +234,25 @@
     /* Une case vide tient sa place dans la grille et ne dessine RIEN : les
        autres cartes ne glissent pas (la mémoire du pouce prime). */
     .carte-vide { min-width: 0; min-height: 0; }
+
+    /* `D-100` — LE relief, en une règle pour toutes les surfaces de carte.
+       Elle vient APRÈS les règles d'état (`.carte-focus`, `:active`) parce
+       que celles-ci posent un raccourci `background`, qui remet
+       `background-image` à zéro : écrite plus haut, la lueur disparaîtrait
+       dès que le focus se pose, et la carte focalisée serait la seule à plat.
+       Le dégradé est en blanc translucide, donc il ne connaît pas la couleur
+       qu'il éclaire — et il n'a pas à être réécrit par état. */
+    .carte, .cartes-bouton-entete, .tuile, .fiche, .fiche-action {
+      background-image: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, var(--menu-carte-lisere)) 0,
+        rgba(255, 255, 255, var(--menu-carte-lisere)) 1px,
+        rgba(255, 255, 255, var(--menu-carte-relief)) 1px,
+        rgba(255, 255, 255, 0) 55%
+      );
+    }
+    /* Une carte vide n'est pas une carte : elle ne prend pas le relief. */
+    .carte-vide { background-image: none; }
 
     /* L'icône est un canvas : la règle `canvas { … }` du jeu, plus haut, s'y
        appliquerait (fond noir, rendu pixelisé, doigt bâillonné) — on la

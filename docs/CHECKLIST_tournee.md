@@ -50,7 +50,7 @@ le rendu. Celle-ci est la liste de ce qu'on **joue**.
 | V-50 | Écran de choix : le carré jaune tient dans sa bulle | `pas vu` |
 | V-47 | « +1 » au-dessus de « +1xp », les deux lisibles jusqu'au bout | `pas vu` |
 | V-48 | Barre du bas : la case du consommable dessine le fruit équipé | `pas vu` |
-| V-11 | Le puits : mâts au sol, perspective de trois quarts | `non` (→ `D-16`) |
+| V-11 | Le puits : mâts au sol, perspective de trois quarts | `ok` (21/09, après `D-16`) |
 
 *(Une ligne par validation encore due. Chaque ticket de la file Nv.0 → Nv.10 ajoute la sienne au
 moment de son commit, à sa place dans l'ordre d'une partie.)*

@@ -303,6 +303,8 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 | **Une silhouette se juge à la taille où le jeu la montre, jamais agrandie.** `dessinerVisuel` met le trait à l'échelle avec le reste : regarder une entrée de `visuels.json` à `echelle: 32` donne des barres de 32 px là où le joueur verra un cheveu — on juge alors une image qui n'existe pas. L'outil `tools/banc_visuel.html` rend donc aux tailles réelles (monde à DPR 1 et 3, tuile de la Poche) **puis** agrandit le bitmap au plus proche voisin. Né de la plume (`D-76`) : le premier jet, jugé agrandi, passait pour un pâté ; le vrai défaut était ailleurs (le **galbe** des barbes, pas leur nombre) | 2026-09-21 | `docs/JOURNAL_2026-09-21_polish-live.md`, `D-76` |
 | **Mourir rejoue le réveil de l'intro** — le clignement du respawn reprend **exactement** les durées de l'intro (~3,7 s), au lieu de la version courte de ~0,9 s. *Révise* la contrainte d'origine de `D-65` (« plus court que l'intro, à ne pas allonger »), sur verdict `non` de Xav en jeu. Aucune ligne de code : `intro.js#ouverturePaupieres` était déjà la seule implémentation, seules les données changent. Corollaire de test, tiré de `D-52` : le test n'épingle plus une durée mais la **relation** (respawn = intro) | 2026-09-21 | `D-74`, `Q-46` (ce qui reste à trancher sur la mort) |
 | **Une case de la barre du bas dessine ce qui l'occupe, quel que soit le verbe** : `ui/hud.js` reçoit une table `verbe → visuel` et n'a plus de branche `if (verbe === 'attack')`. L'arme équipée et le consommable équipé y passent par la même ligne, et une compétence s'y branchera **sans code de HUD nouveau** — seul `main.js`, qui a le registre, sait de quoi vient une silhouette | 2026-09-21 | `D-75` |
+| **Le bord LATÉRAL d'un volume, jamais son point le plus bas, est ce qui se compare au pied de ce qui l'entoure.** En trois quarts, le point de contact le plus bas d'un cylindre est son AVANT, plus près de l'œil : un fût « posé à `y = 0 »` paraît donc **flotter au-dessus** des mâts plantés à ce même `y = 0`. Ce qui doit coïncider avec leur pied, c'est le bord du fût là où il les longe — la **hauteur du centre** de son ellipse de base. Né de `D-16`, en deux corrections de Xav ; verrouillé par test plutôt que laissé à l'œil, il resservira à toute silhouette cylindrique | 2026-09-21 | `D-16`, `tests/test_sd_puits_silhouette_…` §2 ter |
+| **Le puits est refait, et son empreinte solide n'a rien gagné** : elle est strictement **incluse** dans celle d'avant (le toit, plus bas, libère une rangée de tuiles). Un ticket de silhouette qui craint pour la collision n'a donc pas à mesurer le chemin et la zone du fruit : il lui suffit de prouver l'**inclusion**. Poser une `empreinte` sur la seule base reste `[OUVERT]` — cela change où le héros peut se tenir, donc c'est une décision de jeu | 2026-09-21 | `D-16` |
 | **« Pas compris » n'est pas un verdict de tournée, c'est un défaut de la checklist** : quand une ligne `V-` ne se comprend pas manette en main, c'est la ligne qu'on réécrit, jamais au lecteur de deviner. Né de `V-40` le 21/09 | 2026-09-21 | `docs/CHECKLIST_tournee.md` v1.1.0 |
 
 (Les décisions de `05_construction-stations.md` étaient déjà actées par Xav **dans la spec elle-même** avant tout code, v1.0.0 §9 — les lignes ci-dessus n'y renvoient que pour mémoire, elles ne tranchent rien de nouveau.)
@@ -375,10 +377,15 @@ nommés. Branche `main`, aucun `push`. Fichier de bord :
 
 Livré : `D-73` (le « +1 » ne chevauche plus le « +1xp »), `D-74` (le clignement de mort rejoue
 celui de l'intro — *révise* `D-65`), `D-75` (le consommable équipé dans la barre du bas), `D-76`
-(la plume redessinée, deux passes) et `D-77` (le carré du follet jaune tient dans sa bulle).
-Tout est **à valider en jeu** : `V-43` (à rejouer) et `V-47` à `V-50`. Ouvert au passage :
+(la plume redessinée, deux passes), `D-77` (le carré du follet jaune tient dans sa bulle) et
+`D-16` (le puits repris en cylindre vu de trois quarts, trois passes). Ouvert au passage :
 `Q-46` (ce qui reste à trancher sur la mort — le clignement ne gèle rien, le rythme, et le levier
 de la salle 1 qui ne se rejoue pas). Outil né de la session : `tools/banc_visuel.html`.
+
+**Session close le 21/09**, les neuf commits **poussés sur `main` à la demande de Xav, donc en
+ligne**. `D-16` et `V-11` sont closes : Xav a suivi les trois passes du puits **au fil de l'eau**,
+Chrome ouvert à côté du terminal. **Restent dues** : `V-43` (à rejouer) et `V-47` à `V-50` — elles
+sont en ligne sans verdict, et `pas vu` ne se clôt jamais par le silence.
 
 ## Journal de session précédent — file de micro-tickets « Nv.0 → Nv.10 » (21/09)
 

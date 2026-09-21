@@ -2,8 +2,8 @@
 projet: RPG V2
 episode/session: Session de polish en direct (Xav à la manette, une consigne = une modif)
 type: fichier de bord
-version: 1.0.0
-statut: en cours
+version: 1.1.0
+statut: clos
 catégorie: Journal
 date: 2026-09-21
 genere_par: claude
@@ -29,11 +29,11 @@ Ce fichier est l'état de la session sur le disque, écrit au fil des modifs —
 
 | 5 | « les angles du carré dépassent vachement de la bulle […] réduire la taille du feu follet jaune, mais pas en entier : juste les carrés jaunes, pas la bulle et la déco. » | `visuel_follet_terre` : le carré passe de 14 à **11,6** et son reflet de 6 à 5 (décalé −1,7 au lieu de −2, pour garder la même place relative). Motif mesurable : la demi-diagonale d'un carré de 14 vaut **9,9** alors que la bulle a un rayon de **8,5** — les quatre coins sortaient. À 11,6 elle vaut 8,2, le carré est inscrit et la bulle réapparaît aux quatre coins, comme les pointes du triangle de feu. **Bulle, étincelles et halo inchangés**, et l'encombrement à l'écran ne bouge pas (c'est la bulle de 17 qui le fixe). Aucun effet de jeu : l'aura et la lumière viennent de `companions.json`, et l'échelle de dessin d'une constante (`TAILLE_REFERENCE_FOLLET_PX`), jamais de la taille du carré. | `data/visuels.json` | à faire |
 
-| 6 | « la silhouette [du puits] est cassée depuis l'agrandissement des proportions, j'aimerais qu'on la reprenne comme on vient de faire avec la plume : diagnostic visuel chrome/tools puis itération » (`D-16`) | Mesuré d'abord : le pied des mâts s'arrêtait à `y −7` pour un sol à `y 0` — **7 unités de vide**, soit 14,7 px à l'échelle ×2,1, la demi-tuile signalée ; et la margelle était un **disque** (−16..+4) avec l'eau en son centre, d'où le « pot ». Reconstruite en **cylindre vu de trois quarts** (règle du décor : base + paroi + rebord, trois pièces, l'ellipse de base dessinée SOUS la paroi pour ne pas la barrer d'un arc), mâts **plantés au sol** et débordant du cylindre pour que leur pied se voie, toit en deux pentes au lieu de la planche plate qui faisait un portique. Treuil, corde et seau conservés (`Q-03`). Défaut d'assemblage attrapé au passage par le test : la corde ne touchait plus le seau de 0,1 unité. | `data/visuels.json`, `tests/test_sd_puits_silhouette_…`, `tools/banc_visuel.html` | à faire |
+| 6 | « la silhouette [du puits] est cassée depuis l'agrandissement des proportions, j'aimerais qu'on la reprenne comme on vient de faire avec la plume : diagnostic visuel chrome/tools puis itération » (`D-16`) | Mesuré d'abord : le pied des mâts s'arrêtait à `y −7` pour un sol à `y 0` — **7 unités de vide**, soit 14,7 px à l'échelle ×2,1, la demi-tuile signalée ; et la margelle était un **disque** (−16..+4) avec l'eau en son centre, d'où le « pot ». Reconstruite en **cylindre vu de trois quarts** (règle du décor : base + paroi + rebord, trois pièces, l'ellipse de base dessinée SOUS la paroi pour ne pas la barrer d'un arc), mâts **plantés au sol** et débordant du cylindre pour que leur pied se voie, toit en deux pentes au lieu de la planche plate qui faisait un portique. Treuil, corde et seau conservés (`Q-03`). Défaut d'assemblage attrapé au passage par le test : la corde ne touchait plus le seau de 0,1 unité. | `data/visuels.json`, `tests/test_sd_puits_silhouette_…`, `tools/banc_visuel.html` | **ok** (Xav, Chrome, 21/09) |
 
-| 6 bis | « le fût, il faudrait le mettre au même niveau que le sol. Là, on dirait qu'il vole. […] Suite à ça, il faudra recalculer les ombres. » | Le fût touchait bien le sol (`y +1,5`), mais son ellipse de base **sombre** se lisait comme de l'ombre, et l'ombre portée (centrée `y +1`, haute de 6) débordait de 2,5 unités sous lui : un croissant noir sous l'objet, d'où l'impression qu'il flotte. Tout le monde repose maintenant **exactement sur `y = 0`** — mâts et base du cylindre sur la même ligne —, et l'ombre est **recentrée sur ce contact** (`dy 0`, 24 × 5 : elle ne dépasse plus que de 1,1 unité autour des mâts, au lieu d'un disque presque aussi large que le puits). Le groupe du cylindre (base, paroi, rebord, ouverture, eau, reflet) et le seau descendent d'une unité ensemble : l'assemblage ne bouge pas. L'empreinte perd encore 1,5 unité en bas, toujours incluse dans celle d'avant. | `data/visuels.json`, `tools/banc_visuel.html` | à faire |
+| 6 bis | « le fût, il faudrait le mettre au même niveau que le sol. Là, on dirait qu'il vole. […] Suite à ça, il faudra recalculer les ombres. » | Le fût touchait bien le sol (`y +1,5`), mais son ellipse de base **sombre** se lisait comme de l'ombre, et l'ombre portée (centrée `y +1`, haute de 6) débordait de 2,5 unités sous lui : un croissant noir sous l'objet, d'où l'impression qu'il flotte. Tout le monde repose maintenant **exactement sur `y = 0`** — mâts et base du cylindre sur la même ligne —, et l'ombre est **recentrée sur ce contact** (`dy 0`, 24 × 5 : elle ne dépasse plus que de 1,1 unité autour des mâts, au lieu d'un disque presque aussi large que le puits). Le groupe du cylindre (base, paroi, rebord, ouverture, eau, reflet) et le seau descendent d'une unité ensemble : l'assemblage ne bouge pas. L'empreinte perd encore 1,5 unité en bas, toujours incluse dans celle d'avant. | `data/visuels.json`, `tools/banc_visuel.html` | **ok** (Xav, Chrome, 21/09) |
 
-| 6 ter | « il faut que le bord du fût, le plus bas, soit à y = 0 […] le fût descende en entier, tel quel, de quelques pixels […] et se désolidarise du seau » | **J'avais mal lu la consigne précédente** : « base du fût » désignait son **bord latéral**, celui qui longe les mâts — pas son point le plus bas. En trois quarts, le bord latéral d'un cylindre est la **hauteur du centre** de son ellipse de base ; c'est lui qui doit être au niveau du pied des mâts, et l'avant du fût passe alors **sous** cette ligne, parce qu'il est plus près de l'œil. Le fût descend donc **en bloc de 2,5 unités** (la demi-hauteur de son ellipse), sans changer de taille : bord latéral à `y 0`, avant à `y +2,5`. Le seau **ne suit pas** : il reste suspendu au-dessus de l'ouverture, comme demandé. Ombre resserrée sur le nouveau contact (22 × 6, `dy 0,4`). | `data/visuels.json`, `tests/test_sd_puits_silhouette_…` | à faire |
+| 6 ter | « il faut que le bord du fût, le plus bas, soit à y = 0 […] le fût descende en entier, tel quel, de quelques pixels […] et se désolidarise du seau » | **J'avais mal lu la consigne précédente** : « base du fût » désignait son **bord latéral**, celui qui longe les mâts — pas son point le plus bas. En trois quarts, le bord latéral d'un cylindre est la **hauteur du centre** de son ellipse de base ; c'est lui qui doit être au niveau du pied des mâts, et l'avant du fût passe alors **sous** cette ligne, parce qu'il est plus près de l'œil. Le fût descend donc **en bloc de 2,5 unités** (la demi-hauteur de son ellipse), sans changer de taille : bord latéral à `y 0`, avant à `y +2,5`. Le seau **ne suit pas** : il reste suspendu au-dessus de l'ouverture, comme demandé. Ombre resserrée sur le nouveau contact (22 × 6, `dy 0,4`). | `data/visuels.json`, `tests/test_sd_puits_silhouette_…` | **ok** (Xav, Chrome, 21/09) |
 
 ## Décisions prises en séance
 
@@ -107,6 +107,14 @@ Ce fichier est l'état de la session sur le disque, écrit au fil des modifs —
   checklist. Les quatre nouvelles lignes sont insérées **dans l'ordre d'une partie**, pas à la fin.
 - `CLAUDE.md` : `tools/banc_visuel.html` ajouté à l'arborescence, quatre décisions datées ajoutées,
   et le journal de session pointe désormais sur cette page.
+
+## Clôture (21/09)
+
+Session close à la demande de Xav (« tu peux clore »). `D-16` est **close** : ses trois
+passes ont été vérifiées par lui **au fil de l'eau**, Chrome ouvert à côté du terminal —
+« j'ai vérifié à chaque itération ». `V-11`, qui n'avait plus que le puits en suspens,
+est close sur le même verdict. Les neuf commits de la session sont **poussés sur `main`**,
+donc **en ligne**, à sa demande explicite.
 
 ## À faire
 

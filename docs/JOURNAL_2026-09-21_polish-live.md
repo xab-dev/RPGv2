@@ -24,6 +24,9 @@ Ce fichier est l'état de la session sur le disque, écrit au fil des modifs —
 | 2 | « quand on meurt, le clignement des yeux est trop rapide. si possible, on rejoue toute l'intro sauf le choix et le monstre salle deux. » | `effet_clignement_respawn` reprend **exactement** les durées de l'intro : `[600, 900, 1400]` / noir 400 (≈ 3,7 s) au lieu de `[220, 520]` / 180 (≈ 0,9 s). Aucune seconde implémentation : c'est déjà la même fonction (`intro.js#ouverturePaupieres`), seules les données changent. | `data/effets.json`, `src/main.js` (commentaire), `tests/test_d65_…` | à faire |
 | 3 | « go telle quelle » (afficher le consommable équipé dans la barre du bas comme l'épée) | `ui/hud.js` ne reçoit plus **un** `visuelArme` mais une table `iconesSlots` (`verbe → visuel`) : les deux `if (verbe === 'attack')` du dessin **disparaissent**, barre du bas et boutons tactiles passent par la même ligne. `main.js` résout `attack` (arme équipée, inchangé) et `consume` (le `render.visuel` du consommable équipé — aucune donnée nouvelle). | `src/main.js`, `src/ui/hud.js`, `tests/test_d20b_…` | à faire |
 
+| 4 | « la plume […] n'a que 6 branches et ressemble plus à un os qu'à une plume. rajouter des branches, au moins 6, serrées les unes aux autres, et la pointe de chaque branche un peu noire, comme des plumes d'aigle. ne touche pas à la tige, ni la forme et taille actuelle » | 19 barbes (10 du côté large, 9 du côté ombré) au lieu de 5, espacées de ~1,07 u pour une épaisseur de 0,95 u — **serrées, sans se confondre**. Chacune est faite de DEUX traits : le corps clair et un bout sombre de 0,75 u (les deux se chevauchent de 0,3 u, sinon un trou apparaît à l'arrondi). L'inclinaison des barbes augmente vers la pointe (0,18 → 0,62 de la direction de la tige) : c'est le galbe qui distingue une plume d'une arête. L'encombrement reste celui d'avant (y −5..5). | `data/visuels.json` | à faire |
+| 4 bis | « la tige dépasse de la pointe, il faudrait la redescendre (ou monter les barbes) pour allonger la base et laisser les plumes faire la pointe. peut-être l'affiner un peu aussi, la tige, pas le reste. » | La tige s'arrête à 90 % de sa course (`[[-4, 5], [2.3, -4]]`) et passe de 2 à **1,4** d'épaisseur ; les barbes partent plus haut (22 % au lieu de 10 %) et montent jusqu'à 94 %. Conséquences voulues : la base nue s'allonge, et **ce sont les barbes qui font la pointe** — la tige ne dépasse plus. Les longueurs de bout de barbe sont rentrées pour que la silhouette garde sa hauteur (y −5,1..5). Le reste (nombre, serrage, bouts sombres, galbe) est inchangé. | `data/visuels.json` | à faire |
+
 ## Décisions prises en séance
 
 - **Le clignement de mort rejoue celui de l'intro** — *révise* la contrainte d'origine de `D-65`
@@ -39,6 +42,13 @@ Ce fichier est l'état de la session sur le disque, écrit au fil des modifs —
   fera si c'est trop moche »).
 
 ## Relevé hors consigne — signalé, pas corrigé
+
+- **`tools/banc_visuel.html` est un fichier NON SUIVI, né de la consigne 4** et laissé dans
+  l'arbre de travail : il dessine une silhouette de `data/visuels.json` **aux tailles réelles du
+  jeu** (monde à DPR 1 et 3, tuile de la Poche), puis l'agrandit au plus proche voisin. Le
+  détour n'est pas du zèle : agrandir la transform (`echelle: 32`) épaissit les traits avec, et
+  fait juger une image que personne ne verra jamais — c'est ce qui a fait croire, au premier
+  essai, que la plume était un pâté. À garder ou à jeter, au choix de Xav.
 
 - **Le levier de la salle 1 ne se rejoue pas après la mort.** `flag_levier_salle1` est persistant :
   au respawn la porte est déjà ouverte, donc la séquence « clignement → levier → sortie » que Xav

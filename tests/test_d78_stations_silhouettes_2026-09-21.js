@@ -53,7 +53,7 @@ const visuels = new Map(donnees.visuels.map((v) => [v.id, v]));
 // Seules les stations DÉJÀ refondues entrent dans la boucle : la file avance
 // station par station (un commit chacune), et un ticket ne juge pas le
 // travail d'un autre.
-const REFONDUES = ['visuel_table'];
+const REFONDUES = ['visuel_table', 'visuel_coffre'];
 
 for (const id of REFONDUES) {
   const visuel = visuels.get(id);

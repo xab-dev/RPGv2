@@ -33,12 +33,16 @@ import {
   saveNeuve, reinitialiserSauvegarde, VISUEL_HEROS_ID, COULEUR_HERO_NEUTRE,
 } from './save.js';
 import { dessinerVisuel, echelleVisuel, TAILLE_REFERENCE_FOLLET_PX } from './visuels.js';
-import { creerPoussiere, avancerPoussiere, bouffeesVisibles, viderPoussiere } from './poussiere.js';
+import {
+  creerPoussiere, avancerPoussiere, bouffeesVisibles, viderPoussiere, CAPACITE_RESERVE,
+} from './poussiere.js';
 import { decalageCorpsFollet } from './vol_follet.js';
 import {
   creerTextesFlottants, emettreTexte, avancerTextesFlottants, textesVisibles, viderTextesFlottants,
 } from './texte_flottant.js';
-import { resoudrePreset, valeurLevier } from './qualite.js';
+import {
+  resoudrePreset, valeurLevier, appliquerParticules, lirePresetForce,
+} from './qualite.js';
 import { creerRegistreFlags } from './flags.js';
 import { calculerStatsPrimaires, calculerStatsDerivees, appliquerModulateurSurvie } from './stats.js';
 import {
@@ -372,7 +376,16 @@ export function creerOrchestrateurGrotte({
   // patron qu'`onEtatUi` et `onPremierGeste` : un test headless n'a rien à
   // fournir.
   onVerbesActions = () => {},
+  // `specs/09_reglages-graphiques.md` palier C : le preset graphique DÉJÀ
+  // résolu, tel que `resoudreGraphismes` le rend. Par défaut, l'orchestrateur
+  // le résout lui-même, sans signal d'appareil ni paramètre d'URL — un test
+  // headless n'a donc rien à fournir et traverse quand même la VRAIE fonction
+  // de résolution, jamais une décision recopiée dans un harnais (`D-72`).
+  graphismes = resoudreGraphismes(registre, save, null),
 }) {
+  // Les leviers sont lus UNE fois, ici : au-delà de cette ligne, plus personne
+  // ne connaît le mot « bas ». Chaque système reçoit un nombre.
+  const multiplicateurParticules = valeurLevier(graphismes.config, graphismes.preset, 'particules');
   let etatModifie = false;
 
   // Silhouettes de tuiles (03_maison-exterieur §3.3) : résolu UNE fois (pas
@@ -441,7 +454,15 @@ export function creerOrchestrateurGrotte({
   // MT_trainee-poussiere_2026-09-19 : réglages en données (data/effets.json,
   // tous PROVISOIRES, à régler au ressenti par Xav) et réserve fixe allouée
   // UNE fois au boot — jamais par frame, jamais par entrée en scène.
-  const effetPoussiere = registre.obtenir('effets', 'effet_poussiere');
+  // Palier C : la réserve est dimensionnée par le levier `particules`, dont
+  // le défaut (8) appartient toujours à `poussiere.js` — il est passé, jamais
+  // recopié ici. À zéro, la réserve est vide : rien ne naît, rien n'est
+  // dessiné, et `avancerPoussiere` n'a pas une ligne de plus.
+  const effetPoussiere = appliquerParticules(
+    registre.obtenir('effets', 'effet_poussiere'),
+    multiplicateurParticules,
+    { capacite: CAPACITE_RESERVE },
+  );
   const visuelPoussiere = registre.obtenir('visuels', effetPoussiere.visuel);
   const poussiere = creerPoussiere(effetPoussiere);
 
@@ -464,7 +485,11 @@ export function creerOrchestrateurGrotte({
   // Initialisé à sa valeur à t = 0, et non à zéro : sinon la toute première
   // frame ferait sauter le corps de son centre à son orbite.
   let corpsFollet = decalageCorpsFollet(0, configVolFollet);
-  const effetSillage = registre.obtenir('effets', 'effet_sillage_follet');
+  const effetSillage = appliquerParticules(
+    registre.obtenir('effets', 'effet_sillage_follet'),
+    multiplicateurParticules,
+    { capacite: CAPACITE_RESERVE },
+  );
   const visuelSillage = registre.obtenir('visuels', effetSillage.visuel);
   const sillageFollet = creerPoussiere(effetSillage);
 
@@ -2828,11 +2853,25 @@ export function signauxAppareil(fenetre) {
 // chaque palier les couvre, mais une faute de frappe dans `leviers` ferait
 // lever `valeurLevier` en pleine partie, au premier système qui le demande —
 // ici, elle tombe au boot, avec le nom du levier.
-export function resoudreGraphismes(registre, save, fenetre) {
+//
+// `search` (facultatif) apporte `?qualite=bas|moyen|haut`, un outil de DEBUG :
+// il remplace le preset résolu en UN seul point — celui-ci — et n'écrit jamais
+// rien dans la sauvegarde. Même contrat que `?echelle` : une valeur invalide
+// laisse le réglage du joueur en place et s'annonce.
+export function resoudreGraphismes(registre, save, fenetre, search = null) {
   const config = registre.obtenir('graphismes', 'graphismes_presets');
   const resolu = resoudrePreset(save.settings.graphismes, signauxAppareil(fenetre), config);
-  for (const levier of config.leviers) valeurLevier(config, resolu.preset, levier);
-  return { config, ...resolu };
+  const force = lirePresetForce(search, config);
+  const preset = force.preset || resolu.preset;
+  for (const levier of config.leviers) valeurLevier(config, preset, levier);
+  return {
+    config,
+    preset,
+    // Un preset forcé n'est pas « choisi par Auto » : la carte de Paramètres
+    // ne doit pas annoncer « Auto (Bas) » pour un palier venu de l'URL.
+    auto: force.preset ? false : resolu.auto,
+    avertissement: [resolu.avertissement, force.avertissement].filter(Boolean).join(' · ') || null,
+  };
 }
 
 export async function demarrerJeu() {
@@ -2892,7 +2931,7 @@ export async function demarrerJeu() {
   // au palier C. Ce qui est déjà vrai : le catalogue est validé, un réglage
   // inconnu venu d'une sauvegarde est signalé plutôt que remplacé en silence,
   // et le choix du joueur ne quitte jamais `save.settings`.
-  const graphismes = resoudreGraphismes(registre, save, window);
+  const graphismes = resoudreGraphismes(registre, save, window, window.location.search);
   if (graphismes.avertissement) console.warn(graphismes.avertissement);
 
   // Une sauvegarde d'une session antérieure peut pointer vers une scène qui
@@ -3181,6 +3220,9 @@ export async function demarrerJeu() {
   const moniteurPerf = creerMoniteurPerf({ document, search: window.location.search });
 
   const orchestrateur = creerOrchestrateurGrotte({
+    // Résolu plus haut, avec la fenêtre et l'URL : l'orchestrateur ne lit ni
+    // l'une ni l'autre (il doit rester importable depuis Node).
+    graphismes,
     registre, i18n, save, store, dialogue, menu, input, ctxLogique, ctxVisible, canvasLogique,
     onPremierGeste: armerAudioUneFois,
     moniteurPerf,
@@ -3234,11 +3276,17 @@ export async function demarrerJeu() {
   const curseur = creerCurseur({
     doc: document,
     fenetre: window,
-    config: registre.obtenir('effets', 'effet_curseur'),
+    config: appliquerParticules(
+      registre.obtenir('effets', 'effet_curseur'),
+      valeurLevier(graphismes.config, graphismes.preset, 'particules'),
+    ),
     // La traînée est une 3ᵉ instance de `poussiere.js` : même mécanique que
     // celle du héros et que le sillage du follet, une entrée de catalogue de
     // plus et rien d'autre.
-    configSillage: registre.obtenir('effets', 'effet_curseur_sillage'),
+    configSillage: appliquerParticules(
+      registre.obtenir('effets', 'effet_curseur_sillage'),
+      valeurLevier(graphismes.config, graphismes.preset, 'particules'),
+    ),
     visuelOrbe: registre.obtenir('visuels', 'visuel_curseur'),
     visuelParticule: registre.obtenir('visuels', 'visuel_curseur_eclat'),
     visuelSillage: registre.obtenir('visuels', 'visuel_curseur_sillage'),

@@ -127,3 +127,58 @@ export function leviersNonNeutres(config, presetId) {
   const neutre = typeof config.valeur_neutre === 'number' ? config.valeur_neutre : VALEUR_NEUTRE_DEFAUT;
   return (config.leviers || []).filter((levier) => valeurLevier(config, presetId, levier) !== neutre);
 }
+
+// Le levier `particules` appliqué à la configuration d'un effet, UNE fois, au
+// démarrage. Rend une configuration neuve : le catalogue n'est jamais muté, et
+// le système de particules reçoit un nombre — il ne saura jamais qu'un preset
+// existe.
+//
+// Deux règles, pas une de plus :
+//   — un effet `information` n'est JAMAIS touché (§4.2 : Bas retire du
+//     cosmétique, jamais ce qui dit quelque chose au joueur) ;
+//   — toute quantité de particules déclarée par un effet cosmétique est
+//     multipliée. Les champs sont listés ici parce qu'un effet n'a pas
+//     toujours le même mot pour « combien » (une traînée a une réserve, une
+//     orbite a un nombre d'étincelles) ; un champ absent du catalogue ET des
+//     défauts reste absent.
+//
+// À zéro, la quantité tombe à zéro, et c'est tout : une réserve vide n'émet
+// rien et ne dessine rien, un compte d'étincelles nul n'en dessine aucune.
+// « Le système n'émet pas et ne dessine pas » est donc une CONSÉQUENCE, pas
+// une branche de plus à maintenir.
+//
+// `defauts` porte la valeur qu'un système utilise quand son effet ne déclare
+// rien (la réserve de 8 de `poussiere.js`) : sans elle, un effet sans
+// `capacite` resterait à son défaut et continuerait d'émettre en Bas. Le
+// défaut reste la propriété du système — il est passé, jamais recopié ici.
+const CHAMPS_QUANTITE_PARTICULES = ['capacite', 'nb_particules'];
+
+export function appliquerParticules(effet, multiplicateur, defauts = {}) {
+  if (!effet || effet.role !== 'cosmetique') return effet;
+  const sortie = { ...effet };
+  for (const champ of CHAMPS_QUANTITE_PARTICULES) {
+    const base = effet[champ] !== undefined ? effet[champ] : defauts[champ];
+    if (base === undefined) continue;
+    sortie[champ] = Math.max(0, Math.round(base * multiplicateur));
+  }
+  return sortie;
+}
+
+// `?qualite=bas|moyen|haut` — outil de DEBUG, même contrat que `?echelle`
+// (`debug_perf.js#lireEchelleForcee`) : une valeur invalide est rendue avec
+// son avertissement et le réglage du joueur est conservé, JAMAIS un repli
+// silencieux sur une valeur plausible. `auto` n'est pas acceptable ici : on
+// force un palier réel, or `auto` n'en est pas un — il se résout.
+export function lirePresetForce(search, config) {
+  if (!search) return { preset: null, avertissement: null };
+  const brut = new URLSearchParams(search).get('qualite');
+  if (brut === null) return { preset: null, avertissement: null };
+  const reels = (config.paliers || []).filter((p) => p.leviers !== undefined).map((p) => p.id);
+  if (!reels.includes(brut)) {
+    return {
+      preset: null,
+      avertissement: `?qualite=${brut} ignoré : attendu ${reels.join(', ')}. Réglage du joueur conservé.`,
+    };
+  }
+  return { preset: brut, avertissement: null };
+}

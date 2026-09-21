@@ -30,8 +30,13 @@ export const CAPACITE_RESERVE = 8;
 // l'écran en une demi-seconde et vide la réserve en quatre frames — la traînée
 // devient alors une grappe clignotante. La taille de la réserve suit donc la
 // VITESSE de ce qu'on suit, et c'est un réglage, pas une constante du module.
+//
+// Une capacité de ZÉRO est une valeur, pas une absence (palier C de
+// `specs/09_reglages-graphiques.md`) : la réserve est vide, donc rien ne naît
+// et rien n'est dessiné, sans une branche « effet éteint » de plus ici. Ce
+// module ignore toujours qu'un preset existe — il reçoit un nombre.
 export function creerPoussiere(config) {
-  const capacite = Number.isInteger(config.capacite) && config.capacite > 0 ? config.capacite : CAPACITE_RESERVE;
+  const capacite = Number.isInteger(config.capacite) && config.capacite >= 0 ? config.capacite : CAPACITE_RESERVE;
   const bouffees = new Array(capacite);
   for (let i = 0; i < capacite; i += 1) {
     bouffees[i] = { active: false, x: 0, y: 0, ageMs: 0, cote: 1 };

@@ -56,6 +56,9 @@ import { creerDialogue, resoudreLignes } from './dialogue.js';
 import {
   creerIntro, avancerIntro, etatRendu as etatRenduIntro,
   creerDepart, avancerDepart, etatRenduDepart, avancementDepart, ETAPE_CLIGNEMENTS,
+  // `D-65` (T8) : le retour de mort rouvre les yeux avec la MÊME séquence
+  // que l'intro, en version courte — aucune seconde implémentation.
+  ouverturePaupieres, dureeClignements,
 } from './intro.js';
 import {
   tablesDeScene, tableActive, tirerPositionApparition, tirerPointDomaine, estEnZoneSurePx, zonesSignalees,
@@ -362,6 +365,23 @@ export function creerOrchestrateurGrotte({
   // ici, au rendu, que le gabarit et le nom de l'item sont résolus.
   const effetTexteGain = registre.obtenir('effets', 'effet_texte_gain');
   const textesFlottants = creerTextesFlottants(effetTexteGain);
+
+  // `D-65` (T8) : le clignement du retour de mort. Demande de Xav du 21/09 —
+  // « après chaque mort dans la Grotte, le héros revient avec le clignement
+  // d'yeux de l'intro, en version courte ».
+  //
+  // `null` = personne ne vient de mourir. Une horloge de plus, mais pas une
+  // seconde implémentation : la FORME du clignement est celle de l'intro
+  // (`intro.js#ouverturePaupieres`), seules les durées changent, et elles
+  // vivent en données. Total ici : ~0,9 s, largement sous les ~4 s du
+  // respawn mesuré — le ticket interdit de l'allonger.
+  //
+  // C'est un effet PUREMENT visuel : il ne gèle rien, ne capte aucun verbe,
+  // et un joueur pressé peut repartir avant la fin. Le rideau de l'intro,
+  // lui, couvre une cinématique ; celui-ci accompagne un retour.
+  const effetClignementRespawn = registre.obtenir('effets', 'effet_clignement_respawn');
+  const DUREE_CLIGNEMENT_RESPAWN_MS = dureeClignements(effetClignementRespawn);
+  let clignementRespawnMs = null;
 
   // Un gain d'item, quelle que soit sa source (ramassage au sol, récolte à
   // l'outil, et demain butin ou coffre) passe par ce seul point : le texte
@@ -1509,6 +1529,10 @@ export function creerOrchestrateurGrotte({
       y: (spawnGrotte.spawn.y + 0.5) * spawnGrotte.tile_size,
     });
     Object.assign(hero, respawn(hero, { x: hero.x, y: hero.y }, hero.pvMax));
+    // `D-65` : les yeux se rouvrent. Remis à zéro à CHAQUE mort, jamais
+    // cumulé — deux morts rapprochées rejouent la séquence depuis le début
+    // plutôt que de la prolonger.
+    clignementRespawnMs = 0;
   }
 
   // Stats effectives du héros : calculées à chaque frame, y compris quand
@@ -1913,6 +1937,15 @@ export function creerOrchestrateurGrotte({
       // « +1 Branche » se fige le temps de la réplique puis reprend sa montée
       // — comme la poussière, comme les cooldowns, comme l'horloge du monde.
       avancerTextesFlottants(textesFlottants, deltaMs);
+
+      // `D-65` : gelé sous UI par LE point de décision unique, comme la
+      // poussière et les textes flottants. Ouvrir le menu juste après une
+      // mort met donc le clignement en pause — cohérent avec tout le reste,
+      // et il n'y avait aucune raison d'en faire une exception.
+      if (clignementRespawnMs !== null) {
+        clignementRespawnMs += deltaMs;
+        if (clignementRespawnMs >= DUREE_CLIGNEMENT_RESPAWN_MS) clignementRespawnMs = null;
+      }
     }
 
     // Le temps de jeu est en pause sous UI (§4) : ni combat, ni énigme, ni
@@ -2477,6 +2510,12 @@ export function creerOrchestrateurGrotte({
     // jamais dépendre de l'ordre des autres calques).
     if (renduIntro && renduIntro.etape === ETAPE_CLIGNEMENTS) {
       dessinerPaupieres(ctxLogique, renduIntro.paupieres);
+    } else if (clignementRespawnMs !== null) {
+      // `D-65` : même calque, même fonction, même place — en TOUT DERNIER.
+      // Le `else` n'est pas une précaution : les deux ne peuvent pas
+      // coexister (on ne meurt pas pendant l'intro), et s'ils le pouvaient,
+      // superposer deux rideaux ne voudrait rien dire.
+      dessinerPaupieres(ctxLogique, ouverturePaupieres(effetClignementRespawn, clignementRespawnMs));
     }
 
     presenter(ctxVisible, canvasLogique);
@@ -2559,6 +2598,12 @@ export function creerOrchestrateurGrotte({
     // tests — le dessin n'est jamais exercé en headless, donc c'est la seule
     // façon de prouver qu'une partie neuve n'a qu'une case.
     obtenirVerbesActions: () => verbesActionsVisibles(),
+    // `D-65` : l'ouverture des paupières du retour de mort, 0..1, ou `null`
+    // quand personne ne vient de mourir. Seule façon de prouver la séquence
+    // en headless — le dessin, lui, n'est jamais exercé.
+    obtenirClignementRespawn: () => (
+      clignementRespawnMs === null ? null : ouverturePaupieres(effetClignementRespawn, clignementRespawnMs)
+    ),
     // Palier D (§3.4) : fourni à ui/menu.js via menu.definirEntreesStats()
     // une fois l'orchestrateur construit (même patron que
     // reinitialiserPartie ci-dessus) — le menu Stats n'a besoin d'appeler

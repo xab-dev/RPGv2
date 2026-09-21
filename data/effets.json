@@ -46,5 +46,11 @@
     "capacite": 6,
     "fusion_ms": 0,
     "offset_y_px": -8
+  },
+  {
+    "id": "effet_clignement_respawn",
+    "type": "clignement",
+    "ouvertures_ms": [220, 520],
+    "noir_ms": 180
   }
 ]

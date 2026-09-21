@@ -93,7 +93,13 @@ export function avancerIntro(intro, deltaMs) {
 
 // Ouverture des paupières (0 = noir plein écran, 1 = grand ouvert) à
 // l'instant `tMs` de l'étape clignements uniquement.
-function ouverturePaupieres({ ouvertures_ms, noir_ms }, tMs) {
+//
+// EXPORTÉE depuis `D-65` (T8) : le retour de mort réutilise exactement cette
+// séquence, en version courte — demande de Xav du 21/09. « Réutilise la
+// séquence existante, aucune seconde implémentation » : c'est la même
+// fonction, avec d'autres durées, lues dans `data/effets.json`. Un second
+// modèle de clignement finirait par ne plus ressembler au premier.
+export function ouverturePaupieres({ ouvertures_ms, noir_ms }, tMs) {
   let t = tMs;
   for (let i = 0; i < ouvertures_ms.length; i++) {
     const duree = ouvertures_ms[i];

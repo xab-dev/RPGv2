@@ -1272,13 +1272,35 @@ export const SCHEMAS = {
       // `vol` (`D-36`) : un décalage purement visuel, sans silhouette ni
       // gabarit — d'où un 3ᵉ jeu de champs. Ajouter un genre d'effet reste
       // ce qu'il était : une branche de plus ici, et rien ailleurs.
-      const TYPES = ['particules', 'texte', 'vol'];
+      // `clignement` (`D-65`, T8) : les durées d'une séquence de paupières.
+      // Sa durée totale est la SOMME de ses ouvertures et de ses noirs, donc
+      // il n'a pas de `duree_ms` — d'où un 4ᵉ jeu de champs.
+      const TYPES = ['particules', 'texte', 'vol', 'clignement'];
       if (!TYPES.includes(entry.type)) {
         erreurs.push(`${path} > type doit valoir ${TYPES.map((t) => `"${t}"`).join(' ou ')}`);
         return erreurs;
       }
 
-      // `duree_ms` est commun aux deux : une durée nulle donne un effet
+      if (entry.type === 'clignement') {
+        // Aucun repli, aucune valeur par défaut : c'est exactement le genre
+        // de réglage qu'on veut voir tomber au boot plutôt qu'à la mort du
+        // héros, le dessin n'étant jamais exercé en headless.
+        if (!Array.isArray(entry.ouvertures_ms) || entry.ouvertures_ms.length === 0) {
+          erreurs.push(`${path} > ouvertures_ms doit être un tableau non vide de durées`);
+        } else {
+          for (const duree of entry.ouvertures_ms) {
+            if (typeof duree !== 'number' || duree <= 0) {
+              erreurs.push(`${path} > ouvertures_ms : ${JSON.stringify(duree)} doit être un nombre positif`);
+            }
+          }
+        }
+        if (typeof entry.noir_ms !== 'number' || entry.noir_ms < 0) {
+          erreurs.push(`${path} > noir_ms doit être un nombre >= 0`);
+        }
+        return erreurs;
+      }
+
+      // `duree_ms` est commun aux autres : une durée nulle donne un effet
       // invisible, quel que soit son genre.
       const positifs = ['duree_ms'];
       const positifsOuNuls = [];

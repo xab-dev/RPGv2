@@ -44,3 +44,9 @@ se lisent comme une **moufle gauche**.
 | 5 | `D-99` | **Les cases de la barre du bas.** Le fond blanc à 15 % prenait la couleur du décor (beige sur la terre de la Maison) : il devient **sombre**, avec le même dégradé très court que le bandeau, un liseré sur l'arête haute et un contour **or** pour l'attaque. Une seule fonction de fond sert la case carrée du clavier et le bouton rond du doigt. Le **placement** des boutons tactiles n'est pas touché (`D-57`, chapitre de Xav) | à venir |
 | 6 | `D-100` | **Le relief des surfaces du menu**, en **jetons** seulement (`--menu-carte-lisere`, `--menu-carte-relief`) : un liseré d'un pixel sur l'arête haute et une lueur qui s'éteint à mi-hauteur, en **blanc translucide** — donc valable au repos, au focus et à l'appui sans être réécrit par état. La règle est posée **après** les règles d'état, sinon leur raccourci `background` effaçait le dégradé et la carte focalisée devenait la seule à plat. Pas d'ombre portée : la décision de sobriété d'origine tient | à venir |
 | 7 | `D-101` | **Les vignettes des tuiles.** Une **flaque d'ombre** en fond de vignette (centrée à 72 % de la hauteur, là où repose le bas d'un objet) rend son sol à l'ombre propre des items, qui se perdait sur le fond uni d'une tuile ; 28 u → 31 u. La vignette de la **fiche** ne la prend pas (sur un grand panneau, ce serait une tache). Le coin « équipé » rapetisse et gagne une arête sombre, sans quoi sa diagonale se lisait comme une coupure de la tuile | à venir |
+
+**Une reprise en cours de route, et elle vaut d'être notée** : la flaque d'ombre et l'arête du
+coin avaient d'abord été écrites en `rgba(...)` directement dans les règles. Le test
+`test_d43_c1_ecran_fiches` l'a refusé — « aucune couleur en dur : les jetons, et eux seuls ».
+C'est la règle du 20/09 qui tient toute seule, un an de méthode plus tard : les quatre couleurs
+nouvelles de cette passe (les deux du relief, les deux de la vignette) sont des **jetons**.

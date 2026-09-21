@@ -1,6 +1,7 @@
 [
   {
     "id": "item_branche",
+    "xp": 1,
     "label_key": "item.branche",
     "categorie": "ressource",
     "stack_max": 20,
@@ -9,6 +10,7 @@
   },
   {
     "id": "item_caillou",
+    "xp": 1,
     "label_key": "item.caillou",
     "categorie": "ressource",
     "stack_max": 20,
@@ -17,6 +19,7 @@
   },
   {
     "id": "item_fruit",
+    "xp": 2,
     "label_key": "item.fruit",
     "categorie": "nourriture",
     "stack_max": 10,

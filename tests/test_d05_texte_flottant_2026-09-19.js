@@ -9,7 +9,8 @@
 //   - réserve pleine sans allocation (recyclage du plus ancien) ;
 //   - fusion de deux gains du même item dans la même frame (« +2 ») ;
 //   - texte résolu dans les deux langues, sans chaîne en dur ;
-//   - une récolte et un ramassage simulés déclenchent chacun UNE émission.
+//   - une récolte et un ramassage simulés émettent chacun le gain ET son XP
+//     (`D-58`, 21/09 : « +1 » sans le nom, « +1xp », distingués par la taille).
 //
 // Le dessin lui-même n'est jamais exercé (canvas, contrainte de méthode) :
 // l'orchestrateur expose l'état des textes, comme il expose déjà l'indice de
@@ -51,6 +52,7 @@ assert.ok(CONFIG, 'effet_texte_gain doit exister dans data/effets.json');
 // recopiées plus bas (le contrat « aucune chaîne en dur » vaut aussi pour un
 // fichier de test, qui sinon fige un texte au lieu de figer un contrat).
 const CLE_FORMAT = 'monde.gain_item';
+const CLE_FORMAT_XP = 'monde.gain_xp';
 
 // --- 1. Émission, vieillissement, extinction ------------------------------
 {
@@ -161,13 +163,33 @@ const CLE_FORMAT = 'monde.gain_item';
     i18n.definirLangue(langue);
     const gabarit = i18n.t(CLE_FORMAT);
     assert.ok(!gabarit.startsWith('[['), `${CLE_FORMAT} doit exister en ${langue}`);
-    for (const marque of ['{n}', '{item}']) {
-      assert.ok(gabarit.includes(marque), `${CLE_FORMAT} (${langue}) doit porter ${marque}`);
-    }
-    const rendu = i18n.t(CLE_FORMAT, { n: 2, item: i18n.t('item.bois') });
+    assert.ok(gabarit.includes('{n}'), `${CLE_FORMAT} (${langue}) doit porter {n}`);
+    // `D-58` (Xav, 21/09 : « trop de texte ») : le gabarit de gain ne porte
+    // PLUS le nom de l'item. Le témoin négatif compte autant que le positif —
+    // sans lui, remettre « {item} » demain passerait inaperçu.
+    assert.ok(
+      !gabarit.includes('{item}'),
+      `${CLE_FORMAT} (${langue}) ne doit plus porter {item} : « +1 », sans le nom`
+    );
+    const rendu = i18n.t(CLE_FORMAT, { n: 2 });
     assert.ok(!/\{[a-z_]+\}/.test(rendu), `aucun marqueur ne doit rester après résolution (${langue}) : ${rendu}`);
     assert.ok(rendu.includes('2'), `la quantité doit apparaître (${langue}) : ${rendu}`);
-    assert.ok(rendu.includes(i18n.t('item.bois')), `le nom de l'item doit apparaître (${langue}) : ${rendu}`);
+    assert.ok(!rendu.includes(i18n.t('item.bois')), `le nom de l'item ne doit plus apparaître (${langue}) : ${rendu}`);
+
+    // Le gabarit de l'XP, et son SUFFIXE, vivent dans les locales aussi : le
+    // « xp » de « +1xp » est du texte traduisible, jamais une chaîne du code.
+    const gabaritXp = i18n.t(CLE_FORMAT_XP);
+    assert.ok(!gabaritXp.startsWith('[['), `${CLE_FORMAT_XP} doit exister en ${langue}`);
+    assert.ok(gabaritXp.includes('{n}'), `${CLE_FORMAT_XP} (${langue}) doit porter {n}`);
+    const renduXp = i18n.t(CLE_FORMAT_XP, { n: 2 });
+    assert.ok(!/\{[a-z_]+\}/.test(renduXp), `aucun marqueur ne doit rester (${langue}) : ${renduXp}`);
+    // Les deux textes doivent se LIRE différemment, sinon « +1 » et « +1xp »
+    // seraient le même retour à l'écran, taille mise à part.
+    assert.notEqual(renduXp, rendu, `« +2 » et « +2xp » doivent différer (${langue})`);
+    assert.ok(
+      renduXp.replace(/[0-9+\s]/g, '').length > 0,
+      `${CLE_FORMAT_XP} (${langue}) doit porter un suffixe lisible, pas seulement un nombre : ${renduXp}`
+    );
   }
 
   // Tous les items ramassables/produits ont déjà un nom traduit : le texte
@@ -247,16 +269,29 @@ const CLE_FORMAT = 'monde.gain_item';
   orch.maj(16);
   assert.equal(save.inventaire.items.item_bois, 1, 'la récolte doit bien créditer du bois');
   const apresRecolte = orch.obtenirTextesFlottants();
-  assert.equal(apresRecolte.length, 1, 'une récolte = UNE émission');
-  assert.equal(apresRecolte[0].cle, 'item_bois', 'le texte porte l\'item réellement gagné');
-  assert.equal(apresRecolte[0].quantite, 1);
+  // `D-58` : une récolte émet désormais DEUX textes au même endroit, le gain
+  // et son XP — c'est le couple qui apprend la boucle au joueur. Ils se
+  // distinguent par leur `style`, jamais par leur ordre dans la réserve.
+  assert.equal(apresRecolte.length, 2, 'une récolte = le gain ET son XP');
+  const gainRecolte = apresRecolte.find((t) => t.style === 'gain');
+  const xpRecolte = apresRecolte.find((t) => t.style === 'xp');
+  assert.ok(gainRecolte && xpRecolte, 'les deux textes doivent porter des styles distincts');
+  assert.equal(gainRecolte.cle, 'item_bois', "le texte porte l'item réellement gagné");
+  assert.equal(gainRecolte.quantite, 1);
+  assert.equal(gainRecolte.libelle, null, "`D-58` : plus de nom d'item dans le texte de gain");
+  // L'XP affichée est celle du CATALOGUE, jamais un nombre écrit ici.
+  assert.equal(xpRecolte.quantite, registre.obtenir('resources', 'res_bois').xp);
+  assert.ok(
+    Math.abs(xpRecolte.x - gainRecolte.x) < 1e-9 && Math.abs(xpRecolte.y - gainRecolte.y) < 1e-9,
+    'les deux textes partent du même point : la source du gain',
+  );
   // Il part de la tuile récoltée, pas du héros : c'est la SOURCE du gain.
   assert.ok(
-    Math.abs(apresRecolte[0].x - (cible.tx + 0.5) * scene.tileSize) < 1e-9,
+    Math.abs(gainRecolte.x - (cible.tx + 0.5) * scene.tileSize) < 1e-9,
     'le texte monte depuis la ressource',
   );
 
-  // b) Ramassage au sol : même mécanisme, une seule émission de plus.
+  // b) Ramassage au sol : même mécanisme, le même couple de textes.
   viderTextesFlottants(orch.obtenirEtatTextesFlottants());
   const itemsSol = save.monde.items_sol[scene.id] || {};
   let auSol = null;
@@ -274,9 +309,12 @@ const CLE_FORMAT = 'monde.gain_item';
   orch.maj(16);
   assert.equal(save.inventaire.items[auSol.itemId], avant + 1, 'le ramassage doit créditer l\'item');
   const apresRamassage = orch.obtenirTextesFlottants();
-  assert.equal(apresRamassage.length, 1, 'un ramassage = UNE émission');
-  assert.equal(apresRamassage[0].cle, auSol.itemId);
-  console.log('OK une récolte et un ramassage déclenchent chacun une seule émission');
+  const gainRamassage = apresRamassage.find((t) => t.style === 'gain');
+  const xpRamassage = apresRamassage.find((t) => t.style === 'xp');
+  assert.equal(apresRamassage.length, 2, 'un ramassage = le gain ET son XP');
+  assert.equal(gainRamassage.cle, auSol.itemId);
+  assert.equal(xpRamassage.quantite, registre.obtenir('items', auSol.itemId).xp);
+  console.log('OK une récolte et un ramassage émettent chacun le gain et son XP');
 }
 
 console.log('OK test_d05_texte_flottant');

@@ -34,7 +34,7 @@ export function creerTextesFlottants(config) {
   }
   const textes = new Array(capacite);
   for (let i = 0; i < capacite; i += 1) {
-    textes[i] = { active: false, x: 0, y: 0, ageMs: 0, cle: null, quantite: 0, format: null, libelle: null };
+    textes[i] = { active: false, x: 0, y: 0, ageMs: 0, cle: null, quantite: 0, format: null, libelle: null, style: null };
   }
   return { config, textes };
 }
@@ -47,7 +47,15 @@ export function creerTextesFlottants(config) {
 // `format` et `libelle` sont des clés que l'appelant résoudra au rendu. Un
 // futur « +12 » de dégâts émettra un `format` différent et `libelle: null`,
 // sans une ligne de code ici.
-export function emettreTexte(etat, { x, y, cle, quantite = 1, format = null, libelle = null }) {
+//
+// `style` est une clé opaque de plus, du même genre : le module ne sait pas
+// ce qu'elle veut dire, il la transporte. C'est `data/effets.json` qui dit à
+// quoi ressemble un `style`, et le rendu qui le lit. Né de la demande de Xav
+// du 21/09 (`V-12`) : un gain de ressource (« +1 ») et un gain d'XP
+// (« +1xp ») doivent se distinguer **d'un coup d'œil, par la taille** — la
+// couleur peut s'y ajouter, jamais porter seule la différence (un joueur qui
+// distingue mal les couleurs lirait alors deux fois le même texte).
+export function emettreTexte(etat, { x, y, cle, quantite = 1, format = null, libelle = null, style = null }) {
   const fusionMs = etat.config.fusion_ms || 0;
 
   // Fusion : un texte du même gain, assez jeune, absorbe celui-ci. On garde
@@ -83,6 +91,7 @@ export function emettreTexte(etat, { x, y, cle, quantite = 1, format = null, lib
   cible.quantite = quantite;
   cible.format = format;
   cible.libelle = libelle;
+  cible.style = style;
   return etat;
 }
 
@@ -123,6 +132,7 @@ export function textesVisibles(etat) {
       quantite: t.quantite,
       format: t.format,
       libelle: t.libelle,
+      style: t.style,
     });
   }
   return visibles;

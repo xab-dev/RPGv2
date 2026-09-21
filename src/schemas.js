@@ -670,6 +670,20 @@ function validerStatusEffect(entry, catalogs, path) {
 // qui ont chacun un `custom` propre par ailleurs — pas une entrée du
 // mécanisme générique `refs` (qui ne lit que des champs de premier niveau,
 // jamais `entry.render.visuel`).
+// `xp` optionnel (`D-58`) : porté par `items.json` (ramassage au sol),
+// `resources.json` (récolte à l'outil) et `stations.json` (le puits). Absent
+// = cette entrée ne rapporte rien, le cas le plus courant. PRÉSENT, il doit
+// être un nombre fini ≥ 0 : un `"xp": "3"` ou un `"xp": -1` passerait sans
+// bruit jusqu'à `xp.js#xpDeCatalogue`, qui rendrait une chaîne ou retirerait
+// de l'XP — le genre de faute qui ne se voit qu'en jouant longtemps.
+function erreursXpOptionnel(entry, path) {
+  if (entry.xp === undefined) return [];
+  if (typeof entry.xp !== 'number' || !Number.isFinite(entry.xp) || entry.xp < 0) {
+    return [`${path} > xp doit être un nombre fini >= 0 (ou absent)`];
+  }
+  return [];
+}
+
 function erreursRenderVisuel(entry, catalogs, path) {
   const visuel = entry.render && entry.render.visuel;
   if (typeof visuel !== 'string' || !(catalogs.visuels || []).some((v) => v.id === visuel)) {
@@ -1239,15 +1253,37 @@ export const SCHEMAS = {
       } else {
         // `montee_px` à 0 donnerait un texte qui ne monte pas : accepté (le
         // réglage est à Xav), mais il doit rester un nombre.
-        positifs.push('taille_px');
         positifsOuNuls.push('montee_px', 'fondu_depuis');
+        // `D-58` : la taille et la couleur ne sont plus globales, elles
+        // vivent dans un STYLE — un effet de texte en déclare au moins un, et
+        // chacun porte les deux. Le contrôle est ici parce que le rendu lève
+        // sur un style inconnu ou incomplet, et que le rendu n'est jamais
+        // exercé en headless : sans ce contrôle, la faute se verrait au
+        // premier ramassage en jeu, pas au boot.
+        const styles = entry.styles;
+        if (!styles || typeof styles !== 'object' || Object.keys(styles).length === 0) {
+          erreurs.push(`${path} > styles doit être un objet non vide { nom: { taille_px, couleur } }`);
+        } else {
+          for (const [nom, style] of Object.entries(styles)) {
+            if (!style || typeof style !== 'object') {
+              erreurs.push(`${path} > styles.${nom} doit être un objet { taille_px, couleur }`);
+              continue;
+            }
+            if (typeof style.taille_px !== 'number' || style.taille_px <= 0) {
+              erreurs.push(`${path} > styles.${nom}.taille_px doit être un nombre strictement positif`);
+            }
+            if (typeof style.couleur !== 'string') {
+              erreurs.push(`${path} > styles.${nom}.couleur doit être une couleur (chaîne)`);
+            }
+          }
+        }
         if (!Number.isInteger(entry.capacite) || entry.capacite <= 0) {
           erreurs.push(`${path} > capacite doit être un entier strictement positif (taille de la réserve)`);
         }
         if (entry.fusion_ms !== undefined && (typeof entry.fusion_ms !== 'number' || entry.fusion_ms < 0)) {
           erreurs.push(`${path} > fusion_ms doit être un nombre >= 0 si présent`);
         }
-        for (const champ of ['couleur', 'contour']) {
+        for (const champ of ['contour']) {
           if (entry[champ] !== undefined && typeof entry[champ] !== 'string') {
             erreurs.push(`${path} > ${champ} doit être une couleur (chaîne) si présent`);
           }
@@ -1380,6 +1416,7 @@ export const SCHEMAS = {
       if (typeof entry.cooldown_ms !== 'number' || entry.cooldown_ms <= 0) {
         erreurs.push(`${path} > cooldown_ms doit être un nombre positif`);
       }
+      erreurs.push(...erreursXpOptionnel(entry, path));
       return erreurs;
     },
   },
@@ -1400,6 +1437,7 @@ export const SCHEMAS = {
         erreurs.push(`${path} > stack_max doit être un nombre positif`);
       }
       erreurs.push(...erreursRenderVisuel(entry, catalogs, path));
+      erreurs.push(...erreursXpOptionnel(entry, path));
       // spawn optionnel (§2.1 : "spawn optionnel") : un item purement de
       // craft n'a pas besoin d'exister au sol.
       if (entry.spawn !== undefined) {
@@ -1512,6 +1550,7 @@ export const SCHEMAS = {
     custom(entry, catalogs, path) {
       const erreurs = [];
       const ROLES_STATION = ['craft', 'stockage', 'eau'];
+      erreurs.push(...erreursXpOptionnel(entry, path));
       if (!ROLES_STATION.includes(entry.role)) {
         erreurs.push(`${path} > role doit être l'un de ${ROLES_STATION.join('/')}`);
       }

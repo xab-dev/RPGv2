@@ -21,3 +21,4 @@ file, la session ne le tient pas de mémoire.
 | # | Ticket | Commit | Ce qui est livré | Lignes de suivi |
 |---|---|---|---|---|
 | T0 | Reporter les verdicts du 21/09 | (ce commit) | 23 lignes `V-`/`E-` closes sous dictée de Xav et descendues en §8 · `V-11` réduite au puits · `V-10` dégelée en **non** · `Q-23` close, `Q-33`/`Q-34` tranchées · état **`pas vu`** ajouté au mode d'emploi · `docs/CHECKLIST_tournee.md` créée | ouvre `D-55` (volume), `D-56` (Motorola, à qualifier), `D-57` (placement tactile, gelé) ; clôt `D-36` |
+| T1 | L'XP de récolte et son retour visuel | (ce commit) | Champ `xp` sur items / resources / stations, lu par `xp.js#xpDeCatalogue` et validé au boot · texte flottant réduit à « +1 », « +1xp » à côté, distingués par la **taille** (`style` opaque + `data/effets.json`) · `crediterXpHeros` prend une position optionnelle · équilibrage prouvé : 22 XP → Nv.2, 24,4 % de Nv.0 → 5 | clôt `D-58` ; ouvre `Q-43`, `Q-44`, `V-36` |

@@ -1,6 +1,7 @@
 [
   {
     "id": "res_bois",
+    "xp": 3,
     "label_key": "resource.bois",
     "dialogue_bloque": "dlg_ressource_bloquee_bois",
     "outil_requis": "item_hache",
@@ -9,6 +10,7 @@
   },
   {
     "id": "res_pierre",
+    "xp": 3,
     "label_key": "resource.pierre",
     "dialogue_bloque": "dlg_ressource_bloquee_pierre",
     "outil_requis": "item_pioche",

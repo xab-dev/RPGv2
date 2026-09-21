@@ -37,8 +37,10 @@
     "duree_ms": 900,
     "montee_px": 16,
     "fondu_depuis": 0.5,
-    "taille_px": 8,
-    "couleur": "#f2e6b8",
+    "styles": {
+      "gain": { "taille_px": 9, "couleur": "#f2e6b8" },
+      "xp": { "taille_px": 6, "couleur": "#9fd0f0" }
+    },
     "contour": "#101418",
     "contour_px": 2,
     "capacite": 6,

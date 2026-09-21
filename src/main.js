@@ -75,7 +75,7 @@ import {
   decroitre as decroitreSurvie, consommer as consommerSurvie, appliquerMalusRespawn,
   calculerModulateur as calculerModulateurSurvie, configSurvie, jaugeSousLeSeuil,
 } from './survival.js';
-import { crediter as crediterXp } from './xp.js';
+import { crediter as crediterXp, xpDeCatalogue } from './xp.js';
 import { initialiserMenu, clesTexteEtats } from './ui/menu.js';
 import { creerDessinateurIcones } from './ui/icone_canvas.js';
 import { erreursCouleursUi } from './ui/couleurs_ui.js';
@@ -121,6 +121,9 @@ const DISTANCE_INTERACT_PX = 28;
 // le reste (contrainte « zéro chaîne en dur »). Un futur gain d'XP ou un
 // nombre de dégâts prendra son propre gabarit, sans toucher texte_flottant.js.
 const CLE_TEXTE_GAIN_ITEM = 'monde.gain_item';
+// `D-58` : le gabarit ET son suffixe (« xp ») vivent dans les locales, jamais
+// ici — c'est ce qui permet de l'écrire autrement en anglais le jour venu.
+const CLE_TEXTE_GAIN_XP = 'monde.gain_xp';
 // Respawn différé des items au sol (Palier B §3.2) : défaut appliqué quand
 // l'item ne surcharge pas `spawn.respawn_ms` — même esprit que
 // cooldown_ms par défaut de recipes.js.
@@ -352,11 +355,30 @@ export function creerOrchestrateurGrotte({
   // l'item — deux gains du même item dans la même frame fusionnent en « +2 ».
   function signalerGainItem(itemId, quantite, x, y) {
     if (!(quantite > 0)) return;
-    const itemDef = registre.obtenir('items', itemId);
     emettreTexte(textesFlottants, {
       x, y, cle: itemId, quantite,
       format: CLE_TEXTE_GAIN_ITEM,
-      libelle: itemDef.label_key,
+      // `D-58` (Xav, 21/09 : « trop de texte ») : plus de nom d'item. Le
+      // `libelle` reste à null plutôt que d'être retiré du module — un « +1
+      // Épée en bois » de butin rare le reprendra sans code nouveau, et
+      // c'est le gabarit de locale qui décidera de l'afficher ou non.
+      libelle: null,
+      style: 'gain',
+    });
+  }
+
+  // Le pendant du précédent pour l'XP. Deux textes montent donc d'une même
+  // récolte, « +1 » et « +1xp », au même endroit : c'est exactement ce qui
+  // apprend la boucle au joueur sans une ligne de tutoriel — il voit ce qu'il
+  // a pris ET ce que ça lui rapporte. Leur `cle` diffère, donc ils ne
+  // fusionnent jamais entre eux.
+  function signalerGainXp(xpGagne, x, y) {
+    if (!(xpGagne > 0)) return;
+    emettreTexte(textesFlottants, {
+      x, y, cle: 'gain_xp', quantite: xpGagne,
+      format: CLE_TEXTE_GAIN_XP,
+      libelle: null,
+      style: 'xp',
     });
   }
 
@@ -734,6 +756,10 @@ export function creerOrchestrateurGrotte({
         // `D-05` : émis AVANT le retrait de l'objet, pour partir de la
         // position réelle où il était posé — après, elle n'existe plus.
         signalerGainItem(itemProche.itemId, resultat.ajoute, itemProche.position.x, itemProche.position.y);
+        // `D-58` : l'XP du ramassage, proportionnelle à ce qui est RÉELLEMENT
+        // entré en poche (`resultat.ajoute`, 0 si elle est pleine) — jamais
+        // au nombre d'objets convoités.
+        crediterXpHeros(xpDeCatalogue(itemDef) * resultat.ajoute, itemProche.position);
         // Palier B (§3.2) : retrait immédiat, régénération DIFFÉRÉE (jamais
         // plus un tirage immédiat comme en Phase 2) — respawn_ms de l'item,
         // ou le défaut de catalogue.
@@ -780,6 +806,10 @@ export function creerOrchestrateurGrotte({
         (ressourceProche.tx + 0.5) * scene.tileSize,
         (ressourceProche.ty + 0.5) * scene.tileSize,
       );
+      crediterXpHeros(xpDeCatalogue(donneesRessource) * resultatRecolte.ajoute, {
+        x: (ressourceProche.tx + 0.5) * scene.tileSize,
+        y: (ressourceProche.ty + 0.5) * scene.tileSize,
+      });
       save.cooldowns = poserCooldown(save.cooldowns, cleCooldown, save.monde.heure);
       etatModifie = true;
     }
@@ -811,7 +841,20 @@ export function creerOrchestrateurGrotte({
       dialogue.ouvrir(resoudreLignes('dlg_puits_cooldown', registre, i18n, save.hero.companion));
       return;
     }
+    // `[OUVERT]` (`Q-43`) : l'XP du puits n'est créditée que si la gourde
+    // n'était PAS déjà pleine — boire quand on n'a pas soif ne rapporte rien.
+    // Retenu par défaut faute de tranchage : sans cela, le puits deviendrait
+    // une source d'XP à volonté, bornée par le seul cooldown anti-spam.
+    const soifAvant = save.survie.jauge_soif;
     save.survie = consommerSurvie(save.survie, { jauge_soif: 1 });
+    if (save.survie.jauge_soif > soifAvant) {
+      // Le « +1xp » monte du CENTRE du puits, pas du héros : même règle que
+      // partout ailleurs, le texte dit d'où vient le gain. On réutilise
+      // l'empreinte déjà calculée pour le seuil d'interaction — jamais une
+      // seconde position qui pourrait diverger de celle qu'on vient de tester.
+      const boite = rectangleInteractif(puzzle);
+      crediterXpHeros(xpDeCatalogue(station), { x: boite.x + boite.w / 2, y: boite.y + boite.h / 2 });
+    }
     save.cooldowns = poserCooldown(save.cooldowns, cleCooldown, save.monde.heure);
     etatModifie = true;
   }
@@ -1268,8 +1311,15 @@ export function creerOrchestrateurGrotte({
   // XP -> niveaux -> flags (Palier D §3.4) : seul point qui touche
   // save.hero.{xp,niveau,points_stats_libres} — combat (onMonstreMort) et
   // craft (entreesCraft) partagent ce même chemin, jamais deux compteurs.
-  function crediterXpHeros(xpGagne) {
+  //
+  // `position` est OPTIONNELLE (`D-58`) : quand l'appelant sait d'où vient le
+  // gain — la tuile récoltée, l'objet ramassé, le puits —, un « +1xp » monte
+  // de cet endroit. Le combat et le craft ne la passent pas encore ; le jour
+  // où ils le feront (position du monstre, de la station), il n'y aura rien à
+  // écrire ici.
+  function crediterXpHeros(xpGagne, position = null) {
     if (!xpGagne) return;
+    if (position) signalerGainXp(xpGagne, position.x, position.y);
     const resultat = crediterXp(
       { xp: save.hero.xp, niveau: save.hero.niveau, pointsStatsLibres: save.hero.points_stats_libres },
       xpGagne,

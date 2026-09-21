@@ -834,12 +834,25 @@ export function dessinerTextesFlottants(ctx, { textes, camera, config }) {
   const contourPx = config.contour_px || 0;
 
   ctx.save();
-  ctx.font = `bold ${config.taille_px}px monospace`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'bottom';
   ctx.lineJoin = 'round'; // sans ça, le contour épais produit des pointes aux angles des lettres
   ctx.lineWidth = contourPx;
   for (const t of textes) {
+    // `D-58` : la taille et la couleur viennent du STYLE du texte, pas du
+    // réglage global — c'est la taille qui distingue « +1 » de « +1xp », et
+    // la couleur ne fait que l'appuyer (elle ne porte jamais seule la
+    // différence : règle d'accessibilité posée par Xav le 21/09). Un style
+    // inconnu est une erreur de catalogue, jamais un repli silencieux qui
+    // afficherait les deux textes identiques.
+    const style = config.styles[t.style];
+    if (!style) {
+      throw new Error(
+        `render.js#dessinerTextesFlottants : style de texte "${t.style}" absent de l'entrée d'effets `
+        + `(styles connus : ${Object.keys(config.styles).join(', ')})`
+      );
+    }
+    ctx.font = `bold ${style.taille_px}px monospace`;
     ctx.globalAlpha = t.alpha;
     const x = t.x - camera.x;
     const y = t.y - camera.y + decalageY;
@@ -850,7 +863,7 @@ export function dessinerTextesFlottants(ctx, { textes, camera, config }) {
       ctx.strokeStyle = config.contour;
       ctx.strokeText(t.texte, x, y);
     }
-    ctx.fillStyle = config.couleur;
+    ctx.fillStyle = style.couleur;
     ctx.fillText(t.texte, x, y);
   }
   ctx.restore();

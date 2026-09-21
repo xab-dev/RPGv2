@@ -44,7 +44,18 @@ const PALETTE_JAUGES = {
   soif: { creux: '#0e1b2a', corps: '#2a6aa8', haut: '#4a9ad9', lisere: '#a6dcff' },
 };
 const COULEUR_JAUGE_CONTOUR = 'rgba(8, 9, 12, 0.75)';
-const COULEUR_SLOT_GRISE = 'rgba(255,255,255,0.15)';
+// `D-99` — la case d'action. Le blanc translucide d'avant prenait la couleur
+// de ce qu'il y avait derrière : sur la terre de la Maison, les cases
+// viraient au beige et l'icône s'y noyait. Un fond SOMBRE tient sur
+// n'importe quel décor, de jour comme de nuit — c'est le même raisonnement
+// que le bandeau du haut, qui est sombre depuis toujours.
+const COULEUR_SLOT_FOND = 'rgba(10, 12, 17, 0.8)';
+const COULEUR_SLOT_FOND_HAUT = 'rgba(40, 46, 58, 0.8)';
+const COULEUR_SLOT_BORD = 'rgba(255, 255, 255, 0.28)';
+// Le liseré clair court sur l'arête HAUTE de la case : la lumière vient d'en
+// haut partout ailleurs (jauges, silhouettes), elle ne va pas changer d'avis
+// ici.
+const COULEUR_SLOT_LISERE = 'rgba(255, 255, 255, 0.14)';
 
 // Jauges faim/soif (Palier C, specs/04_maison-interieur.md §3.3/hud_layout) :
 // icônes distinctes PAR FORME (P4② — jamais la couleur seule), un triangle
@@ -116,6 +127,17 @@ function dessinerIconeSlot(ctx, visuel, cx, cy, taille) {
   dessinerVisuel(ctx, visuel, cx, cy, { echelle: echelleIconeArme(taille) });
 }
 
+// Le fond d'une case, rond ou carré : un dégradé vertical très court, du
+// clair en haut vers le sombre en bas. Une seule fonction pour les deux
+// formes — sans quoi la case du doigt et la case du clavier finiraient par
+// ne plus se ressembler, alors qu'elles disent la même chose.
+function fondSlot(ctx, y, hauteur) {
+  const degrade = ctx.createLinearGradient(0, y, 0, y + hauteur);
+  degrade.addColorStop(0, COULEUR_SLOT_FOND_HAUT);
+  degrade.addColorStop(1, COULEUR_SLOT_FOND);
+  return degrade;
+}
+
 function dessinerBoutonsTactiles(ctx, iconesSlots, verbesActions) {
   for (const bouton of boutonsTactilesVisibles(verbesActions)) {
     ctx.beginPath();
@@ -123,9 +145,9 @@ function dessinerBoutonsTactiles(ctx, iconesSlots, verbesActions) {
     // `[OUVERT]` D-20 B : plus d'aplat jaune sur l'attaque — fond identique
     // aux autres cases, c'est l'ICÔNE qui porte le jaune. On garde le repère
     // de couleur sans le pavé, qui écrasait la silhouette.
-    ctx.fillStyle = COULEUR_SLOT_GRISE;
+    ctx.fillStyle = fondSlot(ctx, bouton.cy - bouton.rayon, bouton.rayon * 2);
     ctx.fill();
-    ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+    ctx.strokeStyle = bouton.verbe === 'attack' ? COULEUR_SLOT_ACTIF : COULEUR_SLOT_BORD;
     ctx.stroke();
     dessinerIconeSlot(ctx, iconesSlots[bouton.verbe], bouton.cx, bouton.cy, bouton.rayon * ICONE_PART_DU_BOUTON);
   }
@@ -153,12 +175,14 @@ function dessinerSlotsBas(ctx, resolution, iconesSlots, verbesActions) {
     // Même `[OUVERT]` que les boutons tactiles : fond commun, jaune porté par
     // l'icône. Le contour de l'attaque reste plus vif — c'est le seul slot
     // actif, et ça ne dépend pas de l'arme.
-    ctx.fillStyle = COULEUR_SLOT_GRISE;
+    ctx.fillStyle = fondSlot(ctx, y, SLOT_TAILLE);
     ctx.fillRect(x, y, SLOT_TAILLE, SLOT_TAILLE);
+    ctx.fillStyle = COULEUR_SLOT_LISERE;
+    ctx.fillRect(x, y, SLOT_TAILLE, 1);
     // Le repère de couleur de la case d'attaque, passé du blanc à l'or : il
     // vit désormais dans le CONTOUR, le seul endroit où il ne peut pas écraser
     // la silhouette qu'il désigne (cf. `dessinerIconeSlot`).
-    ctx.strokeStyle = verbe === 'attack' ? COULEUR_SLOT_ACTIF : 'rgba(255,255,255,0.4)';
+    ctx.strokeStyle = verbe === 'attack' ? COULEUR_SLOT_ACTIF : COULEUR_SLOT_BORD;
     ctx.strokeRect(x, y, SLOT_TAILLE, SLOT_TAILLE);
     dessinerIconeSlot(ctx, iconesSlots[verbe], x + SLOT_TAILLE / 2, y + SLOT_TAILLE / 2, SLOT_TAILLE * ICONE_PART_DE_LA_CASE);
   });

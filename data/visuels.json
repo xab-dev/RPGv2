@@ -242,11 +242,26 @@
   {
     "id": "visuel_atelier",
     "ancre": "bas",
-    "ombre": { "dy": 1, "w": 20, "h": 5, "alpha": 0.3 },
+    "ombre": { "dy": -0.6, "w": 19, "h": 4, "alpha": 0.32 },
     "primitives": [
-      { "forme": "rect", "dx": 0, "dy": -5, "w": 22, "h": 8, "couleur": "#5a5a5a" },
-      { "forme": "cercle", "dx": -6, "dy": -9, "w": 8, "h": 8, "couleur": "#6b6b6b" },
-      { "forme": "cercle", "dx": 6, "dy": -9, "w": 8, "h": 8, "couleur": "#6b6b6b" }
+      { "forme": "rect", "dx": 0.5, "dy": -10.9, "w": 15.5, "h": 3.6, "couleur": "#4f4334" },
+      { "forme": "rect", "dx": -3.2, "dy": -11.7, "w": 5.6, "h": 1, "couleur": "#94989d" },
+      { "forme": "rect", "dx": 0.4, "dy": -11.7, "w": 1.6, "h": 1.6, "couleur": "#8a5a32" },
+      { "forme": "rect", "dx": 5.2, "dy": -10.8, "w": 0.9, "h": 3.2, "couleur": "#8a5a32" },
+      { "forme": "rect", "dx": 5.2, "dy": -12, "w": 3, "h": 1.4, "couleur": "#7a7e83" },
+      { "forme": "polygone", "dx": 0, "dy": 0,
+        "points": [[-8.4, -9.2], [8.4, -9.2], [10.2, -6.4], [-10.2, -6.4]], "couleur": "#7a6a52" },
+      { "forme": "rect", "dx": 0, "dy": -5.7, "w": 20.4, "h": 1.8, "couleur": "#5e5040" },
+      { "forme": "rect", "dx": -7.2, "dy": -3.6, "w": 1.8, "h": 3, "couleur": "#453a2c" },
+      { "forme": "rect", "dx": 7.2, "dy": -3.6, "w": 1.8, "h": 3, "couleur": "#453a2c" },
+      { "forme": "rect", "dx": 0, "dy": -2.6, "w": 14.5, "h": 1, "couleur": "#453a2c" },
+      { "forme": "rect", "dx": -8.8, "dy": -3, "w": 2.4, "h": 4, "couleur": "#574a3a" },
+      { "forme": "rect", "dx": 8.8, "dy": -3, "w": 2.4, "h": 4, "couleur": "#574a3a" },
+      { "forme": "rect", "dx": -7, "dy": -5.6, "w": 4.2, "h": 2.2, "couleur": "#6f6f72" },
+      { "forme": "rect", "dx": -7, "dy": -3.9, "w": 0.9, "h": 1.6, "couleur": "#5a5a5d" },
+      { "forme": "cercle", "dx": -7, "dy": -3, "w": 2, "h": 2, "couleur": "#7a7e83" },
+      { "forme": "polygone", "dx": 0, "dy": 0,
+        "points": [[2.2, -8.4], [8.2, -8.4], [9.2, -6.9], [3.2, -6.9]], "couleur": "#9a7f58" }
     ]
   },
   {

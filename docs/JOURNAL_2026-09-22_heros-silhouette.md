@@ -61,10 +61,21 @@ silhouette dépasse librement : la boîte est son emprise au sol, pas sa taille.
    qu'on lise « il est dedans ».
 2. **Épaules en socle à angles vifs** → un pion d'échecs avec un col. Reprises
    en pente arrondie, du cou vers le bras.
-3. **Le liseré remonté d'un cran à la fin** : `save.js` documente depuis la
+3. **Le liseré remonté d'un cran** : `save.js` documente depuis la
    Phase 1 une intention explicite — « un contour clair pour rester lisible même
    dans la pénombre ». Le disque la portait par son cercle clair de 22 ; c'est
    maintenant le liseré de la capuche qui en a la charge.
+
+4. **Une itération de plus, demandée par Xav** après avoir vu le résultat en
+   jeu (« le reste on garde, c'est très bon ») : **le visage grossit** d'environ
+   1,5 px à l'écran — la boule, son halo et l'ouverture de la capuche
+   ensemble, sinon la boule aurait mangé son creux —, et **la pointe de la
+   capuche s'arrondit**, elle seule. Le groupe du visage remonte de 0,5 unité
+   au passage : agrandi en place, le bas de l'ouverture serait sorti sous le
+   bord de la capuche et aurait mordu le manteau. Et la calotte du **corps**
+   de la capuche a dû remonter vers celle du creux : une pointe arrondie
+   laissait la bande de contour former un **ergot sombre** au sommet, ce
+   qu'une pointe vive cachait.
 
 ## Vérifications
 

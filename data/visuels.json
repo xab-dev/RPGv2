@@ -41,8 +41,8 @@
     "ancre": "centre",
     "teintable": true,
     "primitives": [
-      { "forme": "rect", "dx": 0, "dy": 0, "w": 14, "h": 14, "couleur": "#c2a23a", "teinte": true },
-      { "forme": "rect", "dx": -2, "dy": -2, "w": 6, "h": 6, "couleur": "#e8d488", "alpha": 0.4 },
+      { "forme": "rect", "dx": 0, "dy": 0, "w": 11.6, "h": 11.6, "couleur": "#c2a23a", "teinte": true },
+      { "forme": "rect", "dx": -1.7, "dy": -1.7, "w": 5, "h": 5, "couleur": "#e8d488", "alpha": 0.4 },
       { "forme": "cercle", "dx": 0, "dy": 0, "w": 17, "h": 17, "couleur": "#c2a23a", "alpha": 0.16, "teinte": true },
       { "forme": "polygone", "dx": 0, "dy": -8, "points": [[0, -4], [0.9, 0], [0, 4], [-0.9, 0]], "couleur": "#f2e6b8", "alpha": 0.55 },
       { "forme": "polygone", "dx": -6, "dy": 5, "points": [[0, -3], [0.7, 0], [0, 3], [-0.7, 0]], "couleur": "#f2e6b8", "alpha": 0.35 }

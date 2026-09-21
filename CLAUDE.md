@@ -573,4 +573,33 @@ Et une chose que les captures ont montrée et que la spec n'avait pas prévue :
 en Bas, **le parquet de la Maison perd ses lames**. Dehors un aplat d'herbe
 reste de l'herbe ; dedans, la lame *est* la lecture de la surface. `Q-59`.
 
+### Le retour de Xav sur les trois presets (22/09), et ce qu'il retourne
+
+Verbatim : « **bas** : aucun problème à l'œil, le jeu est léger. **moyen** : le
+plus "moche" des trois, fonctionnel. **haut** : pas encore de différence
+notable, à booster. »
+
+Trois conséquences, toutes consignées et aucune traitée :
+
+`Q-55` est **répondue, à l'envers de ce qu'on craignait**. On redoutait que Bas
+sans grain soit trop pauvre ; c'est **Moyen** — c'est-à-dire le jeu
+d'aujourd'hui — que Xav trouve le moins beau. `grain_sol: 0` reste, le repli
+`0.2` n'est pas posé, et `Q-59` (le parquet sans ses lames) tombe avec.
+
+`Q-60` naît de là, et elle est plus grosse qu'elle n'en a l'air : **le grain du
+sol gagne-t-il sa place ?** Bas est jugé bon à l'œil *et* il divise par ~5 le
+coût de reconstruction du calque — donc il est un candidat sérieux au **statut
+de défaut**, pas seulement à celui d'allègement. Mais toute suite autre que
+« rien » **rouvre le sol**, que `E-04` avait verrouillé (« garde le sol de la
+maison, améliore-le, mais ne le change pas ») : ça remonte, ça ne se fait pas.
+Réserve de lecture : grain et décor partent **ensemble** en Bas, donc ce retour
+ne dit pas lequel des deux est en cause.
+
+`D-116` — **Haut ne se voit pas**, et les mesures le disaient déjà : même
+calque que Moyen, seules les particules changent, et elles sont petites, brèves
+et périphériques. Ce qui manque à Haut est de la matière **dans le calque**,
+c'est-à-dire `E-04` — que la spec avait justement prévu comme son réceptacle.
+Premier levier disponible : `densite_decor` au-delà de 1, **bloqué par
+`D-106`** (sans lui, décupler la densité sème de l'herbe sur le chemin).
+
 Reste le palier E : Auto — signal de départ, descente mesurée, annonce.

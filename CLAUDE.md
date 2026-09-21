@@ -422,10 +422,19 @@ scénario de capture neuf `tools/scenarios/heros_scene.mjs` — les trois teinte
 en plein jour, la nuit, et la Grotte d'une partie **neuve** —, album
 `docs/captures/heros-2026-09-22/`.
 
-**Ce que je signale moi-même** : dans la Grotte, **avant le choix du follet**, la teinte est
-le gris neutre, le visage luit à peine et la silhouette est très sombre sur le voile. Elle se
-lit sur capture ; manette en main, c'est peut-être trop discret pour la première image du
-jeu. C'est le point le plus discutable du ticket (`V-54`).
+**Une itération de plus, demandée par Xav après l'avoir vu en jeu** (« le reste on garde,
+c'est très bon ») : le **visage grossit** d'environ 1,5 px — la boule, son halo et
+l'ouverture ensemble, sinon la boule aurait mangé son creux — et la **pointe** de la capuche
+s'arrondit, elle seule. Effet de bord qui a demandé une seconde retouche : une pointe vive
+cachait la bande de contour sombre qui couronne la capuche ; arrondie, elle devenait un
+**ergot noir** au sommet.
+
+**Validé en jeu par Xav le jour même** (`V-54`, « parfait »), avec un relevé `?debug=fps`
+pris dans la foulée (`R-17`) : **59,9 fps, 0/600 frame sautée**, `dessiner()` 0,77 ms, à
+**6 monstres, 4 interactifs et 21 objets au sol** — les treize primitives du héros ne se
+voient pas dans la mesure. `push` demandé, donc **en ligne**. Le point que je signalais
+comme le plus discutable (le héros très sombre dans la Grotte, avant le choix du follet)
+n'a pas été relevé : il reste tel quel.
 
 **Relevé sans y toucher** : `Q-51` — le héros ne regarde toujours nulle part (aucune
 orientation en données), hors périmètre annoncé avant le go.

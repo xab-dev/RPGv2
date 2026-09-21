@@ -322,3 +322,8 @@ Ouvertes par la session, sans y toucher :
   **en silence** ; rien ne distingue « pas d'arme » de « arme introuvable ».
 
 Hors scope, non touché comme demandé : le menu, les fonctionnalités, le code.
+
+**Verdict de Xav, le 21/09, après avoir fait le tour des dix** : « c'est bien
+mieux que ce à quoi je m'attendais. Fruit et fruit cuit, on fait la différence
+au premier coup d'œil. C'est validé. » `V-52` close, `push` demandé dans la
+foulée — les dix items sont **en ligne**.

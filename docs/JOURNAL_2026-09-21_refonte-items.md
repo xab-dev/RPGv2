@@ -209,3 +209,21 @@ peau tendue, un éclat net.
 **Application, une itération** (plus un recalage de 0,08 unité demandé par le
 test : la masse ombrée sortait par le bas).
 
+### `D-88` — le fruit cuit
+
+**Diagnostic** : le fruit cru à la teinte près.
+
+**Conceptualisation** : il garde sa couleur d'identité et **perd** les trois
+signes du cru posés par `D-87` — plus de feuille, plus de peau tendue, plus
+d'éclat net —, puis gagne ce que la cuisson donne : une **fente** d'où sort la
+chair claire (l'accent) et un brûlé du côté de la braise.
+
+**Application, trois itérations** (le plafond que Xav a fixé), toutes sur ces
+deux détails :
+
+1. Fente longue et droite → un **pansement collé** sur le fruit. Brûlé petit et
+   dense → un **trou**.
+2. Fente raccourcie et courbée, partant du haut où la peau cède ; brûlé adouci.
+   Toujours ramassé, il se lisait alors comme un **haricot** posé dessus.
+3. Brûlé devenu une ombre large et très diluée (4,6 × 2,7, `alpha` 0,22).
+

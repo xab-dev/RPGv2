@@ -100,6 +100,13 @@ class FauxCtx2D {
   createRadialGradient() {
     return { addColorStop() {} };
   }
+
+  // Le fond du bandeau HUD est un dégradé vertical depuis `D-95` : un
+  // enregistreur qui ne le connaît pas ferait échouer ce test pour une raison
+  // qui n'a rien à voir avec les transforms qu'il surveille.
+  createLinearGradient() {
+    return { addColorStop() {} };
+  }
 }
 
 function creerFauxCanvas(largeur, hauteur) {

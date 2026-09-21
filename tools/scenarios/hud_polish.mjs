@@ -18,7 +18,7 @@ function saveChargee() {
   save.monde.heure = 0.25; // plein jour
   save.hero.x = (85 + 0.5) * TILE;
   save.hero.y = (49 + 0.5) * TILE;
-  save.hero.pv = 17;
+  save.hero.pv = 1; // +delta de pv_max au chargement : la barre finit à mi-course, ce qui est le but
   save.hero.niveau = 12;
   save.survie = { jauge_faim: 0.42, jauge_soif: 0.66 };
   save.hero.buffs_actifs = { buff_repas: 120000, buff_force: 9000, buff_agilite: 1400 };

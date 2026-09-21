@@ -140,6 +140,29 @@ export function boutonsTactiles() {
   return [BOUTON_ATTAQUE, ...BOUTONS_SKILLS, BOUTON_CONSOMMABLE, BOUTON_INTERACT, BOUTON_MENU];
 }
 
+// `INTERACT` et `MENU` ne sont pas des actions : ce sont des commandes, et
+// elles sont là dès la Grotte. Les leviers en dépendent au tactile, donc les
+// cacher fermerait le jeu. C'est pour cela qu'elles ne figurent pas dans
+// `data/action_slots.json` — elles ne peuvent pas être masquées par erreur.
+const VERBES_HORS_BARRE_ACTION = ['interact', 'menu'];
+
+// `D-63` (T9) : les boutons RÉELLEMENT présents, une fois l'anti-spoil des
+// touches appliqué. `verbesVisibles` vient de l'orchestrateur, qui l'a
+// obtenu du MÊME filtre que les écrans (`visibilite.js#entreesVisibles` sur
+// `action_slots.json`) — jamais une seconde règle écrite ici.
+//
+// Les POSITIONS ne bougent pas d'un pixel : une case masquée laisse sa place
+// vide, elle ne décale pas ses voisines. C'est la règle des « cases stables »
+// déjà retenue pour les menus en cartes (`D-43`), et c'est aussi ce qui garde
+// ce ticket hors du chapitre tactile de Xav (`D-57`), qui traitera le
+// placement des boutons d'un bloc.
+export function boutonsTactilesVisibles(verbesVisibles) {
+  const visibles = new Set(verbesVisibles);
+  return boutonsTactiles().filter(
+    (b) => VERBES_HORS_BARRE_ACTION.includes(b.verbe) || visibles.has(b.verbe),
+  );
+}
+
 // --- Bandeau haut, pleine largeur (MT_hud-ligne-haute_2026-09-19) ---------
 // Décision Xav : PV, faim, soif, niveau sur UNE ligne en haut, à la place de
 // la colonne de gauche qui prenait trop de place. La barre d'XP quitte le

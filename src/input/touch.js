@@ -7,7 +7,7 @@
 // position du canvas) qui la fournit ; ce module ne connaît que des
 // coordonnées déjà logiques, comme le reste du jeu.
 
-import { JOYSTICK, boutonsTactiles } from '../ui/hud_layout.js';
+import { JOYSTICK, boutonsTactiles, boutonsTactilesVisibles } from '../ui/hud_layout.js';
 
 function dansCercle(x, y, cercle) {
   return Math.hypot(x - cercle.cx, y - cercle.cy) <= cercle.rayon;
@@ -32,9 +32,25 @@ function dansCercle(x, y, cercle) {
 // écran, ni l'orientation, ni le DOM au-delà de ses propres événements. Il
 // appelle à **chaque** relâchement ; c'est `plein_ecran.js` qui porte le
 // loquet, en un seul endroit. Mettre le loquet ici l'aurait dispersé.
+//
+// `verbesActions` (`D-63`, T9) : les verbes de la barre d'actions réellement
+// débloqués, annoncés par l'orchestrateur à chaque frame — même patron que
+// `interceptionActive` pour le clavier (`D-54`). Un bouton masqué ne doit pas
+// rester cliquable : un doigt posé sur une case invisible déclencherait une
+// compétence que le joueur n'a pas, et il ne comprendrait jamais pourquoi.
+//
+// La couche d'input ne DÉCIDE rien : elle ne sait pas ce qu'est un slot, ni
+// une compétence, ni un flag. Elle reçoit une liste, comme le rendu. Un seul
+// écrivain (l'orchestrateur), deux lecteurs — jamais deux règles.
+//
+// Défaut : tout est actif. C'est le bon défaut ICI, et seulement ici : les
+// tests headless et les bancs d'essai qui ne branchent rien doivent garder
+// des boutons qui répondent, alors que le RENDU, lui, ne doit rien dessiner
+// sans qu'on le lui dise (un défaut y masquerait un branchement oublié).
 export function creerSourceTactile(cible, {
   versLogique = (x, y) => ({ x, y }),
   surRelachement = null,
+  verbesActions = () => boutonsTactiles().map((b) => b.verbe),
 } = {}) {
   let actif = false;
   // Incrémenté à chaque touchstart (jamais décrémenté) : `estActif()` est un
@@ -131,8 +147,14 @@ export function creerSourceTactile(cible, {
 
       const points = Array.from(doigts.values());
       const etat = { move };
+      // Tous les verbes sont émis à chaque frame, y compris ceux des boutons
+      // masqués : un verbe absent de l'état serait `undefined` là où le
+      // gameplay lit `.pressed` en direct. Ce qui change, c'est qu'un bouton
+      // masqué vaut toujours `false`, quoi qu'on pose dessus.
+      const actifs = new Set(boutonsTactilesVisibles(verbesActions()).map((b) => b.verbe));
       for (const bouton of boutonsTactiles()) {
-        etat[bouton.verbe] = points.some((p) => dansCercle(p.x, p.y, bouton));
+        etat[bouton.verbe] = actifs.has(bouton.verbe)
+          && points.some((p) => dansCercle(p.x, p.y, bouton));
       }
       return etat;
     },

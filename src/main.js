@@ -255,6 +255,11 @@ export function creerOrchestrateurGrotte({
   // hors frame (un `keydown` n'attend pas la boucle de jeu). No-op par
   // défaut, même patron qu'onPremierGeste.
   onEtatUi = () => {},
+  // `D-63` : les verbes de la barre d'actions débloqués, annoncés à chaque
+  // frame à qui veut les lire (la source tactile). No-op par défaut, même
+  // patron qu'`onEtatUi` et `onPremierGeste` : un test headless n'a rien à
+  // fournir.
+  onVerbesActions = () => {},
 }) {
   let etatModifie = false;
 
@@ -571,6 +576,46 @@ export function creerOrchestrateurGrotte({
       if (!flagId || flags.has(flagId)) continue;
       const { x, y, w, h } = zone.rect;
       if (tx >= x && tx < x + w && ty >= y && ty < y + h) flags.set(flagId);
+    }
+  }
+
+  // `D-63` (T9) : les verbes de la barre d'actions réellement débloqués, dans
+  // l'ordre du catalogue. Décision de Xav (21/09) : sur une partie neuve,
+  // **seule la case d'attaque de base est là** ; une case apparaît quand son
+  // premier contenu est débloqué.
+  //
+  // C'est le MÊME filtre que les écrans (`D-62`, T4) sur le MÊME registre de
+  // flags — pas un second mécanisme. `data/action_slots.json` porte les
+  // conditions ; ni le rendu ni l'input ne savent ce qu'est un slot.
+  //
+  // Recalculé à chaque appel, jamais mis en cache : une condition peut
+  // devenir vraie au milieu d'une frame (ramasser un fruit), et une case qui
+  // n'apparaîtrait qu'au rechargement serait exactement le genre de défaut
+  // qu'on ne reproduit jamais.
+  function verbesActionsVisibles() {
+    return entreesVisibles(registre.tous('action_slots'), flags).map((slot) => slot.verb);
+  }
+
+  // Le loquet du premier consommable. `[OUVERT]` retenu par défaut, comme le
+  // ticket y autorise : la case apparaît au premier consommable **obtenu**,
+  // et elle RESTE — manger son dernier fruit ne doit pas faire disparaître la
+  // touche qu'on vient d'apprendre.
+  //
+  // Un loquet, donc un flag, et pas une valeur nommée `{ valeur:
+  // 'consommables_en_poche', min: 1 }` : celle-ci aurait fait clignoter la
+  // case au rythme de la poche. Posé ici, en UN point, sur l'état observable
+  // de la poche plutôt qu'à chacun des endroits qui peuvent y ajouter
+  // quelque chose (ramassage, craft, retrait du coffre) — une partie déjà
+  // commencée avec un fruit en poche le pose donc à sa première frame, sans
+  // migration.
+  function verifierDeblocagesBarreAction() {
+    if (flags.has('flag_premier_consommable')) return;
+    for (const [itemId, quantite] of Object.entries(save.inventaire.items)) {
+      if (!(quantite > 0)) continue;
+      if (registre.obtenir('items', itemId).categorie !== 'nourriture') continue;
+      flags.set('flag_premier_consommable');
+      etatModifie = true;
+      return;
     }
   }
 
@@ -1806,6 +1851,7 @@ export function creerOrchestrateurGrotte({
     // `D-54` : LE point de décision unique annonce son verdict au dehors
     // (aujourd'hui : le `preventDefault` de `Tab`, qui arrive hors frame).
     onEtatUi(uiOuverte);
+    onVerbesActions(verbesActionsVisibles());
     if (menu.estOuvert()) menu.traiterInput(etatBrut);
     else if (dialogueOuvertMaintenant) dialogue.traiterInput(dialogueVientDeSOuvrir ? etatNeutre(etatBrut) : etatBrut);
     else if (choixFolletActif()) traiterChoixFollet(etatBrut);
@@ -1879,6 +1925,7 @@ export function creerOrchestrateurGrotte({
       indices.maj(deltaMs);
       verifierIndicesNiveau();
       verifierLignesAmbiance();
+      verifierDeblocagesBarreAction();
 
       // Horloge "temps de jeu actif" (daynight.js#avancerHeure) : avancée
       // dans TOUTES les scènes désormais (Palier A/C, specs/04_maison-
@@ -2373,6 +2420,9 @@ export function creerOrchestrateurGrotte({
       companion: companionActif,
       visuelFollet: companionActif ? registre.obtenir('visuels', companionActif.render.visuel) : null,
       tactileActif: input.tactileActif(),
+      // `D-63` : résolu ici, comme `visuelArme` et `visuelFollet` — `hud.js`
+      // ne connaît ni catalogue ni flag.
+      verbesActions: verbesActionsVisibles(),
       // D-20 B : icône de l'arme ÉQUIPÉE, résolue ici (main.js a le registre)
       // exactement comme visuelFollet au-dessus — ui/hud.js ne reçoit qu'une
       // silhouette et ignore de quelle arme elle vient. Même résolution
@@ -2505,6 +2555,10 @@ export function creerOrchestrateurGrotte({
     // elle-même, pour qu'un test puisse la vider entre deux scénarios.
     obtenirTextesFlottants: () => textesVisibles(textesFlottants),
     obtenirEtatTextesFlottants: () => textesFlottants,
+    // `D-63` : les verbes de la barre d'actions débloqués. Exposé pour les
+    // tests — le dessin n'est jamais exercé en headless, donc c'est la seule
+    // façon de prouver qu'une partie neuve n'a qu'une case.
+    obtenirVerbesActions: () => verbesActionsVisibles(),
     // Palier D (§3.4) : fourni à ui/menu.js via menu.definirEntreesStats()
     // une fois l'orchestrateur construit (même patron que
     // reinitialiserPartie ci-dessus) — le menu Stats n'a besoin d'appeler
@@ -2634,8 +2688,18 @@ export async function demarrerJeu() {
     // en silence.
     nav: typeof navigator !== 'undefined' ? navigator : null,
   });
+  // `D-63` : les verbes de la barre d'actions débloqués, écrits par
+  // l'orchestrateur à chaque frame (`onVerbesActions`), lus par le tactile au
+  // moment du contact — exactement le patron de `uiCapteLesVerbes` ci-dessous
+  // (`D-54`). Un bouton masqué ne doit pas rester cliquable.
+  //
+  // Il démarre VIDE plutôt qu'avec les cinq verbes : avant la première frame,
+  // personne ne sait encore ce qui est débloqué, et un doigt posé dans cet
+  // intervalle ne doit pas déclencher une compétence que le joueur n'a pas.
+  let verbesActionsDebloques = [];
   const sourceTactile = creerSourceTactile(canvasVisible, {
     surRelachement: () => pleinEcran.demanderUneFois(),
+    verbesActions: () => verbesActionsDebloques,
     // Seule source de vérité pour écran -> logique (diagnostic
     // SD_ui-lisibilite §3c) : versCoordonneesLogiques() est la même fonction
     // pure, testée, dont presenter()/calculerRectanglePresentation() dessine
@@ -2808,6 +2872,7 @@ export async function demarrerJeu() {
     valeursExternes: () => ({ plein_ecran_disponible: pleinEcran.disponible() ? 1 : 0 }),
     // `D-54` : le seul écrivain du drapeau lu par le clavier (cf. plus haut).
     onEtatUi: (ouverte) => { uiCapteLesVerbes = ouverte; },
+    onVerbesActions: (verbes) => { verbesActionsDebloques = verbes; },
   });
   // Dépendance circulaire résolue par un point de couture explicite (§B du
   // diagnostic) : le menu (construit avant l'orchestrateur, qui en a besoin

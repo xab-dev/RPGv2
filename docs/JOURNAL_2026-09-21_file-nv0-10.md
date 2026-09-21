@@ -26,3 +26,21 @@ file, la session ne le tient pas de mémoire.
 | T6 | La Plume | (ce commit) | `item_plume` + `objets_uniques` dans la scène (générique, hors tirage du jour) · aucune migration : c'est l'absence du flag qui la pose · `description_key` optionnelle rendue par `lignesFicheItem` · texte FR/EN **proposé**, à réécrire par Xav | clôt `D-60` ; ouvre `V-38` |
 | T3 | Une ligne d'ambiance par palier | (ce commit) | `data/ambiances.json` + `src/ambiances.js` (pur : condition / phases / scènes → un dialogue, une fois, gardé par un flag) · première entrée Nv. ≥ 5 à la tombée de nuit · texte FR/EN **proposé** · le format accueille les lignes futures sans code, vérifié sur une entrée factice | clôt `D-61` ; ouvre `V-39` |
 | T4 | Le filtre anti-spoil, en un seul point | (ce commit) | `visible_si` sur n'importe quel catalogue, validé une fois dans `registry.js` · `src/visibilite.js#entreesVisibles`, seul module autorisé à le lire (contrôle de source) · `connue_au_depart`/`deblocage` des recettes **retirés**, anciens champs refusés au boot · `src/ui/` ne lit aucun catalogue (2ᵉ contrôle de source) | clôt `D-62` ; ouvre `V-40` |
+
+## T9 — état des lieux de la barre d'actions (lecture seule, avant tout code)
+
+1. **Sur PC**, `ui/hud.js#dessinerSlotsBas` dessine **cinq cases** en bas au centre, dans l'ordre
+   d'une liste **écrite en dur** dans le fichier : `['attack', 'skill_1', 'skill_2', 'skill_3',
+   'consume']`. Seule celle d'attaque porte une icône (celle de l'arme équipée, `D-20`) et un
+   contour vif ; les quatre autres sont des cases vides au contour pâle.
+2. **Au tactile**, la ligne du bas n'existe pas : ce sont les **boutons** qui sont les cases
+   (`hud_layout.js#boutonsTactiles`), et ils sont **sept** — les cinq mêmes verbes, plus `INTERACT`
+   et `MENU`, qui ne sont pas des actions mais des commandes.
+3. **`data/action_slots.json` existe déjà** (cinq entrées, `id` + `verb`) et **personne ne le lit** :
+   ni le rendu, ni l'input. Les deux listes ci-dessus sont donc deux troisièmes vérités.
+4. **Aucune poche nulle part.** Le principe « poches façon Minecraft » du 19/09 n'a jamais été
+   implémenté : il n'y a rien à retirer, seulement à ne pas ajouter (`E-01` sans objet).
+5. **Rien n'est conditionnel** : les cinq cases sont là dès la Grotte, sur une partie neuve, alors
+   qu'aucune compétence n'existe dans le jeu et qu'on n'a encore aucun consommable.
+
+| T9 | La barre d'actions : anti-spoil des touches | (ce commit) | État des lieux ci-dessus · `action_slots.json` enfin lu, avec un `visible_si` par slot (**même filtre que T4**) · rendu et input reçoivent la liste, aucun des deux ne sait ce qu'est un slot · tactile branché par le patron `onVerbesActions` (`D-54`) : un bouton masqué n'est plus cliquable, **et aucun n'a bougé** · `INTERACT`/`MENU` hors catalogue, donc immasquables | clôt `D-63` ; `E-01` sans objet ; ouvre `V-41` |

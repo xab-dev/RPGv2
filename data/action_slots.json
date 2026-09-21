@@ -1,7 +1,26 @@
 [
-  { "id": "slot_attaque", "verb": "attack" },
-  { "id": "slot_skill_1", "verb": "skill_1" },
-  { "id": "slot_skill_2", "verb": "skill_2" },
-  { "id": "slot_skill_3", "verb": "skill_3" },
-  { "id": "slot_consommable", "verb": "consume" }
+  {
+    "id": "slot_attaque",
+    "verb": "attack"
+  },
+  {
+    "id": "slot_skill_1",
+    "verb": "skill_1",
+    "visible_si": "flag_competence_1"
+  },
+  {
+    "id": "slot_skill_2",
+    "verb": "skill_2",
+    "visible_si": "flag_competence_2"
+  },
+  {
+    "id": "slot_skill_3",
+    "verb": "skill_3",
+    "visible_si": "flag_competence_3"
+  },
+  {
+    "id": "slot_consommable",
+    "verb": "consume",
+    "visible_si": "flag_premier_consommable"
+  }
 ]

@@ -7,7 +7,7 @@
 // la ligne du bas ne se dessine que quand le tactile est inactif).
 
 import {
-  boutonsTactiles, JOYSTICK, BANDEAU_HAUT, elementsBandeauHaut, echelleIconeArme,
+  boutonsTactilesVisibles, JOYSTICK, BANDEAU_HAUT, elementsBandeauHaut, echelleIconeArme,
   placerIconesBuffs, alphaPulsationBuff, echelleIconeBuff, ICONE_BUFF,
 } from './hud_layout.js';
 import { RESOLUTION_LOGIQUE } from '../render.js';
@@ -46,10 +46,20 @@ const JAUGE_ICONE_TAILLE = 6;
 // ne reçoit qu'un ratio 0..1 déjà calculé.
 const COULEUR_ECLAT_NIVEAU = '#ffe9a8';
 
-// 5 slots d'action (1 attaque + 3 skills + 1 consommable, §0 verrouillé) en
+// Les slots d'action (1 attaque + 3 skills + 1 consommable, §0 verrouillé) en
 // bas au centre, visibles seulement hors tactile (§3.9/§4 : sur tactile, les
 // boutons de hud_layout.js sont déjà les slots).
-const ORDRE_SLOTS_BAS = ['attack', 'skill_1', 'skill_2', 'skill_3', 'consume'];
+//
+// `D-63` (T9) : la liste n'est plus écrite ici. Elle arrive en paramètre,
+// filtrée par l'orchestrateur avec le MÊME filtre que les écrans
+// (`visibilite.js#entreesVisibles` sur `data/action_slots.json`). Sur une
+// partie neuve, il n'y a donc **qu'une case** : l'attaque de base. Une case
+// apparaît quand son premier contenu est débloqué — décision de Xav du
+// 21/09, l'anti-spoil des touches.
+//
+// Ce module n'a aucun repli : s'il ne reçoit rien, il ne dessine rien. Un
+// défaut « les cinq comme avant » aurait masqué un branchement oublié, et
+// c'est précisément ce que ce ticket cherche à empêcher.
 const SLOT_TAILLE = 16;
 const SLOT_ECART = 4;
 
@@ -74,8 +84,8 @@ function dessinerIconeArme(ctx, visuelArme, cx, cy, taille) {
   });
 }
 
-function dessinerBoutonsTactiles(ctx, visuelArme) {
-  for (const bouton of boutonsTactiles()) {
+function dessinerBoutonsTactiles(ctx, visuelArme, verbesActions) {
+  for (const bouton of boutonsTactilesVisibles(verbesActions)) {
     ctx.beginPath();
     ctx.arc(bouton.cx, bouton.cy, bouton.rayon, 0, Math.PI * 2);
     // `[OUVERT]` D-20 B : plus d'aplat jaune sur l'attaque — fond identique
@@ -98,12 +108,17 @@ function dessinerBoutonsTactiles(ctx, visuelArme) {
 
 // Ligne statique en bas au centre (§4), même liste de verbes que les boutons
 // tactiles mais jamais leurs positions (celles-ci n'ont de sens qu'au doigt).
-function dessinerSlotsBas(ctx, resolution, visuelArme) {
-  const largeurTotale = ORDRE_SLOTS_BAS.length * SLOT_TAILLE + (ORDRE_SLOTS_BAS.length - 1) * SLOT_ECART;
+function dessinerSlotsBas(ctx, resolution, visuelArme, verbesActions) {
+  if (verbesActions.length === 0) return;
+  // La barre se RESSERRE sur ce qui existe, elle ne laisse pas de cases
+  // vides : au tactile les boutons gardent leurs positions (le placement est
+  // le chapitre de Xav, `D-57`), mais ici une case vide au centre de l'écran
+  // annoncerait exactement ce que l'anti-spoil veut taire.
+  const largeurTotale = verbesActions.length * SLOT_TAILLE + (verbesActions.length - 1) * SLOT_ECART;
   const xDepart = (resolution.largeur - largeurTotale) / 2;
   const y = resolution.hauteur - SLOT_TAILLE - 8;
 
-  ORDRE_SLOTS_BAS.forEach((verbe, i) => {
+  verbesActions.forEach((verbe, i) => {
     const x = xDepart + i * (SLOT_TAILLE + SLOT_ECART);
     // Même `[OUVERT]` que les boutons tactiles : fond commun, jaune porté par
     // l'icône. Le contour de l'attaque reste plus vif — c'est le seul slot
@@ -165,6 +180,11 @@ export function dessinerHud(ctx, {
   // ne sait pas ce qu'est un status_effect, et ne recalcule rien : la table
   // des buffs est tenue par status.js, il la LIT.
   buffs = [],
+  // `D-63` : les verbes des slots d'action RÉELLEMENT débloqués, dans l'ordre
+  // du catalogue. Résolus par main.js, qui a le registre et les flags — ce
+  // module ne sait pas ce qu'est un slot, pas plus qu'il ne sait ce qu'est un
+  // status_effect. Aucun défaut : voir le commentaire de `dessinerSlotsBas`.
+  verbesActions = [],
 }) {
   ctx.save();
 
@@ -278,12 +298,12 @@ export function dessinerHud(ctx, {
 
   // §4 : jamais les deux à la fois. Sur tactile, les boutons SONT les slots.
   if (tactileActif) {
-    dessinerBoutonsTactiles(ctx, visuelArme);
+    dessinerBoutonsTactiles(ctx, visuelArme, verbesActions);
   } else {
     // Diagnostic SD_dialogues-invisibles_2026-09-15 : même défaut que
     // dialogue_box.js — `ctx.canvas.width/height` est la taille PHYSIQUE
     // depuis le MT rendu-net, jamais la résolution logique sous laquelle ce
     // dessin est réellement placé (transform f encore active).
-    dessinerSlotsBas(ctx, RESOLUTION_LOGIQUE, visuelArme);
+    dessinerSlotsBas(ctx, RESOLUTION_LOGIQUE, visuelArme, verbesActions);
   }
 }

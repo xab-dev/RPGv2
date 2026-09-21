@@ -199,8 +199,15 @@ try {
     const ctx = canvas.getContext('2d');
     ctx.setTransform(echelle, 0, 0, echelle, 0, 0);
 
-    dessinerHud(ctx, { pv: 10, pvMax: 10, eclats: 0, companion: null, tactileActif: false });
-    // Les 5 slots d'action (16x16) sont les seuls fillRect de cette taille —
+    // `D-63` : la barre d'actions ne dessine QUE ce qu'on lui donne — plus de
+    // liste écrite dans `hud.js`, et aucun repli. Ce test-ci vérifie où la
+    // ligne se pose dans le canvas, pas ce qu'elle contient : on lui passe
+    // donc les cinq verbes, comme une partie très avancée les aurait.
+    dessinerHud(ctx, {
+      pv: 10, pvMax: 10, eclats: 0, companion: null, tactileActif: false,
+      verbesActions: ['attack', 'skill_1', 'skill_2', 'skill_3', 'consume'],
+    });
+    // Les slots d'action (16x16) sont les seuls fillRect de cette taille —
     // la cartouche/barre PV ont d'autres dimensions (voir hud.js).
     const slot = ctx.registre.find((e) => e.type === 'fillRect' && e.w === 16 && e.h === 16);
     assert.ok(slot, 'la ligne de slots statiques doit dessiner des carrés 16x16');

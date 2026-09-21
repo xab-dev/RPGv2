@@ -484,3 +484,14 @@ ligne**, à sa demande.
 
 Reste ouverte, consignée sans être commencée : `Q-54` — **le curseur ne clique
 pas**, la navigation des menus reste au stick gauche.
+
+**Fin de session, 22/09 — topo de polish carte, rien livré.** Xav a demandé ce
+qu'impliquerait « une passe de polish du canvas de la map, en gardant le sol de
+la Maison — l'améliorer, pas le changer ». Topo rendu, **aucun code écrit** :
+« on ne fait rien, consigne-le et je ferai rédiger une spec ». Tout vit
+désormais dans `docs/DOC_suivi-dettes.md` sous **`E-04`** (la spec à écrire),
+avec l'ordre d'importance fixé par Xav — `Q-52` (lisières) → **`D-110`** (la
+forêt est un mur d'arbres identiques, relevé au topo) → `D-106` (le décor sait
+sur quelle surface il pousse) → `Q-53` (densité et motifs). La **forme** de la
+lisière est explicitement **déléguée à Claude** au moment de la spec. Ce qui ne
+se rouvre pas : le grain du sol de `D-105`, gardé tel quel.

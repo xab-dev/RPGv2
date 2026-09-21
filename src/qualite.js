@@ -182,3 +182,36 @@ export function lirePresetForce(search, config) {
   }
   return { preset: brut, avertissement: null };
 }
+
+// Le levier `grain_sol` appliqué au visuel de grain d'une tuile. Rend un
+// visuel neuf dont on ne garde que la PREMIÈRE fraction des primitives, ou
+// `null` quand il n'en reste aucune — l'appelant n'inscrit alors pas la tuile
+// dans sa table, et le rendu ne lui coûte plus rien du tout (§4.3 : « 0 = le
+// système ne dessine pas »).
+//
+// Convention, écrite aussi dans le schéma des tuiles : **les primitives d'un
+// visuel de grain sont rangées par importance décroissante**. Couper par la
+// fin n'est donc pas arbitraire, c'est la règle — et c'est ce qui permet à
+// `grain_sol: 0.2` de rendre « trois brins au lieu de quatorze » sans qu'un
+// second catalogue de grain léger ait à exister.
+//
+// Deux choses que cette fonction ne fait pas, volontairement : elle ne touche
+// pas la couleur de base de la tuile (le sol reste peint, il perd son grain —
+// jamais sa surface), et elle ignore tout des tuiles solides. Une silhouette
+// d'arbre ou de rocher EST le monde, elle ne s'allège pas (§4.3) ; c'est
+// l'appelant qui ne l'appelle pas pour elles, parce que c'est lui qui sait ce
+// qui est solide.
+//
+// Limite connue, à garder en tête si Xav retient un palier intermédiaire
+// (`Q-55`) : un grain CONTINU d'une cellule à la suivante — le parquet, dont
+// les lames doivent être régulières (`D-105`) — supporte 0 et 1, mais une
+// fraction entre les deux y laisserait la moitié des lames. Rien ne l'interdit
+// aujourd'hui parce qu'aucun preset ne le demande.
+export function appliquerGrainSol(visuel, fraction) {
+  if (!visuel || !Array.isArray(visuel.primitives)) return visuel;
+  if (fraction >= 1) return visuel;
+  const total = visuel.primitives.length;
+  const gardees = Math.max(0, Math.min(total, Math.round(total * fraction)));
+  if (gardees === 0) return null;
+  return { ...visuel, primitives: visuel.primitives.slice(0, gardees) };
+}

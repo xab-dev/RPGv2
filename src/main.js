@@ -41,7 +41,7 @@ import {
   creerTextesFlottants, emettreTexte, avancerTextesFlottants, textesVisibles, viderTextesFlottants,
 } from './texte_flottant.js';
 import {
-  resoudrePreset, valeurLevier, appliquerParticules, lirePresetForce,
+  resoudrePreset, valeurLevier, appliquerParticules, appliquerGrainSol, lirePresetForce,
 } from './qualite.js';
 import { creerRegistreFlags } from './flags.js';
 import { calculerStatsPrimaires, calculerStatsDerivees, appliquerModulateurSurvie } from './stats.js';
@@ -392,11 +392,24 @@ export function creerOrchestrateurGrotte({
   // par scène, contrairement à `decor` — tiles.json est un catalogue global)
   // à partir du registre, jamais recalculé par frame. render.js ne connaît
   // que dessinerVisuel, jamais visuels.json par id (§3.3 grotte-polish).
+  // Palier C, levier `grain_sol` : la fraction s'applique ICI, au seul
+  // endroit où la table est construite — `render.js` reçoit la table et ne
+  // saura jamais qu'un preset existe. Une tuile SOLIDE n'est pas allégée : sa
+  // silhouette *est* le monde (§4.3). Et un grain réduit à rien n'entre pas
+  // dans la table du tout : le rendu ne le cherche même plus, donc il ne
+  // coûte plus une ligne (« 0 = ne dessine pas », pris au mot).
+  const grainSol = valeurLevier(graphismes.config, graphismes.preset, 'grain_sol');
   const visuelsTuiles = new Map(
     registre
       .tous('tiles')
       .filter((t) => t.render && t.render.visuel)
-      .map((t) => [t.id, registre.obtenir('visuels', t.render.visuel)])
+      .map((t) => [
+        t.id,
+        t.solid
+          ? registre.obtenir('visuels', t.render.visuel)
+          : appliquerGrainSol(registre.obtenir('visuels', t.render.visuel), grainSol),
+      ])
+      .filter(([, visuel]) => visuel !== null)
   );
 
   // Extrait en fonction (plutôt qu'un simple `const`) : reinitialiserPartie()
@@ -2763,6 +2776,12 @@ export function creerOrchestrateurGrotte({
     choixFolletActif,
     reinitialiserPartie,
     obtenirHero: () => hero,
+    // Palier C (`D-113`) : la table des grains de tuiles, telle que
+    // `render.js` la reçoit. Exposée pour les tests — le dessin n'est jamais
+    // exercé headless, donc c'est la seule façon de prouver qu'un preset
+    // allège le sol sans toucher une silhouette solide. On rend la VRAIE
+    // table, jamais une recopie qui pourrait diverger (`D-72`).
+    obtenirVisuelsTuiles: () => visuelsTuiles,
     obtenirFollet: () => follet,
     obtenirScene: () => scene,
     obtenirMonstres: () => monstres,

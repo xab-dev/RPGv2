@@ -1183,6 +1183,14 @@ export const SCHEMAS = {
     custom: null,
   },
   tiles: {
+    // CONVENTION du grain (`D-105`, exploitée par le levier `grain_sol` du
+    // palier C de `specs/09_reglages-graphiques.md`) : dans le visuel cité
+    // par `render.visuel`, **les primitives sont rangées par importance
+    // décroissante**. Le preset Bas coupe la liste par la fin, donc les
+    // premières sont celles qu'on garde en dernier recours. Rien ici ne peut
+    // le vérifier — c'est une règle d'auteur, pas une propriété de données —,
+    // mais elle est écrite là où on écrit un grain, et non dans le code qui
+    // le coupe.
     requiredFields: ['id', 'solid', 'render'],
     idField: 'id',
     refs: [],

@@ -52,5 +52,33 @@
     "type": "clignement",
     "ouvertures_ms": [600, 900, 1400],
     "noir_ms": 400
+  },
+  {
+    "id": "effet_curseur",
+    "type": "curseur",
+    "visuel": "visuel_curseur",
+    "visuel_particule": "visuel_curseur_eclat",
+    "echelle": 1,
+    "nb_particules": 2,
+    "rayon_orbite_px": 11,
+    "aplatissement": 0.45,
+    "periode_ms": 1400,
+    "sens": -1,
+    "phase_rad": 0,
+    "vitesse_stick_px_s": 900,
+    "courbe_stick": 1.6
+  },
+  {
+    "id": "effet_curseur_sillage",
+    "type": "particules",
+    "visuel": "visuel_curseur_sillage",
+    "duree_ms": 420,
+    "intervalle_px": 11,
+    "capacite": 28,
+    "alpha_depart": 0.5,
+    "echelle_depart": 0.9,
+    "echelle_fin": 0.2,
+    "decalage_lateral_px": 1.5,
+    "offset_y_px": 0
   }
 ]

@@ -25,9 +25,15 @@ export const CAPACITE_RESERVE = 8;
 // `compteur` sert au décalage latéral alterné : déterministe (pas de
 // Math.random() dans la boucle, §À faire), donc deux exécutions identiques
 // produisent exactement les mêmes bouffées.
+// `capacite` en DONNÉES (`D-108`), défaut `CAPACITE_RESERVE` : 8 bouffées
+// suffisent au héros (75 px/s) et au follet, pas à une souris, qui traverse
+// l'écran en une demi-seconde et vide la réserve en quatre frames — la traînée
+// devient alors une grappe clignotante. La taille de la réserve suit donc la
+// VITESSE de ce qu'on suit, et c'est un réglage, pas une constante du module.
 export function creerPoussiere(config) {
-  const bouffees = new Array(CAPACITE_RESERVE);
-  for (let i = 0; i < CAPACITE_RESERVE; i += 1) {
+  const capacite = Number.isInteger(config.capacite) && config.capacite > 0 ? config.capacite : CAPACITE_RESERVE;
+  const bouffees = new Array(capacite);
+  for (let i = 0; i < capacite; i += 1) {
     bouffees[i] = { active: false, x: 0, y: 0, ageMs: 0, cote: 1 };
   }
   return { config, bouffees, distanceDepuisDerniere: 0, compteur: 0 };
@@ -44,7 +50,17 @@ export function creerPoussiere(config) {
 // (héros qui bouge ET aucune UI ouverte ET pas d'intro). Ce module ne décide
 // jamais lui-même s'il a le droit d'émettre — le point de décision unique
 // reste dans main.js#maj(), comme pour tout le reste du gameplay.
-export function avancerPoussiere(etat, { x, y, distancePx, deltaMs, emettre }) {
+//
+// `depuisX`/`depuisY` (`D-108`, facultatifs, défaut = `x`/`y`) : le point d'où
+// l'on vient. Sans eux, toutes les bouffées d'une même frame naissent AU POINT
+// D'ARRIVÉE — invisible au héros (1 px par frame), mais une souris qui fait
+// 60 px en une frame dépose alors une grappe au lieu d'une traînée. Les donner
+// rend vraie la promesse déjà écrite plus haut : « l'émission se fait à la
+// distance parcourue ». Défaut inchangé, donc le héros et le follet ne bougent
+// pas d'un pixel.
+export function avancerPoussiere(etat, {
+  x, y, distancePx, deltaMs, emettre, depuisX = x, depuisY = y,
+}) {
   const { duree_ms, intervalle_px, decalage_lateral_px } = etat.config;
 
   for (const b of etat.bouffees) {
@@ -60,12 +76,19 @@ export function avancerPoussiere(etat, { x, y, distancePx, deltaMs, emettre }) {
     return etat;
   }
 
+  // Distance déjà accumulée AVANT ce déplacement : c'est elle qui dit à quelle
+  // fraction du segment tombe la première émission.
+  const reportAvant = etat.distanceDepuisDerniere;
+  let parcouru = 0;
   etat.distanceDepuisDerniere += distancePx;
   // `while` et non `if` : une frame longue (onglet masqué, gros delta) peut
   // franchir plusieurs intervalles d'un coup. Borné par la réserve de toute
   // façon, donc jamais une boucle coûteuse.
   while (etat.distanceDepuisDerniere >= intervalle_px) {
     etat.distanceDepuisDerniere -= intervalle_px;
+    parcouru += intervalle_px;
+    // Fraction du segment à laquelle cette bouffée-ci est née.
+    const t = distancePx > 0 ? Math.min(1, Math.max(0, (parcouru - reportAvant) / distancePx)) : 1;
     etat.compteur += 1;
     const cote = etat.compteur % 2 === 0 ? 1 : -1;
     const libre = etat.bouffees.find((b) => !b.active);
@@ -74,8 +97,8 @@ export function avancerPoussiere(etat, { x, y, distancePx, deltaMs, emettre }) {
     // et c'est le prix du « zéro allocation ».
     if (!libre) continue;
     libre.active = true;
-    libre.x = x + cote * decalage_lateral_px;
-    libre.y = y;
+    libre.x = depuisX + (x - depuisX) * t + cote * decalage_lateral_px;
+    libre.y = depuisY + (y - depuisY) * t;
     libre.ageMs = 0;
     libre.cote = cote;
   }

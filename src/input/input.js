@@ -46,6 +46,14 @@ export function creerCoucheInput({ sourceClavier, sourceManette, sourceTactile }
   // qu'aucun geste n'a été vu sur aucune source.
   let peripheriqueActif = 'manette';
 
+  // `D-109` : le stick DROIT, pointeur analogique du curseur. Exposé par un
+  // accesseur séparé et non dans `etat`, pour la même raison que
+  // `tactileActif` juste au-dessus : `etat` a une forme move+verbes dont
+  // `etatNeutre()` dérive génériquement, et y glisser un champ qui n'est pas
+  // un verbe casserait cette généricité. Ce n'est pas un détail de rangement —
+  // c'est ce qui garantit qu'aucun système de jeu ne lira jamais ce stick.
+  let pointeur = { x: 0, y: 0 };
+
   function maj() {
     const clavier = sourceClavier ? sourceClavier.instantane() : null;
     const manette = sourceManette ? sourceManette.instantane() : null;
@@ -60,6 +68,15 @@ export function creerCoucheInput({ sourceClavier, sourceManette, sourceTactile }
 
     let clavierActifFrame = !!(clavier && (clavier.move.x !== 0 || clavier.move.y !== 0));
     let manetteActifFrame = !!(manette && (manette.move.x !== 0 || manette.move.y !== 0));
+
+    // Une source qui ignore le stick droit (le clavier, le tactile, une
+    // fausse manette de test) vaut simplement zéro : même règle que pour un
+    // verbe inconnu, aucun cas particulier à écrire.
+    pointeur = (manette && manette.pointeur) || { x: 0, y: 0 };
+    // Bouger le stick droit EST un geste de manette : le périphérique actif
+    // le suit, donc les indices de commande passent aux glyphes de manette
+    // comme pour n'importe quel autre geste.
+    if (pointeur.x !== 0 || pointeur.y !== 0) manetteActifFrame = true;
 
     for (const verbe of VERBES_BOUTON) {
       // Recalculé à zéro chaque frame à partir des trois sources : une
@@ -92,7 +109,12 @@ export function creerCoucheInput({ sourceClavier, sourceManette, sourceTactile }
     return etat;
   }
 
-  return { maj, tactileActif: () => tactileActif, peripheriqueActif: () => peripheriqueActif };
+  return {
+    maj,
+    tactileActif: () => tactileActif,
+    peripheriqueActif: () => peripheriqueActif,
+    pointeurManette: () => pointeur,
+  };
 }
 
 // État neutre : dérivé de la forme réelle de `etat` (pas d'une liste de

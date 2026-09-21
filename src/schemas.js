@@ -1281,7 +1281,13 @@ export const SCHEMAS = {
     // échec dur au boot avec son chemin exact, cf. registry.js).
     requiredFields: ['id', 'type'],
     idField: 'id',
-    refs: [{ field: 'visuel', catalog: 'visuels' }],
+    refs: [
+      { field: 'visuel', catalog: 'visuels' },
+      // `D-108` : le curseur a DEUX silhouettes (l'orbe et sa particule
+      // d'orbite). Une référence, donc un id inconnu tombe au boot avec son
+      // chemin, comme partout ailleurs.
+      { field: 'visuel_particule', catalog: 'visuels' },
+    ],
     custom(entry, catalogs, path) {
       const erreurs = [];
       // Tous les seuils sont PROVISOIRES (à régler au ressenti par Xav), mais
@@ -1297,9 +1303,67 @@ export const SCHEMAS = {
       // `clignement` (`D-65`, T8) : les durées d'une séquence de paupières.
       // Sa durée totale est la SOMME de ses ouvertures et de ses noirs, donc
       // il n'a pas de `duree_ms` — d'où un 4ᵉ jeu de champs.
-      const TYPES = ['particules', 'texte', 'vol', 'clignement'];
+      // `curseur` (`D-108`) : la tête du curseur de souris et son orbite.
+      // 5ᵉ jeu de champs — il n'a ni durée ni gabarit, mais une orbite et
+      // un nombre de particules, et il vit dans l'ÉCRAN et non dans le
+      // monde. C'est la branche de plus annoncée juste au-dessus, et rien
+      // ailleurs.
+      const TYPES = ['particules', 'texte', 'vol', 'clignement', 'curseur'];
       if (!TYPES.includes(entry.type)) {
         erreurs.push(`${path} > type doit valoir ${TYPES.map((t) => `"${t}"`).join(' ou ')}`);
+        return erreurs;
+      }
+
+      if (entry.type === 'curseur') {
+        // Le dessin du curseur n'est jamais exercé headless (c'est du rendu),
+        // et un réglage absurde ne se verrait donc que sur l'écran de Xav :
+        // tout ce qui ferait un curseur invisible, figé ou `NaN` tombe ici.
+        if (typeof entry.echelle !== 'number' || entry.echelle <= 0) {
+          erreurs.push(`${path} > echelle doit être un nombre strictement positif`);
+        }
+        if (!Number.isInteger(entry.nb_particules) || entry.nb_particules < 0) {
+          erreurs.push(`${path} > nb_particules doit être un entier positif ou nul`);
+        }
+        // Rayon nul ACCEPTÉ (même raison que `vol`) : c'est le repli « les
+        // particules au centre de l'orbe », qui doit s'obtenir en changeant un
+        // nombre. Une période nulle, elle, donnerait une division par zéro.
+        if (typeof entry.rayon_orbite_px !== 'number' || entry.rayon_orbite_px < 0) {
+          erreurs.push(`${path} > rayon_orbite_px doit être un nombre positif ou nul`);
+        }
+        if (typeof entry.aplatissement !== 'number' || entry.aplatissement < 0 || entry.aplatissement > 1) {
+          erreurs.push(`${path} > aplatissement doit être un nombre entre 0 et 1 (1 = orbite ronde, 0 = orbite plate)`);
+        }
+        if (typeof entry.periode_ms !== 'number' || entry.periode_ms <= 0) {
+          erreurs.push(`${path} > periode_ms doit être un nombre strictement positif`);
+        }
+        // Même raison que pour `vol` : `sens` est un sens, jamais un facteur
+        // de vitesse — sinon la période cesserait de dire la vérité.
+        if (entry.sens !== 1 && entry.sens !== -1) {
+          erreurs.push(`${path} > sens doit valoir 1 ou -1 (sens de rotation, jamais un facteur)`);
+        }
+        if (typeof entry.phase_rad !== 'number' || !Number.isFinite(entry.phase_rad)) {
+          erreurs.push(`${path} > phase_rad doit être un nombre fini`);
+        }
+        // `D-109` : le stick droit pilote le curseur. Une vitesse nulle le
+        // rendrait immobile sans que rien ne le dise, et une courbe nulle ou
+        // négative inverserait la réponse du stick (plus on pousse, moins ça
+        // va) — deux réglages qu'on veut voir tomber au boot.
+        if (typeof entry.vitesse_stick_px_s !== 'number' || entry.vitesse_stick_px_s <= 0) {
+          erreurs.push(`${path} > vitesse_stick_px_s doit être un nombre strictement positif (px CSS par seconde)`);
+        }
+        if (typeof entry.courbe_stick !== 'number' || entry.courbe_stick <= 0) {
+          erreurs.push(`${path} > courbe_stick doit être un nombre strictement positif (1 = réponse linéaire)`);
+        }
+        // Les deux silhouettes sont REQUISES ici, alors que le schéma générique
+        // les rend seulement facultatives (l'effet `texte` n'en a pas) : un
+        // curseur sans orbe serait un curseur invisible, et personne ne ferait
+        // le lien avec ce catalogue.
+        if (typeof entry.visuel !== 'string') {
+          erreurs.push(`${path} > visuel (l'orbe) est requis pour un effet de type "curseur"`);
+        }
+        if (entry.nb_particules > 0 && typeof entry.visuel_particule !== 'string') {
+          erreurs.push(`${path} > visuel_particule est requis dès que nb_particules > 0`);
+        }
         return erreurs;
       }
 
@@ -1353,6 +1417,13 @@ export const SCHEMAS = {
       }
 
       if (entry.type === 'particules') {
+        // `capacite` (`D-108`, facultative) : la taille de la réserve de
+        // bouffées. Absente = le défaut du module. Présente, elle doit être un
+        // entier strictement positif — une réserve de zéro donnerait une
+        // traînée muette que rien ne signalerait.
+        if (entry.capacite !== undefined && (!Number.isInteger(entry.capacite) || entry.capacite <= 0)) {
+          erreurs.push(`${path} > capacite doit être un entier strictement positif si présent (taille de la réserve)`);
+        }
         // Un intervalle nul ferait une boucle d'émission sans fin dans
         // avancerPoussiere().
         positifs.push('intervalle_px');

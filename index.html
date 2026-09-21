@@ -73,6 +73,34 @@
     }
 
     html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+
+    /* --- Le curseur du jeu (`D-108`) -------------------------------------
+       `--curseur-jeu` est posée au démarrage par `src/curseur.js`, qui dessine
+       l'orbe depuis `visuels.json` et la range dans une image. Le code ne
+       connaît toujours aucune valeur de style : il fabrique une image, il ne
+       choisit ni couleur ni forme (elles sont en données).
+
+       La valeur de repli (`auto`, `pointer` plus bas) est ce qui rend le
+       sous-système « meilleur effort » VISIBLE ici : si la variable n'est
+       jamais posée — navigateur qui refuse, silhouette trop grande, module
+       absent — la page retombe exactement sur le curseur d'avant ce ticket. */
+    html, body { cursor: var(--curseur-jeu, auto); }
+
+    /* Le calque des particules en orbite et de la traînée. Il ne reçoit JAMAIS
+       un événement de pointeur (sinon il volerait tous les clics des menus), et
+       il passe au-dessus des écrans d'UI : l'orbe, lui, est composé par le
+       navigateur par-dessus toute la page, et ses étincelles ne doivent pas
+       rester derrière un menu. */
+    .curseur-calque {
+      position: fixed; left: 0; top: 0; width: 100vw; height: 100vh;
+      pointer-events: none; z-index: 10;
+      /* `background: transparent` n'est PAS une redondance : la règle `canvas`
+         ci-dessus peint tous les canvas en noir (c'est le fond du jeu), et ce
+         calque en est un. Sans cette ligne il recouvre l'écran d'un aplat noir
+         — vérifié, et seule une capture pouvait le voir : aucun test headless
+         ne compose une feuille de style. */
+      background: transparent;
+    }
     /* `touch-action: none` ne vise QUE le jeu : il empêche le navigateur de
        faire défiler/zoomer la page pendant qu'un doigt pilote le joystick.
        Posé sur `html, body` (ce qu'il était jusqu'à `D-42`), il annonce la
@@ -177,7 +205,7 @@
     .fiches-sous-titre { font-size: calc(9.5 * var(--u)); }
     .cartes-bouton-entete {
       --carte-trait: var(--menu-accent);
-      flex: 0 0 auto; box-sizing: border-box; cursor: pointer;
+      flex: 0 0 auto; box-sizing: border-box; cursor: var(--curseur-jeu, pointer);
       min-width: max(calc(24 * var(--u)), 40px); height: max(calc(24 * var(--u)), 40px);
       display: flex; align-items: center; justify-content: center; gap: calc(4 * var(--u));
       background: var(--menu-carte);
@@ -207,7 +235,7 @@
        si la carte est dangereuse. */
     .carte {
       --carte-trait: var(--menu-accent);
-      box-sizing: border-box; min-width: 0; min-height: 0; overflow: hidden; cursor: pointer;
+      box-sizing: border-box; min-width: 0; min-height: 0; overflow: hidden; cursor: var(--curseur-jeu, pointer);
       display: flex; align-items: center; gap: calc(10 * var(--u));
       padding: calc(12 * var(--u));
       background: var(--menu-carte);
@@ -324,7 +352,7 @@
     .tuile {
       --carte-trait: var(--menu-accent);
       position: relative; box-sizing: border-box; height: calc(60 * var(--u)); min-width: 0;
-      overflow: hidden; cursor: pointer;
+      overflow: hidden; cursor: var(--curseur-jeu, pointer);
       display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(3 * var(--u));
       padding: calc(4 * var(--u));
       background: var(--menu-carte);
@@ -412,7 +440,7 @@
     /* Le bouton de la fiche : à l'accent, bordure et texte — jamais un aplat
        (même règle que le danger). Cible tactile : 40 px de page au moins. */
     .fiche-action {
-      flex: 0 0 auto; box-sizing: border-box; cursor: pointer;
+      flex: 0 0 auto; box-sizing: border-box; cursor: var(--curseur-jeu, pointer);
       min-height: max(calc(24 * var(--u)), 40px); padding: 0 calc(8 * var(--u));
       display: flex; align-items: center; justify-content: center; text-align: center;
       font-size: calc(11 * var(--u)); font-weight: 700; color: var(--menu-accent);

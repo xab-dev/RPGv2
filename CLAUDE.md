@@ -147,6 +147,12 @@ rpg_v2/
 │   │                       main.js et placement.js)
 │   ├── daynight.js         cycle jour/nuit en 4 phases (constantes) ; `save.monde.heure` sert aussi
 │   │                       d'horloge "temps actif" partagée (cooldowns/survie), gelée sous UI
+│   ├── souris.js           `D-107` : ce que la souris fait faire au NAVIGATEUR et qu'on lui
+│   │                       retire (clic droit), posé sur le document — « meilleur effort »
+│   ├── curseur.js          `D-108` : le curseur du jeu. Parts pures (boîte du bitmap dérivée du
+│   │                       dessin, géométrie de l'orbite, union de rectangles) + la part DOM :
+│   │                       la TÊTE est un `cursor: url()` généré au boot depuis `visuels.json`,
+│   │                       les particules et la traînée vivent sur un calque de recouvrement
 │   ├── audio.js            musique en boucle, armée au premier verbe abstrait (DOM)
 │   ├── dialogue.js         file de lignes, machine à écrire + armement anti-spam, résolution locuteur
 │   ├── hints.js            indices de commande (specs/04_indices-commandes.md) : un seul affiché
@@ -336,11 +342,15 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 | **Le placement tactile a une mesure commune : un écart de 16 px en résolution logique, et le bouton MENU pour repère** — les autres boutons se règlent à partir de lui, et chaque écart se lit dans `ui/hud_layout.js` en une soustraction, jamais recopié en dur. Avec elle : **aucun nombre choisi à l'œil** (le rayon de l'éventail des actions, 28 + 16 + 20 = 64, et son écartement angulaire, 2·asin(26,5/64) ≈ 48,9°, se *déduisent* des deux écarts demandés ; INTERACT est l'unique point équidistant de ses deux voisins sur son axe) — changer un écart doit **redonner des nombres**, pas casser un nombre mémorisé (règle `D-52`). Les quatre boutons masqués avant déblocage sont en **éventail régulier** autour de l'attaque. Cause racine du « ils se marchent dessus » de la tournée du 21/09 : INTERACT était à gauche, donc **dans la zone qui capte le joystick** (`JOYSTICK.limiteX` = toute la moitié gauche) — un doigt posé dessus pilotait aussi le déplacement ; à droite la question ne se pose plus, sans toucher à la règle du joystick | 2026-09-22 | `D-57`, `docs/archives/JOURNAL_2026-09-22_chapitre-tactile.md` |
 | **La table de niveaux va jusqu'au Nv.30, et la courbe d'XP n'a pas été retouchée** (consigne de Xav : « je veux voir où elle amène, en combien de temps ») : elle est **prolongée par sa propre règle**, celle qu'elle suit depuis le Nv.5 — +5 XP par palier. 2 340 XP cumulés et 29 points de stats sur la course. Trois fichiers et pas un, parce qu'un flag par niveau franchi est **déclaré** (`flags.js` lève sur un flag non déclaré, donc le Nv.11 coûtait une frame sans lui) et que zéro chaîne n'est en dur. La consigne de la session était « pas de `push`, la version en ligne reste au Nv.10 » ; elle est **caduque depuis le 22/09 au soir** : le `push` demandé pour `D-105` a emporté ce commit avec lui, la table est donc **en ligne**. Effet de bord bénéfique : le mur de `D-97` (un niveau hors table rend l'écran Stats inouvrable) passe du Nv.10 au Nv.30 | 2026-09-22 | `Q-44`, même archive |
 
-| **Un motif de tuile est identique sur CHAQUE tuile de son type — donc tout motif qui se *lit* comme un motif devient un papier peint.** Il n'y a que deux issues, et le choix se fait par surface : un motif **continu d'une cellule à la suivante** (les lames du parquet : la périodicité devient le sujet, un plancher *doit* être régulier), ou un **champ dense de petites marques** sans forme dominante (l'herbe, le gravier du chemin : l'œil n'attrape pas de motif quand la cellule est remplie uniformément). Avec ce grain, les variantes de couleur d'une tuile perdent leur rôle : à ±8 % elles étaient le seul relief du sol, et un damier de carrés de 32 px — ramenées à ±2 %. Et un contrat neuf, verrouillé par test : **le grain d'une tuile NON SOLIDE tient dans sa cellule** (ce qui dépasse est effacé par la tuile suivante à droite et en bas, et peint par-dessus une tuile déjà finie à gauche et en haut — de l'herbe sur le chemin ou sur un mur), tandis qu'une tuile **solide** garde le droit de dépasser : c'est ce qui donne sa hauteur à la forêt. Contrairement à une station (`D-78`), redessiner une tuile ne déplace **aucun** mur : sa solidité est un booléen, pas une boîte englobante | 2026-09-22 | `D-105`, `docs/JOURNAL_2026-09-22_grain-du-sol.md` |
+| **Un motif de tuile est identique sur CHAQUE tuile de son type — donc tout motif qui se *lit* comme un motif devient un papier peint.** Il n'y a que deux issues, et le choix se fait par surface : un motif **continu d'une cellule à la suivante** (les lames du parquet : la périodicité devient le sujet, un plancher *doit* être régulier), ou un **champ dense de petites marques** sans forme dominante (l'herbe, le gravier du chemin : l'œil n'attrape pas de motif quand la cellule est remplie uniformément). Avec ce grain, les variantes de couleur d'une tuile perdent leur rôle : à ±8 % elles étaient le seul relief du sol, et un damier de carrés de 32 px — ramenées à ±2 %. Et un contrat neuf, verrouillé par test : **le grain d'une tuile NON SOLIDE tient dans sa cellule** (ce qui dépasse est effacé par la tuile suivante à droite et en bas, et peint par-dessus une tuile déjà finie à gauche et en haut — de l'herbe sur le chemin ou sur un mur), tandis qu'une tuile **solide** garde le droit de dépasser : c'est ce qui donne sa hauteur à la forêt. Contrairement à une station (`D-78`), redessiner une tuile ne déplace **aucun** mur : sa solidité est un booléen, pas une boîte englobante | 2026-09-22 | `D-105`, `docs/archives/JOURNAL_2026-09-22_grain-du-sol.md` |
 | **Le sol ne coûte rien à l'arrêt, et tout ce qu'on lui ajoute se paie au franchissement d'une tuile** — le calque statique n'est reconstruit que là. Un ticket qui touche au sol se mesure donc **en marchant** (`tools/scenarios/cout_calque.mjs`, deux exécutions du même scénario comparées entre elles, jamais à un relevé du §6 : Chrome y est sans fenêtre, les fps n'ont pas de sens). Le grain du sol a porté une reconstruction de **1,02 à 3,47 ms** pour ×14 primitives, sans une frame au-dessus de 20 ms. Corollaire d'outillage : le **banc visuel ne peut pas juger un sol** — il juge une silhouette sur un fond neutre choisi, or ici l'objet du ticket EST le fond ; ce qu'il faut voir (la répétition sur quinze tuiles, la couture entre deux surfaces, la densité à l'échelle d'un écran) ne tient dans aucune vignette | 2026-09-22 | `D-105`, `D-01`, même journal |
 
 (Les décisions de `05_construction-stations.md` étaient déjà actées par Xav **dans la spec elle-même** avant tout code, v1.0.0 §9 — les lignes ci-dessus n'y renvoient que pour mémoire, elles ne tranchent rien de nouveau.)
 | **Le héros est un personnage encapuchonné vu de trois quarts, et la couleur du follet est son VISAGE** (*révise* le corps entier teinté de la Phase 1) : une boule lumineuse logée dans l'ombre de la capuche, avec un glow serré — une lueur, jamais une aura qui éclairerait le sol. Ce qui rend une silhouette lisible à 14 px n'est pas son vêtement mais son **contraste** : un point lumineux dans une masse noire. Et une relation à ne plus contredire : **le héros n'est jamais plus large que ce qui entre en collision** — contrairement à une station, sa hitbox ne dérive PAS du dessin (`RAYON_HERO_BASE_PX × echelle`), donc redessiner ne déplace aucun mur, mais l'ourlet du manteau est calé sur la demi-boîte ; en hauteur il la dépasse librement, la boîte étant son emprise au sol et non sa taille | 2026-09-22 | `D-104`, `docs/JOURNAL_2026-09-22_heros-silhouette.md` |
+| **Ce qui doit être exact est exact, ce qui a le droit de traîner traîne.** Un curseur animé se partage en deux : la **tête** est un vrai `cursor: url(…)`, dessiné une fois au démarrage depuis `visuels.json` — donc **exactement** sous le pointeur, vivant **par-dessus les menus DOM** (là où la souris sert) et gratuit par frame ; les **particules et la traînée** vivent sur un calque de recouvrement (`pointer-events: none`), qui a le droit d'être en retard d'une frame puisque c'est une traînée. Deux bénéfices tombent tout seuls de ce découpage : l'orbe **occulte la moitié lointaine de son orbite** sans une ligne de tri de profondeur (le curseur système est composé par-dessus la page), et le calque passe **au-dessus des écrans d'UI**, ce qu'un dessin dans le canvas du jeu ne peut pas faire. Corollaire de lecture : **une capture d'écran ne contient jamais le curseur** — la vignette de l'album est une simulation collée à la main | 2026-09-22 | `D-108`, `docs/JOURNAL_2026-09-22_curseur.md` |
+| **Le stick droit pilote le curseur, et il sort de la couche d'input par un accesseur SÉPARÉ** (`input.pointeurManette()`), jamais dans l'état de verbes : `etat` garde sa forme move + verbes dont `etatNeutre()` dérive génériquement, et c'est ce qui **garantit qu'aucun système de jeu ne lira jamais ce stick** — un pointeur analogique n'est pas un verbe. Conséquence à ne pas manquer : **une page ne peut pas déplacer le curseur du système** (aucune API, et tant mieux), donc au stick l'orbe est dessiné **sur le calque** et la variable CSS passe à `none` — même silhouette, même fonction de dessin, seul le **porteur** change, et le dernier périphérique qui bouge gagne dans les deux sens. Enfin, un déplacement au stick divise la direction par la norme BRUTE et la vitesse par la norme **bornée à 1** : confondre les deux fait aller une diagonale √2 fois trop vite (c'est `D-102` côté clavier, ici corrigeable sans toucher au gameplay) | 2026-09-22 | `D-109`, `docs/JOURNAL_2026-09-22_curseur.md` |
+| **La taille de la réserve d'un système de particules suit la VITESSE de ce qu'il suit.** Les 8 bouffées de `poussiere.js` sont calibrées sur un héros à 75 px/s ; une souris les vide en quatre frames, et la traînée devient une grappe clignotante. `capacite` passe donc en données (absente = 8, héros et follet identiques au pixel près). Et l'émission est **interpolée le long du segment parcouru** : toutes les bouffées d'une même frame naissaient au point d'ARRIVÉE, invisible à 1 px par frame, ruineux à 60 — ce qui rend enfin vraie la promesse déjà écrite dans ce module, « l'émission se fait à la distance parcourue » | 2026-09-22 | `D-108` |
+| **Le clic droit se verrouille sur le DOCUMENT, jamais sur le seul canvas** : les écrans d'UI sont des éléments DOM posés à côté du canvas (même raison qui fait passer `document.documentElement` en plein écran), donc un garde posé sur le canvas est un garde à moitié posé — et la moitié qui manque est celle où la souris sert. Effet de bord voulu au tactile : l'appui **maintenu** déclenche lui aussi `contextmenu`, donc la bulle « copier / partager » disparaît avec, sans toucher `input/touch.js`. La porte de secours `?souris=libre` ne pose **aucun** écouteur, plutôt qu'un écouteur qui laisse passer | 2026-09-22 | `D-107` |
 | **Une silhouette de personnage se juge dans la scène, pas au banc — et la scène lui prête ses couleurs.** Le manteau du héros prend la teinte de la **lumière du follet** (rayon 100 px) : brun chaud avec le feu, gris-bleu avec l'eau. Personne ne l'a codé, c'est le calque de lumière existant. Corollaire : une capture de silhouette de personnage se prend **par compagnon**, sinon elle ne montre qu'un tiers de la vérité (`tools/scenarios/heros_scene.mjs`) | 2026-09-22 | même journal |
 
 ## Ce qui est dû : dettes, questions, validations
@@ -402,42 +412,75 @@ Les captures de la V1 (`docs/captures/v1/`) sont une **inspiration, jamais un ca
 
 `Q-10`, `Q-11`, `Q-12`, `Q-24` et `Q-25` restent à trancher avec Xav ; `Q-07` est gelée. La spec de la barre d'action du bas (`E-01`) est écrite par Xav lui-même et attend le chiffrage `Q-11`. **Une spec non écrite ne se commence pas** (même règle que pour une phase).
 
-## Journal de session — LE GRAIN DU SOL (22/09)
+## Journal de session — LE CURSEUR, PUIS LE STICK DROIT (22/09)
 
-Session en deux temps, comme Xav l'a demandée. D'abord un **topo** sur le canevas de la
-map, la dernière surface du jeu sans passe graphique : où on en est, et ce que coûteraient
-des modifications — « on ne touche à rien pour l'instant ». Puis, sur son go : **on fait ce
-qui est gratuit, on note le reste.**
+Session en deux temps, comme la précédente : un **topo** (« qu'est-ce que ça
+implique, qu'est-ce que ça coûte »), puis le code sur le go de Xav. Deux
+tickets, deux commits retirables seuls, branche `curseur-2026-09-22`.
 
-Ce que le topo a établi, chiffres en main : **il n'y a pas de mur de performance sur PC.**
-Le sol n'est pas dessiné à chaque frame mais pré-rendu par secteur (187 tuiles, ~190
-primitives) et reconstruit au seul franchissement d'une tuile — 0,37 ms de moyenne au
-dernier relevé réel (`R-17`), soit 2 % du budget d'une frame sur 7 % des frames. Il faudrait
-multiplier les primitives par ~40 pour qu'une reconstruction mange une frame. La contrainte
-qui compte n'était donc pas le coût, mais **ce que les données savent exprimer**.
+Ce que le topo a établi, vérifié et non supposé : **aucun curseur personnalisé
+nulle part** (`cursor` n'apparaissait que quatre fois dans `index.html`, en
+`pointer` sur les cartes de menu), **la souris n'est pas un périphérique de
+jeu** (`src/input/` ne connaît que clavier, manette, tactile — le constat de
+Xav est structurel), et **le clic droit n'était bloqué nulle part**.
 
-Livré : `D-105`, **données seules, aucune ligne de code du jeu** — grain sur l'herbe, le
-chemin, la terre et le parquet, variantes de couleur calmées. La découverte qui commande le
-résultat, et qui a corrigé mon propre topo : un motif de tuile est **identique sur chaque
-tuile**, donc la première version (trois brins au milieu de la cellule) a donné une
-tapisserie pire que le damier qu'elle remplaçait. Les deux issues — motif continu d'une
-cellule à l'autre, ou champ dense de petites marques — sont désormais au tableau des
-décisions ci-dessus. Le parquet est la réussite la plus nette : ce qui est un défaut sur
-l'herbe (la périodicité) est une qualité sur un plancher.
+J'ai recommandé de **masquer** le curseur manette en main. **Xav a choisi
+l'inverse** — un curseur toujours visible — et a précisé le dessin : thème du
+vif d'or, sphère, deux particules en orbite, la même traînée que le follet,
+argenté neutre. Consigné, pas rejoué : sa demande a changé la route technique,
+d'où la route **hybride** au tableau des décisions ci-dessus.
 
-Vérifications : 113 fichiers verts (un test neuf, avec témoins, qui a attrapé **deux fuites
-d'un demi-pixel** avant la première capture) ; coût mesuré avant/après en marche (1,02 →
-3,47 ms par reconstruction, 0/600 frame > 20 ms des deux côtés) ; album de dix paires
-`avant_`/`apres_` sous `docs/captures/sol-2026-09-22/`, sur cinq postes d'observation
-**calculés** depuis les catalogues.
+Livré : `D-107` (clic droit verrouillé sur le document, porte `?souris=libre`)
+et `D-108` (`src/curseur.js`, trois silhouettes et deux effets en données, dont
+un **5ᵉ type d'effet** validé au boot ; la traînée est une **3ᵉ instance de
+`poussiere.js`**, pas un système nouveau ; la boîte du bitmap et son point chaud
+**dérivent du dessin**, comme l'empreinte d'une station).
 
-Relevé sans y toucher, comme demandé : `Q-52` (les **transitions** entre surfaces — à mon
-avis le défaut le plus visible qui reste, et le grain le rend *plus* voyant ; c'est un
-chantier avec une spec), `D-106` (le décor ne sait pas sur quelle surface il pousse — de
-l'herbe dans le salon, connu de Xav, remède = code), `Q-53` (monter la densité du décor,
-payable mais **bloquée par `D-106`**), et `D-01`, dont l'hypothèse de 19/09 est vérifiée :
-la fenêtre se reconstruit à **chaque tuile franchie**, donc sa marge d'une tuile ne sert pas
-d'amortisseur.
+La leçon de la session : **115 tests verts ne disent rien d'un défaut de
+composition.** Deux défauts n'ont été trouvés qu'à la capture — le calque
+héritait du `background: #000` de la règle `canvas` et noircissait tout l'écran,
+et la traînée était une grappe clignotante (réserve de 8 bouffées vidée en
+quatre frames par une souris, émission au point d'arrivée). Le second a été
+traité **à la cause**, dans le module partagé, à défaut inchangé.
 
-Dû : `V-55`, et il porte la seule question que les captures ne peuvent pas trancher —
-**en marchant, est-ce qu'on attrape la répétition ?**
+Mesures : `dessiner()` 0,91 → 0,97 ms entre souris immobile et souris en
+mouvement continu, traînée pleine, 0/600 frame > 20 ms
+(`tools/scenarios/cout_curseur.mjs`) ; à DPR 3 la déclaration passe en
+`image-set(… 3x)` et l'orbe fait 63 px, sous le plafond de 128 au-delà duquel un
+navigateur ignore un curseur **en silence**. Album :
+`docs/captures/curseur-2026-09-22/`.
+
+Dû : **`V-56`**. Tout y est réglable en données (rayon 11 px, période 1400 ms,
+aplatissement 0,45, échelle 1, réserve 28) — « plus, moins ou bon ».
+
+**Puis Xav a vu le curseur, l'a validé (« le visuel est validé par xav ») et a
+tranché la réserve que je gardais pour plus tard, autrement que je ne le
+proposais** : pas de masquage, mais **le stick droit pilote le curseur**
+(`D-109`) — « il n'a pas d'utilité jusque là, ça ne sert à rien à part à faire
+joli, s'amuser avec, et naviguer dans les menus. joystick droit = curseur,
+c'est tout ». Le stick droit était libre depuis toujours (la croix
+directionnelle est réservée depuis le 15/09).
+
+Trois pièces, et rien d'autre touché : `gamepad.js` lit les axes 2/3 avec la
+**même zone morte** que le stick gauche · `input.js` les expose par un
+**accesseur séparé**, jamais dans l'état de verbes — c'est ce qui garantit
+qu'aucun système de jeu ne lira ce stick · `curseur.js` gagne une fonction
+**pure** de déplacement. Le point à ne pas manquer : **une page ne peut pas
+déplacer le curseur du système**, donc au stick l'orbe est dessiné sur le
+calque et le curseur système passe à `none` — même silhouette, même fonction de
+dessin, **rien de ce qui est validé ne change, seul le porteur change**. Un
+défaut attrapé par le test au passage : le premier jet faisait aller une
+diagonale plein stick √2 fois trop vite.
+
+**Rien d'autre n'est livré** : le curseur ne clique pas, la navigation des
+menus reste au stick gauche — c'est exactement ce que Xav a demandé, et la
+question du clic est consignée sans être commencée (`Q-54`).
+
+**Validé en jeu par Xav le jour même** : le visuel d'abord (« le visuel est
+validé par xav »), puis l'ensemble manette en main après le stick droit
+(« all good ») — `V-56` et `V-57` closes, et la vitesse comme la courbe sont
+gardées telles quelles. Les quatre commits sont **fusionnés dans `main` et en
+ligne**, à sa demande.
+
+Reste ouverte, consignée sans être commencée : `Q-54` — **le curseur ne clique
+pas**, la navigation des menus reste au stick gauche.

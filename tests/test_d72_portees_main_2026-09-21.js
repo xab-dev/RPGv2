@@ -85,7 +85,13 @@ const DEMARRAGE = corps('export async function demarrerJeu()');
       // même souhaitable. On ne regarde que le code.
       if (ligne.trim().startsWith('//') || ligne.trim().startsWith('*')) continue;
       for (const [nom, ou] of noms) {
-        if (new RegExp(`\\b${nom}\\s*\\(`).test(ligne)) {
+        // `(?<![.\w$])` : un accès MEMBRE (`orchestrateur.maj(delta)`) n'est
+        // jamais une fuite de portée — c'est justement ce qu'il faut écrire
+        // quand on veut appeler l'autre moitié. Sans cette exclusion, le
+        // garde interdisait la seule forme correcte (vu en branchant le
+        // curseur sur la boucle, `D-108`) ; avec elle, un appel NU comme
+        // `equipementDeLItem(item)` reste attrapé — le témoin le vérifie.
+        if (new RegExp(`(?<![.\\w$])${nom}\\s*\\(`).test(ligne)) {
           trouvees.push(`${nom}() déclaré l.${ou} dans ${nomDe}, appelé l.${n} dans ${nomVers}`);
         }
       }

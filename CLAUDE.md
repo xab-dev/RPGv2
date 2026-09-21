@@ -333,6 +333,9 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 | **Un visuel qui sert dans deux régimes de couleur se met en volume en ALPHA PUR** — noir translucide pour l'ombre, blanc pour la lumière. Les quatre icônes de stats sont dessinées **sans teinte** au bandeau (couleurs d'auteur) et **teintées par le CSS** dans l'écran Stats (`ui/icone_canvas.js` prend la couleur calculée du canvas) : une facette en couleur fixe aurait juré dans l'un des deux. Même raison côté DOM, où une surface de menu a trois états (repos, focus, appui) : le relief y est un **blanc translucide**, donc jamais réécrit par état — et sa règle se place **après** les règles d'état, dont le raccourci `background` remet `background-image` à zéro | 2026-09-22 | `D-98`, `D-100` |
 | **Une vignette de tuile rend son sol à l'objet** : l'ombre portée d'un item est dessinée *dans* son canvas, et sur le fond uni d'une tuile elle ne porte plus — une **flaque d'ombre** en fond de vignette, centrée à 72 % de la hauteur (au milieu, elle entourerait l'objet et le ferait flotter davantage). La vignette de la **fiche** ne la prend pas : sur un grand panneau, ce serait une tache | 2026-09-22 | `D-101` |
 
+| **Le placement tactile a une mesure commune : un écart de 16 px en résolution logique, et le bouton MENU pour repère** — les autres boutons se règlent à partir de lui, et chaque écart se lit dans `ui/hud_layout.js` en une soustraction, jamais recopié en dur. Avec elle : **aucun nombre choisi à l'œil** (le rayon de l'éventail des actions, 28 + 16 + 20 = 64, et son écartement angulaire, 2·asin(26,5/64) ≈ 48,9°, se *déduisent* des deux écarts demandés ; INTERACT est l'unique point équidistant de ses deux voisins sur son axe) — changer un écart doit **redonner des nombres**, pas casser un nombre mémorisé (règle `D-52`). Les quatre boutons masqués avant déblocage sont en **éventail régulier** autour de l'attaque. Cause racine du « ils se marchent dessus » de la tournée du 21/09 : INTERACT était à gauche, donc **dans la zone qui capte le joystick** (`JOYSTICK.limiteX` = toute la moitié gauche) — un doigt posé dessus pilotait aussi le déplacement ; à droite la question ne se pose plus, sans toucher à la règle du joystick | 2026-09-22 | `D-57`, `docs/archives/JOURNAL_2026-09-22_chapitre-tactile.md` |
+| **La table de niveaux va jusqu'au Nv.30, et la courbe d'XP n'a pas été retouchée** (consigne de Xav : « je veux voir où elle amène, en combien de temps ») : elle est **prolongée par sa propre règle**, celle qu'elle suit depuis le Nv.5 — +5 XP par palier. 2 340 XP cumulés et 29 points de stats sur la course. Trois fichiers et pas un, parce qu'un flag par niveau franchi est **déclaré** (`flags.js` lève sur un flag non déclaré, donc le Nv.11 coûtait une frame sans lui) et que zéro chaîne n'est en dur. **La version en ligne reste volontairement au Nv.10** | 2026-09-22 | `Q-44`, même archive |
+
 (Les décisions de `05_construction-stations.md` étaient déjà actées par Xav **dans la spec elle-même** avant tout code, v1.0.0 §9 — les lignes ci-dessus n'y renvoient que pour mémoire, elles ne tranchent rien de nouveau.)
 | **Le héros est un personnage encapuchonné vu de trois quarts, et la couleur du follet est son VISAGE** (*révise* le corps entier teinté de la Phase 1) : une boule lumineuse logée dans l'ombre de la capuche, avec un glow serré — une lueur, jamais une aura qui éclairerait le sol. Ce qui rend une silhouette lisible à 14 px n'est pas son vêtement mais son **contraste** : un point lumineux dans une masse noire. Et une relation à ne plus contredire : **le héros n'est jamais plus large que ce qui entre en collision** — contrairement à une station, sa hitbox ne dérive PAS du dessin (`RAYON_HERO_BASE_PX × echelle`), donc redessiner ne déplace aucun mur, mais l'ourlet du manteau est calé sur la demi-boîte ; en hauteur il la dépasse librement, la boîte étant son emprise au sol et non sa taille | 2026-09-22 | `D-104`, `docs/JOURNAL_2026-09-22_heros-silhouette.md` |
 | **Une silhouette de personnage se juge dans la scène, pas au banc — et la scène lui prête ses couleurs.** Le manteau du héros prend la teinte de la **lumière du follet** (rayon 100 px) : brun chaud avec le feu, gris-bleu avec l'eau. Personne ne l'a codé, c'est le calque de lumière existant. Corollaire : une capture de silhouette de personnage se prend **par compagnon**, sinon elle ne montre qu'un tiers de la vérité (`tools/scenarios/heros_scene.mjs`) | 2026-09-22 | même journal |
@@ -395,80 +398,3 @@ Les sept tickets de code du 19/09 (`D-22`, `D-21`, `D-20` A et B, `D-05`, `D-23`
 Les captures de la V1 (`docs/captures/v1/`) sont une **inspiration, jamais un cahier des charges** : aucun ticket ne les lit tant que `E-03` (une ligne d'intention par capture) n'est pas rempli.
 
 `Q-10`, `Q-11`, `Q-12`, `Q-24` et `Q-25` restent à trancher avec Xav ; `Q-07` est gelée. La spec de la barre d'action du bas (`E-01`) est écrite par Xav lui-même et attend le chiffrage `Q-11`. **Une spec non écrite ne se commence pas** (même règle que pour une phase).
-
-## Journal de session — le CHAPITRE TACTILE (22/09)
-
-Session **guidée en direct** par Xav, l'écran sous les yeux, bouton par bouton (`D-57`,
-son « chapitre tactile », gelé depuis le 21/09 en attendant d'être traité d'un bloc).
-**Placement seul** : aucune fonctionnalité touchée, **aucune ligne de code de jeu** — tout
-le placement vivait déjà dans `src/ui/hud_layout.js`, que le **dessin** (`ui/hud.js`) et la
-**zone qui répond** (`input/touch.js`) lisent tous les deux, donc bouger un bouton bouge le
-rond dessiné et la cible du doigt ensemble.
-
-Deux idées ont commandé toute la session, et elles valent pour la suite :
-
-- **Un écart générique de 16 px**, en résolution logique, sert de mesure commune à tout le
-  placement tactile ; **le bouton MENU en est le repère** — les autres se règlent à partir
-  de lui, et chaque écart se lit dans le fichier en une soustraction, jamais recopié en dur.
-- **Aucun nombre n'est choisi à l'œil.** L'éventail des actions donne son rayon
-  (28 + 16 + 20 = 64) et son écartement angulaire (2·asin(26,5/64) ≈ 48,9°) par déduction
-  des deux écarts demandés ; la position d'INTERACT est l'unique point équidistant de ses
-  deux voisins sur son axe. Changer un écart doit **redonner des nombres**, pas casser un
-  nombre mémorisé (règle `D-52`).
-
-Ce qui a bougé : **MENU** `cy 38 → 52 → 44` (écart au bandeau = le rayon du bouton, puis sa
-moitié) · **INTERACT** `70,130 → 454,97` · **les quatre boutons masqués avant déblocage**
-(3 compétences + consommable) en **éventail régulier autour de l'attaque**, 16 px d'elle,
-13 px entre voisins · **l'attaque n'a pas bougé** (420, 210). Un déplacement a été fait puis
-**défait à l'identique** en cours de route — « bouton action » lu comme l'attaque au lieu
-d'INTERACT.
-
-**La cause racine du « ils se marchent dessus »** de la tournée du 21/09 était qu'INTERACT
-se trouvait à gauche, donc **dans la zone qui capte le joystick** (`JOYSTICK.limiteX` =
-toute la moitié gauche) : un doigt posé dessus pilotait aussi le déplacement. À droite, la
-question ne se pose plus — sans toucher à la règle du joystick.
-
-Deux réglages sont venus d'un défaut que j'ai signalé plutôt que de le masquer : un éventail
-de quatre à 16 px partout balaie 156°, soit **exactement** l'arc libre autour de l'attaque —
-il tenait à l'écran mais collait aux bordures. Xav a tranché en ramenant l'écart entre
-voisins à 13 px et en **rendant les degrés économisés aux bords**, puis en remontant le MENU
-pour dégager INTERACT. Marges finales : ≥ 6 px de toute bordure, ≥ 12,2 px entre deux
-boutons quelconques.
-
-**Vérifications** : 112 fichiers verts après chaque déplacement. **Aucune validation en jeu
-à distance n'était nécessaire** — Xav regardait l'écran à chaque étape et a clos lui-même
-(« non c'est bon »).
-
-## Puis : la table de niveaux prolongée jusqu'au Nv.30 (`Q-44`)
-
-Second ticket de la session, demandé par Xav pour **ses tests de développeur** : « ce sera
-plus simple pour moi de visualiser le contenu à mettre et quand le mettre ». Livré en
-**données seules**, quatre fichiers, aucune ligne de code de jeu.
-
-**Consigne explicite : on ne touche pas à la courbe d'XP** — « justement, je veux voir où
-elle amène, en combien de temps ». La table n'est donc pas ré-équilibrée : elle est
-**prolongée par sa propre règle**, celle qu'elle suit depuis le Nv.5 — le coût d'un palier
-augmente de 5 XP à chaque niveau (50 pour le Nv.10, 55, 60… 150 pour le Nv.30). Aucune
-entrée existante n'a changé d'un point.
-
-Ce qu'il fallait toucher, et pourquoi c'était trois fichiers et pas un :
-`data/levels.json` (20 entrées), `data/flags.json` (`flag_niveau_11..30` — `main.js` pose un
-flag par niveau franchi et `flags.js` **lève** sur un flag non déclaré, donc sans eux le
-passage au Nv.11 coûtait une frame à chaque fois), et les deux locales (zéro chaîne en dur).
-
-Où elle amène : **2 340 XP cumulés au Nv.30**, soit ~67 rôdeurs à 35 XP, et **29 points de
-stats** sur la course entière.
-
-Un test a dû changer, et c'est la règle `D-52` en action : `test_t1_xp_recolte_equilibrage`
-**épinglait la longueur de la table** (`niveaux.length === 10`) pour avouer qu'il ne
-prouvait rien au-delà. Il vérifie désormais un **contrat** — la table doit couvrir le niveau
-où se joue la clôture de la Région Maison (30) —, si bien que la décroissance de la part de
-la récolte est prouvée sur toute la course (1,30 niveau au Nv.1 → 0,17 au Nv.29).
-
-**Pas de `push` : la version en ligne reste volontairement bloquée au Nv.10.**
-
-`D-97` (un niveau hors table rend l'écran Stats inouvrable) **reste ouverte** : la table plus
-longue ne la traite pas, elle déplace seulement la question de « au-dessus de 10 » à
-« au-dessus de 30 ». Et ce qui manque pour *jouer* ces vingt niveaux n'est pas touché ici :
-une seule table d'apparition (Nv.5, nuit), un seul monstre hors Grotte — les paliers Nv.10
-et Nv.15 de `specs/07_chaos-nocturne.md` restent à écrire.

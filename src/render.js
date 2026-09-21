@@ -129,9 +129,44 @@ export function calculerRectanglePresentation(largeurEcran, hauteurEcran, resolu
 // distinction deltaBrut/delta et le flag `plafonne` répondent à la piste 2 du
 // ticket (irrégularité du delta-time / frames plafonnées), dureeMajMs/
 // dureeDessinerMs à la piste 4 (part maj()/dessiner() dans une frame lente).
+//
+// `D-71` — LA BOUCLE SURVIT À UNE EXCEPTION. Décision de Xav, 21/09, après
+// que la panne ait figé le jeu pour la DEUXIÈME fois : le freeze musique du
+// 17/09 (une exception dans `audio.js` remontée jusqu'ici), puis le style de
+// texte flottant manquant du 21/09. Les deux fois, la cause était minuscule
+// et le symptôme total : plus une seule frame, donc plus de sondage manette
+// ni clavier (ils vivent dans `maj()`), souris encore vivante parce qu'elle
+// ne dépend pas du `requestAnimationFrame` — un tableau qui ne ressemble à
+// aucun bug et qu'on ne sait pas lire.
+//
+// Ceci *révise* la position du 17/09 (« jamais un try/catch global autour de
+// update()/dessiner(), qui masquerait aussi de vraies erreurs de gameplay »).
+// Ce qui a changé : on ne masque rien. L'exception est journalisée avec sa
+// pile, elle reste parfaitement visible en console — c'est seulement la MORT
+// de la boucle qui n'est plus la punition. Une frame qui échoue est une
+// frame perdue, pas une partie perdue.
 export function creerBoucle({ maj, dessiner, surFrame }) {
   let dernierT = null;
   let enCours = false;
+  // Compteur et signature de la dernière panne : à 60 fps, une frame qui
+  // échoue échoue en général à toutes les suivantes. Tout journaliser noierait
+  // le premier message — c'est-à-dire exactement celui qu'on cherche à lire.
+  let nbFramesEnEchec = 0;
+  let dernierePanne = null;
+
+  function signalerPanne(erreur) {
+    nbFramesEnEchec += 1;
+    const signature = String((erreur && erreur.message) || erreur);
+    if (signature !== dernierePanne) {
+      dernierePanne = signature;
+      console.error(
+        'render.js#creerBoucle : exception pendant la frame — la boucle CONTINUE, '
+        + 'mais cette frame est perdue (`D-71`)', erreur,
+      );
+    } else if (nbFramesEnEchec % 300 === 0) {
+      console.error(`render.js#creerBoucle : ${nbFramesEnEchec} frames perdues sur « ${signature} »`);
+    }
+  }
 
   function frame(tMs) {
     if (!enCours) return;
@@ -139,32 +174,47 @@ export function creerBoucle({ maj, dessiner, surFrame }) {
     const deltaBrut = tMs - dernierT;
     const delta = plafonnerDelta(deltaBrut);
     dernierT = tMs;
-    const t0 = surFrame ? performance.now() : 0;
-    maj(delta);
-    const t1 = surFrame ? performance.now() : 0;
-    dessiner();
-    if (surFrame) {
-      surFrame({
-        tMs,
-        deltaBrut,
-        delta,
-        plafonne: deltaBrut > delta,
-        dureeMajMs: t1 - t0,
-        dureeDessinerMs: performance.now() - t1,
-      });
+    // La replanification est dans le `finally` : quoi qu'il arrive au-dessus,
+    // y compris une exception dans `surFrame` lui-même, la frame suivante est
+    // demandée. C'est LE point du ticket, et il ne doit dépendre d'aucun
+    // chemin d'exécution particulier.
+    try {
+      const t0 = surFrame ? performance.now() : 0;
+      maj(delta);
+      const t1 = surFrame ? performance.now() : 0;
+      dessiner();
+      if (surFrame) {
+        surFrame({
+          tMs,
+          deltaBrut,
+          delta,
+          plafonne: deltaBrut > delta,
+          dureeMajMs: t1 - t0,
+          dureeDessinerMs: performance.now() - t1,
+        });
+      }
+    } catch (erreur) {
+      signalerPanne(erreur);
+    } finally {
+      requestAnimationFrame(frame);
     }
-    requestAnimationFrame(frame);
   }
 
   return {
     demarrer() {
       enCours = true;
       dernierT = null;
+      nbFramesEnEchec = 0;
+      dernierePanne = null;
       requestAnimationFrame(frame);
     },
     arreter() {
       enCours = false;
     },
+    // Exposé pour les tests : combien de frames ont été perdues. Le seul
+    // moyen de prouver qu'une exception n'a pas tué la boucle sans lire la
+    // console.
+    framesEnEchec: () => nbFramesEnEchec,
   };
 }
 
@@ -842,16 +892,17 @@ export function dessinerTextesFlottants(ctx, { textes, camera, config }) {
     // `D-58` : la taille et la couleur viennent du STYLE du texte, pas du
     // réglage global — c'est la taille qui distingue « +1 » de « +1xp », et
     // la couleur ne fait que l'appuyer (elle ne porte jamais seule la
-    // différence : règle d'accessibilité posée par Xav le 21/09). Un style
-    // inconnu est une erreur de catalogue, jamais un repli silencieux qui
-    // afficherait les deux textes identiques.
+    // différence : règle d'accessibilité posée par Xav le 21/09).
+    //
+    // `D-71` : un style inconnu ne lève PLUS ici. Ce `throw` vivait dans la
+    // boucle de dessin, qui ne se replanifiait pas après une exception : il
+    // transformait un texte sans taille — un défaut cosmétique — en jeu mort,
+    // clavier et manette compris. Le garde-fou est remonté au démarrage
+    // (`main.js#erreursStylesTexteFlottant`), là où une faute de catalogue se
+    // voit avant d'être jouée. Ici, on saute le texte : c'est la bonne
+    // dégradation pour un retour d'interface.
     const style = config.styles[t.style];
-    if (!style) {
-      throw new Error(
-        `render.js#dessinerTextesFlottants : style de texte "${t.style}" absent de l'entrée d'effets `
-        + `(styles connus : ${Object.keys(config.styles).join(', ')})`
-      );
-    }
+    if (!style) continue;
     ctx.font = `bold ${style.taille_px}px monospace`;
     ctx.globalAlpha = t.alpha;
     const x = t.x - camera.x;

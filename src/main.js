@@ -180,6 +180,65 @@ export function lignesFicheItem(itemDef, registre, i18n) {
   return lignes;
 }
 
+// --- Textes flottants : la jointure module → rendu (`D-71`) ---------------
+//
+// CE QUI S'EST PASSÉ, et pourquoi ce code existe : `dessiner()` reconstruisait
+// à la main l'objet envoyé au rendu (`{ x, y, alpha, texte }`), au lieu de
+// transmettre celui que `texte_flottant.js` lui donne. Le jour où ce module a
+// gagné une clé (`style`, `D-58`), elle est tombée dans l'intervalle — sans
+// bruit, et le jeu se figeait au premier ramassage.
+//
+// Le module est conçu pour TRANSPORTER des clés qu'il ne comprend pas (`cle`,
+// `format`, `libelle`, `style`). Refabriquer un objet à l'arrivée, c'est
+// défaire ce transport, et c'est une faute qui se rejouera à chaque clé
+// ajoutée. D'où la règle, ici : on **enrichit**, on ne recopie pas.
+//
+// Et c'est une fonction PURE, sortie de `dessiner()` : le rendu canvas n'est
+// jamais exercé par les tests (contrainte de méthode), donc tant que cette
+// composition vivait dedans, la jointure était intestable. Les deux moitiés
+// avaient leurs tests ; le passage de l'une à l'autre n'en avait aucun.
+//
+// `traduire` plutôt qu'`i18n` : cette fonction n'a pas besoin de savoir d'où
+// vient le texte, et le module de textes flottants, lui, n'a même pas le
+// droit de le savoir (contrôle de source dans son test).
+export function composerTextesFlottants(visibles, traduire) {
+  return visibles.map((t) => ({
+    ...t,
+    // Le SEUL ajout. Le gabarit ne porte plus que `{n}` depuis `D-58` : le
+    // paramètre `item` qui traînait ici ne servait plus rien et mentait sur
+    // le contrat. `libelle` continue d'être transporté par le module, prêt
+    // pour le jour où un gabarit voudra nommer l'objet — ce sera alors le
+    // ticket de ce gabarit, pas un reliquat.
+    texte: traduire(t.format, { n: t.quantite }),
+  }));
+}
+
+// Les styles de texte flottant que le CODE peut émettre. Ils sont écrits ici
+// parce que c'est ici qu'on les émet (`signalerGainItem`, `signalerGainXp`),
+// et relus AU DÉMARRAGE pour vérifier que le catalogue les déclare tous.
+//
+// C'est le déplacement du garde-fou de `D-58` : il vivait dans la boucle de
+// dessin, sous forme d'exception. Le schéma, lui, ne pouvait pas le voir — il
+// vérifie la forme de ce qui est déclaré, jamais que ce que le code émet
+// existe. Retirer « xp » du catalogue passait donc le boot sans un mot.
+export const STYLES_TEXTE_FLOTTANT = ['gain', 'xp'];
+
+// Contrôle de démarrage : chaque style émis par le code a bien sa taille et sa
+// couleur au catalogue. Même famille que `erreursTextesMenus` — ce que le code
+// choisit, aucun catalogue ne le cite, donc seul un contrôle au boot peut le
+// voir manquer.
+export function erreursStylesTexteFlottant(effets) {
+  const effet = (effets || []).find((e) => e.id === 'effet_texte_gain');
+  if (!effet) return ['effets.json > "effet_texte_gain" introuvable'];
+  const declares = effet.styles || {};
+  return STYLES_TEXTE_FLOTTANT
+    .filter((style) => !declares[style])
+    .map((style) => (
+      `effets.json > effet_texte_gain > styles : "${style}" manquant `
+      + `(émis par main.js, styles déclarés : ${Object.keys(declares).join(', ') || 'aucun'})`
+    ));
+}
+
 // Les clés de texte que les fiches composent d'elles-mêmes (aucun catalogue ne
 // les cite) : passées au contrôle de démarrage des textes, avec celles des menus.
 export function clesTexteFiches() {
@@ -2500,12 +2559,10 @@ export function creerOrchestrateurGrotte({
     dessinerTextesFlottants(ctxLogique, {
       camera,
       config: effetTexteGain,
-      textes: textesVisibles(textesFlottants).map((t) => ({
-        x: t.x,
-        y: t.y,
-        alpha: t.alpha,
-        texte: i18n.t(t.format, { n: t.quantite, item: t.libelle ? i18n.t(t.libelle) : '' }),
-      })),
+      // `D-71` : on TRANSMET ce que le module donne, enrichi du texte résolu
+      // — jamais un objet refabriqué champ par champ, qui laisserait tomber
+      // la prochaine clé comme il a laissé tomber `style`.
+      textes: composerTextesFlottants(textesVisibles(textesFlottants), i18n.t),
     });
     dessinerHud(ctxLogique, {
       i18n,
@@ -2725,7 +2782,15 @@ export async function demarrerJeu() {
     donnees.menus, dictionnaires,
     [...CLES_TEXTE_COMPOSANT, ...clesTexteEtats(Object.keys(dictionnaires)), ...clesTexteFiches()],
   );
-  const toutesErreurs = [...erreursChargement, ...erreursValidation, ...erreursCles, ...erreursCouleurs, ...erreursTextes];
+  // `D-71` : les styles de texte flottant que le code émet existent-ils au
+  // catalogue ? Ni `validerCatalogues` ni le schéma ne peuvent le dire — ils
+  // ne connaissent pas le code. C'est le garde-fou qui vivait dans la boucle
+  // de dessin, remis là où une faute de catalogue se voit : au démarrage.
+  const erreursStyles = erreursChargement.length ? [] : erreursStylesTexteFlottant(donnees.effets);
+  const toutesErreurs = [
+    ...erreursChargement, ...erreursValidation, ...erreursCles,
+    ...erreursCouleurs, ...erreursTextes, ...erreursStyles,
+  ];
 
   if (toutesErreurs.length > 0) {
     afficherErreurBoot(toutesErreurs);

@@ -87,3 +87,24 @@ fiche de la Plume, la ligne d'ambiance du vent de cendre, et les libellés des p
 **Le verdict des fondations** (T5) est le résultat le plus lourd de la nuit : **quatre fichiers de
 code** pour ajouter une arme, donc les fondations ne sont pas validées pour les armes et
 l'équipement. Le détail est plus haut ; il alimente `E-02`.
+
+## Après-coup — `D-71` : la jointure texte flottant → rendu
+
+Xav, en jeu : **« le jeu crash quand je ramasse un item »**. Régression de T1 (`D-58`), trouvée en
+reproduisant le chemin de DESSIN headless — celui que la suite n'exerce jamais.
+
+Le retrait de T1 a été **mesuré avant d'être écarté** : `git revert c834e5a` donne **cinq conflits**
+(dont `data/items.json` et `src/schemas.js`), T6 (la Plume) dépend du comportement de T1 — son test
+exige l'XP et les deux textes stylés — et T2 possède la moitié du fichier de test né dans T1.
+Retirer T1, ce n'était pas un `revert` : c'était défaire deux décisions du 21/09 (« toute récolte
+rapporte de l'XP », le « +1 » sans le nom de l'objet) pour contourner un champ manquant. Xav a
+choisi le ticket de jointure.
+
+Ce que la nuit avait raté, et qui est réparé : **la règle « un commit retirable seul » n'a pas tenu
+sur T1** — T2 et T6 ont construit dessus, ce qui a privé Xav de l'option simple le matin.
+
+Les cinq points sont livrés en un commit, et **les deux témoins ont été vérifiés dans des copies
+jetables** : avec la recopie champ par champ, le test tombe sur « dessin après un ramassage » ; avec
+la boucle d'avant, il tombe sur « panne simulée de dessin ». Un test qui passe des deux côtés ne
+vaut rien.
+

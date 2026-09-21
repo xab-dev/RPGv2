@@ -336,6 +336,9 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 | **Le placement tactile a une mesure commune : un écart de 16 px en résolution logique, et le bouton MENU pour repère** — les autres boutons se règlent à partir de lui, et chaque écart se lit dans `ui/hud_layout.js` en une soustraction, jamais recopié en dur. Avec elle : **aucun nombre choisi à l'œil** (le rayon de l'éventail des actions, 28 + 16 + 20 = 64, et son écartement angulaire, 2·asin(26,5/64) ≈ 48,9°, se *déduisent* des deux écarts demandés ; INTERACT est l'unique point équidistant de ses deux voisins sur son axe) — changer un écart doit **redonner des nombres**, pas casser un nombre mémorisé (règle `D-52`). Les quatre boutons masqués avant déblocage sont en **éventail régulier** autour de l'attaque. Cause racine du « ils se marchent dessus » de la tournée du 21/09 : INTERACT était à gauche, donc **dans la zone qui capte le joystick** (`JOYSTICK.limiteX` = toute la moitié gauche) — un doigt posé dessus pilotait aussi le déplacement ; à droite la question ne se pose plus, sans toucher à la règle du joystick | 2026-09-22 | `D-57`, `docs/archives/JOURNAL_2026-09-22_chapitre-tactile.md` |
 | **La table de niveaux va jusqu'au Nv.30, et la courbe d'XP n'a pas été retouchée** (consigne de Xav : « je veux voir où elle amène, en combien de temps ») : elle est **prolongée par sa propre règle**, celle qu'elle suit depuis le Nv.5 — +5 XP par palier. 2 340 XP cumulés et 29 points de stats sur la course. Trois fichiers et pas un, parce qu'un flag par niveau franchi est **déclaré** (`flags.js` lève sur un flag non déclaré, donc le Nv.11 coûtait une frame sans lui) et que zéro chaîne n'est en dur. **La version en ligne reste volontairement au Nv.10** | 2026-09-22 | `Q-44`, même archive |
 
+| **Un motif de tuile est identique sur CHAQUE tuile de son type — donc tout motif qui se *lit* comme un motif devient un papier peint.** Il n'y a que deux issues, et le choix se fait par surface : un motif **continu d'une cellule à la suivante** (les lames du parquet : la périodicité devient le sujet, un plancher *doit* être régulier), ou un **champ dense de petites marques** sans forme dominante (l'herbe, le gravier du chemin : l'œil n'attrape pas de motif quand la cellule est remplie uniformément). Avec ce grain, les variantes de couleur d'une tuile perdent leur rôle : à ±8 % elles étaient le seul relief du sol, et un damier de carrés de 32 px — ramenées à ±2 %. Et un contrat neuf, verrouillé par test : **le grain d'une tuile NON SOLIDE tient dans sa cellule** (ce qui dépasse est effacé par la tuile suivante à droite et en bas, et peint par-dessus une tuile déjà finie à gauche et en haut — de l'herbe sur le chemin ou sur un mur), tandis qu'une tuile **solide** garde le droit de dépasser : c'est ce qui donne sa hauteur à la forêt. Contrairement à une station (`D-78`), redessiner une tuile ne déplace **aucun** mur : sa solidité est un booléen, pas une boîte englobante | 2026-09-22 | `D-105`, `docs/JOURNAL_2026-09-22_grain-du-sol.md` |
+| **Le sol ne coûte rien à l'arrêt, et tout ce qu'on lui ajoute se paie au franchissement d'une tuile** — le calque statique n'est reconstruit que là. Un ticket qui touche au sol se mesure donc **en marchant** (`tools/scenarios/cout_calque.mjs`, deux exécutions du même scénario comparées entre elles, jamais à un relevé du §6 : Chrome y est sans fenêtre, les fps n'ont pas de sens). Le grain du sol a porté une reconstruction de **1,02 à 3,47 ms** pour ×14 primitives, sans une frame au-dessus de 20 ms. Corollaire d'outillage : le **banc visuel ne peut pas juger un sol** — il juge une silhouette sur un fond neutre choisi, or ici l'objet du ticket EST le fond ; ce qu'il faut voir (la répétition sur quinze tuiles, la couture entre deux surfaces, la densité à l'échelle d'un écran) ne tient dans aucune vignette | 2026-09-22 | `D-105`, `D-01`, même journal |
+
 (Les décisions de `05_construction-stations.md` étaient déjà actées par Xav **dans la spec elle-même** avant tout code, v1.0.0 §9 — les lignes ci-dessus n'y renvoient que pour mémoire, elles ne tranchent rien de nouveau.)
 | **Le héros est un personnage encapuchonné vu de trois quarts, et la couleur du follet est son VISAGE** (*révise* le corps entier teinté de la Phase 1) : une boule lumineuse logée dans l'ombre de la capuche, avec un glow serré — une lueur, jamais une aura qui éclairerait le sol. Ce qui rend une silhouette lisible à 14 px n'est pas son vêtement mais son **contraste** : un point lumineux dans une masse noire. Et une relation à ne plus contredire : **le héros n'est jamais plus large que ce qui entre en collision** — contrairement à une station, sa hitbox ne dérive PAS du dessin (`RAYON_HERO_BASE_PX × echelle`), donc redessiner ne déplace aucun mur, mais l'ourlet du manteau est calé sur la demi-boîte ; en hauteur il la dépasse librement, la boîte étant son emprise au sol et non sa taille | 2026-09-22 | `D-104`, `docs/JOURNAL_2026-09-22_heros-silhouette.md` |
 | **Une silhouette de personnage se juge dans la scène, pas au banc — et la scène lui prête ses couleurs.** Le manteau du héros prend la teinte de la **lumière du follet** (rayon 100 px) : brun chaud avec le feu, gris-bleu avec l'eau. Personne ne l'a codé, c'est le calque de lumière existant. Corollaire : une capture de silhouette de personnage se prend **par compagnon**, sinon elle ne montre qu'un tiers de la vérité (`tools/scenarios/heros_scene.mjs`) | 2026-09-22 | même journal |
@@ -398,3 +401,43 @@ Les sept tickets de code du 19/09 (`D-22`, `D-21`, `D-20` A et B, `D-05`, `D-23`
 Les captures de la V1 (`docs/captures/v1/`) sont une **inspiration, jamais un cahier des charges** : aucun ticket ne les lit tant que `E-03` (une ligne d'intention par capture) n'est pas rempli.
 
 `Q-10`, `Q-11`, `Q-12`, `Q-24` et `Q-25` restent à trancher avec Xav ; `Q-07` est gelée. La spec de la barre d'action du bas (`E-01`) est écrite par Xav lui-même et attend le chiffrage `Q-11`. **Une spec non écrite ne se commence pas** (même règle que pour une phase).
+
+## Journal de session — LE GRAIN DU SOL (22/09)
+
+Session en deux temps, comme Xav l'a demandée. D'abord un **topo** sur le canevas de la
+map, la dernière surface du jeu sans passe graphique : où on en est, et ce que coûteraient
+des modifications — « on ne touche à rien pour l'instant ». Puis, sur son go : **on fait ce
+qui est gratuit, on note le reste.**
+
+Ce que le topo a établi, chiffres en main : **il n'y a pas de mur de performance sur PC.**
+Le sol n'est pas dessiné à chaque frame mais pré-rendu par secteur (187 tuiles, ~190
+primitives) et reconstruit au seul franchissement d'une tuile — 0,37 ms de moyenne au
+dernier relevé réel (`R-17`), soit 2 % du budget d'une frame sur 7 % des frames. Il faudrait
+multiplier les primitives par ~40 pour qu'une reconstruction mange une frame. La contrainte
+qui compte n'était donc pas le coût, mais **ce que les données savent exprimer**.
+
+Livré : `D-105`, **données seules, aucune ligne de code du jeu** — grain sur l'herbe, le
+chemin, la terre et le parquet, variantes de couleur calmées. La découverte qui commande le
+résultat, et qui a corrigé mon propre topo : un motif de tuile est **identique sur chaque
+tuile**, donc la première version (trois brins au milieu de la cellule) a donné une
+tapisserie pire que le damier qu'elle remplaçait. Les deux issues — motif continu d'une
+cellule à l'autre, ou champ dense de petites marques — sont désormais au tableau des
+décisions ci-dessus. Le parquet est la réussite la plus nette : ce qui est un défaut sur
+l'herbe (la périodicité) est une qualité sur un plancher.
+
+Vérifications : 113 fichiers verts (un test neuf, avec témoins, qui a attrapé **deux fuites
+d'un demi-pixel** avant la première capture) ; coût mesuré avant/après en marche (1,02 →
+3,47 ms par reconstruction, 0/600 frame > 20 ms des deux côtés) ; album de dix paires
+`avant_`/`apres_` sous `docs/captures/sol-2026-09-22/`, sur cinq postes d'observation
+**calculés** depuis les catalogues.
+
+Relevé sans y toucher, comme demandé : `Q-52` (les **transitions** entre surfaces — à mon
+avis le défaut le plus visible qui reste, et le grain le rend *plus* voyant ; c'est un
+chantier avec une spec), `D-106` (le décor ne sait pas sur quelle surface il pousse — de
+l'herbe dans le salon, connu de Xav, remède = code), `Q-53` (monter la densité du décor,
+payable mais **bloquée par `D-106`**), et `D-01`, dont l'hypothèse de 19/09 est vérifiée :
+la fenêtre se reconstruit à **chaque tuile franchie**, donc sa marge d'une tuile ne sert pas
+d'amortisseur.
+
+Dû : `V-55`, et il porte la seule question que les captures ne peuvent pas trancher —
+**en marchant, est-ce qu'on attrape la répétition ?**

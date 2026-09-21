@@ -65,3 +65,25 @@ n'avait tout simplement pas.
 son `visible_si` niveau ≥ 10 (offert par T4), la portée `[0 ; 0,75]`, l'icône, les textes. Quatre
 entrées JSON et six clés de locale.
 
+
+## Bilan de la file
+
+**Dix commits, dix tickets, tous retirables seul.** Ordre tenu : ménage → T0 → T1 → T2 → T6 → T3 →
+T4 → T9 → T7 → T8 → T5.
+
+**107 fichiers de test, 106 verts.** Le seul rouge est `D-52`, **antérieur à cette file** : un test
+épingle `echelle_jeu === 0,75` pour les trois compagnons alors que Xav a réglé le catalogue à la
+main. Il n'a pas été touché — c'est à lui de dire quelle valeur fait foi.
+
+**Ce qui attend Xav.** Neuf validations en jeu, toutes à l'état `pas vu`, listées dans l'ordre d'une
+partie : `docs/CHECKLIST_tournee.md`. Plus haut dans ce fichier, les lignes `Q-` que la file a
+ouvertes et qui demandent un arbitrage : `Q-41`, `Q-43` (le puits à gourde pleine), `Q-44`
+(`levels.json` s'arrête au Nv. 10, la clôture de la Région Maison se joue au Nv. 30), `Q-45` (le
+nombre d'objets au sol et le plafond d'XP de récolte tirent l'un contre l'autre).
+
+**Trois textes sont des PROPOSITIONS, pas des livraisons** — l'écriture est le camp de Xav : la
+fiche de la Plume, la ligne d'ambiance du vent de cendre, et les libellés des paliers de volume.
+
+**Le verdict des fondations** (T5) est le résultat le plus lourd de la nuit : **quatre fichiers de
+code** pour ajouter une arme, donc les fondations ne sont pas validées pour les armes et
+l'équipement. Le détail est plus haut ; il alimente `E-02`.

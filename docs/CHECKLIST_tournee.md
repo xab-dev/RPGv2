@@ -39,6 +39,7 @@ le rendu. Celle-ci est la liste de ce qu'on **joue**.
 | V-40 | Craft : les 3 recettes d'origine, rien de plus, rien de « ??? » | `pas vu` |
 | V-42 | Paramètres › Volume : cycle, s'entend, se retient | `pas vu` |
 | V-43 | Mourir : les yeux se rouvrent, court, sans retarder | `pas vu` |
+| V-44 | Nv. 10 : l'épée apparaît à l'Atelier, se craft, s'équipe | `pas vu` |
 | V-27 | Menu et Sauvegarde : manette, souris, doigt, deux tailles | `pas vu` |
 | V-11 | Le puits : mâts au sol, perspective de trois quarts | `non` (→ `D-16`) |
 

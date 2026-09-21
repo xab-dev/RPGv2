@@ -24,24 +24,71 @@ export const JOYSTICK = { cx: 70, cy: 200, rayonZone: 45, limiteX: 240 };
 // vraiment utile en Phase 1 (les 4 autres sont grisés, cf. ui/hud.js).
 export const BOUTON_ATTAQUE = { cx: 420, cy: 210, rayon: 28, verbe: 'attack' };
 
-// En éventail au-dessus/à gauche de l'attaque, chacun à distance > somme des
-// deux rayons de son voisin (aucun chevauchement à l'écran) et toujours
-// x >= 330 / y >= 120 (§3 : ne jamais recouvrir le centre de l'écran).
+// `D-57` (22/09), consigne de Xav : les QUATRE boutons d'action masques avant
+// deblocage (3 competences + consommable) sont repartis **equitablement en
+// eventail autour du bouton d'attaque**, du cote de la zone de jeu (vers le
+// haut et la gauche), jamais contre la bordure.
+//
+// Deux ecarts, et non un seul — c'est la revision du 22/09, prise apres avoir
+// vu l'eventail a l'ecran :
+//   - 16 px de chaque bouton a l'ATTAQUE (l'ecart generique, inchange) ;
+//   - 13 px entre deux VOISINS de l'eventail.
+// Les nombres ci-dessous en decoulent entierement, un test les RECALCULE
+// plutot que de les memoriser (regle `D-52`) :
+//   - rayon de l'eventail = 28 (attaque) + 16 + 20 (bouton) = 64 px ;
+//   - deux voisins distants de 20 + 13 + 20 = 53 px de centre a centre, d'ou
+//     un ecartement angulaire de 2*asin(26,5/64) ~ 48,9 deg, et un eventail de
+//     quatre qui balaie 146,8 deg au lieu de 156.
+//
+// Ces ~9 deg gagnes servent a **s'ecarter des bords**, pas a se resserrer : a
+// 156 deg l'eventail occupait tout l'arc libre et deux de ses extremites
+// frolaient la bordure (6 px en bas, 4 px a droite), la derniere passant a
+// 13 px d'INTERACT. L'angle de depart (151,6 deg) est celui qui maximise la
+// plus petite de ces marges — la plus serree remonte a ~9,6 px.
+//
+// L'ordre de l'eventail (skill_1 en bas-gauche, puis en remontant, le
+// consommable en haut) est un choix par defaut, pas une decision.
 export const BOUTONS_SKILLS = [
-  { cx: 445, cy: 155, rayon: 20, verbe: 'skill_1' },
-  { cx: 400, cy: 140, rayon: 20, verbe: 'skill_2' },
-  { cx: 350, cy: 150, rayon: 20, verbe: 'skill_3' },
+  { cx: 364, cy: 240, rayon: 20, verbe: 'skill_1' },
+  { cx: 360, cy: 188, rayon: 20, verbe: 'skill_2' },
+  { cx: 398, cy: 150, rayon: 20, verbe: 'skill_3' },
 ];
 
-export const BOUTON_CONSOMMABLE = { cx: 335, cy: 195, rayon: 20, verbe: 'consume' };
-// Juste au-dessus du joystick (§3), assez loin de rayonZone pour ne pas se
-// chevaucher visuellement (distance centre-centre 70px > 45+20).
-export const BOUTON_INTERACT = { cx: 70, cy: 130, rayon: 20, verbe: 'interact' };
-// `D-17` : descendu SOUS le bandeau (cy 20 -> 38, donc y 22..54, deux pixels
-// sous le bandeau qui finit à 20). Il était à moitié dessus — verdict de
-// `V-02` par Xav sur l'A04. Deux gains, tous deux dans la décision verrouillée
-// du 19/09 : le pouce l'atteint mieux, et le bandeau redevient libre sur
-// toute sa largeur, ce qui permet de coller `Nv. N` au bord droit.
+export const BOUTON_CONSOMMABLE = { cx: 450, cy: 154, rayon: 20, verbe: 'consume' };
+// Replacé le 22/09 (70,130 -> 454,97) sur consigne de Xav, en trois temps :
+// d'abord sous le bouton MENU, **même axe vertical** ; puis, une fois
+// l'éventail des actions posé, **à équidistance de ses deux voisins**, qui
+// sont le MENU au-dessus et le CONSOMMABLE en bas à gauche — seul y se
+// cherchait alors, et il vaut 97, ce qui laisse 17,1 px de chaque côté
+// (contre 16 au MENU et 10 au consommable avant).
+//
+// Enfin cx 455 -> 454, pour porter la marge au bord droit de 5 à 6 px : avec
+// son rayon de 20 (celui du MENU n'est que de 16), l'axe commun le collait
+// plus près du bord que son voisin. L'axe s'en trouve décalé d'un pixel, et
+// l'équidistance tient toujours (17,0 / 17,1) — un pixel ne se voit pas sur
+// un alignement, cinq se voyaient sur une bordure.
+//
+// Ce n'est pas l'écart générique de 16 px : c'est une équidistance, et elle
+// se recalcule (un test la refait) — bouger le MENU ou le consommable doit
+// redonner un nombre, pas casser un nombre.
+//
+// Gain de côté, qui n'était pas le but de la consigne mais qui en découle :
+// il était à gauche, donc **dans la zone qui capte le joystick**
+// (`JOYSTICK.limiteX` = toute la moitié gauche) — un doigt posé dessus
+// pilotait aussi le déplacement. C'est la classe de défaut consignée en
+// `D-57`. À droite, la question ne se pose plus.
+export const BOUTON_INTERACT = { cx: 454, cy: 97, rayon: 20, verbe: 'interact' };
+// `D-17` : descendu SOUS le bandeau (cy 20 -> 38). Il était à moitié dessus —
+// verdict de `V-02` par Xav sur l'A04. Deux gains, tous deux dans la décision
+// verrouillée du 19/09 : le pouce l'atteint mieux, et le bandeau redevient
+// libre sur toute sa largeur, ce qui permet de coller `Nv. N` au bord droit.
+//
+// Redescendu puis remonté le 22/09, l'écart au bandeau réglé à l'œil par Xav :
+// cy 38 -> 52 (écart = le rayon du bouton, 16 px), puis **cy 52 -> 44**, soit
+// la moitié de cet écart (8 px sous un bandeau qui finit à 20). L'axe
+// gauche/droite n'a jamais bougé. Ce bouton est le REPÈRE du placement
+// tactile : les autres se règlent à partir de lui, donc tout écart se lit ici
+// en une soustraction, jamais recopié en dur.
 //
 // Il croise en y la bannière d'indice de commande (26..44), mais jamais en x :
 // la bannière est centrée (hud_hints.js) et celle-ci est au bord droit — le
@@ -50,7 +97,7 @@ export const BOUTON_INTERACT = { cx: 70, cy: 130, rayon: 20, verbe: 'interact' }
 // GAUCHE de la fenêtre (ui/hud_debug.js) : il ne peut pas le rencontrer.
 //
 // PROVISOIRE : jamais validé au pouce par Xav (`V-23`).
-export const BOUTON_MENU = { cx: 455, cy: 38, rayon: 16, verbe: 'menu' };
+export const BOUTON_MENU = { cx: 455, cy: 44, rayon: 16, verbe: 'menu' };
 
 // D-20 B : `data/visuels.json#visuel_icone_main` (et toute icône d'arme
 // future) est dessinée dans une boîte de ce côté-là ; chaque appelant calcule

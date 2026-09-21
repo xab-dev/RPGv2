@@ -396,45 +396,46 @@ Les captures de la V1 (`docs/captures/v1/`) sont une **inspiration, jamais un ca
 
 `Q-10`, `Q-11`, `Q-12`, `Q-24` et `Q-25` restent à trancher avec Xav ; `Q-07` est gelée. La spec de la barre d'action du bas (`E-01`) est écrite par Xav lui-même et attend le chiffrage `Q-11`. **Une spec non écrite ne se commence pas** (même règle que pour une phase).
 
-## Journal de session — la silhouette du HÉROS (22/09)
+## Journal de session — le CHAPITRE TACTILE (22/09)
 
-Session **autonome supervisée**, **un ticket** (`D-104`), un commit, branche
-`heros-silhouette-2026-09-22`. Fichier de bord : `docs/JOURNAL_2026-09-22_heros-silhouette.md`.
+Session **guidée en direct** par Xav, l'écran sous les yeux, bouton par bouton (`D-57`,
+son « chapitre tactile », gelé depuis le 21/09 en attendant d'être traité d'un bloc).
+**Placement seul** : aucune fonctionnalité touchée, **aucune ligne de code de jeu** — tout
+le placement vivait déjà dans `src/ui/hud_layout.js`, que le **dessin** (`ui/hud.js`) et la
+**zone qui répond** (`input/touch.js`) lisent tous les deux, donc bouger un bouton bouge le
+rond dessiné et la cible du doigt ensemble.
 
-Le héros était **le dernier objet vu du dessus dans un monde de trois quarts** : trois
-cercles concentriques, un pion de jeu de dames, là où le puits, les quatre stations et les
-dix items ont tous reçu la facture du 21/09. Xav a donné une photo de référence — une capuche
-noire dont seul un fil de lumière dessine la forme — et la consigne : **un personnage
-encapuchonné, vu de trois quarts, dont le visage est une boule lumineuse**, avec un glow
-léger. La couleur du follet quitte donc le corps et se concentre là.
+Deux idées ont commandé toute la session, et elles valent pour la suite :
 
-**Livré en données seules**, aucune ligne de code du jeu. Treize primitives, et **aucune
-forme nouvelle** (leçon des stations) : tout s'obtient en glissant ou en réduisant la même
-forme — le bord éclairé de la capuche est une ellipse pâle que l'ellipse noire du creux
-recouvre aux trois quarts. `echelle` **inchangée** (0,643) : la hitbox est identique au pixel
-près. Trois itérations, chacune nommée au journal (capuche trop conique → un œil de Sauron ;
-épaules en socle à angles vifs ; le liseré remonté d'un cran pour reprendre à son compte le
-« contour clair » que `save.js` documente depuis la Phase 1).
+- **Un écart générique de 16 px**, en résolution logique, sert de mesure commune à tout le
+  placement tactile ; **le bouton MENU en est le repère** — les autres se règlent à partir
+  de lui, et chaque écart se lit dans le fichier en une soustraction, jamais recopié en dur.
+- **Aucun nombre n'est choisi à l'œil.** L'éventail des actions donne son rayon
+  (28 + 16 + 20 = 64) et son écartement angulaire (2·asin(26,5/64) ≈ 48,9°) par déduction
+  des deux écarts demandés ; la position d'INTERACT est l'unique point équidistant de ses
+  deux voisins sur son axe. Changer un écart doit **redonner des nombres**, pas casser un
+  nombre mémorisé (règle `D-52`).
 
-**Vérifications** : test neuf **avec témoin** (le disque d'avant échoue aux deux premières
-assertions), qui n'épingle que des **relations** (règle `D-52`) ; 112 fichiers verts ;
-scénario de capture neuf `tools/scenarios/heros_scene.mjs` — les trois teintes de compagnon
-en plein jour, la nuit, et la Grotte d'une partie **neuve** —, album
-`docs/captures/heros-2026-09-22/`.
+Ce qui a bougé : **MENU** `cy 38 → 52 → 44` (écart au bandeau = le rayon du bouton, puis sa
+moitié) · **INTERACT** `70,130 → 454,97` · **les quatre boutons masqués avant déblocage**
+(3 compétences + consommable) en **éventail régulier autour de l'attaque**, 16 px d'elle,
+13 px entre voisins · **l'attaque n'a pas bougé** (420, 210). Un déplacement a été fait puis
+**défait à l'identique** en cours de route — « bouton action » lu comme l'attaque au lieu
+d'INTERACT.
 
-**Une itération de plus, demandée par Xav après l'avoir vu en jeu** (« le reste on garde,
-c'est très bon ») : le **visage grossit** d'environ 1,5 px — la boule, son halo et
-l'ouverture ensemble, sinon la boule aurait mangé son creux — et la **pointe** de la capuche
-s'arrondit, elle seule. Effet de bord qui a demandé une seconde retouche : une pointe vive
-cachait la bande de contour sombre qui couronne la capuche ; arrondie, elle devenait un
-**ergot noir** au sommet.
+**La cause racine du « ils se marchent dessus »** de la tournée du 21/09 était qu'INTERACT
+se trouvait à gauche, donc **dans la zone qui capte le joystick** (`JOYSTICK.limiteX` =
+toute la moitié gauche) : un doigt posé dessus pilotait aussi le déplacement. À droite, la
+question ne se pose plus — sans toucher à la règle du joystick.
 
-**Validé en jeu par Xav le jour même** (`V-54`, « parfait »), avec un relevé `?debug=fps`
-pris dans la foulée (`R-17`) : **59,9 fps, 0/600 frame sautée**, `dessiner()` 0,77 ms, à
-**6 monstres, 4 interactifs et 21 objets au sol** — les treize primitives du héros ne se
-voient pas dans la mesure. `push` demandé, donc **en ligne**. Le point que je signalais
-comme le plus discutable (le héros très sombre dans la Grotte, avant le choix du follet)
-n'a pas été relevé : il reste tel quel.
+Deux réglages sont venus d'un défaut que j'ai signalé plutôt que de le masquer : un éventail
+de quatre à 16 px partout balaie 156°, soit **exactement** l'arc libre autour de l'attaque —
+il tenait à l'écran mais collait aux bordures. Xav a tranché en ramenant l'écart entre
+voisins à 13 px et en **rendant les degrés économisés aux bords**, puis en remontant le MENU
+pour dégager INTERACT. Marges finales : ≥ 6 px de toute bordure, ≥ 12,2 px entre deux
+boutons quelconques.
 
-**Relevé sans y toucher** : `Q-51` — le héros ne regarde toujours nulle part (aucune
-orientation en données), hors périmètre annoncé avant le go.
+**Vérifications** : 112 fichiers verts après chaque déplacement. **Aucune validation en jeu
+à distance n'était nécessaire** — Xav regardait l'écran à chaque étape et a clos lui-même
+(« non c'est bon »).
+

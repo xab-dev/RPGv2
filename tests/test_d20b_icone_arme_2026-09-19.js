@@ -78,13 +78,20 @@ function chevauchement(a, b) {
   });
 }
 
-// 5. L'icône est teintable : la case garde son repère de couleur en jaune
-// SANS aplat de fond (défaut `[OUVERT]` du ticket). Une silhouette non
-// teintable imposerait de recopier la couleur en données.
+// 5. AUCUNE icône d'arme n'est teintable — *révise* le `[OUVERT]` du ticket
+// (« l'icône est teintable, la case garde son repère de couleur en jaune »).
+// Ce qui se teste n'est pas une couleur mais l'absence de DEUX standings dans
+// la même barre : l'épée de bois est arrivée non teintable (`D-75`), le fruit
+// équipé aussi, et la main restait seule en aplat doré. Une teinte unique
+// appliquée à toute la silhouette interdit par construction les trois valeurs
+// de la charte d'item. Le repère de couleur vit maintenant dans le contour de
+// la case, où il n'écrase rien.
 {
-  const main = visuels.get(armes.get('weapon_mains_nues').icone);
-  assert.equal(main.teintable, true);
-  assert.ok(main.primitives.some((p) => p.teinte === true), 'au moins une primitive doit suivre la teinte');
+  for (const arme of armes.values()) {
+    const icone = visuels.get(arme.icone);
+    assert.ok(icone, `icône introuvable pour ${arme.id}`);
+    assert.ok(!icone.teintable, `${arme.id} : une icône d'arme ne se teinte pas (elle a ses propres valeurs)`);
+  }
 }
 
 // 6. La silhouette tient dans sa taille de référence : sans ça, l'échelle

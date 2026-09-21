@@ -1864,7 +1864,11 @@ export const SCHEMAS = {
   survival: {
     requiredFields: ['id'],
     idField: 'id',
-    refs: [],
+    // `D-96` : chaque jauge déclare la SILHOUETTE de son icône (l'entrée de
+    // configuration, elle, n'en a pas — d'où une référence optionnelle ici et
+    // une exigence dans `custom` pour les seules jauges). Un id inconnu tombe
+    // au boot avec son chemin exact, comme toute référence croisée.
+    refs: [{ field: 'icone', catalog: 'visuels' }],
     custom(entry, catalogs, path) {
       const erreurs = [];
       if (entry.id === 'survie_config') {
@@ -1888,6 +1892,10 @@ export const SCHEMAS = {
         return erreurs;
       }
       if (typeof entry.label_key !== 'string') erreurs.push(`${path} > label_key manquant`);
+      // Une jauge SANS icône se réduirait à sa couleur, et la règle
+      // d'accessibilité P4② dit l'inverse : c'est la FORME qui porte le sens,
+      // jamais la couleur seule. Le champ est donc requis, pas optionnel.
+      if (typeof entry.icone !== 'string') erreurs.push(`${path} > icone manquante (la forme porte le sens, jamais la couleur seule)`);
       if (typeof entry.decroissance_ms_plein_a_vide !== 'number' || entry.decroissance_ms_plein_a_vide <= 0) {
         erreurs.push(`${path} > decroissance_ms_plein_a_vide doit être un nombre positif`);
       }

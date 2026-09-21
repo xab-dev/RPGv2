@@ -327,6 +327,11 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 | **Ce qui distingue deux items voisins n'est ni leur taille ni leur teinte : c'est un parti pris opposé.** Le caillou devient un **galet** (lisse, rond, gris chaud) et la pierre un **rocher** (anguleux, froid, facetté) ; le fruit cuit **perd** un par un les trois signes du cru (feuille, peau tendue, éclat net) et gagne les siens (fente, brûlé). Une nuance de gris ou de rouge ne survit pas à la taille du monde — un parti pris, oui | 2026-09-21 | `D-84`, `D-85`, `D-87`, `D-88` |
 | **On ne régénère pas un dessin déjà validé en jeu.** La refonte de la plume a commencé par régénérer ses barbes : à 19 barbes courtes et serrées le fan se referme en masse et la plume se lit comme une **truelle**. Les barbes de `D-76` (validées `V-49`) ont été reprises à l'identique, et le ticket n'a ajouté que la charte. Un ticket de *standing* ne rouvre pas un dessin que Xav a déjà vu et accepté | 2026-09-21 | `D-82` |
 | **Une silhouette d'item se vérifie à trois endroits, pas un** : au **banc** (itération), **au sol dans la scène** (le banc juge sur un fond neutre choisi, la scène pose l'objet sur la vraie terre) et **dans la barre du bas**, réduite à une case de 12 unités — la seule vue qui pouvait dire si l'ombre portée de la charte gêne à cette taille. `tools/scenarios/items_poche.mjs`. Deux pièges d'une capture d'étalage, nommés une fois pour toutes : poser les items **hors des stations**, et **geler le repos du jour** (`jour_items_sol`), sans quoi le tirage redistribue au hasard tout item qui a un bloc `spawn` | 2026-09-21 | `D-91` |
+| **Une case de la barre du bas n'impose pas sa couleur à ce qu'elle contient** (*révise* le `[OUVERT]` de `D-20 B`) : **aucune icône d'arme n'est teintable**. L'épée de bois et le fruit équipé y étaient déjà à leurs vraies couleurs, la main seule restait un aplat doré — une teinte unique appliquée à toute une silhouette interdit par construction les trois valeurs de la charte d'item. Le repère de couleur de l'attaque passe dans le **contour** de la case, le seul endroit où il n'écrase rien. Et la case elle-même prend un fond **sombre** : un blanc translucide n'a pas de couleur propre, il a celle du décor — beige sur la terre de la Maison | 2026-09-22 | `D-94`, `D-99`, journal de session ci-dessous |
+| **Le bandeau n'a qu'UNE barre** : les PV, la faim et la soif traversent la même fonction (`ui/hud.js#dessinerBarre`) — ils avaient deux factures, dont une écrite *inline*, donc aucun moyen d'en régler une sans laisser l'autre. Quatre valeurs chacune, qui sont la charte d'item transposée : **creux** (lisible même à zéro), **corps**, **moitié haute éclairée** (le volume vient d'une seconde forme, jamais d'un flou), **liseré** d'un pixel — qui s'arrête où le remplissage s'arrête, sinon une barre vide se lirait pleine. Le contour passe au trait sombre : c'est le blanc pur qui écrasait tout | 2026-09-22 | `D-95` |
+| **Toute icône du HUD est une entrée de `visuels.json`, résolue par `main.js`** — plus aucune forme tracée au `moveTo` dans `ui/hud.js`, et plus aucun **caractère de police** en guise d'icône (les éclats étaient un `◆`, donc à la merci de la fonte du système). Les deux jauges déclarent la leur **en données** (`survival.json#icone`, référence **requise** au boot : une jauge sans forme se réduirait à sa couleur, ce que P4② interdit). Conséquence voulue : la prochaine retouche de ces icônes est une affaire de données | 2026-09-22 | `D-96` |
+| **Un visuel qui sert dans deux régimes de couleur se met en volume en ALPHA PUR** — noir translucide pour l'ombre, blanc pour la lumière. Les quatre icônes de stats sont dessinées **sans teinte** au bandeau (couleurs d'auteur) et **teintées par le CSS** dans l'écran Stats (`ui/icone_canvas.js` prend la couleur calculée du canvas) : une facette en couleur fixe aurait juré dans l'un des deux. Même raison côté DOM, où une surface de menu a trois états (repos, focus, appui) : le relief y est un **blanc translucide**, donc jamais réécrit par état — et sa règle se place **après** les règles d'état, dont le raccourci `background` remet `background-image` à zéro | 2026-09-22 | `D-98`, `D-100` |
+| **Une vignette de tuile rend son sol à l'objet** : l'ombre portée d'un item est dessinée *dans* son canvas, et sur le fond uni d'une tuile elle ne porte plus — une **flaque d'ombre** en fond de vignette, centrée à 72 % de la hauteur (au milieu, elle entourerait l'objet et le ferait flotter davantage). La vignette de la **fiche** ne la prend pas : sur un grand panneau, ce serait une tache | 2026-09-22 | `D-101` |
 
 (Les décisions de `05_construction-stations.md` étaient déjà actées par Xav **dans la spec elle-même** avant tout code, v1.0.0 §9 — les lignes ci-dessus n'y renvoient que pour mémoire, elles ne tranchent rien de nouveau.)
 
@@ -389,41 +394,52 @@ Les captures de la V1 (`docs/captures/v1/`) sont une **inspiration, jamais un ca
 
 `Q-10`, `Q-11`, `Q-12`, `Q-24` et `Q-25` restent à trancher avec Xav ; `Q-07` est gelée. La spec de la barre d'action du bas (`E-01`) est écrite par Xav lui-même et attend le chiffrage `Q-11`. **Une spec non écrite ne se commence pas** (même règle que pour une phase).
 
-## Journal de session — refonte graphique des items de la poche (21/09)
+## Journal de session — passe de polish de l'INTERFACE (22/09)
 
-Session **autonome supervisée**, branche `main`, **un commit par item**. Consigne de Xav :
-« refonte graphique des items de l'inventaire. On **ne touche pas au menu**, on ne touche pas
-aux fonctionnalités, on ne touche pas au code déjà présent. Tous les items doivent être
-améliorés, **y compris la plume, qui va être la première et qui servira de référence** pour les
-autres. Le but étant de coller aux standings actuels des stations et du jeu en général. »
-Procédure imposée par item : **diagnostic** (Chrome + `tools/`) → **conceptualisation** →
-**application itérative**, trois itérations au plus. Fichier de bord :
-`docs/JOURNAL_2026-09-21_refonte-items.md`.
+Session **autonome supervisée**, **file de micro-tickets** sur la branche
+`polish-interface-2026-09-22`, **un commit par ticket**, chacun retirable seul. Fichier de
+bord : `docs/JOURNAL_2026-09-22_polish-interface.md`. Consigne de Xav : « il ne reste pas
+grand-chose pour une harmonie générale — la grotte est verrouillée, les stations sont
+verrouillées, les items sont faits. Il reste l'interface. » Cibles nommées : l'**arme mains
+nues** (« le pouce n'est pas dans le bon sens », et trop simpliste à côté de la pomme), les
+**éclats**, les **jauges de survie**, la **barre de vie** (« par rapport aux feux follets,
+elle peut être améliorée »), les **icônes de buff**. Périmètre confirmé en début de session :
+**ni le menu ni les fonctionnalités** — la structure des menus reste gelée (21/09) ; côté
+**DOM**, deux surfaces en *look* seulement, les **jetons de style** des cartes/fiches et les
+**tuiles d'icônes**. La référence, citée par Xav, est le **follet** : des valeurs
+superposées, un accent, du grain — ce que la charte d'item du 21/09 dit déjà autrement.
 
-**Les dix items sont livrés, en données seules — aucune ligne de code du jeu touchée.**
-`D-82` la **plume** (qui fixe la charte), `D-83` la **branche**, `D-84` le **caillou**,
-`D-85` la **pierre**, `D-86` le **bois**, `D-87` le **fruit**, `D-88` le **fruit cuit**,
-`D-89` la **hache**, `D-90` la **pioche**, `D-91` l'**épée en bois**. Un outil neuf :
-`tools/scenarios/items_poche.mjs` et son album `docs/captures/items-2026-09-21/`.
+**Les sept tickets sont livrés** : `D-94` les **mains nues** (un poing de trois quarts, et la
+case n'impose plus sa couleur), `D-95` **LA barre** du bandeau (une seule fonction pour les PV,
+la faim et la soif, en quatre valeurs), `D-96` les **icônes du bandeau** passées en **données**,
+`D-98` les **quatre icônes de stats** (donc les buffs) mises en volume **en alpha pur**, `D-99`
+les **cases d'action** qui prennent enfin une couleur à elles, `D-100` le **relief** des
+surfaces du menu en jetons, `D-101` les **vignettes** des tuiles, posées. Outils neufs :
+`tools/scenarios/hud_polish.mjs` (avec une **loupe** sur une zone du canvas en unités
+logiques — le bandeau fait 20 unités de haut, on n'y voit rien à la taille d'une capture),
+`tools/scenarios/banc_visuel.mjs` et `tools/remplacer_visuel.mjs`. Album :
+`docs/captures/hud-2026-09-22/`.
 
-**Ce qui commande toute la session** : un item n'a pas d'empreinte solide, mais sa boîte décide
-de la place qu'il prend au sol **et** du cadrage de sa tuile de Poche — grossir un item est donc
-une décision de **jeu**, pas de dessin (`Q-47` étendue). Chaque silhouette est refaite **dans**
-son enveloppe d'avant, inclusion prouvée par test aux trois échelles
-(`tests/test_d82_items_silhouettes_2026-09-21.js`), régime de cadrage de tuile relevé et
-inchangé. La mesure a dû changer en chemin : `boitePrimitive` ignore l'épaisseur d'une ligne, et
-la branche d'origine était un trait de 3 unités — ce qui se compare est l'étendue **réellement
-peinte**.
+**Ce qui commande la session** : une icône d'UI vit dans **deux régimes de couleur** (le HUD
+la dessine à ses couleurs d'auteur, le DOM lui impose la couleur CSS du canvas) et une surface
+de menu dans **trois états** (repos, focus, appui). Une facette écrite en couleur fixe jure
+dans l'un d'eux ; le volume se pose donc en **alpha pur** — noir pour l'ombre, blanc pour la
+lumière —, qui tient par-dessus n'importe quelle teinte et n'a pas à être réécrit par état.
 
-Deux corrections de défaut au passage, toutes deux graphiques : la **hache était décentrée**
-(x de −1 à 5, elle se serait posée entièrement à droite de son point logique) — recentrée ; et
-les deux **paires qui ne se distinguaient que par la taille ou la teinte** (caillou/pierre,
-fruit/fruit cuit) sont désormais séparées par un **parti pris opposé**.
+**Relevés en passant, sans y toucher** : `D-97` (un niveau au-delà de `levels.json` rend
+l'écran Stats inouvrable — **rattaché par Xav au futur ticket « déblocage des niveaux 10 →
+30 »**, puisque c'est ce chantier-là qui allongera la table), `Q-49` (les éclats n'ont aucune
+entrée de catalogue, donc l'id de leur silhouette vit dans `main.js`) et `Q-50` (la fiche de
+Force et d'Esprit est vide), que Xav a mise **hors-scope**.
 
-**Session close et validée le 21/09** : `V-52` rendue **ok** par Xav, après avoir fait le tour des dix (« c'est bien mieux que ce à quoi je m'attendais » ; et le piège nommé est levé — « fruit et fruit cuit, on fait la différence au premier coup d'œil »). Poussée sur `main` à sa demande, donc **en ligne**. La session ne laisse **aucune validation due**. Ouvertes sans y
-toucher : **`Q-48`** (les outils font 17-18 unités contre 6 à 10 pour le reste des items — une
-décision de jeu), **`D-92`** et **`D-93`**. Ces deux dernières sont **de la même famille — un slot garde un
-id que plus rien ne revalide — et Xav a demandé qu'elles soient traitées ENSEMBLE, dans un ticket qui prenne le
-sujet en entier** (21/09) : `D-92`, un id d'arme absent du catalogue n'est rattrapé nulle part (au repos rien ne se
-voit, mais le premier ATTACK lève, et le héros ne peut plus frapper) ; `D-93`, le fruit reste dessiné dans la case
-du bas quand la poche est vide — la *case* qui reste est voulue (loquet assumé), l'*icône* dedans ne l'est pas.
+**Verdicts de Xav, 22/09** : les **sept tickets sont validés un par un** (« good » pour
+chacun), mais `V-53` — l'effet d'ensemble, manette en main — reçoit **« trop léger, pas
+vu »** : la ligne **reste ouverte**, et une ligne `pas vu` n'est jamais close par le silence.
+Le mot à retenir pour la suite est *trop léger* : si la passe doit se voir davantage, c'est un
+ticket neuf (contrastes plus francs, reliefs plus marqués), jamais une reprise en passant.
+
+**Et un bug rapporté au ressenti, à ne pas corriger** : `D-102`, la vitesse de déplacement au
+clavier **paraît cumulative en diagonale**. Lecture du code (pas une mesure) : la couleur du
+défaut est réelle — les deux axes sont bornés **séparément** puis reçoivent chacun la vitesse
+entière, donc une diagonale vaut √2, soit **≈ 41 % plus vite**, là où Xav ressent le double.
+Il le garde comme *exploit de dev* et demande une **session de diagnostic** dédiée.

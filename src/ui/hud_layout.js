@@ -76,6 +76,18 @@ export function echelleIconeBuff(tailleVoulue) {
   return tailleVoulue / TAILLE_REFERENCE_ICONE_BUFF_PX;
 }
 
+// --- Icônes du bandeau : faim, soif, éclats (`D-96`) -----------------------
+// Même patron encore : les silhouettes de `data/visuels.json` sont dessinées
+// dans une boîte de 10 unités, et l'appelant demande la taille qu'il veut.
+// Une constante distincte de celle des buffs parce que ce sont deux réglages
+// distincts (une icône de jauge n'a pas à rapetisser si un buff rapetisse),
+// même si les deux valent 10 aujourd'hui.
+export const TAILLE_REFERENCE_ICONE_BANDEAU_PX = 10;
+
+export function echelleIconeBandeau(tailleVoulue) {
+  return tailleVoulue / TAILLE_REFERENCE_ICONE_BANDEAU_PX;
+}
+
 // `taille` tient dans la hauteur de la zone des buffs (12 px) en laissant un
 // pixel de part et d'autre. PROVISOIRE, jamais validé en jeu (`V-24`).
 export const ICONE_BUFF = { taille: 10, ecart: 3 };
@@ -188,7 +200,7 @@ const BANDEAU_ECART = 8;
 const LARGEUR_FOLLET = 12;
 const LARGEUR_PV = 86;
 const LARGEUR_ECLATS = 30;
-const LARGEUR_JAUGE_SURVIE = 50; // icône (6) + écart (4) + barre (40)
+const LARGEUR_JAUGE_SURVIE = 52; // icône (8) + écart (4) + barre (40) — `D-96` : l'icône est passée de 6 à 8 avec sa mise en volume
 const LARGEUR_NIVEAU = 30;
 
 // Rectangles du bandeau, dans l'ordre définitif de la décision verrouillée du

@@ -110,7 +110,7 @@ function etendueDessinee(visuel, echelle) {
 
 // Seuls les items DÉJÀ refondus entrent dans la boucle : la file avance item
 // par item (un commit chacun), et un ticket ne juge pas le travail d'un autre.
-const REFONDUS = ['visuel_plume', 'visuel_branche', 'visuel_caillou', 'visuel_pierre', 'visuel_bois', 'visuel_fruit', 'visuel_fruit_cuit', 'visuel_hache', 'visuel_pioche'];
+const REFONDUS = ['visuel_plume', 'visuel_branche', 'visuel_caillou', 'visuel_pierre', 'visuel_bois', 'visuel_fruit', 'visuel_fruit_cuit', 'visuel_hache', 'visuel_pioche', 'visuel_icone_epee_bois'];
 
 const { donnees, erreurs } = await chargerCataloguesDepuisDisque(
   path.join(RACINE, 'data'),

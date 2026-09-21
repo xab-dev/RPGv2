@@ -523,10 +523,19 @@
   {
     "id": "visuel_icone_epee_bois",
     "ancre": "centre",
+    "ombre": {"dy":5.5,"w":4,"h":1.5,"alpha":0.24},
     "primitives": [
-      { "forme": "rect", "dx": 0, "dy": -1.5, "w": 1.8, "h": 8, "couleur": "#c9a97a" },
-      { "forme": "rect", "dx": 0, "dy": 3, "w": 5, "h": 1.4, "couleur": "#8a6b45" },
-      { "forme": "rect", "dx": 0, "dy": 4.6, "w": 1.6, "h": 2.4, "couleur": "#6b4f30" }
+      {"forme":"polygone","dx":0,"dy":0,"points":[[0,-5.4],[0.98,-4.1],[1.02,0.5],[-1.02,0.5],[-0.98,-4.1]],"couleur":"#8a6b45"},
+      {"forme":"polygone","dx":0,"dy":0,"points":[[-0.1,-5.2],[-0.9,-4.05],[-0.95,0.4],[-0.1,0.4]],"couleur":"#c9a97a"},
+      {"forme":"polygone","dx":0,"dy":0,"points":[[0.72,-4.4],[0.92,-4.05],[0.96,0.4],[0.72,0.4]],"couleur":"#6b4f30"},
+      {"forme":"rect","dx":0,"dy":1.05,"w":4.6,"h":1.1,"couleur":"#6b4f30"},
+      {"forme":"rect","dx":0,"dy":0.72,"w":4.6,"h":0.44,"couleur":"#9c7a52"},
+      {"forme":"rect","dx":0,"dy":3.05,"w":1.6,"h":3.1,"couleur":"#5a4530"},
+      {"forme":"rect","dx":-0.3,"dy":3.05,"w":0.5,"h":3.1,"couleur":"#7a5c3e"},
+      {"forme":"rect","dx":0,"dy":2.2,"w":1.8,"h":0.4,"couleur":"#3f2e1e"},
+      {"forme":"rect","dx":0,"dy":3.8,"w":1.8,"h":0.4,"couleur":"#3f2e1e"},
+      {"forme":"ellipse","dx":0,"dy":4.85,"w":2.1,"h":1.7,"couleur":"#6b4f30"},
+      {"forme":"ellipse","dx":-0.35,"dy":4.6,"w":1.1,"h":0.85,"couleur":"#9c7a52"}
     ]
   },
   {

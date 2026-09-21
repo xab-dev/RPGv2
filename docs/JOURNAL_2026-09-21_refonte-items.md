@@ -268,3 +268,37 @@ repère, donc les trois valeurs sont trois appels du **même** parcours.
 2. Fer épaissi (1,45), passe éclairée réduite au tiers, bouts fondus dans l'arc,
    collier resserré.
 
+### `D-91` — l'épée en bois
+
+**Diagnostic** : trois rectangles empilés — une croix. Ni lame, ni garde, ni
+poignée.
+
+**Conceptualisation** : les quatre pièces d'une épée (lame, garde, poignée
+tenue, pommeau), les trois valeurs de la lame prises **dans le sens de la
+longueur** (plat éclairé, chant dans l'ombre), et un chant d'**aubier clair**
+plutôt qu'un tranchant blanc — elle est en bois, et c'est ce qui la sépare à
+l'œil de la hache et de la pioche, seules porteuses du blanc du catalogue.
+
+**Application, une itération.**
+
+### Vérification en scène (la leçon des stations, appliquée d'emblée)
+
+`tools/scenarios/items_poche.mjs` : les dix items **dans le jeu**, pas au banc.
+Trois vues, en vrais pixels sous Chrome sans fenêtre —
+`docs/captures/items-2026-09-21/` :
+
+- **au sol**, les dix étalés sur deux rangées au nord de la Maison. Deux pièges
+  contournés pour que la capture montre deux fois la même chose : les poser
+  **hors des stations** (entre elles, la moitié passait derrière une table), et
+  **geler le repos du jour** (`jour_items_sol`), sans quoi le tirage
+  redistribuait au hasard les quatre items qui ont un bloc `spawn`.
+- **la Poche**, les dix tuiles ensemble : c'est la vue qui dit si la série se
+  tient.
+- **la barre du bas**, arme et consommable équipés réduits à une case de 12
+  unités — la seule vue qui pouvait dire si l'ombre portée de la charte gêne à
+  cette taille. Elle ne gêne pas.
+
+Ouverte en écrivant ce scénario, sans y toucher : **`D-92`** — un id d'arme
+inconnu dans la sauvegarde vide la case d'attaque **en silence**, et rien ne
+distingue « pas d'arme » de « arme introuvable ».
+

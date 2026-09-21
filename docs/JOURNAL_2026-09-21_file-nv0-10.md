@@ -20,3 +20,4 @@ file, la session ne le tient pas de mémoire.
 
 | # | Ticket | Commit | Ce qui est livré | Lignes de suivi |
 |---|---|---|---|---|
+| T0 | Reporter les verdicts du 21/09 | (ce commit) | 23 lignes `V-`/`E-` closes sous dictée de Xav et descendues en §8 · `V-11` réduite au puits · `V-10` dégelée en **non** · `Q-23` close, `Q-33`/`Q-34` tranchées · état **`pas vu`** ajouté au mode d'emploi · `docs/CHECKLIST_tournee.md` créée | ouvre `D-55` (volume), `D-56` (Motorola, à qualifier), `D-57` (placement tactile, gelé) ; clôt `D-36` |

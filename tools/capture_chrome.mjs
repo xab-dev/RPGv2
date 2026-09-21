@@ -30,6 +30,10 @@
 //   chrome.attendre(ms)
 //   chrome.evaluer(expression)     rend la valeur (JSON) de l'expression, `await` permis
 //   chrome.capture(chemin)         PNG du viewport
+//   chrome.bridageCpu(facteur)     ralentit le CPU d'autant (1 = normal, 6 = proxy
+//                                  d'appareil faible) — le coût du calque est CPU
+//   chrome.messages(type = null)   ce que la console a dit (`log`, `info`, `warn`…)
+//   chrome.erreurs()               erreurs et exceptions vues par la console
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -103,6 +107,14 @@ async function main() {
       async taille(largeur, hauteur, dpr = 1) {
         await envoyer('Emulation.setDeviceMetricsOverride', { width: largeur, height: hauteur, deviceScaleFactor: dpr, mobile: dpr !== 1 });
       },
+      // Ralentisseur de CPU de Chrome (CDP). Sert de proxy d'appareil faible :
+      // le coût du calque statique suit le NOMBRE DE PRIMITIVES, donc le CPU,
+      // et non les pixels (`R-12` -> `R-13` : diviser les pixels par 9 sur
+      // l'A04 ne rend que 3,6 fps). Un facteur n'est pas un appareil : il
+      // compare deux exécutions du même scénario, rien de plus.
+      async bridageCpu(facteur) {
+        await envoyer('Emulation.setCPUThrottlingRate', { rate: facteur });
+      },
       async ouvrir(url) {
         evenements.length = 0;
         await envoyer('Page.navigate', { url });
@@ -137,6 +149,16 @@ async function main() {
         fs.mkdirSync(path.dirname(chemin), { recursive: true });
         fs.writeFileSync(chemin, Buffer.from(r.data, 'base64'));
         console.log(`capture : ${chemin}`);
+      },
+      // Tout ce que la console a DIT depuis la dernière navigation, filtré
+      // par type (`log`, `info`, `warn`…). Sert à observer ce qui n'a pas de
+      // trace dans le DOM : la bannière d'Auto passe en trois secondes et vit
+      // sur le canvas, donc aucun sélecteur ne la verra jamais — mais la
+      // descente, elle, se journalise.
+      messages(type = null) {
+        return evenements
+          .filter((e) => e.method === 'Runtime.consoleAPICalled' && (type === null || e.params.type === type))
+          .map((e) => e.params.args.map((a) => a.value ?? a.description).join(' '));
       },
       // Erreurs et exceptions vues par la console depuis la dernière navigation.
       erreurs() {

@@ -25,7 +25,7 @@ import { genererDecor } from './decor.js';
 import {
   creerBoucle, dessinerScene, dessinerObscurite, dessinerSignalZones, dessinerPaupieres, dessinerTextesFlottants, presenter,
   RESOLUTION_LOGIQUE, calculerRectanglePresentation, versCoordonneesLogiques, AURA_TRAIT,
-  definirEchelleForcee, dimensionsEcranPhysiquesActuelles,
+  definirEchelleForcee, dimensionsEcranPhysiquesActuelles, invaliderCoucheStatique,
 } from './render.js';
 import { creerStoreIndexedDB } from './storage_indexeddb.js';
 import {
@@ -33,11 +33,17 @@ import {
   saveNeuve, reinitialiserSauvegarde, VISUEL_HEROS_ID, COULEUR_HERO_NEUTRE,
 } from './save.js';
 import { dessinerVisuel, echelleVisuel, TAILLE_REFERENCE_FOLLET_PX } from './visuels.js';
-import { creerPoussiere, avancerPoussiere, bouffeesVisibles, viderPoussiere } from './poussiere.js';
+import {
+  creerPoussiere, avancerPoussiere, bouffeesVisibles, viderPoussiere, CAPACITE_RESERVE,
+} from './poussiere.js';
 import { decalageCorpsFollet } from './vol_follet.js';
 import {
   creerTextesFlottants, emettreTexte, avancerTextesFlottants, textesVisibles, viderTextesFlottants,
 } from './texte_flottant.js';
+import {
+  resoudrePreset, valeurLevier, appliquerParticules, appliquerGrainSol, lirePresetForce,
+  cleEtatCarte, presetSuivant, creerDescenteAuto,
+} from './qualite.js';
 import { creerRegistreFlags } from './flags.js';
 import { calculerStatsPrimaires, calculerStatsDerivees, appliquerModulateurSurvie } from './stats.js';
 import {
@@ -371,19 +377,74 @@ export function creerOrchestrateurGrotte({
   // patron qu'`onEtatUi` et `onPremierGeste` : un test headless n'a rien à
   // fournir.
   onVerbesActions = () => {},
+  // `specs/09_reglages-graphiques.md` palier C : le preset graphique DÉJÀ
+  // résolu, tel que `resoudreGraphismes` le rend. Par défaut, l'orchestrateur
+  // le résout lui-même, sans signal d'appareil ni paramètre d'URL — un test
+  // headless n'a donc rien à fournir et traverse quand même la VRAIE fonction
+  // de résolution, jamais une décision recopiée dans un harnais (`D-72`).
+  graphismes = resoudreGraphismes(registre, save, null),
+  // Palier E : ce qu'un changement de preset entraîne HORS de la scène — le
+  // curseur du jeu, qui vit sur son propre calque DOM et dont les étincelles
+  // sont des particules cosmétiques comme les autres. L'orchestrateur ne le
+  // connaît pas (il doit rester importable depuis Node), mais il est le seul
+  // à savoir QUAND le preset change : Auto peut le changer tout seul, au
+  // milieu d'une frame, sans que personne ait cliqué. Un seul point de
+  // notification, donc un seul endroit à relire — jamais une ligne recopiée
+  // derrière chaque appelant (`D-72`). No-op par défaut, comme `onEtatUi`.
+  onGraphismesAppliques = () => {},
 }) {
+  // Les leviers sont lus UNE fois, ici : au-delà de cette ligne, plus personne
+  // ne connaît le mot « bas ». Chaque système reçoit un nombre.
+  const multiplicateurParticules = valeurLevier(graphismes.config, graphismes.preset, 'particules');
+  // LE point de lecture des leviers de tout l'orchestrateur : au-delà de
+  // cette ligne, plus personne ne connaît le mot « bas », chaque système
+  // reçoit un nombre. Mutable depuis le palier D, parce que le joueur peut
+  // changer de preset en cours de partie (§4.5) — mais toujours un seul
+  // endroit qui lit, donc un seul endroit à relire quand ça change.
+  let graphismesActuels = graphismes;
+  const levier = (nom) => valeurLevier(graphismesActuels.config, graphismesActuels.preset, nom);
+  // §5.2 — l'état d'Auto pour CETTE session : la fenêtre glissante des frames
+  // qui comptent, et la mémoire de ce qui a déjà été dit. La règle elle-même
+  // vit dans `qualite.js`, pure et testée sans horloge ; ici on ne fait que
+  // décider quelles frames lui sont données, et obéir à son verdict.
+  const descenteAuto = creerDescenteAuto(graphismesActuels.config);
+  // Les premières secondes d'une scène ne comptent pas : c'est le temps que le
+  // calque statique se construise, et le juger là reviendrait à faire
+  // descendre Auto sur le coût d'un chargement.
+  let msDepuisEntreeScene = 0;
+  // L'annonce attend son tour si un indice de commande occupe la bannière
+  // (`hints.js#annoncer` rend faux) — jamais perdue, jamais forcée.
+  let annoncePendante = null;
   let etatModifie = false;
 
   // Silhouettes de tuiles (03_maison-exterieur §3.3) : résolu UNE fois (pas
   // par scène, contrairement à `decor` — tiles.json est un catalogue global)
   // à partir du registre, jamais recalculé par frame. render.js ne connaît
   // que dessinerVisuel, jamais visuels.json par id (§3.3 grotte-polish).
-  const visuelsTuiles = new Map(
-    registre
-      .tous('tiles')
-      .filter((t) => t.render && t.render.visuel)
-      .map((t) => [t.id, registre.obtenir('visuels', t.render.visuel)])
-  );
+  // Palier C, levier `grain_sol` : la fraction s'applique ICI, au seul
+  // endroit où la table est construite — `render.js` reçoit la table et ne
+  // saura jamais qu'un preset existe. Une tuile SOLIDE n'est pas allégée : sa
+  // silhouette *est* le monde (§4.3). Et un grain réduit à rien n'entre pas
+  // dans la table du tout : le rendu ne le cherche même plus, donc il ne
+  // coûte plus une ligne (« 0 = ne dessine pas », pris au mot).
+  // Reconstruite, et non recalculée par frame : au démarrage, et une fois de
+  // plus à chaque changement de preset (§4.5).
+  function construireTableGrains() {
+    const grainSol = levier('grain_sol');
+    return new Map(
+      registre
+        .tous('tiles')
+        .filter((t) => t.render && t.render.visuel)
+        .map((t) => [
+          t.id,
+          t.solid
+            ? registre.obtenir('visuels', t.render.visuel)
+            : appliquerGrainSol(registre.obtenir('visuels', t.render.visuel), grainSol),
+        ])
+        .filter(([, visuel]) => visuel !== null)
+    );
+  }
+  let visuelsTuiles = construireTableGrains();
 
   // Extrait en fonction (plutôt qu'un simple `const`) : reinitialiserPartie()
   // (diagnostic SD_grotte-blocage-choix-follet_2026-09-15.md, §B) doit
@@ -433,6 +494,100 @@ export function creerOrchestrateurGrotte({
   // valeur-là et rien d'autre ; aucun autre seuil du jeu n'en dépend
   // (orbite du follet, seuil d'interaction, portées d'arme, rayon
   // d'effacement du toit sont tous indépendants — inventaire de la fiche).
+  // Palier C, levier `densite_decor` : `decor.js` reçoit un nombre, pas un
+  // preset. Le décor réduit est le PRÉFIXE du décor complet, donc un motif
+  // présent en Bas est au même endroit en Moyen et en Haut — le décor ne se
+  // réarrange pas quand on change de réglage (§4.3). Appelé à l'entrée en
+  // scène, et une fois de plus à chaque changement de preset.
+  function regenererDecor() {
+    decor = genererDecor(scene, levier('densite_decor'))
+      .map((d) => ({ ...d, visuel: registre.obtenir('visuels', d.visuel) }));
+  }
+
+  // §4.5 — changer de preset EN JEU, sans recharger. Ce qui bouge, et rien
+  // d'autre : la table des grains, le décor de la scène courante, les
+  // réserves de particules (recréées à la nouvelle capacité, donc VIDÉES —
+  // même geste qu'à l'entrée en scène), et le calque statique, invalidé UNE
+  // fois. La position du héros, l'heure, les monstres, la sauvegarde : rien.
+  //
+  // Le preset arrive déjà RÉSOLU : c'est `demarrerJeu` qui a la fenêtre et
+  // l'URL, et l'orchestrateur doit rester importable depuis Node.
+  function appliquerGraphismes(resolu) {
+    graphismesActuels = resolu;
+    visuelsTuiles = construireTableGrains();
+    effetPoussiere = appliquerParticules(
+      effetPoussiereCatalogue, levier('particules'), { capacite: CAPACITE_RESERVE },
+    );
+    poussiere = creerPoussiere(effetPoussiere);
+    effetSillage = appliquerParticules(
+      effetSillageCatalogue, levier('particules'), { capacite: CAPACITE_RESERVE },
+    );
+    sillageFollet = creerPoussiere(effetSillage);
+    if (scene) regenererDecor();
+    // Sans ça, l'ancien sol resterait à l'écran jusqu'au prochain
+    // franchissement de tuile : la signature du calque (scène, échelle,
+    // portes) n'a pas bougé, et c'est normal — ce n'est pas elle qui a changé.
+    invaliderCoucheStatique();
+    // Palier E : les frames d'avant mesuraient un AUTRE jeu — les garder
+    // ferait juger Bas sur les frames de Moyen, et descendre deux fois de
+    // suite sur une seule mauvaise passe. Vaut pour les deux causes d'un
+    // changement, le joueur comme Auto : la fenêtre est jetée ici, une fois.
+    descenteAuto.reinitialiserFenetre();
+    onGraphismesAppliques(resolu);
+  }
+
+  // §5.2 — Auto descend d'un cran, et jamais ne remonte. Trois gestes, pas un
+  // de plus : savoir si cette frame compte, la donner à la décision, obéir.
+  // La règle (la fenêtre, la part de frames lentes, le palier inférieur, « une
+  // seule annonce ») est tout entière dans `qualite.js` ; ce qui est ICI est
+  // ce que ce module est seul à savoir — quelles frames sont du vrai jeu.
+  function majDescenteAuto(deltaMs, uiOuverte) {
+    msDepuisEntreeScene += deltaMs;
+    // Une annonce que la bannière a refusée est rappelée jusqu'à ce qu'elle
+    // passe : même contrat que `declencherVerbeUtile`, dont l'appelant répète
+    // la demande tant qu'elle tient. Un premier indice de commande a la
+    // priorité — il apprend le jeu, l'annonce ne fait que l'expliquer.
+    if (annoncePendante && !uiOuverte
+      && indices.annoncer(annoncePendante.cle, annoncePendante.dureeMs)) {
+      annoncePendante = null;
+    }
+    // « Un choix manuel du joueur coupe Auto jusqu'à ce qu'il re-choisisse
+    // Auto » — et un `?qualite=` n'est pas davantage un choix d'Auto. Les deux
+    // sont déjà dits par le même champ, résolu au démarrage.
+    if (!graphismesActuels.auto) return;
+    // Ce qui ne compte pas : une UI ouverte — donc aussi l'intro, le dialogue,
+    // le menu, la construction, puisque c'est LE point de décision unique qui
+    // le dit — et les premières secondes d'une scène. Un onglet caché, lui, ne
+    // produit aucune frame ; celle du retour est plafonnée à 100 ms par
+    // `render.js`, soit UNE frame lente sur 600, très loin des 15 % qu'il
+    // faudrait pour descendre. Il n'y a donc rien à écrire pour elle — et
+    // rien qui puisse se tromper.
+    if (uiOuverte) return;
+    if (msDepuisEntreeScene < graphismesActuels.config.auto.delai_entree_scene_ms) return;
+
+    const descente = descenteAuto.observer(deltaMs, graphismesActuels.preset);
+    if (!descente) return;
+    // Dit en console, et pas seulement à l'écran : la bannière passe en trois
+    // secondes, or c'est exactement l'information qu'on voudra relire quand
+    // Xav rapportera « le jeu s'est allégé tout seul » depuis une autre
+    // machine. C'est aussi ce que le scénario headless observe.
+    console.info(
+      `graphismes : Auto descend de « ${graphismesActuels.preset} » à « ${descente.preset} » `
+      + `(${Math.round(descente.part * 100)} % de frames lentes sur la fenêtre)`,
+    );
+    // Le preset RÉSOLU change ; le CHOIX, lui, reste « auto » — donc rien
+    // n'est écrit dans la sauvegarde (§5.3), et la carte de Paramètres passera
+    // d'elle-même à « Auto (Bas) » sans qu'on ait à l'en avertir : elle relit
+    // la source, et la source est l'orchestrateur.
+    appliquerGraphismes({ ...graphismesActuels, preset: descente.preset });
+    if (descente.annoncer) {
+      annoncePendante = {
+        cle: graphismesActuels.config.auto.cle_annonce,
+        dureeMs: graphismesActuels.config.auto.annonce_duree_ms,
+      };
+    }
+  }
+
   function rayonHeros() {
     return RAYON_HERO_BASE_PX * echelleVisuel(registre.obtenir('visuels', VISUEL_HEROS_ID));
   }
@@ -440,9 +595,16 @@ export function creerOrchestrateurGrotte({
   // MT_trainee-poussiere_2026-09-19 : réglages en données (data/effets.json,
   // tous PROVISOIRES, à régler au ressenti par Xav) et réserve fixe allouée
   // UNE fois au boot — jamais par frame, jamais par entrée en scène.
-  const effetPoussiere = registre.obtenir('effets', 'effet_poussiere');
-  const visuelPoussiere = registre.obtenir('visuels', effetPoussiere.visuel);
-  const poussiere = creerPoussiere(effetPoussiere);
+  // Palier C : la réserve est dimensionnée par le levier `particules`, dont
+  // le défaut (8) appartient toujours à `poussiere.js` — il est passé, jamais
+  // recopié ici. À zéro, la réserve est vide : rien ne naît, rien n'est
+  // dessiné, et `avancerPoussiere` n'a pas une ligne de plus.
+  const effetPoussiereCatalogue = registre.obtenir('effets', 'effet_poussiere');
+  const visuelPoussiere = registre.obtenir('visuels', effetPoussiereCatalogue.visuel);
+  let effetPoussiere = appliquerParticules(
+    effetPoussiereCatalogue, levier('particules'), { capacite: CAPACITE_RESERVE },
+  );
+  let poussiere = creerPoussiere(effetPoussiere);
 
   // `D-36` (proposition) : le follet « aérien ». Deux effets, tous deux
   // PUREMENT VISUELS et tous deux en données.
@@ -463,9 +625,12 @@ export function creerOrchestrateurGrotte({
   // Initialisé à sa valeur à t = 0, et non à zéro : sinon la toute première
   // frame ferait sauter le corps de son centre à son orbite.
   let corpsFollet = decalageCorpsFollet(0, configVolFollet);
-  const effetSillage = registre.obtenir('effets', 'effet_sillage_follet');
-  const visuelSillage = registre.obtenir('visuels', effetSillage.visuel);
-  const sillageFollet = creerPoussiere(effetSillage);
+  const effetSillageCatalogue = registre.obtenir('effets', 'effet_sillage_follet');
+  const visuelSillage = registre.obtenir('visuels', effetSillageCatalogue.visuel);
+  let effetSillage = appliquerParticules(
+    effetSillageCatalogue, levier('particules'), { capacite: CAPACITE_RESERVE },
+  );
+  let sillageFollet = creerPoussiere(effetSillage);
 
   // MT_texte-flottant_2026-09-19 (`D-05`) : même patron exactement — réglages
   // en données (tous PROVISOIRES, à régler au ressenti par Xav) et réserve
@@ -870,11 +1035,14 @@ export function creerOrchestrateurGrotte({
     // qu'on quitte n'a rien à faire flottant dans la suivante.
     viderTextesFlottants(textesFlottants);
     scene = chargerScene(registre, sceneId, resoudreOverridesStations(sceneId));
+    // Palier E : le calque statique de la scène neuve est à construire, et
+    // cette construction n'est pas une saccade de jeu — Auto ne la juge pas.
+    msDepuisEntreeScene = 0;
     // Décor (§3.4 03_grotte-polish) : genererDecor() reste pur et ne connaît
     // que des id (visuel: string) — résolus ici une seule fois, à l'entrée en
     // scène (le décor est statique, jamais recalculé par frame), même
     // patron que monstresAffiches/puzzlesAffiches dans dessiner().
-    decor = genererDecor(scene).map((d) => ({ ...d, visuel: registre.obtenir('visuels', d.visuel) }));
+    regenererDecor();
 
     const pos = positionInitialePx || {
       x: (scene.spawn.x + 0.5) * scene.tileSize,
@@ -2011,6 +2179,9 @@ export function creerOrchestrateurGrotte({
     // (aujourd'hui : le `preventDefault` de `Tab`, qui arrive hors frame).
     onEtatUi(uiOuverte);
     onVerbesActions(verbesActionsVisibles());
+    // Auto (§5.2) : lu sur la MÊME frame et le MÊME `uiOuverte` que tout le
+    // reste — jamais un second calcul de « le jeu a-t-il la main ».
+    majDescenteAuto(deltaMs, uiOuverte);
     if (menu.estOuvert()) menu.traiterInput(etatBrut);
     else if (dialogueOuvertMaintenant) dialogue.traiterInput(dialogueVientDeSOuvrir ? etatNeutre(etatBrut) : etatBrut);
     else if (choixFolletActif()) traiterChoixFollet(etatBrut);
@@ -2737,6 +2908,20 @@ export function creerOrchestrateurGrotte({
     choixFolletActif,
     reinitialiserPartie,
     obtenirHero: () => hero,
+    // Palier C (`D-113`) : la table des grains de tuiles, telle que
+    // `render.js` la reçoit. Exposée pour les tests — le dessin n'est jamais
+    // exercé headless, donc c'est la seule façon de prouver qu'un preset
+    // allège le sol sans toucher une silhouette solide. On rend la VRAIE
+    // table, jamais une recopie qui pourrait diverger (`D-72`).
+    obtenirVisuelsTuiles: () => visuelsTuiles,
+    // Palier D (§4.5) : changer de preset en jeu. Le preset arrive déjà
+    // résolu — `demarrerJeu` a la fenêtre et l'URL, pas l'orchestrateur.
+    appliquerGraphismes,
+    obtenirGraphismes: () => graphismesActuels,
+    // Palier C (`D-114`) : le décor réellement généré pour la scène courante.
+    // Même raison que la table ci-dessus — prouver l'inclusion Bas ⊂ Moyen ⊂
+    // Haut demande le vrai décor, pas une régénération refaite côté test.
+    obtenirDecor: () => decor,
     obtenirFollet: () => follet,
     obtenirScene: () => scene,
     obtenirMonstres: () => monstres,
@@ -2796,6 +2981,63 @@ export function creerOrchestrateurGrotte({
   };
 }
 
+// `specs/09_reglages-graphiques.md` §5.1 : les signaux d'appareil sont lus UNE
+// FOIS, au démarrage, ici — jamais dans un module pur, jamais par frame. Un
+// seul signal, volontairement : le pointeur grossier (téléphone, tablette).
+// Ni mémoire, ni nombre de cœurs, ni nom de navigateur — le portable Pentium
+// sans GPU, 2 Go, joue à 58 fps en Moyen, et une heuristique mémoire l'aurait
+// classé Bas à tort.
+//
+// Déclarée au NIVEAU MODULE (règle née de `D-72`) : `demarrerJeu` et
+// `creerOrchestrateurGrotte` sont deux fonctions sœurs, et ce que les deux
+// peuvent avoir à lire ne vit dans ni l'une ni l'autre. C'est aussi ce qui la
+// rend testable depuis Node, où `demarrerJeu` n'est jamais exécuté.
+export function signauxAppareil(fenetre) {
+  const mediaQuery = fenetre && typeof fenetre.matchMedia === 'function' ? fenetre.matchMedia : null;
+  if (!mediaQuery) return { pointeurGrossier: false };
+  try {
+    return { pointeurGrossier: !!mediaQuery.call(fenetre, '(pointer: coarse)').matches };
+  } catch {
+    // `matchMedia` absent ou capricieux : on ne devine pas, on prend le cas
+    // qui ne retire rien au joueur (Moyen).
+    return { pointeurGrossier: false };
+  }
+}
+
+// Résolution du réglage graphique au démarrage. Rend le preset RÉEL (jamais
+// « auto », qui n'est pas un palier) et ce qu'il faut en dire. Le preset
+// résolu n'est jamais persisté : seul le choix du joueur l'est (§5.3).
+//
+// Les leviers sont relus un par un juste après : le schéma garantit déjà que
+// chaque palier les couvre, mais une faute de frappe dans `leviers` ferait
+// lever `valeurLevier` en pleine partie, au premier système qui le demande —
+// ici, elle tombe au boot, avec le nom du levier.
+//
+// `search` (facultatif) apporte `?qualite=bas|moyen|haut`, un outil de DEBUG :
+// il remplace le preset résolu en UN seul point — celui-ci — et n'écrit jamais
+// rien dans la sauvegarde. Même contrat que `?echelle` : une valeur invalide
+// laisse le réglage du joueur en place et s'annonce.
+export function resoudreGraphismes(registre, save, fenetre, search = null) {
+  const config = registre.obtenir('graphismes', 'graphismes_presets');
+  const resolu = resoudrePreset(save.settings.graphismes, signauxAppareil(fenetre), config);
+  const force = lirePresetForce(search, config);
+  const preset = force.preset || resolu.preset;
+  for (const levier of config.leviers) valeurLevier(config, preset, levier);
+  return {
+    config,
+    preset,
+    // Le choix TEL QU'IL FAIT FOI, et non tel qu'il est enregistré : sous
+    // `?qualite=`, c'est le paramètre d'URL qui commande, donc c'est lui que
+    // la carte de Paramètres doit afficher. Sans ce champ, la carte dirait
+    // « Auto (Bas) » pendant que le jeu rend en Haut — un mensonge, et le
+    // genre d'écart qu'on passe une soirée à ne pas comprendre.
+    choix: force.preset || save.settings.graphismes,
+    // Un preset forcé n'est pas « choisi par Auto ».
+    auto: force.preset ? false : resolu.auto,
+    avertissement: [resolu.avertissement, force.avertissement].filter(Boolean).join(' · ') || null,
+  };
+}
+
 export async function demarrerJeu() {
   const noms = Object.keys(SCHEMAS);
   const [dictionnaires, { donnees, erreurs: erreursChargement }] = await Promise.all([
@@ -2847,6 +3089,14 @@ export async function demarrerJeu() {
   const store = creerStoreIndexedDB();
   const { payload: save } = await chargerSave(store);
   i18n.definirLangue(save.settings.lang);
+
+  // `specs/09_reglages-graphiques.md` palier B : le réglage graphique est
+  // RÉSOLU au démarrage, et rien n'en dépend encore — les leviers se branchent
+  // au palier C. Ce qui est déjà vrai : le catalogue est validé, un réglage
+  // inconnu venu d'une sauvegarde est signalé plutôt que remplacé en silence,
+  // et le choix du joueur ne quitte jamais `save.settings`.
+  const graphismes = resoudreGraphismes(registre, save, window, window.location.search);
+  if (graphismes.avertissement) console.warn(graphismes.avertissement);
 
   // Une sauvegarde d'une session antérieure peut pointer vers une scène qui
   // n'existe plus (ex. scene_salle_test de la Phase 0, remplacée par la
@@ -3023,6 +3273,29 @@ export async function demarrerJeu() {
     // Les paliers et leurs libellés viennent de `data/audio.json` : le menu
     // ne sait pas combien il y en a, et ajouter un cran (ou un volume
     // d'effets sonores) ne touchera pas une ligne de code.
+    // Palier D de `specs/09_reglages-graphiques.md` : les réglages
+    // graphiques. Même patron que le volume — l'état réel vit dans
+    // `save.settings`, l'effet dans l'orchestrateur, et le menu ne connaît ni
+    // l'un ni l'autre. Le cycle (`auto → bas → moyen → haut → auto`) est
+    // l'ordre du catalogue : ajouter un preset ne touche pas une ligne ici.
+    //
+    // L'état est relu à la SOURCE, et la source est l'orchestrateur — pas
+    // `save.settings`. La différence compte sous `?qualite=` : c'est alors
+    // l'URL qui commande, et la carte doit dire ce que le jeu rend, jamais ce
+    // qui est enregistré.
+    graphismesCourant() {
+      const courant = orchestrateur.obtenirGraphismes();
+      return cleEtatCarte(courant.config, courant.choix, courant.preset);
+    },
+    cyclerGraphismes() {
+      // Le cycle part du choix ENREGISTRÉ, pas du preset forcé : un
+      // `?qualite=` dans l'URL ne doit pas détourner le réglage du joueur.
+      save.settings.graphismes = presetSuivant(graphismes.config, save.settings.graphismes);
+      const resolu = resoudreGraphismes(registre, save, window, window.location.search);
+      if (resolu.avertissement) console.warn(resolu.avertissement);
+      // Le curseur suit par `onGraphismesAppliques`, câblé une fois plus bas.
+      orchestrateur.appliquerGraphismes(resolu);
+    },
     volumeCourant: () => cleEtatVolume(),
     cyclerVolume() {
       const reglage = registre.obtenir('audio', 'audio_volume_musique');
@@ -3134,6 +3407,9 @@ export async function demarrerJeu() {
   const moniteurPerf = creerMoniteurPerf({ document, search: window.location.search });
 
   const orchestrateur = creerOrchestrateurGrotte({
+    // Résolu plus haut, avec la fenêtre et l'URL : l'orchestrateur ne lit ni
+    // l'une ni l'autre (il doit rester importable depuis Node).
+    graphismes,
     registre, i18n, save, store, dialogue, menu, input, ctxLogique, ctxVisible, canvasLogique,
     onPremierGeste: armerAudioUneFois,
     moniteurPerf,
@@ -3143,6 +3419,12 @@ export async function demarrerJeu() {
     // `D-54` : le seul écrivain du drapeau lu par le clavier (cf. plus haut).
     onEtatUi: (ouverte) => { uiCapteLesVerbes = ouverte; },
     onVerbesActions: (verbes) => { verbesActionsDebloques = verbes; },
+    // Le curseur n'est pas dans la scène, mais ses étincelles sont des
+    // particules cosmétiques comme les autres : les laisser derrière ferait un
+    // Bas à moitié appliqué, visible à la souris. Ici, et pas derrière chaque
+    // appelant — parce que depuis le palier E, le preset peut changer sans que
+    // personne ait cliqué (`descenteAuto`).
+    onGraphismesAppliques: () => curseur.definirEffets(effetsCurseur().config, effetsCurseur().sillage),
   });
   // Dépendance circulaire résolue par un point de couture explicite (§B du
   // diagnostic) : le menu (construit avant l'orchestrateur, qui en a besoin
@@ -3184,14 +3466,26 @@ export async function demarrerJeu() {
   // `D-108` : le curseur du jeu. Il se construit ICI parce que c'est le premier
   // endroit où le registre existe — les deux silhouettes et les deux réglages
   // viennent des catalogues, ce module n'invente ni forme ni couleur.
+  // Les deux effets du curseur, passés au levier `particules` du preset EN
+  // COURS. Une seule fonction, appelée au démarrage et à chaque changement de
+  // preset : la décision n'est écrite qu'une fois (`D-72`).
+  function effetsCurseur() {
+    const courant = orchestrateur.obtenirGraphismes();
+    const multiplicateur = valeurLevier(courant.config, courant.preset, 'particules');
+    return {
+      config: appliquerParticules(registre.obtenir('effets', 'effet_curseur'), multiplicateur),
+      sillage: appliquerParticules(registre.obtenir('effets', 'effet_curseur_sillage'), multiplicateur),
+    };
+  }
+
   const curseur = creerCurseur({
     doc: document,
     fenetre: window,
-    config: registre.obtenir('effets', 'effet_curseur'),
+    config: effetsCurseur().config,
     // La traînée est une 3ᵉ instance de `poussiere.js` : même mécanique que
     // celle du héros et que le sillage du follet, une entrée de catalogue de
     // plus et rien d'autre.
-    configSillage: registre.obtenir('effets', 'effet_curseur_sillage'),
+    configSillage: effetsCurseur().sillage,
     visuelOrbe: registre.obtenir('visuels', 'visuel_curseur'),
     visuelParticule: registre.obtenir('visuels', 'visuel_curseur_eclat'),
     visuelSillage: registre.obtenir('visuels', 'visuel_curseur_sillage'),

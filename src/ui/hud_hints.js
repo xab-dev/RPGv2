@@ -37,7 +37,10 @@ export function dessinerHudHints(ctx, indice) {
   const alpha = Math.max(0, Math.min(alphaEntree, alphaSortie));
   if (alpha <= 0) return;
 
-  const contenu = texte ? `${glyphe}  ${texte}` : glyphe;
+  // Glyphe et texte, dans cet ordre, en sautant ce qui manque. Une annonce du
+  // jeu (palier E de `specs/09`) n'a pas de glyphe : composer à l'aveugle lui
+  // mettrait deux espaces en tête, donc une phrase décentrée dans sa boîte.
+  const contenu = [glyphe, texte].filter(Boolean).join('  ');
 
   ctx.save();
   ctx.globalAlpha = alpha;

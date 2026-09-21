@@ -576,6 +576,16 @@
     ]
   },
   {
+    "id": "visuel_icone_menu_graphismes",
+    "ancre": "centre",
+    "teintable": true,
+    "primitives": [
+      { "forme": "rect", "dx": -4, "dy": 2.9, "w": 2.8, "h": 3.2, "couleur": "#f2e9d8", "teinte": true },
+      { "forme": "rect", "dx": 0, "dy": 1.7, "w": 2.8, "h": 5.6, "couleur": "#f2e9d8", "teinte": true },
+      { "forme": "rect", "dx": 4, "dy": 0.5, "w": 2.8, "h": 8, "couleur": "#f2e9d8", "teinte": true }
+    ]
+  },
+  {
     "id": "visuel_icone_menu_volume",
     "ancre": "centre",
     "teintable": true,

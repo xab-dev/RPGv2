@@ -11,24 +11,35 @@
 // vert, la cause est ailleurs : s'arrêter et rapporter.") — la vraie cause
 // des "250 recalculs sur 600 frames" est un bug de L'INSTRUMENT de mesure
 // (ui/hud_debug.js, corrigé le même jour), pas du fenêtrage : voir le journal.
+//
+// Mis à jour le 22/09 (`D-01`, palier A de `specs/09_reglages-graphiques.md`) :
+// ce fichier recopiait la condition de `dessinerCoucheStatique` sous un
+// commentaire affirmant qu'elle était "exactement" celle du rendu — la forme
+// exacte des deux bugs `D-71` et `D-72`. Il appelle désormais LA décision du
+// rendu (`calqueDoitEtreReconstruit`). Ses quatre bornes sont des MAJORANTS :
+// elles restent donc valides maintenant que la marge amortit, et disent la
+// même chose qu'au 19/09 — le fenêtrage n'a jamais été la cause des "250
+// recalculs sur 600 frames".
 import assert from 'node:assert/strict';
 import { calculerCamera } from '../src/camera.js';
-import { selectionnerTuilesVisibles, RESOLUTION_LOGIQUE } from '../src/render.js';
+import { calqueDoitEtreReconstruit, selectionnerTuilesVisibles, RESOLUTION_LOGIQUE } from '../src/render.js';
 
 const TILE = 32;
-const MARGE = 1; // défaut de selectionnerTuilesVisibles
+const ECHELLE = 4; // échelle naturelle d'un écran 1920x1080 (stable sur les 4 scénarios)
 
-// Rejoue une trajectoire caméra frame par frame et compte les changements de
-// xDebut/yDebut de la fenêtre — exactement la condition de dessinerCoucheStatique
-// (render.js) pour la partie "fenêtre", sans dupliquer echelle/signaturePortes
-// (déjà stables dans les 4 scénarios ci-dessous : même scène, même écran).
+// Rejoue une trajectoire caméra frame par frame en passant par la décision du
+// rendu, et compte les reconstructions. `sceneId`/`signaturePortes` sont
+// stables dans les 4 scénarios ci-dessous (même scène, même écran) : seul le
+// déplacement est en cause.
 function compterRecalculs(traceCamera) {
-  let precedente = null;
+  let calque = null;
   let recalculs = 0;
   for (const camera of traceCamera) {
-    const fenetre = selectionnerTuilesVisibles(camera, RESOLUTION_LOGIQUE, TILE, MARGE);
-    if (!precedente || precedente.xDebut !== fenetre.xDebut || precedente.yDebut !== fenetre.yDebut) recalculs++;
-    precedente = fenetre;
+    const contexte = { sceneId: 'scene_test', echelle: ECHELLE, signaturePortes: '', camera, tileSize: TILE, resolution: RESOLUTION_LOGIQUE };
+    if (calqueDoitEtreReconstruit(calque, contexte)) {
+      recalculs++;
+      calque = { sceneId: 'scene_test', echelle: ECHELLE, signaturePortes: '', ...selectionnerTuilesVisibles(camera, RESOLUTION_LOGIQUE, TILE) };
+    }
   }
   return recalculs;
 }

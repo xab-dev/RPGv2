@@ -348,9 +348,17 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 (Les décisions de `05_construction-stations.md` étaient déjà actées par Xav **dans la spec elle-même** avant tout code, v1.0.0 §9 — les lignes ci-dessus n'y renvoient que pour mémoire, elles ne tranchent rien de nouveau.)
 | **Le héros est un personnage encapuchonné vu de trois quarts, et la couleur du follet est son VISAGE** (*révise* le corps entier teinté de la Phase 1) : une boule lumineuse logée dans l'ombre de la capuche, avec un glow serré — une lueur, jamais une aura qui éclairerait le sol. Ce qui rend une silhouette lisible à 14 px n'est pas son vêtement mais son **contraste** : un point lumineux dans une masse noire. Et une relation à ne plus contredire : **le héros n'est jamais plus large que ce qui entre en collision** — contrairement à une station, sa hitbox ne dérive PAS du dessin (`RAYON_HERO_BASE_PX × echelle`), donc redessiner ne déplace aucun mur, mais l'ourlet du manteau est calé sur la demi-boîte ; en hauteur il la dépasse librement, la boîte étant son emprise au sol et non sa taille | 2026-09-22 | `D-104`, `docs/JOURNAL_2026-09-22_heros-silhouette.md` |
 | **Ce qui doit être exact est exact, ce qui a le droit de traîner traîne.** Un curseur animé se partage en deux : la **tête** est un vrai `cursor: url(…)`, dessiné une fois au démarrage depuis `visuels.json` — donc **exactement** sous le pointeur, vivant **par-dessus les menus DOM** (là où la souris sert) et gratuit par frame ; les **particules et la traînée** vivent sur un calque de recouvrement (`pointer-events: none`), qui a le droit d'être en retard d'une frame puisque c'est une traînée. Deux bénéfices tombent tout seuls de ce découpage : l'orbe **occulte la moitié lointaine de son orbite** sans une ligne de tri de profondeur (le curseur système est composé par-dessus la page), et le calque passe **au-dessus des écrans d'UI**, ce qu'un dessin dans le canvas du jeu ne peut pas faire. Corollaire de lecture : **une capture d'écran ne contient jamais le curseur** — la vignette de l'album est une simulation collée à la main | 2026-09-22 | `D-108`, `docs/JOURNAL_2026-09-22_curseur.md` |
+| **Un réglage qui appartient à l'APPAREIL ne voyage pas avec la sauvegarde, et son absence est une valeur.** `settings.graphismes` absent veut dire « je n'ai jamais choisi », donc `auto` — le défaut vit dans le catalogue, une seule fois (patron du volume, `D-64`), et **aucune migration** n'est due, `schema_version` ne bouge pas. À l'import, la machine **reprend les siens** : une sauvegarde exportée d'un PC en « haut » ne l'impose pas au téléphone, et une machine qui n'a jamais choisi ne l'hérite pas non plus. Le moyen est une **liste** (`save.js#REGLAGES_APPAREIL`), pas un `if` : le prochain réglage d'appareil s'y ajoute et nulle part ailleurs. Enfin, le preset **résolu** par Auto n'est jamais persisté — seul le choix du joueur l'est | 2026-09-22 | `D-111`, palier B de `specs/09_reglages-graphiques.md` |
+| **Ce qu'un preset a le droit de retirer se déclare en données, sans repli.** Chaque effet de `effets.json` porte un `role` — `cosmetique` (Bas peut le retirer) ou `information` (il dit quelque chose au joueur : le « +1 » qui enseigne la boucle, les paupières de la mort). Champ **requis**, aucune valeur par défaut : un repli « absent = cosmétique » ferait disparaître en Bas le prochain effet qu'on oublierait de classer, et personne ne ferait le lien. Même discipline côté presets : **chaque palier donne une valeur à chaque levier déclaré**, faute de quoi le jeu ne démarre pas, avec le nom du levier. Et « Moyen = l'état actuel » se teste en **propriété** (aucun levier ne s'écarte de la `valeur_neutre` du catalogue), jamais en liste de nombres — le contrat survit à l'ajout d'un levier | 2026-09-22 | même palier |
+| **Un système allégé par un preset reçoit un NOMBRE, jamais un preset.** `poussiere.js`, `curseur.js`, `decor.js` et la table de grains que lit `render.js` ignorent qu'un réglage graphique existe : le seul endroit qui connaît le mot « bas » est l'orchestrateur, sur trois lignes. Et **zéro n'est pas une absence** — une réserve de capacité nulle n'émet rien et ne dessine rien, un grain réduit à rien **sort de la table** et le rendu ne le cherche même plus : « le système ne dessine pas » est une **conséquence** de la donnée, pas une branche `if (éteint)` à maintenir. Corollaire pour ce qui reste : un effet `information` n'est touché par aucun preset, et une tuile **solide** n'est jamais allégée (sa silhouette *est* le monde), contrairement à un sol, qui perd son grain mais jamais sa surface | 2026-09-22 | `D-112`, `D-113`, palier C de `specs/09_reglages-graphiques.md` |
+| **Un décor réduit est le PRÉFIXE du décor complet, et c'est un contrat, pas une chance.** `genererDecor` tire en séquence ; baisser la densité ne décale pourtant rien, parce que **chaque itération consomme un nombre constant de tirages** — un caillou présent en Bas est donc au même endroit en Moyen et en Haut, sans qu'une position ait eu à bouger. La spec craignait l'inverse et proposait un tirage par tuile comparé à un seuil : ça aurait déplacé **tous** les motifs de la Maison, **y compris sous Moyen**, soit une régression visible au nom d'un défaut qui n'existe pas. Vérifier à la cause avant de corriger vaut aussi pour un remède déjà écrit dans une spec. Ce qui restait à faire n'était pas un correctif mais un **verrou** : le contrat est écrit dans la boucle et tenu par test (préfixe *et* inclusion d'ensembles), pour que le prochain tirage conditionnel ajouté là tombe en test et non sous les yeux de Xav | 2026-09-22 | `D-114`, même palier |
+| **Un état d'UI se relit à la source — et la source est celle qui FAIT, pas celle qui enregistre.** La carte Graphismes lit le preset de l'orchestrateur, jamais `save.settings` : sous `?qualite=`, c'est l'URL qui commande, et une carte qui annoncerait « Auto (Bas) » pendant que le jeu rend en Haut serait un mensonge qu'on passe une soirée à ne pas comprendre. Corollaire de texte : un libellé à trou (« Auto (Bas) ») est **une** clé de locale par situation, déclarée en données sur le palier, jamais deux clés qu'un gabarit assemblerait en code — sinon les parenthèses et l'ordre des mots seraient figés pour toutes les langues. Le schéma exige la seconde clé, donc un preset ajouté demain ne peut pas afficher « Auto () » | 2026-09-22 | `D-115`, palier D de `specs/09_reglages-graphiques.md` |
+| **Un calque pré-rendu se refait quand la VUE EN SORT, jamais quand on franchit une tuile.** La fenêtre du calque statique portait depuis la Phase 2 une marge de 1,5 tuile en moyenne (une tuile pleine de chaque côté, plus la fraction de `floor`/`ceil`) qui ne servait qu'à couvrir les tuiles coupées au bord : la condition de reconstruction comparait `xDebut`/`yDebut` d'une frame à l'autre, donc un franchissement de tuile reconstruisait un calque qui couvrait encore parfaitement l'écran. La bonne question est celle que `drawImage` pose deux lignes plus bas — **« le rectangle source tient-il dans le calque ? »**, en pixels **physiques** (un test en pixels logiques laisserait passer l'arrondi de `canvas.width`, et une demi-frange vide au bord). Conséquence mesurée, deux exécutions par régime : reconstructions **15 → 8**, et sous bridage CPU ×6 **16 → 8 frames > 20 ms** — il y a **une frame lente par reconstruction**, donc la fréquence *est* la saccade. Le **pic ne baisse pas** : seul le défilement incrémental le ferait. Et la décision est **une fonction pure exportée** que le rendu et les tests appellent tous les deux, jamais une condition recopiée (`D-71`, `D-72`) | 2026-09-22 | `D-01`, palier A de `specs/09_reglages-graphiques.md` |
 | **Le stick droit pilote le curseur, et il sort de la couche d'input par un accesseur SÉPARÉ** (`input.pointeurManette()`), jamais dans l'état de verbes : `etat` garde sa forme move + verbes dont `etatNeutre()` dérive génériquement, et c'est ce qui **garantit qu'aucun système de jeu ne lira jamais ce stick** — un pointeur analogique n'est pas un verbe. Conséquence à ne pas manquer : **une page ne peut pas déplacer le curseur du système** (aucune API, et tant mieux), donc au stick l'orbe est dessiné **sur le calque** et la variable CSS passe à `none` — même silhouette, même fonction de dessin, seul le **porteur** change, et le dernier périphérique qui bouge gagne dans les deux sens. Enfin, un déplacement au stick divise la direction par la norme BRUTE et la vitesse par la norme **bornée à 1** : confondre les deux fait aller une diagonale √2 fois trop vite (c'est `D-102` côté clavier, ici corrigeable sans toucher au gameplay) | 2026-09-22 | `D-109`, `docs/JOURNAL_2026-09-22_curseur.md` |
 | **La taille de la réserve d'un système de particules suit la VITESSE de ce qu'il suit.** Les 8 bouffées de `poussiere.js` sont calibrées sur un héros à 75 px/s ; une souris les vide en quatre frames, et la traînée devient une grappe clignotante. `capacite` passe donc en données (absente = 8, héros et follet identiques au pixel près). Et l'émission est **interpolée le long du segment parcouru** : toutes les bouffées d'une même frame naissaient au point d'ARRIVÉE, invisible à 1 px par frame, ruineux à 60 — ce qui rend enfin vraie la promesse déjà écrite dans ce module, « l'émission se fait à la distance parcourue » | 2026-09-22 | `D-108` |
 | **Le clic droit se verrouille sur le DOCUMENT, jamais sur le seul canvas** : les écrans d'UI sont des éléments DOM posés à côté du canvas (même raison qui fait passer `document.documentElement` en plein écran), donc un garde posé sur le canvas est un garde à moitié posé — et la moitié qui manque est celle où la souris sert. Effet de bord voulu au tactile : l'appui **maintenu** déclenche lui aussi `contextmenu`, donc la bulle « copier / partager » disparaît avec, sans toucher `input/touch.js`. La porte de secours `?souris=libre` ne pose **aucun** écouteur, plutôt qu'un écouteur qui laisse passer | 2026-09-22 | `D-107` |
+| **Auto mesure du TEMPS DE JEU, et c'est l'orchestrateur — et lui seul — qui dit quelles frames en sont.** La règle de descente est pure et sans horloge (la durée de la fenêtre est la **somme des deltas**, donc un test donne des nombres au lieu de simuler une horloge) ; ce qu'elle ignore volontairement, c'est *quelles* frames lui arrivent. Une UI ouverte n'en produit aucune, et **par le point de décision unique existant** (`uiOuverte`) — ce qui couvre l'intro, le dialogue, le menu et la construction sans une ligne de plus ; les premières secondes d'une scène non plus (le calque s'y construit : le juger ferait descendre Auto sur un chargement). L'onglet caché, lui, n'a demandé **rien du tout** — il ne produit aucune frame, et celle du retour est plafonnée à 100 ms, soit **une** frame lente sur 600 quand il en faudrait 90. Vérifié à la cause plutôt que traité par précaution : une machinerie pour un problème qui n'existe pas est une machinerie qui se trompera un jour | 2026-09-22 | `D-117`, palier E de `specs/09_reglages-graphiques.md` |
+| **Une décision lue par frame ne se lit pas sur une liste.** La même règle existe en deux formes — `doitDescendre` prend les 600 deltas (tests, outillage), `doitDescendreAgrege` prend les compteurs courants (le jeu) — parce que refaire la somme à chaque frame allouerait un tableau par frame, exactement ce que le tampon circulaire pré-alloué existe pour éviter. Deux formes, **une** règle, et un test qui refuse qu'elles divergent : c'est `D-71`/`D-72` appliqué *avant* le bug plutôt qu'après. Corollaire de dimensionnement, trouvé en écrivant : le tampon se calcule **depuis la fenêtre**, jamais depuis les 600 cases de l'instrument — 600 frames ne font 10 s qu'à 60 fps *pile*, et à 62 fps la fenêtre ne se serait jamais complétée. Auto n'aurait plus rien évalué, **sans conséquence visible** (une machine fluide ne descend pas de toute façon), donc sans que personne le découvre | 2026-09-22 | `D-117` |
 | **Une silhouette de personnage se juge dans la scène, pas au banc — et la scène lui prête ses couleurs.** Le manteau du héros prend la teinte de la **lumière du follet** (rayon 100 px) : brun chaud avec le feu, gris-bleu avec l'eau. Personne ne l'a codé, c'est le calque de lumière existant. Corollaire : une capture de silhouette de personnage se prend **par compagnon**, sinon elle ne montre qu'un tiers de la vérité (`tools/scenarios/heros_scene.mjs`) | 2026-09-22 | même journal |
 
 ## Ce qui est dû : dettes, questions, validations
@@ -403,95 +411,239 @@ la session précédente a révélées, clos celles qu'elle a livrées.
 4. ~~`D-36` — follet « aérien »~~ — **proposé et conservé** par Xav ; réglage et verdict final à l'œil (`V-20`).
 5. ~~**La nuit du 20/09** (file autonome n° 2)~~ — **les cinq tickets sont livrés et fusionnés** (`D-39`, `D-40`, `D-17`, `D-13`, `D-30`). Le playtest téléphone qui a suivi en a rouvert deux, `D-42` et `D-30` : ~~mini-file « menu tactile »~~ — **livrée, en ligne, validée par Xav** (`V-25`, `V-26`).
 5 bis. ~~**`specs/08_menus-cartes.md`** (`D-43`)~~ — **les trois paliers et le polish sont livrés, fusionnés dans `main` et en ligne** (21/09, clavier et manette validés par Xav). Restent à Xav : le téléphone (`V-27`, `V-28`, `V-29`), et confirmer ou réviser `Q-36` et `Q-39`. **Premier retour téléphone, 20/09 midi : les menus s'ouvraient à l'échelle 1080p** — `D-48`, corrigé et mesuré le jour même (une seule fonction, en px CSS) ; verdict en jeu dû `V-31`.
-6. `D-01` (défilement incrémental du calque), `D-16` (puits), puis reprise de `Q-07`.
+6. `D-01` — **palier A livré le 22/09** (`specs/09_reglages-graphiques.md`) : le calque se reconstruit quand la vue sort de la zone pré-rendue, reconstructions et frames lentes **divisées par deux**. Le **défilement incrémental** (remède n° 2, le seul qui baisse le pic) attend la décision de Xav au vu des chiffres. **Paliers B, C et D livrés le 22/09** (`D-111` catalogue + résolution + sauvegarde ; `D-112`/`D-113`/`D-114` les trois leviers, un commit chacun ; `D-115` la carte dans Paramètres et le changement à chaud ; `D-117` le mode Auto, palier E). **La spec est livrée en entier** ; il ne reste d'elle que ce qui revient à Xav : `V-58` à `V-61` et les questions ouvertes (`Q-55` à `Q-61`). `D-16` (puits) est **close**. Puis reprise de `Q-07`.
 7. Ce que Xav doit trancher avant d'aller plus loin sur le contenu : `Q-33` (apparitions de ressources) et `Q-34` (lisibilité de la première nuit dangereuse) — nées du constat d'équilibrage du 19/09 au soir.
 
 Les sept tickets de code du 19/09 (`D-22`, `D-21`, `D-20` A et B, `D-05`, `D-23`) sont livrés — détail et validations restantes dans `docs/DOC_suivi-dettes.md`. En parallèle, côté Xav : `A-06` (Firefox `about:support`, 2 min). `A-07` (profil USB de l'A04) **tombe sans objet** avec `D-31`.
 
 Les captures de la V1 (`docs/captures/v1/`) sont une **inspiration, jamais un cahier des charges** : aucun ticket ne les lit tant que `E-03` (une ligne d'intention par capture) n'est pas rempli.
 
-`Q-10`, `Q-11`, `Q-12`, `Q-24` et `Q-25` restent à trancher avec Xav ; `Q-07` est gelée. La spec de la barre d'action du bas (`E-01`) est écrite par Xav lui-même et attend le chiffrage `Q-11`. **Une spec non écrite ne se commence pas** (même règle que pour une phase).
+`Q-10`, `Q-11`, `Q-12`, `Q-24` et `Q-25` restent à trancher avec Xav ; `Q-07` est gelée. La spec de la barre d'action du bas (`E-01`) est écrite par Xav lui-même et attend le chiffrage `Q-11`. **Une spec non écrite ne se commence pas** (même règle que pour une phase).## Journal de session — `specs/09_reglages-graphiques.md`, PALIERS A À E (22/09)
 
-## Journal de session — LE CURSEUR, PUIS LE STICK DROIT (22/09)
+Les **cinq** paliers de `specs/09_reglages-graphiques.md` (arrivée écrite et
+décidée, §3), branche `reglages-graphiques`, **un commit par palier** — et
+**un par levier** au palier C, comme la spec le demande —, validation de Xav
+entre deux. La spec est **livrée en entier** ; ce qui reste d'elle est du
+ressort de Xav : `V-58` à `V-61`, et les questions qu'elle a ouvertes.
 
-Session en deux temps, comme la précédente : un **topo** (« qu'est-ce que ça
-implique, qu'est-ce que ça coûte »), puis le code sur le go de Xav. Deux
-tickets, deux commits retirables seuls, branche `curseur-2026-09-22`.
+### Palier A — `D-01` : le calque ne se refait plus à chaque tuile
 
-Ce que le topo a établi, vérifié et non supposé : **aucun curseur personnalisé
-nulle part** (`cursor` n'apparaissait que quatre fois dans `index.html`, en
-`pointer` sur les cartes de menu), **la souris n'est pas un périphérique de
-jeu** (`src/input/` ne connaît que clavier, manette, tactile — le constat de
-Xav est structurel), et **le clic droit n'était bloqué nulle part**.
+La marge du calque statique existait **depuis la Phase 2** — une tuile pleine de
+chaque côté, plus la fraction que `floor`/`ceil` ajoutent, soit 1,5 tuile en
+moyenne — et personne ne s'en servait : la condition de reconstruction comparait
+`xDebut`/`yDebut` d'une frame à l'autre, donc un franchissement de tuile
+reconstruisait **un calque qui couvrait encore parfaitement la vue**. Le remède
+n'ajoute rien, il pose la question que `drawImage` pose deux lignes plus bas —
+« le rectangle source tient-il dans le calque ? », en pixels **physiques**.
 
-J'ai recommandé de **masquer** le curseur manette en main. **Xav a choisi
-l'inverse** — un curseur toujours visible — et a précisé le dessin : thème du
-vif d'or, sphère, deux particules en orbite, la même traînée que le follet,
-argenté neutre. Consigné, pas rejoué : sa demande a changé la route technique,
-d'où la route **hybride** au tableau des décisions ci-dessus.
+Mesuré en marchant, deux exécutions par régime (`cout_calque.mjs` ; Chrome sans
+fenêtre, les fps n'y ont aucun sens) :
 
-Livré : `D-107` (clic droit verrouillé sur le document, porte `?souris=libre`)
-et `D-108` (`src/curseur.js`, trois silhouettes et deux effets en données, dont
-un **5ᵉ type d'effet** validé au boot ; la traînée est une **3ᵉ instance de
-`poussiere.js`**, pas un système nouveau ; la boîte du bitmap et son point chaud
-**dérivent du dessin**, comme l'empreinte d'une station).
+| | reconstructions | moyenne | pic | frames > 20 ms |
+|---|---|---|---|---|
+| avant, ×1 | 15 | 3,64 ms | 5,70 ms | 0/600 |
+| après, ×1 | **8** | 3,65 ms | 4,50 ms | 0/600 |
+| avant, ×6 | 16 / 16 | 24,0 / 25,9 ms | 35,2 / 40,3 ms | **16/600** |
+| après, ×6 | **8 / 8** | 27,6 / 27,0 ms | 48,8 / 50,0 ms | **8/600** |
 
-La leçon de la session : **115 tests verts ne disent rien d'un défaut de
-composition.** Deux défauts n'ont été trouvés qu'à la capture — le calque
-héritait du `background: #000` de la règle `canvas` et noircissait tout l'écran,
-et la traînée était une grappe clignotante (réserve de 8 bouffées vidée en
-quatre frames par une souris, émission au point d'arrivée). Le second a été
-traité **à la cause**, dans le module partagé, à défaut inchangé.
+Le bridage CPU ×6 est neuf (`chrome.bridageCpu`) et dit une chose nette : **une
+frame lente par reconstruction, avant comme après**. Donc la fréquence *est* la
+saccade — et **le pic ne baisse pas**, exactement ce que la spec annonçait. Le
+défilement incrémental (remède n° 2) reste le seul qui le ferait tomber ; il
+attend la décision de Xav, avec son piège déjà nommé (`D-105` : une tuile solide
+a le droit de déborder de sa cellule). **`V-58` close le jour même** (« game is
+still good »), `D-01` reste ouverte.
 
-Mesures : `dessiner()` 0,91 → 0,97 ms entre souris immobile et souris en
-mouvement continu, traînée pleine, 0/600 frame > 20 ms
-(`tools/scenarios/cout_curseur.mjs`) ; à DPR 3 la déclaration passe en
-`image-set(… 3x)` et l'orbe fait 63 px, sous le plafond de 128 au-delà duquel un
-navigateur ignore un curseur **en silence**. Album :
-`docs/captures/curseur-2026-09-22/`.
+### Palier B — le catalogue, la résolution, la sauvegarde (`D-111`)
 
-Dû : **`V-56`**. Tout y est réglable en données (rayon 11 px, période 1400 ms,
-aplatissement 0,45, échelle 1, réserve 28) — « plus, moins ou bon ».
+**Zéro changement visible, et c'est vérifiable autrement qu'à l'œil** : le seul
+appel de `valeurLevier` est le contrôle de démarrage — `render.js`, `decor.js`
+et `poussiere.js` ne sont pas touchés. Ce qui existe maintenant :
+`data/graphismes.json` (les quatre paliers, les trois leviers, les seuils
+d'Auto), `src/qualite.js` (pur, LE point de résolution), `role` requis sur
+chaque effet, `settings.graphismes` et l'import qui l'ignore.
 
-**Puis Xav a vu le curseur, l'a validé (« le visuel est validé par xav ») et a
-tranché la réserve que je gardais pour plus tard, autrement que je ne le
-proposais** : pas de masquage, mais **le stick droit pilote le curseur**
-(`D-109`) — « il n'a pas d'utilité jusque là, ça ne sert à rien à part à faire
-joli, s'amuser avec, et naviguer dans les menus. joystick droit = curseur,
-c'est tout ». Le stick droit était libre depuis toujours (la croix
-directionnelle est réservée depuis le 15/09).
+Trois choses tombent désormais **au démarrage** plutôt qu'en jeu : un palier qui
+n'a pas de valeur pour un levier déclaré · un effet sans `role` (aucun repli :
+ce que Bas retire est justement ce qui ne dit rien au joueur, donc un effet
+oublié disparaîtrait en silence) · un réglage inconnu venu d'une sauvegarde,
+qui est résolu comme le défaut **et** signalé (patron de `lireEchelleForcee`).
 
-Trois pièces, et rien d'autre touché : `gamepad.js` lit les axes 2/3 avec la
-**même zone morte** que le stick gauche · `input.js` les expose par un
-**accesseur séparé**, jamais dans l'état de verbes — c'est ce qui garantit
-qu'aucun système de jeu ne lira ce stick · `curseur.js` gagne une fonction
-**pure** de déplacement. Le point à ne pas manquer : **une page ne peut pas
-déplacer le curseur du système**, donc au stick l'orbe est dessiné sur le
-calque et le curseur système passe à `none` — même silhouette, même fonction de
-dessin, **rien de ce qui est validé ne change, seul le porteur change**. Un
-défaut attrapé par le test au passage : le premier jet faisait aller une
-diagonale plein stick √2 fois trop vite.
+Le contrat de non-régression est posé en **propriété**, jamais en nombres (règle
+`D-52`) : sous Moyen, aucun levier ne s'écarte de la `valeur_neutre` déclarée en
+données. Il restera vrai le jour où un levier s'ajoutera — c'est tout l'intérêt.
 
-**Rien d'autre n'est livré** : le curseur ne clique pas, la navigation des
-menus reste au stick gauche — c'est exactement ce que Xav a demandé, et la
-question du clic est consignée sans être commencée (`Q-54`).
+Et le piège de l'export est traité à la source : **le réglage graphique
+appartient à l'appareil**, donc `REGLAGES_APPAREIL` est une *liste* (le prochain
+réglage d'appareil s'y ajoute et nulle part ailleurs), l'import reprend la
+valeur de la machine, et **l'absence est une valeur** — une machine qui n'a
+jamais choisi ne se fait pas imposer le « haut » d'un fichier venu d'un PC.
+Aucune migration, `schema_version` inchangée.
 
-**Validé en jeu par Xav le jour même** : le visuel d'abord (« le visuel est
-validé par xav »), puis l'ensemble manette en main après le stick droit
-(« all good ») — `V-56` et `V-57` closes, et la vitesse comme la courbe sont
-gardées telles quelles. Les quatre commits sont **fusionnés dans `main` et en
-ligne**, à sa demande.
+### Palier C — les trois leviers branchés (`D-112`, `D-113`, `D-114`)
 
-Reste ouverte, consignée sans être commencée : `Q-54` — **le curseur ne clique
-pas**, la navigation des menus reste au stick gauche.
+Un commit chacun, retirable seul. La règle qui les gouverne tous les trois :
+**chaque système reçoit un NOMBRE**. `poussiere.js`, `curseur.js`, `decor.js`
+et la table de grains que lit `render.js` ignorent toujours qu'un preset
+existe — le seul endroit qui connaît le mot « bas » est l'orchestrateur, sur
+trois lignes.
 
-**Fin de session, 22/09 — topo de polish carte, rien livré.** Xav a demandé ce
-qu'impliquerait « une passe de polish du canvas de la map, en gardant le sol de
-la Maison — l'améliorer, pas le changer ». Topo rendu, **aucun code écrit** :
-« on ne fait rien, consigne-le et je ferai rédiger une spec ». Tout vit
-désormais dans `docs/DOC_suivi-dettes.md` sous **`E-04`** (la spec à écrire),
-avec l'ordre d'importance fixé par Xav — `Q-52` (lisières) → **`D-110`** (la
-forêt est un mur d'arbres identiques, relevé au topo) → `D-106` (le décor sait
-sur quelle surface il pousse) → `Q-53` (densité et motifs). La **forme** de la
-lisière est explicitement **déléguée à Claude** au moment de la spec. Ce qui ne
-se rouvre pas : le grain du sol de `D-105`, gardé tel quel.
+`particules` (`D-112`) multiplie les quantités déclarées par les effets
+**cosmétiques**, et elles seules : les deux effets `information` du catalogue
+sont intouchés dans les trois presets. **Zéro n'est pas une absence** — la
+réserve est vide, donc rien ne naît et rien n'est dessiné ; « n'émet pas et ne
+dessine pas » est une conséquence, pas une branche de plus. Avec, l'outil de
+debug `?qualite=bas|moyen|haut` (même contrat que `?echelle`).
+
+`grain_sol` (`D-113`) coupe la liste des primitives du grain d'une tuile **non
+solide**, par la fin — convention écrite dans le schéma des tuiles, et la
+coupe est un **préfixe**, vérifié. Un grain réduit à rien **sort de la table**
+que reçoit `render.js` : le rendu ne le cherche même plus. Deux immunités
+prouvées : la couleur de base (le sol perd son grain, jamais sa surface) et
+les tuiles solides (une silhouette d'arbre *est* le monde). Le repli prêt de
+`Q-55` est mesuré au passage : `0.2` laisse **3 brins sur 14**.
+
+`densite_decor` (`D-114`) multiplie la densité déclarée par la scène. La
+crainte de la spec — « si `decor.js` tire en séquence, le décor se réarrangera
+à chaque changement de preset » — a été **vérifiée à la cause, et elle ne se
+réalise pas** : le tirage est séquentiel, mais chaque itération consomme un
+nombre **constant** de tirages, donc réduire le compte tronque au lieu de
+décaler. Le décor réduit est le **préfixe** du décor complet. Il n'y avait
+rien à corriger, mais un contrat implicite à rendre explicite : il est écrit
+dans `genererDecor` et **tenu par test**. Le remède suggéré par la spec (un
+tirage par tuile comparé à un seuil) aurait déplacé **tous** les motifs de la
+Maison, **y compris sous Moyen** — une régression visible au nom d'un défaut
+qui n'existe pas.
+
+Mesuré en marchant, deux exécutions par régime (`cout_calque.mjs`, désormais
+piloté par `RPG_QUALITE`) :
+
+| | coût moyen d'une reconstruction | pic | frames > 20 ms |
+|---|---|---|---|
+| Bas, ×1 | **1,69 / 1,89 ms** | 3,7 / 5,8 ms | 0 / 1 sur 600 |
+| Moyen, ×1 | 6,11 / 5,92 ms | 8,6 / 11,9 ms | 0 / 0 |
+| Haut, ×1 | 6,70 / 5,56 ms | 12,8 / 8,5 ms | 0 / 0 |
+| Bas, ×6 | **6,29 / 7,36 ms** | 8,6 / 10,6 ms | **3 / 2** |
+| Moyen, ×6 | 38,4 / 34,5 ms | 51,2 / 44,4 ms | 8 / 9 |
+| Haut, ×6 | 38,8 / 39,0 ms | 73,9 / 76,7 ms | **12 / 13** |
+
+Sur un appareil lent simulé, **Bas divise le coût de reconstruction par ~5 et
+les frames lentes par ~4** : c'est exactement ce que le palier visait. Et Haut
+coûte ce qu'il promet — même calque que Moyen, mais plus de frames lentes et
+un pic bien plus haut, à cause des particules. Assumé : c'est le palier des
+machines qui s'ennuient.
+
+L'invariant §4.1 (**un preset ne change jamais le jeu**) est éprouvé sur la
+vraie scène Maison, 600 frames identiques dans les trois presets : solidité
+relue par `estSolideAuPoint` — la fonction de collision elle-même, jamais une
+grille recopiée —, empreintes des stations, héros, monstres, sauvegarde
+entière. 121 fichiers verts.
+
+### Palier D — la carte, et le changement à chaud (`D-115`)
+
+Carte `bascule` en **6ᵉ et dernière case** de Paramètres, cycle
+`auto → bas → moyen → haut → auto` pris dans l'**ordre du catalogue** :
+insérer un preset dans le tableau l'ajoute au cycle sans une ligne de code.
+
+Le libellé est **une seule clé**, jamais deux qu'un gabarit assemblerait ici —
+« Auto (…) » composé en code figerait parenthèses et ordre des mots pour
+toutes les langues. Chaque palier réel porte donc `cle_etat` **et**
+`cle_etat_auto`, la seconde **exigée par le schéma** : un preset ajouté demain
+ne peut pas faire afficher « Auto () ».
+
+L'état est relu à la **source**, et la source est l'orchestrateur — pas
+`save.settings`. La différence n'est pas théorique : sous `?qualite=`, c'est
+l'URL qui commande, et la carte doit dire ce que le jeu **rend**, jamais ce
+qui est enregistré.
+
+Changement à chaud (§4.5), prouvé sur le vrai orchestrateur. Ce qui bouge : la
+table des grains, le décor de la scène, les réserves de particules (recréées,
+donc **vidées** — même geste qu'à l'entrée en scène), et le calque statique
+**jeté une fois**. Ce qui ne bouge pas : le héros au pixel près, l'heure du
+monde, la sauvegarde — et le preset **résolu** n'est toujours pas persisté.
+Le retour en arrière rend exactement l'état d'avant.
+
+Captures aux **trois profils**, cycle complet par clics réels, **aucune erreur
+de console** (`tools/scenarios/reglages_graphiques.mjs`). Une réserve à dire :
+le profil `telephone` émule la taille et le DPR, **pas** `pointer: coarse` —
+il affiche donc « Auto (Moyen) » là où un vrai téléphone dirait « Auto (Bas) ».
+Limite de l'outil, pas du code ; seul `V-61` peut la lever.
+
+**Paramètres est plein** : les six cases sont prises, et une 7ᵉ ne rentre dans
+aucune grille — l'écran serait vide. Consigné, non traité (décision 5).
+
+Et une chose que les captures ont montrée et que la spec n'avait pas prévue :
+en Bas, **le parquet de la Maison perd ses lames**. Dehors un aplat d'herbe
+reste de l'herbe ; dedans, la lame *est* la lecture de la surface. `Q-59`.
+
+### Le retour de Xav sur les trois presets (22/09), et ce qu'il retourne
+
+Verbatim : « **bas** : aucun problème à l'œil, le jeu est léger. **moyen** : le
+plus "moche" des trois, fonctionnel. **haut** : pas encore de différence
+notable, à booster. »
+
+Trois conséquences, toutes consignées et aucune traitée :
+
+`Q-55` est **répondue, à l'envers de ce qu'on craignait**. On redoutait que Bas
+sans grain soit trop pauvre ; c'est **Moyen** — c'est-à-dire le jeu
+d'aujourd'hui — que Xav trouve le moins beau. `grain_sol: 0` reste, le repli
+`0.2` n'est pas posé, et `Q-59` (le parquet sans ses lames) tombe avec.
+
+`Q-60` naît de là, et elle est plus grosse qu'elle n'en a l'air : **le grain du
+sol gagne-t-il sa place ?** Bas est jugé bon à l'œil *et* il divise par ~5 le
+coût de reconstruction du calque — donc il est un candidat sérieux au **statut
+de défaut**, pas seulement à celui d'allègement. Mais toute suite autre que
+« rien » **rouvre le sol**, que `E-04` avait verrouillé (« garde le sol de la
+maison, améliore-le, mais ne le change pas ») : ça remonte, ça ne se fait pas.
+Réserve de lecture : grain et décor partent **ensemble** en Bas, donc ce retour
+ne dit pas lequel des deux est en cause.
+
+`D-116` — **Haut ne se voit pas**, et les mesures le disaient déjà : même
+calque que Moyen, seules les particules changent, et elles sont petites, brèves
+et périphériques. Ce qui manque à Haut est de la matière **dans le calque**,
+c'est-à-dire `E-04` — que la spec avait justement prévu comme son réceptacle.
+Premier levier disponible : `densite_decor` au-delà de 1, **bloqué par
+`D-106`** (sans lui, décupler la densité sème de l'herbe sur le chemin).
+
+### Palier E — Auto (`D-117`), et le chantier est fini
+
+Le signal de départ existait depuis le palier B (`pointer: coarse` → Bas,
+sinon Moyen, et **jamais Haut** : Auto ne suppose pas, il n'offre pas). Ce
+palier livre la **descente** et ce qu'on en dit.
+
+Les quatre promesses de §5.2 sont tenues **par construction** plus que par
+surveillance. « Au plus une descente par niveau » n'a demandé aucun compteur :
+chaque descente change de niveau et rien ne remonte jamais, donc aucun niveau
+ne se présente deux fois. « Jamais de remontée » n'a demandé aucun garde : il
+n'existe aucun chemin qui rende un preset au-dessus du courant. Ce qui a
+demandé du soin, c'est l'inverse — les frames qu'il ne faut **pas** compter.
+
+L'**annonce** passe par la bannière d'indice, à qui on apprend à dire une
+phrase du jeu et non d'un verbe : pas de glyphe, pas de flag. Elle **cède le
+pas** à un premier indice de commande et se represente jusqu'à ce qu'elle
+passe — un indice enseigne le jeu, l'annonce ne fait que l'expliquer. Elle est
+aussi journalisée : la bannière dure trois secondes, or c'est exactement ce
+qu'on voudra relire le jour où un « le jeu s'est allégé tout seul » arrivera
+d'une autre machine.
+
+Trois passes dans un vrai Chrome (`tools/scenarios/auto_graphismes.mjs`) :
+
+| | carte Paramètres après 25 s de marche | descentes |
+|---|---|---|
+| bridage ×20, Auto | « Auto (Moyen) » → **« Auto (Bas) »** | **1** |
+| sans bridage, Auto | « Auto (Moyen) » | 0 |
+| bridage ×20, **`haut` choisi à la main** | « Haut » | 0 |
+
+La deuxième passe n'est pas du zèle : sans elle, la première ne prouverait
+rien — un Auto qui descendrait toujours la passerait aussi.
+
+Et une mesure que personne n'avait demandée, qui devient `Q-61` : sous bridage
+**×2, ×3 et ×6**, Auto **ne descend jamais**. Le ×6 est pourtant le proxy
+d'appareil faible du palier A. Le seuil de 15 % n'est donc pas nerveux — il
+est peut-être trop lâche. C'est structurel : 20 ms, c'est 50 fps, donc une
+machine à 60 fps régulier passe et une machine à 45 fps régulier échoue à
+**100 %**. Conséquence à regarder en face : la saccade au franchissement de
+tuile (~1,3 % de frames lentes) ne déclenchera **jamais** Auto, alors que
+c'est justement la gêne que Bas soigne le mieux. Rien n'est changé — les trois
+seuils sont ceux que la spec a fixés, ils vivent en données, et c'est `V-61`
+sur les vraies machines qui doit parler avant qu'on touche un chiffre.

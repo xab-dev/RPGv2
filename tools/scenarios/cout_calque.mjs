@@ -13,6 +13,16 @@
 // est sans fenêtre : les fps n'ont pas de sens (pas de vsync à honorer), seul
 // le **coût d'un recalcul** est comparable d'une exécution à l'autre, à
 // condition de comparer deux exécutions du même scénario.
+//
+// `RPG_QUALITE=bas|moyen|haut` force le preset graphique (palier C de
+// `specs/09`) : c'est ainsi qu'on mesure ce qu'un preset fait au coût du
+// calque, sans toucher à la sauvegarde de personne. Absent = le réglage
+// résolu normalement, donc l'état d'avant le palier C.
+//
+// `RPG_BRIDAGE=6 node tools/capture_chrome.mjs …` ralentit le CPU d'autant
+// (`specs/09` palier A, étape 1 : proxy d'appareil faible — le coût du calque
+// est CPU, pas pixels). Un facteur n'est pas un appareil : il sert à comparer
+// deux exécutions du même scénario, jamais à prédire un téléphone.
 import { ouvrirLeJeu, saveDansLaMaison } from './commun.mjs';
 
 const TILE = 32;
@@ -25,10 +35,17 @@ export default async function (chrome) {
   save.hero.x = (40 + 0.5) * TILE;
   save.hero.y = (56 + 0.5) * TILE;
   save.monde.heure = PLEIN_JOUR;
-  await ouvrirLeJeu(chrome, { largeur: 1920, hauteur: 1080, save, requete: '?debug=fps' });
+  const qualite = process.env.RPG_QUALITE || null;
+  const requete = qualite ? `?debug=fps&qualite=${qualite}` : '?debug=fps';
+  await ouvrirLeJeu(chrome, {
+    largeur: 1920, hauteur: 1080, save, requete,
+  });
+  const bridage = Number(process.env.RPG_BRIDAGE) || 1;
+  if (bridage !== 1) await chrome.bridageCpu(bridage);
 
   for (let i = 0; i < 24; i++) await chrome.touche('KeyD', 420);
 
   const releve = await chrome.evaluer(`document.querySelector('#debug-perf').textContent`);
+  console.log(`preset : ${qualite || '(resolu)'} — bridage CPU : x${bridage}`);
   console.log(releve);
 }

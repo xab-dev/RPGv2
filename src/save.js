@@ -315,15 +315,45 @@ export async function charger(store) {
   };
 }
 
+// `specs/09_reglages-graphiques.md` §5.3 : les réglages qui appartiennent à
+// l'APPAREIL, pas à la partie. Une sauvegarde exportée d'un PC en « haut »
+// puis importée sur un téléphone ne doit pas lui imposer « haut ».
+//
+// Pourquoi une liste et pas un `if` : le prochain réglage d'appareil (le son,
+// une taille d'UI tactile) s'ajoute ici et nulle part ailleurs. Les réglages
+// de PARTIE (langue, musique) ne sont pas dans cette liste et suivent la
+// sauvegarde, comme avant.
+export const REGLAGES_APPAREIL = ['graphismes'];
+
+// Pure, donc testable sans store : rend le payload importé avec, pour chaque
+// réglage d'appareil, la valeur de CET appareil — y compris son absence
+// (« je n'ai jamais choisi » est une valeur, et elle doit survivre à un
+// import qui, lui, portait un choix).
+export function conserverReglagesAppareil(payloadImporte, payloadAppareil) {
+  const settings = { ...(payloadImporte.settings || {}) };
+  const ici = (payloadAppareil && payloadAppareil.settings) || {};
+  for (const cle of REGLAGES_APPAREIL) {
+    if (cle in ici) settings[cle] = ici[cle];
+    else delete settings[cle];
+  }
+  return { ...payloadImporte, settings };
+}
+
 // Import manuel (menu) : valide puis migre le fichier fourni par
 // l'utilisateur avant de l'écrire en double tampon. Une version supérieure à
 // la version du jeu est refusée par migrer(), jamais migrée "à l'envers".
+//
+// La sauvegarde DÉJÀ présente est relue d'abord, pour la seule raison
+// ci-dessus : on lui reprend ses réglages d'appareil. Si elle est absente ou
+// illisible, l'import garde simplement les siens — un appareil sans historique
+// n'a rien à défendre.
 export async function importerSauvegarde(store, payloadBrut) {
   if (!estValide(payloadBrut)) {
     throw new Error('fichier de sauvegarde invalide');
   }
   const migre = migrer(payloadBrut);
-  return sauvegarder(store, migre);
+  const ici = await store.lire(CLE_ACTUELLE);
+  return sauvegarder(store, conserverReglagesAppareil(migre, estValide(ici) ? ici : null));
 }
 
 // Réinitialisation depuis le menu (diagnostic

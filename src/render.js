@@ -332,6 +332,17 @@ export function statsCoucheStatique() {
   return coucheStatique ? { largeur: coucheStatique.canvas.width, hauteur: coucheStatique.canvas.height } : null;
 }
 
+// Jette le calque : la prochaine frame le reconstruit, UNE fois (§4.5 du
+// palier D de `specs/09_reglages-graphiques.md`). Il existe parce qu'un
+// changement de preset modifie ce qu'on DESSINE sur le calque sans rien
+// changer à ce que sa signature observe (scène, échelle, portes) : sans cet
+// appel, l'ancien sol resterait affiché jusqu'au prochain franchissement de
+// tuile. Un `null`, et rien d'autre — pas un drapeau « à refaire » qui
+// pourrait rester allumé et reconstruire à chaque frame.
+export function invaliderCoucheStatique() {
+  coucheStatique = null;
+}
+
 // Fenêtre de tuiles à dessiner pour couvrir le viewport logique courant, avec
 // une marge (tuiles partiellement visibles au bord). Pure, testée
 // (03_maison-exterieur §2.2 : bornée par le viewport, jamais par la taille de
@@ -344,6 +355,38 @@ export function selectionnerTuilesVisibles(camera, resolution, tileSize, margeTu
     xFin: Math.ceil((camera.x + resolution.largeur) / tileSize) + margeTuiles,
     yFin: Math.ceil((camera.y + resolution.hauteur) / tileSize) + margeTuiles,
   };
+}
+
+// LA décision « faut-il reconstruire le calque statique ? », pure et exportée
+// — appelée par le rendu ET par les tests, jamais recopiée d'un côté ou de
+// l'autre (règle née de `D-71`/`D-72` : un harnais qui réimplémente ce qu'il
+// prétend éprouver ne prouve rien).
+//
+// `D-01` (palier A de `specs/09_reglages-graphiques.md`) : la condition
+// comparait `xDebut`/`yDebut` d'une frame à l'autre, donc reconstruisait à
+// CHAQUE tuile franchie — alors que la fenêtre bâtie porte déjà une marge
+// d'une tuile pleine, plus la fraction que `floor`/`ceil` ajoutent de chaque
+// côté (entre 1 et 2 tuiles de rab, 1,5 en moyenne). Cette marge existait
+// depuis la Phase 2 sans servir d'amortisseur. Elle le devient : on ne
+// reconstruit que lorsque la vue SORT de la zone déjà pré-rendue.
+//
+// La question se pose en pixels PHYSIQUES, parce que c'est exactement celle
+// que `drawImage` pose plus bas : « le rectangle source tient-il dans le
+// calque ? ». Un test en pixels logiques laisserait passer l'arrondi de
+// `canvas.width`, et une demi-frange vide au bord de l'écran.
+export function calqueDoitEtreReconstruit(calque, { sceneId, echelle, signaturePortes, camera, tileSize, resolution = RESOLUTION_LOGIQUE }) {
+  if (!calque) return true;
+  if (calque.sceneId !== sceneId || calque.echelle !== echelle || calque.signaturePortes !== signaturePortes) return true;
+
+  const sourceX = (camera.x - calque.xDebut * tileSize) * echelle;
+  const sourceY = (camera.y - calque.yDebut * tileSize) * echelle;
+  if (sourceX < 0 || sourceY < 0) return true;
+
+  // Mêmes arrondis que `construireCoucheStatique` : c'est la taille réelle du
+  // canvas qui borne, pas la taille idéale.
+  const largeurCalque = Math.max(1, Math.round((calque.xFin - calque.xDebut) * tileSize * echelle));
+  const hauteurCalque = Math.max(1, Math.round((calque.yFin - calque.yDebut) * tileSize * echelle));
+  return sourceX + resolution.largeur * echelle > largeurCalque || sourceY + resolution.hauteur * echelle > hauteurCalque;
 }
 
 // Signature de l'état des portes conditionnelles (scene.portes[], scene.js) :
@@ -403,7 +446,10 @@ function construireCoucheStatique(scene, decor, echelle, signaturePortes, estFla
     });
   }
 
-  return { sceneId: scene.id, echelle, signaturePortes, xDebut, yDebut, canvas };
+  // `xFin`/`yFin` sont gardés depuis `D-01` : sans eux, personne ne peut dire
+  // jusqu'où le calque couvre, donc personne ne peut décider de NE PAS le
+  // reconstruire (cf. `calqueDoitEtreReconstruit`).
+  return { sceneId: scene.id, echelle, signaturePortes, xDebut, yDebut, xFin, yFin, canvas };
 }
 
 // Composite le calque statique (reconstruit si scène/échelle/portes/fenêtre
@@ -419,16 +465,13 @@ function construireCoucheStatique(scene, decor, echelle, signaturePortes, estFla
 function dessinerCoucheStatique(ctx, scene, decor, camera, estFlagActif, visuelsTuiles, surRecalcul) {
   const echelle = echelleDepuisCanvas(ctx.canvas.width);
   const signature = signaturePortesScene(scene, estFlagActif);
-  const fenetre = selectionnerTuilesVisibles(camera, RESOLUTION_LOGIQUE, scene.tileSize);
 
-  if (
-    !coucheStatique ||
-    coucheStatique.sceneId !== scene.id ||
-    coucheStatique.echelle !== echelle ||
-    coucheStatique.signaturePortes !== signature ||
-    coucheStatique.xDebut !== fenetre.xDebut ||
-    coucheStatique.yDebut !== fenetre.yDebut
-  ) {
+  if (calqueDoitEtreReconstruit(coucheStatique, {
+    sceneId: scene.id, echelle, signaturePortes: signature, camera, tileSize: scene.tileSize, resolution: RESOLUTION_LOGIQUE,
+  })) {
+    // La fenêtre n'est calculée QUE lorsqu'on reconstruit : tant que la vue
+    // tient dans le calque, il n'y a rien à sélectionner.
+    const fenetre = selectionnerTuilesVisibles(camera, RESOLUTION_LOGIQUE, scene.tileSize);
     const debut = surRecalcul ? performance.now() : 0;
     coucheStatique = construireCoucheStatique(scene, decor, echelle, signature, estFlagActif, fenetre, visuelsTuiles);
     if (surRecalcul) surRecalcul({ dureeMs: performance.now() - debut });

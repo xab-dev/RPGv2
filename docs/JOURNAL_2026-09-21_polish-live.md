@@ -31,6 +31,8 @@ Ce fichier est l'état de la session sur le disque, écrit au fil des modifs —
 
 | 6 | « la silhouette [du puits] est cassée depuis l'agrandissement des proportions, j'aimerais qu'on la reprenne comme on vient de faire avec la plume : diagnostic visuel chrome/tools puis itération » (`D-16`) | Mesuré d'abord : le pied des mâts s'arrêtait à `y −7` pour un sol à `y 0` — **7 unités de vide**, soit 14,7 px à l'échelle ×2,1, la demi-tuile signalée ; et la margelle était un **disque** (−16..+4) avec l'eau en son centre, d'où le « pot ». Reconstruite en **cylindre vu de trois quarts** (règle du décor : base + paroi + rebord, trois pièces, l'ellipse de base dessinée SOUS la paroi pour ne pas la barrer d'un arc), mâts **plantés au sol** et débordant du cylindre pour que leur pied se voie, toit en deux pentes au lieu de la planche plate qui faisait un portique. Treuil, corde et seau conservés (`Q-03`). Défaut d'assemblage attrapé au passage par le test : la corde ne touchait plus le seau de 0,1 unité. | `data/visuels.json`, `tests/test_sd_puits_silhouette_…`, `tools/banc_visuel.html` | à faire |
 
+| 6 bis | « le fût, il faudrait le mettre au même niveau que le sol. Là, on dirait qu'il vole. […] Suite à ça, il faudra recalculer les ombres. » | Le fût touchait bien le sol (`y +1,5`), mais son ellipse de base **sombre** se lisait comme de l'ombre, et l'ombre portée (centrée `y +1`, haute de 6) débordait de 2,5 unités sous lui : un croissant noir sous l'objet, d'où l'impression qu'il flotte. Tout le monde repose maintenant **exactement sur `y = 0`** — mâts et base du cylindre sur la même ligne —, et l'ombre est **recentrée sur ce contact** (`dy 0`, 24 × 5 : elle ne dépasse plus que de 1,1 unité autour des mâts, au lieu d'un disque presque aussi large que le puits). Le groupe du cylindre (base, paroi, rebord, ouverture, eau, reflet) et le seau descendent d'une unité ensemble : l'assemblage ne bouge pas. L'empreinte perd encore 1,5 unité en bas, toujours incluse dans celle d'avant. | `data/visuels.json`, `tools/banc_visuel.html` | à faire |
+
 ## Décisions prises en séance
 
 - **Le clignement de mort rejoue celui de l'intro** — *révise* la contrainte d'origine de `D-65`
@@ -56,6 +58,10 @@ Ce fichier est l'état de la session sur le disque, écrit au fil des modifs —
   (`&echelle=2.1` pour une station). Motif : à 24 unités fixes il **coupait le toit du
   puits**, c'est-à-dire précisément la pièce à juger — et il ne montrait que l'échelle 1,
   que le jeu n'affiche jamais pour une station.
+
+- **Le banc visuel compte l'ombre portée dans son cadre.** Il ne cadrait que sur les
+  primitives, donc il **rognait l'ombre** — c'est-à-dire, pour cette consigne, la pièce
+  même qui disait si le puits était posé ou s'il flottait.
 
 ## Relevé hors consigne — signalé, pas corrigé
 

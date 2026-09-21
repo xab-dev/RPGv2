@@ -41,7 +41,11 @@
   // Le cadre suit la silhouette plutôt qu'un nombre fixe : un cadre trop
   // court rogne la pièce qu'on est justement venu juger (le toit du puits
   // dépasse les 24 unités d'origine), et l'ancre `bas` place le sol en bas.
+  // L'ombre portée compte dans le cadre : c'est souvent elle qui dit si la
+  // silhouette est POSÉE ou si elle flotte, et la rogner reviendrait à cacher
+  // la pièce qu'on est venu juger.
   const boites = v.primitives.map((p) => boitePrimitive(p));
+  if (v.ombre) boites.push(boitePrimitive({ dx: 0, dy: v.ombre.dy, w: v.ombre.w, h: v.ombre.h }));
   const bas = Math.max(0, ...boites.map((b) => b.maxY)) + 2;
   const haut = Math.min(0, ...boites.map((b) => b.minY)) - 2;
   const large = Math.max(...boites.map((b) => Math.max(-b.minX, b.maxX))) + 2;

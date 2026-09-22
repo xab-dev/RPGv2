@@ -109,6 +109,9 @@ function faireCanvas() {
       if (p === 'measureText') return () => ({ width: 10 });
       if (p === 'createLinearGradient' || p === 'createRadialGradient') return () => ({ addColorStop() {} });
       if (p === 'getTransform') return () => ({ a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 });
+      // `D-132` : un motif réel, pour que le chemin du toit à bardeaux soit
+      // PARCOURU — un `undefined` le ferait retomber sur l'aplat sans rien éprouver.
+      if (p === 'createPattern') return () => ({});
       return () => {};
     },
     set: () => true,

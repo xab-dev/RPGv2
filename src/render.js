@@ -693,16 +693,76 @@ export function dessinerScene(ctx, {
   // "grand ouverte" (intérieur entièrement visible).
   for (const structure of structures) {
     if (structure.opacite <= 0) continue;
-    const x = structure.rect.x * scene.tileSize - camera.x;
-    const y = structure.rect.y * scene.tileSize - camera.y;
-    const largeur = structure.rect.w * scene.tileSize;
-    const hauteur = structure.rect.h * scene.tileSize;
-    ctx.save();
-    ctx.globalAlpha = structure.opacite;
+    dessinerToit(ctx, structure, scene, camera);
+  }
+}
+
+// `D-132` : un toit qui porte un `visuel` (celui de sa tuile, résolu par
+// main.js) est une SURFACE de tuiles, comme le sol : le motif d'une cellule,
+// répété sur tout le rectangle. Il est dessiné à CHAQUE frame (le toit passe
+// au-dessus des entités et son opacité bouge avec le héros), donc jamais
+// cellule par cellule — 224 cellules × une quarantaine de primitives, c'est
+// dix mille ordres par frame. Le motif d'une cellule est rendu UNE fois, à la
+// résolution physique, puis posé par `createPattern` : un seul remplissage.
+//
+// Le remplissage se fait en repère IDENTITÉ, à des coordonnées physiques
+// entières — même raison que le calque statique : le motif est alors copié
+// pixel pour pixel, jamais ré-échantillonné (un bardeau flou à chaque pas de
+// caméra). Fonction unique qui touche la transform, et qui la restaure
+// (règle de méthode née de SD_dialogues-invisibles).
+//
+// Sans `visuel`, l'aplat d'avant, à l'identique.
+const motifsToit = new Map();
+const MOTIFS_TOIT_MAX = 8; // un redimensionnement crée une échelle nouvelle ; le cache ne grossit pas sans fin
+
+function motifDeToit(ctx, visuel, couleur, tileSize, echelle) {
+  const cle = `${visuel.id}|${couleur}|${tileSize}|${echelle}`;
+  let motif = motifsToit.get(cle);
+  if (!motif) {
+    const cote = Math.max(1, Math.round(tileSize * echelle));
+    const cellule = document.createElement('canvas');
+    cellule.width = cote;
+    cellule.height = cote;
+    const ctxCellule = cellule.getContext('2d');
+    ctxCellule.setTransform(cote / tileSize, 0, 0, cote / tileSize, 0, 0);
+    ctxCellule.fillStyle = couleur;
+    ctxCellule.fillRect(0, 0, tileSize, tileSize);
+    // Même ancrage que les tuiles du calque statique : milieu du bas de la cellule.
+    dessinerVisuel(ctxCellule, visuel, tileSize / 2, tileSize, {});
+    // `createPattern` peut rendre `null` (image sans données) : on ne met
+    // alors rien en cache, et le toit retombe sur son aplat plutôt que de
+    // lever dans la boucle de dessin (`D-71`).
+    motif = ctx.createPattern(cellule, 'repeat') || null;
+    if (!motif) return null;
+    if (motifsToit.size >= MOTIFS_TOIT_MAX) motifsToit.clear();
+    motifsToit.set(cle, motif);
+  }
+  return motif;
+}
+
+function dessinerToit(ctx, structure, scene, camera) {
+  const x = structure.rect.x * scene.tileSize - camera.x;
+  const y = structure.rect.y * scene.tileSize - camera.y;
+  const largeur = structure.rect.w * scene.tileSize;
+  const hauteur = structure.rect.h * scene.tileSize;
+  const echelle = echelleDepuisCanvas(ctx.canvas.width);
+  const motif = structure.visuel
+    ? motifDeToit(ctx, structure.visuel, structure.couleur, scene.tileSize, echelle)
+    : null;
+  ctx.save();
+  ctx.globalAlpha = structure.opacite;
+  if (motif) {
+    // Un motif s'ancre à l'origine du repère courant : on place donc
+    // l'origine AU COIN du toit (en pixels physiques entiers), sinon les
+    // bardeaux glisseraient sous le toit à chaque pas de caméra.
+    ctx.setTransform(1, 0, 0, 1, Math.round(x * echelle), Math.round(y * echelle));
+    ctx.fillStyle = motif;
+    ctx.fillRect(0, 0, Math.round(largeur * echelle), Math.round(hauteur * echelle));
+  } else {
     ctx.fillStyle = structure.couleur;
     ctx.fillRect(x, y, largeur, hauteur);
-    ctx.restore();
   }
+  ctx.restore();
 }
 
 // Voile jamais noir pur (0,94 rendait murs/sol/décor totalement invisibles

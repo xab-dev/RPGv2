@@ -3196,14 +3196,20 @@ export function creerOrchestrateurGrotte({
     // halo" (acté Xav). `couleur` résolue depuis tiles.json > render.valeur
     // (render.js ne connaît jamais tiles.json par id).
     const rayonEffacement = (companionActif ? companionActif.rayon_lumiere : RAYON_TOIT_FOLLET_ABSENT_PX) * FACTEUR_EFFACEMENT_TOIT;
-    const structuresAffichees = scene.structures.map((structure) => ({
-      rect: structure.rect,
-      couleur: registre.obtenir('tiles', structure.toit).render.valeur,
-      opacite: calculerOpaciteToit(hero, structure, scene.tileSize, {
-        rayonEffacement,
-        margeFondu: MARGE_FONDU_TOIT_PX,
-      }),
-    }));
+    // `D-132` : le motif du toit est le `visuel` de sa tuile, résolu ici pour
+    // la même raison que la couleur. Absent = l'aplat seul, comme avant.
+    const structuresAffichees = scene.structures.map((structure) => {
+      const rendu = registre.obtenir('tiles', structure.toit).render;
+      return {
+        rect: structure.rect,
+        couleur: rendu.valeur,
+        visuel: rendu.visuel ? registre.obtenir('visuels', rendu.visuel) : null,
+        opacite: calculerOpaciteToit(hero, structure, scene.tileSize, {
+          rayonEffacement,
+          margeFondu: MARGE_FONDU_TOIT_PX,
+        }),
+      };
+    });
 
     // Cycle jour/nuit (§3.5) : `scene.obscurite` reste celle de la Phase 1
     // pour toute scène qui n'a pas `cycleJourNuit` (grotte, inchangée) ;

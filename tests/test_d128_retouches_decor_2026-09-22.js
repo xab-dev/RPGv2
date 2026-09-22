@@ -102,4 +102,26 @@ assert.ok(decorGrotte.length > 0 && decorGrotte.every((id) => id === 'visuel_roc
   }
 }
 
+// `D-132` — le toit. Son motif est la cellule répétée par render.js
+// (createPattern) sur tout le rectangle : il doit donc se RACCORDER à lui-même.
+// Ce qui touche le bord gauche d'une cellule doit toucher le bord droit sur les
+// mêmes hauteurs, sinon une couture verticale apparaît tous les 32 px. (Qu'il
+// tienne dans sa cellule, le contrat `D-105` le vérifie déjà : c'est une tuile
+// non solide.)
+{
+  const toit = tuile('tile_toit');
+  const v = visuel(toit.render.visuel);
+  assert.ok(v, 'le toit a perdu son motif');
+  for (const cote of COTES) {
+    const bord = cote / 2;
+    const hauteursAuBord = (signe) => v.primitives
+      .map((p) => boitePrimitive(p))
+      .filter((b) => Math.abs((signe < 0 ? b.minX : b.maxX) - signe * bord) < 1e-6)
+      .map((b) => `${b.minY.toFixed(2)}..${b.maxY.toFixed(2)}`)
+      .sort();
+    assert.ok(hauteursAuBord(-1).length > 0, 'le motif du toit ne touche pas ses bords : il ne couvrirait pas le toit');
+    assert.deepEqual(hauteursAuBord(-1), hauteursAuBord(1), 'le motif du toit ne se raccorde pas à lui-même (bord gauche ≠ bord droit)');
+  }
+}
+
 console.log('test_d128_retouches_decor : ok');

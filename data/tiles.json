@@ -36,5 +36,5 @@
                 "visuel": "visuel_grain_parquet" } },
   { "id": "tile_mur_maison", "solid": true, "render": { "type": "couleur", "valeur": "#564e44", "visuel": "visuel_mur_maison" } },
   { "id": "tile_porte_maison", "solid": false, "render": { "type": "couleur", "valeur": "#c9a869" } },
-  { "id": "tile_toit", "solid": false, "render": { "type": "couleur", "valeur": "#5c4530" } }
+  { "id": "tile_toit", "solid": false, "render": { "type": "couleur", "valeur": "#3a2a1c", "visuel": "visuel_toit_bardeaux" } }
 ]

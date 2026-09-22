@@ -20,6 +20,11 @@ const POSTES = {
   // La Maison vue de l'est, toit opaque : héros assez loin pour que le toit
   // ne s'efface pas (structures.js#calculerOpaciteToit).
   toit: { scene: 'scene_maison_exterieur', x: 98.6, y: 57.5 },
+  // Le même, sous le profil téléphone (DPR 3) : le motif du toit est rendu à la
+  // résolution PHYSIQUE, une erreur d'échelle ne se verrait pas à DPR 1 (`D-48`).
+  toit_telephone: { scene: 'scene_maison_exterieur', x: 98.6, y: 57.5, ecran: { largeur: 780, hauteur: 360, dpr: 3 } },
+  // En lisière : le toit à mi-opacité, pendant qu'il s'efface.
+  toit_fondu: { scene: 'scene_maison_exterieur', x: 96.7, y: 57.5 },
   // Dedans, toit effacé : les murs se voient.
   murs: { scene: 'scene_maison_exterieur', x: 81.5, y: 60.5 },
   // Grotte, salle 1 : le levier éteint, puis allumé. L'état on/off vit dans
@@ -39,7 +44,7 @@ export default async function (chrome) {
     save.monde.heure = 0.25; // plein jour : la nuit cacherait ce qu'on regarde
     for (const f of p.retirer || []) delete save.flags[f];
     if (p.puzzles) save.puzzles = { ...save.puzzles, ...p.puzzles };
-    await ouvrirLeJeu(chrome, { largeur: 1920, hauteur: 1080, save });
+    await ouvrirLeJeu(chrome, { ...(p.ecran || { largeur: 1920, hauteur: 1080 }), save });
     await chrome.capture(`${DOSSIER}/${SUFFIXE}_${nom}.png`);
     const erreurs = chrome.erreurs();
     console.log(nom, erreurs.length ? `ERREURS CONSOLE ${JSON.stringify(erreurs)}` : 'ok');

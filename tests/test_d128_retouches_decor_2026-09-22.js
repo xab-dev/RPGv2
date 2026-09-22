@@ -40,6 +40,7 @@ function etendue(v) {
 // tuile-objet -> tuile de sol qu'elle continue.
 const OBJETS_SUR_SOL = {
   tile_rocher: 'tile_herbe', // D-128
+  tile_arbre: 'tile_chemin', // D-129 — l'arbre récoltable est au milieu du chemin
 };
 
 for (const [idObjet, idSol] of Object.entries(OBJETS_SUR_SOL)) {

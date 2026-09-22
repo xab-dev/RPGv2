@@ -73,7 +73,11 @@ function saveDansLaMaison() {
   save.hero.pv = 40;
   save.flags = {
     flag_follet_choisi: true, flag_grotte_sortie: true, flag_grotte_sequence: true,
-    flag_grotte_monstre_tue: true, flag_levier_salle1: true, flag_maison_decouverte: true, flag_ambiance_maison_premiere_visite: true,
+    // `D-125` : les lignes d'ambiance, toutes, DÉRIVÉES du catalogue — un
+    // dialogue gèle le temps actif, et ce fichier éprouve autre chose. Déduites
+    // plutôt que recopiées, pour qu'une ligne de plus ne rouvre pas neuf
+    // fichiers (`Q-42`).
+    flag_grotte_monstre_tue: true, flag_levier_salle1: true, flag_maison_decouverte: true, ...Object.fromEntries(registre.tous('ambiances').map((a) => [a.flag, true])),
   };
   return save;
 }

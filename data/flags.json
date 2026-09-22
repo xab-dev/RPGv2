@@ -198,5 +198,29 @@
   {
     "id": "flag_ambiance_maison_premiere_visite",
     "label_key": "flag.ambiance_maison_premiere_visite"
+  },
+  {
+    "id": "flag_premiere_herbe",
+    "label_key": "flag.premiere_herbe"
+  },
+  {
+    "id": "flag_ambiance_poche_pleine",
+    "label_key": "flag.ambiance_poche_pleine"
+  },
+  {
+    "id": "flag_ambiance_premiere_herbe",
+    "label_key": "flag.ambiance_premiere_herbe"
+  },
+  {
+    "id": "flag_ambiance_premier_rangement",
+    "label_key": "flag.ambiance_premier_rangement"
+  },
+  {
+    "id": "flag_ambiance_niveau_10",
+    "label_key": "flag.ambiance_niveau_10"
+  },
+  {
+    "id": "flag_ambiance_coffre_pose",
+    "label_key": "flag.ambiance_coffre_pose"
   }
 ]

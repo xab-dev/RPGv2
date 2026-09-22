@@ -167,8 +167,12 @@ function construireBanc({ dansLaMaison = true, compagnon, pleinEcranDisponible =
     'toute carte trouve sa fonction, toute fonction a sa carte, toute valeur citée est fournie');
   // `D-93` : `consommables_en_poche` rejoint la liste — la barre du bas n'a
   // plus de flag de déblocage à elle, elle cite une valeur comme les autres.
+  // `D-125` (T9) : trois états du monde de plus, qu'une ligne d'ambiance
+  // interroge. Ce témoin liste ce qui EXISTE — il n'épingle aucun réglage
+  // (`D-52`), il dit seulement de quoi une condition de données dispose.
   assert.deepEqual(enregistres.valeurs.sort(),
-    ['consommables_en_poche', 'niveau', 'plein_ecran_disponible', 'stations_placables']);
+    ['consommables_en_poche', 'niveau', 'objets_au_coffre', 'plein_ecran_disponible',
+      'slots_libres_poche', 'stations_placables', 'stations_posees']);
   assert.deepEqual(enregistres.ecrans, ['ecran_poche', 'ecran_stats', 'ecran_construction'],
     'les trois écrans existants que le palier A rebranche — Craft et Coffre s’ouvrent par INTERACT, pas par une carte');
 

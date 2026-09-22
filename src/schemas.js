@@ -1763,6 +1763,18 @@ export const SCHEMAS = {
       }
       erreurs.push(...erreursRenderVisuel(entry, catalogs, path));
       erreurs.push(...erreursXpOptionnel(entry, path));
+      // `flag_ramassage` (`D-125`, T9) : OPTIONNEL — le flag posé la première
+      // fois que cet objet entre en poche depuis le sol. Même forme, et même
+      // raison d'être, que `scenes.json > objets_uniques > flag` : c'est la
+      // DONNÉE qui nomme le flag, pour qu'une ligne de lore puisse parler
+      // d'un objet sans qu'aucun id d'item n'entre dans le code. Un flag non
+      // déclaré tombe ici, au boot — pas au ramassage, c'est-à-dire en jouant
+      // (`flags.js#set` lèverait alors en pleine frame).
+      if (entry.flag_ramassage !== undefined) {
+        if (!(catalogs.flags || []).some((f) => f.id === entry.flag_ramassage)) {
+          erreurs.push(`${path} > flag_ramassage "${entry.flag_ramassage}" non déclaré dans flags.json`);
+        }
+      }
       // `arme` (`D-66`, T5) : l'objet de poche qui, une fois équipé, DEVIENT
       // cette arme. Une référence, pas un booléen : c'est elle qui fait le
       // pont entre `items.json` (ce qu'on possède) et `weapons.json` (ce que

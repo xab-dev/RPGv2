@@ -182,5 +182,55 @@
         "text_key": "dlg.maison.premiere_visite"
       }
     ]
+  },
+  {
+    "id": "dlg_lore_poche_pleine",
+    "declencheur": "lore_poche_pleine",
+    "lignes": [
+      {
+        "locuteur": "follet",
+        "text_key": "dlg.lore.poche_pleine"
+      }
+    ]
+  },
+  {
+    "id": "dlg_lore_premiere_herbe",
+    "declencheur": "lore_premiere_herbe",
+    "lignes": [
+      {
+        "locuteur": "follet",
+        "text_key": "dlg.lore.premiere_herbe"
+      }
+    ]
+  },
+  {
+    "id": "dlg_lore_premier_rangement",
+    "declencheur": "lore_premier_rangement",
+    "lignes": [
+      {
+        "locuteur": "follet",
+        "text_key": "dlg.lore.premier_rangement"
+      }
+    ]
+  },
+  {
+    "id": "dlg_lore_niveau_10",
+    "declencheur": "lore_niveau_10",
+    "lignes": [
+      {
+        "locuteur": "follet",
+        "text_key": "dlg.lore.niveau_10"
+      }
+    ]
+  },
+  {
+    "id": "dlg_lore_coffre_pose",
+    "declencheur": "lore_coffre_pose",
+    "lignes": [
+      {
+        "locuteur": "follet",
+        "text_key": "dlg.lore.coffre_pose"
+      }
+    ]
   }
 ]

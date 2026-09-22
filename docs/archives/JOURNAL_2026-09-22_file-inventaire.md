@@ -399,3 +399,54 @@ chose. C'est le coût d'entretien des faux états, déjà nommé (`Q-42`), et il
 explicitement plutôt que contourné.
 
 `npm test` : **130 fichiers verts**.
+
+## T9 — Lore diffus du follet pour les choses de base (`D-125`)
+
+**Cinq propositions, en données.** Xav écrit, Claude propose : les cinq textes sont des
+propositions, FR et EN, et ils sont faits pour être réécrits. Ce qui est livré et qui, lui,
+tient, c'est le mécanisme — et il n'y en a pas de nouveau.
+
+Les cinq déclencheurs du brief, avec ce que chacun a coûté :
+
+| Ligne | Condition | Coût |
+|---|---|---|
+| Première poche pleine | `flag_maison_decouverte` **et** `slots_libres_poche ≤ 0` | une valeur nommée |
+| Première herbe | `flag_premiere_herbe` | un champ de données sur l'item |
+| Premier objet rangé au coffre | `objets_au_coffre ≥ 1` | une valeur nommée |
+| Nv.10 atteint | `flag_niveau_10` | **rien** |
+| Premier coffre posé | `stations_posees ≥ 1` | une valeur nommée |
+
+Trois valeurs nommées, donc, et **aucune ne parle de lore** : ce sont des états du monde, du
+même genre que `niveau` et `stations_placables`. C'est ce qui fera qu'une sixième ligne
+s'écrira sans code.
+
+`slots_libres_poche` plutôt que `slots_occupes`, et le choix mérite une ligne : la question
+intéressante est « reste-t-il de la place ? », et elle se pose avec un `max: 0` qui **ne dépend
+pas du nombre de slots du conteneur**. Le jour où la poche en gagne un (une besace, `Q-65`), la
+condition tient toujours, là où un `min: 4` serait devenu faux en silence.
+
+**L'herbe était le seul cas qui demandait du neuf**, et il a été traité sans faire entrer un id
+d'item dans le code : `items.json > flag_ramassage` — même forme, et même raison d'être, que
+`scenes.json > objets_uniques > flag` depuis `D-60`. C'est la donnée qui nomme le flag ; le code
+ne lit qu'un champ. Un flag non déclaré tombe **au boot**, pas au ramassage (c'est-à-dire en
+jouant), et le test en garde le témoin.
+
+**Le « où » est une proposition, lui aussi** : les cinq lignes sont limitées à
+`scene_maison_exterieur`. Motif : la boucle de survie y vit entièrement, et une ligne sur le
+coffre de la maison n'a rien à dire au fond de la Grotte. À réviser d'un mot de données si Xav
+préfère « partout ».
+
+**Ce que le ticket a coûté ailleurs, et qui est un aveu** : neuf fichiers de test posaient
+`flag_ambiance_maison_premiere_visite` à la main depuis T8. Cinq lignes de plus, c'était cinq
+noms recopiés dans neuf fichiers. Ils **dérivent désormais la liste du catalogue**
+(`registre.tous('ambiances').map((a) => a.flag)`), une fois pour toutes — la prochaine ligne
+d'ambiance ne rouvrira plus rien. C'est `Q-42` payé une bonne fois plutôt que reconduit, et
+c'est aussi la règle « un harnais ne recopie pas ce qu'il prétend éprouver » appliquée à une
+liste de flags.
+
+Le test du ticket éprouve les **cinq** lignes en jeu, chacune avec son témoin négatif (sans sa
+condition, rien ne tombe) — parce qu'une ligne qui tomberait toujours serait pire qu'absente.
+Il n'épingle **aucun texte** (`D-52`) : les mots appartiennent à Xav.
+
+`npm test` : **131 fichiers verts**.
+

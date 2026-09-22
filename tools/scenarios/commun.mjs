@@ -1,4 +1,5 @@
 // Ce que partagent les scénarios de `tools/capture_chrome.mjs` — OUTIL DE DEV.
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { saveNeuve } from '../../src/save.js';
@@ -9,6 +10,12 @@ import { chargerScene } from '../../src/scene.js';
 
 export const ORIGINE = process.env.RPG_URL || 'http://localhost:8080';
 const TILE = 32;
+
+// Les flags des lignes d'ambiance (`D-61`, `D-125`), lus sur le catalogue
+// lui-même : ce fichier ne recopie aucun nom de flag.
+const FLAGS_AMBIANCE = JSON.parse(
+  fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'data', 'ambiances.json'), 'utf8'),
+).map((a) => a.flag);
 
 // Les profils d'écran sous lesquels on regarde le jeu — un seul endroit, pour
 // qu'un scénario ne redécrive jamais une taille de son côté.
@@ -35,7 +42,11 @@ export function saveDansLaMaison({ compagnon = 'comp_follet_eau' } = {}) {
   save.hero.pv = 40;
   save.flags = {
     flag_follet_choisi: true, flag_grotte_sortie: true, flag_grotte_sequence: true,
-    flag_grotte_monstre_tue: true, flag_levier_salle1: true, flag_maison_decouverte: true, flag_ambiance_maison_premiere_visite: true,
+    flag_grotte_monstre_tue: true, flag_levier_salle1: true, flag_maison_decouverte: true,
+    // `D-125` : toutes les lignes d'ambiance sont déjà vues. Une capture
+    // montre le JEU, pas un dialogue qui vient de s'ouvrir par-dessus — et la
+    // liste est déduite du catalogue pour qu'une ligne de plus ne la périme pas.
+    ...Object.fromEntries(FLAGS_AMBIANCE.map((f) => [f, true])),
   };
   // `D-118` : la poche ne tient plus que quatre slots — un contenu qui
   // déborde serait normalisé au chargement, et les captures ne montreraient

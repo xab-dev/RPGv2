@@ -63,6 +63,7 @@
   {
     "id": "item_herbe",
     "xp": 1,
+    "flag_ramassage": "flag_premiere_herbe",
     "label_key": "item.herbe",
     "description_key": "item.herbe.description",
     "categorie": "ressource",

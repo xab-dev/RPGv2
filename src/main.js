@@ -702,6 +702,22 @@ export function creerOrchestrateurGrotte({
       // donc une condition de données ordinaire — la barre du bas n'a aucun
       // code de déblocage à elle.
       consommables_en_poche: consommablesEnPoche(),
+      // `D-125` (T9) : trois états du monde de plus, et pas un mot de lore
+      // dedans. Une ligne du follet est une entrée de `ambiances.json` qui
+      // les interroge ; la prochaine s'écrira de même, sans code.
+      //
+      // `slots_libres_poche` plutôt que `slots_occupes` : la question
+      // intéressante est « reste-t-il de la place ? », et elle se pose avec un
+      // `max: 0` qui ne dépend pas du nombre de slots du conteneur — le jour
+      // où la poche en gagne un (une besace, `Q-65`), la condition tient
+      // toujours, là où un `min: 4` serait devenu faux en silence.
+      slots_libres_poche: capacitePoche.slots
+        - slotsOccupes(save.inventaire.items, capacitePoche, obtenirItemDef),
+      objets_au_coffre: objetsRangesAuCoffre(),
+      // `D-121` : une instance CRÉÉE en jeu, donc posée par le joueur — les
+      // stations du catalogue n'en sont pas. Compté par la même fonction que
+      // la résolution des interactifs, jamais par un second parcours.
+      stations_posees: instancesCreees(registre, scene.id, save.maison.stations).length,
       ...valeursExternes(),
     };
   }
@@ -1153,6 +1169,22 @@ export function creerOrchestrateurGrotte({
     return total;
   }
 
+  // `D-125` (T9) : combien d'objets dorment dans les stations de stockage.
+  // TOUTES les instances, pas seulement le coffre de base : depuis `D-121` le
+  // contenu appartient à l'instance, donc en nommer une ici rendrait la ligne
+  // du follet muette dès que le joueur range dans un coffre qu'il a posé.
+  // Une entrée sans `contenu` est une simple POSE (`D-121` encore), et
+  // n'apporte rien à la somme.
+  function objetsRangesAuCoffre() {
+    let total = 0;
+    for (const entree of Object.values(save.maison.stations || {})) {
+      for (const quantite of Object.values((entree && entree.contenu) || {})) {
+        if (quantite > 0) total += quantite;
+      }
+    }
+    return total;
+  }
+
   // `D-92` + `D-93` : un slot qui ne correspond plus à rien retombe sur le
   // défaut de son slot, et ça se DIT en console. Appelée à chaque frame,
   // AVANT toute branche d'UI — le Coffre déplace des objets pendant qu'un
@@ -1486,6 +1518,13 @@ export function creerOrchestrateurGrotte({
         // elle, est rebattue à chaque aube).
         const objetUnique = scene.objetsUniques.find((o) => o.item === itemProche.itemId);
         if (objetUnique) flags.set(objetUnique.flag);
+        // `D-125` (T9) : un item peut déclarer le flag de son PREMIER
+        // ramassage (`items.json > flag_ramassage`), exactement comme un objet
+        // unique déclare le sien. C'est ce qui permet à une ligne de lore de
+        // parler de l'herbe sans qu'aucun id d'item n'entre dans le code — et
+        // `flags.set` est déjà idempotent, donc « le premier » n'a rien à
+        // vérifier ici.
+        if (itemDef.flag_ramassage) flags.set(itemDef.flag_ramassage);
         if (!flags.has('flag_premier_ramassage')) {
           flags.set('flag_premier_ramassage');
           dialogue.ouvrir(resoudreLignes('dlg_premier_ramassage', registre, i18n, save.hero.companion));

@@ -2469,8 +2469,8 @@ export function creerOrchestrateurGrotte({
     const statsBrutes = calculerStatsPrimaires(registre, resoudreModificateursHeros());
     // Modulateur de survie (Palier C §3.3) : appliqué ICI, avant les
     // dérivées — un seul chemin de calcul, donc dégâts (stat_force),
-    // cadence d'attaque et vitesse de déplacement (stat_agilite, toutes
-    // deux dérivées) suivent sans code dédié.
+    // cadence d'attaque et vitesse de déplacement (stat_agilite), toutes
+    // trois dérivées depuis `D-141`, suivent sans code dédié.
     const modulateur = calculerModulateurSurvie(registre, save.survie);
     const statsPrimaires = appliquerModulateurSurvie(statsBrutes, modulateur, configSurvie(registre).stats_modulees);
     const statsDerivees = calculerStatsDerivees(registre, statsPrimaires);
@@ -2613,7 +2613,10 @@ export function creerOrchestrateurGrotte({
       if (idsTouches.size > 0) {
         monstres = monstres.map((monstre) => {
           if (!idsTouches.has(monstre.id)) return monstre;
-          const suivant = infligerDegats(monstre, statsPrimaires.stat_force);
+          // `D-141` : les dégâts passent par LEUR dérivée, comme la cadence
+          // deux lignes plus bas — ils lisaient la Force brute, ce qui
+          // laissait la Force sans formule à régler en données.
+          const suivant = infligerDegats(monstre, statsDerivees.derivee_degats_attaque);
           suivant.flashMs = FLASH_TOUCHE_MS;
           if (suivant.mort && !monstre.mort) onMonstreMort(registre.obtenir('enemies', monstre.enemyId));
           return suivant;

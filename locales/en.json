@@ -124,6 +124,8 @@
   "survie.faim": "Hunger",
   "survie.soif": "Thirst",
   "derivee.vitesse_deplacement": "Movement speed",
+  "derivee.degats_attaque": "Attack damage",
+  "derivee.reserve_esprit": "Spirit reserve",
   "status.buff_repas": "Warm meal",
   "flag.hint_consume": "Consume hint shown",
   "flag.competence_1": "First skill",

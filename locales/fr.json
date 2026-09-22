@@ -124,6 +124,8 @@
   "survie.faim": "Faim",
   "survie.soif": "Soif",
   "derivee.vitesse_deplacement": "Vitesse de déplacement",
+  "derivee.degats_attaque": "Dégâts d'attaque",
+  "derivee.reserve_esprit": "Réserve d'esprit",
   "status.buff_repas": "Repas chaud",
   "flag.hint_consume": "Indice de consommation montré",
   "flag.competence_1": "Première compétence",

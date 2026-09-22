@@ -16,5 +16,17 @@
     "label_key": "derivee.vitesse_deplacement",
     "stat": "stat_agilite",
     "formule": { "base": 80, "coefficient": 3, "min": 20 }
+  },
+  {
+    "id": "derivee_degats_attaque",
+    "label_key": "derivee.degats_attaque",
+    "stat": "stat_force",
+    "formule": { "base": 0, "coefficient": 1, "min": 0 }
+  },
+  {
+    "id": "derivee_reserve_esprit",
+    "label_key": "derivee.reserve_esprit",
+    "stat": "stat_esprit",
+    "formule": { "base": 0, "coefficient": 10, "min": 0 }
   }
 ]

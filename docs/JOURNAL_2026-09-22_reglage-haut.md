@@ -64,3 +64,4 @@ dans les cases d'inventaire » · « D-08 : go ».
 |---|---|---|
 | (ce commit) | `D-07` | Poche et Coffre : cases sans nom (image + quantité), nom dans la fiche et en `aria-label`. Captures `docs/captures/inventaire-2026-09-22/` |
 | (ce commit) | `D-135` | Cailloux de décor sur l'herbe seulement : plus rien sur le chemin (`apres_chemin_haut`) |
+| (ce commit) | `D-08` | Poche : « Manger » (A) mange cet objet par le chemin de CONSUME ; « Équiper » passe en seconde action (X / touche 1). `Q-72` ouverte sur le choix des gestes. Captures `inventaire-2026-09-22/d08_*` |

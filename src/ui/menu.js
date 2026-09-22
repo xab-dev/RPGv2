@@ -259,6 +259,9 @@ export function initialiserMenu({
   // `equiper(slot, itemId)`. Remplace `equiperConsommable`, qui figeait un
   // emplacement dans le nom d'une fonction d'UI.
   equiper = () => {},
+  // `D-08` : manger un objet précis depuis la Poche (même chemin que CONSUME,
+  // côté orchestrateur).
+  consommer = () => {},
   peripheriqueActif = () => 'manette',
   // `D-30` : le plein écran est injecté comme tout le reste — ce module ne
   // connaît ni `document.fullscreenElement`, ni `requestFullscreen`.
@@ -329,6 +332,28 @@ export function initialiserMenu({
   // c'est `main.js` qui dit désormais, par objet, s'il s'équipe et où :
   // `e.equipement = { slot, deja, lignes }`. Cet écran redevient ce qu'il
   // doit être : il ne connaît **aucune** catégorie d'item.
+  // `D-08` : un objet qui se MANGE (`e.consommable`, dit par `main.js`) a
+  // « Manger » en action principale — c'est ce qu'on vient faire, et il le
+  // fait sans passer par la case — et « Équiper » en seconde action s'il n'est
+  // pas déjà dans la case. Tout autre équipable garde « Équiper » seul.
+  function actionsPoche(e, eq, equipe) {
+    const equiperSiLibre = eq && !equipe
+      ? { libelle: i18n.t('menu.poche_equiper'), action: () => equiper(eq.slot, e.id) }
+      : null;
+    if (e.consommable) {
+      return {
+        libelleAction: i18n.t('menu.poche_manger'),
+        action: () => consommer(e.id),
+        libelleActionSecondaire: equiperSiLibre ? equiperSiLibre.libelle : null,
+        actionSecondaire: equiperSiLibre ? equiperSiLibre.action : null,
+      };
+    }
+    return {
+      libelleAction: equiperSiLibre ? equiperSiLibre.libelle : null,
+      action: equiperSiLibre ? equiperSiLibre.action : null,
+    };
+  }
+
   function entreesPoche() {
     return listerPoche().map((e) => {
       const eq = e.equipement || null;
@@ -342,8 +367,7 @@ export function initialiserMenu({
           i18n.t('menu.fiche.equipe'),
           ...((eq && eq.lignes) || []),
         ] : [])],
-        libelleAction: eq && !equipe ? i18n.t('menu.poche_equiper') : null,
-        action: eq && !equipe ? () => equiper(eq.slot, e.id) : null,
+        ...actionsPoche(e, eq, equipe),
       };
     });
   }
@@ -555,6 +579,7 @@ export function initialiserMenu({
     icones: { fermer: ecranRacine.icone_fermer || null, retour: ecranRacine.icone_retour || null },
     // Au doigt le bouton de la fiche se touche : pas de verbe à annoncer.
     glypheAction: () => (peripheriqueActif() === 'tactile' ? null : i18n.t(`glyphe.${peripheriqueActif()}.attack`)),
+    glypheActionSecondaire: () => (peripheriqueActif() === 'tactile' ? null : i18n.t(`glyphe.${peripheriqueActif()}.skill_1`)),
   });
 
   return {

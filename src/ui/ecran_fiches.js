@@ -28,6 +28,9 @@
 //                  le bouton retente quand même l'action réelle, le résultat fait foi
 //                  (règle des écrans de liste depuis la Phase 3)
 //   action         () => void
+//   libelleActionSecondaire, actionSecondaire   (`D-08`) une SECONDE action, portée par
+//                  un second bouton et par le verbe `skill_1` (X). Absente = rien : un seul
+//                  bouton, comme avant. Le composant ne sait pas ce qu'elle fait
 //   groupe         un intertitre : les entrées d'un même groupe se suivent, un groupe
 //                  commence sur une rangée neuve (Coffre : « Poche » / « Coffre »)
 //
@@ -85,6 +88,7 @@ export function normaliserLigneFiche(ligne) {
 //   onRetour        () => void   le `retour()` de la pile — `[←]` et B l'appellent tous les deux
 //   aLaRacine       () => bool   rien sous cet écran dans la pile : la sortie FERME (`[X]`)
 //   icones          { fermer, retour }   ids de `visuels.json`, lus sur l'écran racine du catalogue
+//   glypheActionSecondaire () => chaîne | null  même chose pour le bouton secondaire (`D-08`)
 //   glypheAction    () => chaîne | null  le glyphe du verbe qui actionne le bouton de la fiche
 //                                        (« A », « Espace ») ; null = ne rien afficher (au doigt,
 //                                        le bouton se touche : il n'a pas de verbe à annoncer)
@@ -92,7 +96,7 @@ export function creerEcranFiches({
   document, i18n, afficherEcran, seuilPoussee,
   couleurAccent = () => null, rectangleJeu = () => null, dessinerIcone = () => {},
   onRetour, aLaRacine = () => false, icones = { fermer: null, retour: null },
-  glypheAction = () => null,
+  glypheAction = () => null, glypheActionSecondaire = () => null,
 }) {
   // Même découpe que tous les écrans depuis `D-42`, même ordre dans le DOM :
   // le corps d'abord, l'en-tête (donc la sortie) en dernier enfant, remonté à
@@ -211,31 +215,42 @@ export function creerEcranFiches({
     fiche.appendChild(lignes);
 
     if (entree.libelleAction) {
-      // Un `<div>`, pas un `<button>` — même raison que les cartes : un bouton
-      // natif garde le focus du navigateur après un clic, et Espace (= ATTACK)
-      // l'activerait une seconde fois dans la même frame.
-      const bouton = document.createElement('div');
-      bouton.className = entree.grisee ? 'fiche-action fiche-action-grisee' : 'fiche-action';
-      bouton.dataset.action = 'fiche';
-      poserAttribut(bouton, 'role', 'button');
-      // À la manette et au clavier le bouton n'est pas focalisable — c'est la
-      // TUILE qui l'est, et A agit. Le glyphe du verbe, posé sur le bouton,
-      // fait le lien : « ce bouton, c'est A ».
-      const glyphe = glypheAction();
-      if (glyphe) {
-        const elGlyphe = document.createElement('span');
-        elGlyphe.className = 'fiche-action-glyphe';
-        elGlyphe.textContent = glyphe;
-        bouton.appendChild(elGlyphe);
-      }
-      const libelle = document.createElement('span');
-      libelle.className = 'fiche-action-libelle';
-      libelle.textContent = entree.libelleAction;
-      bouton.appendChild(libelle);
-      bouton.addEventListener('click', () => activer());
-      fiche.appendChild(bouton);
+      fiche.appendChild(creerBoutonFiche(entree.libelleAction, glypheAction(), entree.grisee, activer, false));
+    }
+    // `D-08` : la seconde action, sous la première, moins appuyée (bordure
+    // neutre) — A reste le geste principal, X le second.
+    if (entree.libelleActionSecondaire && entree.actionSecondaire) {
+      fiche.appendChild(creerBoutonFiche(
+        entree.libelleActionSecondaire, glypheActionSecondaire(), false, activerSecondaire, true,
+      ));
     }
     dessinerIcones(fiche);
+  }
+
+  // Un `<div>`, pas un `<button>` — même raison que les cartes : un bouton
+  // natif garde le focus du navigateur après un clic, et Espace (= ATTACK)
+  // l'activerait une seconde fois dans la même frame.
+  // À la manette et au clavier le bouton n'est pas focalisable — c'est la
+  // TUILE qui l'est, et le verbe agit. Le glyphe du verbe, posé sur le bouton,
+  // fait le lien : « ce bouton, c'est A » (ou X pour le second).
+  function creerBoutonFiche(texte, glyphe, grisee, surClic, secondaire) {
+    const bouton = document.createElement('div');
+    bouton.className = ['fiche-action', grisee ? 'fiche-action-grisee' : '', secondaire ? 'fiche-action-secondaire' : '']
+      .filter(Boolean).join(' ');
+    bouton.dataset.action = secondaire ? 'fiche-secondaire' : 'fiche';
+    poserAttribut(bouton, 'role', 'button');
+    if (glyphe) {
+      const elGlyphe = document.createElement('span');
+      elGlyphe.className = 'fiche-action-glyphe';
+      elGlyphe.textContent = glyphe;
+      bouton.appendChild(elGlyphe);
+    }
+    const libelle = document.createElement('span');
+    libelle.className = 'fiche-action-libelle';
+    libelle.textContent = texte;
+    bouton.appendChild(libelle);
+    bouton.addEventListener('click', () => surClic());
+    return bouton;
   }
 
   function poserFocus(i) {
@@ -371,6 +386,14 @@ export function creerEcranFiches({
     if (niveau && !el.hidden) rendre();
   }
 
+  // `D-08` : X, ou le bouton secondaire. Même relecture que `activer`.
+  function activerSecondaire() {
+    const entree = entreeFocalisee();
+    if (!entree || !entree.actionSecondaire) return;
+    entree.actionSecondaire();
+    if (niveau && !el.hidden) rendre();
+  }
+
   boutonEntete.addEventListener('click', () => onRetour());
 
   return {
@@ -401,6 +424,7 @@ export function creerEcranFiches({
         poserFocus(voisin(niveau.focus, direction, COLONNES_TUILES, cases.length, (i) => cases[i] !== null));
       }
       if (etat.attack && etat.attack.pressed) activer();
+      else if (etat.skill_1 && etat.skill_1.pressed) activerSecondaire();
     },
     // Observation pour les tests headless.
     obtenirEtat: () => ({

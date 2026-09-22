@@ -467,6 +467,9 @@
     /* Désactivé (§4.5) : texte à 40 %, aucune bordure d'accent. */
     .fiche-action-grisee { color: var(--menu-texte-titre); border-color: var(--menu-carte-bordure); }
     .fiche-action-grisee { color: color-mix(in srgb, var(--menu-texte-titre) calc(var(--menu-desactive-opacite) * 100%), transparent); }
+    /* `D-08` : la seconde action (X) se lit comme seconde : bordure neutre,
+       texte clair — le même bouton, moins appuyé, jamais une autre forme. */
+    .fiche-action-secondaire { color: var(--menu-texte-titre); border-color: var(--menu-carte-bordure); }
     .fiche-vide { margin: auto; text-align: center; font-size: calc(10 * var(--u)); line-height: 1.3; color: var(--menu-texte-phrase); }
   </style>
 </head>

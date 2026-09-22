@@ -415,6 +415,20 @@ export function revaliderEquipement(save, registre) {
   return { changements };
 }
 
+// Une entrée de l'écran Poche, telle que `ui/menu.js` la reçoit. Niveau module
+// et exportée (`D-08`, règle de `D-72`) : le test de la Poche l'appelait en
+// RECOPIE, et un champ ajouté ici (`consommable`) n'y serait jamais arrivé.
+export function entreePoche(itemDef, quantite, { equipementHero, registre, i18n, peripherique }) {
+  return {
+    id: itemDef.id, label: i18n.t(itemDef.label_key), quantite, categorie: itemDef.categorie,
+    icone: itemDef.render.visuel, lignes: lignesFicheItem(itemDef, registre, i18n),
+    // `D-08` : se mange-t-il ? Dit par la DONNÉE (`consommation`), jamais par
+    // une catégorie : c'est ce que `essayerConsommer` exige aussi.
+    consommable: Boolean(itemDef.consommation),
+    equipement: equipementDeLItem(itemDef, { equipementHero, registre, traduire: i18n.t, peripherique }),
+  };
+}
+
 // Ce que l'écran Poche doit savoir d'un objet équipable : dans quel
 // emplacement il va, s'il y est déjà, et ce que ça change. `null` pour tout
 // le reste. PURE : tout ce dont elle a besoin lui est donné.
@@ -2343,18 +2357,22 @@ export function creerOrchestrateurGrotte({
   // Manger (Palier C §3.3) : consomme l'item équipé au slot consommable
   // (verbe CONSUME) — à défaut d'équipement ou de stock, ne fait rien
   // silencieusement (rien à manger, rien ne se passe).
-  function essayerConsommer() {
-    const itemId = save.hero.equipement.consommable;
-    if (!itemId || (save.inventaire.items[itemId] || 0) <= 0) return;
+  // `itemId` (`D-08`, défaut : le consommable équipé) : la Poche mange un
+  // objet précis, le verbe CONSUME mange celui de la case. UN seul chemin de
+  // consommation pour les deux — jauges, retrait, buffs —, jamais un second
+  // qui oublierait les buffs. Rend vrai si quelque chose a été mangé.
+  function essayerConsommer(itemId = save.hero.equipement.consommable) {
+    if (!itemId || (save.inventaire.items[itemId] || 0) <= 0) return false;
     const itemDef = registre.obtenir('items', itemId);
     const c = itemDef.consommation;
-    if (!c) return;
+    if (!c) return false;
     save.survie = consommerSurvie(save.survie, { jauge_faim: c.faim || 0, jauge_soif: c.soif || 0 });
     save.inventaire.items = retirerItem(save.inventaire.items, itemId, 1);
     for (const effetId of c.effets || []) {
       save.hero.buffs_actifs = ajouterBuffActif(registre, save.hero.buffs_actifs, effetId);
     }
     etatModifie = true;
+    return true;
   }
 
   // Progression vers le niveau suivant (HUD §3.9, discret) : 1 si le
@@ -3511,6 +3529,8 @@ export function creerOrchestrateurGrotte({
   return {
     maj,
     dessiner,
+    // `D-08` : « Manger » depuis la Poche — le même chemin que CONSUME.
+    consommerItem: (itemId) => essayerConsommer(itemId),
     choixFolletActif,
     reinitialiserPartie,
     obtenirHero: () => hero,
@@ -3928,19 +3948,9 @@ export async function demarrerJeu() {
     sousTitrePoche: () => texteRemplissagePoche(save, registre, i18n),
     listerPoche: () => Object.entries(save.inventaire.items)
       .filter(([, quantite]) => quantite > 0)
-      .map(([itemId, quantite]) => {
-        const itemDef = registre.obtenir('items', itemId);
-        return {
-          id: itemId, label: i18n.t(itemDef.label_key), quantite, categorie: itemDef.categorie,
-          icone: itemDef.render.visuel, lignes: lignesFicheItem(itemDef, registre, i18n),
-          equipement: equipementDeLItem(itemDef, {
-            equipementHero: save.hero.equipement,
-            registre,
-            traduire: i18n.t,
-            peripherique: input.peripheriqueActif(),
-          }),
-        };
-      }),
+      .map(([itemId, quantite]) => entreePoche(registre.obtenir('items', itemId), quantite, {
+        equipementHero: save.hero.equipement, registre, i18n, peripherique: input.peripheriqueActif(),
+      })),
     // Palier C (§3.3) + `D-66` (T5) : UN point d'équipement, quel que soit
     // l'emplacement. Mutation directe de `save` (même patron que
     // basculerMusique ci-dessus, hors du chemin etatModifie de
@@ -3953,6 +3963,8 @@ export async function demarrerJeu() {
       // (portée, icône, modificateurs) continue de ne connaître que l'arme.
       save.hero.equipement[slot] = slot === 'arme' ? itemDef.arme : itemId;
     },
+    // `D-08` : manger un objet précis depuis la Poche, sans l'équiper.
+    consommer: (itemId) => orchestrateur.consommerItem(itemId),
     // MT_construction-bandeau-placement_2026-09-17 : glyphes du bandeau
     // résolus sur le périphérique réellement actif, jamais manette en dur.
     peripheriqueActif: () => input.peripheriqueActif(),

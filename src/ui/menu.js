@@ -332,25 +332,19 @@ export function initialiserMenu({
   // c'est `main.js` qui dit désormais, par objet, s'il s'équipe et où :
   // `e.equipement = { slot, deja, lignes }`. Cet écran redevient ce qu'il
   // doit être : il ne connaît **aucune** catégorie d'item.
-  // `D-08` : un objet qui se MANGE (`e.consommable`, dit par `main.js`) a
-  // « Manger » en action principale — c'est ce qu'on vient faire, et il le
-  // fait sans passer par la case — et « Équiper » en seconde action s'il n'est
-  // pas déjà dans la case. Tout autre équipable garde « Équiper » seul.
+  // `D-08`, révisé par `Q-72` (Xav, 23/09) : A ÉQUIPE, comme partout ailleurs
+  // — un nouveau joueur ne doit pas manger par erreur ce qu'il voulait équiper.
+  // Un objet qui se MANGE (`e.consommable`, dit par `main.js`) gagne
+  // « Manger » en SECONDE action (X), placée sous « Équiper ». Déjà équipé,
+  // il n'a plus que « Manger », toujours sur X (RT mange l'objet équipé, sans
+  // menu, et ne change pas).
   function actionsPoche(e, eq, equipe) {
-    const equiperSiLibre = eq && !equipe
-      ? { libelle: i18n.t('menu.poche_equiper'), action: () => equiper(eq.slot, e.id) }
-      : null;
-    if (e.consommable) {
-      return {
-        libelleAction: i18n.t('menu.poche_manger'),
-        action: () => consommer(e.id),
-        libelleActionSecondaire: equiperSiLibre ? equiperSiLibre.libelle : null,
-        actionSecondaire: equiperSiLibre ? equiperSiLibre.action : null,
-      };
-    }
+    const equiper_ = eq && !equipe;
     return {
-      libelleAction: equiperSiLibre ? equiperSiLibre.libelle : null,
-      action: equiperSiLibre ? equiperSiLibre.action : null,
+      libelleAction: equiper_ ? i18n.t('menu.poche_equiper') : null,
+      action: equiper_ ? () => equiper(eq.slot, e.id) : null,
+      libelleActionSecondaire: e.consommable ? i18n.t('menu.poche_manger') : null,
+      actionSecondaire: e.consommable ? () => consommer(e.id) : null,
     };
   }
 

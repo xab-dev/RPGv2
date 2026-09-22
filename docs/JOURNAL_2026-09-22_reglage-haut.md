@@ -68,3 +68,8 @@ dans les cases d'inventaire » · « D-08 : go ».
 
 Verdicts consignés : `V-75` validée (réserve → `D-135`), `Q-58` tranchée (« oui, j'aime ! »),
 `D-06` close par décision (pas d'indicateur jour/nuit). À Xav : `V-76`, `Q-72`.
+
+23/09 : « Q-72: inverse les touches […] A pour équiper (comme les autres), X pour manger
+directement » · « V-76 : good ». Inversion livrée (A = Équiper en haut, X = Manger dessous),
+vérifiée au vrai clavier : touche 1 mange (3 → 2 fruits, rien d'équipé), Espace équipe.
+Capture `inventaire-2026-09-22/q72_fruit_1920x1080.png`. **Session close** ; rien n'est poussé.

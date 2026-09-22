@@ -156,22 +156,23 @@ class ElementFactice {
   // Une ressource : une fiche, AUCUN bouton (plutôt qu'un bouton qui ne fait rien).
   assert.deepEqual([fiche().titre, fiche().lignes, fiche().bouton], ['Branche', ['Ressource'], null]);
 
-  // La nourriture (`D-08`) : « Manger » en action principale (A), « Équiper »
-  // en seconde (X). Sélectionner ne fait rien.
+  // La nourriture (`D-08`, révisé par `Q-72`) : « Équiper » en action
+  // principale (A, comme partout), « Manger » en seconde (X), dessous.
+  // Sélectionner ne fait rien.
   tuiles()[1].declencher('click');
   assert.equal(equipe, null, 'sélectionner une tuile n’équipe rien');
   assert.deepEqual(manges, [], 'ni ne mange rien');
   const libelle = (b) => b.querySelector('.fiche-action-libelle').textContent;
   const glyphe = (b) => b.querySelector('.fiche-action-glyphe').textContent;
   assert.deepEqual([fiche().titre, libelle(fiche().bouton), libelle(fiche().secondaire)],
-    ['Fruit', i18n.t('menu.poche_manger'), i18n.t('menu.poche_equiper')]);
+    ['Fruit', i18n.t('menu.poche_equiper'), i18n.t('menu.poche_manger')]);
   assert.equal(glyphe(fiche().bouton), i18n.t('glyphe.manette.attack'), 'le glyphe du périphérique actif (la manette, par défaut)');
   assert.equal(glyphe(fiche().secondaire), i18n.t('glyphe.manette.skill_1'), 'la seconde action a le sien');
-  fiche().bouton.declencher('click');
-  assert.deepEqual(manges, ['item_fruit'], 'A mange CET objet, sans l’équiper');
+  fiche().secondaire.declencher('click');
+  assert.deepEqual(manges, ['item_fruit'], 'X mange CET objet, sans l’équiper');
   assert.equal(equipe, null);
   assert.equal(tuiles()[1].querySelector('.tuile-quantite').textContent, '2', 'l’écran s’est relu');
-  fiche().secondaire.declencher('click');
+  fiche().bouton.declencher('click');
   assert.equal(equipe, 'item_fruit');
   // L'écran s'est relu : l'objet équipé se VOIT, et le dit.
   assert.deepEqual(tuiles().map((t) => t.querySelectorAll('.tuile-marque').length), [0, 1, 0, 0], 'un repère sur la tuile équipée, et elle seule');
@@ -179,14 +180,14 @@ class ElementFactice {
     'Nourriture', 'Faim +15 %', 'Soif +5 %', i18n.t('menu.fiche.equipe'),
     i18n.t('menu.fiche.manger', { glyphe: i18n.t('glyphe.manette.consume') }),
   ], 'équipé : la fiche dit aussi comment le manger, au glyphe du périphérique actif');
-  assert.equal(libelle(fiche().bouton), i18n.t('menu.poche_manger'), 'équipé : on peut toujours le manger d’ici');
-  assert.equal(fiche().secondaire, null, 'rééquiper serait sans effet : plus de seconde action');
+  assert.equal(fiche().bouton, null, 'rééquiper serait sans effet : plus de bouton principal');
+  assert.equal(libelle(fiche().secondaire), i18n.t('menu.poche_manger'), 'équipé : on peut toujours le manger d’ici, sur X');
   assert.equal(tuiles()[1]._classes.includes('tuile-grisee'), false, '« équipé » n’est pas « indisponible » : la tuile n’est pas grisée');
   assert.equal(menu.obtenirEtatFiches().entreeFocalisee, 'Fruit', 'le focus n’a pas bougé pendant la relecture');
 
   // Équiper un autre consommable déplace le repère.
   tuiles()[2].declencher('click');
-  fiche().secondaire.declencher('click');
+  fiche().bouton.declencher('click');
   assert.equal(equipe, 'item_fruit_cuit');
   assert.deepEqual(tuiles().map((t) => t.querySelectorAll('.tuile-marque').length), [0, 0, 1, 0]);
 
@@ -200,7 +201,7 @@ class ElementFactice {
   assert.equal(ecran().querySelector('.fiche-vide').textContent, i18n.t('menu.poche_vide'));
   ecran().querySelector('[data-sortie]').declencher('click');
   assert.deepEqual(menu.obtenirEtatPile(), { profondeur: 2, sommet: 'menu_heros' }, 'la sortie ramène à l’écran Héros');
-  console.log('OK Poche : une tuile par objet ; « Manger » (A) et « Équiper » (X) sur la nourriture ; l’équipé se voit ; poche vide dite');
+  console.log('OK Poche : une tuile par objet ; « Équiper » (A) et « Manger » (X) sur la nourriture ; l’équipé se voit ; poche vide dite');
 }
 
 console.log('OK test_d43_c2_poche_fiches');

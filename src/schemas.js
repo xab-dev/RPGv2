@@ -457,6 +457,21 @@ function validerScene(entry, catalogs, path) {
         if (typeof motif.poids !== 'number' || motif.poids <= 0) {
           erreurs.push(`${path} > decor.motifs[${i}] > poids doit être un nombre positif`);
         }
+        // `sur` (`D-106`) : les tuiles qui PORTENT ce motif. Absent = partout,
+        // pour qu'un catalogue d'avant reste valide tel quel (la Grotte n'en
+        // déclare pas). Présent, il ne peut pas être vide : un motif qui ne
+        // pousse nulle part est une faute de frappe, pas une intention.
+        if (motif.sur !== undefined) {
+          if (!Array.isArray(motif.sur) || motif.sur.length === 0) {
+            erreurs.push(`${path} > decor.motifs[${i}] > sur doit être une liste non vide d'ids de tiles.json`);
+          } else {
+            motif.sur.forEach((tileId) => {
+              if (!tileIds.has(tileId)) {
+                erreurs.push(`${path} > decor.motifs[${i}] > sur : "${tileId}" introuvable dans tiles.json`);
+              }
+            });
+          }
+        }
       });
     }
   }

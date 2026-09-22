@@ -1,0 +1,43 @@
+---
+projet: RPG V2
+episode/session: Réglage Haut — une couche de plus que Moyen (grain, particules, animations)
+type: fichier de bord
+version: 1.0.0
+statut: en cours
+catégorie: Journal
+date: 2026-09-22
+genere_par: claude
+verifie_par: xav
+---
+
+# Fichier de bord : le réglage Haut (22/09, nuit)
+
+Consigne de Xav : « Q-58 et D-133 : tout ce qui touche aux animations, grain, particules
+(réglage Haut), on ne réinvente pas tout, mais tu peux en rajouter une couche pour que l'on
+voie la différence avec le réglage moyen. » La forêt, les monstres et la Grotte restent hors
+périmètre (consigne de la session précédente). Pas de `push` sans son go.
+
+Outil : `tools/scenarios/haut_moyen.mjs`, qui prend chaque poste (parquet, pelouse, marche,
+nuit) sous Moyen **puis** sous Haut, forcés par `?qualite=`. Captures :
+`docs/captures/haut-2026-09-22/`.
+
+## Diagnostic
+
+- **Haut = Moyen + `particules: 2`, et rien d'autre** (`data/graphismes.json`). Ce levier
+  double la **réserve** des traînées. Or une réserve qui n'était pas pleine ne dessine rien de
+  plus quand on la double : l'intervalle d'émission, lui, n'a pas bougé. D'où le « pas de
+  différence notable » de Xav (`D-116`).
+- **`densite_decor` ne pouvait pas monter** : le décor ne savait pas sur quelle surface il
+  pousse (`D-106`). Le multiplier aurait semé de l'herbe dans le salon.
+- **`D-133` est `D-106`**, et rien d'autre. La touffe, la flaque et le caillou vus sur le
+  parquet sont du **décor** (`visuel_herbe`, `visuel_flaque`, `visuel_rocher_petit`). Les
+  objets ramassables excluent déjà la zone `maison`, donc l'hypothèse `tirerPositionLibre`
+  tombe.
+- **`Q-58`** (ornements du follet, halos) : ces deux leviers n'ont jamais été livrés. Aucun
+  effet n'était réservé à Haut, et rien dans les données ne permettait de le dire.
+
+## Commits
+
+| Commit | Ticket | Ce qui change |
+|---|---|---|
+| (ce commit) | `D-106`, `D-133` | `sur` sur un motif de décor ; rejet sans re-tirage (préfixe `D-114` intact) ; plus rien sur le parquet |

@@ -54,9 +54,12 @@ export function genererDecor(scene, multiplicateurDensite = 1) {
   for (let y = 0; y < scene.height; y++) {
     for (let x = 0; x < scene.width; x++) {
       const tuile = scene.tuileA(x, y);
-      if (tuile && !tuile.solid) positionsSol.push({ x, y });
+      if (tuile && !tuile.solid) positionsSol.push({ x, y, tuileId: tuile.id });
     }
   }
+  // `sur` (`D-106`) : les tuiles qui portent chaque motif, en Set une fois
+  // pour toutes. Absent = partout (la Grotte, et tout catalogue d'avant).
+  const porteurs = config.motifs.map((m) => (Array.isArray(m.sur) ? new Set(m.sur) : null));
 
   const nombreMotifs = Math.floor(positionsSol.length * config.densite * multiplicateurDensite);
   const decor = [];
@@ -66,25 +69,32 @@ export function genererDecor(scene, multiplicateurDensite = 1) {
     // Tirage pondéré (poids/poidsTotal) : le dernier motif sert de repli en
     // cas d'arrondi flottant en bout de tirage, jamais un motif indéfini.
     let tirage = alea() * poidsTotal;
-    let visuel = config.motifs[config.motifs.length - 1].visuel;
-    for (const motif of config.motifs) {
-      if (tirage < motif.poids) {
-        visuel = motif.visuel;
+    let indice = config.motifs.length - 1;
+    for (let m = 0; m < config.motifs.length; m++) {
+      if (tirage < config.motifs[m].poids) {
+        indice = m;
         break;
       }
-      tirage -= motif.poids;
+      tirage -= config.motifs[m].poids;
     }
+    const visuel = config.motifs[indice].visuel;
 
-    decor.push({
-      x: (position.x + alea()) * scene.tileSize,
-      y: (position.y + alea()) * scene.tileSize,
-      visuel,
-      // Légère variation d'inclinaison par graine (§3.4, visuel_herbe) —
-      // appliquée à tout motif via dessinerVisuel#options.rotation plutôt que
-      // conditionnée à un id précis : un rocher/une flaque, symétriques ou
-      // quasi, n'en paraissent pas moins statiques ; un brin d'herbe, si.
-      rotation: (alea() * 2 - 1) * ROTATION_MAX_DEG,
-    });
+    // Les trois tirages restants sont faits AVANT de savoir si le motif est
+    // gardé : c'est ce qui garde constant le nombre de tirages par itération
+    // (contrat ci-dessus). Un motif qui tombe sur une surface qui ne le porte
+    // pas (`D-106` : une touffe d'herbe sur le parquet) est donc REJETÉ, pas
+    // re-tiré ailleurs — re-tirer consommerait des nombres de plus et
+    // redistribuerait tout le décor qui suit, à chaque preset.
+    const x = (position.x + alea()) * scene.tileSize;
+    const y = (position.y + alea()) * scene.tileSize;
+    // Légère variation d'inclinaison par graine (§3.4, visuel_herbe) —
+    // appliquée à tout motif via dessinerVisuel#options.rotation plutôt que
+    // conditionnée à un id précis : un rocher/une flaque, symétriques ou
+    // quasi, n'en paraissent pas moins statiques ; un brin d'herbe, si.
+    const rotation = (alea() * 2 - 1) * ROTATION_MAX_DEG;
+    const sur = porteurs[indice];
+    if (sur && !sur.has(position.tuileId)) continue;
+    decor.push({ x, y, visuel, rotation });
   }
   return decor;
 }

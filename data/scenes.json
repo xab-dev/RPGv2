@@ -140,15 +140,18 @@
       "motifs": [
         {
           "visuel": "visuel_herbe",
-          "poids": 5
+          "poids": 5,
+          "sur": ["tile_herbe"]
         },
         {
           "visuel": "visuel_flaque",
-          "poids": 1
+          "poids": 1,
+          "sur": ["tile_herbe"]
         },
         {
           "visuel": "visuel_rocher_petit",
-          "poids": 2
+          "poids": 2,
+          "sur": ["tile_herbe", "tile_chemin"]
         }
       ]
     },

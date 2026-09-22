@@ -2555,6 +2555,180 @@
     ]
   },
   {
+    "id": "visuel_mur_maison",
+    "ancre": "bas",
+    "primitives": [
+      {
+        "forme": "rect",
+        "dx": -10.5,
+        "dy": -26.5,
+        "w": 9.8,
+        "h": 9.8,
+        "couleur": "#867d70"
+      },
+      {
+        "forme": "rect",
+        "dx": -10.5,
+        "dy": -30.6,
+        "w": 9.8,
+        "h": 1.6,
+        "couleur": "#a39a8b"
+      },
+      {
+        "forme": "rect",
+        "dx": -10.5,
+        "dy": -22.2,
+        "w": 9.8,
+        "h": 1.2,
+        "couleur": "#655d52"
+      },
+      {
+        "forme": "rect",
+        "dx": 5.5,
+        "dy": -26.5,
+        "w": 19.8,
+        "h": 9.8,
+        "couleur": "#7a7165"
+      },
+      {
+        "forme": "rect",
+        "dx": 5.5,
+        "dy": -30.6,
+        "w": 19.8,
+        "h": 1.6,
+        "couleur": "#a39a8b"
+      },
+      {
+        "forme": "rect",
+        "dx": 5.5,
+        "dy": -22.2,
+        "w": 19.8,
+        "h": 1.2,
+        "couleur": "#655d52"
+      },
+      {
+        "forme": "rect",
+        "dx": -13.8,
+        "dy": -16,
+        "w": 4.4,
+        "h": 8.8,
+        "couleur": "#8f8679"
+      },
+      {
+        "forme": "rect",
+        "dx": -13.8,
+        "dy": -19.6,
+        "w": 4.4,
+        "h": 1.6,
+        "couleur": "#a39a8b"
+      },
+      {
+        "forme": "rect",
+        "dx": -13.8,
+        "dy": -12.2,
+        "w": 4.4,
+        "h": 1.2,
+        "couleur": "#655d52"
+      },
+      {
+        "forme": "rect",
+        "dx": -3,
+        "dy": -16,
+        "w": 14.8,
+        "h": 8.8,
+        "couleur": "#80776a"
+      },
+      {
+        "forme": "rect",
+        "dx": -3,
+        "dy": -19.6,
+        "w": 14.8,
+        "h": 1.6,
+        "couleur": "#a39a8b"
+      },
+      {
+        "forme": "rect",
+        "dx": -3,
+        "dy": -12.2,
+        "w": 14.8,
+        "h": 1.2,
+        "couleur": "#655d52"
+      },
+      {
+        "forme": "rect",
+        "dx": 10.8,
+        "dy": -16,
+        "w": 10.4,
+        "h": 8.8,
+        "couleur": "#8b8274"
+      },
+      {
+        "forme": "rect",
+        "dx": 10.8,
+        "dy": -19.6,
+        "w": 10.4,
+        "h": 1.6,
+        "couleur": "#a39a8b"
+      },
+      {
+        "forme": "rect",
+        "dx": 10.8,
+        "dy": -12.2,
+        "w": 10.4,
+        "h": 1.2,
+        "couleur": "#655d52"
+      },
+      {
+        "forme": "rect",
+        "dx": -7,
+        "dy": -5.5,
+        "w": 16.8,
+        "h": 9.8,
+        "couleur": "#77705f"
+      },
+      {
+        "forme": "rect",
+        "dx": -7,
+        "dy": -9.6,
+        "w": 16.8,
+        "h": 1.6,
+        "couleur": "#a39a8b"
+      },
+      {
+        "forme": "rect",
+        "dx": -7,
+        "dy": -1.2,
+        "w": 16.8,
+        "h": 1.2,
+        "couleur": "#655d52"
+      },
+      {
+        "forme": "rect",
+        "dx": 9,
+        "dy": -5.5,
+        "w": 12.8,
+        "h": 9.8,
+        "couleur": "#867d70"
+      },
+      {
+        "forme": "rect",
+        "dx": 9,
+        "dy": -9.6,
+        "w": 12.8,
+        "h": 1.6,
+        "couleur": "#a39a8b"
+      },
+      {
+        "forme": "rect",
+        "dx": 9,
+        "dy": -1.2,
+        "w": 12.8,
+        "h": 1.2,
+        "couleur": "#655d52"
+      }
+    ]
+  },
+  {
     "id": "visuel_arbre_fruitier",
     "ancre": "bas",
     "ombre": {

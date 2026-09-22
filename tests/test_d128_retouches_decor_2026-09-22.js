@@ -87,4 +87,19 @@ assert.ok(decorGrotte.length > 0 && decorGrotte.every((id) => id === 'visuel_roc
   }
 }
 
+// `D-131` — les murs de la Maison. Une tuile solide a le droit de dépasser vers
+// le haut (un arbre), mais un MUR est une surface, pas un objet : son appareil
+// tient dans sa cellule sur les quatre bords, sinon la pierre d'un mur nord
+// mordrait l'herbe au-dessus, et celle d'un mur ouest le chemin à sa gauche.
+{
+  const mur = tuile('tile_mur_maison');
+  assert.equal(mur.solid, true, 'le mur de la Maison doit rester solide');
+  const v = visuel(mur.render.visuel);
+  for (const cote of COTES) {
+    const e = etendue(v);
+    assert.ok(e.minX >= -cote / 2 && e.maxX <= cote / 2 && e.minY >= -cote && e.maxY <= 0,
+      `le mur de la Maison sort de sa cellule (${JSON.stringify(e)})`);
+  }
+}
+
 console.log('test_d128_retouches_decor : ok');

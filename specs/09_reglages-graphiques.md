@@ -56,11 +56,12 @@ Pour que ce tri ne vive pas dans la tête de quelqu'un : **chaque effet de `data
 
 ### 4.3 Les trois leviers
 
-| Levier | Sens de la valeur | Bas | Moyen | Haut (v1) |
+| Levier | Sens de la valeur | Bas | Moyen | Haut |
 |---|---|---|---|---|
 | `grain_sol` | Fraction 0 → 1 des primitives du `render.visuel` d'une tuile **non solide**, prises **dans l'ordre des données** (les premières sont donc les plus importantes : convention à écrire dans le schéma). Les tuiles **solides** (arbres, rochers) ne sont pas touchées : leur silhouette *est* le monde | **0** | **1** | **1** |
-| `densite_decor` | Multiplicateur de la `densite` déclarée par la scène | **0** | **1** | **1**, puis davantage **quand `D-106` sera livré** (voir §4.4) |
-| `particules` | Multiplicateur de la `capacite` des effets `cosmetique`. 0 = le système n'émet pas et ne dessine pas | **0** | **1** | **2** *(provisoire)* |
+| `densite_decor` | Multiplicateur de la `densite` déclarée par la scène | **0** | **1** | **10** depuis `D-116` (22/09), une fois `D-106` livré *(provisoire)* |
+| `particules` | Multiplicateur de la `capacite` des effets `cosmetique`. 0 = le système n'émet pas et ne dessine pas. Au-dessus de 1 (`D-116`) : intervalle d'émission ÷ m, durée de vie × √m, réserve × m√m, faute de quoi Haut ne se voyait pas | **0** | **1** | **2** *(provisoire)* |
+| `ornements` (`D-134`, réponse à `Q-58`) | Niveau d'ornement. Un effet qui déclare `ornement_min` n'existe qu'à partir de ce niveau ; sans seuil, il existe partout | **0** | **1** | **2** (étincelles du follet, halo qui respire) |
 
 Toutes les valeurs sont *provisoires* et vivent en données.
 

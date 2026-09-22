@@ -3,7 +3,7 @@ projet: RPG V2
 episode/session: Réglage Haut — une couche de plus que Moyen (grain, particules, animations)
 type: fichier de bord
 version: 1.0.0
-statut: en cours
+statut: clos
 catégorie: Journal
 date: 2026-09-22
 genere_par: claude
@@ -40,7 +40,16 @@ nuit) sous Moyen **puis** sous Haut, forcés par `?qualite=`. Captures :
 
 | Commit | Ticket | Ce qui change |
 |---|---|---|
-| (ce commit) | `D-106`, `D-133` | `sur` sur un motif de décor ; rejet sans re-tirage (préfixe `D-114` intact) ; plus rien sur le parquet |
-| (ce commit) | `D-116` (1/3) | Haut : `densite_decor` 1 → **10** (le « ×10 » de `Q-53`), ~25 à 30 motifs par écran au lieu de 3 ou 4. Essais : ×5 ne se voyait pas, ×12 n'apportait rien de plus que ×10. Coût mesuré en marchant (`cout_calque.mjs`) : reconstruction moyenne **4,28 → 4,91 ms**, pic 5,8 → 7,0 ms, **0 frame > 20 ms** dans les deux cas. Réserve : un quart des motifs sont des cailloux gris, ce sont eux qui se voient le plus |
-| (ce commit) | `D-116` (2/3) | Le levier `particules`, au-dessus de 1, **densifie** : intervalle d'émission ÷ m, durée de vie × √m, réserve × m√m. Avant : Haut rendait Moyen **au pixel près** en marche (capture `avant_marche_*` : 2 bouffées dans les deux). Après : 5 à 6 bouffées, traînée plus longue (`apres_marche_haut`). Moyen reste le catalogue au champ près (test `D-112` §1), et le test exige désormais que Haut montre **strictement plus** de bouffées que Moyen |
-| (ce commit) | `D-134` (`Q-58`) | 4ᵉ levier `ornements` (0 / 1 / 2) ; deux effets à `ornement_min: 2` : trois étincelles en orbite autour du follet (devant puis derrière lui), halo qui respire (±35 %, teinte seule, jamais le trou dans le voile). Moyen au pixel près. Captures `apres_pelouse_*`, `apres_nuit_*` |
+| `0d571a0` | `D-106`, `D-133` | `sur` sur un motif de décor ; rejet sans re-tirage (préfixe `D-114` intact) ; plus rien sur le parquet |
+| `311c1aa` | `D-116` (1/3) | Haut : `densite_decor` 1 → **10** (le « ×10 » de `Q-53`), ~25 à 30 motifs par écran au lieu de 3 ou 4. Essais : ×5 ne se voyait pas, ×12 n'apportait rien de plus que ×10. Coût mesuré en marchant (`cout_calque.mjs`) : reconstruction moyenne **4,28 → 4,91 ms**, pic 5,8 → 7,0 ms, **0 frame > 20 ms** dans les deux cas. Réserve : un quart des motifs sont des cailloux gris, ce sont eux qui se voient le plus |
+| `6494368` | `D-116` (2/3) | Le levier `particules`, au-dessus de 1, **densifie** : intervalle d'émission ÷ m, durée de vie × √m, réserve × m√m. Avant : Haut rendait Moyen **au pixel près** en marche (capture `avant_marche_*` : 2 bouffées dans les deux). Après : 5 à 6 bouffées, traînée plus longue (`apres_marche_haut`). Moyen reste le catalogue au champ près (test `D-112` §1), et le test exige désormais que Haut montre **strictement plus** de bouffées que Moyen |
+| `4116a0b` | `D-134` (`Q-58`) | 4ᵉ levier `ornements` (0 / 1 / 2) ; deux effets à `ornement_min: 2` : trois étincelles en orbite autour du follet (devant puis derrière lui), halo qui respire (±35 %, teinte seule, jamais le trou dans le voile). Moyen au pixel près. Captures `apres_pelouse_*`, `apres_nuit_*` |
+
+## Ce qui reste à Xav
+
+- **`V-75`** : Moyen ↔ Haut au même endroit, pelouse, marche, follet (de jour et de nuit).
+- **`Q-58`** : les ornements existent, sous le seuil `ornement_min: 2`. À toi de dire si c'est
+  la bonne réponse à la question et de la clore.
+- Hors périmètre, non touché : la forêt (`D-110`), les lisières (`Q-52`), la Grotte. Haut n'a
+  **pas** été mesuré sous bridage CPU : Auto ne choisit jamais Haut, c'est un choix du joueur
+  sur une machine qui s'ennuie (`specs/09` §5).

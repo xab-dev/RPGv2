@@ -257,7 +257,13 @@ function monterPartie(stations = null) {
   console.log('OK migration 6 -> 7 : le coffre de base hérite, sa pose tient, un coffre vide ne laisse rien');
 }
 
-// --- 6. Les dix sauvegardes réelles de Xav se chargent -------------------
+// --- 6. Les sauvegardes réelles de Xav se chargent -----------------------
+// Le dossier grossit à chaque export : ce test lit ce qu'il TROUVE, et les
+// fichiers n'y sont pas tous de la même époque — depuis le 22/09 certains
+// sont déjà en v7, le coffre de base portant son contenu dans sa propre
+// entrée. Ce qui se vérifie n'est donc pas « la v6 a bien été convertie »
+// mais la propriété qui vaut des deux côtés : **rien ne se perd**, quelle que
+// soit la forme d'arrivée.
 {
   const fs = await import('node:fs/promises');
   const dossier = path.join(RACINE, 'docs', 'sauvegardes');
@@ -270,11 +276,15 @@ function monterPartie(stations = null) {
     const migre = migrer(payload);
     assert.equal(migre.schema_version, VERSION_SCHEMA_COURANTE, `${fichier} : migrée à la version courante`);
     assert.equal(migre.coffre, undefined, `${fichier} : plus de champ coffre`);
-    // Rien de perdu : ce que le coffre contenait est toujours là.
-    const avant = (payload.coffre && payload.coffre.items) || {};
+    // Rien de perdu : ce que le coffre de base portait AVANT — dans le champ
+    // `coffre` d'une v6, ou déjà dans son entrée de `maison.stations` — est
+    // toujours là après.
     const total = (t) => Object.values(t || {}).reduce((a, b) => a + b, 0);
-    const apres = (migre.maison.stations[COFFRE_DE_BASE.id] || {}).contenu || {};
-    assert.equal(total(apres), total(avant), `${fichier} : le contenu du coffre est intact`);
+    const stationsAvant = (payload.maison && payload.maison.stations) || {};
+    const avant = total((payload.coffre && payload.coffre.items))
+      + total((stationsAvant[COFFRE_DE_BASE.id] || {}).contenu);
+    const apres = total((migre.maison.stations[COFFRE_DE_BASE.id] || {}).contenu);
+    assert.equal(apres, avant, `${fichier} : le contenu du coffre est intact`);
   }
   console.log(`OK les ${fichiers.length} sauvegardes réelles se chargent, coffre intact`);
 }

@@ -1337,9 +1337,70 @@ export const SCHEMAS = {
       // un nombre de particules, et il vit dans l'ÉCRAN et non dans le
       // monde. C'est la branche de plus annoncée juste au-dessus, et rien
       // ailleurs.
-      const TYPES = ['particules', 'texte', 'vol', 'clignement', 'curseur'];
+      // `orbite` et `respiration` (`Q-58`, `D-134`) : les ORNEMENTS du follet —
+      // des étincelles qui lui tournent autour, et un halo qui respire. Ni
+      // l'un ni l'autre ne vit hors de Haut aujourd'hui, et c'est `ornement_min`
+      // qui le dit, pas le type.
+      const TYPES = ['particules', 'texte', 'vol', 'clignement', 'curseur', 'orbite', 'respiration'];
       if (!TYPES.includes(entry.type)) {
         erreurs.push(`${path} > type doit valoir ${TYPES.map((t) => `"${t}"`).join(' ou ')}`);
+        return erreurs;
+      }
+
+      // `ornement_min` (`D-134`, facultatif, tout type) : le niveau du levier
+      // `ornements` à partir duquel l'effet existe. Absent = toujours. C'est un
+      // SEUIL et pas une liste de presets : l'effet ne connaît pas le mot
+      // « haut », il dit de combien d'ornement il a besoin, et le catalogue des
+      // presets dit combien chacun en donne. Seul un effet cosmétique peut en
+      // porter un : ce qui informe le joueur ne se réserve pas à une machine.
+      if (entry.ornement_min !== undefined) {
+        if (!Number.isInteger(entry.ornement_min) || entry.ornement_min < 0) {
+          erreurs.push(`${path} > ornement_min doit être un entier positif ou nul`);
+        } else if (entry.role !== 'cosmetique') {
+          erreurs.push(`${path} > ornement_min est réservé aux effets "cosmetique" (une information ne dépend pas du réglage)`);
+        }
+      }
+
+      if (entry.type === 'orbite') {
+        // Mêmes champs d'orbite que le curseur (`curseur.js#positionsOrbite`
+        // les lit tels quels), plus l'échelle d'une étincelle.
+        if (!Number.isInteger(entry.nb_particules) || entry.nb_particules < 0) {
+          erreurs.push(`${path} > nb_particules doit être un entier positif ou nul`);
+        }
+        if (typeof entry.rayon_orbite_px !== 'number' || entry.rayon_orbite_px < 0) {
+          erreurs.push(`${path} > rayon_orbite_px doit être un nombre positif ou nul`);
+        }
+        if (typeof entry.aplatissement !== 'number' || entry.aplatissement < 0 || entry.aplatissement > 1) {
+          erreurs.push(`${path} > aplatissement doit être un nombre entre 0 et 1 (1 = orbite ronde, 0 = orbite plate)`);
+        }
+        if (typeof entry.periode_ms !== 'number' || entry.periode_ms <= 0) {
+          erreurs.push(`${path} > periode_ms doit être un nombre strictement positif`);
+        }
+        if (entry.sens !== 1 && entry.sens !== -1) {
+          erreurs.push(`${path} > sens doit valoir 1 ou -1 (sens de rotation, jamais un facteur)`);
+        }
+        if (typeof entry.phase_rad !== 'number' || !Number.isFinite(entry.phase_rad)) {
+          erreurs.push(`${path} > phase_rad doit être un nombre fini`);
+        }
+        if (typeof entry.echelle !== 'number' || entry.echelle <= 0) {
+          erreurs.push(`${path} > echelle doit être un nombre strictement positif`);
+        }
+        if (typeof entry.visuel !== 'string') {
+          erreurs.push(`${path} > visuel (l'étincelle) est requis pour un effet de type "orbite"`);
+        }
+        return erreurs;
+      }
+
+      if (entry.type === 'respiration') {
+        // Un facteur qui oscille autour de 1 : 1 ± amplitude. Une amplitude
+        // ≥ 1 ferait passer le facteur par zéro (halo éteint à chaque souffle)
+        // ou sous zéro (un alpha négatif) — refusé au boot.
+        if (typeof entry.periode_ms !== 'number' || entry.periode_ms <= 0) {
+          erreurs.push(`${path} > periode_ms doit être un nombre strictement positif`);
+        }
+        if (typeof entry.amplitude !== 'number' || entry.amplitude < 0 || entry.amplitude >= 1) {
+          erreurs.push(`${path} > amplitude doit être un nombre dans [0, 1[ (le facteur reste positif)`);
+        }
         return erreurs;
       }
 

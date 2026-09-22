@@ -18,6 +18,7 @@ import { creerSourceTactile } from './input/touch.js';
 import { creerPleinEcranTactile } from './plein_ecran.js';
 import { verrouillerMenuContextuel } from './souris.js';
 import { creerCurseur } from './curseur.js';
+import { ornementActif, etincellesOrbite, facteurRespiration } from './ornements.js';
 import { creerCoucheInput, etatNeutre } from './input/input.js';
 import { chargerScene, resoudreDeplacement, portailFranchi, trouverPositionLibrePlusProche } from './scene.js';
 import { calculerCamera } from './camera.js';
@@ -822,6 +823,8 @@ export function creerOrchestrateurGrotte({
       effetSillageCatalogue, levier('particules'), { capacite: CAPACITE_RESERVE },
     );
     sillageFollet = creerPoussiere(effetSillage);
+    effetOrnement = ornementActif(effetOrnementCatalogue, levier('ornements'));
+    effetHalo = ornementActif(effetHaloCatalogue, levier('ornements'));
     if (scene) regenererDecor();
     // Sans ça, l'ancien sol resterait à l'écran jusqu'au prochain
     // franchissement de tuile : la signature du calque (scène, échelle,
@@ -930,6 +933,15 @@ export function creerOrchestrateurGrotte({
     effetSillageCatalogue, levier('particules'), { capacite: CAPACITE_RESERVE },
   );
   let sillageFollet = creerPoussiere(effetSillage);
+  // `D-134` (`Q-58`) : les ornements du follet. Résolus UNE fois par preset,
+  // comme les réserves de particules : `null` sous le seuil, et le dessin ne
+  // fait alors qu'un test de présence. Même horloge que le vol du corps
+  // (`tempsVolFolletMs`), donc gelés sous UI sans une condition de plus.
+  const effetOrnementCatalogue = registre.obtenir('effets', 'effet_ornement_follet');
+  const visuelOrnement = registre.obtenir('visuels', effetOrnementCatalogue.visuel);
+  const effetHaloCatalogue = registre.obtenir('effets', 'effet_halo_follet');
+  let effetOrnement = ornementActif(effetOrnementCatalogue, levier('ornements'));
+  let effetHalo = ornementActif(effetHaloCatalogue, levier('ornements'));
 
   // MT_texte-flottant_2026-09-19 (`D-05`) : même patron exactement — réglages
   // en données (tous PROVISOIRES, à régler au ressenti par Xav) et réserve
@@ -3268,6 +3280,17 @@ export function creerOrchestrateurGrotte({
       sillage: companionActif
         ? { visuel: visuelSillage, teinte: companionActif.render.couleur, bouffees: bouffeesVisibles(sillageFollet) }
         : null,
+      // `D-134` : étincelles en orbite autour de la SILHOUETTE (là où l'œil
+      // voit le follet), teintes à sa couleur. Vide sous le seuil d'ornement.
+      ornementsFollet: follet && companionActif && effetOrnement
+        ? {
+          visuel: visuelOrnement,
+          teinte: companionActif.render.couleur,
+          etincelles: etincellesOrbite(
+            effetOrnement, tempsVolFolletMs, follet.x + corpsFollet.dx, follet.y + corpsFollet.dy,
+          ),
+        }
+        : null,
       // `undefined` (jamais un no-op) hors `?debug=fps` — même raison que
       // `surFrame` ci-dessous : render.js ne lit `performance.now()` que si
       // ce callback est fourni.
@@ -3279,6 +3302,8 @@ export function creerOrchestrateurGrotte({
       follet: follet ? { x: follet.x, y: follet.y } : null,
       rayonLumiereFollet: companionActif ? companionActif.rayon_lumiere : 0,
       couleurLumiereFollet: companionActif ? companionActif.render.couleur : null,
+      // `D-134` : 1 exactement sans l'effet, donc Moyen inchangé.
+      respirationLumiereFollet: facteurRespiration(effetHalo, tempsVolFolletMs),
     });
     // Signal des zones de Chaos (specs/07 palier D) : APRÈS le calque
     // d'obscurité — il se voit à travers la nuit sans percer le voile (on

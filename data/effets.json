@@ -103,5 +103,27 @@
     "echelle_fin": 0.2,
     "decalage_lateral_px": 1.5,
     "offset_y_px": 0
+  },
+  {
+    "id": "effet_ornement_follet",
+    "type": "orbite",
+    "role": "cosmetique",
+    "ornement_min": 2,
+    "visuel": "visuel_sillage_follet",
+    "echelle": 0.9,
+    "nb_particules": 3,
+    "rayon_orbite_px": 9,
+    "aplatissement": 0.45,
+    "periode_ms": 2600,
+    "sens": 1,
+    "phase_rad": 0
+  },
+  {
+    "id": "effet_halo_follet",
+    "type": "respiration",
+    "role": "cosmetique",
+    "ornement_min": 2,
+    "periode_ms": 2800,
+    "amplitude": 0.35
   }
 ]

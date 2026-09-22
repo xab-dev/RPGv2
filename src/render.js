@@ -512,6 +512,10 @@ export function dessinerScene(ctx, {
   // fichier ne connaît ni le module, ni visuels.json par id. Défaut vide :
   // un appelant qui ne fournit rien dessine exactement comme avant.
   poussiere = null, sillage = null,
+  // `D-134` : étincelles en orbite autour du follet ({ visuel, teinte,
+  // etincelles: [{ x, y, devant, alpha, echelle }] }), déjà calculées par
+  // `ornements.js`. Absent = rien, donc un appelant d'avant dessine pareil.
+  ornementsFollet = null,
   // MT_mesure-saccades_2026-09-19, piste 1 : cf. dessinerCoucheStatique plus
   // haut — `undefined` par défaut, jamais fourni par le jeu réel hors
   // `?debug=fps` (ui/hud_debug.js).
@@ -650,7 +654,20 @@ export function dessinerScene(ctx, {
     }
   }
 
+  // `D-134` : une orbite se lit parce qu'elle passe DERRIÈRE puis DEVANT ce
+  // qu'elle entoure — d'où deux passes autour de la silhouette du follet.
+  const dessinerEtincelles = (devant) => {
+    if (!ornementsFollet) return;
+    for (const e of ornementsFollet.etincelles) {
+      if (e.devant !== devant) continue;
+      dessinerVisuel(ctx, ornementsFollet.visuel, e.x - camera.x, e.y - camera.y, {
+        teinte: ornementsFollet.teinte, alpha: e.alpha, echelle: e.echelle,
+      });
+    }
+  };
+
   if (follet) {
+    dessinerEtincelles(false);
     // `D-34` : `follet.echelle` est résolue par main.js (échelle de jeu en
     // données, interpolée à la sortie de la cinématique). Absente = 1, donc
     // un appelant qui l'ignore dessine comme avant.
@@ -658,6 +675,7 @@ export function dessinerScene(ctx, {
       teinte: follet.couleur,
       echelle: follet.echelle === undefined ? 1 : follet.echelle,
     });
+    dessinerEtincelles(true);
   }
 
   // Anneau d'attaque (§3.1 03_grotte-polish, spec 02_grotte.md §3.5 jamais
@@ -843,7 +861,13 @@ export function statsCanvasVoile() {
 // propre calque, on y perce des trous dégradés (coeur net, bord doux, cf.
 // constantes ci-dessus) en "destination-out", puis on compose ce calque
 // par-dessus la scène.
-export function dessinerObscurite(ctx, { scene, camera, follet, rayonLumiereFollet, couleurLumiereFollet }) {
+// `respirationLumiereFollet` (`D-134`, défaut 1) : un facteur qui module la
+// seule TEINTE chaude, jamais le trou percé dans le voile — ce que la lumière
+// révèle du sol est une règle de jeu (`rayon_lumiere`, `D-35`), ce qu'elle
+// colore est un ornement.
+export function dessinerObscurite(ctx, {
+  scene, camera, follet, rayonLumiereFollet, couleurLumiereFollet, respirationLumiereFollet = 1,
+}) {
   if (!scene.obscurite) return;
 
   // Taille déjà posée par dessinerScene un peu plus tôt dans la même frame
@@ -918,7 +942,7 @@ export function dessinerObscurite(ctx, { scene, camera, follet, rayonLumiereFoll
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     const degrade = ctx.createRadialGradient(x, y, 0, x, y, rayonLumiereFollet);
-    degrade.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.35)`);
+    degrade.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${0.35 * respirationLumiereFollet})`);
     degrade.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
     ctx.fillStyle = degrade;
     ctx.beginPath();

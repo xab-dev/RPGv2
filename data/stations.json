@@ -16,6 +16,7 @@
     "label_key": "station.coffre",
     "role": "stockage",
     "placable": true,
+    "deplacable_si_vide": true,
     "conteneur": "conteneur_coffre"
   },
   {

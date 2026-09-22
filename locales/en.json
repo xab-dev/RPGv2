@@ -272,5 +272,6 @@
   "flag.ambiance_premiere_herbe": "The wisp spoke about the grass",
   "flag.ambiance_premier_rangement": "The wisp spoke about the chest",
   "flag.ambiance_niveau_10": "The wisp spoke about level 10",
-  "flag.ambiance_coffre_pose": "The wisp spoke about the placed chest"
+  "flag.ambiance_coffre_pose": "The wisp spoke about the placed chest",
+  "menu.fiche.refus_station_pleine": "Empty it before moving it"
 }

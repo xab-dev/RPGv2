@@ -1967,6 +1967,15 @@ export const SCHEMAS = {
       if (typeof entry.placable !== 'boolean') {
         erreurs.push(`${path} > placable doit être un booléen`);
       }
+      // `D-126` (décision de Xav, 22/09) : OPTIONNEL — « on ne déplace pas un
+      // meuble plein ». Absent = la station se déplace quel que soit son
+      // contenu (c'est le cas des trois autres, qui n'en ont pas). Déclaré
+      // ici plutôt que déduit du rôle « stockage » : une scierie qui
+      // stockerait des bûches devra trancher pour elle-même, et une règle de
+      // jeu se LIT, elle ne se devine pas.
+      if (entry.deplacable_si_vide !== undefined && typeof entry.deplacable_si_vide !== 'boolean') {
+        erreurs.push(`${path} > deplacable_si_vide doit être un booléen s'il est présent`);
+      }
       return erreurs;
     },
   },

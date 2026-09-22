@@ -450,3 +450,54 @@ Il n'épingle **aucun texte** (`D-52`) : les mots appartiennent à Xav.
 
 `npm test` : **131 fichiers verts**.
 
+## Hors file — On ne déplace pas un meuble plein (`D-126`)
+
+**Relevé par Xav en jouant** : « je ne peux plus déplacer le premier coffre ». Il a demandé de
+**garder la mécanique** et de corriger la racine. Les deux sont possibles ensemble, et c'est
+même le bon dénouement : la règle voulue **remplace** le défaut au lieu de le masquer.
+
+**La règle, maintenant DITE** : `stations.json > deplacable_si_vide`, sur le type coffre.
+Optionnel — une station qui ne déclare rien se déplace quel que soit son contenu, donc les
+trois autres n'ont rien à changer. Déclaré sur le type plutôt que déduit du rôle « stockage » :
+une scierie qui stockerait des bûches devra trancher pour elle-même, et **une règle de jeu se
+lit, elle ne se devine pas**. Un contenu à **zéro** n'est pas un contenu (`retirerItem` peut
+laisser une clé derrière lui) : un coffre vidé redevient déplaçable.
+
+La tuile est **grisée** et la fiche dit pourquoi — patron de `D-122` : sans la phrase, le joueur
+verrait une tuile morte sans savoir que la vider la réveille. Et l'action est **retentée pour de
+vrai** plutôt que court-circuitée : le résultat fait foi.
+
+**La racine, c'était la moitié non faite de `D-121`.** Avant T5, `save.maison.stations[id]`
+**était** une pose ; depuis, c'est une **fiche** qui peut porter `contenu`, `type` et `scene`, et
+qui n'a des coordonnées que si le joueur a déplacé la station. J'avais appris la nouvelle forme
+à `resoudreOverridesStations` — **et à lui seul**. Les deux autres chemins prenaient une fiche
+de contenu pour une pose :
+
+- `demarrerConstruction` : le repli `|| {pose par défaut}` ne joue que si l'entrée est
+  **absente**. Un coffre qu'on a rempli sans jamais le déplacer A une entrée, donc le fantôme
+  naissait à `x: undefined` ; la poussée faisait `undefined + 1`, et `Math.max`/`Math.min`
+  propageaient le NaN **sans rien dire**. C'est ce que Xav voyait.
+- `confirmerConstruction` : `= { ...pose }` **remplaçait** la fiche. Deux pertes silencieuses,
+  mesurées en banc avant d'être décrites : déplacer un coffre plein **effaçait son contenu**, et
+  déplacer un coffre **fabriqué** lui retirait `type` et `scene` — donc `instancesCreees` ne le
+  rendait plus et **il disparaissait du monde** au rechargement, avec ce qu'il portait.
+
+Remède : **un** lecteur (`poseSauvegardeeDeStation`, au niveau module, donc testable et lisible
+par les deux fonctions sœurs) et **une** écriture qui **enrichit** au lieu de remplacer. C'est
+`D-71` mot pour mot — « une charge utile s'enrichit, elle ne se refabrique pas » — appliqué
+cette fois à une entrée de **sauvegarde**. Trois lectures de la même donnée finissent toujours
+par diverger : c'est exactement ce qui vient de se produire.
+
+**Troisième trou, trouvé en route** : `poseValide` rendait **`ok: true` sur une empreinte NaN**.
+Toute comparaison avec NaN étant fausse, les trois tests de la fonction la laissaient passer —
+le fantôme s'affichait **vert** tout en n'étant nulle part. Un garde-fou en tête coûte quatre
+comparaisons et rend la panne visible là où elle se produit. Et une raison sans dialogue
+(`pose_invalide`) se **journalise** au lieu de se raconter au follet : une faute de code n'est
+pas une règle de jeu, et `resoudreLignes(undefined)` aurait levé dans la boucle.
+
+**Ce que la suite de tests n'a pas vu, et pourquoi** : elle est restée verte pendant tout le
+diagnostic. Aucun test ne déplaçait une station qui portait quelque chose — le cas n'existait
+pas avant `D-121`, et T5 ne l'a pas ajouté. C'est le trou que ce ticket referme.
+
+`npm test` : **132 fichiers verts**.
+

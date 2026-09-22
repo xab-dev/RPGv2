@@ -77,6 +77,15 @@ export function couloirPraticable(structure, empreintes, tileSize) {
 // interactifs solides de la même structure, à leur position effective
 // actuelle (jamais celle qu'on est en train de déplacer).
 export function poseValide({ empreinte, structure, autresEmpreintes, tileSize }) {
+  // `D-126` : une empreinte qui n'est pas faite de nombres est REFUSÉE, jamais
+  // acceptée. Toute comparaison avec NaN est fausse, donc les trois tests
+  // ci-dessous la laissaient passer et cette fonction répondait `ok` sur une
+  // pose qui n'existait nulle part — le fantôme de Construction s'affichait
+  // vert en étant introuvable à l'écran. Un garde-fou en tête coûte quatre
+  // comparaisons et rend la panne visible à l'endroit où elle se produit.
+  if (![empreinte.x, empreinte.y, empreinte.w, empreinte.h].every(Number.isFinite)) {
+    return { ok: false, raison: 'pose_invalide' };
+  }
   const { interieur } = structure;
   const interieurPx = {
     x: interieur.x * tileSize, y: interieur.y * tileSize, w: interieur.w * tileSize, h: interieur.h * tileSize,

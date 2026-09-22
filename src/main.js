@@ -233,6 +233,41 @@ export function modeleDeStation(registre, stationTypeId) {
     .find((p) => p.type === 'station' && p.station_type === stationTypeId) || null;
 }
 
+// `D-126` : LE point de lecture d'une pose sauvegardée, et il n'y en a qu'un.
+//
+// Depuis `D-121`, une entrée de `save.maison.stations` n'est PLUS une pose :
+// c'est une fiche qui peut porter un `contenu`, un `type` et une `scene`, et
+// qui n'a des coordonnées que si le joueur a déplacé la station. Trois
+// endroits la lisaient ; un seul avait appris la nouvelle forme, et les deux
+// autres prenaient une fiche de contenu pour une pose — le fantôme de
+// Construction naissait à `x: undefined`, la poussée faisait `undefined + 1`,
+// et `Math.max/min` propageaient le NaN sans rien dire. D'où la fonction :
+// trois lectures de la même donnée finissent toujours par diverger (`D-71`).
+//
+// Rend une pose PROPRE (jamais la fiche elle-même, qui traînerait un contenu
+// dans les overrides de scène) ou `null` — « je n'ai pas de pose », à 
+// l'appelant de retomber sur celle du catalogue.
+export function poseSauvegardeeDeStation(entree) {
+  if (!entree || !Number.isFinite(entree.x) || !Number.isFinite(entree.y)) return null;
+  return { x: entree.x, y: entree.y, rotation: entree.rotation || 0 };
+}
+
+// `D-126` (décision de Xav, 22/09) : **on ne déplace pas un meuble plein.**
+//
+// Ce qui était un accident devient une règle : le premier coffre se scellait
+// dès qu'on y rangeait quelque chose, par le bug ci-dessus, et Xav a voulu
+// garder le geste. Il est donc DIT, en données (`stations.json >
+// deplacable_si_vide`), et il vaut pour tout coffre — celui livré avec la
+// maison comme ceux qu'on fabrique.
+//
+// Une station qui ne déclare rien se déplace quel que soit son contenu : les
+// trois autres n'en ont pas, et rien ne change pour elles.
+export function stationDeplacable(stationType, contenu) {
+  if (!stationType.deplacable_si_vide) return { ok: true, raison: null };
+  const porteQuelqueChose = Object.values(contenu || {}).some((q) => q > 0);
+  return porteQuelqueChose ? { ok: false, raison: 'station_pleine' } : { ok: true, raison: null };
+}
+
 export function instancesCreees(registre, sceneId, stationsSauvegardees) {
   const creees = [];
   for (const [id, entree] of Object.entries(stationsSauvegardees || {})) {
@@ -478,6 +513,8 @@ export function clesTexteFiches() {
     'menu.fiche.deja_possede', 'menu.fiche.ingredient_manquant',
     'menu.fiche.eclats_manquants_n', 'menu.fiche.poche_pleine',
     'menu.craft_deja_possede',
+    // `D-126` : la raison pour laquelle une station ne se déplace pas.
+    'menu.fiche.refus_station_pleine',
   ];
 }
 
@@ -1253,10 +1290,10 @@ export function creerOrchestrateurGrotte({
         const poseParDefaut = { x: puzzle.position.x, y: puzzle.position.y, rotation: puzzle.rotation || 0 };
         // `D-121` : une entrée de `maison.stations` peut ne porter QUE un
         // contenu (un coffre jamais déplacé qu'on a rempli). Elle n'est une
-        // pose que si elle en a les coordonnées.
-        const entreeSauvegardee = stationType.placable ? save.maison.stations[puzzle.id] : null;
-        const poseSauvegardee = entreeSauvegardee && Number.isFinite(entreeSauvegardee.x)
-          ? entreeSauvegardee
+        // pose que si elle en a les coordonnées — et c'est `D-126` qui a sorti
+        // cette règle d'ici, parce qu'elle était vraie ici seulement.
+        const poseSauvegardee = stationType.placable
+          ? poseSauvegardeeDeStation(save.maison.stations[puzzle.id])
           : null;
 
         if (!poseSauvegardee) {
@@ -1947,11 +1984,20 @@ export function creerOrchestrateurGrotte({
   // erreur) si le héros n'est dans aucune structure : le menu n'aurait de
   // toute façon pas dû montrer l'entrée (disponibiliteConstruction), mais un
   // appel isolé (test) reste sans danger.
+  // `D-126` : LE verdict de déplacement d'une station. La liste l'interroge
+  // pour griser la tuile et dire pourquoi, `demarrerConstruction` pour
+  // refuser — jamais deux calculs, qui finiraient par ne plus dire la même
+  // chose (c'est exactement ce qui a produit ce défaut).
+  function deplacementAutorise(puzzle) {
+    return stationDeplacable(registre.obtenir('stations', puzzle.station_type), contenuDeStation(puzzle.id));
+  }
+
   function entreesConstruction() {
     const structure = structureHeros();
     if (!structure) return [];
     return stationsPlacablesDeStructure(structure).map((p) => {
       const stationType = registre.obtenir('stations', p.station_type);
+      const verdict = deplacementAutorise(p);
       // specs/08_menus-cartes.md, palier C6 : la tuile est la silhouette de la
       // station (celle du monde, recadrée par `icone_canvas.js#cadrer`). Les
       // lignes de la fiche — les touches du placement — sont ajoutées par
@@ -1961,6 +2007,11 @@ export function creerOrchestrateurGrotte({
         titre: i18n.t(stationType.label_key),
         icone: p.render.visuel,
         libelleAction: i18n.t('menu.fiche.deplacer'),
+        // `D-126` : grisé est un INDICE, et la fiche dit la raison — même
+        // patron que `D-122` côté craft. Sans la phrase, le joueur verrait une
+        // tuile morte sans savoir que vider le coffre la réveille.
+        grisee: !verdict.ok,
+        lignes: verdict.ok ? [] : [i18n.t(`menu.fiche.refus_${verdict.raison}`)],
         action: () => demarrerConstruction(p, structure),
       };
     });
@@ -2024,7 +2075,14 @@ export function creerOrchestrateurGrotte({
   }
 
   function demarrerConstruction(puzzle, structure) {
-    const poseActuelle = save.maison.stations[puzzle.id] || {
+    // `D-126` : la tuile est déjà grisée et la fiche dit pourquoi, mais c'est
+    // le RÉSULTAT qui fait foi — même discipline qu'une recette grisée, dont
+    // l'action est retentée pour de vrai plutôt que court-circuitée.
+    if (!deplacementAutorise(puzzle).ok) return;
+    // `D-126` : la pose passe par LE lecteur. Le repli « entrée absente » ne
+    // suffisait pas : un coffre qu'on a rempli sans jamais le déplacer A une
+    // entrée, mais pas de coordonnées — le fantôme naissait à `undefined`.
+    const poseActuelle = poseSauvegardeeDeStation(save.maison.stations[puzzle.id]) || {
       x: puzzle.position.x, y: puzzle.position.y, rotation: puzzle.rotation || 0,
     };
     construction = {
@@ -2092,7 +2150,14 @@ export function creerOrchestrateurGrotte({
   // la LISTE (jamais un simple retour au jeu nu) — "on enchaîne et on range
   // toute la maison sans repasser par MENU" (décision Xav).
   function confirmerConstruction() {
-    save.maison.stations[construction.puzzle.id] = { ...construction.pose };
+    // `D-126` : on ENRICHIT l'entrée, on ne la refabrique pas (`D-71`). Une
+    // affectation écrasait la fiche par la seule pose : le contenu d'un coffre
+    // plein disparaissait, et un coffre FABRIQUÉ perdait son `type` et sa
+    // `scene` — donc `instancesCreees` ne le rendait plus, et il s'effaçait du
+    // monde au rechargement avec ce qu'il portait.
+    const entree = save.maison.stations[construction.puzzle.id]
+      || (save.maison.stations[construction.puzzle.id] = {});
+    Object.assign(entree, construction.pose);
     etatModifie = true;
     construction = null;
     rechargerSceneApresConstruction();
@@ -2138,10 +2203,16 @@ export function creerOrchestrateurGrotte({
     if (etat.attack.pressed) {
       if (construction.verdict.ok) {
         confirmerConstruction();
-      } else {
+      } else if (DIALOGUE_REFUS_CONSTRUCTION[construction.verdict.raison]) {
         dialogue.ouvrir(
           resoudreLignes(DIALOGUE_REFUS_CONSTRUCTION[construction.verdict.raison], registre, i18n, save.hero.companion)
         );
+      } else {
+        // `D-126` : `pose_invalide` n'est pas une situation de jeu, c'est une
+        // faute de code. On la JOURNALISE ; la raconter au follet ferait
+        // passer un bug pour une règle, et `resoudreLignes(undefined)` lèverait
+        // dans la boucle.
+        console.warn(`main.js#traiterConstruction : refus sans dialogue (${construction.verdict.raison})`);
       }
       return;
     }

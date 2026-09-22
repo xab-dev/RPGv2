@@ -63,3 +63,4 @@ dans les cases d'inventaire » · « D-08 : go ».
 | Commit | Ticket | Ce qui change |
 |---|---|---|
 | (ce commit) | `D-07` | Poche et Coffre : cases sans nom (image + quantité), nom dans la fiche et en `aria-label`. Captures `docs/captures/inventaire-2026-09-22/` |
+| (ce commit) | `D-135` | Cailloux de décor sur l'herbe seulement : plus rien sur le chemin (`apres_chemin_haut`) |

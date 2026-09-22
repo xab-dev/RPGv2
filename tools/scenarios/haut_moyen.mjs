@@ -1,6 +1,6 @@
 // « Haut se voit » — la MÊME vue sous Moyen puis sous Haut. OUTIL DE DEV.
 //   node tools/capture_chrome.mjs tools/scenarios/haut_moyen.mjs
-//   RPG_QUALITES=moyen,haut (défaut)  RPG_POSTES=parquet,pelouse,marche,nuit
+//   RPG_QUALITES=moyen,haut (défaut)  RPG_POSTES=parquet,pelouse,marche,nuit,chemin
 //   RPG_ETIQUETTE=apres (préfixe des fichiers)
 //
 // Ce qu'un preset change ne se juge qu'à côté de l'autre : chaque poste est
@@ -33,10 +33,12 @@ async function postes() {
   const scene = chargerScene(construireRegistre(donnees), 'scene_maison_exterieur');
   const idA = (x, y) => { const t = scene.tuileA(x, y); return t ? t.id : null; };
   const parquets = [];
+  const chemins = [];
   let pelouse = null;
   for (let y = 0; y < scene.height; y++) {
     for (let x = 0; x < scene.width; x++) {
       if (idA(x, y) === 'tile_parquet') parquets.push([x, y]);
+      if (idA(x, y) === 'tile_chemin') chemins.push([x, y]);
     }
   }
   // La pelouse la plus proche de la Maison qui soit franche sur 7 tuiles :
@@ -59,6 +61,9 @@ async function postes() {
     pelouse: { x: px(pelouse[0]), y: px(pelouse[1]), heure: PLEIN_JOUR },
     marche: { x: px(pelouse[0]) - 3 * TILE, y: px(pelouse[1]), heure: PLEIN_JOUR, marche: true },
     nuit: { x: px(pelouse[0]), y: px(pelouse[1]), heure: PLEINE_NUIT },
+    // Le chemin, au milieu de sa longueur : c'est là que Xav a vu le
+    // « champ de cailloux » (`D-135`).
+    chemin: { x: px(chemins[Math.floor(chemins.length / 2)][0]), y: px(chemins[Math.floor(chemins.length / 2)][1]), heure: PLEIN_JOUR },
   };
 }
 

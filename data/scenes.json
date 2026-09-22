@@ -151,7 +151,7 @@
         {
           "visuel": "visuel_rocher_petit",
           "poids": 2,
-          "sur": ["tile_herbe", "tile_chemin"]
+          "sur": ["tile_herbe"]
         }
       ]
     },

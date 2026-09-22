@@ -62,6 +62,9 @@ dans les cases d'inventaire » · « D-08 : go ».
 
 | Commit | Ticket | Ce qui change |
 |---|---|---|
-| (ce commit) | `D-07` | Poche et Coffre : cases sans nom (image + quantité), nom dans la fiche et en `aria-label`. Captures `docs/captures/inventaire-2026-09-22/` |
-| (ce commit) | `D-135` | Cailloux de décor sur l'herbe seulement : plus rien sur le chemin (`apres_chemin_haut`) |
-| (ce commit) | `D-08` | Poche : « Manger » (A) mange cet objet par le chemin de CONSUME ; « Équiper » passe en seconde action (X / touche 1). `Q-72` ouverte sur le choix des gestes. Captures `inventaire-2026-09-22/d08_*` |
+| `93e283f` | `D-07` | Poche et Coffre : cases sans nom (image + quantité), nom dans la fiche et en `aria-label`. Captures `docs/captures/inventaire-2026-09-22/` |
+| `6c61523` | `D-135` | Cailloux de décor sur l'herbe seulement : plus rien sur le chemin (`apres_chemin_haut`) |
+| `6c0672c` | `D-08` | Poche : « Manger » (A) mange cet objet par le chemin de CONSUME ; « Équiper » passe en seconde action (X / touche 1). `Q-72` ouverte sur le choix des gestes. Captures `inventaire-2026-09-22/d08_*` |
+
+Verdicts consignés : `V-75` validée (réserve → `D-135`), `Q-58` tranchée (« oui, j'aime ! »),
+`D-06` close par décision (pas d'indicateur jour/nuit). À Xav : `V-76`, `Q-72`.

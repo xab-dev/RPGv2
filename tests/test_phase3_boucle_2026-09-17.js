@@ -40,7 +40,7 @@ save.hero.pv = 40;
 // flag_premier_ramassage posé d'avance : le dialogue de premier ramassage
 // (couvert par test_phase2_chemin_critique) ouvrirait une UI qui gèlerait le
 // temps actif pendant tout ce bot, sans rapport avec ce qui est prouvé ici.
-save.flags = { flag_follet_choisi: true, flag_grotte_sortie: true, flag_grotte_sequence: true, flag_grotte_monstre_tue: true, flag_levier_salle1: true, flag_premier_ramassage: true };
+save.flags = { flag_follet_choisi: true, flag_grotte_sortie: true, flag_grotte_sequence: true, flag_grotte_monstre_tue: true, flag_levier_salle1: true, flag_premier_ramassage: true, flag_ambiance_maison_premiere_visite: true };
 // `D-120` (22/09) : hache et pioche sont gâtées au Nv.10 et coûtent des
 // éclats — c'est le cœur du ralentissement voulu par Xav. Ce bot n'éprouve
 // PAS le déblocage (c'est `test_d120_outils_nv10`) : il éprouve la boucle

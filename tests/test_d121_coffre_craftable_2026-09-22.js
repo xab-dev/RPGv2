@@ -103,7 +103,7 @@ function monterPartie(stations = null) {
   save.inventaire.items = { item_bois: 5, item_branche: 5, item_herbe: 5 };
   save.flags = {
     flag_follet_choisi: true, flag_grotte_sortie: true, flag_grotte_sequence: true,
-    flag_grotte_monstre_tue: true, flag_levier_salle1: true, flag_premier_ramassage: true,
+    flag_grotte_monstre_tue: true, flag_levier_salle1: true, flag_premier_ramassage: true, flag_ambiance_maison_premiere_visite: true,
   };
   const ouvert = { craft: null, coffre: null, placement: null, listeRouverte: 0 };
   const menu = {

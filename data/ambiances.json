@@ -1,9 +1,25 @@
 [
   {
+    "id": "amb_maison_premiere_visite",
+    "condition": "flag_maison_decouverte",
+    "scenes": [
+      "scene_maison_exterieur"
+    ],
+    "dialogue": "dlg_maison_premiere_visite",
+    "flag": "flag_ambiance_maison_premiere_visite"
+  },
+  {
     "id": "amb_vent_cendre",
-    "condition": { "valeur": "niveau", "min": 5 },
-    "phases": ["nuit"],
-    "scenes": ["scene_maison_exterieur"],
+    "condition": {
+      "valeur": "niveau",
+      "min": 5
+    },
+    "phases": [
+      "nuit"
+    ],
+    "scenes": [
+      "scene_maison_exterieur"
+    ],
     "dialogue": "dlg_ambiance_vent_cendre",
     "flag": "flag_ambiance_vent_cendre"
   }

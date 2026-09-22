@@ -35,7 +35,7 @@ export function saveDansLaMaison({ compagnon = 'comp_follet_eau' } = {}) {
   save.hero.pv = 40;
   save.flags = {
     flag_follet_choisi: true, flag_grotte_sortie: true, flag_grotte_sequence: true,
-    flag_grotte_monstre_tue: true, flag_levier_salle1: true, flag_maison_decouverte: true,
+    flag_grotte_monstre_tue: true, flag_levier_salle1: true, flag_maison_decouverte: true, flag_ambiance_maison_premiere_visite: true,
   };
   // `D-118` : la poche ne tient plus que quatre slots — un contenu qui
   // déborde serait normalisé au chargement, et les captures ne montreraient

@@ -130,7 +130,7 @@ const coffre = resoudreCapacite(registre.obtenir('conteneurs', 'conteneur_coffre
   save.hero.pv = 40;
   save.flags = {
     flag_follet_choisi: true, flag_grotte_sortie: true, flag_grotte_sequence: true,
-    flag_grotte_monstre_tue: true, flag_levier_salle1: true, flag_premier_ramassage: true,
+    flag_grotte_monstre_tue: true, flag_levier_salle1: true, flag_premier_ramassage: true, flag_ambiance_maison_premiere_visite: true,
   };
   // La poche est pleine de quatre sortes, dont la hache (sinon la récolte est
   // refusée pour une autre raison : l'outil manquant).

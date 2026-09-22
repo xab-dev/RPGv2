@@ -194,5 +194,9 @@
   {
     "id": "flag_niveau_30",
     "label_key": "flag.niveau_30"
+  },
+  {
+    "id": "flag_ambiance_maison_premiere_visite",
+    "label_key": "flag.ambiance_maison_premiere_visite"
   }
 ]

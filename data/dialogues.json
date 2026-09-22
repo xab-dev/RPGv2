@@ -3,118 +3,184 @@
     "id": "dlg_grotte_choix_follet",
     "declencheur": "grotte_salle1_cinematique",
     "lignes": [
-      { "locuteur": "narrateur", "text_key": "dlg.choix_follet.1" }
+      {
+        "locuteur": "narrateur",
+        "text_key": "dlg.choix_follet.1"
+      }
     ]
   },
   {
     "id": "dlg_grotte_follet_enthousiaste",
     "declencheur": "grotte_salle1_follet_choisi",
     "lignes": [
-      { "locuteur": "follet", "text_key": "dlg.follet_enthousiaste.1" }
+      {
+        "locuteur": "follet",
+        "text_key": "dlg.follet_enthousiaste.1"
+      }
     ]
   },
   {
     "id": "dlg_grotte_tuto_combat",
     "declencheur": "grotte_salle2_entree",
     "lignes": [
-      { "locuteur": "follet", "text_key": "dlg.tuto_combat.1" },
-      { "locuteur": "follet", "text_key": "dlg.tuto_combat.2" }
+      {
+        "locuteur": "follet",
+        "text_key": "dlg.tuto_combat.1"
+      },
+      {
+        "locuteur": "follet",
+        "text_key": "dlg.tuto_combat.2"
+      }
     ]
   },
   {
     "id": "dlg_grotte_eclats",
     "declencheur": "grotte_salle2_monstre_tue",
     "lignes": [
-      { "locuteur": "follet", "text_key": "dlg.eclats.1" }
+      {
+        "locuteur": "follet",
+        "text_key": "dlg.eclats.1"
+      }
     ]
   },
   {
     "id": "dlg_ressource_bloquee_bois",
     "declencheur": "ressource_bloquee",
     "lignes": [
-      { "locuteur": "follet", "text_key": "dlg.ressource_bloquee_bois.1" }
+      {
+        "locuteur": "follet",
+        "text_key": "dlg.ressource_bloquee_bois.1"
+      }
     ]
   },
   {
     "id": "dlg_ressource_bloquee_pierre",
     "declencheur": "ressource_bloquee",
     "lignes": [
-      { "locuteur": "follet", "text_key": "dlg.ressource_bloquee_pierre.1" }
+      {
+        "locuteur": "follet",
+        "text_key": "dlg.ressource_bloquee_pierre.1"
+      }
     ]
   },
   {
     "id": "dlg_station_pas_encore",
     "declencheur": "station_pas_encore",
     "lignes": [
-      { "locuteur": "follet", "text_key": "dlg.station_pas_encore.1" }
+      {
+        "locuteur": "follet",
+        "text_key": "dlg.station_pas_encore.1"
+      }
     ]
   },
   {
     "id": "dlg_puits_pas_encore",
     "declencheur": "puits_pas_encore",
     "lignes": [
-      { "locuteur": "follet", "text_key": "dlg.puits_pas_encore.1" }
+      {
+        "locuteur": "follet",
+        "text_key": "dlg.puits_pas_encore.1"
+      }
     ]
   },
   {
     "id": "dlg_premier_ramassage",
     "declencheur": "premier_ramassage",
     "lignes": [
-      { "locuteur": "follet", "text_key": "dlg.premier_ramassage.1" }
+      {
+        "locuteur": "follet",
+        "text_key": "dlg.premier_ramassage.1"
+      }
     ]
   },
   {
     "id": "dlg_puits_cooldown",
     "declencheur": "puits_cooldown",
     "lignes": [
-      { "locuteur": "follet", "text_key": "dlg.puits_cooldown.1" }
+      {
+        "locuteur": "follet",
+        "text_key": "dlg.puits_cooldown.1"
+      }
     ]
   },
   {
     "id": "dlg_ressource_cooldown",
     "declencheur": "ressource_cooldown",
     "lignes": [
-      { "locuteur": "follet", "text_key": "dlg.ressource_cooldown.1" }
+      {
+        "locuteur": "follet",
+        "text_key": "dlg.ressource_cooldown.1"
+      }
     ]
   },
   {
     "id": "dlg_recette_indisponible",
     "declencheur": "recette_indisponible",
     "lignes": [
-      { "locuteur": "follet", "text_key": "dlg.recette_indisponible.1" }
+      {
+        "locuteur": "follet",
+        "text_key": "dlg.recette_indisponible.1"
+      }
     ]
   },
   {
     "id": "dlg_construction_refus_interieur",
     "declencheur": "construction_refus_interieur",
     "lignes": [
-      { "locuteur": "follet", "text_key": "dlg.construction_refus_interieur.1" }
+      {
+        "locuteur": "follet",
+        "text_key": "dlg.construction_refus_interieur.1"
+      }
     ]
   },
   {
     "id": "dlg_construction_refus_chevauchement",
     "declencheur": "construction_refus_chevauchement",
     "lignes": [
-      { "locuteur": "follet", "text_key": "dlg.construction_refus_chevauchement.1" }
+      {
+        "locuteur": "follet",
+        "text_key": "dlg.construction_refus_chevauchement.1"
+      }
     ]
   },
   {
     "id": "dlg_construction_refus_couloir",
     "declencheur": "construction_refus_couloir",
     "lignes": [
-      { "locuteur": "follet", "text_key": "dlg.construction_refus_couloir.1" }
+      {
+        "locuteur": "follet",
+        "text_key": "dlg.construction_refus_couloir.1"
+      }
     ]
   },
   {
     "id": "dlg_premiere_faim",
     "declencheur": "premiere_faim",
     "lignes": [
-      { "locuteur": "follet", "text_key": "dlg.premiere_faim.1" }
+      {
+        "locuteur": "follet",
+        "text_key": "dlg.premiere_faim.1"
+      }
     ]
   },
   {
     "id": "dlg_ambiance_vent_cendre",
     "declencheur": "ambiance_vent_cendre",
-    "lignes": [{ "locuteur": "narrateur", "text_key": "dlg.ambiance.vent_cendre" }]
+    "lignes": [
+      {
+        "locuteur": "narrateur",
+        "text_key": "dlg.ambiance.vent_cendre"
+      }
+    ]
+  },
+  {
+    "id": "dlg_maison_premiere_visite",
+    "declencheur": "maison_premiere_visite",
+    "lignes": [
+      {
+        "locuteur": "follet",
+        "text_key": "dlg.maison.premiere_visite"
+      }
+    ]
   }
 ]

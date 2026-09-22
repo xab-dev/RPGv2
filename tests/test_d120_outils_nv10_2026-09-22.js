@@ -75,7 +75,7 @@ function monter({ niveau, poche = {}, eclats = 0 }) {
   save.inventaire.eclats = eclats;
   save.flags = {
     flag_follet_choisi: true, flag_grotte_sortie: true, flag_grotte_sequence: true,
-    flag_grotte_monstre_tue: true, flag_levier_salle1: true, flag_premier_ramassage: true,
+    flag_grotte_monstre_tue: true, flag_levier_salle1: true, flag_premier_ramassage: true, flag_ambiance_maison_premiere_visite: true,
   };
   const ouvert = {};
   const frames = [];

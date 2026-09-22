@@ -375,3 +375,27 @@ Le champ est **optionnel** : une jauge qui n'en déclare pas ne rapporte jamais 
 le cas de la faim — on ne mange pas au puits.
 
 `npm test` : **129 fichiers verts**.
+
+## T8 — Le follet à la première maison (`D-124`)
+
+**Données seules, et c'est tout le ticket.** Aucun déclencheur nouveau n'a été écrit : le
+patron de `D-61` (« condition + flag → une ligne, une seule fois ») et le flag de zone qui
+existe depuis la Phase 2 (`flag_maison_decouverte`, posé en marchant dans le rectangle
+`maison`) suffisent. La ligne est une entrée de `ambiances.json`, un dialogue, un flag, deux
+locales.
+
+C'était la question ouverte du ticket — le toit qui s'efface, ou le rectangle de zone. Le
+rectangle gagne parce qu'il **existe déjà et sert déjà à ça** : le signal du toit aurait
+demandé un second mécanisme pour dire exactement la même chose.
+
+Le texte est celui de Xav, mot pour mot ; l'anglais est une proposition, marquée comme telle.
+C'est le follet qui parle, pas le narrateur — vérifié aussi, parce que c'est ce qui distingue
+cette ligne d'une ligne d'ambiance.
+
+Conséquence sur les tests existants : neuf fichiers posent désormais
+`flag_ambiance_maison_premiere_visite` d'avance, pour la même raison que
+`flag_premier_ramassage` — un dialogue qui s'ouvre gèle le temps actif, et ils éprouvent autre
+chose. C'est le coût d'entretien des faux états, déjà nommé (`Q-42`), et il est payé
+explicitement plutôt que contourné.
+
+`npm test` : **130 fichiers verts**.

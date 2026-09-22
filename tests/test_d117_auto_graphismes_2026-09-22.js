@@ -167,7 +167,7 @@ function partieEnCours(reglage) {
   save.hero.x = 85.5 * 32;
   save.hero.y = 52.5 * 32;
   save.hero.companion = 'comp_follet_eau';
-  save.flags = { flag_follet_choisi: true, flag_grotte_sortie: true, flag_maison_decouverte: true };
+  save.flags = { flag_follet_choisi: true, flag_grotte_sortie: true, flag_maison_decouverte: true, flag_ambiance_maison_premiere_visite: true };
   if (reglage !== undefined) save.settings.graphismes = reglage;
   return save;
 }

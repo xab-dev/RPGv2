@@ -137,7 +137,7 @@ function faussSave({ poche = {}, arme = null, consommable = null } = {}) {
   save.hero.pv = 40;
   save.flags = {
     flag_follet_choisi: true, flag_grotte_sortie: true, flag_grotte_sequence: true,
-    flag_grotte_monstre_tue: true, flag_levier_salle1: true, flag_premier_ramassage: true,
+    flag_grotte_monstre_tue: true, flag_levier_salle1: true, flag_premier_ramassage: true, flag_ambiance_maison_premiere_visite: true,
   };
   save.inventaire.items = { item_fruit: 1, [OBJET_ARME.id]: 1 };
   save.hero.equipement = { arme: OBJET_ARME.arme, consommable: 'item_fruit' };

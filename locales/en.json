@@ -259,5 +259,7 @@
   "menu.fiche.ingredient_manquant": "{n} {item} missing",
   "menu.fiche.eclats_manquants_n": "{n} shards missing",
   "menu.fiche.poche_pleine": "Your pouch is full",
-  "menu.craft_deja_possede": "already carried"
+  "menu.craft_deja_possede": "already carried",
+  "dlg.maison.premiere_visite": "Oh, look — someone left stations here. Go on, quick, see what’s inside.",
+  "flag.ambiance_maison_premiere_visite": "First visit to the house"
 }

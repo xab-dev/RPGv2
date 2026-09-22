@@ -63,7 +63,7 @@ function boireAvecSoif(soif) {
   save.survie.jauge_soif = soif;
   save.flags = {
     flag_follet_choisi: true, flag_grotte_sortie: true, flag_grotte_sequence: true,
-    flag_grotte_monstre_tue: true, flag_levier_salle1: true, flag_premier_ramassage: true,
+    flag_grotte_monstre_tue: true, flag_levier_salle1: true, flag_premier_ramassage: true, flag_ambiance_maison_premiere_visite: true,
   };
   const frames = [];
   const orch = creerOrchestrateurGrotte({

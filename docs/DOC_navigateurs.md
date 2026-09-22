@@ -44,6 +44,8 @@ Conséquence pour l'instrument : sous Chrome, `dessiner()` ne mesure que l'enreg
 
 **Cas transversal : l'accélération matérielle désactivée.** Un Chrome ou un Edge dont l'utilisateur a coupé « Utiliser l'accélération graphique » se comporte comme le Firefox de Xav. Vérifiable dans `chrome://gpu`, ligne « Canvas ».
 
+**Politique (23/09, Xav).** `Q-24` close jusqu'à nouvel ordre : Chrome et les navigateurs Blink sont la seule référence, aucun engagement sur Firefox ni Safari (« l'humain s'adapte plutôt que notre code »). `Q-25` résolue par les réglages graphiques (`specs/09`) : le mode Auto baisse la qualité de lui-même, aucun message au joueur n'est prévu.
+
 ## 3. Deux mises en garde sur le message aux joueurs
 
 - **Pas de navigation privée.** La sauvegarde vit dans IndexedDB ; en navigation privée elle est **effacée à la fermeture de la fenêtre**. Recommander le mode privé, c'est faire perdre leur partie aux joueurs. « Sans compte, sans connexion à quoi que ce soit » : oui. « En privé » : non.

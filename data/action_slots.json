@@ -21,6 +21,9 @@
   {
     "id": "slot_consommable",
     "verb": "consume",
-    "visible_si": "flag_premier_consommable"
+    "visible_si": {
+      "valeur": "consommables_en_poche",
+      "min": 1
+    }
   }
 ]

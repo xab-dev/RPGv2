@@ -165,7 +165,10 @@ function construireBanc({ dansLaMaison = true, compagnon, pleinEcranDisponible =
   const enregistres = { ...menu.cablage(), valeurs: orchestrateur.nomsValeursConditions() };
   assert.deepEqual(erreursCablageMenus(registre.tous('menus'), enregistres), [],
     'toute carte trouve sa fonction, toute fonction a sa carte, toute valeur citée est fournie');
-  assert.deepEqual(enregistres.valeurs.sort(), ['niveau', 'plein_ecran_disponible', 'stations_placables']);
+  // `D-93` : `consommables_en_poche` rejoint la liste — la barre du bas n'a
+  // plus de flag de déblocage à elle, elle cite une valeur comme les autres.
+  assert.deepEqual(enregistres.valeurs.sort(),
+    ['consommables_en_poche', 'niveau', 'plein_ecran_disponible', 'stations_placables']);
   assert.deepEqual(enregistres.ecrans, ['ecran_poche', 'ecran_stats', 'ecran_construction'],
     'les trois écrans existants que le palier A rebranche — Craft et Coffre s’ouvrent par INTERACT, pas par une carte');
 

@@ -133,3 +133,42 @@ Ce n'est pas un détour de test, c'est le rituel voulu par Xav — et c'est la m
 que le ticket fait son travail.
 
 `npm test` : **124 fichiers verts**.
+
+## T2 — Les slots d'équipement disent la vérité (`D-92` + `D-93`)
+
+Les deux lignes sont la **même famille** et se traitent ensemble, comme Xav l'avait demandé :
+un slot garde un id que **plus rien ne revalide** — là l'id ne résout plus (`D-92`), ici il
+résout mais l'objet n'est plus en poche (`D-93`). Une seule fonction, `revaliderEquipement`,
+posée au **niveau module** (donc testable, règle `D-72`) et appelée **à chaque frame**.
+
+Deux choix méritent d'être dits, parce qu'ils sont la différence entre corriger et re-corriger :
+
+- **À chaque frame, pas à chaque mutation de poche.** La fonction est idempotente et ne coûte
+  que deux recherches ; chercher « tous les endroits qui touchent la poche » est exactement ce
+  qui avait laissé passer les trois chemins divergents de `D-93`. Ici, le prochain endroit qui
+  touchera la poche n'aura rien à savoir.
+- **Avant toute branche d'UI, jamais sous `if (!uiOuverte)`.** L'écran Coffre déplace des
+  objets pendant qu'il est ouvert : une revalidation gelée sous UI manquerait précisément le
+  cas qui a fait le bug. C'est pour cette raison que l'ancien `verifierDeblocagesBarreAction`
+  ne pouvait pas servir de point d'accroche.
+
+Ce que ça donne : l'arme absente de la poche retombe sur le **défaut du slot** (mains nues) et
+reprendre l'épée au coffre ne la rééquipe pas ; un id d'arme inconnu fait pareil **et se dit en
+console** (`D-92` : plus de `arme.portee` lu sur `undefined`, donc plus de héros qui ne peut
+plus jamais frapper) ; un consommable épuisé passe au **suivant de la même catégorie** s'il y
+en a un en poche (`Q-64`, retenu par défaut), sinon la case **disparaît**.
+
+**Le loquet `flag_premier_consommable` est retiré** — flag, entrée de catalogue et clés de
+locale avec. La case du consommable suit désormais l'état réel de la poche par une **valeur
+nommée** (`consommables_en_poche`) que `data/action_slots.json` cite : c'est le mécanisme
+d'apparition existant de `D-62`, sans code de déblocage propre. C'est un retournement assumé
+(*révise* le 21/09) : on craignait de faire clignoter la case, mais voir une touche qui ne fait
+rien est pire que de la voir partir avec ce qu'elle servait à manger.
+
+Une dette de duplication ramassée en passant, parce qu'elle était sur le chemin : les valeurs
+nommées étaient **déclarées deux fois** (`valeurs:` à la construction du registre de flags,
+et `nomsValeursConditions` pour le contrôle de démarrage). Une seule déclaration désormais, la
+seconde en dérive ses clés — deux listes finissent toujours par diverger (`D-71`).
+
+`npm test` : **125 fichiers verts**, dont le tour de dessin à faux contexte sur les trois états
+de poche (`D-71`).

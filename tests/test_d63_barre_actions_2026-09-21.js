@@ -90,24 +90,25 @@ function monterPartie({ flagsSupplementaires = {}, poche = {} } = {}) {
   console.log('OK partie neuve : une seule case, l\'attaque');
 }
 
-// --- 2. Le consommable apparaît, et il RESTE ---------------------------
-// `[OUVERT]` retenu par défaut : la case apparaît au premier consommable
-// OBTENU, et manger le dernier fruit ne la fait pas disparaître — on
-// n'enlève pas au joueur une touche qu'il vient d'apprendre.
+// --- 2. Le consommable apparaît, et il PART avec le dernier fruit -------
+// *Révisé par `D-93` (22/09, décision de Xav)* : le loquet
+// `flag_premier_consommable` est retiré, la case suit l'état RÉEL de la
+// poche. Voir une touche qui ne fait rien est pire que de la voir partir
+// avec ce qu'elle servait à manger.
 {
   const partie = monterPartie({ poche: { item_fruit: 1 } });
   assert.deepEqual(
     partie.orch.obtenirVerbesActions(), ['attack', 'consume'],
     'un consommable en poche fait apparaître sa case',
   );
-  assert.equal(partie.save.flags.flag_premier_consommable, true, 'le loquet est posé');
+  assert.equal(partie.save.flags.flag_premier_consommable, undefined, 'plus aucun loquet posé');
 
-  // On le mange : la poche se vide, la case reste.
+  // On le mange : la poche se vide, la case disparaît.
   partie.save.inventaire.items = {};
   partie.tick();
   assert.deepEqual(
-    partie.orch.obtenirVerbesActions(), ['attack', 'consume'],
-    'la case du consommable reste une fois le loquet posé',
+    partie.orch.obtenirVerbesActions(), ['attack'],
+    'plus de consommable en poche : la case retourne à son état de base',
   );
 
   // Et un objet qui n'est PAS un consommable ne la fait pas apparaître.
@@ -116,7 +117,7 @@ function monterPartie({ flagsSupplementaires = {}, poche = {} } = {}) {
     sansConsommable.orch.obtenirVerbesActions(), ['attack'],
     'une branche et une hache ne sont pas des consommables',
   );
-  console.log('OK la case du consommable apparaît au premier obtenu, et reste');
+  console.log('OK la case du consommable suit la poche : elle apparaît, et elle repart');
 }
 
 // --- 3. Les compétences, une à une, avec leur flag ---------------------

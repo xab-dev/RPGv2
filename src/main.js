@@ -217,6 +217,77 @@ export function lignesFicheItem(itemDef, registre, i18n) {
 // la Poche appelle enfin la vraie fonction au lieu d'en recopier la logique.
 export const SLOT_PAR_CATEGORIE = { nourriture: 'consommable', arme: 'arme' };
 
+// --- Un slot d'équipement dit la vérité (`D-92` + `D-93`, T2) -------------
+//
+// LE PROBLÈME, tel que Xav l'a vu en jeu : l'épée rangée au coffre restait
+// dans la case d'attaque, et le dernier fruit mangé restait dans la case du
+// consommable. Ce n'est pas un défaut d'affichage — c'est qu'un slot garde un
+// id que plus RIEN ne revalide. `D-92` en est la forme extrême : après un
+// renommage de catalogue, l'id ne résout même plus, et `arme.portee` lève au
+// premier ATTACK.
+//
+// UNE seule fonction, donc, appelée à chaque frame plutôt qu'à chacune des
+// mutations de poche (ramassage, craft, consommation, transfert au coffre,
+// chargement) : elle est idempotente et ne coûte que deux recherches, et
+// surtout elle ne peut pas être OUBLIÉE au prochain endroit qui touchera la
+// poche. Chercher tous les appelants était exactement ce qui avait laissé
+// passer les trois chemins divergents de `D-93`.
+//
+// PURE : tout ce dont elle a besoin lui est donné, et elle rend la liste de ce
+// qu'elle a changé — c'est l'appelant qui journalise et qui persiste.
+export function revaliderEquipement(save, registre) {
+  const changements = [];
+  const equipement = save.hero.equipement;
+  const poche = save.inventaire.items || {};
+  const enPoche = (itemId) => (poche[itemId] || 0) > 0;
+
+  // --- L'arme ---
+  const slotArme = registre.obtenir('equipment_slots', 'equip_arme');
+  const armeDefaut = slotArme ? slotArme.defaut : null;
+  const armeEquipee = equipement.arme;
+  if (armeEquipee && armeEquipee !== armeDefaut) {
+    if (!registre.existe('weapons', armeEquipee)) {
+      // `D-92` : id inconnu du catalogue (renommage, sauvegarde importée,
+      // id du mauvais catalogue). On replie sur le défaut du slot et on le
+      // DIT — jamais un échec dur en pleine partie, jamais un `arme.portee`
+      // lu sur `undefined`.
+      equipement.arme = null;
+      changements.push({ slot: 'arme', raison: 'inconnue', id: armeEquipee });
+    } else {
+      // L'arme est un id de `weapons.json` ; ce qu'on possède est un objet de
+      // poche qui la DÉSIGNE. On cherche donc l'objet, pas l'arme.
+      const objet = registre.tous('items').find((it) => it.arme === armeEquipee);
+      if (!objet || !enPoche(objet.id)) {
+        equipement.arme = null;
+        changements.push({ slot: 'arme', raison: 'absente', id: armeEquipee });
+      }
+    }
+  }
+
+  // --- Le consommable ---
+  const consommable = equipement.consommable;
+  if (consommable) {
+    const inconnu = !registre.existe('items', consommable);
+    if (inconnu || !enPoche(consommable)) {
+      // `Q-64`, retenu par défaut : un autre objet de la MÊME catégorie prend
+      // la case. Sinon elle disparaît — et c'est bien la case, pas seulement
+      // son icône : le loquet `flag_premier_consommable` est retiré, la case
+      // suit désormais l'état réel de la poche (décision de Xav, 22/09, qui
+      // *révise* le 21/09).
+      const categorie = !inconnu ? registre.obtenir('items', consommable).categorie : 'nourriture';
+      const releve = registre.tous('items')
+        .find((it) => it.categorie === categorie && it.id !== consommable && enPoche(it.id));
+      equipement.consommable = releve ? releve.id : null;
+      changements.push({
+        slot: 'consommable', raison: inconnu ? 'inconnu' : 'epuise', id: consommable,
+        remplace: releve ? releve.id : null,
+      });
+    }
+  }
+
+  return { changements };
+}
+
 // Ce que l'écran Poche doit savoir d'un objet équipable : dans quel
 // emplacement il va, s'il y est déjà, et ce que ça change. `null` pour tout
 // le reste. PURE : tout ce dont elle a besoin lui est donné.
@@ -525,12 +596,22 @@ export function creerOrchestrateurGrotte({
       // COMBIEN de stations le héros peut déplacer là où il se tient. Un vrai
       // nombre, pas un booléen déguisé — « lieu » n'est pas un format de
       // condition de `flags.js`, et la spec interdit d'en créer un.
-      valeurs: () => ({
-        niveau: save.hero.niveau,
-        stations_placables: nombreStationsPlacables(),
-        ...valeursExternes(),
-      }),
+      valeurs: valeursConditions,
     });
+  }
+  // LES valeurs nommées qu'une condition de données peut interroger. Une
+  // seule déclaration : `nomsValeursConditions` en dérive ses clés, au lieu de
+  // recopier la liste — deux listes finissent toujours par diverger (`D-71`).
+  function valeursConditions() {
+    return {
+      niveau: save.hero.niveau,
+      stations_placables: nombreStationsPlacables(),
+      // `D-93` : combien de SORTES de consommables la poche porte. Un nombre,
+      // donc une condition de données ordinaire — la barre du bas n'a aucun
+      // code de déblocage à elle.
+      consommables_en_poche: consommablesEnPoche(),
+      ...valeursExternes(),
+    };
   }
   let flags = construireFlags();
 
@@ -961,28 +1042,40 @@ export function creerOrchestrateurGrotte({
     return entreesVisibles(registre.tous('action_slots'), flags).map((slot) => slot.verb);
   }
 
-  // Le loquet du premier consommable. `[OUVERT]` retenu par défaut, comme le
-  // ticket y autorise : la case apparaît au premier consommable **obtenu**,
-  // et elle RESTE — manger son dernier fruit ne doit pas faire disparaître la
-  // touche qu'on vient d'apprendre.
+  // `D-93` (T2) : le loquet `flag_premier_consommable` est RETIRÉ. La case du
+  // consommable suit désormais l'état réel de la poche, par une valeur nommée
+  // (`consommables_en_poche`) que `data/action_slots.json` cite — c'est le
+  // mécanisme d'apparition existant, sans code de déblocage propre.
   //
-  // Un loquet, donc un flag, et pas une valeur nommée `{ valeur:
-  // 'consommables_en_poche', min: 1 }` : celle-ci aurait fait clignoter la
-  // case au rythme de la poche. Posé ici, en UN point, sur l'état observable
-  // de la poche plutôt qu'à chacun des endroits qui peuvent y ajouter
-  // quelque chose (ramassage, craft, retrait du coffre) — une partie déjà
-  // commencée avec un fruit en poche le pose donc à sa première frame, sans
-  // migration.
-  function verifierDeblocagesBarreAction() {
-    if (flags.has('flag_premier_consommable')) return;
+  // C'est un retournement assumé (décision de Xav, 22/09, qui *révise* le
+  // 21/09) : on craignait de faire « clignoter » la case au rythme de la
+  // poche, mais voir une touche qui ne fait rien est pire que de la voir
+  // partir avec ce qu'elle servait à manger.
+  function consommablesEnPoche() {
+    let total = 0;
     for (const [itemId, quantite] of Object.entries(save.inventaire.items)) {
       if (!(quantite > 0)) continue;
-      if (registre.obtenir('items', itemId).categorie !== 'nourriture') continue;
-      flags.set('flag_premier_consommable');
-      etatModifie = true;
-      return;
+      const itemDef = registre.obtenir('items', itemId);
+      if (itemDef && SLOT_PAR_CATEGORIE[itemDef.categorie] === 'consommable') total += 1;
+    }
+    return total;
+  }
+
+  // `D-92` + `D-93` : un slot qui ne correspond plus à rien retombe sur le
+  // défaut de son slot, et ça se DIT en console. Appelée à chaque frame,
+  // AVANT toute branche d'UI — le Coffre déplace des objets pendant qu'un
+  // écran est ouvert, donc une revalidation posée sous `if (!uiOuverte)`
+  // manquerait précisément le cas qui a fait le bug.
+  function revaliderEquipementDuHeros() {
+    const { changements } = revaliderEquipement(save, registre);
+    if (!changements.length) return;
+    etatModifie = true;
+    for (const c of changements) {
+      console.info(`[D-92/D-93] slot "${c.slot}" revalidé : "${c.id}" ${c.raison}`
+        + `${c.remplace ? ` — remplacé par "${c.remplace}"` : ' — retour au défaut'}`);
     }
   }
+  revaliderEquipementDuHeros();
 
   // `D-61` (T3, `Q-34`) : les lignes d'ambiance par palier. Le CHOIX est dans
   // `ambiances.js` (pur) ; ici, seulement de quoi le nourrir et quoi faire du
@@ -2286,6 +2379,10 @@ export function creerOrchestrateurGrotte({
       menu.estOuvert() || dialogueOuvertMaintenant || choixFolletActif() || introEtaitActive || departEtaitActif ||
       constructionActif() || menuFermeParVerbe
     );
+    // `D-92`/`D-93` : avant tout le reste, y compris avant l'UI — un écran
+    // Coffre ouvert vide la poche, et la case d'attaque doit dire la vérité
+    // dès cette frame-là.
+    revaliderEquipementDuHeros();
     // `D-54` : LE point de décision unique annonce son verdict au dehors
     // (aujourd'hui : le `preventDefault` de `Tab`, qui arrive hors frame).
     onEtatUi(uiOuverte);
@@ -2375,7 +2472,6 @@ export function creerOrchestrateurGrotte({
       indices.maj(deltaMs);
       verifierIndicesNiveau();
       verifierLignesAmbiance();
-      verifierDeblocagesBarreAction();
 
       // Horloge "temps de jeu actif" (daynight.js#avancerHeure) : avancée
       // dans TOUTES les scènes désormais (Palier A/C, specs/04_maison-
@@ -3086,7 +3182,7 @@ export function creerOrchestrateurGrotte({
     evaluerCondition: (condition) => flags.evaluate(condition),
     // Les noms des valeurs que les conditions peuvent citer — la moitié
     // « code » du contrôle de câblage au démarrage.
-    nomsValeursConditions: () => Object.keys({ niveau: 0, stations_placables: 0, ...valeursExternes() }),
+    nomsValeursConditions: () => Object.keys(valeursConditions()),
     constructionActif,
     obtenirConstruction: () => construction,
   };

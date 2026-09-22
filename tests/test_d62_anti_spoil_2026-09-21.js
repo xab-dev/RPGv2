@@ -74,6 +74,8 @@ function monterPartie({ niveau, recetteEnPlus }) {
   save.hero.pv = 40;
   save.hero.niveau = niveau;
   save.flags = {
+    // `D-09` : la réplique de première interaction avec l'Atelier, déjà vue.
+    ...Object.fromEntries(registre.tous('stations').filter((s) => s.premiere_interaction).map((s) => [s.premiere_interaction.flag, true])),
     flag_follet_choisi: true, flag_grotte_sortie: true, flag_grotte_sequence: true,
     flag_grotte_monstre_tue: true, flag_levier_salle1: true, flag_premier_ramassage: true,
     flag_ambiance_vent_cendre: true,

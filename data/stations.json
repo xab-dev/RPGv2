@@ -9,7 +9,11 @@
     "id": "station_type_atelier",
     "label_key": "station.atelier",
     "role": "craft",
-    "placable": true
+    "placable": true,
+    "premiere_interaction": {
+      "dialogue": "dlg_recette_indisponible",
+      "flag": "flag_atelier_premiere_interaction"
+    }
   },
   {
     "id": "station_type_coffre",

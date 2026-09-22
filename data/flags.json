@@ -222,5 +222,9 @@
   {
     "id": "flag_ambiance_coffre_pose",
     "label_key": "flag.ambiance_coffre_pose"
+  },
+  {
+    "id": "flag_atelier_premiere_interaction",
+    "label_key": "flag.atelier_premiere_interaction"
   }
 ]

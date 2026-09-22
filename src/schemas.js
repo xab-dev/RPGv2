@@ -2071,6 +2071,24 @@ export const SCHEMAS = {
       if (entry.deplacable_si_vide !== undefined && typeof entry.deplacable_si_vide !== 'boolean') {
         erreurs.push(`${path} > deplacable_si_vide doit être un booléen s'il est présent`);
       }
+      // `D-09` (décision de Xav, 23/09) : OPTIONNEL — une réplique dite la
+      // toute première fois qu'on interagit avec une station de ce TYPE, avant
+      // que son écran s'ouvre. Le flag est exigé déclaré pour la même raison
+      // qu'une ambiance : `flags.js` lève sur un flag inconnu, donc une faute
+      // de frappe ici coûterait une frame figée au lieu d'un échec au boot.
+      if (entry.premiere_interaction !== undefined) {
+        const pi = entry.premiere_interaction;
+        if (pi === null || typeof pi !== 'object' || Array.isArray(pi)) {
+          erreurs.push(`${path} > premiere_interaction doit être un objet { dialogue, flag } s'il est présent`);
+        } else {
+          if (!(catalogs.dialogues || []).some((d) => d.id === pi.dialogue)) {
+            erreurs.push(`${path} > premiere_interaction.dialogue "${pi.dialogue}" introuvable dans dialogues.json`);
+          }
+          if (!(catalogs.flags || []).some((f) => f.id === pi.flag)) {
+            erreurs.push(`${path} > premiere_interaction.flag "${pi.flag}" non déclaré dans flags.json`);
+          }
+        }
+      }
       return erreurs;
     },
   },

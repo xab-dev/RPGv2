@@ -44,7 +44,7 @@ save.hero.pv = 40;
 // dialogue gèle le temps actif, et ce fichier éprouve autre chose. Déduites
 // plutôt que recopiées, pour qu'une ligne de plus ne rouvre pas neuf
 // fichiers (`Q-42`).
-save.flags = { flag_follet_choisi: true, flag_grotte_sortie: true, flag_grotte_sequence: true, flag_grotte_monstre_tue: true, flag_levier_salle1: true, flag_premier_ramassage: true, ...Object.fromEntries(registre.tous('ambiances').map((a) => [a.flag, true])), };
+save.flags = { flag_follet_choisi: true, flag_grotte_sortie: true, flag_grotte_sequence: true, flag_grotte_monstre_tue: true, flag_levier_salle1: true, flag_premier_ramassage: true, ...Object.fromEntries(registre.tous('ambiances').map((a) => [a.flag, true])), ...Object.fromEntries(registre.tous('stations').filter((s) => s.premiere_interaction).map((s) => [s.premiere_interaction.flag, true])), };
 // `D-120` (22/09) : hache et pioche sont gâtées au Nv.10 et coûtent des
 // éclats — c'est le cœur du ralentissement voulu par Xav. Ce bot n'éprouve
 // PAS le déblocage (c'est `test_d120_outils_nv10`) : il éprouve la boucle

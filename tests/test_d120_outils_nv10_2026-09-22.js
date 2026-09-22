@@ -79,7 +79,7 @@ function monter({ niveau, poche = {}, eclats = 0 }) {
     // dialogue gèle le temps actif, et ce fichier éprouve autre chose. Déduites
     // plutôt que recopiées, pour qu'une ligne de plus ne rouvre pas neuf
     // fichiers (`Q-42`).
-    flag_grotte_monstre_tue: true, flag_levier_salle1: true, flag_premier_ramassage: true, ...Object.fromEntries(registre.tous('ambiances').map((a) => [a.flag, true])),
+    flag_grotte_monstre_tue: true, flag_levier_salle1: true, flag_premier_ramassage: true, ...Object.fromEntries(registre.tous('ambiances').map((a) => [a.flag, true])), ...Object.fromEntries(registre.tous('stations').filter((s) => s.premiere_interaction).map((s) => [s.premiere_interaction.flag, true])),
   };
   const ouvert = {};
   const frames = [];

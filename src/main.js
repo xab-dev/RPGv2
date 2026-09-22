@@ -1671,6 +1671,27 @@ export function creerOrchestrateurGrotte({
   // 5ᵉ type de station avec un rôle déjà existant ne demande aucun code ici.
   function essayerStation(puzzle) {
     const station = registre.obtenir('stations', puzzle.station_type);
+    // `D-09` (décision de Xav, 23/09) : la réplique de première interaction
+    // passe AVANT l'écran, et l'écran s'ouvre à sa fermeture — jamais un
+    // dialogue par-dessus un menu, ce qui était la raison du gel de la ligne
+    // (le routage de `maj()` ne sert qu'une UI à la fois). La relance passe
+    // par cette même fonction, donc le rôle de la station décide toujours
+    // seul de ce qui suit, et le flag déjà posé l'empêche de reboucler.
+    //
+    // Le flag est posé AVANT le dialogue, comme pour une ambiance : une
+    // sauvegarde prise pendant la réplique ne la fait pas revenir. Et
+    // `reinitialiserPartie`, qui ferme le dialogue (donc déclencherait ce
+    // `onFermer`), ne peut pas courir pendant la réplique : elle part du
+    // menu, qui ne s'ouvre jamais par-dessus un dialogue.
+    const premiere = station.premiere_interaction;
+    if (premiere && !flags.has(premiere.flag)) {
+      flags.set(premiere.flag);
+      etatModifie = true;
+      dialogue.ouvrir(resoudreLignes(premiere.dialogue, registre, i18n, save.hero.companion), {
+        onFermer: () => essayerStation(puzzle),
+      });
+      return;
+    }
     if (station.role === 'craft') {
       menu.ouvrirCraft(() => entreesCraft(station), i18n.t(station.label_key), {
         texteVide: i18n.t('menu.fiche.aucune_recette'),

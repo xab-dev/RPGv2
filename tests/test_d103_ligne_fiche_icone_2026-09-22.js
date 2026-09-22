@@ -162,7 +162,7 @@ class ElementFactice {
   const save = saveNeuve();
   save.hero.scene = 'scene_maison_exterieur';
   save.hero.companion = 'comp_follet_eau';
-  save.flags = { flag_follet_choisi: true, flag_grotte_sortie: true, flag_maison_decouverte: true };
+  save.flags = { flag_follet_choisi: true, flag_grotte_sortie: true, flag_maison_decouverte: true, ...Object.fromEntries(registre.tous('stations').filter((s) => s.premiere_interaction).map((s) => [s.premiere_interaction.flag, true])) };
   save.inventaire.items = { item_branche: 6, item_caillou: 2 };
   // `D-120` : hache et pioche sont gâtées au Nv.10 et coûtent des éclats — il
   // faut donc un héros qui y a droit, et l'XP qui va avec (le niveau est

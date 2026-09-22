@@ -131,6 +131,8 @@ const ITEM = registre.obtenir('items', 'item_epee_bois');
   save.inventaire.eclats = 30;
   save.inventaire.items = { item_bois: 1, item_branche: 1 };
   save.flags = {
+    // `D-09` : la réplique de première interaction avec l'Atelier, déjà vue.
+    ...Object.fromEntries(registre.tous('stations').filter((s) => s.premiere_interaction).map((s) => [s.premiere_interaction.flag, true])),
     flag_follet_choisi: true, flag_grotte_sortie: true, flag_grotte_sequence: true,
     flag_grotte_monstre_tue: true, flag_levier_salle1: true, flag_premier_ramassage: true,
     flag_ambiance_vent_cendre: true, flag_premiere_faim: true, flag_maison_decouverte: true,

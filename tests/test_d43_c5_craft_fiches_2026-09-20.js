@@ -33,7 +33,7 @@ function monter({ poche }) {
   const save = saveNeuve();
   save.hero.scene = 'scene_maison_exterieur';
   save.hero.companion = 'comp_follet_eau';
-  save.flags = { flag_follet_choisi: true, flag_grotte_sortie: true, flag_maison_decouverte: true };
+  save.flags = { flag_follet_choisi: true, flag_grotte_sortie: true, flag_maison_decouverte: true, ...Object.fromEntries(registre.tous('stations').filter((s) => s.premiere_interaction).map((s) => [s.premiere_interaction.flag, true])) };
   save.inventaire.items = { ...poche };
   // `D-120` (22/09) : hache et pioche sont désormais gâtées au Nv.10 et
   // coûtent des éclats. Cet écran-ci n'éprouve pas le déblocage (c'est

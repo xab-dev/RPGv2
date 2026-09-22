@@ -274,5 +274,6 @@
   "flag.ambiance_premier_rangement": "Le follet a parlé du coffre",
   "flag.ambiance_niveau_10": "Le follet a parlé du Nv.10",
   "flag.ambiance_coffre_pose": "Le follet a parlé du coffre posé",
+  "flag.atelier_premiere_interaction": "Le follet a parlé devant l'atelier",
   "menu.fiche.refus_station_pleine": "Vide-le avant de le déplacer"
 }

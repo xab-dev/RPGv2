@@ -53,3 +53,13 @@ nuit) sous Moyen **puis** sous Haut, forcés par `?qualite=`. Captures :
 - Hors périmètre, non touché : la forêt (`D-110`), les lisières (`Q-52`), la Grotte. Haut n'a
   **pas** été mesuré sous bridage CPU : Auto ne choisit jamais Haut, c'est un choix du joueur
   sur une machine qui s'ennuie (`specs/09` §5).
+
+## Suite : verdicts de Xav et petits tickets (22/09, nuit)
+
+« V-75: good, mais "champ de cailloux", surtout ceux sur le chemin » · « Q-58 : oui, j'aime ! » ·
+« D-06: non, pas d'indicateur » · « D-07: non, réalisme […] Par contre, on enlève le texte affiché
+dans les cases d'inventaire » · « D-08 : go ».
+
+| Commit | Ticket | Ce qui change |
+|---|---|---|
+| (ce commit) | `D-07` | Poche et Coffre : cases sans nom (image + quantité), nom dans la fiche et en `aria-label`. Captures `docs/captures/inventaire-2026-09-22/` |

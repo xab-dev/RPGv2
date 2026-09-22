@@ -34,6 +34,10 @@
 // Un niveau de la pile porte : { vue, id, titre, obtenirEntrees, sousTitre?, texteVide? }
 //   sousTitre      () => chaîne, relue à chaque affichage (Stats : les points libres)
 //   texteVide      ce que dit la fiche quand il n'y a aucune entrée
+//   nomsMasques    vrai = les tuiles ne montrent que leur image (`D-07`, Poche et
+//                  Coffre) : le nom reste dans la fiche et dans l'étiquette
+//                  d'accessibilité de la tuile. Une tuile SANS image garde son nom,
+//                  sinon elle serait une case vide que rien ne distingue
 //
 // LE GESTE, et pourquoi il diffère de la grille de cartes : ici une tuile se
 // SÉLECTIONNE (survol, clic, appui), et c'est le BOUTON DE LA FICHE qui agit.
@@ -251,10 +255,15 @@ export function creerEcranFiches({
       icone.dataset.icone = entree.icone;
       elTuile.appendChild(icone);
     }
-    const nom = document.createElement('span');
-    nom.className = 'tuile-nom';
-    nom.textContent = entree.titre;
-    elTuile.appendChild(nom);
+    // `D-07` : le nom se CACHE, il ne se supprime pas — la tuile le porte en
+    // étiquette, et la fiche d'à côté l'écrit en tête.
+    poserAttribut(elTuile, 'aria-label', entree.titre);
+    if (!(niveau.nomsMasques && entree.icone)) {
+      const nom = document.createElement('span');
+      nom.className = 'tuile-nom';
+      nom.textContent = entree.titre;
+      elTuile.appendChild(nom);
+    }
     if (entree.quantite !== undefined && entree.quantite !== null) {
       const quantite = document.createElement('span');
       quantite.className = 'tuile-quantite';

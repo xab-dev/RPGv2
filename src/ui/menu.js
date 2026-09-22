@@ -515,6 +515,9 @@ export function initialiserMenu({
     [ECRAN_POCHE]: () => navigation.empiler({
       vue: ecranFiches, id: ECRAN_POCHE, obtenirEntrees: entreesPoche, titre: i18n.t('menu.poche_titre'),
       texteVide: i18n.t('menu.poche_vide'), sousTitre: () => sousTitrePoche(),
+      // `D-07` (Xav, 22/09) : dans l'inventaire, l'image suffit ; le nom est
+      // dans la fiche. Rien n'est retiré, il est seulement caché.
+      nomsMasques: true,
     }),
     // Stats (palier C3) : maître-détail, comme la Poche. Le sous-titre (points
     // libres, progression d'XP) est relu à chaque affichage.
@@ -668,6 +671,7 @@ export function initialiserMenu({
       navigation.ouvrir({
         vue: ecranFiches, id: ECRAN_COFFRE, obtenirEntrees, titre,
         sousTitre: options.sousTitre || null, texteVide: options.texteVide || '',
+        nomsMasques: true, // `D-07`, comme la Poche
       });
     },
     rafraichirCoffre() {

@@ -6,7 +6,7 @@
 // avant / après se lit dans l'historique du dossier de captures.
 import { ouvrirLeJeu, saveDansLaMaison, cliquer, mesurerEcrans, positionPresDe } from './commun.mjs';
 
-const DOSSIER = 'docs/captures/menus-cartes-2026-09-20/palier-c';
+const DOSSIER = process.env.RPG_DOSSIER_CAPTURES || 'docs/captures/menus-cartes-2026-09-20/palier-c';
 const seulement = process.argv[3] || null;
 
 // Comment ouvrir chaque écran depuis le jeu nu (touches réelles).

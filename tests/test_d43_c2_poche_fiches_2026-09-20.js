@@ -65,6 +65,8 @@ class ElementFactice {
   set className(v) { this._classes = String(v || '').split(/\s+/).filter(Boolean); }
   appendChild(enfant) { enfant.parentNode = this; this.children.push(enfant); return enfant; }
   addEventListener(type, fn) { (this._listeners[type] ||= []).push(fn); }
+  setAttribute(nom, valeur) { (this._attributs ||= {})[nom] = String(valeur); }
+  getAttribute(nom) { return (this._attributs || {})[nom] ?? null; }
   declencher(type) { for (const fn of this._listeners[type] || []) fn({}); }
   get textContent() { return this._texte; }
   set textContent(v) { this._texte = v; this.children = []; }
@@ -139,8 +141,11 @@ class ElementFactice {
   assert.deepEqual(menu.obtenirEtatPile(), { profondeur: 3, sommet: 'ecran_poche' });
   assert.equal(ecran().hidden, false, 'la Poche est l’écran « maître-détail »');
   assert.equal(ecran().querySelector('.cartes-titre').textContent, i18n.t('menu.poche_titre'));
-  assert.deepEqual(tuiles().map((t) => [t.querySelector('.tuile-nom').textContent, t.querySelector('.tuile-quantite').textContent]),
+  // `D-07` (Xav, 22/09) : la tuile n'ÉCRIT plus son nom, elle le PORTE
+  // (étiquette d'accessibilité) ; la fiche d'à côté l'écrit en tête.
+  assert.deepEqual(tuiles().map((t) => [t.getAttribute('aria-label'), t.querySelector('.tuile-quantite').textContent]),
     [['Branche', '6'], ['Fruit', '3'], ['Fruit cuit', '1'], ['Hache', '1']], 'une tuile par objet : son nom, sa quantité');
+  assert.deepEqual(tuiles().map((t) => t.querySelector('.tuile-nom')), [null, null, null, null], 'aucun nom écrit sur une tuile de la Poche');
   assert.deepEqual(tuiles().map((t) => t.querySelector('.carte-icone').dataset.icone),
     ['visuel_branche', 'visuel_fruit', 'visuel_fruit_cuit', 'visuel_hache'], 'et sa silhouette du monde, lue dans `items.json`');
 

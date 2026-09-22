@@ -105,6 +105,10 @@ const mult = (preset) => valeurLevier(config, preset, 'particules');
   assert.equal(bas, 0, 'Bas : pas une bouffée sur 400 frames de marche');
   assert.ok(moyen > 0, 'Moyen : la traînée existe toujours');
   assert.ok(haut >= moyen, 'Haut : au moins autant de bouffées visibles');
+  // `D-116` : dès que Haut multiplie, il doit SE VOIR — plus de bouffées à
+  // l'écran au même pas, pas seulement une réserve plus grande qui ne se
+  // remplit jamais (c'était le défaut : Haut rendait Moyen au pixel près).
+  if (mult('haut') > mult('moyen')) assert.ok(haut > moyen, 'Haut : strictement plus de bouffées visibles que Moyen');
   console.log(`OK extinction réelle (bas ${bas}, moyen ${moyen}, haut ${haut} bouffées au plus)`);
 }
 

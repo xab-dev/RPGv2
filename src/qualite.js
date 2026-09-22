@@ -206,15 +206,36 @@ export function leviersNonNeutres(config, presetId) {
 // rien (la réserve de 8 de `poussiere.js`) : sans elle, un effet sans
 // `capacite` resterait à son défaut et continuerait d'émettre en Bas. Le
 // défaut reste la propriété du système — il est passé, jamais recopié ici.
+
+//
+// `D-116` — au-dessus de 1, multiplier la RÉSERVE ne suffit pas : une réserve
+// qui n'était pas pleine ne dessine rien de plus quand on la double (Haut à
+// `particules: 2` était pixel pour pixel Moyen, capture à l'appui). Ce qui se
+// voit, c'est une traînée plus DENSE et plus LONGUE. Au-delà de 1, donc :
+//   — l'intervalle d'émission est divisé par le multiplicateur (m fois plus de
+//     bouffées au pixel parcouru) ;
+//   — la durée de vie est multipliée par √m (la traînée s'étire sans devenir
+//     une comète) ;
+//   — la réserve suit les deux (× m × √m), sinon elle se viderait avant la fin
+//     de la traînée et on retrouverait la grappe clignotante de `D-108`.
+// À 1 ou en dessous, rien de cela : Moyen reste le catalogue au champ près, et
+// Bas s'éteint par sa réserve nulle comme avant.
 const CHAMPS_QUANTITE_PARTICULES = ['capacite', 'nb_particules'];
 
 export function appliquerParticules(effet, multiplicateur, defauts = {}) {
   if (!effet || effet.role !== 'cosmetique') return effet;
   const sortie = { ...effet };
+  const densifier = multiplicateur > 1 && typeof effet.intervalle_px === 'number';
+  const facteurDuree = densifier ? Math.sqrt(multiplicateur) : 1;
   for (const champ of CHAMPS_QUANTITE_PARTICULES) {
     const base = effet[champ] !== undefined ? effet[champ] : defauts[champ];
     if (base === undefined) continue;
-    sortie[champ] = Math.max(0, Math.round(base * multiplicateur));
+    const facteur = champ === 'capacite' ? multiplicateur * facteurDuree : multiplicateur;
+    sortie[champ] = Math.max(0, Math.round(base * facteur));
+  }
+  if (densifier) {
+    sortie.intervalle_px = effet.intervalle_px / multiplicateur;
+    if (typeof effet.duree_ms === 'number') sortie.duree_ms = Math.round(effet.duree_ms * facteurDuree);
   }
   return sortie;
 }

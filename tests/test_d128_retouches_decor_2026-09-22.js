@@ -68,4 +68,23 @@ const decorGrotte = donnees.scenes
 assert.ok(decorGrotte.length > 0 && decorGrotte.every((id) => id === 'visuel_rocher_grand' || id === 'visuel_rocher_petit'),
   `le décor de la Grotte a changé de rocher : ${decorGrotte}`);
 
+// `D-130` — le levier. Son état ne se lit qu'à la teinte (gris → jaune, posée
+// par render.js) : il faut donc AU MOINS une pièce teintée, et le visuel doit
+// se déclarer teintable (schemas.js le refuse sinon). Et règle `D-98` : ce qui
+// donne du volume par-dessus une pièce teintée est en ALPHA PUR (noir ou blanc
+// translucide) — une facette de couleur fixe jurerait dans l'un des deux états.
+{
+  const levier = visuel('visuel_levier');
+  assert.equal(levier.teintable, true, 'visuel_levier doit rester teintable');
+  const teintees = levier.primitives.filter((p) => p.teinte);
+  assert.ok(teintees.length >= 1, 'le levier ne porte plus de pièce teintée : son état ne se lirait plus');
+  const indices = teintees.map((p) => levier.primitives.indexOf(p));
+  for (let i = 0; i < levier.primitives.length; i++) {
+    const p = levier.primitives[i];
+    // Un volume = une primitive posée juste après une pièce teintée, avant la pièce suivante.
+    const surTeinte = indices.some((j) => i > j && i <= j + 2 && !p.teinte && p.alpha != null);
+    if (surTeinte) assert.ok(['#000000', '#ffffff'].includes(p.couleur), `volume de levier en couleur fixe : ${p.couleur}`);
+  }
+}
+
 console.log('test_d128_retouches_decor : ok');

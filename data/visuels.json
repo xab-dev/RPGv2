@@ -776,28 +776,243 @@
     "ancre": "bas",
     "teintable": true,
     "ombre": {
-      "dy": 2,
-      "w": 10,
-      "h": 3,
-      "alpha": 0.3
+      "dy": 0.3,
+      "w": 15,
+      "h": 3.2,
+      "alpha": 0.35
     },
     "primitives": [
       {
-        "forme": "rect",
+        "forme": "polygone",
         "dx": 0,
-        "dy": -6,
-        "w": 3,
-        "h": 12,
-        "couleur": "#5a5044"
+        "dy": 0,
+        "points": [
+          [
+            -6.4,
+            -4.2
+          ],
+          [
+            6.4,
+            -4.2
+          ],
+          [
+            6.4,
+            0
+          ],
+          [
+            -6.4,
+            0
+          ]
+        ],
+        "couleur": "#3a3e44"
       },
       {
-        "forme": "cercle",
+        "forme": "polygone",
         "dx": 0,
-        "dy": -12,
+        "dy": 0,
+        "points": [
+          [
+            -6,
+            -4
+          ],
+          [
+            6,
+            -4
+          ],
+          [
+            6,
+            -0.5
+          ],
+          [
+            -6,
+            -0.5
+          ]
+        ],
+        "couleur": "#50555c"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -6.4,
+            -4.2
+          ],
+          [
+            -5,
+            -7.4
+          ],
+          [
+            5,
+            -7.4
+          ],
+          [
+            6.4,
+            -4.2
+          ]
+        ],
+        "couleur": "#6e737a"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -5.6,
+            -4.6
+          ],
+          [
+            -4.6,
+            -6.9
+          ],
+          [
+            0,
+            -6.9
+          ],
+          [
+            -0.8,
+            -4.6
+          ]
+        ],
+        "couleur": "#858a91"
+      },
+      {
+        "forme": "ellipse",
+        "dx": 0,
+        "dy": -5.8,
+        "w": 6,
+        "h": 1.4,
+        "couleur": "#1f2226"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -2,
+            -3.2
+          ],
+          [
+            2,
+            -3.2
+          ],
+          [
+            2,
+            -1.4
+          ],
+          [
+            -2,
+            -1.4
+          ]
+        ],
+        "couleur": "#3c3c3c",
+        "teinte": true
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -2,
+            -3.2
+          ],
+          [
+            2,
+            -3.2
+          ],
+          [
+            2,
+            -2.6
+          ],
+          [
+            -2,
+            -2.6
+          ]
+        ],
+        "couleur": "#ffffff",
+        "alpha": 0.35
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0,
+            -5.8
+          ],
+          [
+            4.6,
+            -15.4
+          ]
+        ],
+        "couleur": "#3a2a1a",
+        "epaisseur": 2.4
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0,
+            -5.8
+          ],
+          [
+            4.6,
+            -15.4
+          ]
+        ],
+        "couleur": "#6b5038",
+        "epaisseur": 1.5
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -0.3,
+            -6.4
+          ],
+          [
+            4.1,
+            -15.4
+          ]
+        ],
+        "couleur": "#8a6b4a",
+        "epaisseur": 0.6
+      },
+      {
+        "forme": "ellipse",
+        "dx": 4.8,
+        "dy": -16,
         "w": 6,
         "h": 6,
         "couleur": "#6b6b6b",
         "teinte": true
+      },
+      {
+        "forme": "ellipse",
+        "dx": 5.6,
+        "dy": -14.2,
+        "w": 4,
+        "h": 2,
+        "couleur": "#000000",
+        "alpha": 0.22
+      },
+      {
+        "forme": "ellipse",
+        "dx": 3.8,
+        "dy": -17.2,
+        "w": 2.2,
+        "h": 1.6,
+        "couleur": "#ffffff",
+        "alpha": 0.6
       }
     ]
   },

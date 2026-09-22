@@ -22,9 +22,10 @@ const POSTES = {
   toit: { scene: 'scene_maison_exterieur', x: 98.6, y: 57.5 },
   // Dedans, toit effacé : les murs se voient.
   murs: { scene: 'scene_maison_exterieur', x: 81.5, y: 60.5 },
-  // Grotte, salle 1 : le levier baissé (flag retiré), puis levé.
+  // Grotte, salle 1 : le levier éteint, puis allumé. L'état on/off vit dans
+  // `save.puzzles[id].actif` (main.js), pas dans le flag qu'il pose.
   levier_eteint: { scene: 'scene_grotte_salle_1', x: 11.2, y: 7.4, retirer: ['flag_levier_salle1'] },
-  levier_allume: { scene: 'scene_grotte_salle_1', x: 11.2, y: 7.4 },
+  levier_allume: { scene: 'scene_grotte_salle_1', x: 11.2, y: 7.4, puzzles: { puzzle_levier_salle1: { actif: true } } },
 };
 
 export default async function (chrome) {
@@ -37,6 +38,7 @@ export default async function (chrome) {
     save.hero.y = p.y * TUILE;
     save.monde.heure = 0.25; // plein jour : la nuit cacherait ce qu'on regarde
     for (const f of p.retirer || []) delete save.flags[f];
+    if (p.puzzles) save.puzzles = { ...save.puzzles, ...p.puzzles };
     await ouvrirLeJeu(chrome, { largeur: 1920, hauteur: 1080, save });
     await chrome.capture(`${DOSSIER}/${SUFFIXE}_${nom}.png`);
     const erreurs = chrome.erreurs();

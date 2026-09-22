@@ -47,10 +47,18 @@ function dansCercle(x, y, cercle) {
 // tests headless et les bancs d'essai qui ne branchent rien doivent garder
 // des boutons qui répondent, alors que le RENDU, lui, ne doit rien dessiner
 // sans qu'on le lui dise (un défaut y masquerait un branchement oublié).
+//
+// `zonesMonde` (`Q-40`, 23/09) : des cibles tactiles qui BOUGENT avec le
+// monde (aujourd'hui le seul follet), en coordonnées logiques d'écran,
+// annoncées par l'orchestrateur à chaque frame — `[{ cx, cy, rayon, verbe }]`.
+// Même patron que `verbesActions` : ce module ne sait ni ce qu'est un follet
+// ni où est la caméra, il reçoit des cercles. Défaut : aucune, donc un banc
+// qui ne branche rien n'a pas de zone fantôme.
 export function creerSourceTactile(cible, {
   versLogique = (x, y) => ({ x, y }),
   surRelachement = null,
   verbesActions = () => boutonsTactiles().map((b) => b.verbe),
+  zonesMonde = () => [],
 } = {}) {
   let actif = false;
   // Incrémenté à chaque touchstart (jamais décrémenté) : `estActif()` est un
@@ -155,6 +163,13 @@ export function creerSourceTactile(cible, {
       for (const bouton of boutonsTactiles()) {
         etat[bouton.verbe] = actifs.has(bouton.verbe)
           && points.some((p) => dansCercle(p.x, p.y, bouton));
+      }
+      // Le doigt qui pilote le joystick n'en fait pas partie : un pouce qui
+      // glisse sur le follet en se déplaçant changerait de cible à chaque
+      // passage, sans l'avoir voulu. Un verbe déjà vrai par un bouton le reste.
+      const libres = Array.from(doigts.entries()).filter(([id]) => id !== idJoystick).map(([, p]) => p);
+      for (const zone of zonesMonde()) {
+        etat[zone.verbe] = !!etat[zone.verbe] || libres.some((p) => dansCercle(p.x, p.y, zone));
       }
       return etat;
     },

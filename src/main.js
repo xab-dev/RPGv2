@@ -22,6 +22,7 @@ import { ornementActif, etincellesOrbite, facteurRespiration } from './ornements
 import { creerCoucheInput, etatNeutre } from './input/input.js';
 import { chargerScene, resoudreDeplacement, portailFranchi, trouverPositionLibrePlusProche } from './scene.js';
 import { calculerCamera } from './camera.js';
+import { RAYON_TOUCHE_FOLLET } from './ui/hud_layout.js';
 import { genererDecor } from './decor.js';
 import {
   creerBoucle, dessinerScene, dessinerObscurite, dessinerSignalZones, dessinerPaupieres, dessinerTextesFlottants, presenter,
@@ -615,6 +616,10 @@ export function creerOrchestrateurGrotte({
   // patron qu'`onEtatUi` et `onPremierGeste` : un test headless n'a rien à
   // fournir.
   onVerbesActions = () => {},
+  // `Q-40` (23/09) : les cibles tactiles qui suivent le monde — le follet —,
+  // en coordonnées logiques d'écran, annoncées à chaque frame. Même patron
+  // qu'`onVerbesActions` : no-op par défaut, un test headless n'a rien à fournir.
+  onZonesMonde = () => {},
   // `specs/09_reglages-graphiques.md` palier C : le preset graphique DÉJÀ
   // résolu, tel que `resoudreGraphismes` le rend. Par défaut, l'orchestrateur
   // le résout lui-même, sans signal d'appareil ni paramètre d'URL — un test
@@ -2809,6 +2814,7 @@ export function creerOrchestrateurGrotte({
     // (aujourd'hui : le `preventDefault` de `Tab`, qui arrive hors frame).
     onEtatUi(uiOuverte);
     onVerbesActions(verbesActionsVisibles());
+    onZonesMonde(zonesTactilesMonde(uiOuverte));
     // Auto (§5.2) : lu sur la MÊME frame et le MÊME `uiOuverte` que tout le
     // reste — jamais un second calcul de « le jeu a-t-il la main ».
     majDescenteAuto(deltaMs, uiOuverte);
@@ -3141,8 +3147,11 @@ export function creerOrchestrateurGrotte({
     }
   }
 
-  function dessiner() {
-    const camera = calculerCamera({
+  // Une seule caméra pour le dessin et pour ce qui se touche à l'écran : une
+  // zone tactile calculée avec une autre formule que celle du dessin
+  // répondrait à côté de ce que le joueur voit.
+  function cameraCourante() {
+    return calculerCamera({
       cibleX: hero.x,
       cibleY: hero.y,
       largeurScene: scene.width * scene.tileSize,
@@ -3150,6 +3159,21 @@ export function creerOrchestrateurGrotte({
       largeurVue: RESOLUTION_LOGIQUE.largeur,
       hauteurVue: RESOLUTION_LOGIQUE.hauteur,
     });
+  }
+
+  // `Q-40`/`Q-41` : toucher le follet = `target_next`. Aucune zone quand une
+  // UI capte les verbes (le verbe y serait neutralisé de toute façon, mais
+  // une zone annoncée sous un menu serait un mensonge pour qui la lit), ni
+  // avant le choix du follet. Position lue sur la frame en cours, relue par
+  // le tactile à la suivante : un retard d'une frame, sans conséquence au doigt.
+  function zonesTactilesMonde(uiOuverte) {
+    if (uiOuverte || !follet) return [];
+    const camera = cameraCourante();
+    return [{ cx: follet.x - camera.x, cy: follet.y - camera.y, rayon: RAYON_TOUCHE_FOLLET, verbe: 'target_next' }];
+  }
+
+  function dessiner() {
+    const camera = cameraCourante();
     // MT_mesure-saccades_2026-09-19, piste 3 (arrondi caméra/héros) : no-op
     // hors `?debug=fps`. Position écran EN LOGIQUE (avant la transform
     // logique->physique de render.js), lue au même endroit que dessinerScene
@@ -3828,9 +3852,12 @@ export async function demarrerJeu() {
   // personne ne sait encore ce qui est débloqué, et un doigt posé dans cet
   // intervalle ne doit pas déclencher une compétence que le joueur n'a pas.
   let verbesActionsDebloques = [];
+  // `Q-40` : même patron, pour les cibles qui suivent le monde (le follet).
+  let zonesMondeTactiles = [];
   const sourceTactile = creerSourceTactile(canvasVisible, {
     surRelachement: () => pleinEcran.demanderUneFois(),
     verbesActions: () => verbesActionsDebloques,
+    zonesMonde: () => zonesMondeTactiles,
     // Seule source de vérité pour écran -> logique (diagnostic
     // SD_ui-lisibilite §3c) : versCoordonneesLogiques() est la même fonction
     // pure, testée, dont presenter()/calculerRectanglePresentation() dessine
@@ -4075,6 +4102,7 @@ export async function demarrerJeu() {
     // `D-54` : le seul écrivain du drapeau lu par le clavier (cf. plus haut).
     onEtatUi: (ouverte) => { uiCapteLesVerbes = ouverte; },
     onVerbesActions: (verbes) => { verbesActionsDebloques = verbes; },
+    onZonesMonde: (zones) => { zonesMondeTactiles = zones; },
     // Le curseur n'est pas dans la scène, mais ses étincelles sont des
     // particules cosmétiques comme les autres : les laisser derrière ferait un
     // Bas à moitié appliqué, visible à la souris. Ici, et pas derrière chaque

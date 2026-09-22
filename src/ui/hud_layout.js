@@ -106,6 +106,17 @@ export const BOUTON_INTERACT = { cx: 454, cy: 97, rayon: 20, verbe: 'interact' }
 // PROVISOIRE : jamais validé au pouce par Xav (`V-23`).
 export const BOUTON_MENU = { cx: 455, cy: 44, rayon: 16, verbe: 'menu' };
 
+// `Q-40`/`Q-41` (23/09, décision de Xav) : toucher le FOLLET émet
+// `target_next` — le geste « cible suivante » du doigt, qui sert aussi de
+// rappel quand il est parti trop loin (sa cible hors de portée, le cycle
+// repart du monstre le plus proche du héros, cf. companion.js#cibleSuivante).
+// Le follet se dessine en quelques pixels : la zone qui répond est celle d'un
+// bouton ordinaire (rayon 20, le minimum P4① rappelé en tête de fichier),
+// centrée sur lui et qui le suit. Elle déborde sur le héros quand le follet
+// orbite près de lui, sans conséquence : rien d'autre ne se touche dans le
+// monde. PROVISOIRE, jamais validé au pouce.
+export const RAYON_TOUCHE_FOLLET = 20;
+
 // D-20 B : `data/visuels.json#visuel_icone_main` (et toute icône d'arme
 // future) est dessinée dans une boîte de ce côté-là ; chaque appelant calcule
 // son échelle avec `echelleIconeArme(tailleVoulue)` plutôt que de recopier la

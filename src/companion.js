@@ -179,7 +179,7 @@ export function avancerPosition(follet, hero, monstres, deltaS) {
 
 // --- « Cible suivante » (`D-54`, décision de Xav du 20/09) -----------------
 // Le joueur fait changer le follet de monstre : RB à la manette, Tab au
-// clavier (le geste tactile reste à définir, `Q-40`). Pur, aucun périphérique
+// clavier, toucher le follet au doigt (`Q-40`, 23/09). Pur, aucun périphérique
 // ici — le verbe abstrait `target_next` arrive déjà traduit.
 //
 // CANDIDATS = les monstres vivants que le follet ne lâcherait pas aussitôt,
@@ -198,7 +198,9 @@ export function avancerPosition(follet, hero, monstres, deltaS) {
 // rendu tel quel, sans effet et sans erreur. Un appui alors que le follet
 // n'a aucune cible prend le premier de la liste (le plus proche) — lecture
 // retenue par défaut du « zéro ou un candidat : sans effet » du ticket,
-// marquée `[OUVERT]` (`Q-41`) : l'inverse serait un appui sans réponse.
+// confirmée par Xav le 23/09 (`Q-41`) : c'est aussi le RAPPEL du follet
+// parti trop loin — sa cible hors de portée n'est plus candidate, le cycle
+// repart du plus proche du héros.
 export function cibleSuivante(follet, hero, monstres, companion) {
   if (!follet) return follet;
   const portee = distanceRelachePx(companion);

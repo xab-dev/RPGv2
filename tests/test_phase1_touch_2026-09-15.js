@@ -44,14 +44,38 @@ function toucher(id, x, y) {
   assert.equal(etat.move.y, 0);
 }
 
-// 3. Un doigt bien au-delà du rayon visuel (mais toujours dans la moitié
-// gauche de l'écran, §2.3) -> magnitude clampée à 1 (jamais plus).
+// 3. Un doigt au-delà du rayon visuel (mais toujours dans la bande qui
+// capture le joystick, §2.3) -> magnitude clampée à 1 (jamais plus). Le point
+// est pris juste avant la frontière plutôt qu'à une distance fixe : ce test
+// vérifie le clamp, il ne doit pas casser quand la bande se règle (`D-137`).
 {
   const cible = creerFausseCible();
   const tactile = creerSourceTactile(cible);
-  cible.emettre('touchstart', [toucher(1, JOYSTICK.cx + JOYSTICK.rayonZone * 2, JOYSTICK.cy)]);
+  assert.ok(JOYSTICK.limiteX - 1 > JOYSTICK.cx + JOYSTICK.rayonZone, 'la bande doit dépasser le cercle dessiné');
+  cible.emettre('touchstart', [toucher(1, JOYSTICK.limiteX - 1, JOYSTICK.cy)]);
   const etat = tactile.instantane();
   assert.equal(etat.move.x, 1);
+}
+
+// 3 bis. `D-137` : un PREMIER contact hors de la bande ne prend pas le
+// joystick — c'est la zone de jeu, pas le pouce gauche.
+{
+  const cible = creerFausseCible();
+  const tactile = creerSourceTactile(cible);
+  cible.emettre('touchstart', [toucher(1, JOYSTICK.limiteX + 1, JOYSTICK.cy)]);
+  const etat = tactile.instantane();
+  assert.equal(etat.move.x, 0);
+  assert.equal(etat.move.y, 0);
+}
+
+// 3 ter. `D-137` : un doigt DÉJÀ attribué qui glisse hors de la bande garde
+// la main — réduire la bande ne doit jamais couper un déplacement en cours.
+{
+  const cible = creerFausseCible();
+  const tactile = creerSourceTactile(cible);
+  cible.emettre('touchstart', [toucher(1, JOYSTICK.cx, JOYSTICK.cy)]);
+  cible.emettre('touchmove', [toucher(1, JOYSTICK.limiteX + 40, JOYSTICK.cy)]);
+  assert.equal(tactile.instantane().move.x, 1);
 }
 
 // 4. Relâchement -> move revient à {0,0} immédiatement (aucun état collé).

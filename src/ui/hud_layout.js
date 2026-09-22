@@ -12,13 +12,20 @@
 // ci-dessous correspond à un verbe, donc à terme à un `action_slots.json`
 // affiché au même endroit — pas un second HUD à maintenir en parallèle.
 
-// `limiteX` : toute la moitié gauche de l'écran logique (480/2) capture le
-// joystick dès le premier contact (§2.3 : "joystick virtuel à gauche"),
-// comme un joystick mobile classique — `rayonZone` ne sert qu'à normaliser
-// la magnitude du déplacement une fois le doigt attribué, pas à détecter le
-// contact initial (un doigt qui commence loin du centre visuel doit quand
-// même piloter le joystick, clampé à 1).
-export const JOYSTICK = { cx: 70, cy: 200, rayonZone: 45, limiteX: 240 };
+// `limiteX` : la bande gauche de l'écran logique qui capture le joystick dès
+// le premier contact (§2.3 : "joystick virtuel à gauche") — `rayonZone` ne
+// sert qu'à normaliser la magnitude du déplacement une fois le doigt
+// attribué, pas à détecter le contact initial (un doigt qui commence loin du
+// centre visuel doit quand même piloter le joystick, clampé à 1).
+//
+// `D-137` (23/09, retour de Xav sur l'A04) : elle valait toute la moitié
+// gauche (240), qui mordait sur la zone de jeu — un doigt posé au milieu de
+// l'écran devenait un joystick. Ramenée à un TIERS (160), soit le centre plus
+// deux rayons : le pouce garde un rayon entier de glissement au-delà du
+// cercle dessiné avant de sortir de la bande. Seul le premier contact est
+// concerné — un doigt déjà attribué continue de piloter hors de la bande.
+// PROVISOIRE, jamais validé au pouce.
+export const JOYSTICK = { cx: 70, cy: 200, rayonZone: 45, limiteX: 160 };
 
 // Bas-droite (§3 : "attaque bas-droite ≈ 420, 210"), rayon 28 = seul bouton
 // vraiment utile en Phase 1 (les 4 autres sont grisés, cf. ui/hud.js).

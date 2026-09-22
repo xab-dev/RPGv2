@@ -67,7 +67,7 @@ export function creerSourceTactile(cible, {
     return Array.from(touchList).map((t) => ({ identifier: t.identifier, ...versLogique(t.clientX, t.clientY) }));
   }
 
-  // Un doigt qui apparaît dans la moitié gauche de l'écran (JOYSTICK.limiteX)
+  // Un doigt qui apparaît dans la bande gauche de l'écran (JOYSTICK.limiteX)
   // "prend" le joystick et continue à le piloter même s'il glisse loin du
   // centre visuel (comportement standard d'un joystick virtuel) — la
   // magnitude reste clampée à 1 par ailleurs (rayonZone). Le premier doigt

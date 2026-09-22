@@ -73,7 +73,9 @@ import {
 } from './spawns.js';
 import { creerComportement, avancerComportement } from './comportement_monstres.js';
 import { peutRecolter, trouverRessourceProche } from './resources.js';
-import { ajouterItem, retirerItem } from './inventory.js';
+import {
+  ajouterItem, retirerItem, resoudreCapacite, plafondPourItem, slotsOccupes, normaliserContenus,
+} from './inventory.js';
 import {
   remplirItemsSol, trouverItemProche, ramasser, planifierRespawn, tickRespawns,
   calculerTuilesAtteignables, reposerItemsDuJour,
@@ -140,6 +142,17 @@ const CLE_TEXTE_GAIN_ITEM = 'monde.gain_item';
 // `D-58` : le gabarit ET son suffixe (« xp ») vivent dans les locales, jamais
 // ici — c'est ce qui permet de l'écrire autrement en anglais le jour venu.
 const CLE_TEXTE_GAIN_XP = 'monde.gain_xp';
+// `D-118` : le refus d'un conteneur plein se DIT, au même endroit et de la
+// même façon qu'un gain — c'est le même mécanisme de retour dans le monde, pas
+// un second. Les deux clés sont des gabarits sans `{n}` : le texte flottant
+// transporte une quantité que ces gabarits n'utilisent pas, ce qui est
+// exactement ce que « transporter des clés opaques » veut dire.
+const CLE_TEXTE_POCHE_PLEINE = 'monde.poche_pleine';
+// La poche du héros est un conteneur comme un autre, et son id vit ici pour
+// la même raison que `effet_texte_gain` : c'est le code qui en a besoin, donc
+// c'est le code qui le nomme — un id inconnu tombe au boot (`registre.obtenir`).
+const ID_CONTENEUR_POCHE = 'conteneur_poche';
+const CLE_TEXTE_COFFRE_PLEIN = 'monde.coffre_plein';
 // Respawn différé des items au sol (Palier B §3.2) : défaut appliqué quand
 // l'item ne surcharge pas `spawn.respawn_ms` — même esprit que
 // cooldown_ms par défaut de recipes.js.
@@ -276,7 +289,7 @@ export function composerTextesFlottants(visibles, traduire) {
 // dessin, sous forme d'exception. Le schéma, lui, ne pouvait pas le voir — il
 // vérifie la forme de ce qui est déclaré, jamais que ce que le code émet
 // existe. Retirer « xp » du catalogue passait donc le boot sans un mot.
-export const STYLES_TEXTE_FLOTTANT = ['gain', 'xp'];
+export const STYLES_TEXTE_FLOTTANT = ['gain', 'xp', 'refus'];
 
 // Contrôle de démarrage : chaque style émis par le code a bien sa taille et sa
 // couleur au catalogue. Même famille que `erreursTextesMenus` — ce que le code
@@ -445,6 +458,49 @@ export function creerOrchestrateurGrotte({
     );
   }
   let visuelsTuiles = construireTableGrains();
+
+  // --- Capacité des conteneurs (`D-118`) ----------------------------------
+  //
+  // Résolue UNE fois, ici : `inventory.js#resoudreCapacite` est le seul point
+  // par lequel une besace ou un porte-outils passeront (`Q-65`), donc tout ce
+  // qui suit lit ces deux objets et jamais les nombres du catalogue.
+  //
+  // Le coffre prend sa capacité de son TYPE de station, pas d'une constante :
+  // c'est ce qui fera qu'un coffre crafté (T5) ne portera aucun second
+  // nombre. En M1 il n'y a qu'un seul type de stockage — on le cherche par
+  // son rôle plutôt que par son id, parce que c'est le rôle qui est stable.
+  const obtenirItemDef = (id) => registre.obtenir('items', id);
+  const capacitePoche = resoudreCapacite(registre.obtenir('conteneurs', ID_CONTENEUR_POCHE));
+  function capaciteDeStation(station) {
+    return resoudreCapacite(registre.obtenir('conteneurs', station.conteneur));
+  }
+  const typeStockageDeBase = registre.tous('stations').find((s) => s.role === 'stockage');
+  const capaciteCoffreDeBase = capaciteDeStation(typeStockageDeBase);
+
+  function plafondPoche(itemId) {
+    return plafondPourItem(save.inventaire.items, itemId, capacitePoche, obtenirItemDef);
+  }
+
+  // Une sauvegarde d'avant `D-118` peut porter 20 bois en poche là où quatre
+  // slots de cinq n'en tiennent plus autant. Normalisé une fois, au
+  // démarrage, et DIT — jamais un objet qui s'évapore entre deux parties.
+  {
+    const bilan = normaliserContenus(
+      { poche: save.inventaire.items, coffre: save.coffre.items },
+      { capacitePoche, capaciteCoffre: capaciteCoffreDeBase, obtenirItem: obtenirItemDef },
+    );
+    if (bilan.deplaces.length || bilan.perdus.length) {
+      save.inventaire.items = bilan.poche;
+      save.coffre.items = bilan.coffre;
+      etatModifie = true;
+      for (const d of bilan.deplaces) {
+        console.info(`[D-118] poche trop pleine au chargement : ${d.quantite} × ${d.item} descendu(s) au coffre.`);
+      }
+      for (const p of bilan.perdus) {
+        console.warn(`[D-118] poche ET coffre pleins au chargement : ${p.quantite} × ${p.item} n'a pas pu être rangé.`);
+      }
+    }
+  }
 
   // Extrait en fonction (plutôt qu'un simple `const`) : reinitialiserPartie()
   // (diagnostic SD_grotte-blocage-choix-follet_2026-09-15.md, §B) doit
@@ -673,6 +729,20 @@ export function creerOrchestrateurGrotte({
       // c'est le gabarit de locale qui décidera de l'afficher ou non.
       libelle: null,
       style: 'gain',
+    });
+  }
+
+  // `D-118` : le pendant NÉGATIF du précédent. Un conteneur plein refusait
+  // jusqu'ici en silence (`D-28`), et le refus se lit au même endroit que le
+  // gain qu'il remplace : à la source, là où le joueur regarde.
+  //
+  // `quantite: 1` et non 0 : un gain à zéro n'est jamais émis (garde de
+  // `signalerGainItem`), et le gabarit n'affiche pas le nombre de toute façon.
+  // La `cle` porte le conteneur, donc deux refus de la même frame fusionnent
+  // en un seul texte au lieu de s'empiler.
+  function signalerRefusConteneur(cleTexte, x, y) {
+    emettreTexte(textesFlottants, {
+      x, y, cle: cleTexte, quantite: 1, format: cleTexte, libelle: null, style: 'refus',
     });
   }
 
@@ -1175,10 +1245,13 @@ export function creerOrchestrateurGrotte({
     const itemProche = trouverItemProche(itemsSol, hero, DISTANCE_INTERACT_PX);
     if (itemProche) {
       const itemDef = registre.obtenir('items', itemProche.itemId);
-      const resultat = ajouterItem(save.inventaire.items, itemProche.itemId, 1, itemDef.stack_max);
-      // Poche pleine (§4 edge case) : l'item reste au sol, rien d'autre ne se
-      // passe — pas de toast "poche pleine" en Phase 2 (D4⑤ formalisé plus
-      // tard), un simple non-ramassage silencieux suffit pour cette session.
+      const resultat = ajouterItem(save.inventaire.items, itemProche.itemId, 1, plafondPoche(itemProche.itemId));
+      // Poche pleine (§4 edge case) : l'item reste au sol — et depuis `D-118`
+      // ça se DIT (le silence était la moitié de `D-28`). Le texte monte de
+      // l'objet refusé, pas du héros : même règle que le gain qu'il remplace.
+      if (resultat.ajoute <= 0) {
+        signalerRefusConteneur(CLE_TEXTE_POCHE_PLEINE, itemProche.position.x, itemProche.position.y);
+      }
       if (resultat.ajoute > 0) {
         save.inventaire.items = resultat.inventaire;
         compteurRamassages += 1;
@@ -1242,7 +1315,21 @@ export function creerOrchestrateurGrotte({
         return;
       }
       const itemDefProduit = registre.obtenir('items', donneesRessource.item_produit);
-      const resultatRecolte = ajouterItem(save.inventaire.items, donneesRessource.item_produit, 1, itemDefProduit.stack_max);
+      const resultatRecolte = ajouterItem(
+        save.inventaire.items, donneesRessource.item_produit, 1, plafondPoche(donneesRessource.item_produit),
+      );
+      // `D-28`, l'autre moitié : une récolte refusée ne consomme PAS le
+      // cooldown de la tuile. Les deux chemins de récolte se comportent enfin
+      // pareil — c'était la divergence même que la ligne décrivait (le
+      // ramassage au sol laissait l'objet, la récolte mangeait le cooldown).
+      if (resultatRecolte.ajoute <= 0) {
+        signalerRefusConteneur(
+          CLE_TEXTE_POCHE_PLEINE,
+          (ressourceProche.tx + 0.5) * scene.tileSize,
+          (ressourceProche.ty + 0.5) * scene.tileSize,
+        );
+        return;
+      }
       save.inventaire.items = resultatRecolte.inventaire;
       // `D-05` : depuis le centre de la TUILE récoltée (l'arbre, le rocher),
       // pas depuis le héros — la source du gain est ce qu'on vient de frapper.
@@ -1276,7 +1363,9 @@ export function creerOrchestrateurGrotte({
     }
     if (station.role === 'stockage') {
       menu.ouvrirCoffre(() => entreesCoffre(station), i18n.t(station.label_key), {
-        sousTitre: () => i18n.t('menu.fiche.coffre_piles', { n: nombrePilesCoffre(), max: station.capacite }),
+        sousTitre: () => i18n.t('menu.fiche.coffre_piles', {
+          n: slotsCoffre(station), max: capaciteDeStation(station).slots,
+        }),
         texteVide: i18n.t('menu.poche_vide'),
       });
       return;
@@ -1371,9 +1460,18 @@ export function creerOrchestrateurGrotte({
           libelleAction: i18n.t('menu.fiche.fabriquer'),
           grisee: !verdict.ok,
           action: () => {
-            const itemDefSortie = registre.obtenir('items', r.sortie.item);
             const resultat = fabriquer(r, {
-              poche: save.inventaire.items, flags, cooldowns: save.cooldowns, heureMs: save.monde.heure, itemDefSortie,
+              poche: save.inventaire.items,
+              flags,
+              cooldowns: save.cooldowns,
+              heureMs: save.monde.heure,
+              // Le plafond se mesure sur la poche que `fabriquer` nous
+              // passe — celle d'APRÈS le retrait des ingrédients. C'est ce
+              // qui fait qu'on peut cuire son dernier fruit sans avoir à
+              // vider un slot d'abord.
+              plafondSortie: (pocheApresEntrees) => plafondPourItem(
+                pocheApresEntrees, r.sortie.item, capacitePoche, obtenirItemDef,
+              ),
               eclats: save.inventaire.eclats,
             });
             if (resultat.ok) {
@@ -1410,14 +1508,19 @@ export function creerOrchestrateurGrotte({
   // de la source sans l'ajouter à la destination (`ajouterItem` plafonne à
   // `stack_max` et le dit par `ajoute`, que personne ne lisait) — l'objet
   // disparaissait. On ajoute D'ABORD, et on ne retire que ce qui est entré.
-  function nombrePilesCoffre() {
-    return Object.values(save.coffre.items).filter((qte) => qte > 0).length;
+  //
+  // `D-118` : « combien de piles » devient « combien de SLOTS », et le calcul
+  // sort d'ici — `inventory.js#slotsOccupes` est le seul à savoir qu'une pile
+  // de douze branches en occupe trois. Le coffre, lui, ne compte plus ses
+  // entrées : deux vérités de remplissage auraient fini par diverger.
+  function slotsCoffre(station) {
+    return slotsOccupes(save.coffre.items, capaciteDeStation(station), obtenirItemDef);
   }
 
   // Déplace UNE unité de `source` vers `destination` (deux clés de `save` qui
   // portent un `items`). Rend vrai si l'unité a bougé.
-  function transfererUnite(source, destination, itemId, stackMax) {
-    const resultat = ajouterItem(save[destination].items, itemId, 1, stackMax);
+  function transfererUnite(source, destination, itemId, plafond) {
+    const resultat = ajouterItem(save[destination].items, itemId, 1, plafond);
     if (resultat.ajoute < 1) return false;
     save[destination].items = resultat.inventaire;
     save[source].items = retirerItem(save[source].items, itemId, 1);
@@ -1430,9 +1533,15 @@ export function creerOrchestrateurGrotte({
       .filter(([, qte]) => qte > 0)
       .map(([itemId, qte]) => {
         const itemDef = registre.obtenir('items', itemId);
+        const capaciteCoffre = capaciteDeStation(station);
         const dansLeCoffre = save.coffre.items[itemId] || 0;
-        const coffrePlein = dansLeCoffre === 0 && nombrePilesCoffre() >= station.capacite;
-        const pilePleine = dansLeCoffre >= itemDef.stack_max;
+        // Un seul calcul dit les deux refus : le plafond de CET objet dans ce
+        // coffre. S'il vaut ce qu'on a déjà, il n'y a plus de place — et la
+        // raison dépend de qui la prend (une pile à elle seule, ou les
+        // autres objets).
+        const plafond = plafondPourItem(save.coffre.items, itemId, capaciteCoffre, obtenirItemDef);
+        const coffrePlein = plafond <= dansLeCoffre && slotsCoffre(station) >= capaciteCoffre.slots;
+        const pilePleine = plafond <= dansLeCoffre && !coffrePlein;
         const refus = coffrePlein ? 'menu.fiche.coffre_plein' : pilePleine ? 'menu.fiche.pile_pleine' : null;
         return {
           texte: `${i18n.t('menu.coffre_deposer')} : ${i18n.t(itemDef.label_key)} × ${qte}`,
@@ -1442,12 +1551,14 @@ export function creerOrchestrateurGrotte({
           libelleAction: i18n.t('menu.coffre_deposer'),
           grisee: refus !== null,
           action: () => {
-            // Le plafond de piles se relit au moment d'agir : `grisee` n'est
-            // qu'un indice, le résultat fait foi.
-            const dejaPresent = (save.coffre.items[itemId] || 0) > 0;
-            if (dejaPresent || nombrePilesCoffre() < station.capacite) {
-              transfererUnite('inventaire', 'coffre', itemId, itemDef.stack_max);
-            }
+            // Le plafond se relit au moment d'agir : `grisee` n'est qu'un
+            // indice, le résultat fait foi. `ajouterItem` refuse tout seul
+            // au-delà du plafond, donc il n'y a plus de condition à écrire
+            // ici — une de moins à faire diverger de l'affichage.
+            transfererUnite(
+              'inventaire', 'coffre', itemId,
+              plafondPourItem(save.coffre.items, itemId, capaciteDeStation(station), obtenirItemDef),
+            );
             menu.rafraichirCoffre();
           },
         };
@@ -1456,7 +1567,7 @@ export function creerOrchestrateurGrotte({
       .filter(([, qte]) => qte > 0)
       .map(([itemId, qte]) => {
         const itemDef = registre.obtenir('items', itemId);
-        const pilePleine = (save.inventaire.items[itemId] || 0) >= itemDef.stack_max;
+        const pilePleine = (save.inventaire.items[itemId] || 0) >= plafondPoche(itemId);
         return {
           texte: `${i18n.t('menu.coffre_retirer')} : ${i18n.t(itemDef.label_key)} × ${qte}`,
           groupe: i18n.t(station.label_key),
@@ -1465,7 +1576,7 @@ export function creerOrchestrateurGrotte({
           libelleAction: i18n.t('menu.coffre_retirer'),
           grisee: pilePleine,
           action: () => {
-            transfererUnite('coffre', 'inventaire', itemId, itemDef.stack_max);
+            transfererUnite('coffre', 'inventaire', itemId, plafondPoche(itemId));
             menu.rafraichirCoffre();
           },
         };
@@ -3308,6 +3419,13 @@ export async function demarrerJeu() {
     // la nourriture (ui/menu.js#entreesPoche).
     // specs/08 palier C : `icone` et `lignes` — la tuile et la fiche de l'écran
     // « maître-détail ». Résolues ICI (registre + i18n), jamais dans le menu.
+    // `D-118` : la poche dit ce qu'elle a d'occupé. Un seul calcul, celui du
+    // module (`slotsOccupes`), donc ce nombre ne peut pas diverger de celui
+    // qui refuse un ramassage.
+    sousTitrePoche: () => i18n.t('menu.fiche.coffre_piles', {
+      n: slotsOccupes(save.inventaire.items, capacitePoche, obtenirItemDef),
+      max: capacitePoche.slots,
+    }),
     listerPoche: () => Object.entries(save.inventaire.items)
       .filter(([, quantite]) => quantite > 0)
       .map(([itemId, quantite]) => {

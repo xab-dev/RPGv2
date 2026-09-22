@@ -83,7 +83,7 @@ const ITEM = registre.obtenir('items', 'item_epee_bois');
   assert.equal(peutFabriquer(RECETTE, poche, flagsToujours, {}, 0, 15).ok, true, '15 suffisent');
 
   const resultat = fabriquer(RECETTE, {
-    poche, flags: flagsToujours, cooldowns: {}, heureMs: 0, itemDefSortie: ITEM, eclats: 40,
+    poche, flags: flagsToujours, cooldowns: {}, heureMs: 0, plafondSortie: () => 1, eclats: 40,
   });
   assert.equal(resultat.ok, true);
   assert.equal(resultat.eclats, 25, 'les 15 éclats sont déduits, et RENDUS (le module reste pur)');

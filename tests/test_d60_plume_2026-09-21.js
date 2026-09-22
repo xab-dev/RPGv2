@@ -122,7 +122,7 @@ function monterPartie(flagsSupplementaires = {}) {
     assert.notEqual(recette.sortie.item, PLUME, `${recette.id} ne doit pas produire la Plume : il n'y en a qu'une`);
   }
   assert.equal(plumeDef.consommation, undefined, 'la Plume ne se consomme pas');
-  assert.equal(plumeDef.stack_max, 1, 'il n\'y en a qu\'une : la pile est de 1');
+  assert.equal(plumeDef.pile_max, 1, 'il n\'y en a qu\'une : la pile est de 1');
   assert.equal(plumeDef.spawn, undefined, 'la Plume est hors du tirage du jour (`D-59`) : aucun bloc spawn');
   console.log('OK la Plume ne sert à rien, et rien ne la produit');
 }

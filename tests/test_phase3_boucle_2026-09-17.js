@@ -200,6 +200,26 @@ hero.y = (ciblePierre.ty + 0.5) * scene.tileSize + 20;
 interagir();
 assert.equal(save.inventaire.items.item_pierre, 1, 'pierre récoltée avec la pioche');
 
+// --- Vider ses poches avant de repartir (`D-118`) ---
+// Ceci n'est pas un détour de test, c'est la boucle elle-même qui a changé :
+// avec quatre slots, hache + pioche + bois + pierre REMPLISSENT la poche, et
+// le fruit ne rentre plus. Le rituel « vider ses poches, aller chercher,
+// revenir » est voulu (décision de Xav, 22/09) — le bot le joue donc aussi.
+allerA('station_coffre');
+{
+  dernieresEntreesCoffre = null;
+  interagir();
+  assert.ok(dernieresEntreesCoffre, 'menu.ouvrirCoffre n\'a pas été appelé avant la cuisine');
+  // La pierre suffit : un slot libéré, c'est la place du fruit. Le bois reste
+  // en poche pour l'étape « Coffre » plus bas, qui l'y dépose et le reprend.
+  const depot = dernieresEntreesCoffre().find(
+    (e) => e.texte.startsWith(i18n.t('menu.coffre_deposer')) && e.titre === i18n.t(registre.obtenir('items', 'item_pierre').label_key),
+  );
+  assert.ok(depot, 'entrée "Déposer : Pierre" introuvable');
+  depot.action();
+  assert.equal(save.inventaire.items.item_pierre, 0, 'la pierre est au coffre, un slot se libère');
+}
+
 // --- Cuisine : fruit cuit, mangé au champ (CONSUME) ---
 ramasserItem('item_fruit');
 allerA('station_table');

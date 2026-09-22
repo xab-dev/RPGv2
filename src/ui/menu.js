@@ -238,6 +238,10 @@ export function clesTexteEtats(langues) {
 export function initialiserMenu({
   document, i18n, menus, exporterSauvegarde, importerSauvegarde,
   musiqueActive = () => true, basculerMusique = () => {}, listerPoche = () => [],
+  // `D-118` : ce que la poche a d'occupé, relu à chaque affichage — même
+  // patron que le sous-titre des Stats. L'écran ne calcule rien : il ne sait
+  // pas ce qu'est un slot, et c'est très bien ainsi.
+  sousTitrePoche = () => null,
   // `D-64` (T7) : le volume. `volumeCourant` rend la CLÉ de texte du palier
   // en cours (jamais un pourcentage composé ici : un lecteur d'état rend une
   // clé, c'est le contrat des bascules depuis `D-43`) ; `cyclerVolume`
@@ -510,7 +514,7 @@ export function initialiserMenu({
   const ecrans = {
     [ECRAN_POCHE]: () => navigation.empiler({
       vue: ecranFiches, id: ECRAN_POCHE, obtenirEntrees: entreesPoche, titre: i18n.t('menu.poche_titre'),
-      texteVide: i18n.t('menu.poche_vide'),
+      texteVide: i18n.t('menu.poche_vide'), sousTitre: () => sousTitrePoche(),
     }),
     // Stats (palier C3) : maître-détail, comme la Poche. Le sous-titre (points
     // libres, progression d'XP) est relu à chaque affichage.

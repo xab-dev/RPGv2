@@ -50,21 +50,36 @@ export function peutFabriquer(recette, poche, flags, cooldowns, heureMs, eclats 
 
 // Fabrique une recette : retire les entrées, ajoute la sortie, crédite l'XP,
 // pose le cooldown. §4 edge case : la sortie qui ne rentre pas dans la poche
-// (stack_max) est un refus AVANT toute consommation — rien n'est modifié.
-export function fabriquer(recette, { poche, flags, cooldowns, heureMs, itemDefSortie, eclats = 0 }) {
+// est un refus AVANT toute consommation — rien n'est modifié.
+//
+// `D-118` : le plafond n'est plus un champ de l'objet produit, c'est une
+// FONCTION que l'appelant fournit (`inventory.js#plafondPourItem`), parce que
+// « combien de cet objet tiennent encore » dépend du conteneur et de ce qu'il
+// contient déjà — deux choses que ce module ne connaît pas et ne doit pas
+// connaître.
+//
+// Et une fonction plutôt qu'un nombre, parce que le plafond se mesure sur la
+// poche APRÈS le retrait des ingrédients : cuire un fruit dans une poche
+// pleine libère la place du fruit cuit, et le refuser serait faux. La règle
+// « refus AVANT toute consommation » tient toujours — le retrait se fait dans
+// une copie locale, et c'est la poche d'ORIGINE qui est rendue en cas de
+// refus.
+export function fabriquer(recette, { poche, flags, cooldowns, heureMs, plafondSortie, eclats = 0 }) {
   const verdict = peutFabriquer(recette, poche, flags, cooldowns, heureMs, eclats);
   if (!verdict.ok) return { ok: false, raison: verdict.raison, poche, cooldowns, eclats };
-
-  const dejaPossede = poche[recette.sortie.item] || 0;
-  if (dejaPossede + recette.sortie.qte > itemDefSortie.stack_max) {
-    return { ok: false, raison: 'poche_pleine', poche, cooldowns, eclats };
-  }
 
   let pocheFinale = poche;
   for (const entree of recette.entrees) {
     pocheFinale = retirerItem(pocheFinale, entree.item, entree.qte);
   }
-  pocheFinale = ajouterItem(pocheFinale, recette.sortie.item, recette.sortie.qte, itemDefSortie.stack_max).inventaire;
+
+  const plafond = plafondSortie(pocheFinale);
+  const dejaPossede = pocheFinale[recette.sortie.item] || 0;
+  if (dejaPossede + recette.sortie.qte > plafond) {
+    return { ok: false, raison: 'poche_pleine', poche, cooldowns, eclats };
+  }
+
+  pocheFinale = ajouterItem(pocheFinale, recette.sortie.item, recette.sortie.qte, plafond).inventaire;
 
   return {
     ok: true,

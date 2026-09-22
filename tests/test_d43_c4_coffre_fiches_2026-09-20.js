@@ -69,7 +69,10 @@ function monter({ poche, coffre, registre: registreDuBanc = registre }) {
   ], 'la poche d’abord (on dépose), le coffre ensuite (on retire)');
   assert.deepEqual(liste[1].lignes, lignesFicheItem(registre.obtenir('items', 'item_fruit'), registre, i18n), 'la même fiche que dans la Poche');
   assert.ok(liste.every((e) => e.icone && e.grisee === false));
-  assert.equal(ouvert.options.sousTitre(), i18n.t('menu.fiche.coffre_piles', { n: 1, max: typeCoffre.capacite }), 'le sous-titre dit la capacité');
+  // `D-118` : la capacité vient du CONTENEUR désigné par le type de station,
+  // plus d'un nombre posé sur la station elle-même.
+  const capaciteCoffre = registre.obtenir('conteneurs', typeCoffre.conteneur);
+  assert.equal(ouvert.options.sousTitre(), i18n.t('menu.fiche.coffre_piles', { n: 1, max: capaciteCoffre.slots }), 'le sous-titre dit la capacité');
   console.log('OK Coffre : deux groupes, une tuile par objet, la fiche de la Poche, la capacité en sous-titre');
 }
 
@@ -86,21 +89,28 @@ function monter({ poche, coffre, registre: registreDuBanc = registre }) {
 
 // --- 3. `D-45` : une pile pleine ne mange plus l'objet ------------------------------------
 {
-  // La pile du COFFRE est pleine : déposer est refusé, et rien ne disparaît.
-  const a = monter({ poche: { item_bois: 2 }, coffre: { item_bois: bois.stack_max } });
+  // `D-118` a changé ce que « plein » veut dire, et le test le suit : une
+  // pile ne borne plus un objet à elle seule, il s'en ouvre une deuxième tant
+  // qu'un SLOT reste libre. Le coffre est donc plein quand ses dix slots le
+  // sont — dix piles de vingt bois.
+  const coffre = registre.obtenir('conteneurs', typeCoffre.conteneur);
+  const coffreRempli = coffre.slots * coffre.pile;
+  const a = monter({ poche: { item_bois: 2 }, coffre: { item_bois: coffreRempli } });
   const depot = a.entrees()[0];
   assert.equal(depot.grisee, true);
-  assert.ok(depot.lignes.includes(i18n.t('menu.fiche.pile_pleine')), 'la fiche dit pourquoi');
+  assert.ok(depot.lignes.includes(i18n.t('menu.fiche.coffre_plein')), 'la fiche dit pourquoi');
   depot.action();
-  assert.deepEqual([a.save.inventaire.items.item_bois, a.save.coffre.items.item_bois], [2, bois.stack_max],
-    'avant le correctif : 1 et stack_max — une unité de bois s’évaporait');
+  assert.deepEqual([a.save.inventaire.items.item_bois, a.save.coffre.items.item_bois], [2, coffreRempli],
+    'avant le correctif : 1 et le coffre plein — une unité de bois s’évaporait');
 
-  // La pile de la POCHE est pleine : retirer est refusé de même.
-  const b = monter({ poche: { item_bois: bois.stack_max }, coffre: { item_bois: 5 } });
+  // La POCHE est pleine : retirer est refusé de même.
+  const pocheDef = registre.obtenir('conteneurs', 'conteneur_poche');
+  const pocheRemplie = pocheDef.slots * pocheDef.pile;
+  const b = monter({ poche: { item_bois: pocheRemplie }, coffre: { item_bois: 5 } });
   const retrait = b.entrees().find((e) => e.libelleAction === i18n.t('menu.coffre_retirer'));
   assert.equal(retrait.grisee, true);
   retrait.action();
-  assert.deepEqual([b.save.inventaire.items.item_bois, b.save.coffre.items.item_bois], [bois.stack_max, 5]);
+  assert.deepEqual([b.save.inventaire.items.item_bois, b.save.coffre.items.item_bois], [pocheRemplie, 5]);
   console.log('OK D-45 : vers une pile pleine, rien ne bouge et rien ne disparaît — dans les deux sens');
 }
 
@@ -109,13 +119,16 @@ function monter({ poche, coffre, registre: registreDuBanc = registre }) {
   // Le vrai coffre a plus de piles que le jeu n'a d'objets : pour le remplir,
   // le même catalogue avec une capacité de 2 — une DONNÉE, le code ne change pas.
   const capacite = 2;
-  const petit = construireRegistre({ ...donnees, stations: donnees.stations.map((st) => (st.role === 'stockage' ? { ...st, capacite } : st)) });
+  const petit = construireRegistre({
+    ...donnees,
+    conteneurs: donnees.conteneurs.map((c) => (c.id === 'conteneur_coffre' ? { ...c, slots: capacite } : c)),
+  });
   // Les objets sont choisis sur leur PROPRIÉTÉ, jamais sur leur rang dans le
   // catalogue : `tous[0]` a changé de sens le jour où `item_plume` (`D-60`,
   // pile de 1) est arrivé en tête, et le test s'est mis à éprouver « pile
   // pleine » en croyant éprouver « coffre plein ». Ici il faut un objet
   // empilable, pour que seule la limite de PILES du coffre soit en jeu.
-  const tous = registre.tous('items').filter((it) => it.stack_max > 1).map((it) => it.id);
+  const tous = registre.tous('items').filter((it) => (it.pile_max ?? 99) > 1).map((it) => it.id);
   assert.ok(tous.length > capacite, "il faut plus d'objets empilables que la capacité pour remplir le coffre");
   const remplissage = Object.fromEntries(tous.slice(0, capacite).map((id) => [id, 1]));
   const nouveau = tous[capacite];

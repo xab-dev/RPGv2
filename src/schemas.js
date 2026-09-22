@@ -1706,8 +1706,41 @@ export const SCHEMAS = {
       return erreurs;
     },
   },
+  // `D-118` : ce que peut contenir un contenant. UN seul endroit où vivent
+  // les quatre nombres de la poche et du coffre, tous PROVISOIRES — c'est
+  // `inventory.js#resoudreCapacite` qui les lit, et rien d'autre.
+  //
+  // `filtre` est déclaré mais jamais rempli : c'est le contrat que le
+  // porte-outils attend (`Q-65`, hors scope). Le déclarer maintenant coûte
+  // trois lignes et évite qu'il arrive un jour sous la forme d'un second
+  // mécanisme.
+  conteneurs: {
+    requiredFields: ['id', 'label_key', 'slots', 'pile'],
+    idField: 'id',
+    refs: [],
+    custom(entry, catalogs, path) {
+      const erreurs = [];
+      for (const champ of ['slots', 'pile']) {
+        if (!Number.isInteger(entry[champ]) || entry[champ] <= 0) {
+          erreurs.push(`${path} > ${champ} doit être un entier strictement positif`);
+        }
+      }
+      if (entry.filtre !== undefined) {
+        if (!Array.isArray(entry.filtre) || entry.filtre.length === 0) {
+          erreurs.push(`${path} > filtre doit être une liste non vide de catégories si présent`);
+        } else {
+          for (const categorie of entry.filtre) {
+            if (!CATEGORIES_ITEM.includes(categorie)) {
+              erreurs.push(`${path} > filtre : "${categorie}" n'est pas une catégorie d'item (${CATEGORIES_ITEM.join('/')})`);
+            }
+          }
+        }
+      }
+      return erreurs;
+    },
+  },
   items: {
-    requiredFields: ['id', 'label_key', 'categorie', 'stack_max', 'render'],
+    requiredFields: ['id', 'label_key', 'categorie', 'render'],
     idField: 'id',
     refs: [],
     custom(entry, catalogs, path) {
@@ -1719,8 +1752,14 @@ export const SCHEMAS = {
       if (!CATEGORIES_ITEM.includes(entry.categorie)) {
         erreurs.push(`${path} > categorie doit être l'une de ${CATEGORIES_ITEM.join('/')}`);
       }
-      if (typeof entry.stack_max !== 'number' || entry.stack_max <= 0) {
-        erreurs.push(`${path} > stack_max doit être un nombre positif`);
+      // `pile_max` (`D-118`) : OPTIONNEL, et c'est le point du ticket. La
+      // hauteur d'une pile appartient désormais au CONTENEUR
+      // (`conteneurs.json`) ; un objet ne fait que l'abaisser quand c'est
+      // vrai de lui partout — un outil ou une arme ne s'empile pas, dans
+      // n'importe quelle poche et dans n'importe quel coffre. Absent = le
+      // conteneur décide seul, ce qui est le cas de toutes les ressources.
+      if (entry.pile_max !== undefined && (!Number.isInteger(entry.pile_max) || entry.pile_max <= 0)) {
+        erreurs.push(`${path} > pile_max doit être un entier strictement positif s'il est présent`);
       }
       erreurs.push(...erreursRenderVisuel(entry, catalogs, path));
       erreurs.push(...erreursXpOptionnel(entry, path));
@@ -1876,8 +1915,14 @@ export const SCHEMAS = {
       if (!ROLES_STATION.includes(entry.role)) {
         erreurs.push(`${path} > role doit être l'un de ${ROLES_STATION.join('/')}`);
       }
-      if (entry.role === 'stockage' && (typeof entry.capacite !== 'number' || entry.capacite <= 0)) {
-        erreurs.push(`${path} > role "stockage" exige capacite (nombre positif)`);
+      // `D-118` : une station de stockage ne porte plus un nombre de piles,
+      // elle DÉSIGNE son conteneur. C'est ce qui permettra au coffre crafté
+      // (T5) d'avoir la même capacité que le coffre de base sans qu'un
+      // second nombre existe quelque part.
+      if (entry.role === 'stockage') {
+        if (!(catalogs.conteneurs || []).some((c) => c.id === entry.conteneur)) {
+          erreurs.push(`${path} > role "stockage" exige conteneur (id de conteneurs.json), reçu ${JSON.stringify(entry.conteneur)}`);
+        }
       }
       if (typeof entry.placable !== 'boolean') {
         erreurs.push(`${path} > placable doit être un booléen`);

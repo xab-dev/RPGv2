@@ -8,7 +8,10 @@ import { poserCooldown } from '../src/cooldowns.js';
 import { SCHEMAS } from '../src/schemas.js';
 import { validerCatalogues } from '../src/registry.js';
 
-const itemHache = { id: 'item_hache', label_key: 'x', categorie: 'outil', stack_max: 1, render: { visuel: 'v' } };
+// `D-118` : `fabriquer` reçoit un PLAFOND (un nombre), plus une fiche
+// d'objet — « combien en tiennent encore » dépend du conteneur, que ce
+// module ne connaît pas. Ici la hache ne s'empile pas : son plafond est 1.
+const PLAFOND_HACHE = 1;
 const recetteHache = {
   id: 'rec_hache', label_key: 'x', station: 'station_type_atelier',
   entrees: [{ item: 'item_branche', qte: 2 }, { item: 'item_caillou', qte: 1 }],
@@ -58,7 +61,7 @@ const flagsQuiDebloquentTout = { evaluate: () => true };
 // renvoie l'xp.
 {
   const poche = { item_branche: 3, item_caillou: 2 };
-  const resultat = fabriquer(recetteHache, { poche, flags: flagsFactice, cooldowns: {}, heureMs: 500, itemDefSortie: itemHache });
+  const resultat = fabriquer(recetteHache, { poche, flags: flagsFactice, cooldowns: {}, heureMs: 500, plafondSortie: () => PLAFOND_HACHE });
   assert.equal(resultat.ok, true);
   assert.equal(resultat.poche.item_branche, 1);
   assert.equal(resultat.poche.item_caillou, 1);
@@ -67,11 +70,11 @@ const flagsQuiDebloquentTout = { evaluate: () => true };
   assert.equal(resultat.cooldowns.rec_hache, 500);
 }
 
-// 6. §4 edge case : sortie ne rentrant pas dans la poche (stack_max) -> refus
+// 6. §4 edge case : sortie ne rentrant pas dans la poche (plafond) -> refus
 // AVANT toute consommation, rien n'est modifié.
 {
-  const poche = { item_branche: 3, item_caillou: 2, item_hache: 1 }; // déjà au stack_max (1)
-  const resultat = fabriquer(recetteHache, { poche, flags: flagsFactice, cooldowns: {}, heureMs: 0, itemDefSortie: itemHache });
+  const poche = { item_branche: 3, item_caillou: 2, item_hache: 1 }; // déjà au plafond (1)
+  const resultat = fabriquer(recetteHache, { poche, flags: flagsFactice, cooldowns: {}, heureMs: 0, plafondSortie: () => PLAFOND_HACHE });
   assert.equal(resultat.ok, false);
   assert.equal(resultat.raison, 'poche_pleine');
   assert.deepEqual(resultat.poche, poche, 'aucune entrée ne doit avoir été retirée');
@@ -98,8 +101,8 @@ const flagsQuiDebloquentTout = { evaluate: () => true };
   donnees.unlocks = [];
   donnees.visuels = [{ id: 'v', ancre: 'centre', primitives: [{ forme: 'cercle', dx: 0, dy: 0, w: 4, couleur: '#fff' }] }];
   donnees.items = [
-    { id: 'item_branche', label_key: 'x', categorie: 'ressource', stack_max: 20, render: { visuel: 'v' } },
-    { id: 'item_corde', label_key: 'x', categorie: 'materiau', stack_max: 20, render: { visuel: 'v' } },
+    { id: 'item_branche', label_key: 'x', categorie: 'ressource', render: { visuel: 'v' } },
+    { id: 'item_corde', label_key: 'x', categorie: 'materiau', render: { visuel: 'v' } },
   ];
   donnees.items[1].categorie = 'valeur'; // catégorie libre existante, la corde n'a pas besoin d'une nouvelle catégorie
   donnees.stations = [{ id: 'station_type_atelier', label_key: 'x', role: 'craft', placable: true }];

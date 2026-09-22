@@ -34,7 +34,8 @@ function monter({ poche, coffre, registre: registreDuBanc = registre }) {
   save.hero.companion = 'comp_follet_eau';
   save.flags = { flag_follet_choisi: true, flag_grotte_sortie: true, flag_maison_decouverte: true };
   save.inventaire.items = { ...poche };
-  save.coffre.items = { ...coffre };
+  // `D-121` : le contenu appartient à l'INSTANCE de station, plus au jeu.
+  save.maison.stations.station_coffre = { contenu: { ...coffre } };
   const ouvert = {};
   const menu = {
     estOuvert: () => false, traiterInput: () => {}, ouvrir: () => {}, fermer: () => {},
@@ -80,10 +81,10 @@ function monter({ poche, coffre, registre: registreDuBanc = registre }) {
 {
   const { save, ouvert, entrees } = monter({ poche: { item_bois: 2 }, coffre: {} });
   entrees()[0].action();
-  assert.deepEqual([save.inventaire.items.item_bois, save.coffre.items.item_bois], [1, 1]);
+  assert.deepEqual([save.inventaire.items.item_bois, save.maison.stations.station_coffre.contenu.item_bois], [1, 1]);
   assert.match(ouvert.options.sousTitre(), /1 \//);
   entrees().find((e) => e.libelleAction === i18n.t('menu.coffre_retirer')).action();
-  assert.deepEqual([save.inventaire.items.item_bois, save.coffre.items.item_bois], [2, 0]);
+  assert.deepEqual([save.inventaire.items.item_bois, save.maison.stations.station_coffre.contenu.item_bois], [2, 0]);
   console.log('OK Coffre : déposer puis retirer, une unité à la fois');
 }
 
@@ -100,7 +101,7 @@ function monter({ poche, coffre, registre: registreDuBanc = registre }) {
   assert.equal(depot.grisee, true);
   assert.ok(depot.lignes.includes(i18n.t('menu.fiche.coffre_plein')), 'la fiche dit pourquoi');
   depot.action();
-  assert.deepEqual([a.save.inventaire.items.item_bois, a.save.coffre.items.item_bois], [2, coffreRempli],
+  assert.deepEqual([a.save.inventaire.items.item_bois, a.save.maison.stations.station_coffre.contenu.item_bois], [2, coffreRempli],
     'avant le correctif : 1 et le coffre plein — une unité de bois s’évaporait');
 
   // La POCHE est pleine : retirer est refusé de même.
@@ -110,7 +111,7 @@ function monter({ poche, coffre, registre: registreDuBanc = registre }) {
   const retrait = b.entrees().find((e) => e.libelleAction === i18n.t('menu.coffre_retirer'));
   assert.equal(retrait.grisee, true);
   retrait.action();
-  assert.deepEqual([b.save.inventaire.items.item_bois, b.save.coffre.items.item_bois], [pocheRemplie, 5]);
+  assert.deepEqual([b.save.inventaire.items.item_bois, b.save.maison.stations.station_coffre.contenu.item_bois], [pocheRemplie, 5]);
   console.log('OK D-45 : vers une pile pleine, rien ne bouge et rien ne disparaît — dans les deux sens');
 }
 
@@ -141,7 +142,7 @@ function monter({ poche, coffre, registre: registreDuBanc = registre }) {
   assert.equal(save.inventaire.items[nouveau], 1, 'coffre plein : l’objet reste en poche');
   assert.equal(parTitre(connu).grisee, false, 'un objet DÉJÀ au coffre n’ouvre pas de pile : il passe');
   parTitre(connu).action();
-  assert.deepEqual([save.inventaire.items[connu], save.coffre.items[connu]], [0, 2]);
+  assert.deepEqual([save.inventaire.items[connu], save.maison.stations.station_coffre.contenu[connu]], [0, 2]);
   console.log('OK Coffre plein : refus d’une nouvelle pile, jamais d’un objet déjà présent');
 }
 

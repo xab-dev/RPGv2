@@ -270,3 +270,58 @@ un **verrou dur** que rien n'annonce au joueur, et la ligne `recolte_outil` à *
 relevé ci-dessus est exactement ce que ça donne quand il ne le devine pas.
 
 `npm test` : **126 fichiers verts**.
+
+## T5 — Le coffre craftable, un contenu par instance (`D-121`)
+
+Le plus lourd de la file, et le seul qui contienne un **contrat entre modules** — celui que le
+brief avait déjà tranché : **un coffre = un type + une pose + un contenu**. Tout ce qui viendra
+après (niveaux de coffre, entonnoirs, tri automatique, `Q-66`) repose là-dessus.
+
+Trois pièces, dans cet ordre :
+
+**1. Le contenu descend dans l'instance.** `save.coffre` disparaît ; le contenu vit dans
+`save.maison.stations[id].contenu`. Migration **6 → 7**, et cette fois c'en est bien une : à
+`D-118` la donnée gardait sa forme et seule la règle changeait ; ici le champ disparaît et son
+contenu change d'adresse. Le coffre de base **hérite** de ce qu'il contenait — les treize
+sauvegardes réelles de Xav passent, contenu intact —, et sa pose est conservée : on ajoute un
+champ à son entrée, on ne la remplace pas. Un coffre vide ne laisse aucune trace.
+
+Un défaut attrapé en chemin, et qui valait le détour : la première version de
+`contenuDeStation` **créait** l'entrée en la lisant. Résultat, une entrée sans coordonnées
+atterrissait dans `maison.stations`, que `resoudreOverridesStations` prenait pour une pose
+sauvegardée — et **toutes les stations partaient en NaN**. Dix-huit fichiers de test rouges
+d'un coup. Un accesseur de lecture doit être une lecture ; et une entrée n'est une pose que si
+elle en a les coordonnées, ce qui est désormais écrit.
+
+**2. Une instance créée est un interactif comme un autre.** Pas de catalogue à part : elle
+**clone l'instance livrée avec le jeu** pour son type et ne change que son id et sa pose —
+**l'instance de catalogue est le modèle de son type**. C'est ce qui évite d'inventer un second
+endroit où déclarer à quoi ressemble un coffre, et un contrôle de démarrage refuse une recette
+de station dont le type n'a pas de modèle (sans lui, la faute ne se verrait qu'au moment de
+fabriquer).
+
+Le point d'architecture est ailleurs, et il est petit : `scene.puzzle(id)` devient **LE** point
+de résolution d'un interactif. Sans lui il aurait fallu ajouter « et cherche aussi dans les
+créées » aux sept endroits qui font un `registre.obtenir('puzzles', id)` — et le huitième
+aurait été oublié. Avec lui, l'instance créée est **actionnable, solide, dessinée et
+déplaçable** sans une ligne de plus.
+
+**3. La recette produit une station.** `sortie: { station: … }` plutôt que `{ item, qte }` :
+le schéma exige **exactement un des deux**, et refuse une station non `placable` (on ouvrirait
+un mode de placement sans issue). `fabriquer` ne touche pas la poche dans ce cas — et donc ne
+consulte pas son plafond, ce qui n'est pas un contournement mais la conséquence exacte de
+« rien n'entre en poche » : fabriquer un coffre **poche pleine** est même le cas normal, trois
+slots de ressources viennent d'y passer.
+
+La fabrication enchaîne sur le **mode Construction**, avec le fantôme de ce qu'on vient de
+faire, posé sur la tuile du héros — n'importe quelle autre valeur ferait apparaître le fantôme
+ailleurs que là où le joueur regarde. S'il ressort sans poser, la station existe quand même :
+elle l'attend dans la liste Construction.
+
+**Six coffres posés, et la maison reste praticable** : vérifié par la vraie fonction de
+collision (160 tuiles libres, toutes joignables). Ce qui protège le joueur n'est pas un
+compteur — c'est `poseValide` et sa règle de couloir, qui date de la spec 05 et n'a pas bougé.
+
+`npm test` : **127 fichiers verts**, dont les treize sauvegardes réelles. Captures aux trois
+profils dans `docs/captures/coffre-2026-09-22/` (le jeu au Nv.10 avec la recette en poche, et
+la pièce à six coffres).

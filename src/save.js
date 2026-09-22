@@ -3,7 +3,7 @@
 // valeur) } — IndexedDB en jeu (src/storage_indexeddb.js), un store en
 // mémoire dans les tests (creerStoreMemoire ci-dessous).
 
-export const VERSION_SCHEMA_COURANTE = 6;
+export const VERSION_SCHEMA_COURANTE = 7;
 const CLE_ACTUELLE = 'save_current';
 const CLE_SUIVANTE = 'save_next';
 
@@ -96,8 +96,11 @@ export function saveNeuve() {
     // (id de jauge -> valeur dans [0,1]) — jamais un objet figé
     // { faim, soif } en dur, une 3ᵉ jauge future n'a rien à changer ici.
     survie: etatInitialSurvie(),
-    // Palier E (§3.5) : coffre unique en M1, même forme que l'inventaire.
-    coffre: { items: {} },
+    // `D-121` : le coffre n'a plus de champ à lui. Son contenu vit avec
+    // l'INSTANCE de station qui le porte (`maison.stations[id].contenu`),
+    // parce qu'il y en aura plusieurs — un pour le bois, un pour la pierre.
+    // Une partie neuve n'a donc rien à déclarer ici : le coffre de base
+    // reçoit son entrée au premier objet déposé.
     // Palier A (§3.1, D16②) : ids des recettes déjà découvertes — journal de
     // découvertes futur, données seulement pour l'instant.
     recettes_decouvertes: [],
@@ -240,11 +243,40 @@ function migrer_5_vers_6(payload) {
   };
 }
 
+// Id de l'instance de coffre livrée avec le jeu (data/puzzles.json), écrit en
+// dur ICI pour la même raison que `SPAWN_MAISON_EXTERIEUR_PX` : la migration
+// tourne avant que le registre n'existe, elle ne connaît que le payload. Si
+// cette instance était un jour renommée, ce seul endroit devrait suivre.
+const ID_COFFRE_DE_BASE = 'station_coffre';
+
+// Migration 6 -> 7 (`D-121`, file « inventaire survivaliste », T5) : le
+// contenu du coffre descend dans l'INSTANCE qui le porte.
+//
+// Pourquoi une migration de schéma cette fois, alors que `D-118` n'en
+// demandait aucune : là, la donnée gardait sa forme et seule la règle
+// changeait ; ici le champ `coffre` DISPARAÎT et son contenu change d'adresse.
+// C'est exactement la frontière entre les deux classes.
+//
+// Le coffre de base devient l'instance 0 et hérite de ce qu'il contenait —
+// jamais un coffre vidé par une mise à jour. Sa POSE, si le joueur l'avait
+// déplacé, est conservée telle quelle : on ajoute un champ à son entrée, on
+// ne la remplace pas.
+function migrer_6_vers_7(payload) {
+  const stations = { ...((payload.maison && payload.maison.stations) || {}) };
+  const contenu = (payload.coffre && payload.coffre.items) || {};
+  if (Object.keys(contenu).some((id) => contenu[id] > 0)) {
+    stations[ID_COFFRE_DE_BASE] = { ...(stations[ID_COFFRE_DE_BASE] || {}), contenu };
+  }
+  const migre = { ...payload, schema_version: 7, maison: { ...payload.maison, stations } };
+  delete migre.coffre;
+  return migre;
+}
+
 // Chaîne de migrations, une fonction par palier. Un paramètre permet aux
 // tests d'injecter une chaîne fictive sans toucher à la table de production.
 const MIGRATIONS_PRODUCTION = {
   1: migrer_1_vers_2, 2: migrer_2_vers_3, 3: migrer_3_vers_4, 4: migrer_4_vers_5,
-  5: migrer_5_vers_6,
+  5: migrer_5_vers_6, 6: migrer_6_vers_7,
 };
 
 export function migrer(payload, versionCible = VERSION_SCHEMA_COURANTE, migrations = MIGRATIONS_PRODUCTION) {

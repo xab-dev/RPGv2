@@ -251,5 +251,8 @@
   "menu.fiche.aucune_recette": "No known recipe",
   "menu.fiche.deplacer": "Move",
   "menu.fiche.construction_vide": "Nothing to move here",
-  "menu.fiche.manger": "Eat: {glyphe}"
+  "menu.fiche.manger": "Eat: {glyphe}",
+  "menu.fiche.a_poser": "To place in the house",
+  "recipe.coffre": "Chest",
+  "station.coffre.description": "One more chest, to put wherever you like."
 }

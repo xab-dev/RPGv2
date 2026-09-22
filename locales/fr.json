@@ -251,5 +251,8 @@
   "menu.fiche.aucune_recette": "Aucune recette connue",
   "menu.fiche.deplacer": "Déplacer",
   "menu.fiche.construction_vide": "Rien à déplacer ici",
-  "menu.fiche.manger": "Manger : {glyphe}"
+  "menu.fiche.manger": "Manger : {glyphe}",
+  "menu.fiche.a_poser": "À poser dans la maison",
+  "recipe.coffre": "Coffre",
+  "station.coffre.description": "Un coffre de plus, à ranger où l’on veut."
 }

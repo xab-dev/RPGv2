@@ -1862,12 +1862,30 @@ export const SCHEMAS = {
           }
         });
       }
-      const s = entry.sortie;
-      if (!s || !itemsDeclares.has(s.item)) {
-        erreurs.push(`${path} > sortie.item "${s && s.item}" introuvable dans items.json`);
-      }
-      if (!s || typeof s.qte !== 'number' || s.qte <= 0) {
-        erreurs.push(`${path} > sortie.qte doit être un nombre positif`);
+      // `D-121` (T5) : une recette produit SOIT un objet de poche, SOIT une
+      // STATION. Les deux à la fois n'aurait pas de sens (où irait-elle ?),
+      // et aucun des deux non plus — d'où le « exactement un ».
+      const s = entry.sortie || {};
+      const sortieItem = s.item !== undefined;
+      const sortieStation = s.station !== undefined;
+      if (sortieItem === sortieStation) {
+        erreurs.push(`${path} > sortie doit déclarer soit "item", soit "station", jamais les deux ni aucun`);
+      } else if (sortieItem) {
+        if (!itemsDeclares.has(s.item)) {
+          erreurs.push(`${path} > sortie.item "${s.item}" introuvable dans items.json`);
+        }
+        if (typeof s.qte !== 'number' || s.qte <= 0) {
+          erreurs.push(`${path} > sortie.qte doit être un nombre positif`);
+        }
+      } else {
+        const station = (catalogs.stations || []).find((st) => st.id === s.station);
+        if (!station) {
+          erreurs.push(`${path} > sortie.station "${s.station}" introuvable dans stations.json`);
+        } else if (!station.placable) {
+          // Une station qu'on fabrique doit pouvoir être POSÉE : sans cela,
+          // la fabrication ouvrirait un mode de placement sans issue.
+          erreurs.push(`${path} > sortie.station "${s.station}" n'est pas "placable" : on ne pourrait pas la poser`);
+        }
       }
       if (entry.xp !== undefined && (typeof entry.xp !== 'number' || entry.xp < 0)) {
         erreurs.push(`${path} > xp doit être un nombre >= 0 si présent`);

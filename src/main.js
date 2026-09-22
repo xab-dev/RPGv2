@@ -217,6 +217,72 @@ export function lignesFicheItem(itemDef, registre, i18n) {
 // la Poche appelle enfin la vraie fonction au lieu d'en recopier la logique.
 export const SLOT_PAR_CATEGORIE = { nourriture: 'consommable', arme: 'arme' };
 
+// `D-121` (T5) : les instances de station CRÉÉES en cours de partie.
+//
+// Une instance créée n'a pas d'entrée de catalogue — elle n'en a pas besoin :
+// elle CLONE l'instance livrée avec le jeu pour son type, et ne change que son
+// id et sa pose. C'est la règle du ticket, et elle évite d'inventer un second
+// endroit où déclarer à quoi ressemble un coffre : **l'instance de catalogue
+// est le modèle de son type**. Un type sans modèle ne peut pas être fabriqué,
+// et le contrôle de démarrage le dit (`erreursRecettesDeStation`).
+//
+// Au NIVEAU MODULE, donc testable, et lisible par les deux fonctions sœurs
+// (`D-72`).
+export function modeleDeStation(registre, stationTypeId) {
+  return registre.tous('puzzles')
+    .find((p) => p.type === 'station' && p.station_type === stationTypeId) || null;
+}
+
+export function instancesCreees(registre, sceneId, stationsSauvegardees) {
+  const creees = [];
+  for (const [id, entree] of Object.entries(stationsSauvegardees || {})) {
+    // `type` est ce qui distingue une instance CRÉÉE d'une simple pose
+    // sauvegardée : une pose ne porte que des coordonnées.
+    if (!entree || !entree.type || entree.scene !== sceneId) continue;
+    const modele = modeleDeStation(registre, entree.type);
+    if (!modele) {
+      console.warn(`[D-121] instance "${id}" : aucun modèle pour le type "${entree.type}" — ignorée`);
+      continue;
+    }
+    creees.push({
+      ...modele,
+      id,
+      position: { x: entree.x, y: entree.y },
+      rotation: entree.rotation || 0,
+    });
+  }
+  return creees;
+}
+
+// Le contrôle de démarrage qui va avec : toute recette qui produit une
+// station doit avoir un modèle à cloner. Sans lui, la faute ne se verrait
+// qu'au moment de fabriquer — c'est-à-dire en jouant.
+// Prend les CATALOGUES bruts, pas le registre : ce contrôle se joue avec les
+// autres, avant que le registre n'existe — au démarrage, là où une faute de
+// catalogue se voit avant d'être jouée.
+export function erreursRecettesDeStation(recipes = [], puzzles = []) {
+  const aUnModele = (type) => puzzles.some((p) => p.type === 'station' && p.station_type === type);
+  return recipes
+    .filter((r) => r.sortie && r.sortie.station)
+    .filter((r) => !aUnModele(r.sortie.station))
+    .map((r) => (
+      `recipes.json > "${r.id}" produit la station "${r.sortie.station}", mais aucune instance de ce type `
+      + "n'existe dans puzzles.json — il n'y a rien à cloner"
+    ));
+}
+
+// `D-121` : l'instance de coffre LIVRÉE avec le jeu, celle qui hérite du
+// contenu d'avant ce ticket. On la trouve par son RÔLE, jamais par son id —
+// c'est le rôle qui est stable, et c'est aussi ce qui fera qu'un second type
+// de stockage (un grand coffre, un jour) n'aura rien à déclarer ici.
+export function instanceDeStockageDeBase(registre) {
+  return registre.tous('puzzles').find((p) => {
+    if (p.type !== 'station') return false;
+    const type = registre.obtenir('stations', p.station_type);
+    return type && type.role === 'stockage';
+  }) || null;
+}
+
 // `D-118` : ce que la poche a d'occupé, en texte. AU NIVEAU MODULE, et c'est
 // `D-72` qui l'exige : `demarrerJeu` (qui câble le menu) et
 // `creerOrchestrateurGrotte` (qui tient la poche) sont deux fonctions SŒURS —
@@ -568,17 +634,21 @@ export function creerOrchestrateurGrotte({
     return plafondPourItem(save.inventaire.items, itemId, capacitePoche, obtenirItemDef);
   }
 
+  const coffreDeBase = instanceDeStockageDeBase(registre);
+
   // Une sauvegarde d'avant `D-118` peut porter 20 bois en poche là où quatre
   // slots de cinq n'en tiennent plus autant. Normalisé une fois, au
   // démarrage, et DIT — jamais un objet qui s'évapore entre deux parties.
   {
     const bilan = normaliserContenus(
-      { poche: save.inventaire.items, coffre: save.coffre.items },
+      { poche: save.inventaire.items, coffre: contenuDeStation(coffreDeBase.id) },
       { capacitePoche, capaciteCoffre: capaciteCoffreDeBase, obtenirItem: obtenirItemDef },
     );
     if (bilan.deplaces.length || bilan.perdus.length) {
       save.inventaire.items = bilan.poche;
-      save.coffre.items = bilan.coffre;
+      const entreeCoffre = save.maison.stations[coffreDeBase.id]
+        || (save.maison.stations[coffreDeBase.id] = {});
+      entreeCoffre.contenu = bilan.coffre;
       etatModifie = true;
       for (const d of bilan.deplaces) {
         console.info(`[D-118] poche trop pleine au chargement : ${d.quantite} × ${d.item} descendu(s) au coffre.`);
@@ -1143,7 +1213,13 @@ export function creerOrchestrateurGrotte({
         const stationType = registre.obtenir('stations', puzzle.station_type);
         const visuel = registre.obtenir('visuels', puzzle.render.visuel);
         const poseParDefaut = { x: puzzle.position.x, y: puzzle.position.y, rotation: puzzle.rotation || 0 };
-        const poseSauvegardee = stationType.placable ? save.maison.stations[puzzle.id] : null;
+        // `D-121` : une entrée de `maison.stations` peut ne porter QUE un
+        // contenu (un coffre jamais déplacé qu'on a rempli). Elle n'est une
+        // pose que si elle en a les coordonnées.
+        const entreeSauvegardee = stationType.placable ? save.maison.stations[puzzle.id] : null;
+        const poseSauvegardee = entreeSauvegardee && Number.isFinite(entreeSauvegardee.x)
+          ? entreeSauvegardee
+          : null;
 
         if (!poseSauvegardee) {
           empreintesAcceptees.push(empreinteAbsoluePuzzle(puzzle, visuel, poseParDefaut, donneesScene.tile_size));
@@ -1213,7 +1289,10 @@ export function creerOrchestrateurGrotte({
     // `D-05`, même raison exactement : un « +1 Bois » gagné dans la scène
     // qu'on quitte n'a rien à faire flottant dans la suivante.
     viderTextesFlottants(textesFlottants);
-    scene = chargerScene(registre, sceneId, resoudreOverridesStations(sceneId));
+    scene = chargerScene(
+      registre, sceneId, resoudreOverridesStations(sceneId),
+      instancesCreees(registre, sceneId, save.maison.stations),
+    );
     // Palier E : le calque statique de la scène neuve est à construire, et
     // cette construction n'est pas une saccade de jeu — Auto ne la juge pas.
     msDepuisEntreeScene = 0;
@@ -1329,7 +1408,10 @@ export function creerOrchestrateurGrotte({
   // en dernier — la moins probable d'être ambiguë avec autre chose).
   function essayerInteraction() {
     for (const puzzleId of scene.interactifs) {
-      const puzzle = registre.obtenir('puzzles', puzzleId);
+      // `D-121` : `scene.puzzle` et non `registre.obtenir` — un id venu de la
+      // scène peut désigner une instance CRÉÉE (un coffre fabriqué), qui
+      // n'est dans aucun catalogue.
+      const puzzle = scene.puzzle(puzzleId);
       // §3 : seuil mesuré au bord de l'empreinte, pas au centre (une station
       // ×2,1 solide dépasserait sinon DISTANCE_INTERACT_PX depuis l'extérieur
       // de son propre bord) — un levier (empreinte nulle) redonne exactement
@@ -1471,9 +1553,11 @@ export function creerOrchestrateurGrotte({
       return;
     }
     if (station.role === 'stockage') {
-      menu.ouvrirCoffre(() => entreesCoffre(station), i18n.t(station.label_key), {
+      // `D-121` : c'est CE coffre-là qui s'ouvre, pas « le » coffre — d'où
+      // l'instance passée avec son type.
+      menu.ouvrirCoffre(() => entreesCoffre(puzzle, station), i18n.t(station.label_key), {
         sousTitre: () => i18n.t('menu.fiche.coffre_piles', {
-          n: slotsCoffre(station), max: capaciteDeStation(station).slots,
+          n: slotsCoffre(puzzle, station), max: capaciteDeStation(station).slots,
         }),
         texteVide: i18n.t('menu.poche_vide'),
       });
@@ -1541,7 +1625,15 @@ export function creerOrchestrateurGrotte({
         // poche, relu à chaque affichage), ce qu'elle donne — l'objet produit
         // est décrit par `lignesFicheItem`, comme dans la Poche et le Coffre —,
         // et la raison d'un refus probable.
-        const itemSortie = registre.obtenir('items', r.sortie.item);
+        // `D-121` : une recette produit soit un objet, soit une STATION. Ce
+        // qu'on montre — la tuile, le nom, ce que ça donne — se résout donc
+        // dans un catalogue ou dans l'autre. Une seule paire de valeurs, lue
+        // une fois : c'est ce qui évite d'écrire deux fois la fiche.
+        const modeleSortie = r.sortie.station ? modeleDeStation(registre, r.sortie.station) : null;
+        const defSortie = modeleSortie
+          ? registre.obtenir('stations', r.sortie.station)
+          : registre.obtenir('items', r.sortie.item);
+        const visuelSortie = modeleSortie ? modeleSortie.render.visuel : defSortie.render.visuel;
         const raisons = {
           cooldown: () => i18n.t('menu.fiche.recharge', {
             n: Math.ceil(tempsRestantMs(save.cooldowns, r.id, r.cooldown_ms ?? 60000, heureMs) / 1000),
@@ -1553,7 +1645,7 @@ export function creerOrchestrateurGrotte({
         return {
           texte: `${i18n.t(r.label_key)}${suffixe}`,
           titre: i18n.t(r.label_key),
-          icone: itemSortie.render.visuel,
+          icone: visuelSortie,
           quantite: r.sortie.qte > 1 ? r.sortie.qte : null,
           lignes: [
             ...r.entrees.map((e) => i18n.t('menu.fiche.ingredient', {
@@ -1562,8 +1654,10 @@ export function creerOrchestrateurGrotte({
             ...(r.cout_eclats ? [i18n.t('menu.fiche.cout_eclats', {
               n: r.cout_eclats, possede: save.inventaire.eclats,
             })] : []),
-            i18n.t('menu.fiche.donne', { item: i18n.t(itemSortie.label_key), n: r.sortie.qte }),
-            ...lignesFicheItem(itemSortie, registre, i18n),
+            i18n.t('menu.fiche.donne', { item: i18n.t(defSortie.label_key), n: r.sortie.qte || 1 }),
+            // La fiche d'un OBJET vient de `lignesFicheItem` ; une station
+            // n'en a pas (elle ne se porte pas), elle dit ce qu'on en fera.
+            ...(modeleSortie ? [i18n.t('menu.fiche.a_poser')] : lignesFicheItem(defSortie, registre, i18n)),
             ...(raisons[verdict.raison] ? [raisons[verdict.raison]()] : []),
           ],
           libelleAction: i18n.t('menu.fiche.fabriquer'),
@@ -1578,9 +1672,9 @@ export function creerOrchestrateurGrotte({
               // passe — celle d'APRÈS le retrait des ingrédients. C'est ce
               // qui fait qu'on peut cuire son dernier fruit sans avoir à
               // vider un slot d'abord.
-              plafondSortie: (pocheApresEntrees) => plafondPourItem(
-                pocheApresEntrees, r.sortie.item, capacitePoche, obtenirItemDef,
-              ),
+              plafondSortie: (pocheApresEntrees) => (r.sortie.item
+                ? plafondPourItem(pocheApresEntrees, r.sortie.item, capacitePoche, obtenirItemDef)
+                : 0),
               eclats: save.inventaire.eclats,
             });
             if (resultat.ok) {
@@ -1592,6 +1686,15 @@ export function creerOrchestrateurGrotte({
               crediterXpHeros(resultat.xp);
               flags.set('flag_premier_craft');
               etatModifie = true;
+              // `D-121` : une recette de station ne remplit pas la poche,
+              // elle POSE quelque chose — donc elle enchaîne directement sur
+              // le mode Construction, avec le fantôme de ce qu'on vient de
+              // fabriquer. Si le joueur ressort sans poser, la station
+              // existe quand même : elle l'attend dans la liste Construction.
+              if (resultat.station) {
+                poserStationFabriquee(resultat.station);
+                return;
+              }
             }
             menu.rafraichirCraft();
           },
@@ -1622,34 +1725,66 @@ export function creerOrchestrateurGrotte({
   // sort d'ici — `inventory.js#slotsOccupes` est le seul à savoir qu'une pile
   // de douze branches en occupe trois. Le coffre, lui, ne compte plus ses
   // entrées : deux vérités de remplissage auraient fini par diverger.
-  function slotsCoffre(station) {
-    return slotsOccupes(save.coffre.items, capaciteDeStation(station), obtenirItemDef);
+  //
+  // `D-121` (T5) : le contenu appartient à l'INSTANCE, pas au jeu. Un coffre
+  // = un type + une pose + un contenu, et il y en aura cinq. L'entrée de
+  // `save.maison.stations` est créée paresseusement, au premier dépôt : une
+  // partie neuve n'a donc rien à déclarer, et un coffre jamais ouvert ne
+  // laisse aucune trace dans la sauvegarde.
+  // LIRE ne crée rien : une lecture qui écrivait posait une entrée sans pose
+  // dans `maison.stations`, que `resoudreOverridesStations` prenait ensuite
+  // pour une pose sauvegardée — et toutes les stations partaient en NaN. Un
+  // accesseur de lecture doit être une lecture.
+  function contenuDeStation(puzzleId) {
+    const entree = save.maison.stations[puzzleId];
+    return (entree && entree.contenu) || {};
   }
 
-  // Déplace UNE unité de `source` vers `destination` (deux clés de `save` qui
-  // portent un `items`). Rend vrai si l'unité a bougé.
+  function slotsCoffre(puzzle, station) {
+    return slotsOccupes(contenuDeStation(puzzle.id), capaciteDeStation(station), obtenirItemDef);
+  }
+
+  // Déplace UNE unité d'un contenant vers un autre. Les deux contenants sont
+  // donnés comme un couple lire/écrire plutôt que comme une clé de `save` :
+  // depuis `D-121` une destination peut être n'importe quelle instance de
+  // station, et il n'existe plus de chemin fixe où aller la chercher.
   function transfererUnite(source, destination, itemId, plafond) {
-    const resultat = ajouterItem(save[destination].items, itemId, 1, plafond);
+    const resultat = ajouterItem(destination.lire(), itemId, 1, plafond);
     if (resultat.ajoute < 1) return false;
-    save[destination].items = resultat.inventaire;
-    save[source].items = retirerItem(save[source].items, itemId, 1);
+    destination.ecrire(resultat.inventaire);
+    source.ecrire(retirerItem(source.lire(), itemId, 1));
     etatModifie = true;
     return true;
   }
 
-  function entreesCoffre(station) {
+  const POCHE = {
+    lire: () => save.inventaire.items,
+    ecrire: (items) => { save.inventaire.items = items; },
+  };
+  function contenantStation(puzzleId) {
+    return {
+      lire: () => contenuDeStation(puzzleId),
+      ecrire: (items) => {
+        const entree = save.maison.stations[puzzleId] || (save.maison.stations[puzzleId] = {});
+        entree.contenu = items;
+      },
+    };
+  }
+
+  function entreesCoffre(puzzle, station) {
+    const coffre = contenantStation(puzzle.id);
     const entreesDepot = Object.entries(save.inventaire.items)
       .filter(([, qte]) => qte > 0)
       .map(([itemId, qte]) => {
         const itemDef = registre.obtenir('items', itemId);
         const capaciteCoffre = capaciteDeStation(station);
-        const dansLeCoffre = save.coffre.items[itemId] || 0;
+        const dansLeCoffre = coffre.lire()[itemId] || 0;
         // Un seul calcul dit les deux refus : le plafond de CET objet dans ce
         // coffre. S'il vaut ce qu'on a déjà, il n'y a plus de place — et la
         // raison dépend de qui la prend (une pile à elle seule, ou les
         // autres objets).
-        const plafond = plafondPourItem(save.coffre.items, itemId, capaciteCoffre, obtenirItemDef);
-        const coffrePlein = plafond <= dansLeCoffre && slotsCoffre(station) >= capaciteCoffre.slots;
+        const plafond = plafondPourItem(coffre.lire(), itemId, capaciteCoffre, obtenirItemDef);
+        const coffrePlein = plafond <= dansLeCoffre && slotsCoffre(puzzle, station) >= capaciteCoffre.slots;
         const pilePleine = plafond <= dansLeCoffre && !coffrePlein;
         const refus = coffrePlein ? 'menu.fiche.coffre_plein' : pilePleine ? 'menu.fiche.pile_pleine' : null;
         return {
@@ -1665,14 +1800,14 @@ export function creerOrchestrateurGrotte({
             // au-delà du plafond, donc il n'y a plus de condition à écrire
             // ici — une de moins à faire diverger de l'affichage.
             transfererUnite(
-              'inventaire', 'coffre', itemId,
-              plafondPourItem(save.coffre.items, itemId, capaciteDeStation(station), obtenirItemDef),
+              POCHE, coffre, itemId,
+              plafondPourItem(coffre.lire(), itemId, capaciteDeStation(station), obtenirItemDef),
             );
             menu.rafraichirCoffre();
           },
         };
       });
-    const entreesRetrait = Object.entries(save.coffre.items)
+    const entreesRetrait = Object.entries(coffre.lire())
       .filter(([, qte]) => qte > 0)
       .map(([itemId, qte]) => {
         const itemDef = registre.obtenir('items', itemId);
@@ -1685,7 +1820,7 @@ export function creerOrchestrateurGrotte({
           libelleAction: i18n.t('menu.coffre_retirer'),
           grisee: pilePleine,
           action: () => {
-            transfererUnite('coffre', 'inventaire', itemId, plafondPoche(itemId));
+            transfererUnite(coffre, POCHE, itemId, plafondPoche(itemId));
             menu.rafraichirCoffre();
           },
         };
@@ -1712,7 +1847,7 @@ export function creerOrchestrateurGrotte({
   // (Poste avancé, même patron déclaré par la spec §1).
   function stationsPlacablesDeStructure(structure) {
     return scene.interactifs
-      .map((id) => registre.obtenir('puzzles', id))
+      .map((id) => scene.puzzle(id))
       .filter((p) => p && p.type === 'station' && dansRectangleTuile(p.position.x, p.position.y, structure.rect))
       .filter((p) => registre.obtenir('stations', p.station_type).placable);
   }
@@ -1773,6 +1908,49 @@ export function creerOrchestrateurGrotte({
     });
   }
 
+  // `D-121` (T5) : fabriquer une station la CRÉE, puis enchaîne sur son
+  // placement.
+  //
+  // La pose de départ est la tuile du héros. Ce n'est pas un détail de
+  // confort : n'importe quelle autre valeur (la position du modèle, un coin
+  // de la pièce) ferait apparaître le fantôme ailleurs que là où le joueur
+  // regarde, et il le chercherait. Si elle est invalide — elle l'est souvent,
+  // le héros est contre l'Atelier —, le fantôme est simplement rouge, ce que
+  // `poseValide` dit déjà : aucune règle nouvelle.
+  function poserStationFabriquee(stationTypeId) {
+    const structure = structureHeros();
+    const modele = modeleDeStation(registre, stationTypeId);
+    if (!structure || !modele) {
+      // Hors d'une structure, il n'y a nulle part où poser (`Q-07` gelée) :
+      // la recette n'aurait pas dû être atteignable. On ne perd rien pour
+      // autant — on le dit, et la station n'est pas créée.
+      console.warn(`[D-121] station "${stationTypeId}" fabriquée hors d'une structure : rien à poser`);
+      menu.rafraichirCraft();
+      return;
+    }
+    const id = idInstanceLibre(stationTypeId);
+    save.maison.stations[id] = {
+      type: stationTypeId,
+      scene: scene.id,
+      x: Math.floor(hero.x / scene.tileSize),
+      y: Math.floor(hero.y / scene.tileSize),
+      rotation: 0,
+    };
+    etatModifie = true;
+    rechargerSceneApresConstruction();
+    demarrerConstruction(scene.puzzle(id), structure);
+  }
+
+  // Un id d'instance qui n'est pris ni par le catalogue ni par la sauvegarde.
+  // Numéroté, pas tiré au hasard : une sauvegarde se lit à l'œil, et
+  // `station_type_coffre_2` dit tout de suite ce que c'est.
+  function idInstanceLibre(stationTypeId) {
+    for (let n = 2; ; n += 1) {
+      const id = `${stationTypeId}_${n}`;
+      if (!save.maison.stations[id] && !registre.existe('puzzles', id)) return id;
+    }
+  }
+
   function demarrerConstruction(puzzle, structure) {
     const poseActuelle = save.maison.stations[puzzle.id] || {
       x: puzzle.position.x, y: puzzle.position.y, rotation: puzzle.rotation || 0,
@@ -1818,7 +1996,10 @@ export function creerOrchestrateurGrotte({
   // trouverPositionLibrePlusProche, exactement comme une entrée en scène
   // normale, jamais un second mécanisme de repoussement (consignes §6).
   function rechargerSceneApresConstruction() {
-    scene = chargerScene(registre, scene.id, resoudreOverridesStations(scene.id));
+    scene = chargerScene(
+      registre, scene.id, resoudreOverridesStations(scene.id),
+      instancesCreees(registre, scene.id, save.maison.stations),
+    );
     const positionLibre = trouverPositionLibrePlusProche(scene, hero.x, hero.y, flags.has);
     if (positionLibre.x !== hero.x || positionLibre.y !== hero.y) {
       console.warn(
@@ -2270,7 +2451,7 @@ export function creerOrchestrateurGrotte({
     // n'a que des leviers, donc "le premier interactif rencontré" (§3 de
     // 04_indices-commandes) est de fait le levier de la salle 1.
     for (const puzzleId of scene.interactifs) {
-      const puzzle = registre.obtenir('puzzles', puzzleId);
+      const puzzle = scene.puzzle(puzzleId);
       if (distanceAuRectangle(hero.x, hero.y, rectangleInteractif(puzzle)) <= DISTANCE_INTERACT_PX) {
         indices.declencherVerbeUtile('interact', flags);
         break;
@@ -2791,7 +2972,7 @@ export function creerOrchestrateurGrotte({
     // double : un 5ᵉ type d'interactif positionné se dessine sans toucher
     // cette fonction, ce qui rend la classe de bug irreproductible ici.
     const puzzlesAffiches = scene.interactifs
-      .map((id) => registre.obtenir('puzzles', id))
+      .map((id) => scene.puzzle(id))
       .filter((p) => p.render && p.render.visuel)
       .map((p) => {
         // specs/05_construction-stations.md §3 : position/rotation EFFECTIVE
@@ -3296,9 +3477,17 @@ export async function demarrerJeu() {
   // ne connaissent pas le code. C'est le garde-fou qui vivait dans la boucle
   // de dessin, remis là où une faute de catalogue se voit : au démarrage.
   const erreursStyles = erreursChargement.length ? [] : erreursStylesTexteFlottant(donnees.effets);
+  // `D-121` : toute recette qui produit une station a-t-elle un modèle à
+  // cloner ? Même famille que le contrôle ci-dessus — le schéma vérifie que
+  // le TYPE existe, il ne peut pas savoir qu'aucune INSTANCE de ce type n'a
+  // été posée dans `puzzles.json`, et la faute ne se verrait qu'au moment de
+  // fabriquer.
+  const erreursStations = erreursChargement.length
+    ? []
+    : erreursRecettesDeStation(donnees.recipes, donnees.puzzles);
   const toutesErreurs = [
     ...erreursChargement, ...erreursValidation, ...erreursCles,
-    ...erreursCouleurs, ...erreursTextes, ...erreursStyles,
+    ...erreursCouleurs, ...erreursTextes, ...erreursStyles, ...erreursStations,
   ];
 
   if (toutesErreurs.length > 0) {

@@ -73,17 +73,28 @@ export function fabriquer(recette, { poche, flags, cooldowns, heureMs, plafondSo
     pocheFinale = retirerItem(pocheFinale, entree.item, entree.qte);
   }
 
-  const plafond = plafondSortie(pocheFinale);
-  const dejaPossede = pocheFinale[recette.sortie.item] || 0;
-  if (dejaPossede + recette.sortie.qte > plafond) {
-    return { ok: false, raison: 'poche_pleine', poche, cooldowns, eclats };
+  // `D-121` (T5) : une recette peut produire une STATION plutôt qu'un objet.
+  // La poche n'a alors rien à recevoir — et surtout, elle n'a pas à être
+  // assez vide : fabriquer un coffre avec une poche pleine est même le cas
+  // NORMAL (trois slots de ressources y sont partis). Le plafond n'est donc
+  // pas consulté, ce qui n'est pas un contournement mais la conséquence
+  // exacte de « rien n'entre en poche ».
+  const station = recette.sortie.station || null;
+  if (!station) {
+    const plafond = plafondSortie(pocheFinale);
+    const dejaPossede = pocheFinale[recette.sortie.item] || 0;
+    if (dejaPossede + recette.sortie.qte > plafond) {
+      return { ok: false, raison: 'poche_pleine', poche, cooldowns, eclats };
+    }
+    pocheFinale = ajouterItem(pocheFinale, recette.sortie.item, recette.sortie.qte, plafond).inventaire;
   }
-
-  pocheFinale = ajouterItem(pocheFinale, recette.sortie.item, recette.sortie.qte, plafond).inventaire;
 
   return {
     ok: true,
     raison: null,
+    // `station` vaut `null` pour une recette d'objet : l'appelant n'a donc
+    // aucune branche à écrire pour les recettes d'avant ce ticket.
+    station,
     poche: pocheFinale,
     // Les éclats sont RENDUS, pas mutés : ce module reste pur, comme il l'est
     // pour la poche et les cooldowns. C'est l'appelant qui les repose dans la

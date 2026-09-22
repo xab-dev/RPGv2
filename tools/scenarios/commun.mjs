@@ -37,8 +37,12 @@ export function saveDansLaMaison({ compagnon = 'comp_follet_eau' } = {}) {
     flag_follet_choisi: true, flag_grotte_sortie: true, flag_grotte_sequence: true,
     flag_grotte_monstre_tue: true, flag_levier_salle1: true, flag_maison_decouverte: true,
   };
-  save.inventaire.items = { item_branche: 6, item_caillou: 4, item_fruit: 3, item_bois: 5, item_pierre: 2 };
-  save.coffre.items = { item_bois: 12, item_fruit: 1 };
+  // `D-118` : la poche ne tient plus que quatre slots — un contenu qui
+  // déborde serait normalisé au chargement, et les captures ne montreraient
+  // pas ce qu'elles croient montrer.
+  save.inventaire.items = { item_branche: 4, item_caillou: 4, item_fruit: 3, item_bois: 5 };
+  // `D-121` : le contenu du coffre appartient à l'INSTANCE qui le porte.
+  save.maison.stations.station_coffre = { contenu: { item_bois: 12, item_fruit: 1 } };
   return save;
 }
 

@@ -171,7 +171,7 @@ function faussSave({ poche = {}, arme = null, consommable = null } = {}) {
 
   // On mange le dernier fruit (et on range l'épée au coffre dans la foulée).
   save.inventaire.items = {};
-  save.coffre.items = { [OBJET_ARME.id]: 1 };
+  save.maison.stations.station_coffre = { contenu: { [OBJET_ARME.id]: 1 } };
   tick();
   assert.equal(orch.obtenirVerbesActions().includes('consume'), false, 'plus rien à manger : la case disparaît');
   assert.equal(save.hero.equipement.arme, null, 'l’épée rangée quitte la case d’attaque');

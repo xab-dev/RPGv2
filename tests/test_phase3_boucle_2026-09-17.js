@@ -273,7 +273,7 @@ assert.ok(dernieresEntreesCoffre, 'menu.ouvrirCoffre n\'a pas été appelé');
   depotBois.action();
 }
 assert.equal(save.inventaire.items.item_bois, 0, 'le bois quitte la poche');
-assert.equal(save.coffre.items.item_bois, 1, 'le bois arrive dans le coffre');
+assert.equal(save.maison.stations.station_coffre.contenu.item_bois, 1, 'le bois arrive dans le coffre');
 {
   const entreesApres = dernieresEntreesCoffre();
   const retraitBois = entreesApres.find((e) => e.texte.startsWith(i18n.t('menu.coffre_retirer')) && e.texte.includes(i18n.t('item.bois')));
@@ -281,7 +281,7 @@ assert.equal(save.coffre.items.item_bois, 1, 'le bois arrive dans le coffre');
   retraitBois.action();
 }
 assert.equal(save.inventaire.items.item_bois, 1, 'le bois revient dans la poche');
-assert.equal(save.coffre.items.item_bois, 0, 'le coffre est de nouveau vide');
+assert.equal(save.maison.stations.station_coffre.contenu.item_bois, 0, 'le coffre est de nouveau vide');
 
 // --- Stats (Palier D) : +1 sur la première stat, points libres décrémentés ---
 {

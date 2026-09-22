@@ -97,5 +97,35 @@
       "valeur": "niveau",
       "min": 10
     }
+  },
+  {
+    "id": "rec_coffre",
+    "label_key": "recipe.coffre",
+    "station": "station_type_atelier",
+    "entrees": [
+      {
+        "item": "item_bois",
+        "qte": 5
+      },
+      {
+        "item": "item_branche",
+        "qte": 5
+      },
+      {
+        "item": "item_herbe",
+        "qte": 5
+      }
+    ],
+    "cout_eclats": 20,
+    "sortie": {
+      "station": "station_type_coffre"
+    },
+    "categorie": "station",
+    "xp": 60,
+    "cooldown_ms": 60000,
+    "visible_si": {
+      "valeur": "niveau",
+      "min": 10
+    }
   }
 ]

@@ -103,7 +103,7 @@ import {
 } from './menu_cartes.js';
 import { dessinerHud } from './ui/hud.js';
 import { dessinerHudHints } from './ui/hud_hints.js';
-import { dessinerDialogue } from './ui/dialogue_box.js';
+import { dessinerDialogue, creerPaginateurDialogue } from './ui/dialogue_box.js';
 import { creerMoniteurPerf, creerMoniteurInactif } from './ui/hud_debug.js';
 import { lireEchelleForcee } from './debug_perf.js';
 
@@ -4018,7 +4018,9 @@ export async function demarrerJeu() {
     pleinEcran.synchroniserVerrouillageEchap();
   });
 
-  const dialogue = creerDialogue();
+  // `D-136` : la pagination mesure avec la police de CET appareil, sur le
+  // contexte où la bulle est dessinée — jamais une largeur calculée ailleurs.
+  const dialogue = creerDialogue({ paginer: creerPaginateurDialogue(ctxLogique) });
 
   // §3.6 : premier geste utilisateur — clavier/souris/tactile détectés ici
   // (réactifs dès l'événement DOM lui-même), le geste manette est détecté

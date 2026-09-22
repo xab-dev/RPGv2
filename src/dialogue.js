@@ -17,7 +17,60 @@
 export const DELAI_ARMEMENT_DIALOGUE_MS = 350;
 export const MACHINE_ECRIRE_MS_PAR_CARACTERE = 25;
 
-export function creerDialogue() {
+// `D-136` : une réplique trop longue pour la bulle se coupe en LIGNES au mot
+// près, puis en FENÊTRES de `lignesParFenetre` lignes — une fenêtre de plus
+// s'avance comme une réplique de plus (décision de Xav, 23/09 : « si les
+// dialogues se prolongent, on ouvre une deuxième fenêtre »).
+//
+// La mesure est INJECTÉE, jamais calculée ici : `sans-serif` n'a pas la même
+// largeur sous Windows, Android et iOS, donc seul le navigateur du joueur sait
+// où couper — un découpage écrit d'avance dans `dialogues.json` serait juste
+// sur un appareil et faux sur les autres. Ce module reste pur et testable avec
+// une mesure factice.
+//
+// Rend des chaînes où les lignes d'une fenêtre sont jointes par `\n` : la
+// machine à écrire tape la fenêtre ENTIÈRE, découpée une fois pour toutes, donc
+// un mot ne change jamais de ligne en cours de frappe (le rendu coupe sur `\n`
+// ce qui est déjà affiché).
+//
+// Une ponctuation détachée (« tu ? », « ça ! », guillemet fermant) reste collée
+// au mot qui la précède : les textes français portent une espace ordinaire,
+// pas insécable, avant `?`/`!`/`:`/`;`, et un point d'interrogation seul en
+// début de ligne se lit comme une faute. Un mot plus large que la bulle à lui
+// seul reste entier sur sa ligne (il déborde) : le couper au caractère
+// rendrait le texte illisible pour un cas qu'aucune réplique n'a.
+const PONCTUATION_ACCROCHEE = /^[?!:;»)\]…]+$/;
+
+export function decouperEnFenetres(texte, mesurer, largeurMax, lignesParFenetre) {
+  const lignes = [];
+  for (const paragraphe of String(texte).split('\n')) {
+    const jetons = [];
+    for (const mot of paragraphe.split(' ').filter((m) => m.length > 0)) {
+      if (jetons.length > 0 && PONCTUATION_ACCROCHEE.test(mot)) jetons[jetons.length - 1] += ` ${mot}`;
+      else jetons.push(mot);
+    }
+    let courante = '';
+    for (const jeton of jetons) {
+      const essai = courante ? `${courante} ${jeton}` : jeton;
+      if (courante && mesurer(essai) > largeurMax) {
+        lignes.push(courante);
+        courante = jeton;
+      } else {
+        courante = essai;
+      }
+    }
+    lignes.push(courante);
+  }
+  const fenetres = [];
+  for (let i = 0; i < lignes.length; i += lignesParFenetre) {
+    fenetres.push(lignes.slice(i, i + lignesParFenetre).join('\n'));
+  }
+  return fenetres;
+}
+
+// `paginer(texte) -> string[]` : absent = une fenêtre par réplique, telle
+// quelle (tests headless, et tout appelant qui n'a pas de quoi mesurer).
+export function creerDialogue({ paginer = null } = {}) {
   let lignes = [];
   let index = 0;
   let ouvert = false;
@@ -73,7 +126,12 @@ export function creerDialogue() {
 
   return {
     ouvrir(nouvellesLignes, { onFermer } = {}) {
-      lignes = nouvellesLignes;
+      // Une réplique devient autant d'entrées que de fenêtres, même locuteur :
+      // tout le reste (machine à écrire, armement, avancer) ne voit que des
+      // répliques, et n'a donc rien à apprendre.
+      lignes = paginer
+        ? nouvellesLignes.flatMap((l) => paginer(l.texte).map((texte) => ({ ...l, texte })))
+        : nouvellesLignes;
       index = 0;
       ouvert = lignes.length > 0;
       onFermeture = onFermer || null;

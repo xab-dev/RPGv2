@@ -41,3 +41,4 @@ nuit) sous Moyen **puis** sous Haut, forcés par `?qualite=`. Captures :
 | Commit | Ticket | Ce qui change |
 |---|---|---|
 | (ce commit) | `D-106`, `D-133` | `sur` sur un motif de décor ; rejet sans re-tirage (préfixe `D-114` intact) ; plus rien sur le parquet |
+| (ce commit) | `D-116` (1/3) | Haut : `densite_decor` 1 → **10** (le « ×10 » de `Q-53`), ~25 à 30 motifs par écran au lieu de 3 ou 4. Essais : ×5 ne se voyait pas, ×12 n'apportait rien de plus que ×10. Coût mesuré en marchant (`cout_calque.mjs`) : reconstruction moyenne **4,28 → 4,91 ms**, pic 5,8 → 7,0 ms, **0 frame > 20 ms** dans les deux cas. Réserve : un quart des motifs sont des cailloux gris, ce sont eux qui se voient le plus |

@@ -22,7 +22,7 @@
         "id": "haut",
         "cle_etat": "menu.etat.graphismes_haut",
         "cle_etat_auto": "menu.etat.graphismes_auto_haut",
-        "leviers": { "grain_sol": 1, "densite_decor": 1, "particules": 2 }
+        "leviers": { "grain_sol": 1, "densite_decor": 10, "particules": 2 }
       }
     ],
     "auto": {

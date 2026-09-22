@@ -172,3 +172,52 @@ seconde en dérive ses clés — deux listes finissent toujours par diverger (`D
 
 `npm test` : **125 fichiers verts**, dont le tour de dessin à faux contexte sur les trois états
 de poche (`D-71`).
+
+## T3 — L'herbe, troisième ressource de ramassage (`D-119`)
+
+**Données seules, aucune ligne de code du jeu.** `item_herbe` (catégorie ressource, XP de
+récolte 1 — `Q-45`), `visuel_touffe_herbe`, un bloc `spawn` sur les zones **campagne et
+champs** (donc à l'est : l'herbe est une raison d'aller là-bas, pas une branche de plus sur le
+chemin), trente points candidats posés par l'outil, et les deux locales.
+
+Le dessin suit la charte d'item (`D-82`) : posé (ombre portée), **trois valeurs** obtenues en
+glissant la même courbe, **un** accent — l'épi. Et il a fallu deux passes, pour la raison
+exacte que la refonte des stations avait nommée : la première version était **verte**, elle
+passait très bien au jugement isolé et se **noyait dans la pelouse** à la première capture en
+scène. Le remède n'est pas un contour plus sombre, c'est un **parti pris opposé** (règle
+`D-84`/`D-85`) : de l'herbe **sèche**, paille contre vert. Elle se détache d'un coup d'œil, se
+distingue de la branche sans hésitation (`V-64`), et dit au passage ce qu'elle deviendra —
+de la corde.
+
+Deux choses trouvées en route, et corrigées parce qu'elles bloquaient le ticket :
+
+**Un `D-72` tout frais, dans le code de T1.** `sousTitrePoche` avait été écrit dans le câblage
+du menu (`demarrerJeu`) alors que `capacitePoche` vit dans `creerOrchestrateurGrotte` — deux
+fonctions **sœurs**. `ReferenceError: capacitePoche is not defined` à chaque ouverture de
+l'écran Poche. Aucun test ne pouvait le voir (`demarrerJeu` n'est jamais exécuté headless) :
+c'est la **capture sous Chrome** qui l'a attrapé, exactement comme pour `D-72`. Remède
+identique : la fonction passe au **niveau module** (`texteRemplissagePoche`). Et le garde
+statique est **élargi** — il ne cherchait que des *appels* (`nom(`), or ici c'était une
+**lecture nue** (`capacitePoche.slots`, `obtenirItemDef` passé en argument). Il cherche
+désormais l'identifiant, appelé ou non, avec un **témoin** qui vérifie qu'il attrape bien les
+deux formes.
+
+**Un bug de l'outil de semis, latent depuis le 21/09.** `semer_points_ressources.mjs --ecrire`
+fait une écriture chirurgicale en texte, avec une marque de fin en `\n` — or `data/scenes.json`
+est en **CRLF** sous Windows. `indexOf` rendait -1, la découpe partait de l'octet 6, et le
+fichier se **dupliquait presque en entier** (six scènes au lieu de trois). Le témoin
+`JSON.parse` ne l'a pas vu : le résultat restait du JSON valide. L'outil lit désormais la
+convention de fin de ligne **du fichier qu'il modifie**, refuse d'écrire s'il ne trouve pas sa
+marque, et compte les scènes avant/après. Diff de l'écriture corrigée : **une ligne**.
+
+`npm test` : **125 fichiers verts**. Captures aux trois endroits de `D-91` (sol, poche, barre
+du bas) dans `docs/captures/items-2026-09-21/`.
+
+**`Q-68`, ouvert et à trancher par Xav** : l'herbe fait sauter le plafond des 30 % d'XP de
+récolte (28,9 % → **40 %** de Nv.0 → 5). Ce n'est pas un dérapage, c'est arithmétique — la
+marge n'était plus que d'**un point d'XP**, donc aucune troisième ressource de ramassage ne
+pouvait entrer sans le dépasser. Les deux décisions de Xav du 22/09 se contredisent ici
+(« herbe = 1 XP » et « le plafond des 30 % n'est pas rouvert »), et c'est à lui de dire
+laquelle prime. Rien n'a été réglé : les leviers (XP de l'herbe, `nb_au_sol`, le plafond
+lui-même) sont en données et n'ont pas été touchés ; le test affiche la part mesurée à chaque
+exécution pour que le chiffre ne se perde pas.

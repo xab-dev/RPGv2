@@ -217,6 +217,22 @@ export function lignesFicheItem(itemDef, registre, i18n) {
 // la Poche appelle enfin la vraie fonction au lieu d'en recopier la logique.
 export const SLOT_PAR_CATEGORIE = { nourriture: 'consommable', arme: 'arme' };
 
+// `D-118` : ce que la poche a d'occupé, en texte. AU NIVEAU MODULE, et c'est
+// `D-72` qui l'exige : `demarrerJeu` (qui câble le menu) et
+// `creerOrchestrateurGrotte` (qui tient la poche) sont deux fonctions SŒURS —
+// un nom déclaré dans l'une n'existe pas dans l'autre. Écrite d'abord dans le
+// câblage du menu, cette ligne levait `ReferenceError: capacitePoche is not
+// defined` à chaque ouverture de l'écran Poche, et aucun test ne pouvait le
+// voir : `demarrerJeu` n'est jamais exécuté headless. C'est la capture sous
+// Chrome qui l'a attrapée, comme pour `D-72`.
+export function texteRemplissagePoche(save, registre, i18n) {
+  const capacite = resoudreCapacite(registre.obtenir('conteneurs', ID_CONTENEUR_POCHE));
+  return i18n.t('menu.fiche.coffre_piles', {
+    n: slotsOccupes(save.inventaire.items, capacite, (id) => registre.obtenir('items', id)),
+    max: capacite.slots,
+  });
+}
+
 // --- Un slot d'équipement dit la vérité (`D-92` + `D-93`, T2) -------------
 //
 // LE PROBLÈME, tel que Xav l'a vu en jeu : l'épée rangée au coffre restait
@@ -3518,10 +3534,7 @@ export async function demarrerJeu() {
     // `D-118` : la poche dit ce qu'elle a d'occupé. Un seul calcul, celui du
     // module (`slotsOccupes`), donc ce nombre ne peut pas diverger de celui
     // qui refuse un ramassage.
-    sousTitrePoche: () => i18n.t('menu.fiche.coffre_piles', {
-      n: slotsOccupes(save.inventaire.items, capacitePoche, obtenirItemDef),
-      max: capacitePoche.slots,
-    }),
+    sousTitrePoche: () => texteRemplissagePoche(save, registre, i18n),
     listerPoche: () => Object.entries(save.inventaire.items)
       .filter(([, quantite]) => quantite > 0)
       .map(([itemId, quantite]) => {

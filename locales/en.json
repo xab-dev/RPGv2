@@ -76,6 +76,8 @@
   "item.plume.description": "A feather. It is of no use. You keep it anyway.",
   "item.branche": "Branch",
   "item.caillou": "Pebble",
+  "item.herbe": "Grass",
+  "item.herbe.description": "Long supple blades. Something to weave, one day.",
   "item.fruit": "Fruit",
   "hud.pv": "HP",
   "hud.eclats": "Shards",

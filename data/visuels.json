@@ -4,21 +4,408 @@
     "ancre": "centre",
     "echelle": 0.643,
     "teintable": true,
-    "ombre": {"dy":10.9,"w":17,"h":5,"alpha":0.38},
+    "ombre": {
+      "dy": 10.9,
+      "w": 17,
+      "h": 5,
+      "alpha": 0.38
+    },
     "primitives": [
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-10,10.4],[-8,11.4],[0,11.6],[8,11.4],[10,10.4],[9,5.6],[6.6,2.2],[3.4,1.2],[-3.6,1.2],[-6.8,2.2],[-9,5.6]],"couleur":"#080a0e"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-9,10],[-7.2,10.9],[0,11.1],[7.2,10.9],[9,10],[8.1,5.8],[6,3],[3.2,2.1],[-3.4,2.1],[-6.2,3],[-8.1,5.8]],"couleur":"#1a1f27"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-9,5.6],[-10,10.4],[-8.9,10.7],[-8.1,5.8]],"couleur":"#8ea0b6","alpha":0.32},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-9,5.6],[-6.8,2.2],[-6.1,2.9],[-8.1,5.9]],"couleur":"#8ea0b6","alpha":0.2},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[0,-10.95],[0.8,-11.5],[1.95,-11.42],[2.65,-10.8],[5.6,-5],[6.3,-0.4],[5.4,3.4],[3.4,5.2],[-3.6,5],[-5.4,2.8],[-6.1,-1.4],[-4.9,-5.8]],"couleur":"#080a0e"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[0.3,-10.3],[0.95,-10.75],[1.85,-10.68],[2.35,-10.15],[4.8,-4.8],[5.4,-0.4],[4.6,3],[3,4.4],[-3.2,4.3],[-4.6,2.5],[-5.2,-1.3],[-4.2,-5.4]],"couleur":"#1a1f27"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[1,-11.47],[0,-10.95],[-4.9,-5.8],[-6.1,-1.4],[-5.4,2.8],[-4.6,2.7],[-5.25,-1.3],[-4.15,-5.5],[0.6,-10.1],[1.2,-10.42]],"couleur":"#cdd8e6","alpha":0.5},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[1.9,-11.45],[2.65,-10.8],[5.6,-5],[6.3,-0.4],[5.45,-0.4],[4.8,-4.8],[2.15,-10.45]],"couleur":"#9fb2c8","alpha":0.3},
-      {"forme":"ellipse","dx":0.7,"dy":-0.1,"w":8,"h":8.2,"couleur":"#a8bacf","alpha":0.32},
-      {"forme":"ellipse","dx":0.7,"dy":0.4,"w":7.3,"h":7.5,"couleur":"#05070b"},
-      {"forme":"cercle","dx":0.7,"dy":0.2,"w":7.4,"couleur":"#cfe6ff","alpha":0.1,"teinte":true},
-      {"forme":"cercle","dx":0.7,"dy":0.2,"w":4.6,"couleur":"#cfe6ff","alpha":0.22,"teinte":true},
-      {"forme":"cercle","dx":0.7,"dy":0.2,"w":3.2,"couleur":"#cfe6ff","teinte":true}
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -10,
+            10.4
+          ],
+          [
+            -8,
+            11.4
+          ],
+          [
+            0,
+            11.6
+          ],
+          [
+            8,
+            11.4
+          ],
+          [
+            10,
+            10.4
+          ],
+          [
+            9,
+            5.6
+          ],
+          [
+            6.6,
+            2.2
+          ],
+          [
+            3.4,
+            1.2
+          ],
+          [
+            -3.6,
+            1.2
+          ],
+          [
+            -6.8,
+            2.2
+          ],
+          [
+            -9,
+            5.6
+          ]
+        ],
+        "couleur": "#080a0e"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -9,
+            10
+          ],
+          [
+            -7.2,
+            10.9
+          ],
+          [
+            0,
+            11.1
+          ],
+          [
+            7.2,
+            10.9
+          ],
+          [
+            9,
+            10
+          ],
+          [
+            8.1,
+            5.8
+          ],
+          [
+            6,
+            3
+          ],
+          [
+            3.2,
+            2.1
+          ],
+          [
+            -3.4,
+            2.1
+          ],
+          [
+            -6.2,
+            3
+          ],
+          [
+            -8.1,
+            5.8
+          ]
+        ],
+        "couleur": "#1a1f27"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -9,
+            5.6
+          ],
+          [
+            -10,
+            10.4
+          ],
+          [
+            -8.9,
+            10.7
+          ],
+          [
+            -8.1,
+            5.8
+          ]
+        ],
+        "couleur": "#8ea0b6",
+        "alpha": 0.32
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -9,
+            5.6
+          ],
+          [
+            -6.8,
+            2.2
+          ],
+          [
+            -6.1,
+            2.9
+          ],
+          [
+            -8.1,
+            5.9
+          ]
+        ],
+        "couleur": "#8ea0b6",
+        "alpha": 0.2
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0,
+            -10.95
+          ],
+          [
+            0.8,
+            -11.5
+          ],
+          [
+            1.95,
+            -11.42
+          ],
+          [
+            2.65,
+            -10.8
+          ],
+          [
+            5.6,
+            -5
+          ],
+          [
+            6.3,
+            -0.4
+          ],
+          [
+            5.4,
+            3.4
+          ],
+          [
+            3.4,
+            5.2
+          ],
+          [
+            -3.6,
+            5
+          ],
+          [
+            -5.4,
+            2.8
+          ],
+          [
+            -6.1,
+            -1.4
+          ],
+          [
+            -4.9,
+            -5.8
+          ]
+        ],
+        "couleur": "#080a0e"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0.3,
+            -10.3
+          ],
+          [
+            0.95,
+            -10.75
+          ],
+          [
+            1.85,
+            -10.68
+          ],
+          [
+            2.35,
+            -10.15
+          ],
+          [
+            4.8,
+            -4.8
+          ],
+          [
+            5.4,
+            -0.4
+          ],
+          [
+            4.6,
+            3
+          ],
+          [
+            3,
+            4.4
+          ],
+          [
+            -3.2,
+            4.3
+          ],
+          [
+            -4.6,
+            2.5
+          ],
+          [
+            -5.2,
+            -1.3
+          ],
+          [
+            -4.2,
+            -5.4
+          ]
+        ],
+        "couleur": "#1a1f27"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            1,
+            -11.47
+          ],
+          [
+            0,
+            -10.95
+          ],
+          [
+            -4.9,
+            -5.8
+          ],
+          [
+            -6.1,
+            -1.4
+          ],
+          [
+            -5.4,
+            2.8
+          ],
+          [
+            -4.6,
+            2.7
+          ],
+          [
+            -5.25,
+            -1.3
+          ],
+          [
+            -4.15,
+            -5.5
+          ],
+          [
+            0.6,
+            -10.1
+          ],
+          [
+            1.2,
+            -10.42
+          ]
+        ],
+        "couleur": "#cdd8e6",
+        "alpha": 0.5
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            1.9,
+            -11.45
+          ],
+          [
+            2.65,
+            -10.8
+          ],
+          [
+            5.6,
+            -5
+          ],
+          [
+            6.3,
+            -0.4
+          ],
+          [
+            5.45,
+            -0.4
+          ],
+          [
+            4.8,
+            -4.8
+          ],
+          [
+            2.15,
+            -10.45
+          ]
+        ],
+        "couleur": "#9fb2c8",
+        "alpha": 0.3
+      },
+      {
+        "forme": "ellipse",
+        "dx": 0.7,
+        "dy": -0.1,
+        "w": 8,
+        "h": 8.2,
+        "couleur": "#a8bacf",
+        "alpha": 0.32
+      },
+      {
+        "forme": "ellipse",
+        "dx": 0.7,
+        "dy": 0.4,
+        "w": 7.3,
+        "h": 7.5,
+        "couleur": "#05070b"
+      },
+      {
+        "forme": "cercle",
+        "dx": 0.7,
+        "dy": 0.2,
+        "w": 7.4,
+        "couleur": "#cfe6ff",
+        "alpha": 0.1,
+        "teinte": true
+      },
+      {
+        "forme": "cercle",
+        "dx": 0.7,
+        "dy": 0.2,
+        "w": 4.6,
+        "couleur": "#cfe6ff",
+        "alpha": 0.22,
+        "teinte": true
+      },
+      {
+        "forme": "cercle",
+        "dx": 0.7,
+        "dy": 0.2,
+        "w": 3.2,
+        "couleur": "#cfe6ff",
+        "teinte": true
+      }
     ]
   },
   {
@@ -26,11 +413,108 @@
     "ancre": "centre",
     "teintable": true,
     "primitives": [
-      { "forme": "polygone", "dx": 0, "dy": 0, "points": [[0, -7], [-7, 7], [7, 7]], "couleur": "#ff6a3d", "teinte": true },
-      { "forme": "polygone", "dx": 0, "dy": 1, "points": [[0, -3], [-3, 3], [3, 3]], "couleur": "#ffd9a0", "alpha": 0.45 },
-      { "forme": "cercle", "dx": 0, "dy": 1, "w": 17, "h": 17, "couleur": "#ff6a3d", "alpha": 0.16, "teinte": true },
-      { "forme": "polygone", "dx": 0, "dy": -9, "points": [[0, -4], [0.9, 0], [0, 4], [-0.9, 0]], "couleur": "#ffd9a0", "alpha": 0.55 },
-      { "forme": "polygone", "dx": -6, "dy": 6, "points": [[0, -3], [0.7, 0], [0, 3], [-0.7, 0]], "couleur": "#ffd9a0", "alpha": 0.35 }
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0,
+            -7
+          ],
+          [
+            -7,
+            7
+          ],
+          [
+            7,
+            7
+          ]
+        ],
+        "couleur": "#ff6a3d",
+        "teinte": true
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 1,
+        "points": [
+          [
+            0,
+            -3
+          ],
+          [
+            -3,
+            3
+          ],
+          [
+            3,
+            3
+          ]
+        ],
+        "couleur": "#ffd9a0",
+        "alpha": 0.45
+      },
+      {
+        "forme": "cercle",
+        "dx": 0,
+        "dy": 1,
+        "w": 17,
+        "h": 17,
+        "couleur": "#ff6a3d",
+        "alpha": 0.16,
+        "teinte": true
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": -9,
+        "points": [
+          [
+            0,
+            -4
+          ],
+          [
+            0.9,
+            0
+          ],
+          [
+            0,
+            4
+          ],
+          [
+            -0.9,
+            0
+          ]
+        ],
+        "couleur": "#ffd9a0",
+        "alpha": 0.55
+      },
+      {
+        "forme": "polygone",
+        "dx": -6,
+        "dy": 6,
+        "points": [
+          [
+            0,
+            -3
+          ],
+          [
+            0.7,
+            0
+          ],
+          [
+            0,
+            3
+          ],
+          [
+            -0.7,
+            0
+          ]
+        ],
+        "couleur": "#ffd9a0",
+        "alpha": 0.35
+      }
     ]
   },
   {
@@ -38,12 +522,105 @@
     "ancre": "centre",
     "teintable": true,
     "primitives": [
-      { "forme": "cercle", "dx": 0, "dy": 2, "w": 9.8, "h": 9.8, "couleur": "#3daaff", "teinte": true },
-      { "forme": "polygone", "dx": 0, "dy": 0, "points": [[0, -7], [-3.5, 0], [3.5, 0]], "couleur": "#3daaff", "teinte": true },
-      { "forme": "cercle", "dx": -1.5, "dy": 0.5, "w": 3, "h": 3, "couleur": "#e8f6ff", "alpha": 0.5 },
-      { "forme": "cercle", "dx": 0, "dy": 0, "w": 17, "h": 17, "couleur": "#3daaff", "alpha": 0.16, "teinte": true },
-      { "forme": "polygone", "dx": 0, "dy": -8, "points": [[0, -4], [0.9, 0], [0, 4], [-0.9, 0]], "couleur": "#e8f6ff", "alpha": 0.55 },
-      { "forme": "polygone", "dx": 6, "dy": 5, "points": [[0, -3], [0.7, 0], [0, 3], [-0.7, 0]], "couleur": "#e8f6ff", "alpha": 0.35 }
+      {
+        "forme": "cercle",
+        "dx": 0,
+        "dy": 2,
+        "w": 9.8,
+        "h": 9.8,
+        "couleur": "#3daaff",
+        "teinte": true
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0,
+            -7
+          ],
+          [
+            -3.5,
+            0
+          ],
+          [
+            3.5,
+            0
+          ]
+        ],
+        "couleur": "#3daaff",
+        "teinte": true
+      },
+      {
+        "forme": "cercle",
+        "dx": -1.5,
+        "dy": 0.5,
+        "w": 3,
+        "h": 3,
+        "couleur": "#e8f6ff",
+        "alpha": 0.5
+      },
+      {
+        "forme": "cercle",
+        "dx": 0,
+        "dy": 0,
+        "w": 17,
+        "h": 17,
+        "couleur": "#3daaff",
+        "alpha": 0.16,
+        "teinte": true
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": -8,
+        "points": [
+          [
+            0,
+            -4
+          ],
+          [
+            0.9,
+            0
+          ],
+          [
+            0,
+            4
+          ],
+          [
+            -0.9,
+            0
+          ]
+        ],
+        "couleur": "#e8f6ff",
+        "alpha": 0.55
+      },
+      {
+        "forme": "polygone",
+        "dx": 6,
+        "dy": 5,
+        "points": [
+          [
+            0,
+            -3
+          ],
+          [
+            0.7,
+            0
+          ],
+          [
+            0,
+            3
+          ],
+          [
+            -0.7,
+            0
+          ]
+        ],
+        "couleur": "#e8f6ff",
+        "alpha": 0.35
+      }
     ]
   },
   {
@@ -51,41 +628,251 @@
     "ancre": "centre",
     "teintable": true,
     "primitives": [
-      { "forme": "rect", "dx": 0, "dy": 0, "w": 11.6, "h": 11.6, "couleur": "#c2a23a", "teinte": true },
-      { "forme": "rect", "dx": -1.7, "dy": -1.7, "w": 5, "h": 5, "couleur": "#e8d488", "alpha": 0.4 },
-      { "forme": "cercle", "dx": 0, "dy": 0, "w": 17, "h": 17, "couleur": "#c2a23a", "alpha": 0.16, "teinte": true },
-      { "forme": "polygone", "dx": 0, "dy": -8, "points": [[0, -4], [0.9, 0], [0, 4], [-0.9, 0]], "couleur": "#f2e6b8", "alpha": 0.55 },
-      { "forme": "polygone", "dx": -6, "dy": 5, "points": [[0, -3], [0.7, 0], [0, 3], [-0.7, 0]], "couleur": "#f2e6b8", "alpha": 0.35 }
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": 0,
+        "w": 11.6,
+        "h": 11.6,
+        "couleur": "#c2a23a",
+        "teinte": true
+      },
+      {
+        "forme": "rect",
+        "dx": -1.7,
+        "dy": -1.7,
+        "w": 5,
+        "h": 5,
+        "couleur": "#e8d488",
+        "alpha": 0.4
+      },
+      {
+        "forme": "cercle",
+        "dx": 0,
+        "dy": 0,
+        "w": 17,
+        "h": 17,
+        "couleur": "#c2a23a",
+        "alpha": 0.16,
+        "teinte": true
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": -8,
+        "points": [
+          [
+            0,
+            -4
+          ],
+          [
+            0.9,
+            0
+          ],
+          [
+            0,
+            4
+          ],
+          [
+            -0.9,
+            0
+          ]
+        ],
+        "couleur": "#f2e6b8",
+        "alpha": 0.55
+      },
+      {
+        "forme": "polygone",
+        "dx": -6,
+        "dy": 5,
+        "points": [
+          [
+            0,
+            -3
+          ],
+          [
+            0.7,
+            0
+          ],
+          [
+            0,
+            3
+          ],
+          [
+            -0.7,
+            0
+          ]
+        ],
+        "couleur": "#f2e6b8",
+        "alpha": 0.35
+      }
     ]
   },
   {
     "id": "visuel_monstre_rampant",
     "ancre": "centre",
     "teintable": true,
-    "ombre": { "dy": 6, "w": 12, "h": 4, "alpha": 0.3 },
+    "ombre": {
+      "dy": 6,
+      "w": 12,
+      "h": 4,
+      "alpha": 0.3
+    },
     "primitives": [
-      { "forme": "polygone", "dx": 0, "dy": 0, "points": [[0, -8], [8, 0], [0, 8], [-8, 0]], "couleur": "#7a4a9e", "teinte": true },
-      { "forme": "polygone", "dx": 0, "dy": -1, "points": [[0, -4], [4, 0], [0, 2], [-4, 0]], "couleur": "#a488c9", "alpha": 0.4 }
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0,
+            -8
+          ],
+          [
+            8,
+            0
+          ],
+          [
+            0,
+            8
+          ],
+          [
+            -8,
+            0
+          ]
+        ],
+        "couleur": "#7a4a9e",
+        "teinte": true
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": -1,
+        "points": [
+          [
+            0,
+            -4
+          ],
+          [
+            4,
+            0
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            -4,
+            0
+          ]
+        ],
+        "couleur": "#a488c9",
+        "alpha": 0.4
+      }
     ]
   },
   {
     "id": "visuel_levier",
     "ancre": "bas",
     "teintable": true,
-    "ombre": { "dy": 2, "w": 10, "h": 3, "alpha": 0.3 },
+    "ombre": {
+      "dy": 2,
+      "w": 10,
+      "h": 3,
+      "alpha": 0.3
+    },
     "primitives": [
-      { "forme": "rect", "dx": 0, "dy": -6, "w": 3, "h": 12, "couleur": "#5a5044" },
-      { "forme": "cercle", "dx": 0, "dy": -12, "w": 6, "h": 6, "couleur": "#6b6b6b", "teinte": true }
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": -6,
+        "w": 3,
+        "h": 12,
+        "couleur": "#5a5044"
+      },
+      {
+        "forme": "cercle",
+        "dx": 0,
+        "dy": -12,
+        "w": 6,
+        "h": 6,
+        "couleur": "#6b6b6b",
+        "teinte": true
+      }
     ]
   },
   {
     "id": "visuel_herbe",
     "ancre": "bas",
     "primitives": [
-      { "forme": "ligne", "dx": -2, "dy": 0, "points": [[0, 0], [-1, -6]], "couleur": "#3a4a2e", "epaisseur": 1 },
-      { "forme": "ligne", "dx": 0, "dy": 0, "points": [[0, 0], [0, -8]], "couleur": "#465c34", "epaisseur": 1 },
-      { "forme": "ligne", "dx": 2, "dy": 0, "points": [[0, 0], [1, -5]], "couleur": "#3a4a2e", "epaisseur": 1 },
-      { "forme": "ligne", "dx": -1, "dy": 0, "points": [[0, 0], [0, -4]], "couleur": "#526638", "epaisseur": 1 }
+      {
+        "forme": "ligne",
+        "dx": -2,
+        "dy": 0,
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            -1,
+            -6
+          ]
+        ],
+        "couleur": "#3a4a2e",
+        "epaisseur": 1
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            -8
+          ]
+        ],
+        "couleur": "#465c34",
+        "epaisseur": 1
+      },
+      {
+        "forme": "ligne",
+        "dx": 2,
+        "dy": 0,
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            -5
+          ]
+        ],
+        "couleur": "#3a4a2e",
+        "epaisseur": 1
+      },
+      {
+        "forme": "ligne",
+        "dx": -1,
+        "dy": 0,
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            -4
+          ]
+        ],
+        "couleur": "#526638",
+        "epaisseur": 1
+      }
     ]
   },
   {
@@ -93,211 +880,2400 @@
     "ancre": "centre",
     "primitives": [
       {
-        "forme": "degrade_radial", "dx": 0, "dy": 0, "w": 22, "h": 12,
-        "degrade": { "stops": [
-          { "offset": 0, "couleur": "#4a5866", "alpha": 0.35 },
-          { "offset": 1, "couleur": "#4a5866", "alpha": 0 }
-        ] }
+        "forme": "degrade_radial",
+        "dx": 0,
+        "dy": 0,
+        "w": 22,
+        "h": 12,
+        "degrade": {
+          "stops": [
+            {
+              "offset": 0,
+              "couleur": "#4a5866",
+              "alpha": 0.35
+            },
+            {
+              "offset": 1,
+              "couleur": "#4a5866",
+              "alpha": 0
+            }
+          ]
+        }
       },
-      { "forme": "ellipse", "dx": -5, "dy": -2, "w": 6, "h": 3, "couleur": "#cfe0ea", "alpha": 0.15 }
+      {
+        "forme": "ellipse",
+        "dx": -5,
+        "dy": -2,
+        "w": 6,
+        "h": 3,
+        "couleur": "#cfe0ea",
+        "alpha": 0.15
+      }
     ]
   },
   {
     "id": "visuel_rocher_petit",
     "ancre": "bas",
-    "ombre": { "dy": 1, "w": 10, "h": 3, "alpha": 0.3 },
+    "ombre": {
+      "dy": 1,
+      "w": 10,
+      "h": 3,
+      "alpha": 0.3
+    },
     "primitives": [
-      { "forme": "polygone", "dx": 0, "dy": -3, "points": [[-5, 3], [-3, -4], [3, -5], [5, 2], [1, 4]], "couleur": "#6b6b6b" },
-      { "forme": "polygone", "dx": -1, "dy": -4, "points": [[-3, 0], [-1, -3], [2, -2], [0, 0]], "couleur": "#8a8a8a", "alpha": 0.5 }
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": -3,
+        "points": [
+          [
+            -5,
+            3
+          ],
+          [
+            -3,
+            -4
+          ],
+          [
+            3,
+            -5
+          ],
+          [
+            5,
+            2
+          ],
+          [
+            1,
+            4
+          ]
+        ],
+        "couleur": "#6b6b6b"
+      },
+      {
+        "forme": "polygone",
+        "dx": -1,
+        "dy": -4,
+        "points": [
+          [
+            -3,
+            0
+          ],
+          [
+            -1,
+            -3
+          ],
+          [
+            2,
+            -2
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "couleur": "#8a8a8a",
+        "alpha": 0.5
+      }
     ]
   },
   {
     "id": "visuel_rocher_grand",
     "ancre": "bas",
-    "ombre": { "dy": 2, "w": 16, "h": 4, "alpha": 0.3 },
+    "ombre": {
+      "dy": 2,
+      "w": 16,
+      "h": 4,
+      "alpha": 0.3
+    },
     "primitives": [
-      { "forme": "polygone", "dx": 0, "dy": -5, "points": [[-8, 5], [-5, -6], [5, -8], [8, 3], [2, 6]], "couleur": "#666666" },
-      { "forme": "polygone", "dx": -2, "dy": -6, "points": [[-5, 0], [-1, -5], [3, -3], [0, 0]], "couleur": "#868686", "alpha": 0.5 }
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": -5,
+        "points": [
+          [
+            -8,
+            5
+          ],
+          [
+            -5,
+            -6
+          ],
+          [
+            5,
+            -8
+          ],
+          [
+            8,
+            3
+          ],
+          [
+            2,
+            6
+          ]
+        ],
+        "couleur": "#666666"
+      },
+      {
+        "forme": "polygone",
+        "dx": -2,
+        "dy": -6,
+        "points": [
+          [
+            -5,
+            0
+          ],
+          [
+            -1,
+            -5
+          ],
+          [
+            3,
+            -3
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "couleur": "#868686",
+        "alpha": 0.5
+      }
     ]
   },
   {
     "id": "visuel_arbre",
     "ancre": "bas",
-    "ombre": { "dy": 1, "w": 18, "h": 5, "alpha": 0.3 },
+    "ombre": {
+      "dy": 1,
+      "w": 18,
+      "h": 5,
+      "alpha": 0.3
+    },
     "primitives": [
-      { "forme": "rect", "dx": 0, "dy": -8, "w": 6, "h": 16, "couleur": "#5a4530" },
-      { "forme": "cercle", "dx": 0, "dy": -22, "w": 30, "h": 30, "couleur": "#3d6a2c" },
-      { "forme": "cercle", "dx": -5, "dy": -27, "w": 12, "h": 12, "couleur": "#4d7d38", "alpha": 0.5 }
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": -8,
+        "w": 6,
+        "h": 16,
+        "couleur": "#5a4530"
+      },
+      {
+        "forme": "cercle",
+        "dx": 0,
+        "dy": -22,
+        "w": 30,
+        "h": 30,
+        "couleur": "#3d6a2c"
+      },
+      {
+        "forme": "cercle",
+        "dx": -5,
+        "dy": -27,
+        "w": 12,
+        "h": 12,
+        "couleur": "#4d7d38",
+        "alpha": 0.5
+      }
     ]
   },
   {
     "id": "visuel_arbre_fruitier",
     "ancre": "bas",
-    "ombre": { "dy": 1, "w": 18, "h": 5, "alpha": 0.3 },
+    "ombre": {
+      "dy": 1,
+      "w": 18,
+      "h": 5,
+      "alpha": 0.3
+    },
     "primitives": [
-      { "forme": "rect", "dx": 0, "dy": -8, "w": 6, "h": 16, "couleur": "#5a4530" },
-      { "forme": "cercle", "dx": 0, "dy": -22, "w": 28, "h": 28, "couleur": "#4a7d3a" },
-      { "forme": "cercle", "dx": -6, "dy": -18, "w": 5, "h": 5, "couleur": "#d94a3d" },
-      { "forme": "cercle", "dx": 5, "dy": -14, "w": 5, "h": 5, "couleur": "#d94a3d" },
-      { "forme": "cercle", "dx": 2, "dy": -26, "w": 5, "h": 5, "couleur": "#d94a3d" }
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": -8,
+        "w": 6,
+        "h": 16,
+        "couleur": "#5a4530"
+      },
+      {
+        "forme": "cercle",
+        "dx": 0,
+        "dy": -22,
+        "w": 28,
+        "h": 28,
+        "couleur": "#4a7d3a"
+      },
+      {
+        "forme": "cercle",
+        "dx": -6,
+        "dy": -18,
+        "w": 5,
+        "h": 5,
+        "couleur": "#d94a3d"
+      },
+      {
+        "forme": "cercle",
+        "dx": 5,
+        "dy": -14,
+        "w": 5,
+        "h": 5,
+        "couleur": "#d94a3d"
+      },
+      {
+        "forme": "cercle",
+        "dx": 2,
+        "dy": -26,
+        "w": 5,
+        "h": 5,
+        "couleur": "#d94a3d"
+      }
     ]
   },
   {
     "id": "visuel_plume",
     "ancre": "centre",
-    "ombre": {"dy":5.4,"w":8,"h":2.4,"alpha":0.24},
+    "ombre": {
+      "dy": 5.4,
+      "w": 8,
+      "h": 2.4,
+      "alpha": 0.24
+    },
     "primitives": [
-      {"forme":"ligne","dx":0,"dy":0,"points":[[-3.63,4.99],[1.92,-2.93]],"couleur":"#6f6757","epaisseur":1.1},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[-3.87,4.82],[1.67,-3.1]],"couleur":"#d8d2c4","epaisseur":1.4},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[-3.92,4.25],[1.12,-2.95]],"couleur":"#f4efe4","epaisseur":0.45},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[-3.78,4.75],[-3.02,3.67]],"couleur":"#b9995f","epaisseur":1.6},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[-3.96,4.42],[-3.4,3.61]],"couleur":"#e0c98f","epaisseur":0.4},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[-2.46,2.8],[-3.88,1.32]],"couleur":"#eae5da","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[-3.67,1.53],[-4.19,0.99]],"couleur":"#3a342c","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[-1.9,2],[-3.52,0.16]],"couleur":"#eae5da","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[-3.32,0.39],[-3.82,-0.18]],"couleur":"#3a342c","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[-1.34,1.2],[-3.14,-1.01]],"couleur":"#eae5da","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[-2.95,-0.78],[-3.42,-1.36]],"couleur":"#3a342c","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[-0.78,0.4],[-2.59,-2]],"couleur":"#eae5da","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[-2.41,-1.76],[-2.86,-2.36]],"couleur":"#3a342c","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[-0.22,-0.4],[-1.88,-2.8]],"couleur":"#eae5da","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[-1.71,-2.55],[-2.14,-3.17]],"couleur":"#3a342c","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[0.34,-1.2],[-1.13,-3.52]],"couleur":"#eae5da","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[-0.97,-3.27],[-1.38,-3.9]],"couleur":"#3a342c","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[0.9,-2],[-0.25,-4.05]],"couleur":"#eae5da","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[-0.1,-3.79],[-0.47,-4.44]],"couleur":"#3a342c","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[1.46,-2.8],[0.59,-4.55]],"couleur":"#eae5da","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[0.73,-4.28],[0.39,-4.95]],"couleur":"#3a342c","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[2.02,-3.6],[1.57,-4.63]],"couleur":"#eae5da","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[1.69,-4.36],[1.39,-5.04]],"couleur":"#3a342c","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[2.58,-4.4],[2.47,-4.68]],"couleur":"#eae5da","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[2.58,-4.4],[2.31,-5.1]],"couleur":"#3a342c","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[-2.18,2.4],[-0.51,3.09]],"couleur":"#c9c2b2","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[-0.79,2.98],[-0.09,3.27]],"couleur":"#2b261f","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[-1.62,1.6],[0.38,2.34]],"couleur":"#c9c2b2","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[0.1,2.23],[0.8,2.49]],"couleur":"#2b261f","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[-1.06,0.8],[1.27,1.56]],"couleur":"#c9c2b2","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[0.98,1.46],[1.7,1.7]],"couleur":"#2b261f","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[-0.5,0],[1.77,0.64]],"couleur":"#c9c2b2","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[1.48,0.56],[2.2,0.77]],"couleur":"#2b261f","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[0.06,-0.8],[2.27,-0.26]],"couleur":"#c9c2b2","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[1.98,-0.33],[2.7,-0.15]],"couleur":"#2b261f","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[0.62,-1.6],[2.57,-1.23]],"couleur":"#c9c2b2","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[2.27,-1.28],[3.01,-1.14]],"couleur":"#2b261f","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[1.18,-2.4],[2.79,-2.18]],"couleur":"#c9c2b2","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[2.5,-2.22],[3.24,-2.12]],"couleur":"#2b261f","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[1.74,-3.2],[2.86,-3.1]],"couleur":"#c9c2b2","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[2.56,-3.13],[3.31,-3.06]],"couleur":"#2b261f","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[2.3,-4],[2.77,-3.98]],"couleur":"#c9c2b2","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[2.47,-3.99],[3.22,-3.96]],"couleur":"#2b261f","epaisseur":0.95}
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -3.63,
+            4.99
+          ],
+          [
+            1.92,
+            -2.93
+          ]
+        ],
+        "couleur": "#6f6757",
+        "epaisseur": 1.1
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -3.87,
+            4.82
+          ],
+          [
+            1.67,
+            -3.1
+          ]
+        ],
+        "couleur": "#d8d2c4",
+        "epaisseur": 1.4
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -3.92,
+            4.25
+          ],
+          [
+            1.12,
+            -2.95
+          ]
+        ],
+        "couleur": "#f4efe4",
+        "epaisseur": 0.45
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -3.78,
+            4.75
+          ],
+          [
+            -3.02,
+            3.67
+          ]
+        ],
+        "couleur": "#b9995f",
+        "epaisseur": 1.6
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -3.96,
+            4.42
+          ],
+          [
+            -3.4,
+            3.61
+          ]
+        ],
+        "couleur": "#e0c98f",
+        "epaisseur": 0.4
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -2.46,
+            2.8
+          ],
+          [
+            -3.88,
+            1.32
+          ]
+        ],
+        "couleur": "#eae5da",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -3.67,
+            1.53
+          ],
+          [
+            -4.19,
+            0.99
+          ]
+        ],
+        "couleur": "#3a342c",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -1.9,
+            2
+          ],
+          [
+            -3.52,
+            0.16
+          ]
+        ],
+        "couleur": "#eae5da",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -3.32,
+            0.39
+          ],
+          [
+            -3.82,
+            -0.18
+          ]
+        ],
+        "couleur": "#3a342c",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -1.34,
+            1.2
+          ],
+          [
+            -3.14,
+            -1.01
+          ]
+        ],
+        "couleur": "#eae5da",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -2.95,
+            -0.78
+          ],
+          [
+            -3.42,
+            -1.36
+          ]
+        ],
+        "couleur": "#3a342c",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -0.78,
+            0.4
+          ],
+          [
+            -2.59,
+            -2
+          ]
+        ],
+        "couleur": "#eae5da",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -2.41,
+            -1.76
+          ],
+          [
+            -2.86,
+            -2.36
+          ]
+        ],
+        "couleur": "#3a342c",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -0.22,
+            -0.4
+          ],
+          [
+            -1.88,
+            -2.8
+          ]
+        ],
+        "couleur": "#eae5da",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -1.71,
+            -2.55
+          ],
+          [
+            -2.14,
+            -3.17
+          ]
+        ],
+        "couleur": "#3a342c",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0.34,
+            -1.2
+          ],
+          [
+            -1.13,
+            -3.52
+          ]
+        ],
+        "couleur": "#eae5da",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -0.97,
+            -3.27
+          ],
+          [
+            -1.38,
+            -3.9
+          ]
+        ],
+        "couleur": "#3a342c",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0.9,
+            -2
+          ],
+          [
+            -0.25,
+            -4.05
+          ]
+        ],
+        "couleur": "#eae5da",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -0.1,
+            -3.79
+          ],
+          [
+            -0.47,
+            -4.44
+          ]
+        ],
+        "couleur": "#3a342c",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            1.46,
+            -2.8
+          ],
+          [
+            0.59,
+            -4.55
+          ]
+        ],
+        "couleur": "#eae5da",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0.73,
+            -4.28
+          ],
+          [
+            0.39,
+            -4.95
+          ]
+        ],
+        "couleur": "#3a342c",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            2.02,
+            -3.6
+          ],
+          [
+            1.57,
+            -4.63
+          ]
+        ],
+        "couleur": "#eae5da",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            1.69,
+            -4.36
+          ],
+          [
+            1.39,
+            -5.04
+          ]
+        ],
+        "couleur": "#3a342c",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            2.58,
+            -4.4
+          ],
+          [
+            2.47,
+            -4.68
+          ]
+        ],
+        "couleur": "#eae5da",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            2.58,
+            -4.4
+          ],
+          [
+            2.31,
+            -5.1
+          ]
+        ],
+        "couleur": "#3a342c",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -2.18,
+            2.4
+          ],
+          [
+            -0.51,
+            3.09
+          ]
+        ],
+        "couleur": "#c9c2b2",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -0.79,
+            2.98
+          ],
+          [
+            -0.09,
+            3.27
+          ]
+        ],
+        "couleur": "#2b261f",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -1.62,
+            1.6
+          ],
+          [
+            0.38,
+            2.34
+          ]
+        ],
+        "couleur": "#c9c2b2",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0.1,
+            2.23
+          ],
+          [
+            0.8,
+            2.49
+          ]
+        ],
+        "couleur": "#2b261f",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -1.06,
+            0.8
+          ],
+          [
+            1.27,
+            1.56
+          ]
+        ],
+        "couleur": "#c9c2b2",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0.98,
+            1.46
+          ],
+          [
+            1.7,
+            1.7
+          ]
+        ],
+        "couleur": "#2b261f",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -0.5,
+            0
+          ],
+          [
+            1.77,
+            0.64
+          ]
+        ],
+        "couleur": "#c9c2b2",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            1.48,
+            0.56
+          ],
+          [
+            2.2,
+            0.77
+          ]
+        ],
+        "couleur": "#2b261f",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0.06,
+            -0.8
+          ],
+          [
+            2.27,
+            -0.26
+          ]
+        ],
+        "couleur": "#c9c2b2",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            1.98,
+            -0.33
+          ],
+          [
+            2.7,
+            -0.15
+          ]
+        ],
+        "couleur": "#2b261f",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0.62,
+            -1.6
+          ],
+          [
+            2.57,
+            -1.23
+          ]
+        ],
+        "couleur": "#c9c2b2",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            2.27,
+            -1.28
+          ],
+          [
+            3.01,
+            -1.14
+          ]
+        ],
+        "couleur": "#2b261f",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            1.18,
+            -2.4
+          ],
+          [
+            2.79,
+            -2.18
+          ]
+        ],
+        "couleur": "#c9c2b2",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            2.5,
+            -2.22
+          ],
+          [
+            3.24,
+            -2.12
+          ]
+        ],
+        "couleur": "#2b261f",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            1.74,
+            -3.2
+          ],
+          [
+            2.86,
+            -3.1
+          ]
+        ],
+        "couleur": "#c9c2b2",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            2.56,
+            -3.13
+          ],
+          [
+            3.31,
+            -3.06
+          ]
+        ],
+        "couleur": "#2b261f",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            2.3,
+            -4
+          ],
+          [
+            2.77,
+            -3.98
+          ]
+        ],
+        "couleur": "#c9c2b2",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            2.47,
+            -3.99
+          ],
+          [
+            3.22,
+            -3.96
+          ]
+        ],
+        "couleur": "#2b261f",
+        "epaisseur": 0.95
+      }
     ]
   },
   {
     "id": "visuel_branche",
     "ancre": "centre",
-    "ombre": {"dy":4.3,"w":12.2,"h":2.7,"alpha":0.22},
+    "ombre": {
+      "dy": 4.3,
+      "w": 12.2,
+      "h": 2.7,
+      "alpha": 0.22
+    },
     "primitives": [
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-6.86,1.81],[-4.71,0.91],[-2.57,0],[-0.43,-0.9],[1.71,-1.8],[3.85,-2.7],[6,-3.6],[6.4,-2.8],[4.41,-1.6],[2.42,-0.4],[0.43,0.8],[-1.56,2],[-3.55,3.19],[-5.54,4.39]],"couleur":"#4f3a26"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-6.87,1.79],[-4.74,0.86],[-2.61,-0.07],[-0.48,-0.99],[1.65,-1.92],[3.78,-2.85],[5.91,-3.78],[6.24,-3.12],[4.24,-1.95],[2.23,-0.78],[0.23,0.39],[-1.78,1.57],[-3.78,2.74],[-5.79,3.91]],"couleur":"#7a5c3e"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-6.01,1.64],[-4.1,0.74],[-2.19,-0.17],[-0.29,-1.07],[1.62,-1.98],[3.53,-2.88],[5.43,-3.79],[5.57,-3.52],[3.72,-2.51],[1.86,-1.5],[0.01,-0.5],[-1.85,0.51],[-3.7,1.51],[-5.56,2.52]],"couleur":"#9c7a52"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-0.62,-0.61],[-0.04,-1.24],[0.55,-1.87],[1.13,-2.49],[1.71,-3.12],[2.3,-3.75],[2.88,-4.37],[3.32,-4.03],[2.85,-3.31],[2.37,-2.6],[1.9,-1.89],[1.43,-1.17],[0.95,-0.46],[0.48,0.25]],"couleur":"#4f3a26"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-0.6,-0.6],[-0.03,-1.24],[0.54,-1.88],[1.1,-2.51],[1.67,-3.15],[2.24,-3.79],[2.81,-4.43],[3.14,-4.17],[2.65,-3.47],[2.16,-2.77],[1.67,-2.06],[1.19,-1.36],[0.7,-0.66],[0.21,0.04]],"couleur":"#7a5c3e"},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[-3.1,0.91],[-2.14,1.88]],"couleur":"#3f2e1e","epaisseur":0.45},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[-0.7,-0.2],[0.16,0.56]],"couleur":"#3f2e1e","epaisseur":0.45},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[2.6,-1.69],[3.28,-1.27]],"couleur":"#3f2e1e","epaisseur":0.45},
-      {"forme":"ellipse","dx":-6.2,"dy":3.1,"w":0.95,"h":2.4,"rotation":-26.93,"couleur":"#c9a97a"},
-      {"forme":"ellipse","dx":-6.09,"dy":3.05,"w":0.45,"h":1.3,"rotation":-26.93,"couleur":"#8a6b45"}
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -6.86,
+            1.81
+          ],
+          [
+            -4.71,
+            0.91
+          ],
+          [
+            -2.57,
+            0
+          ],
+          [
+            -0.43,
+            -0.9
+          ],
+          [
+            1.71,
+            -1.8
+          ],
+          [
+            3.85,
+            -2.7
+          ],
+          [
+            6,
+            -3.6
+          ],
+          [
+            6.4,
+            -2.8
+          ],
+          [
+            4.41,
+            -1.6
+          ],
+          [
+            2.42,
+            -0.4
+          ],
+          [
+            0.43,
+            0.8
+          ],
+          [
+            -1.56,
+            2
+          ],
+          [
+            -3.55,
+            3.19
+          ],
+          [
+            -5.54,
+            4.39
+          ]
+        ],
+        "couleur": "#4f3a26"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -6.87,
+            1.79
+          ],
+          [
+            -4.74,
+            0.86
+          ],
+          [
+            -2.61,
+            -0.07
+          ],
+          [
+            -0.48,
+            -0.99
+          ],
+          [
+            1.65,
+            -1.92
+          ],
+          [
+            3.78,
+            -2.85
+          ],
+          [
+            5.91,
+            -3.78
+          ],
+          [
+            6.24,
+            -3.12
+          ],
+          [
+            4.24,
+            -1.95
+          ],
+          [
+            2.23,
+            -0.78
+          ],
+          [
+            0.23,
+            0.39
+          ],
+          [
+            -1.78,
+            1.57
+          ],
+          [
+            -3.78,
+            2.74
+          ],
+          [
+            -5.79,
+            3.91
+          ]
+        ],
+        "couleur": "#7a5c3e"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -6.01,
+            1.64
+          ],
+          [
+            -4.1,
+            0.74
+          ],
+          [
+            -2.19,
+            -0.17
+          ],
+          [
+            -0.29,
+            -1.07
+          ],
+          [
+            1.62,
+            -1.98
+          ],
+          [
+            3.53,
+            -2.88
+          ],
+          [
+            5.43,
+            -3.79
+          ],
+          [
+            5.57,
+            -3.52
+          ],
+          [
+            3.72,
+            -2.51
+          ],
+          [
+            1.86,
+            -1.5
+          ],
+          [
+            0.01,
+            -0.5
+          ],
+          [
+            -1.85,
+            0.51
+          ],
+          [
+            -3.7,
+            1.51
+          ],
+          [
+            -5.56,
+            2.52
+          ]
+        ],
+        "couleur": "#9c7a52"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -0.62,
+            -0.61
+          ],
+          [
+            -0.04,
+            -1.24
+          ],
+          [
+            0.55,
+            -1.87
+          ],
+          [
+            1.13,
+            -2.49
+          ],
+          [
+            1.71,
+            -3.12
+          ],
+          [
+            2.3,
+            -3.75
+          ],
+          [
+            2.88,
+            -4.37
+          ],
+          [
+            3.32,
+            -4.03
+          ],
+          [
+            2.85,
+            -3.31
+          ],
+          [
+            2.37,
+            -2.6
+          ],
+          [
+            1.9,
+            -1.89
+          ],
+          [
+            1.43,
+            -1.17
+          ],
+          [
+            0.95,
+            -0.46
+          ],
+          [
+            0.48,
+            0.25
+          ]
+        ],
+        "couleur": "#4f3a26"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -0.6,
+            -0.6
+          ],
+          [
+            -0.03,
+            -1.24
+          ],
+          [
+            0.54,
+            -1.88
+          ],
+          [
+            1.1,
+            -2.51
+          ],
+          [
+            1.67,
+            -3.15
+          ],
+          [
+            2.24,
+            -3.79
+          ],
+          [
+            2.81,
+            -4.43
+          ],
+          [
+            3.14,
+            -4.17
+          ],
+          [
+            2.65,
+            -3.47
+          ],
+          [
+            2.16,
+            -2.77
+          ],
+          [
+            1.67,
+            -2.06
+          ],
+          [
+            1.19,
+            -1.36
+          ],
+          [
+            0.7,
+            -0.66
+          ],
+          [
+            0.21,
+            0.04
+          ]
+        ],
+        "couleur": "#7a5c3e"
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -3.1,
+            0.91
+          ],
+          [
+            -2.14,
+            1.88
+          ]
+        ],
+        "couleur": "#3f2e1e",
+        "epaisseur": 0.45
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -0.7,
+            -0.2
+          ],
+          [
+            0.16,
+            0.56
+          ]
+        ],
+        "couleur": "#3f2e1e",
+        "epaisseur": 0.45
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            2.6,
+            -1.69
+          ],
+          [
+            3.28,
+            -1.27
+          ]
+        ],
+        "couleur": "#3f2e1e",
+        "epaisseur": 0.45
+      },
+      {
+        "forme": "ellipse",
+        "dx": -6.2,
+        "dy": 3.1,
+        "w": 0.95,
+        "h": 2.4,
+        "rotation": -26.93,
+        "couleur": "#c9a97a"
+      },
+      {
+        "forme": "ellipse",
+        "dx": -6.09,
+        "dy": 3.05,
+        "w": 0.45,
+        "h": 1.3,
+        "rotation": -26.93,
+        "couleur": "#8a6b45"
+      }
+    ]
+  },
+  {
+    "id": "visuel_touffe_herbe",
+    "ancre": "centre",
+    "ombre": {
+      "dy": 4.5,
+      "w": 9.4,
+      "h": 2.4,
+      "alpha": 0.22
+    },
+    "primitives": [
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -1.15,
+            4.25
+          ],
+          [
+            -3.3,
+            1.9
+          ],
+          [
+            -5.35,
+            -1.1
+          ]
+        ],
+        "couleur": "#5a4a20",
+        "epaisseur": 1.5
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -0.6,
+            4.25
+          ],
+          [
+            -1.9,
+            0.6
+          ],
+          [
+            -2.75,
+            -3.7
+          ]
+        ],
+        "couleur": "#5a4a20",
+        "epaisseur": 1.5
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0.0,
+            4.25
+          ],
+          [
+            0.1,
+            0.0
+          ],
+          [
+            0.45,
+            -5.0
+          ]
+        ],
+        "couleur": "#5a4a20",
+        "epaisseur": 1.5
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0.6,
+            4.25
+          ],
+          [
+            1.9,
+            0.5
+          ],
+          [
+            3.3,
+            -3.1
+          ]
+        ],
+        "couleur": "#5a4a20",
+        "epaisseur": 1.5
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            1.15,
+            4.25
+          ],
+          [
+            3.4,
+            1.8
+          ],
+          [
+            5.5,
+            -0.5
+          ]
+        ],
+        "couleur": "#5a4a20",
+        "epaisseur": 1.5
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -1.3,
+            4.05
+          ],
+          [
+            -3.45,
+            1.7
+          ],
+          [
+            -5.5,
+            -1.3
+          ]
+        ],
+        "couleur": "#a8863c",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -0.75,
+            4.05
+          ],
+          [
+            -2.05,
+            0.4
+          ],
+          [
+            -2.9,
+            -3.9
+          ]
+        ],
+        "couleur": "#a8863c",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -0.15,
+            4.05
+          ],
+          [
+            -0.05,
+            -0.2
+          ],
+          [
+            0.3,
+            -5.2
+          ]
+        ],
+        "couleur": "#a8863c",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0.45,
+            4.05
+          ],
+          [
+            1.75,
+            0.3
+          ],
+          [
+            3.15,
+            -3.3
+          ]
+        ],
+        "couleur": "#a8863c",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            1.0,
+            4.05
+          ],
+          [
+            3.25,
+            1.6
+          ],
+          [
+            5.35,
+            -0.7
+          ]
+        ],
+        "couleur": "#a8863c",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -0.9,
+            3.85
+          ],
+          [
+            -2.2,
+            0.2
+          ],
+          [
+            -3.05,
+            -4.1
+          ]
+        ],
+        "couleur": "#dcc271",
+        "epaisseur": 0.45
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -0.3,
+            3.85
+          ],
+          [
+            -0.2,
+            -0.4
+          ],
+          [
+            0.15,
+            -5.4
+          ]
+        ],
+        "couleur": "#dcc271",
+        "epaisseur": 0.45
+      },
+      {
+        "forme": "ellipse",
+        "dx": 0.45,
+        "dy": -4.6,
+        "w": 1.5,
+        "h": 2.6,
+        "rotation": 6,
+        "couleur": "#7a5f24"
+      },
+      {
+        "forme": "ellipse",
+        "dx": 0.3,
+        "dy": -4.75,
+        "w": 1.0,
+        "h": 2.1,
+        "rotation": 6,
+        "couleur": "#f0e3ad"
+      }
     ]
   },
   {
     "id": "visuel_caillou",
     "ancre": "centre",
-    "ombre": {"dy":2.9,"w":7.6,"h":2.1,"alpha":0.26},
+    "ombre": {
+      "dy": 2.9,
+      "w": 7.6,
+      "h": 2.1,
+      "alpha": 0.26
+    },
     "primitives": [
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-4,0.5],[-3.3,-1.3],[-1.6,-2.5],[1.1,-2.7],[3.2,-1.7],[4,0.1],[3,2],[0.4,2.9],[-2.3,2.4]],"couleur":"#4f4a45"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-3.59,0],[-2.96,-1.62],[-1.43,-2.7],[1,-2.88],[2.89,-1.98],[3.61,-0.36],[2.71,1.35],[0.37,2.16],[-2.06,1.71]],"couleur":"#8d8781"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-2.73,-0.61],[-2.31,-1.69],[-1.29,-2.41],[0.33,-2.53],[1.59,-1.93],[2.07,-0.85],[1.47,0.29],[-0.09,0.83],[-1.71,0.53]],"couleur":"#a9a39a"},
-      {"forme":"ellipse","dx":-1.3,"dy":-1.35,"w":2.3,"h":1.15,"rotation":-22,"couleur":"#d2ccc2"},
-      {"forme":"ellipse","dx":1.5,"dy":0.9,"w":1.7,"h":0.6,"rotation":14,"couleur":"#6e6862","alpha":0.45},
-      {"forme":"ellipse","dx":-1.9,"dy":0.9,"w":1.2,"h":0.45,"rotation":-10,"couleur":"#6e6862","alpha":0.4}
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -4,
+            0.5
+          ],
+          [
+            -3.3,
+            -1.3
+          ],
+          [
+            -1.6,
+            -2.5
+          ],
+          [
+            1.1,
+            -2.7
+          ],
+          [
+            3.2,
+            -1.7
+          ],
+          [
+            4,
+            0.1
+          ],
+          [
+            3,
+            2
+          ],
+          [
+            0.4,
+            2.9
+          ],
+          [
+            -2.3,
+            2.4
+          ]
+        ],
+        "couleur": "#4f4a45"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -3.59,
+            0
+          ],
+          [
+            -2.96,
+            -1.62
+          ],
+          [
+            -1.43,
+            -2.7
+          ],
+          [
+            1,
+            -2.88
+          ],
+          [
+            2.89,
+            -1.98
+          ],
+          [
+            3.61,
+            -0.36
+          ],
+          [
+            2.71,
+            1.35
+          ],
+          [
+            0.37,
+            2.16
+          ],
+          [
+            -2.06,
+            1.71
+          ]
+        ],
+        "couleur": "#8d8781"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -2.73,
+            -0.61
+          ],
+          [
+            -2.31,
+            -1.69
+          ],
+          [
+            -1.29,
+            -2.41
+          ],
+          [
+            0.33,
+            -2.53
+          ],
+          [
+            1.59,
+            -1.93
+          ],
+          [
+            2.07,
+            -0.85
+          ],
+          [
+            1.47,
+            0.29
+          ],
+          [
+            -0.09,
+            0.83
+          ],
+          [
+            -1.71,
+            0.53
+          ]
+        ],
+        "couleur": "#a9a39a"
+      },
+      {
+        "forme": "ellipse",
+        "dx": -1.3,
+        "dy": -1.35,
+        "w": 2.3,
+        "h": 1.15,
+        "rotation": -22,
+        "couleur": "#d2ccc2"
+      },
+      {
+        "forme": "ellipse",
+        "dx": 1.5,
+        "dy": 0.9,
+        "w": 1.7,
+        "h": 0.6,
+        "rotation": 14,
+        "couleur": "#6e6862",
+        "alpha": 0.45
+      },
+      {
+        "forme": "ellipse",
+        "dx": -1.9,
+        "dy": 0.9,
+        "w": 1.2,
+        "h": 0.45,
+        "rotation": -10,
+        "couleur": "#6e6862",
+        "alpha": 0.4
+      }
     ]
   },
   {
     "id": "visuel_fruit",
     "ancre": "centre",
-    "ombre": {"dy":4.1,"w":7.4,"h":2.2,"alpha":0.26},
+    "ombre": {
+      "dy": 4.1,
+      "w": 7.4,
+      "h": 2.2,
+      "alpha": 0.26
+    },
     "primitives": [
-      {"forme":"ellipse","dx":0,"dy":0.02,"w":8,"h":7.9,"couleur":"#a8362a"},
-      {"forme":"ellipse","dx":-0.35,"dy":-0.35,"w":7.1,"h":7,"couleur":"#d94a3d"},
-      {"forme":"ellipse","dx":-0.9,"dy":-0.95,"w":5,"h":4.6,"couleur":"#e8705c"},
-      {"forme":"ellipse","dx":-1.35,"dy":-1.5,"w":2.2,"h":1.7,"couleur":"#ffc2b2","rotation":-20},
-      {"forme":"ellipse","dx":0.2,"dy":-3.1,"w":2.6,"h":1.1,"couleur":"#8e2d23","alpha":0.75},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[0.3,-3.2],[0.75,-5.9]],"couleur":"#4f3a26","epaisseur":0.95},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[0.15,-3.3],[0.5,-5.7]],"couleur":"#8a6b45","epaisseur":0.45},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[0.6,-4.5],[2.2,-5.5],[3.5,-4.6],[2.1,-3.7],[1,-3.9]],"couleur":"#4a7d3a"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[0.9,-4.4],[2.2,-5.1],[3,-4.6],[1.9,-4.1]],"couleur":"#67a04f"}
+      {
+        "forme": "ellipse",
+        "dx": 0,
+        "dy": 0.02,
+        "w": 8,
+        "h": 7.9,
+        "couleur": "#a8362a"
+      },
+      {
+        "forme": "ellipse",
+        "dx": -0.35,
+        "dy": -0.35,
+        "w": 7.1,
+        "h": 7,
+        "couleur": "#d94a3d"
+      },
+      {
+        "forme": "ellipse",
+        "dx": -0.9,
+        "dy": -0.95,
+        "w": 5,
+        "h": 4.6,
+        "couleur": "#e8705c"
+      },
+      {
+        "forme": "ellipse",
+        "dx": -1.35,
+        "dy": -1.5,
+        "w": 2.2,
+        "h": 1.7,
+        "couleur": "#ffc2b2",
+        "rotation": -20
+      },
+      {
+        "forme": "ellipse",
+        "dx": 0.2,
+        "dy": -3.1,
+        "w": 2.6,
+        "h": 1.1,
+        "couleur": "#8e2d23",
+        "alpha": 0.75
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0.3,
+            -3.2
+          ],
+          [
+            0.75,
+            -5.9
+          ]
+        ],
+        "couleur": "#4f3a26",
+        "epaisseur": 0.95
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0.15,
+            -3.3
+          ],
+          [
+            0.5,
+            -5.7
+          ]
+        ],
+        "couleur": "#8a6b45",
+        "epaisseur": 0.45
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0.6,
+            -4.5
+          ],
+          [
+            2.2,
+            -5.5
+          ],
+          [
+            3.5,
+            -4.6
+          ],
+          [
+            2.1,
+            -3.7
+          ],
+          [
+            1,
+            -3.9
+          ]
+        ],
+        "couleur": "#4a7d3a"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0.9,
+            -4.4
+          ],
+          [
+            2.2,
+            -5.1
+          ],
+          [
+            3,
+            -4.6
+          ],
+          [
+            1.9,
+            -4.1
+          ]
+        ],
+        "couleur": "#67a04f"
+      }
     ]
   },
   {
     "id": "visuel_table",
     "ancre": "bas",
-    "ombre": { "dy": 0.5, "w": 18.5, "h": 3.6, "alpha": 0.32 },
+    "ombre": {
+      "dy": 0.5,
+      "w": 18.5,
+      "h": 3.6,
+      "alpha": 0.32
+    },
     "primitives": [
-      { "forme": "rect", "dx": -7.4, "dy": -2, "w": 1.9, "h": 3.2, "couleur": "#46341f" },
-      { "forme": "rect", "dx": 7.4, "dy": -2, "w": 1.9, "h": 3.2, "couleur": "#46341f" },
-      { "forme": "rect", "dx": -8.8, "dy": -1.4, "w": 2.6, "h": 4.8, "couleur": "#5a4530" },
-      { "forme": "rect", "dx": 8.8, "dy": -1.4, "w": 2.6, "h": 4.8, "couleur": "#5a4530" },
-      { "forme": "polygone", "dx": 0, "dy": 0,
-        "points": [[-9, -8.4], [9, -8.4], [11, -5.2], [-11, -5.2]], "couleur": "#96754d" },
-      { "forme": "rect", "dx": 0, "dy": -4.4, "w": 22, "h": 2.2, "couleur": "#6b5038" },
-      { "forme": "rect", "dx": 0, "dy": -6.9, "w": 16.5, "h": 0.9, "couleur": "#81653f", "alpha": 0.6 },
-      { "forme": "ellipse", "dx": -4.8, "dy": -8.8, "w": 7.6, "h": 4.2, "couleur": "#3a332e" },
-      { "forme": "ellipse", "dx": -4.8, "dy": -10, "w": 6.2, "h": 1.9, "couleur": "#241f1c" },
-      { "forme": "ellipse", "dx": -4.8, "dy": -9.9, "w": 4.8, "h": 1.2, "couleur": "#b06a2f" },
-      { "forme": "ellipse", "dx": -5.9, "dy": -10.05, "w": 1.9, "h": 0.9, "couleur": "#dba66a", "alpha": 0.85 },
-      { "forme": "polygone", "dx": 0, "dy": 0,
-        "points": [[1.6, -7.6], [8.2, -7.6], [9.4, -5.9], [2.8, -5.9]], "couleur": "#a88a62" },
-      { "forme": "cercle", "dx": 6, "dy": -6.9, "w": 2.2, "h": 2.2, "couleur": "#7a9a45" }
-    ]  },
+      {
+        "forme": "rect",
+        "dx": -7.4,
+        "dy": -2,
+        "w": 1.9,
+        "h": 3.2,
+        "couleur": "#46341f"
+      },
+      {
+        "forme": "rect",
+        "dx": 7.4,
+        "dy": -2,
+        "w": 1.9,
+        "h": 3.2,
+        "couleur": "#46341f"
+      },
+      {
+        "forme": "rect",
+        "dx": -8.8,
+        "dy": -1.4,
+        "w": 2.6,
+        "h": 4.8,
+        "couleur": "#5a4530"
+      },
+      {
+        "forme": "rect",
+        "dx": 8.8,
+        "dy": -1.4,
+        "w": 2.6,
+        "h": 4.8,
+        "couleur": "#5a4530"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -9,
+            -8.4
+          ],
+          [
+            9,
+            -8.4
+          ],
+          [
+            11,
+            -5.2
+          ],
+          [
+            -11,
+            -5.2
+          ]
+        ],
+        "couleur": "#96754d"
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": -4.4,
+        "w": 22,
+        "h": 2.2,
+        "couleur": "#6b5038"
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": -6.9,
+        "w": 16.5,
+        "h": 0.9,
+        "couleur": "#81653f",
+        "alpha": 0.6
+      },
+      {
+        "forme": "ellipse",
+        "dx": -4.8,
+        "dy": -8.8,
+        "w": 7.6,
+        "h": 4.2,
+        "couleur": "#3a332e"
+      },
+      {
+        "forme": "ellipse",
+        "dx": -4.8,
+        "dy": -10,
+        "w": 6.2,
+        "h": 1.9,
+        "couleur": "#241f1c"
+      },
+      {
+        "forme": "ellipse",
+        "dx": -4.8,
+        "dy": -9.9,
+        "w": 4.8,
+        "h": 1.2,
+        "couleur": "#b06a2f"
+      },
+      {
+        "forme": "ellipse",
+        "dx": -5.9,
+        "dy": -10.05,
+        "w": 1.9,
+        "h": 0.9,
+        "couleur": "#dba66a",
+        "alpha": 0.85
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            1.6,
+            -7.6
+          ],
+          [
+            8.2,
+            -7.6
+          ],
+          [
+            9.4,
+            -5.9
+          ],
+          [
+            2.8,
+            -5.9
+          ]
+        ],
+        "couleur": "#a88a62"
+      },
+      {
+        "forme": "cercle",
+        "dx": 6,
+        "dy": -6.9,
+        "w": 2.2,
+        "h": 2.2,
+        "couleur": "#7a9a45"
+      }
+    ]
+  },
   {
     "id": "visuel_coffre",
     "ancre": "bas",
-    "ombre": { "dy": 0.3, "w": 16.5, "h": 4, "alpha": 0.32 },
+    "ombre": {
+      "dy": 0.3,
+      "w": 16.5,
+      "h": 4,
+      "alpha": 0.32
+    },
     "primitives": [
-      { "forme": "rect", "dx": 0, "dy": -0.7, "w": 16, "h": 1.4, "couleur": "#46341f" },
-      { "forme": "ellipse", "dx": 0, "dy": -7.4, "w": 15.8, "h": 7.4, "couleur": "#7a5c3e" },
-      { "forme": "rect", "dx": 0, "dy": -4.2, "w": 15, "h": 6.4, "couleur": "#5f4630" },
-      { "forme": "rect", "dx": 0, "dy": -7.6, "w": 15.8, "h": 1, "couleur": "#46341f" },
-      { "forme": "ellipse", "dx": 0, "dy": -10.2, "w": 9, "h": 1.1, "couleur": "#a6845a", "alpha": 0.75 },
-      { "forme": "rect", "dx": -5.4, "dy": -4.4, "w": 1.2, "h": 5.2, "couleur": "#4a4038" },
-      { "forme": "rect", "dx": 5.4, "dy": -4.4, "w": 1.2, "h": 5.2, "couleur": "#4a4038" },
-      { "forme": "rect", "dx": 0, "dy": -7.6, "w": 2.6, "h": 2.6, "couleur": "#c2a83e" },
-      { "forme": "rect", "dx": 0, "dy": -7.3, "w": 0.8, "h": 1.1, "couleur": "#3a2c20" }
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": -0.7,
+        "w": 16,
+        "h": 1.4,
+        "couleur": "#46341f"
+      },
+      {
+        "forme": "ellipse",
+        "dx": 0,
+        "dy": -7.4,
+        "w": 15.8,
+        "h": 7.4,
+        "couleur": "#7a5c3e"
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": -4.2,
+        "w": 15,
+        "h": 6.4,
+        "couleur": "#5f4630"
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": -7.6,
+        "w": 15.8,
+        "h": 1,
+        "couleur": "#46341f"
+      },
+      {
+        "forme": "ellipse",
+        "dx": 0,
+        "dy": -10.2,
+        "w": 9,
+        "h": 1.1,
+        "couleur": "#a6845a",
+        "alpha": 0.75
+      },
+      {
+        "forme": "rect",
+        "dx": -5.4,
+        "dy": -4.4,
+        "w": 1.2,
+        "h": 5.2,
+        "couleur": "#4a4038"
+      },
+      {
+        "forme": "rect",
+        "dx": 5.4,
+        "dy": -4.4,
+        "w": 1.2,
+        "h": 5.2,
+        "couleur": "#4a4038"
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": -7.6,
+        "w": 2.6,
+        "h": 2.6,
+        "couleur": "#c2a83e"
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": -7.3,
+        "w": 0.8,
+        "h": 1.1,
+        "couleur": "#3a2c20"
+      }
     ]
   },
   {
     "id": "visuel_atelier",
     "ancre": "bas",
-    "ombre": { "dy": -0.6, "w": 19, "h": 4, "alpha": 0.32 },
+    "ombre": {
+      "dy": -0.6,
+      "w": 19,
+      "h": 4,
+      "alpha": 0.32
+    },
     "primitives": [
-      { "forme": "rect", "dx": 0.5, "dy": -10.9, "w": 15.5, "h": 3.6, "couleur": "#3f352a" },
-      { "forme": "rect", "dx": -3.2, "dy": -11.7, "w": 5.6, "h": 1, "couleur": "#b4b9be" },
-      { "forme": "rect", "dx": 0.4, "dy": -11.7, "w": 1.6, "h": 1.6, "couleur": "#8a5a32" },
-      { "forme": "rect", "dx": 5.2, "dy": -10.8, "w": 0.9, "h": 3.2, "couleur": "#8a5a32" },
-      { "forme": "rect", "dx": 5.2, "dy": -12, "w": 3, "h": 1.4, "couleur": "#8d9298" },
-      { "forme": "polygone", "dx": 0, "dy": 0,
-        "points": [[-8.4, -9.2], [8.4, -9.2], [10.2, -6.4], [-10.2, -6.4]], "couleur": "#8a7862" },
-      { "forme": "rect", "dx": 0, "dy": -5.7, "w": 20.4, "h": 1.8, "couleur": "#4f4335" },
-      { "forme": "rect", "dx": -7.2, "dy": -3.6, "w": 1.8, "h": 3, "couleur": "#3f3427" },
-      { "forme": "rect", "dx": 7.2, "dy": -3.6, "w": 1.8, "h": 3, "couleur": "#3f3427" },
-      { "forme": "rect", "dx": 0, "dy": -2.6, "w": 14.5, "h": 1, "couleur": "#3f3427" },
-      { "forme": "rect", "dx": -8.8, "dy": -3, "w": 2.4, "h": 4, "couleur": "#5c4e3c" },
-      { "forme": "rect", "dx": 8.8, "dy": -3, "w": 2.4, "h": 4, "couleur": "#5c4e3c" },
-      { "forme": "rect", "dx": -7, "dy": -5.6, "w": 4.2, "h": 2.2, "couleur": "#6f6f72" },
-      { "forme": "rect", "dx": -7, "dy": -3.9, "w": 0.9, "h": 1.6, "couleur": "#5a5a5d" },
-      { "forme": "cercle", "dx": -7, "dy": -3, "w": 2, "h": 2, "couleur": "#7a7e83" },
-      { "forme": "polygone", "dx": 0, "dy": 0,
-        "points": [[2.2, -8.4], [8.2, -8.4], [9.2, -6.9], [3.2, -6.9]], "couleur": "#9a7f58" }
+      {
+        "forme": "rect",
+        "dx": 0.5,
+        "dy": -10.9,
+        "w": 15.5,
+        "h": 3.6,
+        "couleur": "#3f352a"
+      },
+      {
+        "forme": "rect",
+        "dx": -3.2,
+        "dy": -11.7,
+        "w": 5.6,
+        "h": 1,
+        "couleur": "#b4b9be"
+      },
+      {
+        "forme": "rect",
+        "dx": 0.4,
+        "dy": -11.7,
+        "w": 1.6,
+        "h": 1.6,
+        "couleur": "#8a5a32"
+      },
+      {
+        "forme": "rect",
+        "dx": 5.2,
+        "dy": -10.8,
+        "w": 0.9,
+        "h": 3.2,
+        "couleur": "#8a5a32"
+      },
+      {
+        "forme": "rect",
+        "dx": 5.2,
+        "dy": -12,
+        "w": 3,
+        "h": 1.4,
+        "couleur": "#8d9298"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -8.4,
+            -9.2
+          ],
+          [
+            8.4,
+            -9.2
+          ],
+          [
+            10.2,
+            -6.4
+          ],
+          [
+            -10.2,
+            -6.4
+          ]
+        ],
+        "couleur": "#8a7862"
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": -5.7,
+        "w": 20.4,
+        "h": 1.8,
+        "couleur": "#4f4335"
+      },
+      {
+        "forme": "rect",
+        "dx": -7.2,
+        "dy": -3.6,
+        "w": 1.8,
+        "h": 3,
+        "couleur": "#3f3427"
+      },
+      {
+        "forme": "rect",
+        "dx": 7.2,
+        "dy": -3.6,
+        "w": 1.8,
+        "h": 3,
+        "couleur": "#3f3427"
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": -2.6,
+        "w": 14.5,
+        "h": 1,
+        "couleur": "#3f3427"
+      },
+      {
+        "forme": "rect",
+        "dx": -8.8,
+        "dy": -3,
+        "w": 2.4,
+        "h": 4,
+        "couleur": "#5c4e3c"
+      },
+      {
+        "forme": "rect",
+        "dx": 8.8,
+        "dy": -3,
+        "w": 2.4,
+        "h": 4,
+        "couleur": "#5c4e3c"
+      },
+      {
+        "forme": "rect",
+        "dx": -7,
+        "dy": -5.6,
+        "w": 4.2,
+        "h": 2.2,
+        "couleur": "#6f6f72"
+      },
+      {
+        "forme": "rect",
+        "dx": -7,
+        "dy": -3.9,
+        "w": 0.9,
+        "h": 1.6,
+        "couleur": "#5a5a5d"
+      },
+      {
+        "forme": "cercle",
+        "dx": -7,
+        "dy": -3,
+        "w": 2,
+        "h": 2,
+        "couleur": "#7a7e83"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            2.2,
+            -8.4
+          ],
+          [
+            8.2,
+            -8.4
+          ],
+          [
+            9.2,
+            -6.9
+          ],
+          [
+            3.2,
+            -6.9
+          ]
+        ],
+        "couleur": "#9a7f58"
+      }
     ]
   },
   {
@@ -305,142 +3281,2034 @@
     "ancre": "centre",
     "teintable": true,
     "primitives": [
-      { "forme": "cercle", "dx": 0, "dy": 0, "w": 3, "h": 3, "couleur": "#ffffff", "teinte": true },
-      { "forme": "cercle", "dx": 0, "dy": 0, "w": 1.4, "h": 1.4, "couleur": "#ffffff", "alpha": 0.8 }
+      {
+        "forme": "cercle",
+        "dx": 0,
+        "dy": 0,
+        "w": 3,
+        "h": 3,
+        "couleur": "#ffffff",
+        "teinte": true
+      },
+      {
+        "forme": "cercle",
+        "dx": 0,
+        "dy": 0,
+        "w": 1.4,
+        "h": 1.4,
+        "couleur": "#ffffff",
+        "alpha": 0.8
+      }
     ]
   },
   {
     "id": "visuel_poussiere",
     "ancre": "centre",
     "primitives": [
-      { "forme": "cercle", "dx": 0, "dy": 0, "w": 5, "h": 5, "couleur": "#ffffff" },
-      { "forme": "cercle", "dx": -2, "dy": 1, "w": 3, "h": 3, "couleur": "#ffffff", "alpha": 0.7 },
-      { "forme": "cercle", "dx": 2, "dy": 1, "w": 2.5, "h": 2.5, "couleur": "#ffffff", "alpha": 0.7 }
+      {
+        "forme": "cercle",
+        "dx": 0,
+        "dy": 0,
+        "w": 5,
+        "h": 5,
+        "couleur": "#ffffff"
+      },
+      {
+        "forme": "cercle",
+        "dx": -2,
+        "dy": 1,
+        "w": 3,
+        "h": 3,
+        "couleur": "#ffffff",
+        "alpha": 0.7
+      },
+      {
+        "forme": "cercle",
+        "dx": 2,
+        "dy": 1,
+        "w": 2.5,
+        "h": 2.5,
+        "couleur": "#ffffff",
+        "alpha": 0.7
+      }
     ]
   },
   {
     "id": "visuel_puits",
     "ancre": "bas",
-    "ombre": { "dy": 0.4, "w": 22, "h": 6, "alpha": 0.3 },
+    "ombre": {
+      "dy": 0.4,
+      "w": 22,
+      "h": 6,
+      "alpha": 0.3
+    },
     "primitives": [
-      { "forme": "rect", "dx": -9.6, "dy": -8, "w": 2.6, "h": 16, "couleur": "#5a4530" },
-      { "forme": "rect", "dx": 9.6, "dy": -8, "w": 2.6, "h": 16, "couleur": "#5a4530" },
-      { "forme": "ellipse", "dx": 0, "dy": 0, "w": 18, "h": 5, "couleur": "#63492f" },
-      { "forme": "rect", "dx": 0, "dy": -2.5, "w": 18, "h": 6, "couleur": "#6b5038" },
-      { "forme": "ellipse", "dx": 0, "dy": -5.5, "w": 18, "h": 5.5, "couleur": "#8a6b4a" },
-      { "forme": "ellipse", "dx": 0, "dy": -5.2, "w": 12.6, "h": 3.8, "couleur": "#3a2c20" },
-      { "forme": "ellipse", "dx": 0, "dy": -4.8, "w": 10.6, "h": 3, "couleur": "#2f6f9f" },
-      { "forme": "ellipse", "dx": -2.2, "dy": -5.2, "w": 3.4, "h": 1, "couleur": "#6fa8cf", "alpha": 0.8 },
-      { "forme": "rect", "dx": 0, "dy": -12.6, "w": 19, "h": 2.4, "couleur": "#6b5238" },
-      { "forme": "rect", "dx": 0, "dy": -12.2, "w": 1, "h": 3.6, "couleur": "#cbbb9a" },
-      { "forme": "rect", "dx": 0, "dy": -10.2, "w": 4.4, "h": 3.2, "couleur": "#8a6b4a" },
-      { "forme": "rect", "dx": 0, "dy": -15.6, "w": 22, "h": 1.6, "couleur": "#6b5238" },
-      { "forme": "polygone", "dx": 0, "dy": 0, "points": [[-11, -15.6], [0, -21], [11, -15.6]], "couleur": "#5a4530" }
+      {
+        "forme": "rect",
+        "dx": -9.6,
+        "dy": -8,
+        "w": 2.6,
+        "h": 16,
+        "couleur": "#5a4530"
+      },
+      {
+        "forme": "rect",
+        "dx": 9.6,
+        "dy": -8,
+        "w": 2.6,
+        "h": 16,
+        "couleur": "#5a4530"
+      },
+      {
+        "forme": "ellipse",
+        "dx": 0,
+        "dy": 0,
+        "w": 18,
+        "h": 5,
+        "couleur": "#63492f"
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": -2.5,
+        "w": 18,
+        "h": 6,
+        "couleur": "#6b5038"
+      },
+      {
+        "forme": "ellipse",
+        "dx": 0,
+        "dy": -5.5,
+        "w": 18,
+        "h": 5.5,
+        "couleur": "#8a6b4a"
+      },
+      {
+        "forme": "ellipse",
+        "dx": 0,
+        "dy": -5.2,
+        "w": 12.6,
+        "h": 3.8,
+        "couleur": "#3a2c20"
+      },
+      {
+        "forme": "ellipse",
+        "dx": 0,
+        "dy": -4.8,
+        "w": 10.6,
+        "h": 3,
+        "couleur": "#2f6f9f"
+      },
+      {
+        "forme": "ellipse",
+        "dx": -2.2,
+        "dy": -5.2,
+        "w": 3.4,
+        "h": 1,
+        "couleur": "#6fa8cf",
+        "alpha": 0.8
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": -12.6,
+        "w": 19,
+        "h": 2.4,
+        "couleur": "#6b5238"
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": -12.2,
+        "w": 1,
+        "h": 3.6,
+        "couleur": "#cbbb9a"
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": -10.2,
+        "w": 4.4,
+        "h": 3.2,
+        "couleur": "#8a6b4a"
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": -15.6,
+        "w": 22,
+        "h": 1.6,
+        "couleur": "#6b5238"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -11,
+            -15.6
+          ],
+          [
+            0,
+            -21
+          ],
+          [
+            11,
+            -15.6
+          ]
+        ],
+        "couleur": "#5a4530"
+      }
     ]
   },
   {
     "id": "visuel_hache",
     "ancre": "centre",
-    "ombre": {"dy":6.5,"w":5,"h":1.9,"alpha":0.26},
+    "ombre": {
+      "dy": 6.5,
+      "w": 5,
+      "h": 1.9,
+      "alpha": 0.26
+    },
     "primitives": [
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-2.3,6.22],[-2.33,3.6],[-2.37,0.99],[-2.4,-1.63],[-2.43,-4.25],[-2.47,-6.87],[-2.5,-9.48],[-1.3,-9.52],[-1.2,-6.9],[-1.1,-4.28],[-1,-1.67],[-0.9,0.95],[-0.8,3.56],[-0.7,6.18]],"couleur":"#4f3a26"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-2.32,6.22],[-2.36,3.6],[-2.41,0.99],[-2.45,-1.63],[-2.49,-4.25],[-2.53,-6.87],[-2.57,-9.48],[-1.63,-9.51],[-1.54,-6.89],[-1.45,-4.27],[-1.35,-1.66],[-1.26,0.96],[-1.17,3.57],[-1.08,6.19]],"couleur":"#7a5c3e"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-2.22,5.59],[-2.27,3.23],[-2.32,0.88],[-2.37,-1.48],[-2.42,-3.83],[-2.47,-6.19],[-2.52,-8.54],[-2.16,-8.55],[-2.09,-6.2],[-2.02,-3.84],[-1.95,-1.49],[-1.88,0.87],[-1.81,3.22],[-1.74,5.58]],"couleur":"#9c7a52"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-0.9,-9.9],[1.2,-9.4],[2.5,-7.9],[2.9,-5.8],[2.1,-3.5],[0.5,-4.5],[-0.7,-6.2],[-1.1,-8.2]],"couleur":"#3f464d"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-0.81,-9.73],[1,-9.3],[2.11,-8.01],[2.46,-6.21],[1.77,-4.23],[0.39,-5.09],[-0.64,-6.55],[-0.98,-8.27]],"couleur":"#7b848d"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-0.49,-9.03],[0.43,-8.81],[1,-8.15],[1.18,-7.23],[0.83,-6.22],[0.12,-6.66],[-0.4,-7.41],[-0.58,-8.29]],"couleur":"#9aa3ac"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[2.5,-7.9],[2.9,-5.8],[2.1,-3.5],[1.45,-3.95],[2.15,-5.9],[1.85,-7.6]],"couleur":"#dfe6ed"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-2.75,-7.5],[-0.5,-8.1],[-0.4,-9.9],[-2.6,-9.5]],"couleur":"#2f353b"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-2.5,-7.9],[-1.1,-8.3],[-1.05,-9.5],[-2.45,-9.25]],"couleur":"#5d666e"}
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -2.3,
+            6.22
+          ],
+          [
+            -2.33,
+            3.6
+          ],
+          [
+            -2.37,
+            0.99
+          ],
+          [
+            -2.4,
+            -1.63
+          ],
+          [
+            -2.43,
+            -4.25
+          ],
+          [
+            -2.47,
+            -6.87
+          ],
+          [
+            -2.5,
+            -9.48
+          ],
+          [
+            -1.3,
+            -9.52
+          ],
+          [
+            -1.2,
+            -6.9
+          ],
+          [
+            -1.1,
+            -4.28
+          ],
+          [
+            -1,
+            -1.67
+          ],
+          [
+            -0.9,
+            0.95
+          ],
+          [
+            -0.8,
+            3.56
+          ],
+          [
+            -0.7,
+            6.18
+          ]
+        ],
+        "couleur": "#4f3a26"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -2.32,
+            6.22
+          ],
+          [
+            -2.36,
+            3.6
+          ],
+          [
+            -2.41,
+            0.99
+          ],
+          [
+            -2.45,
+            -1.63
+          ],
+          [
+            -2.49,
+            -4.25
+          ],
+          [
+            -2.53,
+            -6.87
+          ],
+          [
+            -2.57,
+            -9.48
+          ],
+          [
+            -1.63,
+            -9.51
+          ],
+          [
+            -1.54,
+            -6.89
+          ],
+          [
+            -1.45,
+            -4.27
+          ],
+          [
+            -1.35,
+            -1.66
+          ],
+          [
+            -1.26,
+            0.96
+          ],
+          [
+            -1.17,
+            3.57
+          ],
+          [
+            -1.08,
+            6.19
+          ]
+        ],
+        "couleur": "#7a5c3e"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -2.22,
+            5.59
+          ],
+          [
+            -2.27,
+            3.23
+          ],
+          [
+            -2.32,
+            0.88
+          ],
+          [
+            -2.37,
+            -1.48
+          ],
+          [
+            -2.42,
+            -3.83
+          ],
+          [
+            -2.47,
+            -6.19
+          ],
+          [
+            -2.52,
+            -8.54
+          ],
+          [
+            -2.16,
+            -8.55
+          ],
+          [
+            -2.09,
+            -6.2
+          ],
+          [
+            -2.02,
+            -3.84
+          ],
+          [
+            -1.95,
+            -1.49
+          ],
+          [
+            -1.88,
+            0.87
+          ],
+          [
+            -1.81,
+            3.22
+          ],
+          [
+            -1.74,
+            5.58
+          ]
+        ],
+        "couleur": "#9c7a52"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -0.9,
+            -9.9
+          ],
+          [
+            1.2,
+            -9.4
+          ],
+          [
+            2.5,
+            -7.9
+          ],
+          [
+            2.9,
+            -5.8
+          ],
+          [
+            2.1,
+            -3.5
+          ],
+          [
+            0.5,
+            -4.5
+          ],
+          [
+            -0.7,
+            -6.2
+          ],
+          [
+            -1.1,
+            -8.2
+          ]
+        ],
+        "couleur": "#3f464d"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -0.81,
+            -9.73
+          ],
+          [
+            1,
+            -9.3
+          ],
+          [
+            2.11,
+            -8.01
+          ],
+          [
+            2.46,
+            -6.21
+          ],
+          [
+            1.77,
+            -4.23
+          ],
+          [
+            0.39,
+            -5.09
+          ],
+          [
+            -0.64,
+            -6.55
+          ],
+          [
+            -0.98,
+            -8.27
+          ]
+        ],
+        "couleur": "#7b848d"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -0.49,
+            -9.03
+          ],
+          [
+            0.43,
+            -8.81
+          ],
+          [
+            1,
+            -8.15
+          ],
+          [
+            1.18,
+            -7.23
+          ],
+          [
+            0.83,
+            -6.22
+          ],
+          [
+            0.12,
+            -6.66
+          ],
+          [
+            -0.4,
+            -7.41
+          ],
+          [
+            -0.58,
+            -8.29
+          ]
+        ],
+        "couleur": "#9aa3ac"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            2.5,
+            -7.9
+          ],
+          [
+            2.9,
+            -5.8
+          ],
+          [
+            2.1,
+            -3.5
+          ],
+          [
+            1.45,
+            -3.95
+          ],
+          [
+            2.15,
+            -5.9
+          ],
+          [
+            1.85,
+            -7.6
+          ]
+        ],
+        "couleur": "#dfe6ed"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -2.75,
+            -7.5
+          ],
+          [
+            -0.5,
+            -8.1
+          ],
+          [
+            -0.4,
+            -9.9
+          ],
+          [
+            -2.6,
+            -9.5
+          ]
+        ],
+        "couleur": "#2f353b"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -2.5,
+            -7.9
+          ],
+          [
+            -1.1,
+            -8.3
+          ],
+          [
+            -1.05,
+            -9.5
+          ],
+          [
+            -2.45,
+            -9.25
+          ]
+        ],
+        "couleur": "#5d666e"
+      }
     ]
   },
   {
     "id": "visuel_pioche",
     "ancre": "centre",
-    "ombre": {"dy":6.8,"w":5,"h":1.9,"alpha":0.26},
+    "ombre": {
+      "dy": 6.8,
+      "w": 5,
+      "h": 1.9,
+      "alpha": 0.26
+    },
     "primitives": [
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-0.25,6.16],[-0.36,3.77],[-0.48,1.38],[-0.6,-1],[-0.72,-3.39],[-0.83,-5.77],[-0.95,-8.16],[0.25,-8.24],[0.45,-5.86],[0.65,-3.48],[0.85,-1.1],[1.05,1.28],[1.25,3.66],[1.45,6.04]],"couleur":"#4f3a26"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-0.28,6.16],[-0.4,3.77],[-0.53,1.39],[-0.65,-1],[-0.78,-3.38],[-0.9,-5.77],[-1.03,-8.15],[-0.07,-8.22],[0.12,-5.84],[0.31,-3.46],[0.5,-1.08],[0.7,1.31],[0.89,3.69],[1.08,6.07]],"couleur":"#7a5c3e"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-0.19,5.58],[-0.32,3.48],[-0.45,1.38],[-0.57,-0.72],[-0.7,-2.81],[-0.83,-4.91],[-0.95,-7.01],[-0.59,-7.03],[-0.44,-4.94],[-0.29,-2.84],[-0.14,-0.75],[0.01,1.35],[0.17,3.45],[0.32,5.54]],"couleur":"#9c7a52"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-5.6,-8.82],[-4.8,-9.42],[-4,-10],[-3.2,-10.53],[-2.4,-11.01],[-1.6,-11.41],[-0.8,-11.73],[0,-11.95],[0.8,-11.81],[1.6,-11.58],[2.4,-11.26],[3.2,-10.86],[4,-10.41],[4.8,-9.92],[5.6,-9.4],[5.6,-7.8],[4.8,-8.13],[4,-8.44],[3.2,-8.71],[2.4,-8.91],[1.6,-9.05],[0.8,-9.1],[0,-9.05],[-0.8,-9.18],[-1.6,-9.21],[-2.4,-9.16],[-3.2,-9.04],[-4,-8.85],[-4.8,-8.63],[-5.6,-8.38]],"couleur":"#3f464d"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-5.6,-8.42],[-4.8,-8.98],[-4,-9.51],[-3.2,-10],[-2.4,-10.44],[-1.6,-10.8],[-0.8,-11.07],[0,-11.25],[0.8,-11.13],[1.6,-10.92],[2.4,-10.62],[3.2,-10.25],[4,-9.82],[4.8,-9.34],[5.6,-8.85],[5.6,-8.35],[4.8,-8.7],[4,-9.03],[3.2,-9.32],[2.4,-9.55],[1.6,-9.7],[0.8,-9.77],[0,-9.75],[-0.8,-9.84],[-1.6,-9.83],[-2.4,-9.73],[-3.2,-9.57],[-4,-9.34],[-4.8,-9.07],[-5.6,-8.78]],"couleur":"#7b848d"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-5.6,-7.87],[-4.8,-8.35],[-4,-8.8],[-3.2,-9.21],[-2.4,-9.57],[-1.6,-9.85],[-0.8,-10.04],[0,-10.14],[0.8,-10.06],[1.6,-9.89],[2.4,-9.63],[3.2,-9.3],[4,-8.91],[4.8,-8.47],[5.6,-8.02],[5.6,-9.18],[4.8,-9.57],[4,-9.94],[3.2,-10.27],[2.4,-10.54],[1.6,-10.73],[0.8,-10.84],[0,-10.86],[-0.8,-10.87],[-1.6,-10.78],[-2.4,-10.6],[-3.2,-10.36],[-4,-10.05],[-4.8,-9.7],[-5.6,-9.33]],"couleur":"#9aa3ac"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-5.6,-8.72],[-3.9,-9.45],[-3.95,-7.95]],"couleur":"#c9d2da"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[5.6,-9.3],[5.6,-7.85],[4.25,-7.95],[4.25,-9.2]],"couleur":"#c9d2da"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-1.35,-7.3],[0.75,-7.3],[0.7,-9.1],[-1.3,-9.1]],"couleur":"#2f353b"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-1.05,-7.6],[0.1,-7.6],[0.05,-8.8],[-1,-8.8]],"couleur":"#5d666e"}
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -0.25,
+            6.16
+          ],
+          [
+            -0.36,
+            3.77
+          ],
+          [
+            -0.48,
+            1.38
+          ],
+          [
+            -0.6,
+            -1
+          ],
+          [
+            -0.72,
+            -3.39
+          ],
+          [
+            -0.83,
+            -5.77
+          ],
+          [
+            -0.95,
+            -8.16
+          ],
+          [
+            0.25,
+            -8.24
+          ],
+          [
+            0.45,
+            -5.86
+          ],
+          [
+            0.65,
+            -3.48
+          ],
+          [
+            0.85,
+            -1.1
+          ],
+          [
+            1.05,
+            1.28
+          ],
+          [
+            1.25,
+            3.66
+          ],
+          [
+            1.45,
+            6.04
+          ]
+        ],
+        "couleur": "#4f3a26"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -0.28,
+            6.16
+          ],
+          [
+            -0.4,
+            3.77
+          ],
+          [
+            -0.53,
+            1.39
+          ],
+          [
+            -0.65,
+            -1
+          ],
+          [
+            -0.78,
+            -3.38
+          ],
+          [
+            -0.9,
+            -5.77
+          ],
+          [
+            -1.03,
+            -8.15
+          ],
+          [
+            -0.07,
+            -8.22
+          ],
+          [
+            0.12,
+            -5.84
+          ],
+          [
+            0.31,
+            -3.46
+          ],
+          [
+            0.5,
+            -1.08
+          ],
+          [
+            0.7,
+            1.31
+          ],
+          [
+            0.89,
+            3.69
+          ],
+          [
+            1.08,
+            6.07
+          ]
+        ],
+        "couleur": "#7a5c3e"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -0.19,
+            5.58
+          ],
+          [
+            -0.32,
+            3.48
+          ],
+          [
+            -0.45,
+            1.38
+          ],
+          [
+            -0.57,
+            -0.72
+          ],
+          [
+            -0.7,
+            -2.81
+          ],
+          [
+            -0.83,
+            -4.91
+          ],
+          [
+            -0.95,
+            -7.01
+          ],
+          [
+            -0.59,
+            -7.03
+          ],
+          [
+            -0.44,
+            -4.94
+          ],
+          [
+            -0.29,
+            -2.84
+          ],
+          [
+            -0.14,
+            -0.75
+          ],
+          [
+            0.01,
+            1.35
+          ],
+          [
+            0.17,
+            3.45
+          ],
+          [
+            0.32,
+            5.54
+          ]
+        ],
+        "couleur": "#9c7a52"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -5.6,
+            -8.82
+          ],
+          [
+            -4.8,
+            -9.42
+          ],
+          [
+            -4,
+            -10
+          ],
+          [
+            -3.2,
+            -10.53
+          ],
+          [
+            -2.4,
+            -11.01
+          ],
+          [
+            -1.6,
+            -11.41
+          ],
+          [
+            -0.8,
+            -11.73
+          ],
+          [
+            0,
+            -11.95
+          ],
+          [
+            0.8,
+            -11.81
+          ],
+          [
+            1.6,
+            -11.58
+          ],
+          [
+            2.4,
+            -11.26
+          ],
+          [
+            3.2,
+            -10.86
+          ],
+          [
+            4,
+            -10.41
+          ],
+          [
+            4.8,
+            -9.92
+          ],
+          [
+            5.6,
+            -9.4
+          ],
+          [
+            5.6,
+            -7.8
+          ],
+          [
+            4.8,
+            -8.13
+          ],
+          [
+            4,
+            -8.44
+          ],
+          [
+            3.2,
+            -8.71
+          ],
+          [
+            2.4,
+            -8.91
+          ],
+          [
+            1.6,
+            -9.05
+          ],
+          [
+            0.8,
+            -9.1
+          ],
+          [
+            0,
+            -9.05
+          ],
+          [
+            -0.8,
+            -9.18
+          ],
+          [
+            -1.6,
+            -9.21
+          ],
+          [
+            -2.4,
+            -9.16
+          ],
+          [
+            -3.2,
+            -9.04
+          ],
+          [
+            -4,
+            -8.85
+          ],
+          [
+            -4.8,
+            -8.63
+          ],
+          [
+            -5.6,
+            -8.38
+          ]
+        ],
+        "couleur": "#3f464d"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -5.6,
+            -8.42
+          ],
+          [
+            -4.8,
+            -8.98
+          ],
+          [
+            -4,
+            -9.51
+          ],
+          [
+            -3.2,
+            -10
+          ],
+          [
+            -2.4,
+            -10.44
+          ],
+          [
+            -1.6,
+            -10.8
+          ],
+          [
+            -0.8,
+            -11.07
+          ],
+          [
+            0,
+            -11.25
+          ],
+          [
+            0.8,
+            -11.13
+          ],
+          [
+            1.6,
+            -10.92
+          ],
+          [
+            2.4,
+            -10.62
+          ],
+          [
+            3.2,
+            -10.25
+          ],
+          [
+            4,
+            -9.82
+          ],
+          [
+            4.8,
+            -9.34
+          ],
+          [
+            5.6,
+            -8.85
+          ],
+          [
+            5.6,
+            -8.35
+          ],
+          [
+            4.8,
+            -8.7
+          ],
+          [
+            4,
+            -9.03
+          ],
+          [
+            3.2,
+            -9.32
+          ],
+          [
+            2.4,
+            -9.55
+          ],
+          [
+            1.6,
+            -9.7
+          ],
+          [
+            0.8,
+            -9.77
+          ],
+          [
+            0,
+            -9.75
+          ],
+          [
+            -0.8,
+            -9.84
+          ],
+          [
+            -1.6,
+            -9.83
+          ],
+          [
+            -2.4,
+            -9.73
+          ],
+          [
+            -3.2,
+            -9.57
+          ],
+          [
+            -4,
+            -9.34
+          ],
+          [
+            -4.8,
+            -9.07
+          ],
+          [
+            -5.6,
+            -8.78
+          ]
+        ],
+        "couleur": "#7b848d"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -5.6,
+            -7.87
+          ],
+          [
+            -4.8,
+            -8.35
+          ],
+          [
+            -4,
+            -8.8
+          ],
+          [
+            -3.2,
+            -9.21
+          ],
+          [
+            -2.4,
+            -9.57
+          ],
+          [
+            -1.6,
+            -9.85
+          ],
+          [
+            -0.8,
+            -10.04
+          ],
+          [
+            0,
+            -10.14
+          ],
+          [
+            0.8,
+            -10.06
+          ],
+          [
+            1.6,
+            -9.89
+          ],
+          [
+            2.4,
+            -9.63
+          ],
+          [
+            3.2,
+            -9.3
+          ],
+          [
+            4,
+            -8.91
+          ],
+          [
+            4.8,
+            -8.47
+          ],
+          [
+            5.6,
+            -8.02
+          ],
+          [
+            5.6,
+            -9.18
+          ],
+          [
+            4.8,
+            -9.57
+          ],
+          [
+            4,
+            -9.94
+          ],
+          [
+            3.2,
+            -10.27
+          ],
+          [
+            2.4,
+            -10.54
+          ],
+          [
+            1.6,
+            -10.73
+          ],
+          [
+            0.8,
+            -10.84
+          ],
+          [
+            0,
+            -10.86
+          ],
+          [
+            -0.8,
+            -10.87
+          ],
+          [
+            -1.6,
+            -10.78
+          ],
+          [
+            -2.4,
+            -10.6
+          ],
+          [
+            -3.2,
+            -10.36
+          ],
+          [
+            -4,
+            -10.05
+          ],
+          [
+            -4.8,
+            -9.7
+          ],
+          [
+            -5.6,
+            -9.33
+          ]
+        ],
+        "couleur": "#9aa3ac"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -5.6,
+            -8.72
+          ],
+          [
+            -3.9,
+            -9.45
+          ],
+          [
+            -3.95,
+            -7.95
+          ]
+        ],
+        "couleur": "#c9d2da"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            5.6,
+            -9.3
+          ],
+          [
+            5.6,
+            -7.85
+          ],
+          [
+            4.25,
+            -7.95
+          ],
+          [
+            4.25,
+            -9.2
+          ]
+        ],
+        "couleur": "#c9d2da"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -1.35,
+            -7.3
+          ],
+          [
+            0.75,
+            -7.3
+          ],
+          [
+            0.7,
+            -9.1
+          ],
+          [
+            -1.3,
+            -9.1
+          ]
+        ],
+        "couleur": "#2f353b"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -1.05,
+            -7.6
+          ],
+          [
+            0.1,
+            -7.6
+          ],
+          [
+            0.05,
+            -8.8
+          ],
+          [
+            -1,
+            -8.8
+          ]
+        ],
+        "couleur": "#5d666e"
+      }
     ]
   },
   {
     "id": "visuel_fruit_cuit",
     "ancre": "centre",
-    "ombre": {"dy":4.1,"w":7.2,"h":2.2,"alpha":0.26},
+    "ombre": {
+      "dy": 4.1,
+      "w": 7.2,
+      "h": 2.2,
+      "alpha": 0.26
+    },
     "primitives": [
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-3.9,0.2],[-3.4,-2.4],[-1.6,-3.85],[0.9,-3.9],[3.1,-2.7],[3.95,-0.4],[3.3,2.3],[1.1,3.9],[-1.5,3.6],[-3.4,2.2]],"couleur":"#6f2c16"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-3.84,-0.12],[-3.37,-2.54],[-1.7,-3.89],[0.63,-3.93],[2.67,-2.82],[3.46,-0.68],[2.86,1.83],[0.81,3.32],[-1.61,3.04],[-3.37,1.74]],"couleur":"#9a4a2a"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-3.3,-0.82],[-3,-2.38],[-1.92,-3.25],[-0.42,-3.28],[0.9,-2.56],[1.41,-1.18],[1.02,0.44],[-0.3,1.4],[-1.86,1.22],[-3,0.38]],"couleur":"#b96a3c"},
-      {"forme":"ellipse","dx":-1.2,"dy":-1.5,"w":3.4,"h":1.9,"couleur":"#d08a5c","rotation":-24,"alpha":0.65},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-1.75,-2.55],[-1.05,-2.8],[-0.35,-1.2],[-0.5,0.35],[-1.15,-0.5],[-1.55,-1.6]],"couleur":"#cfa070"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-1.45,-2.3],[-1.1,-2.4],[-0.65,-1.2],[-0.75,-0.2],[-1.15,-0.9]],"couleur":"#a97b47"},
-      {"forme":"ellipse","dx":1.6,"dy":1.9,"w":4.6,"h":2.7,"couleur":"#3f2011","rotation":14,"alpha":0.22},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[0.35,-3.6],[0.85,-5.6]],"couleur":"#3d2a18","epaisseur":0.9}
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -3.9,
+            0.2
+          ],
+          [
+            -3.4,
+            -2.4
+          ],
+          [
+            -1.6,
+            -3.85
+          ],
+          [
+            0.9,
+            -3.9
+          ],
+          [
+            3.1,
+            -2.7
+          ],
+          [
+            3.95,
+            -0.4
+          ],
+          [
+            3.3,
+            2.3
+          ],
+          [
+            1.1,
+            3.9
+          ],
+          [
+            -1.5,
+            3.6
+          ],
+          [
+            -3.4,
+            2.2
+          ]
+        ],
+        "couleur": "#6f2c16"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -3.84,
+            -0.12
+          ],
+          [
+            -3.37,
+            -2.54
+          ],
+          [
+            -1.7,
+            -3.89
+          ],
+          [
+            0.63,
+            -3.93
+          ],
+          [
+            2.67,
+            -2.82
+          ],
+          [
+            3.46,
+            -0.68
+          ],
+          [
+            2.86,
+            1.83
+          ],
+          [
+            0.81,
+            3.32
+          ],
+          [
+            -1.61,
+            3.04
+          ],
+          [
+            -3.37,
+            1.74
+          ]
+        ],
+        "couleur": "#9a4a2a"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -3.3,
+            -0.82
+          ],
+          [
+            -3,
+            -2.38
+          ],
+          [
+            -1.92,
+            -3.25
+          ],
+          [
+            -0.42,
+            -3.28
+          ],
+          [
+            0.9,
+            -2.56
+          ],
+          [
+            1.41,
+            -1.18
+          ],
+          [
+            1.02,
+            0.44
+          ],
+          [
+            -0.3,
+            1.4
+          ],
+          [
+            -1.86,
+            1.22
+          ],
+          [
+            -3,
+            0.38
+          ]
+        ],
+        "couleur": "#b96a3c"
+      },
+      {
+        "forme": "ellipse",
+        "dx": -1.2,
+        "dy": -1.5,
+        "w": 3.4,
+        "h": 1.9,
+        "couleur": "#d08a5c",
+        "rotation": -24,
+        "alpha": 0.65
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -1.75,
+            -2.55
+          ],
+          [
+            -1.05,
+            -2.8
+          ],
+          [
+            -0.35,
+            -1.2
+          ],
+          [
+            -0.5,
+            0.35
+          ],
+          [
+            -1.15,
+            -0.5
+          ],
+          [
+            -1.55,
+            -1.6
+          ]
+        ],
+        "couleur": "#cfa070"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -1.45,
+            -2.3
+          ],
+          [
+            -1.1,
+            -2.4
+          ],
+          [
+            -0.65,
+            -1.2
+          ],
+          [
+            -0.75,
+            -0.2
+          ],
+          [
+            -1.15,
+            -0.9
+          ]
+        ],
+        "couleur": "#a97b47"
+      },
+      {
+        "forme": "ellipse",
+        "dx": 1.6,
+        "dy": 1.9,
+        "w": 4.6,
+        "h": 2.7,
+        "couleur": "#3f2011",
+        "rotation": 14,
+        "alpha": 0.22
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0.35,
+            -3.6
+          ],
+          [
+            0.85,
+            -5.6
+          ]
+        ],
+        "couleur": "#3d2a18",
+        "epaisseur": 0.9
+      }
     ]
   },
   {
     "id": "visuel_bois",
     "ancre": "centre",
-    "ombre": {"dy":2.9,"w":12.4,"h":2.3,"alpha":0.26},
+    "ombre": {
+      "dy": 2.9,
+      "w": 12.4,
+      "h": 2.3,
+      "alpha": 0.26
+    },
     "primitives": [
-      {"forme":"ellipse","dx":-5.4,"dy":0,"w":2.2,"h":5.2,"couleur":"#43301f"},
-      {"forme":"rect","dx":-0.1,"dy":0,"w":10.6,"h":5.2,"couleur":"#6b5136"},
-      {"forme":"rect","dx":-0.1,"dy":-1.2,"w":10.6,"h":2.8,"couleur":"#8a6a45"},
-      {"forme":"rect","dx":-0.1,"dy":-2.05,"w":9.8,"h":1.1,"couleur":"#a3805a"},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[-4.2,-2.3],[-3.8,1.9]],"couleur":"#4f3a26","epaisseur":0.45},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[1.1,-1.4],[1.5,2.3]],"couleur":"#4f3a26","epaisseur":0.4},
-      {"forme":"ellipse","dx":5.2,"dy":0,"w":2.6,"h":5.2,"couleur":"#c9a97a"},
-      {"forme":"ellipse","dx":5.2,"dy":0,"w":1.75,"h":3.5,"couleur":"#b08f5e"},
-      {"forme":"ellipse","dx":5.2,"dy":0,"w":0.95,"h":1.9,"couleur":"#96774b"},
-      {"forme":"ellipse","dx":5.2,"dy":0,"w":0.4,"h":0.8,"couleur":"#7a5f38"}
+      {
+        "forme": "ellipse",
+        "dx": -5.4,
+        "dy": 0,
+        "w": 2.2,
+        "h": 5.2,
+        "couleur": "#43301f"
+      },
+      {
+        "forme": "rect",
+        "dx": -0.1,
+        "dy": 0,
+        "w": 10.6,
+        "h": 5.2,
+        "couleur": "#6b5136"
+      },
+      {
+        "forme": "rect",
+        "dx": -0.1,
+        "dy": -1.2,
+        "w": 10.6,
+        "h": 2.8,
+        "couleur": "#8a6a45"
+      },
+      {
+        "forme": "rect",
+        "dx": -0.1,
+        "dy": -2.05,
+        "w": 9.8,
+        "h": 1.1,
+        "couleur": "#a3805a"
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -4.2,
+            -2.3
+          ],
+          [
+            -3.8,
+            1.9
+          ]
+        ],
+        "couleur": "#4f3a26",
+        "epaisseur": 0.45
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            1.1,
+            -1.4
+          ],
+          [
+            1.5,
+            2.3
+          ]
+        ],
+        "couleur": "#4f3a26",
+        "epaisseur": 0.4
+      },
+      {
+        "forme": "ellipse",
+        "dx": 5.2,
+        "dy": 0,
+        "w": 2.6,
+        "h": 5.2,
+        "couleur": "#c9a97a"
+      },
+      {
+        "forme": "ellipse",
+        "dx": 5.2,
+        "dy": 0,
+        "w": 1.75,
+        "h": 3.5,
+        "couleur": "#b08f5e"
+      },
+      {
+        "forme": "ellipse",
+        "dx": 5.2,
+        "dy": 0,
+        "w": 0.95,
+        "h": 1.9,
+        "couleur": "#96774b"
+      },
+      {
+        "forme": "ellipse",
+        "dx": 5.2,
+        "dy": 0,
+        "w": 0.4,
+        "h": 0.8,
+        "couleur": "#7a5f38"
+      }
     ]
   },
   {
     "id": "visuel_pierre",
     "ancre": "centre",
-    "ombre": {"dy":4.4,"w":11.4,"h":2.8,"alpha":0.28},
+    "ombre": {
+      "dy": 4.4,
+      "w": 11.4,
+      "h": 2.8,
+      "alpha": 0.28
+    },
     "primitives": [
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-6,0.4],[-3.4,-4],[1.4,-4.8],[5.2,-1.8],[6,1.8],[2.6,4.4],[-2.4,4.6],[-5.4,2.6]],"couleur":"#464c52"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-5.6,0.05],[-3.18,-4.04],[1.28,-4.79],[4.82,-2],[5.56,1.35],[2.4,3.77],[-2.25,3.96],[-5.04,2.1]],"couleur":"#79808a"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-3.2,-1.6],[-2.6,-3.6],[1.2,-4.2],[2.6,-1.8],[-0.2,-0.2]],"couleur":"#a3abb4"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-2.2,-2],[-1.6,-3.3],[0.6,-3.5],[0.4,-1.6]],"couleur":"#c2c8ce"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[2.8,-1.6],[5,-1.6],[5.6,1.6],[2.6,4],[0.8,1.6]],"couleur":"#5f666e"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-0.2,-0.2],[0.3,-0.2],[1.3,2.4],[0.9,2.6]],"couleur":"#3d434a"}
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -6,
+            0.4
+          ],
+          [
+            -3.4,
+            -4
+          ],
+          [
+            1.4,
+            -4.8
+          ],
+          [
+            5.2,
+            -1.8
+          ],
+          [
+            6,
+            1.8
+          ],
+          [
+            2.6,
+            4.4
+          ],
+          [
+            -2.4,
+            4.6
+          ],
+          [
+            -5.4,
+            2.6
+          ]
+        ],
+        "couleur": "#464c52"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -5.6,
+            0.05
+          ],
+          [
+            -3.18,
+            -4.04
+          ],
+          [
+            1.28,
+            -4.79
+          ],
+          [
+            4.82,
+            -2
+          ],
+          [
+            5.56,
+            1.35
+          ],
+          [
+            2.4,
+            3.77
+          ],
+          [
+            -2.25,
+            3.96
+          ],
+          [
+            -5.04,
+            2.1
+          ]
+        ],
+        "couleur": "#79808a"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -3.2,
+            -1.6
+          ],
+          [
+            -2.6,
+            -3.6
+          ],
+          [
+            1.2,
+            -4.2
+          ],
+          [
+            2.6,
+            -1.8
+          ],
+          [
+            -0.2,
+            -0.2
+          ]
+        ],
+        "couleur": "#a3abb4"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -2.2,
+            -2
+          ],
+          [
+            -1.6,
+            -3.3
+          ],
+          [
+            0.6,
+            -3.5
+          ],
+          [
+            0.4,
+            -1.6
+          ]
+        ],
+        "couleur": "#c2c8ce"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            2.8,
+            -1.6
+          ],
+          [
+            5,
+            -1.6
+          ],
+          [
+            5.6,
+            1.6
+          ],
+          [
+            2.6,
+            4
+          ],
+          [
+            0.8,
+            1.6
+          ]
+        ],
+        "couleur": "#5f666e"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -0.2,
+            -0.2
+          ],
+          [
+            0.3,
+            -0.2
+          ],
+          [
+            1.3,
+            2.4
+          ],
+          [
+            0.9,
+            2.6
+          ]
+        ],
+        "couleur": "#3d434a"
+      }
     ]
   },
   {
     "id": "visuel_icone_main",
     "ancre": "centre",
-    "ombre": {"dy":6.2,"w":8,"h":2.1,"alpha":0.22},
+    "ombre": {
+      "dy": 6.2,
+      "w": 8,
+      "h": 2.1,
+      "alpha": 0.22
+    },
     "primitives": [
-      {"forme":"rect","dx":-0.2,"dy":4.6,"w":4.8,"h":3,"couleur":"#8a5730"},
-      {"forme":"ellipse","dx":0,"dy":-0.8,"w":9,"h":8.6,"couleur":"#63401f"},
-      {"forme":"ellipse","dx":-0.3,"dy":-1.3,"w":8,"h":7.6,"couleur":"#b3794c"},
-      {"forme":"ellipse","dx":-1.1,"dy":-2.6,"w":5.4,"h":4.4,"couleur":"#d79d6e"},
-      {"forme":"ellipse","dx":-1.5,"dy":-3.6,"w":3.4,"h":2,"couleur":"#eec19a"},
-      {"forme":"ellipse","dx":-2.4,"dy":-3.5,"w":2,"h":1.7,"couleur":"#e8b68a"},
-      {"forme":"ellipse","dx":-0.7,"dy":-4,"w":2.1,"h":1.8,"couleur":"#e8b68a"},
-      {"forme":"ellipse","dx":1,"dy":-3.8,"w":2.1,"h":1.8,"couleur":"#e8b68a"},
-      {"forme":"ellipse","dx":2.6,"dy":-3,"w":1.9,"h":1.7,"couleur":"#d79d6e"},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[-1.6,-2.6],[-1.8,0.2]],"couleur":"#7a4b27","epaisseur":0.5,"alpha":0.65},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[0.1,-2.9],[0,0.2]],"couleur":"#7a4b27","epaisseur":0.5,"alpha":0.65},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[1.8,-2.7],[1.9,0]],"couleur":"#7a4b27","epaisseur":0.5,"alpha":0.65},
-      {"forme":"ellipse","dx":0.3,"dy":2.1,"w":7,"h":3.2,"rotation":-10,"couleur":"#63401f"},
-      {"forme":"ellipse","dx":0.3,"dy":2,"w":6.2,"h":2.4,"rotation":-10,"couleur":"#a97246"},
-      {"forme":"ellipse","dx":0,"dy":1.35,"w":5,"h":1.1,"rotation":-10,"couleur":"#cb9265"},
-      {"forme":"ellipse","dx":-2.6,"dy":1.9,"w":1.6,"h":1.9,"rotation":-10,"couleur":"#c08a5e"},
-      {"forme":"rect","dx":-0.2,"dy":4.4,"w":6.2,"h":1.7,"couleur":"#4f3c2a"},
-      {"forme":"rect","dx":-0.2,"dy":3.75,"w":6.2,"h":0.5,"couleur":"#7d6141"},
-      {"forme":"rect","dx":1.8,"dy":4.4,"w":1.1,"h":1.7,"couleur":"#c2a83e"},
-      {"forme":"rect","dx":1.8,"dy":3.9,"w":1.1,"h":0.5,"couleur":"#e4d089"}
+      {
+        "forme": "rect",
+        "dx": -0.2,
+        "dy": 4.6,
+        "w": 4.8,
+        "h": 3,
+        "couleur": "#8a5730"
+      },
+      {
+        "forme": "ellipse",
+        "dx": 0,
+        "dy": -0.8,
+        "w": 9,
+        "h": 8.6,
+        "couleur": "#63401f"
+      },
+      {
+        "forme": "ellipse",
+        "dx": -0.3,
+        "dy": -1.3,
+        "w": 8,
+        "h": 7.6,
+        "couleur": "#b3794c"
+      },
+      {
+        "forme": "ellipse",
+        "dx": -1.1,
+        "dy": -2.6,
+        "w": 5.4,
+        "h": 4.4,
+        "couleur": "#d79d6e"
+      },
+      {
+        "forme": "ellipse",
+        "dx": -1.5,
+        "dy": -3.6,
+        "w": 3.4,
+        "h": 2,
+        "couleur": "#eec19a"
+      },
+      {
+        "forme": "ellipse",
+        "dx": -2.4,
+        "dy": -3.5,
+        "w": 2,
+        "h": 1.7,
+        "couleur": "#e8b68a"
+      },
+      {
+        "forme": "ellipse",
+        "dx": -0.7,
+        "dy": -4,
+        "w": 2.1,
+        "h": 1.8,
+        "couleur": "#e8b68a"
+      },
+      {
+        "forme": "ellipse",
+        "dx": 1,
+        "dy": -3.8,
+        "w": 2.1,
+        "h": 1.8,
+        "couleur": "#e8b68a"
+      },
+      {
+        "forme": "ellipse",
+        "dx": 2.6,
+        "dy": -3,
+        "w": 1.9,
+        "h": 1.7,
+        "couleur": "#d79d6e"
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -1.6,
+            -2.6
+          ],
+          [
+            -1.8,
+            0.2
+          ]
+        ],
+        "couleur": "#7a4b27",
+        "epaisseur": 0.5,
+        "alpha": 0.65
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0.1,
+            -2.9
+          ],
+          [
+            0,
+            0.2
+          ]
+        ],
+        "couleur": "#7a4b27",
+        "epaisseur": 0.5,
+        "alpha": 0.65
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            1.8,
+            -2.7
+          ],
+          [
+            1.9,
+            0
+          ]
+        ],
+        "couleur": "#7a4b27",
+        "epaisseur": 0.5,
+        "alpha": 0.65
+      },
+      {
+        "forme": "ellipse",
+        "dx": 0.3,
+        "dy": 2.1,
+        "w": 7,
+        "h": 3.2,
+        "rotation": -10,
+        "couleur": "#63401f"
+      },
+      {
+        "forme": "ellipse",
+        "dx": 0.3,
+        "dy": 2,
+        "w": 6.2,
+        "h": 2.4,
+        "rotation": -10,
+        "couleur": "#a97246"
+      },
+      {
+        "forme": "ellipse",
+        "dx": 0,
+        "dy": 1.35,
+        "w": 5,
+        "h": 1.1,
+        "rotation": -10,
+        "couleur": "#cb9265"
+      },
+      {
+        "forme": "ellipse",
+        "dx": -2.6,
+        "dy": 1.9,
+        "w": 1.6,
+        "h": 1.9,
+        "rotation": -10,
+        "couleur": "#c08a5e"
+      },
+      {
+        "forme": "rect",
+        "dx": -0.2,
+        "dy": 4.4,
+        "w": 6.2,
+        "h": 1.7,
+        "couleur": "#4f3c2a"
+      },
+      {
+        "forme": "rect",
+        "dx": -0.2,
+        "dy": 3.75,
+        "w": 6.2,
+        "h": 0.5,
+        "couleur": "#7d6141"
+      },
+      {
+        "forme": "rect",
+        "dx": 1.8,
+        "dy": 4.4,
+        "w": 1.1,
+        "h": 1.7,
+        "couleur": "#c2a83e"
+      },
+      {
+        "forme": "rect",
+        "dx": 1.8,
+        "dy": 3.9,
+        "w": 1.1,
+        "h": 0.5,
+        "couleur": "#e4d089"
+      }
     ]
   },
   {
@@ -448,11 +5316,99 @@
     "ancre": "centre",
     "teintable": true,
     "primitives": [
-      {"forme":"polygone","dx":0,"dy":0.4,"points":[[0,-5.2],[4.8,4.2],[-4.8,4.2]],"couleur":"#e0a53a","teinte":true},
-      {"forme":"polygone","dx":0,"dy":0.4,"points":[[0,-5.2],[4.8,4.2],[0,4.2]],"couleur":"#000000","alpha":0.22},
-      {"forme":"polygone","dx":0,"dy":0.4,"points":[[0,-4],[-3.3,3.2],[0,3.2]],"couleur":"#ffffff","alpha":0.2},
-      {"forme":"polygone","dx":0,"dy":0.4,"points":[[0,-5.2],[1.2,-2.6],[-1.2,-2.6]],"couleur":"#ffffff","alpha":0.4},
-      {"forme":"rect","dx":0,"dy":4.2,"w":9.6,"h":0.8,"couleur":"#000000","alpha":0.25}
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0.4,
+        "points": [
+          [
+            0,
+            -5.2
+          ],
+          [
+            4.8,
+            4.2
+          ],
+          [
+            -4.8,
+            4.2
+          ]
+        ],
+        "couleur": "#e0a53a",
+        "teinte": true
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0.4,
+        "points": [
+          [
+            0,
+            -5.2
+          ],
+          [
+            4.8,
+            4.2
+          ],
+          [
+            0,
+            4.2
+          ]
+        ],
+        "couleur": "#000000",
+        "alpha": 0.22
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0.4,
+        "points": [
+          [
+            0,
+            -4
+          ],
+          [
+            -3.3,
+            3.2
+          ],
+          [
+            0,
+            3.2
+          ]
+        ],
+        "couleur": "#ffffff",
+        "alpha": 0.2
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0.4,
+        "points": [
+          [
+            0,
+            -5.2
+          ],
+          [
+            1.2,
+            -2.6
+          ],
+          [
+            -1.2,
+            -2.6
+          ]
+        ],
+        "couleur": "#ffffff",
+        "alpha": 0.4
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": 4.2,
+        "w": 9.6,
+        "h": 0.8,
+        "couleur": "#000000",
+        "alpha": 0.25
+      }
     ]
   },
   {
@@ -460,11 +5416,119 @@
     "ancre": "centre",
     "teintable": true,
     "primitives": [
-      {"forme":"polygone","dx":0,"dy":0,"points":[[0,-5.2],[3.4,0],[0,5.2],[-3.4,0]],"couleur":"#3fc9b0","teinte":true},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[0,-5.2],[3.4,0],[0,5.2]],"couleur":"#000000","alpha":0.22},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[0,-4.2],[-2.6,0],[0,4.2]],"couleur":"#ffffff","alpha":0.18},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[0,-5.2],[-1.4,-1.6],[0,-0.6],[1.1,-2]],"couleur":"#ffffff","alpha":0.42},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[0,5.2],[1.3,1.4],[0,2.2]],"couleur":"#000000","alpha":0.18}
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0,
+            -5.2
+          ],
+          [
+            3.4,
+            0
+          ],
+          [
+            0,
+            5.2
+          ],
+          [
+            -3.4,
+            0
+          ]
+        ],
+        "couleur": "#3fc9b0",
+        "teinte": true
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0,
+            -5.2
+          ],
+          [
+            3.4,
+            0
+          ],
+          [
+            0,
+            5.2
+          ]
+        ],
+        "couleur": "#000000",
+        "alpha": 0.22
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0,
+            -4.2
+          ],
+          [
+            -2.6,
+            0
+          ],
+          [
+            0,
+            4.2
+          ]
+        ],
+        "couleur": "#ffffff",
+        "alpha": 0.18
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0,
+            -5.2
+          ],
+          [
+            -1.4,
+            -1.6
+          ],
+          [
+            0,
+            -0.6
+          ],
+          [
+            1.1,
+            -2
+          ]
+        ],
+        "couleur": "#ffffff",
+        "alpha": 0.42
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0,
+            5.2
+          ],
+          [
+            1.3,
+            1.4
+          ],
+          [
+            0,
+            2.2
+          ]
+        ],
+        "couleur": "#000000",
+        "alpha": 0.18
+      }
     ]
   },
   {
@@ -472,15 +5536,87 @@
     "ancre": "centre",
     "teintable": true,
     "primitives": [
-      {"forme":"rect","dx":0.7,"dy":0.7,"w":3.8,"h":10.4,"couleur":"#e05a5a","teinte":true},
-      {"forme":"rect","dx":0.7,"dy":0.7,"w":10.4,"h":3.8,"couleur":"#e05a5a","teinte":true},
-      {"forme":"rect","dx":0.7,"dy":0.7,"w":3.8,"h":10.4,"couleur":"#000000","alpha":0.35},
-      {"forme":"rect","dx":0.7,"dy":0.7,"w":10.4,"h":3.8,"couleur":"#000000","alpha":0.35},
-      {"forme":"rect","dx":0,"dy":0,"w":3.8,"h":10.4,"couleur":"#e05a5a","teinte":true},
-      {"forme":"rect","dx":0,"dy":0,"w":10.4,"h":3.8,"couleur":"#e05a5a","teinte":true},
-      {"forme":"rect","dx":-0.6,"dy":-0.6,"w":2.2,"h":7.6,"couleur":"#ffffff","alpha":0.2},
-      {"forme":"rect","dx":-0.6,"dy":-0.6,"w":7.6,"h":2.2,"couleur":"#ffffff","alpha":0.2},
-      {"forme":"rect","dx":-0.6,"dy":-0.6,"w":2.2,"h":2.2,"couleur":"#ffffff","alpha":0.4}
+      {
+        "forme": "rect",
+        "dx": 0.7,
+        "dy": 0.7,
+        "w": 3.8,
+        "h": 10.4,
+        "couleur": "#e05a5a",
+        "teinte": true
+      },
+      {
+        "forme": "rect",
+        "dx": 0.7,
+        "dy": 0.7,
+        "w": 10.4,
+        "h": 3.8,
+        "couleur": "#e05a5a",
+        "teinte": true
+      },
+      {
+        "forme": "rect",
+        "dx": 0.7,
+        "dy": 0.7,
+        "w": 3.8,
+        "h": 10.4,
+        "couleur": "#000000",
+        "alpha": 0.35
+      },
+      {
+        "forme": "rect",
+        "dx": 0.7,
+        "dy": 0.7,
+        "w": 10.4,
+        "h": 3.8,
+        "couleur": "#000000",
+        "alpha": 0.35
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": 0,
+        "w": 3.8,
+        "h": 10.4,
+        "couleur": "#e05a5a",
+        "teinte": true
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": 0,
+        "w": 10.4,
+        "h": 3.8,
+        "couleur": "#e05a5a",
+        "teinte": true
+      },
+      {
+        "forme": "rect",
+        "dx": -0.6,
+        "dy": -0.6,
+        "w": 2.2,
+        "h": 7.6,
+        "couleur": "#ffffff",
+        "alpha": 0.2
+      },
+      {
+        "forme": "rect",
+        "dx": -0.6,
+        "dy": -0.6,
+        "w": 7.6,
+        "h": 2.2,
+        "couleur": "#ffffff",
+        "alpha": 0.2
+      },
+      {
+        "forme": "rect",
+        "dx": -0.6,
+        "dy": -0.6,
+        "w": 2.2,
+        "h": 2.2,
+        "couleur": "#ffffff",
+        "alpha": 0.4
+      }
     ]
   },
   {
@@ -488,11 +5624,53 @@
     "ancre": "centre",
     "teintable": true,
     "primitives": [
-      {"forme":"cercle","dx":0,"dy":0,"w":10.4,"h":10.4,"couleur":"#7a8ce0","alpha":0.26,"teinte":true},
-      {"forme":"cercle","dx":0,"dy":0,"w":7.4,"h":7.4,"couleur":"#7a8ce0","teinte":true},
-      {"forme":"cercle","dx":0.8,"dy":0.8,"w":6.4,"h":6.4,"couleur":"#000000","alpha":0.22},
-      {"forme":"cercle","dx":-0.7,"dy":-0.7,"w":5,"h":5,"couleur":"#ffffff","alpha":0.2},
-      {"forme":"ellipse","dx":-1.5,"dy":-1.6,"w":2.4,"h":1.7,"rotation":-32,"couleur":"#ffffff","alpha":0.5}
+      {
+        "forme": "cercle",
+        "dx": 0,
+        "dy": 0,
+        "w": 10.4,
+        "h": 10.4,
+        "couleur": "#7a8ce0",
+        "alpha": 0.26,
+        "teinte": true
+      },
+      {
+        "forme": "cercle",
+        "dx": 0,
+        "dy": 0,
+        "w": 7.4,
+        "h": 7.4,
+        "couleur": "#7a8ce0",
+        "teinte": true
+      },
+      {
+        "forme": "cercle",
+        "dx": 0.8,
+        "dy": 0.8,
+        "w": 6.4,
+        "h": 6.4,
+        "couleur": "#000000",
+        "alpha": 0.22
+      },
+      {
+        "forme": "cercle",
+        "dx": -0.7,
+        "dy": -0.7,
+        "w": 5,
+        "h": 5,
+        "couleur": "#ffffff",
+        "alpha": 0.2
+      },
+      {
+        "forme": "ellipse",
+        "dx": -1.5,
+        "dy": -1.6,
+        "w": 2.4,
+        "h": 1.7,
+        "rotation": -32,
+        "couleur": "#ffffff",
+        "alpha": 0.5
+      }
     ]
   },
   {
@@ -500,8 +5678,48 @@
     "ancre": "centre",
     "teintable": true,
     "primitives": [
-      { "forme": "cercle", "dx": 0, "dy": -2.8, "w": 5.2, "h": 5.2, "couleur": "#f2e9d8", "teinte": true },
-      { "forme": "polygone", "dx": 0, "dy": 0, "points": [[-5, 5.5], [-3.4, 1.4], [-1.2, 0.6], [1.2, 0.6], [3.4, 1.4], [5, 5.5]], "couleur": "#f2e9d8", "teinte": true }
+      {
+        "forme": "cercle",
+        "dx": 0,
+        "dy": -2.8,
+        "w": 5.2,
+        "h": 5.2,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -5,
+            5.5
+          ],
+          [
+            -3.4,
+            1.4
+          ],
+          [
+            -1.2,
+            0.6
+          ],
+          [
+            1.2,
+            0.6
+          ],
+          [
+            3.4,
+            1.4
+          ],
+          [
+            5,
+            5.5
+          ]
+        ],
+        "couleur": "#f2e9d8",
+        "teinte": true
+      }
     ]
   },
   {
@@ -509,12 +5727,62 @@
     "ancre": "centre",
     "teintable": true,
     "primitives": [
-      { "forme": "rect", "dx": 0, "dy": 0, "w": 2.6, "h": 11, "couleur": "#f2e9d8", "teinte": true },
-      { "forme": "rect", "dx": 0, "dy": 0, "w": 11, "h": 2.6, "couleur": "#f2e9d8", "teinte": true },
-      { "forme": "rect", "dx": 0, "dy": 0, "w": 2.6, "h": 11, "rotation": 45, "couleur": "#f2e9d8", "teinte": true },
-      { "forme": "rect", "dx": 0, "dy": 0, "w": 2.6, "h": 11, "rotation": -45, "couleur": "#f2e9d8", "teinte": true },
-      { "forme": "cercle", "dx": 0, "dy": 0, "w": 7.6, "h": 7.6, "couleur": "#f2e9d8", "teinte": true },
-      { "forme": "cercle", "dx": 0, "dy": 0, "w": 3, "h": 3, "couleur": "#0d1017", "alpha": 0.6 }
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": 0,
+        "w": 2.6,
+        "h": 11,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": 0,
+        "w": 11,
+        "h": 2.6,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": 0,
+        "w": 2.6,
+        "h": 11,
+        "rotation": 45,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": 0,
+        "w": 2.6,
+        "h": 11,
+        "rotation": -45,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "cercle",
+        "dx": 0,
+        "dy": 0,
+        "w": 7.6,
+        "h": 7.6,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "cercle",
+        "dx": 0,
+        "dy": 0,
+        "w": 3,
+        "h": 3,
+        "couleur": "#0d1017",
+        "alpha": 0.6
+      }
     ]
   },
   {
@@ -522,8 +5790,26 @@
     "ancre": "centre",
     "teintable": true,
     "primitives": [
-      { "forme": "rect", "dx": -1, "dy": 1, "w": 1.9, "h": 10, "rotation": 45, "couleur": "#f2e9d8", "teinte": true },
-      { "forme": "rect", "dx": 2.4, "dy": -2.4, "w": 8, "h": 4, "rotation": 45, "couleur": "#f2e9d8", "teinte": true }
+      {
+        "forme": "rect",
+        "dx": -1,
+        "dy": 1,
+        "w": 1.9,
+        "h": 10,
+        "rotation": 45,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "rect",
+        "dx": 2.4,
+        "dy": -2.4,
+        "w": 8,
+        "h": 4,
+        "rotation": 45,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      }
     ]
   },
   {
@@ -531,9 +5817,49 @@
     "ancre": "centre",
     "teintable": true,
     "primitives": [
-      { "forme": "ellipse", "dx": 0, "dy": 1.6, "w": 10, "h": 8.4, "couleur": "#f2e9d8", "teinte": true },
-      { "forme": "polygone", "dx": 0, "dy": 0, "points": [[-2.6, -2], [-1.6, -5.4], [1.6, -5.4], [2.6, -2]], "couleur": "#f2e9d8", "teinte": true },
-      { "forme": "rect", "dx": 0, "dy": -2.4, "w": 5.4, "h": 1.1, "couleur": "#0d1017", "alpha": 0.6 }
+      {
+        "forme": "ellipse",
+        "dx": 0,
+        "dy": 1.6,
+        "w": 10,
+        "h": 8.4,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -2.6,
+            -2
+          ],
+          [
+            -1.6,
+            -5.4
+          ],
+          [
+            1.6,
+            -5.4
+          ],
+          [
+            2.6,
+            -2
+          ]
+        ],
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": -2.4,
+        "w": 5.4,
+        "h": 1.1,
+        "couleur": "#0d1017",
+        "alpha": 0.6
+      }
     ]
   },
   {
@@ -541,9 +5867,33 @@
     "ancre": "centre",
     "teintable": true,
     "primitives": [
-      { "forme": "rect", "dx": -3.8, "dy": 3, "w": 2.6, "h": 4, "couleur": "#f2e9d8", "teinte": true },
-      { "forme": "rect", "dx": 0, "dy": 1.5, "w": 2.6, "h": 7, "couleur": "#f2e9d8", "teinte": true },
-      { "forme": "rect", "dx": 3.8, "dy": 0, "w": 2.6, "h": 10, "couleur": "#f2e9d8", "teinte": true }
+      {
+        "forme": "rect",
+        "dx": -3.8,
+        "dy": 3,
+        "w": 2.6,
+        "h": 4,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": 1.5,
+        "w": 2.6,
+        "h": 7,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "rect",
+        "dx": 3.8,
+        "dy": 0,
+        "w": 2.6,
+        "h": 10,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      }
     ]
   },
   {
@@ -551,28 +5901,206 @@
     "ancre": "centre",
     "teintable": true,
     "primitives": [
-      { "forme": "rect", "dx": 0, "dy": -1.2, "w": 11, "h": 7.4, "couleur": "#f2e9d8", "teinte": true },
-      { "forme": "polygone", "dx": 0, "dy": 0, "points": [[-3, 2], [0.5, 2], [-3.6, 5.6]], "couleur": "#f2e9d8", "teinte": true },
-      { "forme": "rect", "dx": 0, "dy": -2.4, "w": 6.6, "h": 1.1, "couleur": "#0d1017", "alpha": 0.6 },
-      { "forme": "rect", "dx": -1, "dy": -0.2, "w": 4.6, "h": 1.1, "couleur": "#0d1017", "alpha": 0.6 }
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": -1.2,
+        "w": 11,
+        "h": 7.4,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -3,
+            2
+          ],
+          [
+            0.5,
+            2
+          ],
+          [
+            -3.6,
+            5.6
+          ]
+        ],
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": -2.4,
+        "w": 6.6,
+        "h": 1.1,
+        "couleur": "#0d1017",
+        "alpha": 0.6
+      },
+      {
+        "forme": "rect",
+        "dx": -1,
+        "dy": -0.2,
+        "w": 4.6,
+        "h": 1.1,
+        "couleur": "#0d1017",
+        "alpha": 0.6
+      }
     ]
   },
   {
     "id": "visuel_icone_epee_bois",
     "ancre": "centre",
-    "ombre": {"dy":5.5,"w":4,"h":1.5,"alpha":0.24},
+    "ombre": {
+      "dy": 5.5,
+      "w": 4,
+      "h": 1.5,
+      "alpha": 0.24
+    },
     "primitives": [
-      {"forme":"polygone","dx":0,"dy":0,"points":[[0,-5.4],[0.98,-4.1],[1.02,0.5],[-1.02,0.5],[-0.98,-4.1]],"couleur":"#8a6b45"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-0.1,-5.2],[-0.9,-4.05],[-0.95,0.4],[-0.1,0.4]],"couleur":"#c9a97a"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[0.72,-4.4],[0.92,-4.05],[0.96,0.4],[0.72,0.4]],"couleur":"#6b4f30"},
-      {"forme":"rect","dx":0,"dy":1.05,"w":4.6,"h":1.1,"couleur":"#6b4f30"},
-      {"forme":"rect","dx":0,"dy":0.72,"w":4.6,"h":0.44,"couleur":"#9c7a52"},
-      {"forme":"rect","dx":0,"dy":3.05,"w":1.6,"h":3.1,"couleur":"#5a4530"},
-      {"forme":"rect","dx":-0.3,"dy":3.05,"w":0.5,"h":3.1,"couleur":"#7a5c3e"},
-      {"forme":"rect","dx":0,"dy":2.2,"w":1.8,"h":0.4,"couleur":"#3f2e1e"},
-      {"forme":"rect","dx":0,"dy":3.8,"w":1.8,"h":0.4,"couleur":"#3f2e1e"},
-      {"forme":"ellipse","dx":0,"dy":4.85,"w":2.1,"h":1.7,"couleur":"#6b4f30"},
-      {"forme":"ellipse","dx":-0.35,"dy":4.6,"w":1.1,"h":0.85,"couleur":"#9c7a52"}
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0,
+            -5.4
+          ],
+          [
+            0.98,
+            -4.1
+          ],
+          [
+            1.02,
+            0.5
+          ],
+          [
+            -1.02,
+            0.5
+          ],
+          [
+            -0.98,
+            -4.1
+          ]
+        ],
+        "couleur": "#8a6b45"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -0.1,
+            -5.2
+          ],
+          [
+            -0.9,
+            -4.05
+          ],
+          [
+            -0.95,
+            0.4
+          ],
+          [
+            -0.1,
+            0.4
+          ]
+        ],
+        "couleur": "#c9a97a"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0.72,
+            -4.4
+          ],
+          [
+            0.92,
+            -4.05
+          ],
+          [
+            0.96,
+            0.4
+          ],
+          [
+            0.72,
+            0.4
+          ]
+        ],
+        "couleur": "#6b4f30"
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": 1.05,
+        "w": 4.6,
+        "h": 1.1,
+        "couleur": "#6b4f30"
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": 0.72,
+        "w": 4.6,
+        "h": 0.44,
+        "couleur": "#9c7a52"
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": 3.05,
+        "w": 1.6,
+        "h": 3.1,
+        "couleur": "#5a4530"
+      },
+      {
+        "forme": "rect",
+        "dx": -0.3,
+        "dy": 3.05,
+        "w": 0.5,
+        "h": 3.1,
+        "couleur": "#7a5c3e"
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": 2.2,
+        "w": 1.8,
+        "h": 0.4,
+        "couleur": "#3f2e1e"
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": 3.8,
+        "w": 1.8,
+        "h": 0.4,
+        "couleur": "#3f2e1e"
+      },
+      {
+        "forme": "ellipse",
+        "dx": 0,
+        "dy": 4.85,
+        "w": 2.1,
+        "h": 1.7,
+        "couleur": "#6b4f30"
+      },
+      {
+        "forme": "ellipse",
+        "dx": -0.35,
+        "dy": 4.6,
+        "w": 1.1,
+        "h": 0.85,
+        "couleur": "#9c7a52"
+      }
     ]
   },
   {
@@ -580,9 +6108,33 @@
     "ancre": "centre",
     "teintable": true,
     "primitives": [
-      { "forme": "rect", "dx": -4, "dy": 2.9, "w": 2.8, "h": 3.2, "couleur": "#f2e9d8", "teinte": true },
-      { "forme": "rect", "dx": 0, "dy": 1.7, "w": 2.8, "h": 5.6, "couleur": "#f2e9d8", "teinte": true },
-      { "forme": "rect", "dx": 4, "dy": 0.5, "w": 2.8, "h": 8, "couleur": "#f2e9d8", "teinte": true }
+      {
+        "forme": "rect",
+        "dx": -4,
+        "dy": 2.9,
+        "w": 2.8,
+        "h": 3.2,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": 1.7,
+        "w": 2.8,
+        "h": 5.6,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "rect",
+        "dx": 4,
+        "dy": 0.5,
+        "w": 2.8,
+        "h": 8,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      }
     ]
   },
   {
@@ -590,10 +6142,76 @@
     "ancre": "centre",
     "teintable": true,
     "primitives": [
-      { "forme": "rect", "dx": -3.4, "dy": 0, "w": 2.6, "h": 4, "couleur": "#f2e9d8", "teinte": true },
-      { "forme": "polygone", "dx": 0, "dy": 0, "points": [[-2.2, -2], [1.6, -5], [1.6, 5], [-2.2, 2]], "couleur": "#f2e9d8", "teinte": true },
-      { "forme": "ligne", "dx": 0, "dy": 0, "points": [[3, -2.4], [3, 2.4]], "couleur": "#f2e9d8", "epaisseur": 1.2, "teinte": true },
-      { "forme": "ligne", "dx": 0, "dy": 0, "points": [[5, -3.8], [5, 3.8]], "couleur": "#f2e9d8", "epaisseur": 1.2, "teinte": true }
+      {
+        "forme": "rect",
+        "dx": -3.4,
+        "dy": 0,
+        "w": 2.6,
+        "h": 4,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -2.2,
+            -2
+          ],
+          [
+            1.6,
+            -5
+          ],
+          [
+            1.6,
+            5
+          ],
+          [
+            -2.2,
+            2
+          ]
+        ],
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            3,
+            -2.4
+          ],
+          [
+            3,
+            2.4
+          ]
+        ],
+        "couleur": "#f2e9d8",
+        "epaisseur": 1.2,
+        "teinte": true
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            5,
+            -3.8
+          ],
+          [
+            5,
+            3.8
+          ]
+        ],
+        "couleur": "#f2e9d8",
+        "epaisseur": 1.2,
+        "teinte": true
+      }
     ]
   },
   {
@@ -601,9 +6219,50 @@
     "ancre": "centre",
     "teintable": true,
     "primitives": [
-      { "forme": "ellipse", "dx": -1.6, "dy": 3.4, "w": 4.8, "h": 3.6, "rotation": -20, "couleur": "#f2e9d8", "teinte": true },
-      { "forme": "rect", "dx": 0.4, "dy": -0.8, "w": 1.3, "h": 8.6, "couleur": "#f2e9d8", "teinte": true },
-      { "forme": "polygone", "dx": 0, "dy": 0, "points": [[1, -5.1], [4.8, -3.2], [4.8, -0.9], [1, -2.6]], "couleur": "#f2e9d8", "teinte": true }
+      {
+        "forme": "ellipse",
+        "dx": -1.6,
+        "dy": 3.4,
+        "w": 4.8,
+        "h": 3.6,
+        "rotation": -20,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "rect",
+        "dx": 0.4,
+        "dy": -0.8,
+        "w": 1.3,
+        "h": 8.6,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            1,
+            -5.1
+          ],
+          [
+            4.8,
+            -3.2
+          ],
+          [
+            4.8,
+            -0.9
+          ],
+          [
+            1,
+            -2.6
+          ]
+        ],
+        "couleur": "#f2e9d8",
+        "teinte": true
+      }
     ]
   },
   {
@@ -611,14 +6270,78 @@
     "ancre": "centre",
     "teintable": true,
     "primitives": [
-      { "forme": "rect", "dx": -3.2, "dy": -4.6, "w": 3.8, "h": 1.4, "couleur": "#f2e9d8", "teinte": true },
-      { "forme": "rect", "dx": -4.4, "dy": -3.4, "w": 1.4, "h": 3.8, "couleur": "#f2e9d8", "teinte": true },
-      { "forme": "rect", "dx": 3.2, "dy": -4.6, "w": 3.8, "h": 1.4, "couleur": "#f2e9d8", "teinte": true },
-      { "forme": "rect", "dx": 4.4, "dy": -3.4, "w": 1.4, "h": 3.8, "couleur": "#f2e9d8", "teinte": true },
-      { "forme": "rect", "dx": -3.2, "dy": 4.6, "w": 3.8, "h": 1.4, "couleur": "#f2e9d8", "teinte": true },
-      { "forme": "rect", "dx": -4.4, "dy": 3.4, "w": 1.4, "h": 3.8, "couleur": "#f2e9d8", "teinte": true },
-      { "forme": "rect", "dx": 3.2, "dy": 4.6, "w": 3.8, "h": 1.4, "couleur": "#f2e9d8", "teinte": true },
-      { "forme": "rect", "dx": 4.4, "dy": 3.4, "w": 1.4, "h": 3.8, "couleur": "#f2e9d8", "teinte": true }
+      {
+        "forme": "rect",
+        "dx": -3.2,
+        "dy": -4.6,
+        "w": 3.8,
+        "h": 1.4,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "rect",
+        "dx": -4.4,
+        "dy": -3.4,
+        "w": 1.4,
+        "h": 3.8,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "rect",
+        "dx": 3.2,
+        "dy": -4.6,
+        "w": 3.8,
+        "h": 1.4,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "rect",
+        "dx": 4.4,
+        "dy": -3.4,
+        "w": 1.4,
+        "h": 3.8,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "rect",
+        "dx": -3.2,
+        "dy": 4.6,
+        "w": 3.8,
+        "h": 1.4,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "rect",
+        "dx": -4.4,
+        "dy": 3.4,
+        "w": 1.4,
+        "h": 3.8,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "rect",
+        "dx": 3.2,
+        "dy": 4.6,
+        "w": 3.8,
+        "h": 1.4,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "rect",
+        "dx": 4.4,
+        "dy": 3.4,
+        "w": 1.4,
+        "h": 3.8,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      }
     ]
   },
   {
@@ -626,9 +6349,53 @@
     "ancre": "centre",
     "teintable": true,
     "primitives": [
-      { "forme": "polygone", "dx": 0, "dy": 0, "points": [[-5, -5], [3, -5], [5, -3], [5, 5], [-5, 5]], "couleur": "#f2e9d8", "teinte": true },
-      { "forme": "rect", "dx": -0.6, "dy": -3.2, "w": 5, "h": 2.6, "couleur": "#0d1017", "alpha": 0.6 },
-      { "forme": "rect", "dx": 0, "dy": 2.4, "w": 6.4, "h": 3.6, "couleur": "#ffffff", "alpha": 0.35 }
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -5,
+            -5
+          ],
+          [
+            3,
+            -5
+          ],
+          [
+            5,
+            -3
+          ],
+          [
+            5,
+            5
+          ],
+          [
+            -5,
+            5
+          ]
+        ],
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "rect",
+        "dx": -0.6,
+        "dy": -3.2,
+        "w": 5,
+        "h": 2.6,
+        "couleur": "#0d1017",
+        "alpha": 0.6
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": 2.4,
+        "w": 6.4,
+        "h": 3.6,
+        "couleur": "#ffffff",
+        "alpha": 0.35
+      }
     ]
   },
   {
@@ -636,8 +6403,52 @@
     "ancre": "centre",
     "teintable": true,
     "primitives": [
-      { "forme": "polygone", "dx": 0, "dy": 0, "points": [[0, -5.6], [-3.6, -1.6], [-1.2, -1.6], [-1.2, 2.2], [1.2, 2.2], [1.2, -1.6], [3.6, -1.6]], "couleur": "#f2e9d8", "teinte": true },
-      { "forme": "rect", "dx": 0, "dy": 4.7, "w": 10, "h": 1.6, "couleur": "#f2e9d8", "teinte": true }
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0,
+            -5.6
+          ],
+          [
+            -3.6,
+            -1.6
+          ],
+          [
+            -1.2,
+            -1.6
+          ],
+          [
+            -1.2,
+            2.2
+          ],
+          [
+            1.2,
+            2.2
+          ],
+          [
+            1.2,
+            -1.6
+          ],
+          [
+            3.6,
+            -1.6
+          ]
+        ],
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": 4.7,
+        "w": 10,
+        "h": 1.6,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      }
     ]
   },
   {
@@ -645,8 +6456,52 @@
     "ancre": "centre",
     "teintable": true,
     "primitives": [
-      { "forme": "polygone", "dx": 0, "dy": 0, "points": [[0, 2.6], [-3.6, -1.4], [-1.2, -1.4], [-1.2, -5.6], [1.2, -5.6], [1.2, -1.4], [3.6, -1.4]], "couleur": "#f2e9d8", "teinte": true },
-      { "forme": "rect", "dx": 0, "dy": 4.7, "w": 10, "h": 1.6, "couleur": "#f2e9d8", "teinte": true }
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0,
+            2.6
+          ],
+          [
+            -3.6,
+            -1.4
+          ],
+          [
+            -1.2,
+            -1.4
+          ],
+          [
+            -1.2,
+            -5.6
+          ],
+          [
+            1.2,
+            -5.6
+          ],
+          [
+            1.2,
+            -1.4
+          ],
+          [
+            3.6,
+            -1.4
+          ]
+        ],
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": 4.7,
+        "w": 10,
+        "h": 1.6,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      }
     ]
   },
   {
@@ -654,9 +6509,45 @@
     "ancre": "centre",
     "teintable": true,
     "primitives": [
-      { "forme": "polygone", "dx": 0, "dy": 0, "points": [[0, -5.6], [-5.8, 4.8], [5.8, 4.8]], "couleur": "#f2e9d8", "teinte": true },
-      { "forme": "rect", "dx": 0, "dy": -0.4, "w": 1.5, "h": 4.2, "couleur": "#0d1017", "alpha": 0.85 },
-      { "forme": "rect", "dx": 0, "dy": 3.1, "w": 1.5, "h": 1.5, "couleur": "#0d1017", "alpha": 0.85 }
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0,
+            -5.6
+          ],
+          [
+            -5.8,
+            4.8
+          ],
+          [
+            5.8,
+            4.8
+          ]
+        ],
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": -0.4,
+        "w": 1.5,
+        "h": 4.2,
+        "couleur": "#0d1017",
+        "alpha": 0.85
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": 3.1,
+        "w": 1.5,
+        "h": 1.5,
+        "couleur": "#0d1017",
+        "alpha": 0.85
+      }
     ]
   },
   {
@@ -664,8 +6555,26 @@
     "ancre": "centre",
     "teintable": true,
     "primitives": [
-      { "forme": "rect", "dx": 0, "dy": 0, "w": 12, "h": 1.9, "rotation": 45, "couleur": "#f2e9d8", "teinte": true },
-      { "forme": "rect", "dx": 0, "dy": 0, "w": 12, "h": 1.9, "rotation": -45, "couleur": "#f2e9d8", "teinte": true }
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": 0,
+        "w": 12,
+        "h": 1.9,
+        "rotation": 45,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": 0,
+        "w": 12,
+        "h": 1.9,
+        "rotation": -45,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      }
     ]
   },
   {
@@ -673,131 +6582,1030 @@
     "ancre": "centre",
     "teintable": true,
     "primitives": [
-      { "forme": "polygone", "dx": 0, "dy": 0, "points": [[-5.8, 0], [-1, -4.4], [-1, -1.1], [5.8, -1.1], [5.8, 1.1], [-1, 1.1], [-1, 4.4]], "couleur": "#f2e9d8", "teinte": true }
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -5.8,
+            0
+          ],
+          [
+            -1,
+            -4.4
+          ],
+          [
+            -1,
+            -1.1
+          ],
+          [
+            5.8,
+            -1.1
+          ],
+          [
+            5.8,
+            1.1
+          ],
+          [
+            -1,
+            1.1
+          ],
+          [
+            -1,
+            4.4
+          ]
+        ],
+        "couleur": "#f2e9d8",
+        "teinte": true
+      }
     ]
   },
   {
     "id": "visuel_icone_eclat",
     "ancre": "centre",
     "primitives": [
-      {"forme":"polygone","dx":0,"dy":0,"points":[[0,-5],[3.3,0],[0,5],[-3.3,0]],"couleur":"#3a566e"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[0,-4.3],[2.7,0],[0,4.3],[-2.7,0]],"couleur":"#7fa6c4"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[0,-4.3],[0,4.3],[-2.7,0]],"couleur":"#cfe6f7"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[0,-4.3],[-1.3,-0.6],[0,0.6]],"couleur":"#ffffff","alpha":0.75},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[0,4.3],[1.4,0.6],[2.7,0]],"couleur":"#26405a","alpha":0.55}
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0,
+            -5
+          ],
+          [
+            3.3,
+            0
+          ],
+          [
+            0,
+            5
+          ],
+          [
+            -3.3,
+            0
+          ]
+        ],
+        "couleur": "#3a566e"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0,
+            -4.3
+          ],
+          [
+            2.7,
+            0
+          ],
+          [
+            0,
+            4.3
+          ],
+          [
+            -2.7,
+            0
+          ]
+        ],
+        "couleur": "#7fa6c4"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0,
+            -4.3
+          ],
+          [
+            0,
+            4.3
+          ],
+          [
+            -2.7,
+            0
+          ]
+        ],
+        "couleur": "#cfe6f7"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0,
+            -4.3
+          ],
+          [
+            -1.3,
+            -0.6
+          ],
+          [
+            0,
+            0.6
+          ]
+        ],
+        "couleur": "#ffffff",
+        "alpha": 0.75
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0,
+            4.3
+          ],
+          [
+            1.4,
+            0.6
+          ],
+          [
+            2.7,
+            0
+          ]
+        ],
+        "couleur": "#26405a",
+        "alpha": 0.55
+      }
     ]
   },
   {
     "id": "visuel_icone_faim",
     "ancre": "centre",
     "primitives": [
-      {"forme":"polygone","dx":0,"dy":0,"points":[[0,-4.8],[4.3,4.2],[-4.3,4.2]],"couleur":"#5e3f14"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[0,-3.9],[3.5,3.5],[-3.5,3.5]],"couleur":"#c2952f"},
-      {"forme":"polygone","dx":-0.3,"dy":-0.2,"points":[[0,-2.6],[2.3,2.5],[-2.5,2.5]],"couleur":"#e8c96a"},
-      {"forme":"rect","dx":0,"dy":3.6,"w":7.6,"h":1.3,"couleur":"#7d5719"},
-      {"forme":"rect","dx":0,"dy":3.1,"w":7.6,"h":0.5,"couleur":"#b98c2c"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[-0.6,-3],[0.4,-1.4],[-1.4,-1.4]],"couleur":"#fff1c4","alpha":0.7}
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0,
+            -4.8
+          ],
+          [
+            4.3,
+            4.2
+          ],
+          [
+            -4.3,
+            4.2
+          ]
+        ],
+        "couleur": "#5e3f14"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0,
+            -3.9
+          ],
+          [
+            3.5,
+            3.5
+          ],
+          [
+            -3.5,
+            3.5
+          ]
+        ],
+        "couleur": "#c2952f"
+      },
+      {
+        "forme": "polygone",
+        "dx": -0.3,
+        "dy": -0.2,
+        "points": [
+          [
+            0,
+            -2.6
+          ],
+          [
+            2.3,
+            2.5
+          ],
+          [
+            -2.5,
+            2.5
+          ]
+        ],
+        "couleur": "#e8c96a"
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": 3.6,
+        "w": 7.6,
+        "h": 1.3,
+        "couleur": "#7d5719"
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": 3.1,
+        "w": 7.6,
+        "h": 0.5,
+        "couleur": "#b98c2c"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -0.6,
+            -3
+          ],
+          [
+            0.4,
+            -1.4
+          ],
+          [
+            -1.4,
+            -1.4
+          ]
+        ],
+        "couleur": "#fff1c4",
+        "alpha": 0.7
+      }
     ]
   },
   {
     "id": "visuel_icone_soif",
     "ancre": "centre",
     "primitives": [
-      {"forme":"cercle","dx":0,"dy":1.6,"w":7.8,"h":7.8,"couleur":"#1b4266"},
-      {"forme":"polygone","dx":0,"dy":0,"points":[[0,-5.2],[-3,1.4],[3,1.4]],"couleur":"#1b4266"},
-      {"forme":"cercle","dx":-0.5,"dy":1.1,"w":6.9,"h":6.9,"couleur":"#3f8fd0"},
-      {"forme":"polygone","dx":-0.35,"dy":-0.4,"points":[[0,-4.4],[-2.5,1.4],[2.5,1.4]],"couleur":"#3f8fd0"},
-      {"forme":"ellipse","dx":-1.4,"dy":0.6,"w":1.7,"h":2.6,"rotation":-22,"couleur":"#bfe6ff","alpha":0.72},
-      {"forme":"ellipse","dx":-1.7,"dy":-1.5,"w":0.9,"h":1.3,"rotation":-22,"couleur":"#eaf7ff","alpha":0.5}
+      {
+        "forme": "cercle",
+        "dx": 0,
+        "dy": 1.6,
+        "w": 7.8,
+        "h": 7.8,
+        "couleur": "#1b4266"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0,
+            -5.2
+          ],
+          [
+            -3,
+            1.4
+          ],
+          [
+            3,
+            1.4
+          ]
+        ],
+        "couleur": "#1b4266"
+      },
+      {
+        "forme": "cercle",
+        "dx": -0.5,
+        "dy": 1.1,
+        "w": 6.9,
+        "h": 6.9,
+        "couleur": "#3f8fd0"
+      },
+      {
+        "forme": "polygone",
+        "dx": -0.35,
+        "dy": -0.4,
+        "points": [
+          [
+            0,
+            -4.4
+          ],
+          [
+            -2.5,
+            1.4
+          ],
+          [
+            2.5,
+            1.4
+          ]
+        ],
+        "couleur": "#3f8fd0"
+      },
+      {
+        "forme": "ellipse",
+        "dx": -1.4,
+        "dy": 0.6,
+        "w": 1.7,
+        "h": 2.6,
+        "rotation": -22,
+        "couleur": "#bfe6ff",
+        "alpha": 0.72
+      },
+      {
+        "forme": "ellipse",
+        "dx": -1.7,
+        "dy": -1.5,
+        "w": 0.9,
+        "h": 1.3,
+        "rotation": -22,
+        "couleur": "#eaf7ff",
+        "alpha": 0.5
+      }
     ]
   },
   {
     "id": "visuel_grain_herbe",
     "ancre": "bas",
     "primitives": [
-      {"forme":"ligne","dx":-12,"dy":-3,"points":[[0,0],[-1,-5]],"couleur":"#38602c","epaisseur":1,"alpha":0.3},
-      {"forme":"ligne","dx":-11,"dy":-3,"points":[[0,0],[2,-3]],"couleur":"#38602c","epaisseur":1,"alpha":0.24},
-      {"forme":"ligne","dx":-5,"dy":-10,"points":[[0,0],[1,-6]],"couleur":"#38602c","epaisseur":1,"alpha":0.28},
-      {"forme":"ligne","dx":-4,"dy":-10,"points":[[0,0],[-2,-3]],"couleur":"#7fb35e","epaisseur":1,"alpha":0.2},
-      {"forme":"ligne","dx":3,"dy":-2,"points":[[0,0],[1,-4]],"couleur":"#38602c","epaisseur":1,"alpha":0.3},
-      {"forme":"ligne","dx":11,"dy":-8,"points":[[0,0],[-1,-6]],"couleur":"#38602c","epaisseur":1,"alpha":0.26},
-      {"forme":"ligne","dx":12,"dy":-8,"points":[[0,0],[1,-3]],"couleur":"#7fb35e","epaisseur":1,"alpha":0.2},
-      {"forme":"ligne","dx":-13,"dy":-19,"points":[[0,0],[1,-5]],"couleur":"#38602c","epaisseur":1,"alpha":0.28},
-      {"forme":"ligne","dx":-6,"dy":-27,"points":[[0,0],[-1,-4]],"couleur":"#38602c","epaisseur":1,"alpha":0.26},
-      {"forme":"ligne","dx":-5,"dy":-27,"points":[[0,0],[2,-3]],"couleur":"#38602c","epaisseur":1,"alpha":0.2},
-      {"forme":"ligne","dx":5,"dy":-21,"points":[[0,0],[-1,-6]],"couleur":"#7fb35e","epaisseur":1,"alpha":0.24},
-      {"forme":"ligne","dx":6,"dy":-21,"points":[[0,0],[1,-3]],"couleur":"#38602c","epaisseur":1,"alpha":0.22},
-      {"forme":"ligne","dx":12,"dy":-27,"points":[[0,0],[1,-4]],"couleur":"#7fb35e","epaisseur":1,"alpha":0.22},
-      {"forme":"ligne","dx":-2,"dy":-15,"points":[[0,0],[1,-5]],"couleur":"#7fb35e","epaisseur":1,"alpha":0.2}
+      {
+        "forme": "ligne",
+        "dx": -12,
+        "dy": -3,
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            -1,
+            -5
+          ]
+        ],
+        "couleur": "#38602c",
+        "epaisseur": 1,
+        "alpha": 0.3
+      },
+      {
+        "forme": "ligne",
+        "dx": -11,
+        "dy": -3,
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            2,
+            -3
+          ]
+        ],
+        "couleur": "#38602c",
+        "epaisseur": 1,
+        "alpha": 0.24
+      },
+      {
+        "forme": "ligne",
+        "dx": -5,
+        "dy": -10,
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            -6
+          ]
+        ],
+        "couleur": "#38602c",
+        "epaisseur": 1,
+        "alpha": 0.28
+      },
+      {
+        "forme": "ligne",
+        "dx": -4,
+        "dy": -10,
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            -2,
+            -3
+          ]
+        ],
+        "couleur": "#7fb35e",
+        "epaisseur": 1,
+        "alpha": 0.2
+      },
+      {
+        "forme": "ligne",
+        "dx": 3,
+        "dy": -2,
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            -4
+          ]
+        ],
+        "couleur": "#38602c",
+        "epaisseur": 1,
+        "alpha": 0.3
+      },
+      {
+        "forme": "ligne",
+        "dx": 11,
+        "dy": -8,
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            -1,
+            -6
+          ]
+        ],
+        "couleur": "#38602c",
+        "epaisseur": 1,
+        "alpha": 0.26
+      },
+      {
+        "forme": "ligne",
+        "dx": 12,
+        "dy": -8,
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            -3
+          ]
+        ],
+        "couleur": "#7fb35e",
+        "epaisseur": 1,
+        "alpha": 0.2
+      },
+      {
+        "forme": "ligne",
+        "dx": -13,
+        "dy": -19,
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            -5
+          ]
+        ],
+        "couleur": "#38602c",
+        "epaisseur": 1,
+        "alpha": 0.28
+      },
+      {
+        "forme": "ligne",
+        "dx": -6,
+        "dy": -27,
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            -1,
+            -4
+          ]
+        ],
+        "couleur": "#38602c",
+        "epaisseur": 1,
+        "alpha": 0.26
+      },
+      {
+        "forme": "ligne",
+        "dx": -5,
+        "dy": -27,
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            2,
+            -3
+          ]
+        ],
+        "couleur": "#38602c",
+        "epaisseur": 1,
+        "alpha": 0.2
+      },
+      {
+        "forme": "ligne",
+        "dx": 5,
+        "dy": -21,
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            -1,
+            -6
+          ]
+        ],
+        "couleur": "#7fb35e",
+        "epaisseur": 1,
+        "alpha": 0.24
+      },
+      {
+        "forme": "ligne",
+        "dx": 6,
+        "dy": -21,
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            -3
+          ]
+        ],
+        "couleur": "#38602c",
+        "epaisseur": 1,
+        "alpha": 0.22
+      },
+      {
+        "forme": "ligne",
+        "dx": 12,
+        "dy": -27,
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            -4
+          ]
+        ],
+        "couleur": "#7fb35e",
+        "epaisseur": 1,
+        "alpha": 0.22
+      },
+      {
+        "forme": "ligne",
+        "dx": -2,
+        "dy": -15,
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            -5
+          ]
+        ],
+        "couleur": "#7fb35e",
+        "epaisseur": 1,
+        "alpha": 0.2
+      }
     ]
   },
   {
     "id": "visuel_grain_chemin",
     "ancre": "bas",
     "primitives": [
-      {"forme":"ellipse","dx":-11,"dy":-5,"w":5,"h":3,"couleur":"#9c8760","alpha":0.45},
-      {"forme":"ellipse","dx":-11,"dy":-6,"w":4,"h":2,"couleur":"#e0d2ac","alpha":0.4},
-      {"forme":"ellipse","dx":-3,"dy":-12,"w":4,"h":3,"couleur":"#9c8760","alpha":0.4},
-      {"forme":"ellipse","dx":-3,"dy":-13,"w":3,"h":2,"couleur":"#e0d2ac","alpha":0.35},
-      {"forme":"ellipse","dx":8,"dy":-3,"w":3,"h":2,"couleur":"#9c8760","alpha":0.4},
-      {"forme":"ellipse","dx":12,"dy":-18,"w":5,"h":3,"couleur":"#9c8760","alpha":0.42},
-      {"forme":"ellipse","dx":12,"dy":-19,"w":4,"h":2,"couleur":"#e0d2ac","alpha":0.38},
-      {"forme":"ellipse","dx":2,"dy":-24,"w":4,"h":2,"couleur":"#9c8760","alpha":0.4},
-      {"forme":"ellipse","dx":-9,"dy":-28,"w":3,"h":2,"couleur":"#9c8760","alpha":0.36},
-      {"forme":"ellipse","dx":-9,"dy":-29,"w":2,"h":2,"couleur":"#e0d2ac","alpha":0.32},
-      {"forme":"ellipse","dx":6,"dy":-30,"w":2,"h":2,"couleur":"#9c8760","alpha":0.34},
-      {"forme":"ellipse","dx":-14,"dy":-21,"w":2,"h":2,"couleur":"#e0d2ac","alpha":0.3}
+      {
+        "forme": "ellipse",
+        "dx": -11,
+        "dy": -5,
+        "w": 5,
+        "h": 3,
+        "couleur": "#9c8760",
+        "alpha": 0.45
+      },
+      {
+        "forme": "ellipse",
+        "dx": -11,
+        "dy": -6,
+        "w": 4,
+        "h": 2,
+        "couleur": "#e0d2ac",
+        "alpha": 0.4
+      },
+      {
+        "forme": "ellipse",
+        "dx": -3,
+        "dy": -12,
+        "w": 4,
+        "h": 3,
+        "couleur": "#9c8760",
+        "alpha": 0.4
+      },
+      {
+        "forme": "ellipse",
+        "dx": -3,
+        "dy": -13,
+        "w": 3,
+        "h": 2,
+        "couleur": "#e0d2ac",
+        "alpha": 0.35
+      },
+      {
+        "forme": "ellipse",
+        "dx": 8,
+        "dy": -3,
+        "w": 3,
+        "h": 2,
+        "couleur": "#9c8760",
+        "alpha": 0.4
+      },
+      {
+        "forme": "ellipse",
+        "dx": 12,
+        "dy": -18,
+        "w": 5,
+        "h": 3,
+        "couleur": "#9c8760",
+        "alpha": 0.42
+      },
+      {
+        "forme": "ellipse",
+        "dx": 12,
+        "dy": -19,
+        "w": 4,
+        "h": 2,
+        "couleur": "#e0d2ac",
+        "alpha": 0.38
+      },
+      {
+        "forme": "ellipse",
+        "dx": 2,
+        "dy": -24,
+        "w": 4,
+        "h": 2,
+        "couleur": "#9c8760",
+        "alpha": 0.4
+      },
+      {
+        "forme": "ellipse",
+        "dx": -9,
+        "dy": -28,
+        "w": 3,
+        "h": 2,
+        "couleur": "#9c8760",
+        "alpha": 0.36
+      },
+      {
+        "forme": "ellipse",
+        "dx": -9,
+        "dy": -29,
+        "w": 2,
+        "h": 2,
+        "couleur": "#e0d2ac",
+        "alpha": 0.32
+      },
+      {
+        "forme": "ellipse",
+        "dx": 6,
+        "dy": -30,
+        "w": 2,
+        "h": 2,
+        "couleur": "#9c8760",
+        "alpha": 0.34
+      },
+      {
+        "forme": "ellipse",
+        "dx": -14,
+        "dy": -21,
+        "w": 2,
+        "h": 2,
+        "couleur": "#e0d2ac",
+        "alpha": 0.3
+      }
     ]
   },
   {
     "id": "visuel_grain_terre",
     "ancre": "bas",
     "primitives": [
-      {"forme":"ligne","dx":0,"dy":0,"points":[[-16,-16],[0,0]],"couleur":"#6d5133","epaisseur":1,"alpha":0.24},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[-16,-32],[16,0]],"couleur":"#6d5133","epaisseur":1,"alpha":0.24},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[0,-32],[16,-16]],"couleur":"#6d5133","epaisseur":1,"alpha":0.24},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[-16,-24],[8,0]],"couleur":"#a4855c","epaisseur":1,"alpha":0.16},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[-8,-32],[16,-8]],"couleur":"#a4855c","epaisseur":1,"alpha":0.16},
-      {"forme":"ligne","dx":0,"dy":0,"points":[[8,-32],[16,-24]],"couleur":"#a4855c","epaisseur":1,"alpha":0.16}
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -16,
+            -16
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "couleur": "#6d5133",
+        "epaisseur": 1,
+        "alpha": 0.24
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -16,
+            -32
+          ],
+          [
+            16,
+            0
+          ]
+        ],
+        "couleur": "#6d5133",
+        "epaisseur": 1,
+        "alpha": 0.24
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0,
+            -32
+          ],
+          [
+            16,
+            -16
+          ]
+        ],
+        "couleur": "#6d5133",
+        "epaisseur": 1,
+        "alpha": 0.24
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -16,
+            -24
+          ],
+          [
+            8,
+            0
+          ]
+        ],
+        "couleur": "#a4855c",
+        "epaisseur": 1,
+        "alpha": 0.16
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -8,
+            -32
+          ],
+          [
+            16,
+            -8
+          ]
+        ],
+        "couleur": "#a4855c",
+        "epaisseur": 1,
+        "alpha": 0.16
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            8,
+            -32
+          ],
+          [
+            16,
+            -24
+          ]
+        ],
+        "couleur": "#a4855c",
+        "epaisseur": 1,
+        "alpha": 0.16
+      }
     ]
   },
   {
     "id": "visuel_grain_parquet",
     "ancre": "bas",
     "primitives": [
-      {"forme":"ligne","dx":0,"dy":-10.5,"points":[[-16,0],[16,0]],"couleur":"#6f4a2d","epaisseur":1,"alpha":0.5},
-      {"forme":"ligne","dx":0,"dy":-9.5,"points":[[-16,0],[16,0]],"couleur":"#cd9d70","epaisseur":1,"alpha":0.3},
-      {"forme":"ligne","dx":0,"dy":-21.5,"points":[[-16,0],[16,0]],"couleur":"#6f4a2d","epaisseur":1,"alpha":0.5},
-      {"forme":"ligne","dx":0,"dy":-20.5,"points":[[-16,0],[16,0]],"couleur":"#cd9d70","epaisseur":1,"alpha":0.3},
-      {"forme":"ligne","dx":7,"dy":-21,"points":[[0,0],[0,10]],"couleur":"#6f4a2d","epaisseur":1,"alpha":0.45}
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": -10.5,
+        "points": [
+          [
+            -16,
+            0
+          ],
+          [
+            16,
+            0
+          ]
+        ],
+        "couleur": "#6f4a2d",
+        "epaisseur": 1,
+        "alpha": 0.5
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": -9.5,
+        "points": [
+          [
+            -16,
+            0
+          ],
+          [
+            16,
+            0
+          ]
+        ],
+        "couleur": "#cd9d70",
+        "epaisseur": 1,
+        "alpha": 0.3
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": -21.5,
+        "points": [
+          [
+            -16,
+            0
+          ],
+          [
+            16,
+            0
+          ]
+        ],
+        "couleur": "#6f4a2d",
+        "epaisseur": 1,
+        "alpha": 0.5
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": -20.5,
+        "points": [
+          [
+            -16,
+            0
+          ],
+          [
+            16,
+            0
+          ]
+        ],
+        "couleur": "#cd9d70",
+        "epaisseur": 1,
+        "alpha": 0.3
+      },
+      {
+        "forme": "ligne",
+        "dx": 7,
+        "dy": -21,
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            10
+          ]
+        ],
+        "couleur": "#6f4a2d",
+        "epaisseur": 1,
+        "alpha": 0.45
+      }
     ]
   },
   {
     "id": "visuel_curseur",
     "ancre": "centre",
     "primitives": [
-      {"forme":"cercle","dx":0,"dy":0,"w":17,"h":17,"couleur":"#dfe6f2","alpha":0.10},
-      {"forme":"cercle","dx":0,"dy":0,"w":13,"h":13,"couleur":"#e8eef8","alpha":0.16},
-      {"forme":"cercle","dx":0,"dy":0,"w":10.4,"h":10.4,"couleur":"#141821","alpha":0.88},
-      {"forme":"cercle","dx":0,"dy":0,"w":8.6,"h":8.6,"couleur":"#8d97a8"},
-      {"forme":"cercle","dx":-1.2,"dy":-1.4,"w":6,"h":6,"couleur":"#cdd5e2"},
-      {"forme":"cercle","dx":-1.9,"dy":-2.1,"w":2.6,"h":2.6,"couleur":"#ffffff"}
+      {
+        "forme": "cercle",
+        "dx": 0,
+        "dy": 0,
+        "w": 17,
+        "h": 17,
+        "couleur": "#dfe6f2",
+        "alpha": 0.1
+      },
+      {
+        "forme": "cercle",
+        "dx": 0,
+        "dy": 0,
+        "w": 13,
+        "h": 13,
+        "couleur": "#e8eef8",
+        "alpha": 0.16
+      },
+      {
+        "forme": "cercle",
+        "dx": 0,
+        "dy": 0,
+        "w": 10.4,
+        "h": 10.4,
+        "couleur": "#141821",
+        "alpha": 0.88
+      },
+      {
+        "forme": "cercle",
+        "dx": 0,
+        "dy": 0,
+        "w": 8.6,
+        "h": 8.6,
+        "couleur": "#8d97a8"
+      },
+      {
+        "forme": "cercle",
+        "dx": -1.2,
+        "dy": -1.4,
+        "w": 6,
+        "h": 6,
+        "couleur": "#cdd5e2"
+      },
+      {
+        "forme": "cercle",
+        "dx": -1.9,
+        "dy": -2.1,
+        "w": 2.6,
+        "h": 2.6,
+        "couleur": "#ffffff"
+      }
     ]
   },
   {
     "id": "visuel_curseur_eclat",
     "ancre": "centre",
     "primitives": [
-      {"forme":"cercle","dx":0,"dy":0,"w":5,"h":5,"couleur":"#e6ecf7","alpha":0.28},
-      {"forme":"cercle","dx":0,"dy":0,"w":2.4,"h":2.4,"couleur":"#ffffff","alpha":0.95}
+      {
+        "forme": "cercle",
+        "dx": 0,
+        "dy": 0,
+        "w": 5,
+        "h": 5,
+        "couleur": "#e6ecf7",
+        "alpha": 0.28
+      },
+      {
+        "forme": "cercle",
+        "dx": 0,
+        "dy": 0,
+        "w": 2.4,
+        "h": 2.4,
+        "couleur": "#ffffff",
+        "alpha": 0.95
+      }
     ]
   },
   {
     "id": "visuel_curseur_sillage",
     "ancre": "centre",
     "primitives": [
-      {"forme":"cercle","dx":0,"dy":0,"w":3,"h":3,"couleur":"#c9d2e0"},
-      {"forme":"cercle","dx":0,"dy":0,"w":1.4,"h":1.4,"couleur":"#ffffff","alpha":0.8}
+      {
+        "forme": "cercle",
+        "dx": 0,
+        "dy": 0,
+        "w": 3,
+        "h": 3,
+        "couleur": "#c9d2e0"
+      },
+      {
+        "forme": "cercle",
+        "dx": 0,
+        "dy": 0,
+        "w": 1.4,
+        "h": 1.4,
+        "couleur": "#ffffff",
+        "alpha": 0.8
+      }
     ]
   }
 ]

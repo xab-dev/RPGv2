@@ -61,6 +61,27 @@
     }
   },
   {
+    "id": "item_herbe",
+    "xp": 1,
+    "label_key": "item.herbe",
+    "description_key": "item.herbe.description",
+    "categorie": "ressource",
+    "render": {
+      "visuel": "visuel_touffe_herbe"
+    },
+    "spawn": {
+      "nb_au_sol": 10,
+      "zones": [
+        "campagne",
+        "champs"
+      ],
+      "zones_exclues": [
+        "maison",
+        "jardin"
+      ]
+    }
+  },
+  {
     "id": "item_fruit",
     "xp": 1,
     "label_key": "item.fruit",

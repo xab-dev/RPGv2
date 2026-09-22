@@ -75,8 +75,35 @@ const DEMARRAGE = corps('export async function demarrerJeu()');
     return noms;
   }
 
+  // Tout ce qui est LIÉ dans un corps, à n'importe quelle profondeur :
+  // déclarations, paramètres déstructurés de la signature, variables de
+  // boucle. Sans cette liste, le garde élargi de `D-118` criait 200 fois à
+  // tort — `registre`, `i18n`, `menu` et `dialogue` sont des noms que les
+  // DEUX fonctions portent légitimement (les uns paramètres, les autres
+  // locaux), et il n'y a là aucune fuite de portée.
+  function nomsLies({ debut, fin }) {
+    const lies = new Set();
+    for (let n = debut - 1; n < fin; n += 1) {
+      const ligne = lignes[n - 1] || '';
+      for (const m of ligne.matchAll(/(?:function|const|let|var)\s+([A-Za-z_$][\w$]*)/g)) lies.add(m[1]);
+      // Une ligne qui n'est qu'une liste de noms séparés par des virgules est
+      // une signature déstructurée (`registre, i18n, save, store, …`) ou une
+      // déstructuration d'affectation : tous ces noms sont liés ici.
+      if (/^\s*[A-Za-z_$][\w$]*(\s*,\s*[A-Za-z_$][\w$]*)*\s*,?\s*$/.test(ligne)) {
+        for (const m of ligne.matchAll(/[A-Za-z_$][\w$]*/g)) lies.add(m[0]);
+      }
+      // Un paramètre À VALEUR PAR DÉFAUT occupe sa propre ligne dans une
+      // signature déstructurée (`moniteurPerf = { … }`, `graphismes = …`) :
+      // il est lié ici, même si la ligne ne ressemble pas à une déclaration.
+      for (const m of ligne.matchAll(/^\s*([A-Za-z_$][\w$]*)\s*=[^=]/g)) lies.add(m[1]);
+    }
+    return lies;
+  }
+
   function fuites(deQui, versQui, nomDe, nomVers) {
     const noms = declarations(deQui);
+    const liesLaBas = nomsLies(versQui);
+    for (const nom of [...noms.keys()]) if (liesLaBas.has(nom)) noms.delete(nom);
     assert.ok(noms.size > 0, `aucune déclaration trouvée dans ${nomDe} : le balayage ne prouverait rien`);
     const trouvees = [];
     for (let n = versQui.debut; n < versQui.fin; n += 1) {
@@ -91,8 +118,16 @@ const DEMARRAGE = corps('export async function demarrerJeu()');
         // garde interdisait la seule forme correcte (vu en branchant le
         // curseur sur la boucle, `D-108`) ; avec elle, un appel NU comme
         // `equipementDeLItem(item)` reste attrapé — le témoin le vérifie.
-        if (new RegExp(`(?<![.\\w$])${nom}\\s*\\(`).test(ligne)) {
-          trouvees.push(`${nom}() déclaré l.${ou} dans ${nomDe}, appelé l.${n} dans ${nomVers}`);
+        // `D-118` a élargi ce garde, et il a fallu un bug pour le voir : la
+        // version d'origine ne cherchait que des APPELS (`nom(`). Or
+        // `sousTitrePoche` LISAIT `capacitePoche.slots` et passait
+        // `obtenirItemDef` en argument — deux lectures nues, sans une
+        // parenthèse, et le `ReferenceError` n'est tombé qu'à la capture sous
+        // Chrome. On cherche donc l'identifiant, appelé ou non.
+        // `(?!\\s*:)` : une CLÉ d'objet (`maj: (d) => …`) porte souvent le
+        // nom de ce qu'elle expose, et n'est pas une lecture de portée.
+        if (new RegExp(`(?<![.\\w$])${nom}(?![\\w$]|\\s*:)`).test(ligne)) {
+          trouvees.push(`${nom} déclaré l.${ou} dans ${nomDe}, utilisé l.${n} dans ${nomVers}`);
         }
       }
     }
@@ -108,7 +143,25 @@ const DEMARRAGE = corps('export async function demarrerJeu()');
     + 'c\'est un ReferenceError à l\'exécution, et il ne se verra qu\'en jouant (`D-72`). '
     + 'Ce qui doit être partagé se déclare au NIVEAU MODULE, où il devient aussi testable.',
   );
-  console.log('OK aucun nom ne traverse la frontière entre les deux grandes fonctions');
+  // TÉMOIN. Un garde qui ne crie jamais ne prouve rien — et celui-ci a
+  // justement laissé passer `D-118` dans sa version « appels seulement ». On
+  // lui présente donc les deux formes, sur des lignes fabriquées : un appel
+  // nu, et la LECTURE nue qui l'avait berné.
+  {
+    const lignesAvant = lignes.slice();
+    try {
+      // Une déclaration dans l'orchestrateur, deux usages dans `demarrerJeu`.
+      lignes[ORCHESTRATEUR.debut] = '  const temoinDePortee = 1;';
+      lignes[DEMARRAGE.debut] = '  const x = temoinDePortee.slots;';
+      lignes[DEMARRAGE.debut + 1] = '  temoinDePortee();';
+      const cris = fuites(ORCHESTRATEUR, DEMARRAGE, 'creerOrchestrateurGrotte', 'demarrerJeu');
+      assert.equal(cris.length, 2, 'le garde doit attraper la LECTURE nue autant que l’appel');
+    } finally {
+      lignes.length = 0;
+      lignes.push(...lignesAvant);
+    }
+  }
+  console.log('OK aucun nom ne traverse la frontière — lecture nue comprise (témoin vérifié)');
 }
 
 // --- 3. Les fonctions déplacées sont pures, et elles marchent -----------

@@ -501,3 +501,53 @@ pas avant `D-121`, et T5 ne l'a pas ajouté. C'est le trou que ce ticket referme
 
 `npm test` : **132 fichiers verts**.
 
+
+---
+
+## T10 — Une fiche montre ce dont elle parle (`D-103`, `Q-49`)
+
+Dernier ticket de la file, et le seul qui touche à un écran. Il était marqué **optionnel** parce
+qu'il approche la structure des menus, gelée depuis le 21/09 — il n'y touche pas : aucune vue
+n'est ajoutée, aucun écran ne change de forme, c'est le **contenu d'une ligne** qui s'ouvre.
+
+**Ce que la dette disait, et qui était juste.** Une ligne de fiche était une **chaîne**. Donc ce
+n'étaient pas « les éclats qui manquaient d'image » : **aucune ligne** de **aucune fiche** ne
+pouvait en porter une. Les ingrédients d'une recette (« Branche : 4 / 2 ») pas davantage que le
+coût. Ce que Xav avait remarqué sur les éclats était le symptôme d'une règle générale.
+
+**Le remède, dans l'ordre que la dette avait fixé.**
+
+1. Une ligne accepte `{ texte, icone? }` **en plus** de la chaîne, et une fonction pure les
+   ramène à une seule forme (`ecran_fiches.js#normaliserLigneFiche`). Deux formes en entrée,
+   volontairement : obliger les quatre-vingts lignes qui n'ont pas d'image à s'emballer dans un
+   objet ne dirait rien de plus, et ferait un ticket de cent lignes modifiées pour deux. La
+   fonction est **sortie du DOM** pour la même raison que `D-71` : tant que la vue démêlait les
+   deux cas au fil du rendu, la règle vivait dans du canvas et du `createElement`, donc hors
+   d'atteinte des tests headless.
+2. La **monnaie** a enfin où déclarer sa silhouette : `data/monnaies.json`, une entrée, deux
+   champs — un id, une icône. Réponse **minimale** à `Q-49`, et assumée comme telle : pas de nom,
+   pas de valeur, pas de règle. `D-68` tient — une monnaie n'est toujours pas un item de poche,
+   elle n'entre ni dans les `entrees` d'une recette ni dans un conteneur. Ce qu'une **seconde**
+   monnaie exigera se décidera quand elle existera.
+
+Ce qui en tombe sans rien demander : les **ingrédients** montrent chacun la silhouette de sa
+tuile de Poche. Elle est lue sur l'item (`render.visuel`), jamais choisie par l'écran de Craft —
+donc un ingrédient ajouté demain arrive avec son image.
+
+**Le texte ne change nulle part.** L'icône s'**ajoute**, elle ne remplace pas le nom : « Branche :
+4 / 2 » reste écrit en toutes lettres, parce que c'est ce que lit un joueur qui ne reconnaît pas
+encore la forme — et parce qu'une image n'a pas de langue, mais qu'une liste d'images muettes
+n'en a pas non plus.
+
+**Deux effets de bord, tous deux payés.** L'id `visuel_icone_eclat` a **quitté `main.js`** : le
+bandeau et les fiches lisent la même entrée de catalogue, et un test le vérifie **statiquement**
+(le fichier ne contient plus la chaîne). Et `menu.fiche.cout_eclats` était composée depuis `D-66`
+**sans passer par le contrôle de démarrage FR/EN** : la retirer des locales aurait affiché sa clé
+en toutes lettres, en jeu, sans un mot au boot. Elle est dans `clesTexteFiches()`.
+
+**Vérifié en vrais pixels** (`tools/scenarios/fiches_icones.mjs`, Chrome sans fenêtre, 703 × 280
+et 1920 × 1080) : trois vignettes dessinées, 12 px de page à la petite taille et 48 à la grande,
+aucune erreur console. Ce qu'une capture ne dit pas — est-ce qu'on **reconnaît** un objet à 12
+px, est-ce que la liste se lit mieux ou est-ce que l'œil s'accroche — revient à Xav (`V-72`).
+
+`npm test` : **133 fichiers verts**.

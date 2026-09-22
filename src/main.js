@@ -180,6 +180,15 @@ const RAYON_TOIT_FOLLET_ABSENT_PX = 90;
 // arbitraire, sans effet sur le gameplay (les 3 follets sont équivalents en
 // interface) ; Xav pourra le changer librement en relisant ce tableau.
 const ORDRE_CHOIX_FOLLET = ['comp_follet_feu', 'comp_follet_eau', 'comp_follet_terre'];
+// `D-103` (T10) : LA monnaie du jeu, par son id de catalogue. Elle est citée
+// à deux endroits — le bandeau et la fiche d'une recette qui coûte des éclats
+// — donc elle se déclare au NIVEAU MODULE (`D-72`) : un nom écrit deux fois
+// finit par ne plus désigner la même chose. Ce que `main.js` en lit se borne
+// à sa silhouette ; le reste des éclats (`save.inventaire.eclats`,
+// `cout_eclats`) ne passe toujours par aucun catalogue, et c'est voulu tant
+// qu'il n'y a qu'une monnaie (`Q-49`, `D-68`).
+const ID_MONNAIE = 'monnaie_eclats';
+
 // Les lignes de la FICHE d'un objet (specs/08_menus-cartes.md, palier C) : sa
 // catégorie, puis ce qu'il rend quand on le mange — tout vient du catalogue,
 // rien n'est écrit par objet. Une seule fonction pour la Poche, le Coffre et la
@@ -515,6 +524,11 @@ export function clesTexteFiches() {
     'menu.craft_deja_possede',
     // `D-126` : la raison pour laquelle une station ne se déplace pas.
     'menu.fiche.refus_station_pleine',
+    // `D-103` : la ligne du coût en monnaie. Elle était composée par la fiche
+    // de Craft depuis `D-66` sans jamais passer par ce contrôle — la retirer
+    // des locales aurait donc rendu « menu.fiche.cout_eclats » en toutes
+    // lettres dans le jeu, sans un mot au démarrage.
+    'menu.fiche.cout_eclats',
   ];
 }
 
@@ -666,6 +680,9 @@ export function creerOrchestrateurGrotte({
   // nombre. En M1 il n'y a qu'un seul type de stockage — on le cherche par
   // son rôle plutôt que par son id, parce que c'est le rôle qui est stable.
   const obtenirItemDef = (id) => registre.obtenir('items', id);
+  // `D-103` : la silhouette de la monnaie, résolue UNE fois — le bandeau et
+  // les fiches de Craft la montrent, et c'est la même.
+  const iconeMonnaie = registre.obtenir('monnaies', ID_MONNAIE).icone;
   const capacitePoche = resoudreCapacite(registre.obtenir('conteneurs', ID_CONTENEUR_POCHE));
   function capaciteDeStation(station) {
     return resoudreCapacite(registre.obtenir('conteneurs', station.conteneur));
@@ -1757,12 +1774,23 @@ export function creerOrchestrateurGrotte({
           icone: visuelSortie,
           quantite: r.sortie.qte > 1 ? r.sortie.qte : null,
           lignes: [
-            ...r.entrees.map((e) => i18n.t('menu.fiche.ingredient', {
-              item: i18n.t(registre.obtenir('items', e.item).label_key), n: e.qte, possede: save.inventaire.items[e.item] || 0,
+            // `D-103` (T10) : une ligne d'ingrédient et une ligne de coût
+            // MONTRENT ce dont elles parlent. La silhouette vient du même
+            // endroit que celle de la tuile (`render.visuel` de l'item, et
+            // `monnaies.json` pour la monnaie) : aucune image n'est choisie
+            // ici. Le texte, lui, ne change pas d'un mot — l'icône s'ajoute,
+            // elle ne remplace pas le nom, qui reste ce que lit un joueur qui
+            // ne reconnaît pas encore la forme.
+            ...r.entrees.map((e) => ({
+              texte: i18n.t('menu.fiche.ingredient', {
+                item: i18n.t(registre.obtenir('items', e.item).label_key), n: e.qte, possede: save.inventaire.items[e.item] || 0,
+              }),
+              icone: registre.obtenir('items', e.item).render.visuel,
             })),
-            ...(r.cout_eclats ? [i18n.t('menu.fiche.cout_eclats', {
-              n: r.cout_eclats, possede: save.inventaire.eclats,
-            })] : []),
+            ...(r.cout_eclats ? [{
+              texte: i18n.t('menu.fiche.cout_eclats', { n: r.cout_eclats, possede: save.inventaire.eclats }),
+              icone: iconeMonnaie,
+            }] : []),
             i18n.t('menu.fiche.donne', { item: i18n.t(defSortie.label_key), n: r.sortie.qte || 1 }),
             // La fiche d'un OBJET vient de `lignesFicheItem` ; une station
             // n'en a pas (elle ne se porte pas), elle dit ce qu'on en fera.
@@ -3353,12 +3381,12 @@ export function creerOrchestrateurGrotte({
       // que le HUD dessine — c'est cet orchestrateur qui a le registre, pas
       // `ui/hud.js`, qui ne connaît aucun id de catalogue. Les deux jauges
       // déclarent la leur dans `survival.json` (donc les changer est une
-      // affaire de données) ; les éclats n'ont pas d'entrée de catalogue —
-      // c'est une monnaie que `main.js` traite déjà comme un cas à part
-      // (`save.inventaire.eclats`), et son id de silhouette vit ici en
-      // attendant qu'ils en aient une (`Q-49`).
+      // affaire de données) ; la monnaie, elle, déclare la sienne dans
+      // `monnaies.json` depuis `D-103` — son id ne vit plus dans ce fichier,
+      // et c'est la même silhouette qu'au bandeau et dans les fiches de
+      // Craft, lue une seule fois.
       iconesBandeau: {
-        eclats: registre.obtenir('visuels', 'visuel_icone_eclat'),
+        eclats: registre.obtenir('visuels', iconeMonnaie),
         faim: registre.obtenir('visuels', registre.obtenir('survival', 'jauge_faim').icone),
         soif: registre.obtenir('visuels', registre.obtenir('survival', 'jauge_soif').icone),
       },

@@ -19,7 +19,10 @@
 //   icone          un id de `visuels.json` (dessiné par `dessinerIcone`, injecté)
 //   quantite       le nombre affiché en pastille sur la tuile (absent = pas de pastille)
 //   marque         vrai = la tuile porte un repère (« équipé ») — une forme, pas une couleur seule
-//   lignes         le détail de la fiche, une chaîne par ligne
+//   lignes         le détail de la fiche : une chaîne, ou `{ texte, icone? }` quand la
+//                  ligne montre AUSSI une silhouette (`D-103` — l'ingrédient d'une
+//                  recette, son coût en monnaie). L'icône est un id de `visuels.json`,
+//                  dessinée par le même `dessinerIcone` que les tuiles
 //   libelleAction  ce que fait A : le texte du bouton de la fiche (absent = pas de bouton)
 //   grisee         l'action a peu de chances d'aboutir — un INDICE visuel, jamais un verrou :
 //                  le bouton retente quand même l'action réelle, le résultat fait foi
@@ -55,6 +58,21 @@ function poserAttribut(el, nom, valeur) {
 }
 
 const VIDE = '';
+
+// Une ligne de fiche, sous sa forme unique (`D-103`). Elle en a DEUX en
+// entrée — une chaîne (le cas de loin le plus courant : une catégorie, un
+// effet, une raison de refus) et `{ texte, icone? }` — parce que la seconde
+// n'a de sens que là où une silhouette existe, et qu'obliger les quatre-vingts
+// autres lignes à s'emballer dans un objet ne dirait rien de plus.
+//
+// Une seule fonction les ramène à la même forme, et c'est elle qu'on teste :
+// tant que la vue démêlait les deux cas au fil du rendu, la règle vivait dans
+// du DOM, donc hors d'atteinte des tests headless (même raison que `D-71`).
+// Pure, exportée.
+export function normaliserLigneFiche(ligne) {
+  if (typeof ligne === 'string') return { texte: ligne, icone: null };
+  return { texte: (ligne && ligne.texte) || VIDE, icone: (ligne && ligne.icone) || null };
+}
 
 // `options` — tout est injecté :
 //   afficherEcran   LE point d'affichage de `ui/menu.js`
@@ -165,10 +183,25 @@ export function creerEcranFiches({
 
     const lignes = document.createElement('div');
     lignes.className = 'fiche-lignes';
-    for (const texte of entree.lignes || []) {
+    for (const brute of entree.lignes || []) {
+      const { texte, icone } = normaliserLigneFiche(brute);
       const ligne = document.createElement('p');
-      ligne.className = 'fiche-ligne';
-      ligne.textContent = texte;
+      ligne.className = icone ? 'fiche-ligne fiche-ligne-icone' : 'fiche-ligne';
+      if (icone) {
+        // Le canvas porte la classe commune `carte-icone` : c'est elle que
+        // `dessinerIcones` balaie, ici comme sur une tuile ou une carte — il
+        // n'existe toujours qu'un seul chemin pour dessiner une silhouette
+        // dans le DOM.
+        const elIcone = document.createElement('canvas');
+        elIcone.className = 'carte-icone fiche-ligne-vignette';
+        elIcone.dataset.icone = icone;
+        ligne.appendChild(elIcone);
+        const elTexte = document.createElement('span');
+        elTexte.textContent = texte;
+        ligne.appendChild(elTexte);
+      } else {
+        ligne.textContent = texte;
+      }
       lignes.appendChild(ligne);
     }
     fiche.appendChild(lignes);

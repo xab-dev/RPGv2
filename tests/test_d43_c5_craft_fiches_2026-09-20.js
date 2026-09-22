@@ -13,6 +13,11 @@ import { creerI18n } from '../src/i18n.js';
 import { creerDialogue } from '../src/dialogue.js';
 import { saveNeuve, creerStoreMemoire } from '../src/save.js';
 import { creerOrchestrateurGrotte, lignesFicheItem } from '../src/main.js';
+// `D-103` : une ligne de fiche peut porter une icône. On la lit par la
+// fonction de la VUE elle-même, jamais en redéfinissant sa forme ici — un
+// harnais qui réimplémente ce qu'il éprouve est exactement ce qui a laissé
+// passer `D-72`.
+import { normaliserLigneFiche } from '../src/ui/ecran_fiches.js';
 
 const RACINE = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const [dictionnaires, { donnees, erreurs }] = await Promise.all([
@@ -77,17 +82,30 @@ const nom = (idItem) => i18n.t(registre.obtenir('items', idItem).label_key);
   assert.equal(e.icone, hache.render.visuel, 'la tuile montre l’objet PRODUIT');
   assert.equal(e.libelleAction, i18n.t('menu.fiche.fabriquer'));
   assert.equal(e.grisee, false, 'ingrédients réunis : pas grisée');
-  assert.deepEqual(e.lignes, [
-    ...recetteHache.entrees.map((x) => i18n.t('menu.fiche.ingredient', { item: nom(x.item), n: x.qte, possede: { item_branche: 6, item_caillou: 1 }[x.item] })),
+  assert.deepEqual(e.lignes.map(normaliserLigneFiche), [
+    // `D-103` : l'ingrédient MONTRE ce dont il parle. La silhouette est lue
+    // sur l'item, comme celle de sa tuile dans la Poche — jamais choisie ici.
+    ...recetteHache.entrees.map((x) => ({
+      texte: i18n.t('menu.fiche.ingredient', { item: nom(x.item), n: x.qte, possede: { item_branche: 6, item_caillou: 1 }[x.item] }),
+      icone: registre.obtenir('items', x.item).render.visuel,
+    })),
     // `D-120` : la hache coûte désormais des éclats. La ligne est lue sur la
-    // RECETTE, pas recopiée : le jour où le coût bouge, ce test suit.
+    // RECETTE, pas recopiée : le jour où le coût bouge, ce test suit. Et
+    // depuis `D-103` elle porte la silhouette de la MONNAIE, qui vient de
+    // `monnaies.json` et de nulle part ailleurs.
     ...(recetteHache.cout_eclats
-      ? [i18n.t('menu.fiche.cout_eclats', { n: recetteHache.cout_eclats, possede: save.inventaire.eclats })]
+      ? [{
+        texte: i18n.t('menu.fiche.cout_eclats', { n: recetteHache.cout_eclats, possede: save.inventaire.eclats }),
+        icone: registre.obtenir('monnaies', 'monnaie_eclats').icone,
+      }]
       : []),
-    i18n.t('menu.fiche.donne', { item: nom(hache.id), n: recetteHache.sortie.qte }),
-    ...lignesFicheItem(hache, registre, i18n),
+    { texte: i18n.t('menu.fiche.donne', { item: nom(hache.id), n: recetteHache.sortie.qte }), icone: null },
+    ...lignesFicheItem(hache, registre, i18n).map((l) => ({ texte: l, icone: null })),
   ], 'ce qu’elle demande (et ce qu’on a), ce qu’elle donne, puis la fiche de l’objet produit');
-  assert.ok(liste.every((x) => x.lignes.every((l) => !l.includes('[[') && !l.includes('{'))), 'aucune clé manquante, aucun marqueur non substitué');
+  assert.ok(
+    liste.every((x) => x.lignes.map(normaliserLigneFiche).every((l) => !l.texte.includes('[[') && !l.texte.includes('{'))),
+    'aucune clé manquante, aucun marqueur non substitué',
+  );
 
   // La pioche demande 2 cailloux : on n'en a qu'un.
   const pioche = liste.find((x) => x.titre === i18n.t('recipe.pioche'));
@@ -111,7 +129,7 @@ const nom = (idItem) => i18n.t(registre.obtenir('items', idItem).label_key);
   avant.action();
   assert.equal(save.inventaire.items[hache.id], 1, 'la hache est fabriquée');
   const apres = entrees().find((x) => x.titre === i18n.t(recetteHache.label_key));
-  assert.equal(apres.lignes[0], i18n.t('menu.fiche.ingredient', { item: nom('item_branche'), n: 2, possede: 4 }), 'ce qu’on a en poche est relu');
+  assert.equal(normaliserLigneFiche(apres.lignes[0]).texte, i18n.t('menu.fiche.ingredient', { item: nom('item_branche'), n: 2, possede: 4 }), 'ce qu’on a en poche est relu');
   assert.equal(apres.grisee, true, 'la recette vient de servir : la tuile est grisée');
   // `D-122` : la hache est `unique`, et « tu l'as déjà » passe AVANT « en
   // recharge » — c'est la plus utile des deux raisons, et c'est elle qui

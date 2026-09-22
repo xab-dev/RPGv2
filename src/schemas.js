@@ -1706,6 +1706,25 @@ export const SCHEMAS = {
       return erreurs;
     },
   },
+  // `D-103` (T10) : une MONNAIE déclare sa silhouette, et c'est tout ce
+  // qu'elle déclare. Les éclats vivaient jusqu'ici en dehors de tout
+  // catalogue (`save.inventaire.eclats`, `loot_tables.json` avec
+  // `item: "eclats"`, `recipes.json#cout_eclats`), si bien que l'id de leur
+  // icône était écrit dans `main.js` — le seul du jeu à l'être (`Q-49`).
+  //
+  // Réponse MINIMALE, et volontairement : pas de nom, pas de valeur, pas de
+  // règle. `D-68` tient — une monnaie n'est pas un item de poche, elle
+  // n'entre ni dans `entrees` d'une recette, ni dans un conteneur. Ce qu'une
+  // seconde monnaie exigera (un nom, un taux, un HUD qui la place) se
+  // décidera quand elle existera, pas avant (règle : aucun système
+  // généralisé avant un second cas d'usage réel).
+  monnaies: {
+    requiredFields: ['id', 'icone'],
+    idField: 'id',
+    // Une monnaie SANS silhouette se réduirait à son nombre : même exigence
+    // que pour une jauge de survie (`D-96`), donc une référence REQUISE.
+    refs: [{ field: 'icone', catalog: 'visuels' }],
+  },
   // `D-118` : ce que peut contenir un contenant. UN seul endroit où vivent
   // les quatre nombres de la poche et du coffre, tous PROVISOIRES — c'est
   // `inventory.js#resoudreCapacite` qui les lit, et rien d'autre.

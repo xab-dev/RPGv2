@@ -1577,13 +1577,19 @@ export function creerOrchestrateurGrotte({
       dialogue.ouvrir(resoudreLignes('dlg_puits_cooldown', registre, i18n, save.hero.companion));
       return;
     }
-    // `[OUVERT]` (`Q-43`) : l'XP du puits n'est créditée que si la gourde
-    // n'était PAS déjà pleine — boire quand on n'a pas soif ne rapporte rien.
-    // Retenu par défaut faute de tranchage : sans cela, le puits deviendrait
-    // une source d'XP à volonté, bornée par le seul cooldown anti-spam.
+    // `D-123` (T7) : l'XP du puits tombe si la jauge était SOUS SON SEUIL
+    // avant de boire — `Q-43` tranchée par Xav le 22/09 (« oui, 90 % »).
+    //
+    // *Révise* la règle d'avant, « l'XP tombe si la jauge a bougé » : à
+    // 99,5 %, boire faisait bouger la jauge d'un demi-point et rapportait
+    // autant qu'à 10 %, ce qui rendait le puits payant au tapotement. Le
+    // seuil vit en données (`survival.json > jauge_soif > seuil_xp`), et une
+    // jauge qui n'en déclare pas ne rapporte jamais rien — on ne mange pas au
+    // puits.
+    const jaugeSoif = registre.obtenir('survival', 'jauge_soif');
     const soifAvant = save.survie.jauge_soif;
     save.survie = consommerSurvie(save.survie, { jauge_soif: 1 });
-    if (save.survie.jauge_soif > soifAvant) {
+    if (jaugeSoif.seuil_xp !== undefined && soifAvant < jaugeSoif.seuil_xp) {
       // Le « +1xp » monte du CENTRE du puits, pas du héros : même règle que
       // partout ailleurs, le texte dit d'où vient le gain. On réutilise
       // l'empreinte déjà calculée pour le seuil d'interaction — jamais une

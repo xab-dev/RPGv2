@@ -359,3 +359,19 @@ vérifie aussi qu'une recette unique produit un objet dont `pile_max` vaut 1 —
 disent la même chose, chacune à sa place, et qui ne doivent pas diverger.
 
 `npm test` : **128 fichiers verts**.
+
+## T7 — Le puits ne rapporte de l'XP que sous son seuil (`D-123`, `Q-43`)
+
+Une ligne, un champ de données, un test. `survival.json > jauge_soif > seuil_xp` (0,9,
+provisoire), lu au même endroit que la règle d'avant.
+
+Ce que ça *révise* mérite d'être dit, parce que c'est la raison d'être du ticket : l'ancienne
+règle était « l'XP tombe si la jauge a bougé ». À 99,5 %, boire faisait bouger la jauge d'un
+demi-point et rapportait **autant** qu'à 10 % — le puits était payant au tapotement, borné par
+le seul cooldown anti-spam. Le test garde ce piège comme témoin : il vérifie qu'au-dessus du
+seuil la jauge bouge **quand même**, et que rien ne tombe.
+
+Le champ est **optionnel** : une jauge qui n'en déclare pas ne rapporte jamais d'XP, ce qui est
+le cas de la faim — on ne mange pas au puits.
+
+`npm test` : **129 fichiers verts**.

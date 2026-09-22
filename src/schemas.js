@@ -2066,6 +2066,13 @@ export const SCHEMAS = {
       if (typeof entry.decroissance_ms_plein_a_vide !== 'number' || entry.decroissance_ms_plein_a_vide <= 0) {
         erreurs.push(`${path} > decroissance_ms_plein_a_vide doit être un nombre positif`);
       }
+      // `D-123` (T7, `Q-43`) : le seuil au-dessous duquel se remplir rapporte
+      // de l'XP. OPTIONNEL — une jauge qui n'en déclare pas ne rapporte jamais
+      // d'XP, ce qui est le cas de la faim (on ne mange pas au puits).
+      if (entry.seuil_xp !== undefined
+        && (typeof entry.seuil_xp !== 'number' || entry.seuil_xp < 0 || entry.seuil_xp > 1)) {
+        erreurs.push(`${path} > seuil_xp doit être un nombre entre 0 et 1 s'il est présent`);
+      }
       return erreurs;
     },
   },

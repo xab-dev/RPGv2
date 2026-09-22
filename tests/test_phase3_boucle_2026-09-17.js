@@ -41,6 +41,18 @@ save.hero.pv = 40;
 // (couvert par test_phase2_chemin_critique) ouvrirait une UI qui gèlerait le
 // temps actif pendant tout ce bot, sans rapport avec ce qui est prouvé ici.
 save.flags = { flag_follet_choisi: true, flag_grotte_sortie: true, flag_grotte_sequence: true, flag_grotte_monstre_tue: true, flag_levier_salle1: true, flag_premier_ramassage: true };
+// `D-120` (22/09) : hache et pioche sont gâtées au Nv.10 et coûtent des
+// éclats — c'est le cœur du ralentissement voulu par Xav. Ce bot n'éprouve
+// PAS le déblocage (c'est `test_d120_outils_nv10`) : il éprouve la boucle
+// « sortir → récolter → revenir → cuisiner/crafter → repartir », qui suppose
+// les outils accessibles. On lui donne donc le niveau qu'un joueur aura
+// atteint quand il fabriquera sa première hache, et de quoi la payer.
+//
+// Le niveau va avec son XP : il est RECALCULÉ depuis l'XP totale à chaque
+// crédit, donc un niveau posé seul retomberait à 1 au premier craft.
+save.hero.niveau = 10;
+save.hero.xp = registre.obtenir('levels', 'niveau_10').xp_cumulee;
+save.inventaire.eclats = 60;
 
 let dernieresEntreesCraft = null;
 let dernieresEntreesCoffre = null;
@@ -173,8 +185,12 @@ assert.equal(save.inventaire.items.item_caillou, 0);
 // XP créditée par les 2 crafts (rec_hache.xp + rec_pioche.xp, cf.
 // data/recipes.json) : niveau doit avoir progressé.
 assert.ok(save.hero.xp > 0, 'XP créditée par le craft');
-assert.ok(save.hero.niveau >= 2, `niveau doit avoir progressé (actuel : ${save.hero.niveau})`);
-assert.equal(save.flags.flag_niveau_2, true);
+// `D-120` : le bot part du Nv.10 (voir plus haut), donc ce qui se vérifie ici
+// n'est plus « le niveau a franchi 2 » mais « le craft a bien crédité de
+// l'XP » — et c'est cela que l'étape voulait dire depuis le début.
+const NIVEAU_DEPART = 10;
+assert.ok(save.hero.niveau >= NIVEAU_DEPART, `le niveau ne doit pas régresser (actuel : ${save.hero.niveau})`);
+assert.ok(save.hero.xp > registre.obtenir('levels', 'niveau_10').xp_cumulee, 'les deux crafts ont crédité de l’XP');
 
 // --- Récolte réelle : bois (hache) puis pierre (pioche) ---
 let cibleBois = null;
@@ -239,8 +255,11 @@ void faimAvantRepas;
 
 // --- Niveau final : au moins niveau 3 (hache 15 + pioche 15 + fruit cuit
 // 10 = 40 xp, cf. data/levels.json niveau_3.xp_cumulee = 40) ---
-assert.ok(save.hero.niveau >= 3, `niveau final attendu >= 3 (actuel : ${save.hero.niveau})`);
-assert.equal(save.flags.flag_niveau_3, true);
+assert.ok(save.hero.niveau >= NIVEAU_DEPART, `niveau final au moins celui du départ (actuel : ${save.hero.niveau})`);
+// Le flag d'un niveau est posé par le FRANCHISSEMENT, pas par le fait d'y
+// être : un bot qui démarre au Nv.10 sans l'avoir franchi ne l'a pas, et
+// c'est correct. Ce que la boucle doit prouver ici est que l'XP monte, et
+// c'est déjà fait plus haut.
 
 // --- Coffre (Palier E, confort) : déposer le bois, le retirer ---
 allerA('station_coffre');
@@ -266,8 +285,12 @@ assert.equal(save.coffre.items.item_bois, 0, 'le coffre est de nouveau vide');
 
 // --- Stats (Palier D) : +1 sur la première stat, points libres décrémentés ---
 {
+  // Les points libres viennent des niveaux FRANCHIS. Le bot part désormais du
+  // Nv.10 sans les avoir franchis (`D-120`), donc on lui en donne un : ce que
+  // cette étape éprouve est l'écran Stats, pas la comptabilité des niveaux
+  // (celle-là a son propre test, `test_phase3_xp`).
+  if (save.hero.points_stats_libres === 0) save.hero.points_stats_libres = 1;
   const pointsAvant = save.hero.points_stats_libres;
-  assert.ok(pointsAvant > 0, 'des points de stats libres doivent être disponibles après ces niveaux');
   const entrees = orch.obtenirEntreesStats();
   const premiereStat = entrees[0];
   assert.equal(premiereStat.grisee, false);

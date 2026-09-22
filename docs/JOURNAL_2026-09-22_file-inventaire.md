@@ -221,3 +221,52 @@ pouvait entrer sans le dépasser. Les deux décisions de Xav du 22/09 se contred
 laquelle prime. Rien n'a été réglé : les leviers (XP de l'herbe, `nb_au_sol`, le plafond
 lui-même) sont en données et n'ont pas été touchés ; le test affiche la part mesurée à chaque
 exécution pour que le chiffre ne se perde pas.
+
+## T4 — Hache et pioche au Nv.10, avec un coût en éclats (`D-120`)
+
+**Données seules** : `visible_si: { valeur: 'niveau', min: 10 }` et `cout_eclats: 10` sur les
+deux recettes d'outil. Le mécanisme est celui de `D-62`, sans une ligne de code — et les
+**trois** recettes (hache, pioche, épée) s'ouvrent au **même palier**, ce qui est la condition
+de « hache → bois → épée le même soir » que Xav voulait pouvoir faire. La **cuisine ne bouge
+pas**, et c'est le témoin du test.
+
+Une vieille sauvegarde **garde ses outils** : une entrée verrouillée est invisible à l'Atelier,
+l'objet possédé ne bouge pas. Personne ne se fait retirer sa hache par un ticket
+d'équilibrage — vérifié.
+
+Le bot de la boucle 5 minutes part désormais du **Nv.10 avec des éclats**, et il fallait le
+dire plutôt que de le faire discrètement : il n'éprouve pas le déblocage (c'est
+`test_d120_outils_nv10`), il éprouve la boucle *sortir → récolter → revenir → crafter*, qui
+suppose les outils accessibles. Deux de ses assertions ont changé de sens avec : le niveau ne
+prouve plus rien (il est posé), c'est l'**XP qui monte** qui le prouve ; et un flag de niveau
+est posé par le **franchissement**, pas par le fait d'y être.
+
+### `R-19 bis` — la mesure, avant et après
+
+Même scénario, même bot, les deux chiffres côte à côte :
+
+| | avant (T0) | après (T3 + T4) |
+|---|---|---|
+| Niveau à la tombée de la première nuit | 4 | **3** |
+| Nv.5 | 20,5 min (jour 1) | **42,8 min** (jour 1) |
+| Nv.9 | 78 min | **202,6 min** |
+| Nv.10 | 179 min | **non atteint** en 4 h |
+| Récolte au sol | 33 % | **67 %** |
+| Récolte à l'outil | 29 % | **0 %** |
+| Craft | 32 % | 25 % |
+
+**La cible de `Q-62` est tenue sur son premier point** : le Nv.5 ne tombe plus avant la
+première nuit (Nv.3 à 11,5 min). Le second point ne l'est pas — « Nv.10 vers 40 min » est très
+loin, le bot n'y arrive pas en quatre heures. **Rien n'est corrigé dans la file**, comme le
+brief le demande : les leviers sont en données (XP par ressource, effectifs semés, XP de
+combat).
+
+Et une conséquence que la mesure rend visible, qui mérite d'être nommée avant d'être subie
+(`Q-69`) : **un joueur qui ne se bat pas ne peut plus jamais obtenir ses outils.** Les éclats
+ne viennent que des monstres (`loot_tables.json`), et les monstres ne viennent que la nuit, à
+partir du Nv.5. La chaîne voulue est donc : survivre à une nuit → éclats → outils → bois et
+pierre. C'est cohérent avec l'intention (« plus lent, découverte, exploration »), mais c'est
+un **verrou dur** que rien n'annonce au joueur, et la ligne `recolte_outil` à **0 %** dans le
+relevé ci-dessus est exactement ce que ça donne quand il ne le devine pas.
+
+`npm test` : **126 fichiers verts**.

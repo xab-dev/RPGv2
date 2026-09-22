@@ -30,6 +30,16 @@ function monter({ poche }) {
   save.hero.companion = 'comp_follet_eau';
   save.flags = { flag_follet_choisi: true, flag_grotte_sortie: true, flag_maison_decouverte: true };
   save.inventaire.items = { ...poche };
+  // `D-120` (22/09) : hache et pioche sont désormais gâtées au Nv.10 et
+  // coûtent des éclats. Cet écran-ci n'éprouve pas le déblocage (c'est
+  // `test_d62_anti_spoil` et `test_d120_outils_nv10`) mais la FICHE — il lui
+  // faut donc un héros qui y a droit, sinon il n'y a plus rien à lister.
+  save.hero.niveau = 10;
+  // ET l'XP qui va avec : le niveau est RECALCULÉ depuis l'XP totale à chaque
+  // crédit. Un niveau posé à la main sans son XP retombe à 1 au premier
+  // craft, et les recettes gâtées disparaissent en plein test.
+  save.hero.xp = registre.obtenir('levels', 'niveau_10').xp_cumulee;
+  save.inventaire.eclats = 50;
   const ouvert = {};
   const menu = {
     estOuvert: () => false, traiterInput: () => {}, ouvrir: () => {}, fermer: () => {},
@@ -58,7 +68,7 @@ const nom = (idItem) => i18n.t(registre.obtenir('items', idItem).label_key);
 
 // --- 1. Une tuile par recette connue ; la fiche vient des données --------------------
 {
-  const { ouvert, entrees } = monter({ poche: { item_branche: 6, item_caillou: 1 } });
+  const { save, ouvert, entrees } = monter({ poche: { item_branche: 6, item_caillou: 1 } });
   assert.equal(ouvert.options.texteVide, i18n.t('menu.fiche.aucune_recette'));
   const liste = entrees();
   assert.ok(liste.length >= 2, 'l’atelier connaît au moins la hache et la pioche');
@@ -69,6 +79,11 @@ const nom = (idItem) => i18n.t(registre.obtenir('items', idItem).label_key);
   assert.equal(e.grisee, false, 'ingrédients réunis : pas grisée');
   assert.deepEqual(e.lignes, [
     ...recetteHache.entrees.map((x) => i18n.t('menu.fiche.ingredient', { item: nom(x.item), n: x.qte, possede: { item_branche: 6, item_caillou: 1 }[x.item] })),
+    // `D-120` : la hache coûte désormais des éclats. La ligne est lue sur la
+    // RECETTE, pas recopiée : le jour où le coût bouge, ce test suit.
+    ...(recetteHache.cout_eclats
+      ? [i18n.t('menu.fiche.cout_eclats', { n: recetteHache.cout_eclats, possede: save.inventaire.eclats })]
+      : []),
     i18n.t('menu.fiche.donne', { item: nom(hache.id), n: recetteHache.sortie.qte }),
     ...lignesFicheItem(hache, registre, i18n),
   ], 'ce qu’elle demande (et ce qu’on a), ce qu’elle donne, puis la fiche de l’objet produit');

@@ -3,81 +3,152 @@
     "id": "item_epee_bois",
     "label_key": "item.epee_bois",
     "categorie": "arme",
-    "stack_max": 1,
     "arme": "weapon_epee_bois",
-    "render": { "visuel": "visuel_icone_epee_bois" }
+    "render": {
+      "visuel": "visuel_icone_epee_bois"
+    },
+    "pile_max": 1
   },
   {
     "id": "item_plume",
     "label_key": "item.plume",
     "description_key": "item.plume.description",
     "categorie": "valeur",
-    "stack_max": 1,
     "xp": 1,
-    "render": { "visuel": "visuel_plume" }
+    "render": {
+      "visuel": "visuel_plume"
+    },
+    "pile_max": 1
   },
   {
     "id": "item_branche",
     "xp": 1,
     "label_key": "item.branche",
     "categorie": "ressource",
-    "stack_max": 20,
-    "render": { "visuel": "visuel_branche" },
-    "spawn": { "nb_au_sol": 10, "zones": ["foret", "campagne"], "zones_exclues": ["maison", "jardin"] }
+    "render": {
+      "visuel": "visuel_branche"
+    },
+    "spawn": {
+      "nb_au_sol": 10,
+      "zones": [
+        "foret",
+        "campagne"
+      ],
+      "zones_exclues": [
+        "maison",
+        "jardin"
+      ]
+    }
   },
   {
     "id": "item_caillou",
     "xp": 1,
     "label_key": "item.caillou",
     "categorie": "ressource",
-    "stack_max": 20,
-    "render": { "visuel": "visuel_caillou" },
-    "spawn": { "nb_au_sol": 10, "zones": ["foret", "campagne"], "zones_exclues": ["maison", "jardin"] }
+    "render": {
+      "visuel": "visuel_caillou"
+    },
+    "spawn": {
+      "nb_au_sol": 10,
+      "zones": [
+        "foret",
+        "campagne"
+      ],
+      "zones_exclues": [
+        "maison",
+        "jardin"
+      ]
+    }
+  },
+  {
+    "id": "item_herbe",
+    "xp": 1,
+    "flag_ramassage": "flag_premiere_herbe",
+    "label_key": "item.herbe",
+    "description_key": "item.herbe.description",
+    "categorie": "ressource",
+    "render": {
+      "visuel": "visuel_touffe_herbe"
+    },
+    "spawn": {
+      "nb_au_sol": 10,
+      "zones": [
+        "campagne",
+        "champs"
+      ],
+      "zones_exclues": [
+        "maison",
+        "jardin"
+      ]
+    }
   },
   {
     "id": "item_fruit",
     "xp": 1,
     "label_key": "item.fruit",
     "categorie": "nourriture",
-    "stack_max": 10,
-    "render": { "visuel": "visuel_fruit" },
-    "spawn": { "nb_au_sol": 1, "zones": ["jardin"], "respawn_ms": 60000 },
-    "consommation": { "faim": 0.15, "soif": 0.05 }
+    "render": {
+      "visuel": "visuel_fruit"
+    },
+    "spawn": {
+      "nb_au_sol": 1,
+      "zones": [
+        "jardin"
+      ],
+      "respawn_ms": 60000
+    },
+    "consommation": {
+      "faim": 0.15,
+      "soif": 0.05
+    }
   },
   {
     "id": "item_hache",
     "label_key": "item.hache",
     "categorie": "outil",
-    "stack_max": 1,
-    "render": { "visuel": "visuel_hache" }
+    "render": {
+      "visuel": "visuel_hache"
+    },
+    "pile_max": 1
   },
   {
     "id": "item_pioche",
     "label_key": "item.pioche",
     "categorie": "outil",
-    "stack_max": 1,
-    "render": { "visuel": "visuel_pioche" }
+    "render": {
+      "visuel": "visuel_pioche"
+    },
+    "pile_max": 1
   },
   {
     "id": "item_fruit_cuit",
     "label_key": "item.fruit_cuit",
     "categorie": "nourriture",
-    "stack_max": 10,
-    "render": { "visuel": "visuel_fruit_cuit" },
-    "consommation": { "faim": 0.35, "soif": 0.1, "effets": ["buff_repas"] }
+    "render": {
+      "visuel": "visuel_fruit_cuit"
+    },
+    "consommation": {
+      "faim": 0.35,
+      "soif": 0.1,
+      "effets": [
+        "buff_repas"
+      ]
+    }
   },
   {
     "id": "item_bois",
     "label_key": "item.bois",
     "categorie": "ressource",
-    "stack_max": 20,
-    "render": { "visuel": "visuel_bois" }
+    "render": {
+      "visuel": "visuel_bois"
+    }
   },
   {
     "id": "item_pierre",
     "label_key": "item.pierre",
     "categorie": "ressource",
-    "stack_max": 20,
-    "render": { "visuel": "visuel_pierre" }
+    "render": {
+      "visuel": "visuel_pierre"
+    }
   }
 ]

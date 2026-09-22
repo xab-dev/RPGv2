@@ -50,6 +50,11 @@
       "xp": {
         "taille_px": 6,
         "couleur": "#9fd0f0"
+      },
+      "refus": {
+        "taille_px": 7,
+        "couleur": "#e8a0a0",
+        "offset_y_px": -9
       }
     },
     "contour": "#101418",

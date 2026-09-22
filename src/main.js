@@ -73,7 +73,9 @@ import {
 } from './spawns.js';
 import { creerComportement, avancerComportement } from './comportement_monstres.js';
 import { peutRecolter, trouverRessourceProche } from './resources.js';
-import { ajouterItem, retirerItem } from './inventory.js';
+import {
+  ajouterItem, retirerItem, resoudreCapacite, plafondPourItem, slotsOccupes, normaliserContenus,
+} from './inventory.js';
 import {
   remplirItemsSol, trouverItemProche, ramasser, planifierRespawn, tickRespawns,
   calculerTuilesAtteignables, reposerItemsDuJour,
@@ -140,6 +142,17 @@ const CLE_TEXTE_GAIN_ITEM = 'monde.gain_item';
 // `D-58` : le gabarit ET son suffixe (« xp ») vivent dans les locales, jamais
 // ici — c'est ce qui permet de l'écrire autrement en anglais le jour venu.
 const CLE_TEXTE_GAIN_XP = 'monde.gain_xp';
+// `D-118` : le refus d'un conteneur plein se DIT, au même endroit et de la
+// même façon qu'un gain — c'est le même mécanisme de retour dans le monde, pas
+// un second. Les deux clés sont des gabarits sans `{n}` : le texte flottant
+// transporte une quantité que ces gabarits n'utilisent pas, ce qui est
+// exactement ce que « transporter des clés opaques » veut dire.
+const CLE_TEXTE_POCHE_PLEINE = 'monde.poche_pleine';
+// La poche du héros est un conteneur comme un autre, et son id vit ici pour
+// la même raison que `effet_texte_gain` : c'est le code qui en a besoin, donc
+// c'est le code qui le nomme — un id inconnu tombe au boot (`registre.obtenir`).
+const ID_CONTENEUR_POCHE = 'conteneur_poche';
+const CLE_TEXTE_COFFRE_PLEIN = 'monde.coffre_plein';
 // Respawn différé des items au sol (Palier B §3.2) : défaut appliqué quand
 // l'item ne surcharge pas `spawn.respawn_ms` — même esprit que
 // cooldown_ms par défaut de recipes.js.
@@ -167,6 +180,15 @@ const RAYON_TOIT_FOLLET_ABSENT_PX = 90;
 // arbitraire, sans effet sur le gameplay (les 3 follets sont équivalents en
 // interface) ; Xav pourra le changer librement en relisant ce tableau.
 const ORDRE_CHOIX_FOLLET = ['comp_follet_feu', 'comp_follet_eau', 'comp_follet_terre'];
+// `D-103` (T10) : LA monnaie du jeu, par son id de catalogue. Elle est citée
+// à deux endroits — le bandeau et la fiche d'une recette qui coûte des éclats
+// — donc elle se déclare au NIVEAU MODULE (`D-72`) : un nom écrit deux fois
+// finit par ne plus désigner la même chose. Ce que `main.js` en lit se borne
+// à sa silhouette ; le reste des éclats (`save.inventaire.eclats`,
+// `cout_eclats`) ne passe toujours par aucun catalogue, et c'est voulu tant
+// qu'il n'y a qu'une monnaie (`Q-49`, `D-68`).
+const ID_MONNAIE = 'monnaie_eclats';
+
 // Les lignes de la FICHE d'un objet (specs/08_menus-cartes.md, palier C) : sa
 // catégorie, puis ce qu'il rend quand on le mange — tout vient du catalogue,
 // rien n'est écrit par objet. Une seule fonction pour la Poche, le Coffre et la
@@ -203,6 +225,194 @@ export function lignesFicheItem(itemDef, registre, i18n) {
 // l'autre moitié du remède — elles deviennent **testables**, donc le test de
 // la Poche appelle enfin la vraie fonction au lieu d'en recopier la logique.
 export const SLOT_PAR_CATEGORIE = { nourriture: 'consommable', arme: 'arme' };
+
+// `D-121` (T5) : les instances de station CRÉÉES en cours de partie.
+//
+// Une instance créée n'a pas d'entrée de catalogue — elle n'en a pas besoin :
+// elle CLONE l'instance livrée avec le jeu pour son type, et ne change que son
+// id et sa pose. C'est la règle du ticket, et elle évite d'inventer un second
+// endroit où déclarer à quoi ressemble un coffre : **l'instance de catalogue
+// est le modèle de son type**. Un type sans modèle ne peut pas être fabriqué,
+// et le contrôle de démarrage le dit (`erreursRecettesDeStation`).
+//
+// Au NIVEAU MODULE, donc testable, et lisible par les deux fonctions sœurs
+// (`D-72`).
+export function modeleDeStation(registre, stationTypeId) {
+  return registre.tous('puzzles')
+    .find((p) => p.type === 'station' && p.station_type === stationTypeId) || null;
+}
+
+// `D-126` : LE point de lecture d'une pose sauvegardée, et il n'y en a qu'un.
+//
+// Depuis `D-121`, une entrée de `save.maison.stations` n'est PLUS une pose :
+// c'est une fiche qui peut porter un `contenu`, un `type` et une `scene`, et
+// qui n'a des coordonnées que si le joueur a déplacé la station. Trois
+// endroits la lisaient ; un seul avait appris la nouvelle forme, et les deux
+// autres prenaient une fiche de contenu pour une pose — le fantôme de
+// Construction naissait à `x: undefined`, la poussée faisait `undefined + 1`,
+// et `Math.max/min` propageaient le NaN sans rien dire. D'où la fonction :
+// trois lectures de la même donnée finissent toujours par diverger (`D-71`).
+//
+// Rend une pose PROPRE (jamais la fiche elle-même, qui traînerait un contenu
+// dans les overrides de scène) ou `null` — « je n'ai pas de pose », à 
+// l'appelant de retomber sur celle du catalogue.
+export function poseSauvegardeeDeStation(entree) {
+  if (!entree || !Number.isFinite(entree.x) || !Number.isFinite(entree.y)) return null;
+  return { x: entree.x, y: entree.y, rotation: entree.rotation || 0 };
+}
+
+// `D-126` (décision de Xav, 22/09) : **on ne déplace pas un meuble plein.**
+//
+// Ce qui était un accident devient une règle : le premier coffre se scellait
+// dès qu'on y rangeait quelque chose, par le bug ci-dessus, et Xav a voulu
+// garder le geste. Il est donc DIT, en données (`stations.json >
+// deplacable_si_vide`), et il vaut pour tout coffre — celui livré avec la
+// maison comme ceux qu'on fabrique.
+//
+// Une station qui ne déclare rien se déplace quel que soit son contenu : les
+// trois autres n'en ont pas, et rien ne change pour elles.
+export function stationDeplacable(stationType, contenu) {
+  if (!stationType.deplacable_si_vide) return { ok: true, raison: null };
+  const porteQuelqueChose = Object.values(contenu || {}).some((q) => q > 0);
+  return porteQuelqueChose ? { ok: false, raison: 'station_pleine' } : { ok: true, raison: null };
+}
+
+export function instancesCreees(registre, sceneId, stationsSauvegardees) {
+  const creees = [];
+  for (const [id, entree] of Object.entries(stationsSauvegardees || {})) {
+    // `type` est ce qui distingue une instance CRÉÉE d'une simple pose
+    // sauvegardée : une pose ne porte que des coordonnées.
+    if (!entree || !entree.type || entree.scene !== sceneId) continue;
+    const modele = modeleDeStation(registre, entree.type);
+    if (!modele) {
+      console.warn(`[D-121] instance "${id}" : aucun modèle pour le type "${entree.type}" — ignorée`);
+      continue;
+    }
+    creees.push({
+      ...modele,
+      id,
+      position: { x: entree.x, y: entree.y },
+      rotation: entree.rotation || 0,
+    });
+  }
+  return creees;
+}
+
+// Le contrôle de démarrage qui va avec : toute recette qui produit une
+// station doit avoir un modèle à cloner. Sans lui, la faute ne se verrait
+// qu'au moment de fabriquer — c'est-à-dire en jouant.
+// Prend les CATALOGUES bruts, pas le registre : ce contrôle se joue avec les
+// autres, avant que le registre n'existe — au démarrage, là où une faute de
+// catalogue se voit avant d'être jouée.
+export function erreursRecettesDeStation(recipes = [], puzzles = []) {
+  const aUnModele = (type) => puzzles.some((p) => p.type === 'station' && p.station_type === type);
+  return recipes
+    .filter((r) => r.sortie && r.sortie.station)
+    .filter((r) => !aUnModele(r.sortie.station))
+    .map((r) => (
+      `recipes.json > "${r.id}" produit la station "${r.sortie.station}", mais aucune instance de ce type `
+      + "n'existe dans puzzles.json — il n'y a rien à cloner"
+    ));
+}
+
+// `D-121` : l'instance de coffre LIVRÉE avec le jeu, celle qui hérite du
+// contenu d'avant ce ticket. On la trouve par son RÔLE, jamais par son id —
+// c'est le rôle qui est stable, et c'est aussi ce qui fera qu'un second type
+// de stockage (un grand coffre, un jour) n'aura rien à déclarer ici.
+export function instanceDeStockageDeBase(registre) {
+  return registre.tous('puzzles').find((p) => {
+    if (p.type !== 'station') return false;
+    const type = registre.obtenir('stations', p.station_type);
+    return type && type.role === 'stockage';
+  }) || null;
+}
+
+// `D-118` : ce que la poche a d'occupé, en texte. AU NIVEAU MODULE, et c'est
+// `D-72` qui l'exige : `demarrerJeu` (qui câble le menu) et
+// `creerOrchestrateurGrotte` (qui tient la poche) sont deux fonctions SŒURS —
+// un nom déclaré dans l'une n'existe pas dans l'autre. Écrite d'abord dans le
+// câblage du menu, cette ligne levait `ReferenceError: capacitePoche is not
+// defined` à chaque ouverture de l'écran Poche, et aucun test ne pouvait le
+// voir : `demarrerJeu` n'est jamais exécuté headless. C'est la capture sous
+// Chrome qui l'a attrapée, comme pour `D-72`.
+export function texteRemplissagePoche(save, registre, i18n) {
+  const capacite = resoudreCapacite(registre.obtenir('conteneurs', ID_CONTENEUR_POCHE));
+  return i18n.t('menu.fiche.coffre_piles', {
+    n: slotsOccupes(save.inventaire.items, capacite, (id) => registre.obtenir('items', id)),
+    max: capacite.slots,
+  });
+}
+
+// --- Un slot d'équipement dit la vérité (`D-92` + `D-93`, T2) -------------
+//
+// LE PROBLÈME, tel que Xav l'a vu en jeu : l'épée rangée au coffre restait
+// dans la case d'attaque, et le dernier fruit mangé restait dans la case du
+// consommable. Ce n'est pas un défaut d'affichage — c'est qu'un slot garde un
+// id que plus RIEN ne revalide. `D-92` en est la forme extrême : après un
+// renommage de catalogue, l'id ne résout même plus, et `arme.portee` lève au
+// premier ATTACK.
+//
+// UNE seule fonction, donc, appelée à chaque frame plutôt qu'à chacune des
+// mutations de poche (ramassage, craft, consommation, transfert au coffre,
+// chargement) : elle est idempotente et ne coûte que deux recherches, et
+// surtout elle ne peut pas être OUBLIÉE au prochain endroit qui touchera la
+// poche. Chercher tous les appelants était exactement ce qui avait laissé
+// passer les trois chemins divergents de `D-93`.
+//
+// PURE : tout ce dont elle a besoin lui est donné, et elle rend la liste de ce
+// qu'elle a changé — c'est l'appelant qui journalise et qui persiste.
+export function revaliderEquipement(save, registre) {
+  const changements = [];
+  const equipement = save.hero.equipement;
+  const poche = save.inventaire.items || {};
+  const enPoche = (itemId) => (poche[itemId] || 0) > 0;
+
+  // --- L'arme ---
+  const slotArme = registre.obtenir('equipment_slots', 'equip_arme');
+  const armeDefaut = slotArme ? slotArme.defaut : null;
+  const armeEquipee = equipement.arme;
+  if (armeEquipee && armeEquipee !== armeDefaut) {
+    if (!registre.existe('weapons', armeEquipee)) {
+      // `D-92` : id inconnu du catalogue (renommage, sauvegarde importée,
+      // id du mauvais catalogue). On replie sur le défaut du slot et on le
+      // DIT — jamais un échec dur en pleine partie, jamais un `arme.portee`
+      // lu sur `undefined`.
+      equipement.arme = null;
+      changements.push({ slot: 'arme', raison: 'inconnue', id: armeEquipee });
+    } else {
+      // L'arme est un id de `weapons.json` ; ce qu'on possède est un objet de
+      // poche qui la DÉSIGNE. On cherche donc l'objet, pas l'arme.
+      const objet = registre.tous('items').find((it) => it.arme === armeEquipee);
+      if (!objet || !enPoche(objet.id)) {
+        equipement.arme = null;
+        changements.push({ slot: 'arme', raison: 'absente', id: armeEquipee });
+      }
+    }
+  }
+
+  // --- Le consommable ---
+  const consommable = equipement.consommable;
+  if (consommable) {
+    const inconnu = !registre.existe('items', consommable);
+    if (inconnu || !enPoche(consommable)) {
+      // `Q-64`, retenu par défaut : un autre objet de la MÊME catégorie prend
+      // la case. Sinon elle disparaît — et c'est bien la case, pas seulement
+      // son icône : le loquet `flag_premier_consommable` est retiré, la case
+      // suit désormais l'état réel de la poche (décision de Xav, 22/09, qui
+      // *révise* le 21/09).
+      const categorie = !inconnu ? registre.obtenir('items', consommable).categorie : 'nourriture';
+      const releve = registre.tous('items')
+        .find((it) => it.categorie === categorie && it.id !== consommable && enPoche(it.id));
+      equipement.consommable = releve ? releve.id : null;
+      changements.push({
+        slot: 'consommable', raison: inconnu ? 'inconnu' : 'epuise', id: consommable,
+        remplace: releve ? releve.id : null,
+      });
+    }
+  }
+
+  return { changements };
+}
 
 // Ce que l'écran Poche doit savoir d'un objet équipable : dans quel
 // emplacement il va, s'il y est déjà, et ce que ça change. `null` pour tout
@@ -276,7 +486,7 @@ export function composerTextesFlottants(visibles, traduire) {
 // dessin, sous forme d'exception. Le schéma, lui, ne pouvait pas le voir — il
 // vérifie la forme de ce qui est déclaré, jamais que ce que le code émet
 // existe. Retirer « xp » du catalogue passait donc le boot sans un mot.
-export const STYLES_TEXTE_FLOTTANT = ['gain', 'xp'];
+export const STYLES_TEXTE_FLOTTANT = ['gain', 'xp', 'refus'];
 
 // Contrôle de démarrage : chaque style émis par le code a bien sa taille et sa
 // couleur au catalogue. Même famille que `erreursTextesMenus` — ce que le code
@@ -306,6 +516,19 @@ export function clesTexteFiches() {
     'menu.fiche.ingredients_manquants', 'menu.fiche.aucune_recette',
     'menu.fiche.deplacer', 'menu.fiche.construction_vide', 'menu.fiche.manger',
     'menu.poche_equiper', 'menu.poche_vide',
+    // `D-121` : la fiche d'une recette qui produit une STATION.
+    'menu.fiche.a_poser',
+    // `D-122` : les raisons d'un refus de craft, dites en toutes lettres.
+    'menu.fiche.deja_possede', 'menu.fiche.ingredient_manquant',
+    'menu.fiche.eclats_manquants_n', 'menu.fiche.poche_pleine',
+    'menu.craft_deja_possede',
+    // `D-126` : la raison pour laquelle une station ne se déplace pas.
+    'menu.fiche.refus_station_pleine',
+    // `D-103` : la ligne du coût en monnaie. Elle était composée par la fiche
+    // de Craft depuis `D-66` sans jamais passer par ce contrôle — la retirer
+    // des locales aurait donc rendu « menu.fiche.cout_eclats » en toutes
+    // lettres dans le jeu, sans un mot au démarrage.
+    'menu.fiche.cout_eclats',
   ];
 }
 
@@ -446,6 +669,56 @@ export function creerOrchestrateurGrotte({
   }
   let visuelsTuiles = construireTableGrains();
 
+  // --- Capacité des conteneurs (`D-118`) ----------------------------------
+  //
+  // Résolue UNE fois, ici : `inventory.js#resoudreCapacite` est le seul point
+  // par lequel une besace ou un porte-outils passeront (`Q-65`), donc tout ce
+  // qui suit lit ces deux objets et jamais les nombres du catalogue.
+  //
+  // Le coffre prend sa capacité de son TYPE de station, pas d'une constante :
+  // c'est ce qui fera qu'un coffre crafté (T5) ne portera aucun second
+  // nombre. En M1 il n'y a qu'un seul type de stockage — on le cherche par
+  // son rôle plutôt que par son id, parce que c'est le rôle qui est stable.
+  const obtenirItemDef = (id) => registre.obtenir('items', id);
+  // `D-103` : la silhouette de la monnaie, résolue UNE fois — le bandeau et
+  // les fiches de Craft la montrent, et c'est la même.
+  const iconeMonnaie = registre.obtenir('monnaies', ID_MONNAIE).icone;
+  const capacitePoche = resoudreCapacite(registre.obtenir('conteneurs', ID_CONTENEUR_POCHE));
+  function capaciteDeStation(station) {
+    return resoudreCapacite(registre.obtenir('conteneurs', station.conteneur));
+  }
+  const typeStockageDeBase = registre.tous('stations').find((s) => s.role === 'stockage');
+  const capaciteCoffreDeBase = capaciteDeStation(typeStockageDeBase);
+
+  function plafondPoche(itemId) {
+    return plafondPourItem(save.inventaire.items, itemId, capacitePoche, obtenirItemDef);
+  }
+
+  const coffreDeBase = instanceDeStockageDeBase(registre);
+
+  // Une sauvegarde d'avant `D-118` peut porter 20 bois en poche là où quatre
+  // slots de cinq n'en tiennent plus autant. Normalisé une fois, au
+  // démarrage, et DIT — jamais un objet qui s'évapore entre deux parties.
+  {
+    const bilan = normaliserContenus(
+      { poche: save.inventaire.items, coffre: contenuDeStation(coffreDeBase.id) },
+      { capacitePoche, capaciteCoffre: capaciteCoffreDeBase, obtenirItem: obtenirItemDef },
+    );
+    if (bilan.deplaces.length || bilan.perdus.length) {
+      save.inventaire.items = bilan.poche;
+      const entreeCoffre = save.maison.stations[coffreDeBase.id]
+        || (save.maison.stations[coffreDeBase.id] = {});
+      entreeCoffre.contenu = bilan.coffre;
+      etatModifie = true;
+      for (const d of bilan.deplaces) {
+        console.info(`[D-118] poche trop pleine au chargement : ${d.quantite} × ${d.item} descendu(s) au coffre.`);
+      }
+      for (const p of bilan.perdus) {
+        console.warn(`[D-118] poche ET coffre pleins au chargement : ${p.quantite} × ${p.item} n'a pas pu être rangé.`);
+      }
+    }
+  }
+
   // Extrait en fonction (plutôt qu'un simple `const`) : reinitialiserPartie()
   // (diagnostic SD_grotte-blocage-choix-follet_2026-09-15.md, §B) doit
   // pouvoir reconstruire un registre de flags vierge sans redémarrer le
@@ -469,12 +742,38 @@ export function creerOrchestrateurGrotte({
       // COMBIEN de stations le héros peut déplacer là où il se tient. Un vrai
       // nombre, pas un booléen déguisé — « lieu » n'est pas un format de
       // condition de `flags.js`, et la spec interdit d'en créer un.
-      valeurs: () => ({
-        niveau: save.hero.niveau,
-        stations_placables: nombreStationsPlacables(),
-        ...valeursExternes(),
-      }),
+      valeurs: valeursConditions,
     });
+  }
+  // LES valeurs nommées qu'une condition de données peut interroger. Une
+  // seule déclaration : `nomsValeursConditions` en dérive ses clés, au lieu de
+  // recopier la liste — deux listes finissent toujours par diverger (`D-71`).
+  function valeursConditions() {
+    return {
+      niveau: save.hero.niveau,
+      stations_placables: nombreStationsPlacables(),
+      // `D-93` : combien de SORTES de consommables la poche porte. Un nombre,
+      // donc une condition de données ordinaire — la barre du bas n'a aucun
+      // code de déblocage à elle.
+      consommables_en_poche: consommablesEnPoche(),
+      // `D-125` (T9) : trois états du monde de plus, et pas un mot de lore
+      // dedans. Une ligne du follet est une entrée de `ambiances.json` qui
+      // les interroge ; la prochaine s'écrira de même, sans code.
+      //
+      // `slots_libres_poche` plutôt que `slots_occupes` : la question
+      // intéressante est « reste-t-il de la place ? », et elle se pose avec un
+      // `max: 0` qui ne dépend pas du nombre de slots du conteneur — le jour
+      // où la poche en gagne un (une besace, `Q-65`), la condition tient
+      // toujours, là où un `min: 4` serait devenu faux en silence.
+      slots_libres_poche: capacitePoche.slots
+        - slotsOccupes(save.inventaire.items, capacitePoche, obtenirItemDef),
+      objets_au_coffre: objetsRangesAuCoffre(),
+      // `D-121` : une instance CRÉÉE en jeu, donc posée par le joueur — les
+      // stations du catalogue n'en sont pas. Compté par la même fonction que
+      // la résolution des interactifs, jamais par un second parcours.
+      stations_posees: instancesCreees(registre, scene.id, save.maison.stations).length,
+      ...valeursExternes(),
+    };
   }
   let flags = construireFlags();
 
@@ -673,6 +972,20 @@ export function creerOrchestrateurGrotte({
       // c'est le gabarit de locale qui décidera de l'afficher ou non.
       libelle: null,
       style: 'gain',
+    });
+  }
+
+  // `D-118` : le pendant NÉGATIF du précédent. Un conteneur plein refusait
+  // jusqu'ici en silence (`D-28`), et le refus se lit au même endroit que le
+  // gain qu'il remplace : à la source, là où le joueur regarde.
+  //
+  // `quantite: 1` et non 0 : un gain à zéro n'est jamais émis (garde de
+  // `signalerGainItem`), et le gabarit n'affiche pas le nombre de toute façon.
+  // La `cle` porte le conteneur, donc deux refus de la même frame fusionnent
+  // en un seul texte au lieu de s'empiler.
+  function signalerRefusConteneur(cleTexte, x, y) {
+    emettreTexte(textesFlottants, {
+      x, y, cle: cleTexte, quantite: 1, format: cleTexte, libelle: null, style: 'refus',
     });
   }
 
@@ -891,28 +1204,56 @@ export function creerOrchestrateurGrotte({
     return entreesVisibles(registre.tous('action_slots'), flags).map((slot) => slot.verb);
   }
 
-  // Le loquet du premier consommable. `[OUVERT]` retenu par défaut, comme le
-  // ticket y autorise : la case apparaît au premier consommable **obtenu**,
-  // et elle RESTE — manger son dernier fruit ne doit pas faire disparaître la
-  // touche qu'on vient d'apprendre.
+  // `D-93` (T2) : le loquet `flag_premier_consommable` est RETIRÉ. La case du
+  // consommable suit désormais l'état réel de la poche, par une valeur nommée
+  // (`consommables_en_poche`) que `data/action_slots.json` cite — c'est le
+  // mécanisme d'apparition existant, sans code de déblocage propre.
   //
-  // Un loquet, donc un flag, et pas une valeur nommée `{ valeur:
-  // 'consommables_en_poche', min: 1 }` : celle-ci aurait fait clignoter la
-  // case au rythme de la poche. Posé ici, en UN point, sur l'état observable
-  // de la poche plutôt qu'à chacun des endroits qui peuvent y ajouter
-  // quelque chose (ramassage, craft, retrait du coffre) — une partie déjà
-  // commencée avec un fruit en poche le pose donc à sa première frame, sans
-  // migration.
-  function verifierDeblocagesBarreAction() {
-    if (flags.has('flag_premier_consommable')) return;
+  // C'est un retournement assumé (décision de Xav, 22/09, qui *révise* le
+  // 21/09) : on craignait de faire « clignoter » la case au rythme de la
+  // poche, mais voir une touche qui ne fait rien est pire que de la voir
+  // partir avec ce qu'elle servait à manger.
+  function consommablesEnPoche() {
+    let total = 0;
     for (const [itemId, quantite] of Object.entries(save.inventaire.items)) {
       if (!(quantite > 0)) continue;
-      if (registre.obtenir('items', itemId).categorie !== 'nourriture') continue;
-      flags.set('flag_premier_consommable');
-      etatModifie = true;
-      return;
+      const itemDef = registre.obtenir('items', itemId);
+      if (itemDef && SLOT_PAR_CATEGORIE[itemDef.categorie] === 'consommable') total += 1;
+    }
+    return total;
+  }
+
+  // `D-125` (T9) : combien d'objets dorment dans les stations de stockage.
+  // TOUTES les instances, pas seulement le coffre de base : depuis `D-121` le
+  // contenu appartient à l'instance, donc en nommer une ici rendrait la ligne
+  // du follet muette dès que le joueur range dans un coffre qu'il a posé.
+  // Une entrée sans `contenu` est une simple POSE (`D-121` encore), et
+  // n'apporte rien à la somme.
+  function objetsRangesAuCoffre() {
+    let total = 0;
+    for (const entree of Object.values(save.maison.stations || {})) {
+      for (const quantite of Object.values((entree && entree.contenu) || {})) {
+        if (quantite > 0) total += quantite;
+      }
+    }
+    return total;
+  }
+
+  // `D-92` + `D-93` : un slot qui ne correspond plus à rien retombe sur le
+  // défaut de son slot, et ça se DIT en console. Appelée à chaque frame,
+  // AVANT toute branche d'UI — le Coffre déplace des objets pendant qu'un
+  // écran est ouvert, donc une revalidation posée sous `if (!uiOuverte)`
+  // manquerait précisément le cas qui a fait le bug.
+  function revaliderEquipementDuHeros() {
+    const { changements } = revaliderEquipement(save, registre);
+    if (!changements.length) return;
+    etatModifie = true;
+    for (const c of changements) {
+      console.info(`[D-92/D-93] slot "${c.slot}" revalidé : "${c.id}" ${c.raison}`
+        + `${c.remplace ? ` — remplacé par "${c.remplace}"` : ' — retour au défaut'}`);
     }
   }
+  revaliderEquipementDuHeros();
 
   // `D-61` (T3, `Q-34`) : les lignes d'ambiance par palier. Le CHOIX est dans
   // `ambiances.js` (pur) ; ici, seulement de quoi le nourrir et quoi faire du
@@ -964,7 +1305,13 @@ export function creerOrchestrateurGrotte({
         const stationType = registre.obtenir('stations', puzzle.station_type);
         const visuel = registre.obtenir('visuels', puzzle.render.visuel);
         const poseParDefaut = { x: puzzle.position.x, y: puzzle.position.y, rotation: puzzle.rotation || 0 };
-        const poseSauvegardee = stationType.placable ? save.maison.stations[puzzle.id] : null;
+        // `D-121` : une entrée de `maison.stations` peut ne porter QUE un
+        // contenu (un coffre jamais déplacé qu'on a rempli). Elle n'est une
+        // pose que si elle en a les coordonnées — et c'est `D-126` qui a sorti
+        // cette règle d'ici, parce qu'elle était vraie ici seulement.
+        const poseSauvegardee = stationType.placable
+          ? poseSauvegardeeDeStation(save.maison.stations[puzzle.id])
+          : null;
 
         if (!poseSauvegardee) {
           empreintesAcceptees.push(empreinteAbsoluePuzzle(puzzle, visuel, poseParDefaut, donneesScene.tile_size));
@@ -1034,7 +1381,10 @@ export function creerOrchestrateurGrotte({
     // `D-05`, même raison exactement : un « +1 Bois » gagné dans la scène
     // qu'on quitte n'a rien à faire flottant dans la suivante.
     viderTextesFlottants(textesFlottants);
-    scene = chargerScene(registre, sceneId, resoudreOverridesStations(sceneId));
+    scene = chargerScene(
+      registre, sceneId, resoudreOverridesStations(sceneId),
+      instancesCreees(registre, sceneId, save.maison.stations),
+    );
     // Palier E : le calque statique de la scène neuve est à construire, et
     // cette construction n'est pas une saccade de jeu — Auto ne la juge pas.
     msDepuisEntreeScene = 0;
@@ -1150,7 +1500,10 @@ export function creerOrchestrateurGrotte({
   // en dernier — la moins probable d'être ambiguë avec autre chose).
   function essayerInteraction() {
     for (const puzzleId of scene.interactifs) {
-      const puzzle = registre.obtenir('puzzles', puzzleId);
+      // `D-121` : `scene.puzzle` et non `registre.obtenir` — un id venu de la
+      // scène peut désigner une instance CRÉÉE (un coffre fabriqué), qui
+      // n'est dans aucun catalogue.
+      const puzzle = scene.puzzle(puzzleId);
       // §3 : seuil mesuré au bord de l'empreinte, pas au centre (une station
       // ×2,1 solide dépasserait sinon DISTANCE_INTERACT_PX depuis l'extérieur
       // de son propre bord) — un levier (empreinte nulle) redonne exactement
@@ -1175,10 +1528,13 @@ export function creerOrchestrateurGrotte({
     const itemProche = trouverItemProche(itemsSol, hero, DISTANCE_INTERACT_PX);
     if (itemProche) {
       const itemDef = registre.obtenir('items', itemProche.itemId);
-      const resultat = ajouterItem(save.inventaire.items, itemProche.itemId, 1, itemDef.stack_max);
-      // Poche pleine (§4 edge case) : l'item reste au sol, rien d'autre ne se
-      // passe — pas de toast "poche pleine" en Phase 2 (D4⑤ formalisé plus
-      // tard), un simple non-ramassage silencieux suffit pour cette session.
+      const resultat = ajouterItem(save.inventaire.items, itemProche.itemId, 1, plafondPoche(itemProche.itemId));
+      // Poche pleine (§4 edge case) : l'item reste au sol — et depuis `D-118`
+      // ça se DIT (le silence était la moitié de `D-28`). Le texte monte de
+      // l'objet refusé, pas du héros : même règle que le gain qu'il remplace.
+      if (resultat.ajoute <= 0) {
+        signalerRefusConteneur(CLE_TEXTE_POCHE_PLEINE, itemProche.position.x, itemProche.position.y);
+      }
       if (resultat.ajoute > 0) {
         save.inventaire.items = resultat.inventaire;
         compteurRamassages += 1;
@@ -1216,6 +1572,13 @@ export function creerOrchestrateurGrotte({
         // elle, est rebattue à chaque aube).
         const objetUnique = scene.objetsUniques.find((o) => o.item === itemProche.itemId);
         if (objetUnique) flags.set(objetUnique.flag);
+        // `D-125` (T9) : un item peut déclarer le flag de son PREMIER
+        // ramassage (`items.json > flag_ramassage`), exactement comme un objet
+        // unique déclare le sien. C'est ce qui permet à une ligne de lore de
+        // parler de l'herbe sans qu'aucun id d'item n'entre dans le code — et
+        // `flags.set` est déjà idempotent, donc « le premier » n'a rien à
+        // vérifier ici.
+        if (itemDef.flag_ramassage) flags.set(itemDef.flag_ramassage);
         if (!flags.has('flag_premier_ramassage')) {
           flags.set('flag_premier_ramassage');
           dialogue.ouvrir(resoudreLignes('dlg_premier_ramassage', registre, i18n, save.hero.companion));
@@ -1242,7 +1605,21 @@ export function creerOrchestrateurGrotte({
         return;
       }
       const itemDefProduit = registre.obtenir('items', donneesRessource.item_produit);
-      const resultatRecolte = ajouterItem(save.inventaire.items, donneesRessource.item_produit, 1, itemDefProduit.stack_max);
+      const resultatRecolte = ajouterItem(
+        save.inventaire.items, donneesRessource.item_produit, 1, plafondPoche(donneesRessource.item_produit),
+      );
+      // `D-28`, l'autre moitié : une récolte refusée ne consomme PAS le
+      // cooldown de la tuile. Les deux chemins de récolte se comportent enfin
+      // pareil — c'était la divergence même que la ligne décrivait (le
+      // ramassage au sol laissait l'objet, la récolte mangeait le cooldown).
+      if (resultatRecolte.ajoute <= 0) {
+        signalerRefusConteneur(
+          CLE_TEXTE_POCHE_PLEINE,
+          (ressourceProche.tx + 0.5) * scene.tileSize,
+          (ressourceProche.ty + 0.5) * scene.tileSize,
+        );
+        return;
+      }
       save.inventaire.items = resultatRecolte.inventaire;
       // `D-05` : depuis le centre de la TUILE récoltée (l'arbre, le rocher),
       // pas depuis le héros — la source du gain est ce qu'on vient de frapper.
@@ -1275,8 +1652,12 @@ export function creerOrchestrateurGrotte({
       return;
     }
     if (station.role === 'stockage') {
-      menu.ouvrirCoffre(() => entreesCoffre(station), i18n.t(station.label_key), {
-        sousTitre: () => i18n.t('menu.fiche.coffre_piles', { n: nombrePilesCoffre(), max: station.capacite }),
+      // `D-121` : c'est CE coffre-là qui s'ouvre, pas « le » coffre — d'où
+      // l'instance passée avec son type.
+      menu.ouvrirCoffre(() => entreesCoffre(puzzle, station), i18n.t(station.label_key), {
+        sousTitre: () => i18n.t('menu.fiche.coffre_piles', {
+          n: slotsCoffre(puzzle, station), max: capaciteDeStation(station).slots,
+        }),
         texteVide: i18n.t('menu.poche_vide'),
       });
       return;
@@ -1289,13 +1670,19 @@ export function creerOrchestrateurGrotte({
       dialogue.ouvrir(resoudreLignes('dlg_puits_cooldown', registre, i18n, save.hero.companion));
       return;
     }
-    // `[OUVERT]` (`Q-43`) : l'XP du puits n'est créditée que si la gourde
-    // n'était PAS déjà pleine — boire quand on n'a pas soif ne rapporte rien.
-    // Retenu par défaut faute de tranchage : sans cela, le puits deviendrait
-    // une source d'XP à volonté, bornée par le seul cooldown anti-spam.
+    // `D-123` (T7) : l'XP du puits tombe si la jauge était SOUS SON SEUIL
+    // avant de boire — `Q-43` tranchée par Xav le 22/09 (« oui, 90 % »).
+    //
+    // *Révise* la règle d'avant, « l'XP tombe si la jauge a bougé » : à
+    // 99,5 %, boire faisait bouger la jauge d'un demi-point et rapportait
+    // autant qu'à 10 %, ce qui rendait le puits payant au tapotement. Le
+    // seuil vit en données (`survival.json > jauge_soif > seuil_xp`), et une
+    // jauge qui n'en déclare pas ne rapporte jamais rien — on ne mange pas au
+    // puits.
+    const jaugeSoif = registre.obtenir('survival', 'jauge_soif');
     const soifAvant = save.survie.jauge_soif;
     save.survie = consommerSurvie(save.survie, { jauge_soif: 1 });
-    if (save.survie.jauge_soif > soifAvant) {
+    if (jaugeSoif.seuil_xp !== undefined && soifAvant < jaugeSoif.seuil_xp) {
       // Le « +1xp » monte du CENTRE du puits, pas du héros : même règle que
       // partout ailleurs, le texte dit d'où vient le gain. On réutilise
       // l'empreinte déjà calculée pour le seuil d'interaction — jamais une
@@ -1322,7 +1709,18 @@ export function creerOrchestrateurGrotte({
     // n'est pas dans la liste, donc elle ne peut pas être comptée.
     return entreesVisibles(recettesDeStation(registre, station.id), flags)
       .map((r) => {
-        const verdict = peutFabriquer(r, save.inventaire.items, flags, save.cooldowns, heureMs, save.inventaire.eclats);
+        // `D-122` (T6) : le plafond est passé au VERDICT, pas seulement à
+        // l'action — c'est ce qui permet de dire « ta poche est pleine »
+        // AVANT de tenter, au lieu de laisser une tuile non grisée ne rien
+        // faire.
+        const verdict = peutFabriquer(
+          r, save.inventaire.items, flags, save.cooldowns, heureMs, save.inventaire.eclats,
+          r.sortie.item
+            ? ((pocheApresEntrees) => plafondPourItem(
+              pocheApresEntrees, r.sortie.item, capacitePoche, obtenirItemDef,
+            ))
+            : null,
+        );
         let suffixe = '';
         if (verdict.raison === 'cooldown') {
           const resteS = Math.ceil(tempsRestantMs(save.cooldowns, r.id, r.cooldown_ms ?? 60000, heureMs) / 1000);
@@ -1331,6 +1729,8 @@ export function creerOrchestrateurGrotte({
           suffixe = ` (${i18n.t('menu.craft_manque')})`;
         } else if (verdict.raison === 'poche_pleine') {
           suffixe = ` (${i18n.t('menu.poche_pleine')})`;
+        } else if (verdict.raison === 'deja_possede') {
+          suffixe = ` (${i18n.t('menu.craft_deja_possede')})`;
         } else if (verdict.raison === 'eclats') {
           // `D-66` : un refus se DIT, comme les trois autres. Sans cette
           // ligne, la recette serait grisée sans raison affichée — et la
@@ -1343,37 +1743,75 @@ export function creerOrchestrateurGrotte({
         // poche, relu à chaque affichage), ce qu'elle donne — l'objet produit
         // est décrit par `lignesFicheItem`, comme dans la Poche et le Coffre —,
         // et la raison d'un refus probable.
-        const itemSortie = registre.obtenir('items', r.sortie.item);
+        // `D-121` : une recette produit soit un objet, soit une STATION. Ce
+        // qu'on montre — la tuile, le nom, ce que ça donne — se résout donc
+        // dans un catalogue ou dans l'autre. Une seule paire de valeurs, lue
+        // une fois : c'est ce qui évite d'écrire deux fois la fiche.
+        const modeleSortie = r.sortie.station ? modeleDeStation(registre, r.sortie.station) : null;
+        const defSortie = modeleSortie
+          ? registre.obtenir('stations', r.sortie.station)
+          : registre.obtenir('items', r.sortie.item);
+        const visuelSortie = modeleSortie ? modeleSortie.render.visuel : defSortie.render.visuel;
+        // `D-122` : la fiche dit ce qui manque, et COMBIEN. Le détail vient
+        // de `peutFabriquer` — seul endroit qui le sache —, la phrase se
+        // compose ici, par un gabarit de locale : ni le module de recettes ni
+        // les locales ne portent l'autre moitié.
         const raisons = {
           cooldown: () => i18n.t('menu.fiche.recharge', {
             n: Math.ceil(tempsRestantMs(save.cooldowns, r.id, r.cooldown_ms ?? 60000, heureMs) / 1000),
           }),
-          ingredients: () => i18n.t('menu.fiche.ingredients_manquants'),
-          eclats: () => i18n.t('menu.fiche.eclats_manquants'),
-          poche_pleine: () => i18n.t('menu.fiche.pile_pleine'),
+          deja_possede: () => i18n.t('menu.fiche.deja_possede'),
+          ingredients: () => i18n.t('menu.fiche.ingredient_manquant', {
+            n: verdict.detail.manque,
+            item: i18n.t(registre.obtenir('items', verdict.detail.item).label_key),
+          }),
+          eclats: () => i18n.t('menu.fiche.eclats_manquants_n', { n: verdict.detail.manque }),
+          poche_pleine: () => i18n.t('menu.fiche.poche_pleine'),
         };
         return {
           texte: `${i18n.t(r.label_key)}${suffixe}`,
           titre: i18n.t(r.label_key),
-          icone: itemSortie.render.visuel,
+          icone: visuelSortie,
           quantite: r.sortie.qte > 1 ? r.sortie.qte : null,
           lignes: [
-            ...r.entrees.map((e) => i18n.t('menu.fiche.ingredient', {
-              item: i18n.t(registre.obtenir('items', e.item).label_key), n: e.qte, possede: save.inventaire.items[e.item] || 0,
+            // `D-103` (T10) : une ligne d'ingrédient et une ligne de coût
+            // MONTRENT ce dont elles parlent. La silhouette vient du même
+            // endroit que celle de la tuile (`render.visuel` de l'item, et
+            // `monnaies.json` pour la monnaie) : aucune image n'est choisie
+            // ici. Le texte, lui, ne change pas d'un mot — l'icône s'ajoute,
+            // elle ne remplace pas le nom, qui reste ce que lit un joueur qui
+            // ne reconnaît pas encore la forme.
+            ...r.entrees.map((e) => ({
+              texte: i18n.t('menu.fiche.ingredient', {
+                item: i18n.t(registre.obtenir('items', e.item).label_key), n: e.qte, possede: save.inventaire.items[e.item] || 0,
+              }),
+              icone: registre.obtenir('items', e.item).render.visuel,
             })),
-            ...(r.cout_eclats ? [i18n.t('menu.fiche.cout_eclats', {
-              n: r.cout_eclats, possede: save.inventaire.eclats,
-            })] : []),
-            i18n.t('menu.fiche.donne', { item: i18n.t(itemSortie.label_key), n: r.sortie.qte }),
-            ...lignesFicheItem(itemSortie, registre, i18n),
+            ...(r.cout_eclats ? [{
+              texte: i18n.t('menu.fiche.cout_eclats', { n: r.cout_eclats, possede: save.inventaire.eclats }),
+              icone: iconeMonnaie,
+            }] : []),
+            i18n.t('menu.fiche.donne', { item: i18n.t(defSortie.label_key), n: r.sortie.qte || 1 }),
+            // La fiche d'un OBJET vient de `lignesFicheItem` ; une station
+            // n'en a pas (elle ne se porte pas), elle dit ce qu'on en fera.
+            ...(modeleSortie ? [i18n.t('menu.fiche.a_poser')] : lignesFicheItem(defSortie, registre, i18n)),
             ...(raisons[verdict.raison] ? [raisons[verdict.raison]()] : []),
           ],
           libelleAction: i18n.t('menu.fiche.fabriquer'),
           grisee: !verdict.ok,
           action: () => {
-            const itemDefSortie = registre.obtenir('items', r.sortie.item);
             const resultat = fabriquer(r, {
-              poche: save.inventaire.items, flags, cooldowns: save.cooldowns, heureMs: save.monde.heure, itemDefSortie,
+              poche: save.inventaire.items,
+              flags,
+              cooldowns: save.cooldowns,
+              heureMs: save.monde.heure,
+              // Le plafond se mesure sur la poche que `fabriquer` nous
+              // passe — celle d'APRÈS le retrait des ingrédients. C'est ce
+              // qui fait qu'on peut cuire son dernier fruit sans avoir à
+              // vider un slot d'abord.
+              plafondSortie: (pocheApresEntrees) => (r.sortie.item
+                ? plafondPourItem(pocheApresEntrees, r.sortie.item, capacitePoche, obtenirItemDef)
+                : 0),
               eclats: save.inventaire.eclats,
             });
             if (resultat.ok) {
@@ -1385,6 +1823,15 @@ export function creerOrchestrateurGrotte({
               crediterXpHeros(resultat.xp);
               flags.set('flag_premier_craft');
               etatModifie = true;
+              // `D-121` : une recette de station ne remplit pas la poche,
+              // elle POSE quelque chose — donc elle enchaîne directement sur
+              // le mode Construction, avec le fantôme de ce qu'on vient de
+              // fabriquer. Si le joueur ressort sans poser, la station
+              // existe quand même : elle l'attend dans la liste Construction.
+              if (resultat.station) {
+                poserStationFabriquee(resultat.station);
+                return;
+              }
             }
             menu.rafraichirCraft();
           },
@@ -1410,29 +1857,72 @@ export function creerOrchestrateurGrotte({
   // de la source sans l'ajouter à la destination (`ajouterItem` plafonne à
   // `stack_max` et le dit par `ajoute`, que personne ne lisait) — l'objet
   // disparaissait. On ajoute D'ABORD, et on ne retire que ce qui est entré.
-  function nombrePilesCoffre() {
-    return Object.values(save.coffre.items).filter((qte) => qte > 0).length;
+  //
+  // `D-118` : « combien de piles » devient « combien de SLOTS », et le calcul
+  // sort d'ici — `inventory.js#slotsOccupes` est le seul à savoir qu'une pile
+  // de douze branches en occupe trois. Le coffre, lui, ne compte plus ses
+  // entrées : deux vérités de remplissage auraient fini par diverger.
+  //
+  // `D-121` (T5) : le contenu appartient à l'INSTANCE, pas au jeu. Un coffre
+  // = un type + une pose + un contenu, et il y en aura cinq. L'entrée de
+  // `save.maison.stations` est créée paresseusement, au premier dépôt : une
+  // partie neuve n'a donc rien à déclarer, et un coffre jamais ouvert ne
+  // laisse aucune trace dans la sauvegarde.
+  // LIRE ne crée rien : une lecture qui écrivait posait une entrée sans pose
+  // dans `maison.stations`, que `resoudreOverridesStations` prenait ensuite
+  // pour une pose sauvegardée — et toutes les stations partaient en NaN. Un
+  // accesseur de lecture doit être une lecture.
+  function contenuDeStation(puzzleId) {
+    const entree = save.maison.stations[puzzleId];
+    return (entree && entree.contenu) || {};
   }
 
-  // Déplace UNE unité de `source` vers `destination` (deux clés de `save` qui
-  // portent un `items`). Rend vrai si l'unité a bougé.
-  function transfererUnite(source, destination, itemId, stackMax) {
-    const resultat = ajouterItem(save[destination].items, itemId, 1, stackMax);
+  function slotsCoffre(puzzle, station) {
+    return slotsOccupes(contenuDeStation(puzzle.id), capaciteDeStation(station), obtenirItemDef);
+  }
+
+  // Déplace UNE unité d'un contenant vers un autre. Les deux contenants sont
+  // donnés comme un couple lire/écrire plutôt que comme une clé de `save` :
+  // depuis `D-121` une destination peut être n'importe quelle instance de
+  // station, et il n'existe plus de chemin fixe où aller la chercher.
+  function transfererUnite(source, destination, itemId, plafond) {
+    const resultat = ajouterItem(destination.lire(), itemId, 1, plafond);
     if (resultat.ajoute < 1) return false;
-    save[destination].items = resultat.inventaire;
-    save[source].items = retirerItem(save[source].items, itemId, 1);
+    destination.ecrire(resultat.inventaire);
+    source.ecrire(retirerItem(source.lire(), itemId, 1));
     etatModifie = true;
     return true;
   }
 
-  function entreesCoffre(station) {
+  const POCHE = {
+    lire: () => save.inventaire.items,
+    ecrire: (items) => { save.inventaire.items = items; },
+  };
+  function contenantStation(puzzleId) {
+    return {
+      lire: () => contenuDeStation(puzzleId),
+      ecrire: (items) => {
+        const entree = save.maison.stations[puzzleId] || (save.maison.stations[puzzleId] = {});
+        entree.contenu = items;
+      },
+    };
+  }
+
+  function entreesCoffre(puzzle, station) {
+    const coffre = contenantStation(puzzle.id);
     const entreesDepot = Object.entries(save.inventaire.items)
       .filter(([, qte]) => qte > 0)
       .map(([itemId, qte]) => {
         const itemDef = registre.obtenir('items', itemId);
-        const dansLeCoffre = save.coffre.items[itemId] || 0;
-        const coffrePlein = dansLeCoffre === 0 && nombrePilesCoffre() >= station.capacite;
-        const pilePleine = dansLeCoffre >= itemDef.stack_max;
+        const capaciteCoffre = capaciteDeStation(station);
+        const dansLeCoffre = coffre.lire()[itemId] || 0;
+        // Un seul calcul dit les deux refus : le plafond de CET objet dans ce
+        // coffre. S'il vaut ce qu'on a déjà, il n'y a plus de place — et la
+        // raison dépend de qui la prend (une pile à elle seule, ou les
+        // autres objets).
+        const plafond = plafondPourItem(coffre.lire(), itemId, capaciteCoffre, obtenirItemDef);
+        const coffrePlein = plafond <= dansLeCoffre && slotsCoffre(puzzle, station) >= capaciteCoffre.slots;
+        const pilePleine = plafond <= dansLeCoffre && !coffrePlein;
         const refus = coffrePlein ? 'menu.fiche.coffre_plein' : pilePleine ? 'menu.fiche.pile_pleine' : null;
         return {
           texte: `${i18n.t('menu.coffre_deposer')} : ${i18n.t(itemDef.label_key)} × ${qte}`,
@@ -1442,21 +1932,23 @@ export function creerOrchestrateurGrotte({
           libelleAction: i18n.t('menu.coffre_deposer'),
           grisee: refus !== null,
           action: () => {
-            // Le plafond de piles se relit au moment d'agir : `grisee` n'est
-            // qu'un indice, le résultat fait foi.
-            const dejaPresent = (save.coffre.items[itemId] || 0) > 0;
-            if (dejaPresent || nombrePilesCoffre() < station.capacite) {
-              transfererUnite('inventaire', 'coffre', itemId, itemDef.stack_max);
-            }
+            // Le plafond se relit au moment d'agir : `grisee` n'est qu'un
+            // indice, le résultat fait foi. `ajouterItem` refuse tout seul
+            // au-delà du plafond, donc il n'y a plus de condition à écrire
+            // ici — une de moins à faire diverger de l'affichage.
+            transfererUnite(
+              POCHE, coffre, itemId,
+              plafondPourItem(coffre.lire(), itemId, capaciteDeStation(station), obtenirItemDef),
+            );
             menu.rafraichirCoffre();
           },
         };
       });
-    const entreesRetrait = Object.entries(save.coffre.items)
+    const entreesRetrait = Object.entries(coffre.lire())
       .filter(([, qte]) => qte > 0)
       .map(([itemId, qte]) => {
         const itemDef = registre.obtenir('items', itemId);
-        const pilePleine = (save.inventaire.items[itemId] || 0) >= itemDef.stack_max;
+        const pilePleine = (save.inventaire.items[itemId] || 0) >= plafondPoche(itemId);
         return {
           texte: `${i18n.t('menu.coffre_retirer')} : ${i18n.t(itemDef.label_key)} × ${qte}`,
           groupe: i18n.t(station.label_key),
@@ -1465,7 +1957,7 @@ export function creerOrchestrateurGrotte({
           libelleAction: i18n.t('menu.coffre_retirer'),
           grisee: pilePleine,
           action: () => {
-            transfererUnite('coffre', 'inventaire', itemId, itemDef.stack_max);
+            transfererUnite(coffre, POCHE, itemId, plafondPoche(itemId));
             menu.rafraichirCoffre();
           },
         };
@@ -1492,7 +1984,7 @@ export function creerOrchestrateurGrotte({
   // (Poste avancé, même patron déclaré par la spec §1).
   function stationsPlacablesDeStructure(structure) {
     return scene.interactifs
-      .map((id) => registre.obtenir('puzzles', id))
+      .map((id) => scene.puzzle(id))
       .filter((p) => p && p.type === 'station' && dansRectangleTuile(p.position.x, p.position.y, structure.rect))
       .filter((p) => registre.obtenir('stations', p.station_type).placable);
   }
@@ -1520,11 +2012,20 @@ export function creerOrchestrateurGrotte({
   // erreur) si le héros n'est dans aucune structure : le menu n'aurait de
   // toute façon pas dû montrer l'entrée (disponibiliteConstruction), mais un
   // appel isolé (test) reste sans danger.
+  // `D-126` : LE verdict de déplacement d'une station. La liste l'interroge
+  // pour griser la tuile et dire pourquoi, `demarrerConstruction` pour
+  // refuser — jamais deux calculs, qui finiraient par ne plus dire la même
+  // chose (c'est exactement ce qui a produit ce défaut).
+  function deplacementAutorise(puzzle) {
+    return stationDeplacable(registre.obtenir('stations', puzzle.station_type), contenuDeStation(puzzle.id));
+  }
+
   function entreesConstruction() {
     const structure = structureHeros();
     if (!structure) return [];
     return stationsPlacablesDeStructure(structure).map((p) => {
       const stationType = registre.obtenir('stations', p.station_type);
+      const verdict = deplacementAutorise(p);
       // specs/08_menus-cartes.md, palier C6 : la tuile est la silhouette de la
       // station (celle du monde, recadrée par `icone_canvas.js#cadrer`). Les
       // lignes de la fiche — les touches du placement — sont ajoutées par
@@ -1534,6 +2035,11 @@ export function creerOrchestrateurGrotte({
         titre: i18n.t(stationType.label_key),
         icone: p.render.visuel,
         libelleAction: i18n.t('menu.fiche.deplacer'),
+        // `D-126` : grisé est un INDICE, et la fiche dit la raison — même
+        // patron que `D-122` côté craft. Sans la phrase, le joueur verrait une
+        // tuile morte sans savoir que vider le coffre la réveille.
+        grisee: !verdict.ok,
+        lignes: verdict.ok ? [] : [i18n.t(`menu.fiche.refus_${verdict.raison}`)],
         action: () => demarrerConstruction(p, structure),
       };
     });
@@ -1553,8 +2059,58 @@ export function creerOrchestrateurGrotte({
     });
   }
 
+  // `D-121` (T5) : fabriquer une station la CRÉE, puis enchaîne sur son
+  // placement.
+  //
+  // La pose de départ est la tuile du héros. Ce n'est pas un détail de
+  // confort : n'importe quelle autre valeur (la position du modèle, un coin
+  // de la pièce) ferait apparaître le fantôme ailleurs que là où le joueur
+  // regarde, et il le chercherait. Si elle est invalide — elle l'est souvent,
+  // le héros est contre l'Atelier —, le fantôme est simplement rouge, ce que
+  // `poseValide` dit déjà : aucune règle nouvelle.
+  function poserStationFabriquee(stationTypeId) {
+    const structure = structureHeros();
+    const modele = modeleDeStation(registre, stationTypeId);
+    if (!structure || !modele) {
+      // Hors d'une structure, il n'y a nulle part où poser (`Q-07` gelée) :
+      // la recette n'aurait pas dû être atteignable. On ne perd rien pour
+      // autant — on le dit, et la station n'est pas créée.
+      console.warn(`[D-121] station "${stationTypeId}" fabriquée hors d'une structure : rien à poser`);
+      menu.rafraichirCraft();
+      return;
+    }
+    const id = idInstanceLibre(stationTypeId);
+    save.maison.stations[id] = {
+      type: stationTypeId,
+      scene: scene.id,
+      x: Math.floor(hero.x / scene.tileSize),
+      y: Math.floor(hero.y / scene.tileSize),
+      rotation: 0,
+    };
+    etatModifie = true;
+    rechargerSceneApresConstruction();
+    demarrerConstruction(scene.puzzle(id), structure);
+  }
+
+  // Un id d'instance qui n'est pris ni par le catalogue ni par la sauvegarde.
+  // Numéroté, pas tiré au hasard : une sauvegarde se lit à l'œil, et
+  // `station_type_coffre_2` dit tout de suite ce que c'est.
+  function idInstanceLibre(stationTypeId) {
+    for (let n = 2; ; n += 1) {
+      const id = `${stationTypeId}_${n}`;
+      if (!save.maison.stations[id] && !registre.existe('puzzles', id)) return id;
+    }
+  }
+
   function demarrerConstruction(puzzle, structure) {
-    const poseActuelle = save.maison.stations[puzzle.id] || {
+    // `D-126` : la tuile est déjà grisée et la fiche dit pourquoi, mais c'est
+    // le RÉSULTAT qui fait foi — même discipline qu'une recette grisée, dont
+    // l'action est retentée pour de vrai plutôt que court-circuitée.
+    if (!deplacementAutorise(puzzle).ok) return;
+    // `D-126` : la pose passe par LE lecteur. Le repli « entrée absente » ne
+    // suffisait pas : un coffre qu'on a rempli sans jamais le déplacer A une
+    // entrée, mais pas de coordonnées — le fantôme naissait à `undefined`.
+    const poseActuelle = poseSauvegardeeDeStation(save.maison.stations[puzzle.id]) || {
       x: puzzle.position.x, y: puzzle.position.y, rotation: puzzle.rotation || 0,
     };
     construction = {
@@ -1598,7 +2154,10 @@ export function creerOrchestrateurGrotte({
   // trouverPositionLibrePlusProche, exactement comme une entrée en scène
   // normale, jamais un second mécanisme de repoussement (consignes §6).
   function rechargerSceneApresConstruction() {
-    scene = chargerScene(registre, scene.id, resoudreOverridesStations(scene.id));
+    scene = chargerScene(
+      registre, scene.id, resoudreOverridesStations(scene.id),
+      instancesCreees(registre, scene.id, save.maison.stations),
+    );
     const positionLibre = trouverPositionLibrePlusProche(scene, hero.x, hero.y, flags.has);
     if (positionLibre.x !== hero.x || positionLibre.y !== hero.y) {
       console.warn(
@@ -1619,7 +2178,14 @@ export function creerOrchestrateurGrotte({
   // la LISTE (jamais un simple retour au jeu nu) — "on enchaîne et on range
   // toute la maison sans repasser par MENU" (décision Xav).
   function confirmerConstruction() {
-    save.maison.stations[construction.puzzle.id] = { ...construction.pose };
+    // `D-126` : on ENRICHIT l'entrée, on ne la refabrique pas (`D-71`). Une
+    // affectation écrasait la fiche par la seule pose : le contenu d'un coffre
+    // plein disparaissait, et un coffre FABRIQUÉ perdait son `type` et sa
+    // `scene` — donc `instancesCreees` ne le rendait plus, et il s'effaçait du
+    // monde au rechargement avec ce qu'il portait.
+    const entree = save.maison.stations[construction.puzzle.id]
+      || (save.maison.stations[construction.puzzle.id] = {});
+    Object.assign(entree, construction.pose);
     etatModifie = true;
     construction = null;
     rechargerSceneApresConstruction();
@@ -1665,10 +2231,16 @@ export function creerOrchestrateurGrotte({
     if (etat.attack.pressed) {
       if (construction.verdict.ok) {
         confirmerConstruction();
-      } else {
+      } else if (DIALOGUE_REFUS_CONSTRUCTION[construction.verdict.raison]) {
         dialogue.ouvrir(
           resoudreLignes(DIALOGUE_REFUS_CONSTRUCTION[construction.verdict.raison], registre, i18n, save.hero.companion)
         );
+      } else {
+        // `D-126` : `pose_invalide` n'est pas une situation de jeu, c'est une
+        // faute de code. On la JOURNALISE ; la raconter au follet ferait
+        // passer un bug pour une règle, et `resoudreLignes(undefined)` lèverait
+        // dans la boucle.
+        console.warn(`main.js#traiterConstruction : refus sans dialogue (${construction.verdict.raison})`);
       }
       return;
     }
@@ -2050,7 +2622,7 @@ export function creerOrchestrateurGrotte({
     // n'a que des leviers, donc "le premier interactif rencontré" (§3 de
     // 04_indices-commandes) est de fait le levier de la salle 1.
     for (const puzzleId of scene.interactifs) {
-      const puzzle = registre.obtenir('puzzles', puzzleId);
+      const puzzle = scene.puzzle(puzzleId);
       if (distanceAuRectangle(hero.x, hero.y, rectangleInteractif(puzzle)) <= DISTANCE_INTERACT_PX) {
         indices.declencherVerbeUtile('interact', flags);
         break;
@@ -2175,6 +2747,10 @@ export function creerOrchestrateurGrotte({
       menu.estOuvert() || dialogueOuvertMaintenant || choixFolletActif() || introEtaitActive || departEtaitActif ||
       constructionActif() || menuFermeParVerbe
     );
+    // `D-92`/`D-93` : avant tout le reste, y compris avant l'UI — un écran
+    // Coffre ouvert vide la poche, et la case d'attaque doit dire la vérité
+    // dès cette frame-là.
+    revaliderEquipementDuHeros();
     // `D-54` : LE point de décision unique annonce son verdict au dehors
     // (aujourd'hui : le `preventDefault` de `Tab`, qui arrive hors frame).
     onEtatUi(uiOuverte);
@@ -2264,7 +2840,6 @@ export function creerOrchestrateurGrotte({
       indices.maj(deltaMs);
       verifierIndicesNiveau();
       verifierLignesAmbiance();
-      verifierDeblocagesBarreAction();
 
       // Horloge "temps de jeu actif" (daynight.js#avancerHeure) : avancée
       // dans TOUTES les scènes désormais (Palier A/C, specs/04_maison-
@@ -2568,7 +3143,7 @@ export function creerOrchestrateurGrotte({
     // double : un 5ᵉ type d'interactif positionné se dessine sans toucher
     // cette fonction, ce qui rend la classe de bug irreproductible ici.
     const puzzlesAffiches = scene.interactifs
-      .map((id) => registre.obtenir('puzzles', id))
+      .map((id) => scene.puzzle(id))
       .filter((p) => p.render && p.render.visuel)
       .map((p) => {
         // specs/05_construction-stations.md §3 : position/rotation EFFECTIVE
@@ -2806,12 +3381,12 @@ export function creerOrchestrateurGrotte({
       // que le HUD dessine — c'est cet orchestrateur qui a le registre, pas
       // `ui/hud.js`, qui ne connaît aucun id de catalogue. Les deux jauges
       // déclarent la leur dans `survival.json` (donc les changer est une
-      // affaire de données) ; les éclats n'ont pas d'entrée de catalogue —
-      // c'est une monnaie que `main.js` traite déjà comme un cas à part
-      // (`save.inventaire.eclats`), et son id de silhouette vit ici en
-      // attendant qu'ils en aient une (`Q-49`).
+      // affaire de données) ; la monnaie, elle, déclare la sienne dans
+      // `monnaies.json` depuis `D-103` — son id ne vit plus dans ce fichier,
+      // et c'est la même silhouette qu'au bandeau et dans les fiches de
+      // Craft, lue une seule fois.
       iconesBandeau: {
-        eclats: registre.obtenir('visuels', 'visuel_icone_eclat'),
+        eclats: registre.obtenir('visuels', iconeMonnaie),
         faim: registre.obtenir('visuels', registre.obtenir('survival', 'jauge_faim').icone),
         soif: registre.obtenir('visuels', registre.obtenir('survival', 'jauge_soif').icone),
       },
@@ -2975,7 +3550,7 @@ export function creerOrchestrateurGrotte({
     evaluerCondition: (condition) => flags.evaluate(condition),
     // Les noms des valeurs que les conditions peuvent citer — la moitié
     // « code » du contrôle de câblage au démarrage.
-    nomsValeursConditions: () => Object.keys({ niveau: 0, stations_placables: 0, ...valeursExternes() }),
+    nomsValeursConditions: () => Object.keys(valeursConditions()),
     constructionActif,
     obtenirConstruction: () => construction,
   };
@@ -3073,9 +3648,17 @@ export async function demarrerJeu() {
   // ne connaissent pas le code. C'est le garde-fou qui vivait dans la boucle
   // de dessin, remis là où une faute de catalogue se voit : au démarrage.
   const erreursStyles = erreursChargement.length ? [] : erreursStylesTexteFlottant(donnees.effets);
+  // `D-121` : toute recette qui produit une station a-t-elle un modèle à
+  // cloner ? Même famille que le contrôle ci-dessus — le schéma vérifie que
+  // le TYPE existe, il ne peut pas savoir qu'aucune INSTANCE de ce type n'a
+  // été posée dans `puzzles.json`, et la faute ne se verrait qu'au moment de
+  // fabriquer.
+  const erreursStations = erreursChargement.length
+    ? []
+    : erreursRecettesDeStation(donnees.recipes, donnees.puzzles);
   const toutesErreurs = [
     ...erreursChargement, ...erreursValidation, ...erreursCles,
-    ...erreursCouleurs, ...erreursTextes, ...erreursStyles,
+    ...erreursCouleurs, ...erreursTextes, ...erreursStyles, ...erreursStations,
   ];
 
   if (toutesErreurs.length > 0) {
@@ -3308,6 +3891,10 @@ export async function demarrerJeu() {
     // la nourriture (ui/menu.js#entreesPoche).
     // specs/08 palier C : `icone` et `lignes` — la tuile et la fiche de l'écran
     // « maître-détail ». Résolues ICI (registre + i18n), jamais dans le menu.
+    // `D-118` : la poche dit ce qu'elle a d'occupé. Un seul calcul, celui du
+    // module (`slotsOccupes`), donc ce nombre ne peut pas diverger de celui
+    // qui refuse un ramassage.
+    sousTitrePoche: () => texteRemplissagePoche(save, registre, i18n),
     listerPoche: () => Object.entries(save.inventaire.items)
       .filter(([, quantite]) => quantite > 0)
       .map(([itemId, quantite]) => {

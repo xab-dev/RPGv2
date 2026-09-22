@@ -1,0 +1,553 @@
+---
+projet: RPG V2
+episode/session: File de micro-tickets « inventaire survivaliste » (branche `inventaire-2026-09-22`)
+type: fichier de bord (une ligne par commit, écrite au moment du commit)
+version: 1.0.0
+statut: en cours
+catégorie: Doc
+date: 2026-09-22
+---
+
+# Journal de bord — file « inventaire survivaliste »
+
+Brief : `docs/BRIEF_file-inventaire_2026-09-22.md`. Branche `inventaire-2026-09-22`,
+**un commit par ticket**, chacun retirable seul. Jamais de `push`.
+
+---
+
+## Ménage de journal (avant tout code)
+
+Le journal de `specs/09_reglages-graphiques.md` (paliers A à E) est archivé dans
+`docs/archives/JOURNAL_2026-09-22_reglages-graphiques.md`, son entrée est ajoutée à
+l'INDEX, et `CLAUDE.md` n'en garde plus rien — la règle veut un seul journal à la fois.
+Le brief et les deux sauvegardes réelles de Xav entrent au dépôt avec (elles serviront
+aux migrations de T1 et T5).
+
+## T0 — État des lieux et mesure de référence (`R-19`)
+
+**Aucun code de jeu.** Ce que la lecture a trouvé, et qui commande les tickets suivants :
+
+- **La poche n'a aucune capacité.** Elle est un dictionnaire `{ itemId: quantité }`, et la
+  seule limite est `stack_max`, porté par l'**objet** (20 pour une ressource, 10 pour une
+  nourriture, 1 pour un outil). Donc : aucun nombre de slots, aucune notion de conteneur, et
+  « la poche est pleine » ne veut rien dire aujourd'hui — sauf pour un seul objet à la fois.
+- **Le coffre, lui, compte déjà** — mais autrement : `stations.json#capacite` (20) borne son
+  nombre de **piles**, c'est-à-dire d'entrées distinctes. Deux mécanismes de remplissage
+  coexistaient donc, un par conteneur.
+- **Un outil compte déjà comme une entrée de poche** (vérifié, pas supposé) : `item_hache` et
+  `item_pioche` sont des items ordinaires, de catégorie `outil` et `stack_max: 1`.
+- **`D-28` est bien là où la ligne le dit** : la récolte à l'outil appelle `ajouterItem` sans
+  regarder `ajoute`, pose le cooldown de la tuile quand même, et ne dit rien ; le ramassage au
+  sol, lui, teste `ajoute > 0` et laisse l'objet par terre. Deux chemins, deux comportements.
+- **Les trois chemins d'équipement de `D-93`** : `main.js#iconesSlots.consume` résout la
+  silhouette depuis `save.hero.equipement.consommable` **sans regarder le stock**, alors que
+  `essayerConsommer` et l'indice de commande le regardent tous les deux. Et le trou de `D-92`
+  est confirmé : `equipment_slots.defaut` ne rattrape que `arme: null`, jamais une chaîne
+  fausse.
+
+### `R-19` — l'instrument, et son premier relevé
+
+`tools/mesure_rythme.mjs` : un bot headless qui joue une partie neuve sur le **vrai**
+orchestrateur, en « vétéran » — ligne droite vers ce qu'il connaît, tout ramassé, récolte dès
+que l'outil est en poche, boire dès que la soif a bougé, fabriquer dès que possible, et
+**vider au coffre** quand une pile sature (sans ce geste, la mesure serait flatteuse et
+fausse : la poche se bloquait toute seule). Le temps compté est le **temps de jeu actif**,
+celui que `maj()` fait avancer ; un déplacement coûte sa distance divisée par la vitesse
+réelle du héros, lue dans `stats_derivees.json`.
+
+Ce n'est pas un test et ça ne doit jamais le devenir (`D-52`) : aucun de ces nombres n'est un
+contrat.
+
+**Ce que le premier relevé dit, et il faut le lire en face :**
+
+| | valeur |
+|---|---|
+| Niveau à la tombée de la **première nuit** (11,5 min) | **4** |
+| Nv.5 | ~20 min (jour 1) |
+| Nv.10 | ~179 min (jour 10) |
+| Nv.15 | **non atteint** en 4 h de jeu |
+| D'où vient l'XP | récolte au sol 33 % · récolte à l'outil 29 % · craft 32 % · puits 6 % |
+
+**Et une contradiction à trancher par Xav, avant tout réglage** (`Q-62`) : le brief part du
+constat que « le Nv.15 se fait en quelques minutes ». L'instrument, lui, ne l'atteint pas en
+quatre heures, et place le Nv.10 à ~3 h. L'un des deux se trompe, et ça change tout ce que la
+file doit faire. Deux pistes pour l'écart, également plausibles : (a) le bot marche
+réellement d'un objet à l'autre sur une carte de 170 × 116 tuiles, là où un joueur reste dans
+un périmètre qu'il connaît ; (b) l'impression de Xav vient d'une partie déjà avancée, pas
+d'une sauvegarde neuve. **Rien n'est réglé sur cette base** : c'est `Q-62` qui doit répondre.
+
+Deux chiffres méritent d'être notés au passage, parce qu'ils bornent tout l'équilibrage à
+venir : la carte n'a que **deux tuiles-ressources** (un arbre, un rocher) et le repos du jour
+ne sème que **21 objets**. La récolte est donc plafonnée par la carte, pas par le joueur.
+
+## T1 — Capacité des conteneurs (`D-118`, clôt `D-28`)
+
+`data/conteneurs.json` : **4 slots / pile 5** pour la poche, **10 slots / pile 20** pour le
+coffre — quatre nombres provisoires, en données, dans un seul fichier.
+
+Ce que le ticket change en profondeur : **la pile appartient au conteneur, l'objet peut la
+plafonner**. `items.json#stack_max` disparaît au profit de `pile_max`, **optionnel** et ne
+restant que là où il dit quelque chose de vrai partout — un outil ou une arme ne s'empile dans
+aucun conteneur. Une ressource n'en porte plus : c'est le conteneur qui décide, donc le même
+bois s'empile par 5 en poche et par 20 au coffre.
+
+Les **slots ne sont pas des cases** : ils sont une conséquence du contenu (`ceil(quantité /
+pile)`), ce qui veut dire que douze branches occupent trois slots et qu'**aucune sauvegarde ne
+change de forme**. C'est ce qui rend la reprise d'une vieille partie possible sans migration
+de schéma.
+
+Le point de résolution unique est `inventory.js#resoudreCapacite` — c'est par là que la besace
+et le porte-outils passeront (`Q-65`), et `filtre` est déjà déclaré au schéma, vide, pour
+qu'ils n'arrivent pas un jour sous la forme d'un second mécanisme.
+
+Trois conséquences qui n'étaient pas demandées mais que le ticket ne pouvait pas éviter :
+
+1. **`fabriquer` reçoit une fonction, pas un nombre.** Le plafond de la sortie se mesure sur la
+   poche **d'après le retrait des ingrédients** — sinon cuire son dernier fruit dans une poche
+   pleine serait refusé, alors que le fruit libère justement la place. La règle « refus avant
+   toute consommation » tient toujours : le retrait se fait dans une copie locale.
+2. **Le coffre ne compte plus ses entrées, il compte ses slots** (`slotsOccupes`), donc les
+   deux conteneurs ont enfin une seule notion de remplissage. Et la station de stockage ne
+   porte plus un nombre : elle **désigne** son conteneur — ce qui fait que le coffre crafté de
+   T5 n'aura aucun second nombre à déclarer.
+3. **`D-28` est clos, en entier.** Un refus se **dit** (texte flottant « Poche pleine », style
+   `refus` déclaré en données, émis à la source du gain qu'il remplace) **et** ne consomme plus
+   le cooldown de la tuile. Les deux chemins de récolte se comportent enfin pareil.
+
+Une vieille sauvegarde est **normalisée au chargement**, pas migrée : la donnée est valide,
+c'est la règle qui a changé (la classe que `CLAUDE.md` nomme depuis le repli sur
+`scene_grotte_salle_1`). Ce qui déborde descend au coffre, ce qui ne rentre nulle part est
+**journalisé** — jamais un objet qui s'évapore entre deux parties. `schema_version` ne bouge
+pas.
+
+**Ce que le ticket n'a PAS fait, et pourquoi** : le brief demandait qu'« une case vide se
+dessine vide » dans les écrans Poche et Coffre. Dessiner des cases vides est un changement de
+**structure de menu**, et la structure des menus est **gelée depuis le 21/09** — le brief le
+redit lui-même en §0. La poche annonce donc son remplissage en **sous-titre**
+(« Emplacements : 3 / 4 »), comme le coffre le faisait déjà, et les cases vides restent
+`[OUVERT]` (`Q-67`).
+
+Le bot de la boucle 5 minutes a dû apprendre à **vider ses poches** avant de cuisiner : avec
+quatre slots, hache + pioche + bois + pierre remplissent la poche et le fruit ne rentre plus.
+Ce n'est pas un détour de test, c'est le rituel voulu par Xav — et c'est la meilleure preuve
+que le ticket fait son travail.
+
+`npm test` : **124 fichiers verts**.
+
+## T2 — Les slots d'équipement disent la vérité (`D-92` + `D-93`)
+
+Les deux lignes sont la **même famille** et se traitent ensemble, comme Xav l'avait demandé :
+un slot garde un id que **plus rien ne revalide** — là l'id ne résout plus (`D-92`), ici il
+résout mais l'objet n'est plus en poche (`D-93`). Une seule fonction, `revaliderEquipement`,
+posée au **niveau module** (donc testable, règle `D-72`) et appelée **à chaque frame**.
+
+Deux choix méritent d'être dits, parce qu'ils sont la différence entre corriger et re-corriger :
+
+- **À chaque frame, pas à chaque mutation de poche.** La fonction est idempotente et ne coûte
+  que deux recherches ; chercher « tous les endroits qui touchent la poche » est exactement ce
+  qui avait laissé passer les trois chemins divergents de `D-93`. Ici, le prochain endroit qui
+  touchera la poche n'aura rien à savoir.
+- **Avant toute branche d'UI, jamais sous `if (!uiOuverte)`.** L'écran Coffre déplace des
+  objets pendant qu'il est ouvert : une revalidation gelée sous UI manquerait précisément le
+  cas qui a fait le bug. C'est pour cette raison que l'ancien `verifierDeblocagesBarreAction`
+  ne pouvait pas servir de point d'accroche.
+
+Ce que ça donne : l'arme absente de la poche retombe sur le **défaut du slot** (mains nues) et
+reprendre l'épée au coffre ne la rééquipe pas ; un id d'arme inconnu fait pareil **et se dit en
+console** (`D-92` : plus de `arme.portee` lu sur `undefined`, donc plus de héros qui ne peut
+plus jamais frapper) ; un consommable épuisé passe au **suivant de la même catégorie** s'il y
+en a un en poche (`Q-64`, retenu par défaut), sinon la case **disparaît**.
+
+**Le loquet `flag_premier_consommable` est retiré** — flag, entrée de catalogue et clés de
+locale avec. La case du consommable suit désormais l'état réel de la poche par une **valeur
+nommée** (`consommables_en_poche`) que `data/action_slots.json` cite : c'est le mécanisme
+d'apparition existant de `D-62`, sans code de déblocage propre. C'est un retournement assumé
+(*révise* le 21/09) : on craignait de faire clignoter la case, mais voir une touche qui ne fait
+rien est pire que de la voir partir avec ce qu'elle servait à manger.
+
+Une dette de duplication ramassée en passant, parce qu'elle était sur le chemin : les valeurs
+nommées étaient **déclarées deux fois** (`valeurs:` à la construction du registre de flags,
+et `nomsValeursConditions` pour le contrôle de démarrage). Une seule déclaration désormais, la
+seconde en dérive ses clés — deux listes finissent toujours par diverger (`D-71`).
+
+`npm test` : **125 fichiers verts**, dont le tour de dessin à faux contexte sur les trois états
+de poche (`D-71`).
+
+## T3 — L'herbe, troisième ressource de ramassage (`D-119`)
+
+**Données seules, aucune ligne de code du jeu.** `item_herbe` (catégorie ressource, XP de
+récolte 1 — `Q-45`), `visuel_touffe_herbe`, un bloc `spawn` sur les zones **campagne et
+champs** (donc à l'est : l'herbe est une raison d'aller là-bas, pas une branche de plus sur le
+chemin), trente points candidats posés par l'outil, et les deux locales.
+
+Le dessin suit la charte d'item (`D-82`) : posé (ombre portée), **trois valeurs** obtenues en
+glissant la même courbe, **un** accent — l'épi. Et il a fallu deux passes, pour la raison
+exacte que la refonte des stations avait nommée : la première version était **verte**, elle
+passait très bien au jugement isolé et se **noyait dans la pelouse** à la première capture en
+scène. Le remède n'est pas un contour plus sombre, c'est un **parti pris opposé** (règle
+`D-84`/`D-85`) : de l'herbe **sèche**, paille contre vert. Elle se détache d'un coup d'œil, se
+distingue de la branche sans hésitation (`V-64`), et dit au passage ce qu'elle deviendra —
+de la corde.
+
+Deux choses trouvées en route, et corrigées parce qu'elles bloquaient le ticket :
+
+**Un `D-72` tout frais, dans le code de T1.** `sousTitrePoche` avait été écrit dans le câblage
+du menu (`demarrerJeu`) alors que `capacitePoche` vit dans `creerOrchestrateurGrotte` — deux
+fonctions **sœurs**. `ReferenceError: capacitePoche is not defined` à chaque ouverture de
+l'écran Poche. Aucun test ne pouvait le voir (`demarrerJeu` n'est jamais exécuté headless) :
+c'est la **capture sous Chrome** qui l'a attrapé, exactement comme pour `D-72`. Remède
+identique : la fonction passe au **niveau module** (`texteRemplissagePoche`). Et le garde
+statique est **élargi** — il ne cherchait que des *appels* (`nom(`), or ici c'était une
+**lecture nue** (`capacitePoche.slots`, `obtenirItemDef` passé en argument). Il cherche
+désormais l'identifiant, appelé ou non, avec un **témoin** qui vérifie qu'il attrape bien les
+deux formes.
+
+**Un bug de l'outil de semis, latent depuis le 21/09.** `semer_points_ressources.mjs --ecrire`
+fait une écriture chirurgicale en texte, avec une marque de fin en `\n` — or `data/scenes.json`
+est en **CRLF** sous Windows. `indexOf` rendait -1, la découpe partait de l'octet 6, et le
+fichier se **dupliquait presque en entier** (six scènes au lieu de trois). Le témoin
+`JSON.parse` ne l'a pas vu : le résultat restait du JSON valide. L'outil lit désormais la
+convention de fin de ligne **du fichier qu'il modifie**, refuse d'écrire s'il ne trouve pas sa
+marque, et compte les scènes avant/après. Diff de l'écriture corrigée : **une ligne**.
+
+`npm test` : **125 fichiers verts**. Captures aux trois endroits de `D-91` (sol, poche, barre
+du bas) dans `docs/captures/items-2026-09-21/`.
+
+**`Q-68`, ouvert et à trancher par Xav** : l'herbe fait sauter le plafond des 30 % d'XP de
+récolte (28,9 % → **40 %** de Nv.0 → 5). Ce n'est pas un dérapage, c'est arithmétique — la
+marge n'était plus que d'**un point d'XP**, donc aucune troisième ressource de ramassage ne
+pouvait entrer sans le dépasser. Les deux décisions de Xav du 22/09 se contredisent ici
+(« herbe = 1 XP » et « le plafond des 30 % n'est pas rouvert »), et c'est à lui de dire
+laquelle prime. Rien n'a été réglé : les leviers (XP de l'herbe, `nb_au_sol`, le plafond
+lui-même) sont en données et n'ont pas été touchés ; le test affiche la part mesurée à chaque
+exécution pour que le chiffre ne se perde pas.
+
+## T4 — Hache et pioche au Nv.10, avec un coût en éclats (`D-120`)
+
+**Données seules** : `visible_si: { valeur: 'niveau', min: 10 }` et `cout_eclats: 10` sur les
+deux recettes d'outil. Le mécanisme est celui de `D-62`, sans une ligne de code — et les
+**trois** recettes (hache, pioche, épée) s'ouvrent au **même palier**, ce qui est la condition
+de « hache → bois → épée le même soir » que Xav voulait pouvoir faire. La **cuisine ne bouge
+pas**, et c'est le témoin du test.
+
+Une vieille sauvegarde **garde ses outils** : une entrée verrouillée est invisible à l'Atelier,
+l'objet possédé ne bouge pas. Personne ne se fait retirer sa hache par un ticket
+d'équilibrage — vérifié.
+
+Le bot de la boucle 5 minutes part désormais du **Nv.10 avec des éclats**, et il fallait le
+dire plutôt que de le faire discrètement : il n'éprouve pas le déblocage (c'est
+`test_d120_outils_nv10`), il éprouve la boucle *sortir → récolter → revenir → crafter*, qui
+suppose les outils accessibles. Deux de ses assertions ont changé de sens avec : le niveau ne
+prouve plus rien (il est posé), c'est l'**XP qui monte** qui le prouve ; et un flag de niveau
+est posé par le **franchissement**, pas par le fait d'y être.
+
+### `R-19 bis` — la mesure, avant et après
+
+Même scénario, même bot, les deux chiffres côte à côte :
+
+| | avant (T0) | après (T3 + T4) |
+|---|---|---|
+| Niveau à la tombée de la première nuit | 4 | **3** |
+| Nv.5 | 20,5 min (jour 1) | **42,8 min** (jour 1) |
+| Nv.9 | 78 min | **202,6 min** |
+| Nv.10 | 179 min | **non atteint** en 4 h |
+| Récolte au sol | 33 % | **67 %** |
+| Récolte à l'outil | 29 % | **0 %** |
+| Craft | 32 % | 25 % |
+
+**La cible de `Q-62` est tenue sur son premier point** : le Nv.5 ne tombe plus avant la
+première nuit (Nv.3 à 11,5 min). Le second point ne l'est pas — « Nv.10 vers 40 min » est très
+loin, le bot n'y arrive pas en quatre heures. **Rien n'est corrigé dans la file**, comme le
+brief le demande : les leviers sont en données (XP par ressource, effectifs semés, XP de
+combat).
+
+Et une conséquence que la mesure rend visible, qui mérite d'être nommée avant d'être subie
+(`Q-69`) : **un joueur qui ne se bat pas ne peut plus jamais obtenir ses outils.** Les éclats
+ne viennent que des monstres (`loot_tables.json`), et les monstres ne viennent que la nuit, à
+partir du Nv.5. La chaîne voulue est donc : survivre à une nuit → éclats → outils → bois et
+pierre. C'est cohérent avec l'intention (« plus lent, découverte, exploration »), mais c'est
+un **verrou dur** que rien n'annonce au joueur, et la ligne `recolte_outil` à **0 %** dans le
+relevé ci-dessus est exactement ce que ça donne quand il ne le devine pas.
+
+`npm test` : **126 fichiers verts**.
+
+## T5 — Le coffre craftable, un contenu par instance (`D-121`)
+
+Le plus lourd de la file, et le seul qui contienne un **contrat entre modules** — celui que le
+brief avait déjà tranché : **un coffre = un type + une pose + un contenu**. Tout ce qui viendra
+après (niveaux de coffre, entonnoirs, tri automatique, `Q-66`) repose là-dessus.
+
+Trois pièces, dans cet ordre :
+
+**1. Le contenu descend dans l'instance.** `save.coffre` disparaît ; le contenu vit dans
+`save.maison.stations[id].contenu`. Migration **6 → 7**, et cette fois c'en est bien une : à
+`D-118` la donnée gardait sa forme et seule la règle changeait ; ici le champ disparaît et son
+contenu change d'adresse. Le coffre de base **hérite** de ce qu'il contenait — les treize
+sauvegardes réelles de Xav passent, contenu intact —, et sa pose est conservée : on ajoute un
+champ à son entrée, on ne la remplace pas. Un coffre vide ne laisse aucune trace.
+
+Un défaut attrapé en chemin, et qui valait le détour : la première version de
+`contenuDeStation` **créait** l'entrée en la lisant. Résultat, une entrée sans coordonnées
+atterrissait dans `maison.stations`, que `resoudreOverridesStations` prenait pour une pose
+sauvegardée — et **toutes les stations partaient en NaN**. Dix-huit fichiers de test rouges
+d'un coup. Un accesseur de lecture doit être une lecture ; et une entrée n'est une pose que si
+elle en a les coordonnées, ce qui est désormais écrit.
+
+**2. Une instance créée est un interactif comme un autre.** Pas de catalogue à part : elle
+**clone l'instance livrée avec le jeu** pour son type et ne change que son id et sa pose —
+**l'instance de catalogue est le modèle de son type**. C'est ce qui évite d'inventer un second
+endroit où déclarer à quoi ressemble un coffre, et un contrôle de démarrage refuse une recette
+de station dont le type n'a pas de modèle (sans lui, la faute ne se verrait qu'au moment de
+fabriquer).
+
+Le point d'architecture est ailleurs, et il est petit : `scene.puzzle(id)` devient **LE** point
+de résolution d'un interactif. Sans lui il aurait fallu ajouter « et cherche aussi dans les
+créées » aux sept endroits qui font un `registre.obtenir('puzzles', id)` — et le huitième
+aurait été oublié. Avec lui, l'instance créée est **actionnable, solide, dessinée et
+déplaçable** sans une ligne de plus.
+
+**3. La recette produit une station.** `sortie: { station: … }` plutôt que `{ item, qte }` :
+le schéma exige **exactement un des deux**, et refuse une station non `placable` (on ouvrirait
+un mode de placement sans issue). `fabriquer` ne touche pas la poche dans ce cas — et donc ne
+consulte pas son plafond, ce qui n'est pas un contournement mais la conséquence exacte de
+« rien n'entre en poche » : fabriquer un coffre **poche pleine** est même le cas normal, trois
+slots de ressources viennent d'y passer.
+
+La fabrication enchaîne sur le **mode Construction**, avec le fantôme de ce qu'on vient de
+faire, posé sur la tuile du héros — n'importe quelle autre valeur ferait apparaître le fantôme
+ailleurs que là où le joueur regarde. S'il ressort sans poser, la station existe quand même :
+elle l'attend dans la liste Construction.
+
+**Six coffres posés, et la maison reste praticable** : vérifié par la vraie fonction de
+collision (160 tuiles libres, toutes joignables). Ce qui protège le joueur n'est pas un
+compteur — c'est `poseValide` et sa règle de couloir, qui date de la spec 05 et n'a pas bougé.
+
+`npm test` : **127 fichiers verts**, dont les treize sauvegardes réelles. Captures aux trois
+profils dans `docs/captures/coffre-2026-09-22/` (le jeu au Nv.10 avec la recette en poche, et
+la pièce à six coffres).
+
+## T6 — Une recette qui ne se fabrique pas dit pourquoi (`D-122`)
+
+Le défaut que Xav a relevé : une tuile de Craft pouvait ne rien faire à l'action, sans
+indication — la pioche déjà possédée s'affichait « 1/1 » et l'appui restait muet. La règle du
+21/09 ne bouge pas (**grisé est un indice, jamais un verrou** : l'action réelle est toujours
+tentée, le résultat fait foi) ; ce qui change, c'est qu'on peut enfin **écrire** la raison.
+
+`peutFabriquer` rend désormais un **détail** en plus du code : quel ingrédient manque et
+combien, combien d'éclats manquent, quel objet est déjà possédé. Le module ne connaît ni i18n
+ni gabarit — il rend ce que lui seul sait, la phrase se compose dans l'orchestrateur, par une
+clé de locale à trou. Quatre phrases neuves, FR et EN, au contrôle de démarrage.
+
+Deux choses qui ne figuraient pas dans le ticket mais qu'il a fallu trancher :
+
+**L'ordre des refus est celui de l'utilité.** Ce qu'on peut aller chercher d'abord (un objet
+déjà possédé, un ingrédient, des éclats), ce qu'on ne peut qu'attendre ensuite (la recharge),
+la place en poche en dernier. C'est visible sur la hache : après l'avoir fabriquée, la fiche
+dit « Tu possèdes déjà cet objet » plutôt que « Prêt dans 47 s » — la première explique le
+« 1/1 », la seconde ne dit rien de ce qui bloque vraiment.
+
+**La place en poche n'a plus qu'une règle, et elle vit dans le verdict.** Elle était jugée
+deux fois : une pour griser, une pour agir — et rien ne garantissait qu'elles disent la même
+chose. `fabriquer` ne la refait plus, il **suit le verdict**. Au passage, le calcul se fait sur
+la poche **d'après le retrait des ingrédients**, sinon cuire son dernier fruit dans une poche
+pleine serait refusé alors que le fruit libère justement la place — et le test en garde le
+témoin.
+
+`unique` est un champ de données (hache, pioche, épée), refusé par le schéma sur une recette de
+station : « déjà possédé » ne voudrait rien dire d'un coffre, dont on veut cinq. Le test
+vérifie aussi qu'une recette unique produit un objet dont `pile_max` vaut 1 — deux données qui
+disent la même chose, chacune à sa place, et qui ne doivent pas diverger.
+
+`npm test` : **128 fichiers verts**.
+
+## T7 — Le puits ne rapporte de l'XP que sous son seuil (`D-123`, `Q-43`)
+
+Une ligne, un champ de données, un test. `survival.json > jauge_soif > seuil_xp` (0,9,
+provisoire), lu au même endroit que la règle d'avant.
+
+Ce que ça *révise* mérite d'être dit, parce que c'est la raison d'être du ticket : l'ancienne
+règle était « l'XP tombe si la jauge a bougé ». À 99,5 %, boire faisait bouger la jauge d'un
+demi-point et rapportait **autant** qu'à 10 % — le puits était payant au tapotement, borné par
+le seul cooldown anti-spam. Le test garde ce piège comme témoin : il vérifie qu'au-dessus du
+seuil la jauge bouge **quand même**, et que rien ne tombe.
+
+Le champ est **optionnel** : une jauge qui n'en déclare pas ne rapporte jamais d'XP, ce qui est
+le cas de la faim — on ne mange pas au puits.
+
+`npm test` : **129 fichiers verts**.
+
+## T8 — Le follet à la première maison (`D-124`)
+
+**Données seules, et c'est tout le ticket.** Aucun déclencheur nouveau n'a été écrit : le
+patron de `D-61` (« condition + flag → une ligne, une seule fois ») et le flag de zone qui
+existe depuis la Phase 2 (`flag_maison_decouverte`, posé en marchant dans le rectangle
+`maison`) suffisent. La ligne est une entrée de `ambiances.json`, un dialogue, un flag, deux
+locales.
+
+C'était la question ouverte du ticket — le toit qui s'efface, ou le rectangle de zone. Le
+rectangle gagne parce qu'il **existe déjà et sert déjà à ça** : le signal du toit aurait
+demandé un second mécanisme pour dire exactement la même chose.
+
+Le texte est celui de Xav, mot pour mot ; l'anglais est une proposition, marquée comme telle.
+C'est le follet qui parle, pas le narrateur — vérifié aussi, parce que c'est ce qui distingue
+cette ligne d'une ligne d'ambiance.
+
+Conséquence sur les tests existants : neuf fichiers posent désormais
+`flag_ambiance_maison_premiere_visite` d'avance, pour la même raison que
+`flag_premier_ramassage` — un dialogue qui s'ouvre gèle le temps actif, et ils éprouvent autre
+chose. C'est le coût d'entretien des faux états, déjà nommé (`Q-42`), et il est payé
+explicitement plutôt que contourné.
+
+`npm test` : **130 fichiers verts**.
+
+## T9 — Lore diffus du follet pour les choses de base (`D-125`)
+
+**Cinq propositions, en données.** Xav écrit, Claude propose : les cinq textes sont des
+propositions, FR et EN, et ils sont faits pour être réécrits. Ce qui est livré et qui, lui,
+tient, c'est le mécanisme — et il n'y en a pas de nouveau.
+
+Les cinq déclencheurs du brief, avec ce que chacun a coûté :
+
+| Ligne | Condition | Coût |
+|---|---|---|
+| Première poche pleine | `flag_maison_decouverte` **et** `slots_libres_poche ≤ 0` | une valeur nommée |
+| Première herbe | `flag_premiere_herbe` | un champ de données sur l'item |
+| Premier objet rangé au coffre | `objets_au_coffre ≥ 1` | une valeur nommée |
+| Nv.10 atteint | `flag_niveau_10` | **rien** |
+| Premier coffre posé | `stations_posees ≥ 1` | une valeur nommée |
+
+Trois valeurs nommées, donc, et **aucune ne parle de lore** : ce sont des états du monde, du
+même genre que `niveau` et `stations_placables`. C'est ce qui fera qu'une sixième ligne
+s'écrira sans code.
+
+`slots_libres_poche` plutôt que `slots_occupes`, et le choix mérite une ligne : la question
+intéressante est « reste-t-il de la place ? », et elle se pose avec un `max: 0` qui **ne dépend
+pas du nombre de slots du conteneur**. Le jour où la poche en gagne un (une besace, `Q-65`), la
+condition tient toujours, là où un `min: 4` serait devenu faux en silence.
+
+**L'herbe était le seul cas qui demandait du neuf**, et il a été traité sans faire entrer un id
+d'item dans le code : `items.json > flag_ramassage` — même forme, et même raison d'être, que
+`scenes.json > objets_uniques > flag` depuis `D-60`. C'est la donnée qui nomme le flag ; le code
+ne lit qu'un champ. Un flag non déclaré tombe **au boot**, pas au ramassage (c'est-à-dire en
+jouant), et le test en garde le témoin.
+
+**Le « où » est une proposition, lui aussi** : les cinq lignes sont limitées à
+`scene_maison_exterieur`. Motif : la boucle de survie y vit entièrement, et une ligne sur le
+coffre de la maison n'a rien à dire au fond de la Grotte. À réviser d'un mot de données si Xav
+préfère « partout ».
+
+**Ce que le ticket a coûté ailleurs, et qui est un aveu** : neuf fichiers de test posaient
+`flag_ambiance_maison_premiere_visite` à la main depuis T8. Cinq lignes de plus, c'était cinq
+noms recopiés dans neuf fichiers. Ils **dérivent désormais la liste du catalogue**
+(`registre.tous('ambiances').map((a) => a.flag)`), une fois pour toutes — la prochaine ligne
+d'ambiance ne rouvrira plus rien. C'est `Q-42` payé une bonne fois plutôt que reconduit, et
+c'est aussi la règle « un harnais ne recopie pas ce qu'il prétend éprouver » appliquée à une
+liste de flags.
+
+Le test du ticket éprouve les **cinq** lignes en jeu, chacune avec son témoin négatif (sans sa
+condition, rien ne tombe) — parce qu'une ligne qui tomberait toujours serait pire qu'absente.
+Il n'épingle **aucun texte** (`D-52`) : les mots appartiennent à Xav.
+
+`npm test` : **131 fichiers verts**.
+
+## Hors file — On ne déplace pas un meuble plein (`D-126`)
+
+**Relevé par Xav en jouant** : « je ne peux plus déplacer le premier coffre ». Il a demandé de
+**garder la mécanique** et de corriger la racine. Les deux sont possibles ensemble, et c'est
+même le bon dénouement : la règle voulue **remplace** le défaut au lieu de le masquer.
+
+**La règle, maintenant DITE** : `stations.json > deplacable_si_vide`, sur le type coffre.
+Optionnel — une station qui ne déclare rien se déplace quel que soit son contenu, donc les
+trois autres n'ont rien à changer. Déclaré sur le type plutôt que déduit du rôle « stockage » :
+une scierie qui stockerait des bûches devra trancher pour elle-même, et **une règle de jeu se
+lit, elle ne se devine pas**. Un contenu à **zéro** n'est pas un contenu (`retirerItem` peut
+laisser une clé derrière lui) : un coffre vidé redevient déplaçable.
+
+La tuile est **grisée** et la fiche dit pourquoi — patron de `D-122` : sans la phrase, le joueur
+verrait une tuile morte sans savoir que la vider la réveille. Et l'action est **retentée pour de
+vrai** plutôt que court-circuitée : le résultat fait foi.
+
+**La racine, c'était la moitié non faite de `D-121`.** Avant T5, `save.maison.stations[id]`
+**était** une pose ; depuis, c'est une **fiche** qui peut porter `contenu`, `type` et `scene`, et
+qui n'a des coordonnées que si le joueur a déplacé la station. J'avais appris la nouvelle forme
+à `resoudreOverridesStations` — **et à lui seul**. Les deux autres chemins prenaient une fiche
+de contenu pour une pose :
+
+- `demarrerConstruction` : le repli `|| {pose par défaut}` ne joue que si l'entrée est
+  **absente**. Un coffre qu'on a rempli sans jamais le déplacer A une entrée, donc le fantôme
+  naissait à `x: undefined` ; la poussée faisait `undefined + 1`, et `Math.max`/`Math.min`
+  propageaient le NaN **sans rien dire**. C'est ce que Xav voyait.
+- `confirmerConstruction` : `= { ...pose }` **remplaçait** la fiche. Deux pertes silencieuses,
+  mesurées en banc avant d'être décrites : déplacer un coffre plein **effaçait son contenu**, et
+  déplacer un coffre **fabriqué** lui retirait `type` et `scene` — donc `instancesCreees` ne le
+  rendait plus et **il disparaissait du monde** au rechargement, avec ce qu'il portait.
+
+Remède : **un** lecteur (`poseSauvegardeeDeStation`, au niveau module, donc testable et lisible
+par les deux fonctions sœurs) et **une** écriture qui **enrichit** au lieu de remplacer. C'est
+`D-71` mot pour mot — « une charge utile s'enrichit, elle ne se refabrique pas » — appliqué
+cette fois à une entrée de **sauvegarde**. Trois lectures de la même donnée finissent toujours
+par diverger : c'est exactement ce qui vient de se produire.
+
+**Troisième trou, trouvé en route** : `poseValide` rendait **`ok: true` sur une empreinte NaN**.
+Toute comparaison avec NaN étant fausse, les trois tests de la fonction la laissaient passer —
+le fantôme s'affichait **vert** tout en n'étant nulle part. Un garde-fou en tête coûte quatre
+comparaisons et rend la panne visible là où elle se produit. Et une raison sans dialogue
+(`pose_invalide`) se **journalise** au lieu de se raconter au follet : une faute de code n'est
+pas une règle de jeu, et `resoudreLignes(undefined)` aurait levé dans la boucle.
+
+**Ce que la suite de tests n'a pas vu, et pourquoi** : elle est restée verte pendant tout le
+diagnostic. Aucun test ne déplaçait une station qui portait quelque chose — le cas n'existait
+pas avant `D-121`, et T5 ne l'a pas ajouté. C'est le trou que ce ticket referme.
+
+`npm test` : **132 fichiers verts**.
+
+
+---
+
+## T10 — Une fiche montre ce dont elle parle (`D-103`, `Q-49`)
+
+Dernier ticket de la file, et le seul qui touche à un écran. Il était marqué **optionnel** parce
+qu'il approche la structure des menus, gelée depuis le 21/09 — il n'y touche pas : aucune vue
+n'est ajoutée, aucun écran ne change de forme, c'est le **contenu d'une ligne** qui s'ouvre.
+
+**Ce que la dette disait, et qui était juste.** Une ligne de fiche était une **chaîne**. Donc ce
+n'étaient pas « les éclats qui manquaient d'image » : **aucune ligne** de **aucune fiche** ne
+pouvait en porter une. Les ingrédients d'une recette (« Branche : 4 / 2 ») pas davantage que le
+coût. Ce que Xav avait remarqué sur les éclats était le symptôme d'une règle générale.
+
+**Le remède, dans l'ordre que la dette avait fixé.**
+
+1. Une ligne accepte `{ texte, icone? }` **en plus** de la chaîne, et une fonction pure les
+   ramène à une seule forme (`ecran_fiches.js#normaliserLigneFiche`). Deux formes en entrée,
+   volontairement : obliger les quatre-vingts lignes qui n'ont pas d'image à s'emballer dans un
+   objet ne dirait rien de plus, et ferait un ticket de cent lignes modifiées pour deux. La
+   fonction est **sortie du DOM** pour la même raison que `D-71` : tant que la vue démêlait les
+   deux cas au fil du rendu, la règle vivait dans du canvas et du `createElement`, donc hors
+   d'atteinte des tests headless.
+2. La **monnaie** a enfin où déclarer sa silhouette : `data/monnaies.json`, une entrée, deux
+   champs — un id, une icône. Réponse **minimale** à `Q-49`, et assumée comme telle : pas de nom,
+   pas de valeur, pas de règle. `D-68` tient — une monnaie n'est toujours pas un item de poche,
+   elle n'entre ni dans les `entrees` d'une recette ni dans un conteneur. Ce qu'une **seconde**
+   monnaie exigera se décidera quand elle existera.
+
+Ce qui en tombe sans rien demander : les **ingrédients** montrent chacun la silhouette de sa
+tuile de Poche. Elle est lue sur l'item (`render.visuel`), jamais choisie par l'écran de Craft —
+donc un ingrédient ajouté demain arrive avec son image.
+
+**Le texte ne change nulle part.** L'icône s'**ajoute**, elle ne remplace pas le nom : « Branche :
+4 / 2 » reste écrit en toutes lettres, parce que c'est ce que lit un joueur qui ne reconnaît pas
+encore la forme — et parce qu'une image n'a pas de langue, mais qu'une liste d'images muettes
+n'en a pas non plus.
+
+**Deux effets de bord, tous deux payés.** L'id `visuel_icone_eclat` a **quitté `main.js`** : le
+bandeau et les fiches lisent la même entrée de catalogue, et un test le vérifie **statiquement**
+(le fichier ne contient plus la chaîne). Et `menu.fiche.cout_eclats` était composée depuis `D-66`
+**sans passer par le contrôle de démarrage FR/EN** : la retirer des locales aurait affiché sa clé
+en toutes lettres, en jeu, sans un mot au boot. Elle est dans `clesTexteFiches()`.
+
+**Vérifié en vrais pixels** (`tools/scenarios/fiches_icones.mjs`, Chrome sans fenêtre, 703 × 280
+et 1920 × 1080) : trois vignettes dessinées, 12 px de page à la petite taille et 48 à la grande,
+aucune erreur console. Ce qu'une capture ne dit pas — est-ce qu'on **reconnaît** un objet à 12
+px, est-ce que la liste se lit mieux ou est-ce que l'œil s'accroche — revient à Xav (`V-72`).
+
+`npm test` : **133 fichiers verts**.

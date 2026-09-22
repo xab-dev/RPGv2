@@ -87,9 +87,25 @@ function appliquerStructures(grille, donnees) {
 // x, y, rotation } }) est optionnel : absent ou vide, chaque interactif garde
 // exactement sa position/rotation de puzzles.json, comportement identique à
 // avant cette fiche (aucune régression sur les scènes sans station placable).
-export function chargerScene(registre, sceneId, overridesInteractifs = {}) {
+//
+// `D-121` : `interactifsCrees` est la liste des instances de station CRÉÉES
+// en cours de partie (un coffre fabriqué). Ce sont des objets de la même
+// forme qu'une entrée de `puzzles.json` — ce module ne sait pas d'où elles
+// viennent, et c'est le point : une instance créée est un interactif comme un
+// autre, pas un cas particulier greffé à côté. Vide par défaut, donc aucune
+// scène existante ne change de comportement.
+export function chargerScene(registre, sceneId, overridesInteractifs = {}, interactifsCrees = []) {
   const donnees = registre.obtenir('scenes', sceneId);
   if (!donnees) throw new Error(`scene "${sceneId}" introuvable dans le registre`);
+
+  // LE point de résolution d'un interactif, catalogue ou créé. Tout ce qui
+  // suit — et `main.js` avec, par `scene.puzzle()` — passe par lui : sans ça
+  // il faudrait ajouter « et cherche aussi dans les créées » à chacun des
+  // sept endroits qui font un `registre.obtenir('puzzles', id)`, et le
+  // huitième serait oublié.
+  const puzzlesCrees = new Map(interactifsCrees.map((p) => [p.id, p]));
+  const obtenirPuzzle = (id) => puzzlesCrees.get(id) || registre.obtenir('puzzles', id);
+  const idsInteractifs = [...(donnees.interactifs || []), ...puzzlesCrees.keys()];
 
   const tuileParId = new Map(registre.tous('tiles').map((t) => [t.id, t]));
   const portes = donnees.portes || [];
@@ -123,8 +139,8 @@ export function chargerScene(registre, sceneId, overridesInteractifs = {}) {
   // (`resoudreEmpreinteInteractif` renvoie un rectangle nul dans ce cas, mais
   // filtrer ici évite de tester des rectangles nuls pour rien à chaque appel
   // de resoudreDeplacement).
-  const empreintesSolides = (donnees.interactifs || [])
-    .map((id) => registre.obtenir('puzzles', id))
+  const empreintesSolides = idsInteractifs
+    .map((id) => obtenirPuzzle(id))
     .filter((p) => p && p.solide)
     .map((p) => {
       const visuel = registre.obtenir('visuels', p.render.visuel);
@@ -180,7 +196,12 @@ export function chargerScene(registre, sceneId, overridesInteractifs = {}) {
     // decor (§3.4) : { densite, motifs: [{ visuel, poids }] }, lu par
     // decor.js#genererDecor — absent = aucun motif, jamais une erreur.
     decor: donnees.decor || null,
-    interactifs: donnees.interactifs || [],
+    interactifs: idsInteractifs,
+    // `D-121` : la résolution d'un interactif par son id, créé ou non.
+    // `main.js` l'emploie partout où il faisait `registre.obtenir('puzzles',
+    // id)` sur un id venu de la SCÈNE — c'est la seule façon qu'un coffre
+    // fabriqué soit actionnable, dessiné et déplaçable sans trois ajouts.
+    puzzle: obtenirPuzzle,
     spawns: donnees.spawns || [],
     portails: donnees.portails || [],
     // 03_maison-exterieur §2.1 : zones nommées (spawn d'objets au sol,
@@ -218,7 +239,7 @@ export function chargerScene(registre, sceneId, overridesInteractifs = {}) {
     // (puzzlesAffiches) l'utilisent tous les deux, jamais `puzzle.position`
     // brut, pour qu'une station déplacée soit actionnable/dessinée à sa
     // VRAIE position.
-    poseEffectiveInteractif: (puzzleId) => poseEffective(registre.obtenir('puzzles', puzzleId)),
+    poseEffectiveInteractif: (puzzleId) => poseEffective(obtenirPuzzle(puzzleId)),
   };
 }
 

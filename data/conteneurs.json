@@ -1,0 +1,14 @@
+[
+  {
+    "id": "conteneur_poche",
+    "label_key": "conteneur.poche",
+    "slots": 4,
+    "pile": 5
+  },
+  {
+    "id": "conteneur_coffre",
+    "label_key": "conteneur.coffre",
+    "slots": 10,
+    "pile": 20
+  }
+]

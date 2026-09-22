@@ -3,28 +3,72 @@
     "id": "rec_hache",
     "label_key": "recipe.hache",
     "station": "station_type_atelier",
-    "entrees": [{ "item": "item_branche", "qte": 2 }, { "item": "item_caillou", "qte": 1 }],
-    "sortie": { "item": "item_hache", "qte": 1 },
+    "entrees": [
+      {
+        "item": "item_branche",
+        "qte": 2
+      },
+      {
+        "item": "item_caillou",
+        "qte": 1
+      }
+    ],
+    "sortie": {
+      "item": "item_hache",
+      "qte": 1
+    },
     "categorie": "outil",
+    "unique": true,
     "xp": 15,
-    "cooldown_ms": 60000
+    "cooldown_ms": 60000,
+    "cout_eclats": 10,
+    "visible_si": {
+      "valeur": "niveau",
+      "min": 10
+    }
   },
   {
     "id": "rec_pioche",
     "label_key": "recipe.pioche",
     "station": "station_type_atelier",
-    "entrees": [{ "item": "item_branche", "qte": 1 }, { "item": "item_caillou", "qte": 2 }],
-    "sortie": { "item": "item_pioche", "qte": 1 },
+    "entrees": [
+      {
+        "item": "item_branche",
+        "qte": 1
+      },
+      {
+        "item": "item_caillou",
+        "qte": 2
+      }
+    ],
+    "sortie": {
+      "item": "item_pioche",
+      "qte": 1
+    },
     "categorie": "outil",
+    "unique": true,
     "xp": 15,
-    "cooldown_ms": 60000
+    "cooldown_ms": 60000,
+    "cout_eclats": 10,
+    "visible_si": {
+      "valeur": "niveau",
+      "min": 10
+    }
   },
   {
     "id": "rec_fruit_cuit",
     "label_key": "recipe.fruit_cuit",
     "station": "station_type_cuisine",
-    "entrees": [{ "item": "item_fruit", "qte": 1 }],
-    "sortie": { "item": "item_fruit_cuit", "qte": 1 },
+    "entrees": [
+      {
+        "item": "item_fruit",
+        "qte": 1
+      }
+    ],
+    "sortie": {
+      "item": "item_fruit_cuit",
+      "qte": 1
+    },
     "categorie": "nourriture",
     "xp": 10,
     "cooldown_ms": 60000
@@ -34,14 +78,57 @@
     "label_key": "recipe.epee_bois",
     "station": "station_type_atelier",
     "entrees": [
-      { "item": "item_bois", "qte": 1 },
-      { "item": "item_branche", "qte": 1 }
+      {
+        "item": "item_bois",
+        "qte": 1
+      },
+      {
+        "item": "item_branche",
+        "qte": 1
+      }
     ],
     "cout_eclats": 15,
-    "sortie": { "item": "item_epee_bois", "qte": 1 },
+    "sortie": {
+      "item": "item_epee_bois",
+      "qte": 1
+    },
     "categorie": "arme",
+    "unique": true,
     "xp": 40,
     "cooldown_ms": 60000,
-    "visible_si": { "valeur": "niveau", "min": 10 }
+    "visible_si": {
+      "valeur": "niveau",
+      "min": 10
+    }
+  },
+  {
+    "id": "rec_coffre",
+    "label_key": "recipe.coffre",
+    "station": "station_type_atelier",
+    "entrees": [
+      {
+        "item": "item_bois",
+        "qte": 5
+      },
+      {
+        "item": "item_branche",
+        "qte": 5
+      },
+      {
+        "item": "item_herbe",
+        "qte": 5
+      }
+    ],
+    "cout_eclats": 20,
+    "sortie": {
+      "station": "station_type_coffre"
+    },
+    "categorie": "station",
+    "xp": 60,
+    "cooldown_ms": 60000,
+    "visible_si": {
+      "valeur": "niveau",
+      "min": 10
+    }
   }
 ]

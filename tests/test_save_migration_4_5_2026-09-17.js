@@ -39,14 +39,18 @@ function payloadV4() {
   assert.equal(migre.hero.points_stats_libres, 1);
   assert.deepEqual(migre.inventaire.items, { item_branche: 2, item_caillou: 1 });
   assert.deepEqual(migre.monde.items_sol, payloadV4().monde.items_sol);
+  // `D-121` : jusqu'à la v6 le coffre avait son champ à lui ; depuis la v7,
+  // son contenu vit avec l'instance de station qui le porte. Cette étape
+  // migre jusqu'à la v5, donc `coffre` y est encore — c'est le palier
+  // suivant qui le déménage, et son propre test qui le vérifie.
   assert.deepEqual(migre.coffre.items, { item_bois: 3 });
   assert.deepEqual(migre.recettes_decouvertes, ['rec_hache']);
   assert.equal(migre.settings.lang, 'en', 'les réglages déjà présents ne doivent pas être perdus');
 }
 
-// 2. La version courante du module est bien 5.
+// 2. La version courante du module suit le dernier palier livré.
 {
-  assert.equal(VERSION_SCHEMA_COURANTE, 6);
+  assert.equal(VERSION_SCHEMA_COURANTE, 7);
 }
 
 // 3. Cycle complet écrire/relire d'une v4 migrée automatiquement au chargement.
@@ -55,7 +59,11 @@ function payloadV4() {
   await sauvegarder(store, payloadV4());
   const { payload } = await charger(store);
   assert.equal(payload.schema_version, VERSION_SCHEMA_COURANTE);
-  assert.deepEqual(payload.maison, { stations: {} });
+  // La v4 portait déjà trois bois au coffre : migrés jusqu'à la v7, ils sont
+  // désormais le CONTENU de l'instance de coffre — rien n'a été perdu en
+  // route, et c'est tout l'objet de la migration 6 -> 7.
+  assert.deepEqual(payload.maison, { stations: { station_coffre: { contenu: { item_bois: 3 } } } });
+  assert.equal(payload.coffre, undefined, 'le champ `coffre` a disparu du schéma');
   assert.equal(payload.hero.x, 300);
 }
 

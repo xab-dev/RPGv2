@@ -437,6 +437,13 @@
       display: flex; flex-direction: column; gap: calc(4 * var(--u));
     }
     .fiche-ligne { margin: 0; font-size: calc(9 * var(--u)); line-height: 1.3; color: var(--menu-texte-phrase); }
+    /* `D-103` : une ligne qui montre ce dont elle parle (un ingrédient, un
+       coût en monnaie). La vignette est calée sur la HAUTEUR du texte — une
+       icône plus grande ferait une liste de tuiles là où on attend une liste
+       de phrases ; `align-items: center` la pose sur la ligne de base
+       visuelle sans dépendre de la fonte. */
+    .fiche-ligne-icone { display: flex; align-items: center; gap: calc(4 * var(--u)); }
+    .fiche .fiche-ligne-vignette { flex: 0 0 auto; width: calc(12 * var(--u)); height: calc(12 * var(--u)); }
     /* Le bouton de la fiche : à l'accent, bordure et texte — jamais un aplat
        (même règle que le danger). Cible tactile : 40 px de page au moins. */
     .fiche-action {

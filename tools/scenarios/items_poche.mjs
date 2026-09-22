@@ -18,9 +18,13 @@ const TILE = 32;
 // avant de compléter, donc ces positions-là survivent à l'entrée en scène —
 // y compris pour les items qui n'ont aucun bloc `spawn` (outils, bois,
 // pierre), qu'on ne verrait jamais au sol autrement.
+// `D-119` : l'herbe rejoint l'étalage, posée À CÔTÉ de la branche — c'est
+// avec elle qu'elle doit se distinguer au premier coup d'œil (`V-64`), et une
+// capture qui les sépare ne répondrait pas à la question.
 const ETALAGE = [
-  'item_plume', 'item_branche', 'item_caillou', 'item_fruit', 'item_fruit_cuit',
-  'item_bois', 'item_pierre', 'item_hache', 'item_pioche', 'item_epee_bois',
+  'item_plume', 'item_branche', 'item_herbe', 'item_caillou', 'item_fruit',
+  'item_fruit_cuit', 'item_bois', 'item_pierre', 'item_hache', 'item_pioche',
+  'item_epee_bois',
 ];
 
 export default async function (chrome) {
@@ -49,11 +53,25 @@ export default async function (chrome) {
   // --- 2. Dans la Poche, et dans la barre du bas --------------------------
   const poche = saveDansLaMaison();
   poche.monde.heure = 0.25;
-  poche.inventaire.items = Object.fromEntries(ETALAGE.map((id) => [id, 3]));
+  // `D-118` : la poche ne tient plus que quatre slots, et un contenu qui
+  // déborde est normalisé au chargement (le surplus descend au coffre). On ne
+  // peut donc plus y étaler les onze items — on y met les quatre qui se
+  // jugent ENSEMBLE (branche et herbe voisines, `V-64`), et le reste au
+  // coffre, qui a la place.
+  // Trois slots de ressources + celui de l'épée : la poche est PLEINE, ce
+  // qui est aussi ce qu'on veut voir (le sous-titre doit dire 4 / 4).
+  const EN_POCHE = ['item_branche', 'item_herbe', 'item_fruit'];
+  poche.inventaire.items = Object.fromEntries(EN_POCHE.map((id) => [id, 3]));
+  poche.coffre.items = Object.fromEntries(ETALAGE.filter((id) => !EN_POCHE.includes(id)).map((id) => [id, 3]));
   poche.hero.equipement.consommable = 'item_fruit';
   // `equipement.arme` porte un id d'ARME (`weapons`), pas un id d'objet de
   // poche : les deux existent et ne se ressemblent que de nom. Avec l'id
   // d'objet, la case d'attaque se vidait en silence — voir `D-92`.
+  // `D-92`/`D-93` : l'arme équipée est revalidée à chaque frame — si l'objet
+  // n'est pas en POCHE, la case retombe sur les mains nues. L'épée doit donc
+  // y être pour que la case d'attaque la montre.
+  poche.inventaire.items.item_epee_bois = 1;
+  delete poche.coffre.items.item_epee_bois;
   poche.hero.equipement.arme = 'weapon_epee_bois';
   await ouvrirLeJeu(chrome, { largeur: 1920, hauteur: 1080, save: poche });
   // La barre du bas AVANT d'ouvrir quoi que ce soit : c'est là que l'arme et

@@ -83,7 +83,7 @@ const ITEM = registre.obtenir('items', 'item_epee_bois');
   assert.equal(peutFabriquer(RECETTE, poche, flagsToujours, {}, 0, 15).ok, true, '15 suffisent');
 
   const resultat = fabriquer(RECETTE, {
-    poche, flags: flagsToujours, cooldowns: {}, heureMs: 0, itemDefSortie: ITEM, eclats: 40,
+    poche, flags: flagsToujours, cooldowns: {}, heureMs: 0, plafondSortie: () => 1, eclats: 40,
   });
   assert.equal(resultat.ok, true);
   assert.equal(resultat.eclats, 25, 'les 15 éclats sont déduits, et RENDUS (le module reste pur)');
@@ -91,9 +91,11 @@ const ITEM = registre.obtenir('items', 'item_epee_bois');
   assert.equal(resultat.poche.item_bois || 0, 0, 'le bois est consommé');
   assert.equal(resultat.poche.item_branche || 0, 0, 'la branche aussi');
 
-  // Une recette SANS coût en éclats ne les regarde jamais : les trois
-  // recettes d'origine se fabriquent toujours avec zéro éclat en poche.
-  for (const id of ['rec_hache', 'rec_pioche', 'rec_fruit_cuit']) {
+  // Une recette SANS coût en éclats ne les regarde jamais. *Révisé par
+  // `D-120`* (22/09) : hache et pioche en coûtent désormais dix chacune, et
+  // c'est voulu — le ralentissement du début de partie passe par là. La
+  // cuisine, elle, ne bouge pas, et c'est ELLE qui porte le contrat ici.
+  for (const id of ['rec_fruit_cuit']) {
     const r = registre.obtenir('recipes', id);
     const pocheComplete = Object.fromEntries(r.entrees.map((e) => [e.item, e.qte]));
     assert.equal(

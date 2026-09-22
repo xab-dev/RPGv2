@@ -24,6 +24,10 @@ aux trois échelles. Validé en jeu par Xav le jour même (`V-51`, « j'ai tout 
 et `Q-47` tranchée dans la foulée : **les stations gardent leur taille**. Détail :
 `docs/JOURNAL_2026-09-21_refonte-stations.md`.
 
+**File « inventaire survivaliste » (`inventaire-2026-09-22`, 14 commits) : T0 à T10 livrés, la file est COMPLÈTE.** Poche et coffre qui **comptent** (`D-118`, clôt `D-28`), slots d'équipement qui **disent la vérité** (`D-92`+`D-93`), l'**herbe** (`D-119`), hache et pioche **au Nv.10 avec un coût en éclats** (`D-120`), le **coffre craftable à contenu par instance** (`D-121`, migration 6 → 7), les **raisons d'un refus de craft** (`D-122`), le **puits sous 90 %** (`D-123`, `Q-43`), la **ligne du follet à la première maison** (`D-124`), le **lore diffus** — cinq lignes du follet aux cinq premières fois (`D-125`, T9 ; les textes sont des **propositions**) — et enfin les **fiches qui montrent ce dont elles parlent** (`D-103`, T10). S'y est ajouté, sur relevé de Xav pendant la file, le **coffre plein qui ne se déplace plus** (`D-126`). Validés en jeu par Xav le 22/09 : `V-62` à `V-70` (« vu, good »), `V-71` et `V-72` (« game is really good, balanced patch works perfectly fine »). La branche est **fusionnée dans `main` et EN LIGNE** depuis le 22/09, à sa demande, après sa tournée manette et clavier. Ce qui reste de son côté n'est pas une validation mais une **mesure** : des boucles de sauvegarde neuve Nv.1 → Nv.20 avant de relancer l'équilibrage automatisé (`Q-62`). Détail : `docs/archives/JOURNAL_2026-09-22_file-inventaire.md`.
+
+**Ce que la file laisse à trancher, et qui compte plus que le reste** : le plafond des 30 % d'XP de récolte **saute mécaniquement** avec une troisième ressource de ramassage (`Q-68`, 40 % mesurés) · **sans combat, plus aucun outil** (`Q-69` : les éclats ne viennent que des monstres, et la ligne « récolte à l'outil » tombe à 0 % dans `R-19 bis`) · et l'instrument de rythme **contredit** l'impression de départ (`Q-62` : le brief part de « le Nv.15 se fait en quelques minutes », le bot vétéran ne l'atteint pas en quatre heures).
+
 **Le volet rendu des fondations est clos sur PC, sous Chrome.** Treize relevés `?debug=fps` réels existent (§6 de `docs/DOC_suivi-dettes.md`). Le relevé qui tranche est `R-11` : **Chrome, plein écran, échelle forcée 8 — 59,9 fps, aucune frame sautée**, GPU à 14 %, aucune saccade vue par Xav en traversée. **Chrome est le navigateur de développement, de jeu et de référence** ; sous Firefox, le même PC exécute le dessin sur le fil principal et devient injouable à l'échelle 5 — ce n'était pas le jeu, c'était le navigateur (registre `docs/DOC_navigateurs.md`). Conséquences : `Q-19` close **sans plafond d'échelle** (la décision « rendu net à résolution physique » est confirmée, cette fois sur mesure), `D-01` déclassée en P2, `D-02` et `D-03` en P3.
 
 **Côté mobile, le plancher est à nommer — mais l'A04 n'est plus la question.** Le Galaxy A04 rend ~37 fps à l'échelle naturelle et ~40 à l'échelle 1 (`R-12`, `R-13`) : diviser les pixels par 9 ne rend que 3,6 fps, donc **l'échelle n'y est pour rien** ; servi **en ligne** plutôt que par le Wi-Fi local, il rend exactement pareil (`R-16`, 37,3 fps), donc **le réseau n'y était pour rien** non plus. Restaient ≈ 18 ms par frame que l'instrument ne voyait pas : **`D-31` est close le 20/09 par décision de Xav — « ça vient du matériel »**, son téléphone n'est plus une cible (« juste bon à changer »). Conséquences : `A-07` (profil USB) tombe **sans objet**, `D-02` et `D-03` sont **dégelées** (P3, rien à y corriger aujourd'hui), et le **plancher mobile est revu à la hausse** — sa définition reste `[OUVERT]`, elle se fixera sur le téléphone du neveu (`Q-20`, `D-14`). Point de comparaison bas déjà connu, déclaratif : un portable Windows 7 **sans GPU** tient 56 à 58 fps sous Chrome, jouable. Les **deux relevés de base sous Chrome** sont **pris** (`A-03` close) : `R-14` de jour et `R-03` de nuit, **59,9 fps et zéro frame sautée** à l'échelle naturelle, `dessiner()` 0,33 ms, `maj()` 0,06 ms. `specs/07_chaos-nocturne.md` a donc son point de comparaison : après chaque palier, le même relevé de nuit, comparé à `R-03`.
@@ -102,7 +106,8 @@ rpg_v2/
 │   ├── scene.js            layout (tableau ou lignes+légende) → forêt procédurale → structures ;
 │   │                       collisions 4 coins + glissement + correction de coin (chevauchement
 │   │                       ≤ `TOLERANCE_COIN_PX`, cf. `docs/archives/JOURNAL_2026-09-16_diagnostic-accrochage-arbre.md`) ; portes conditionnelles ;
-│   │                       portailFranchi()
+│   │                       portailFranchi() ; `puzzle(id)` (`D-121`) — LE point de
+│   │                       résolution d'un interactif, catalogue OU instance créée en jeu
 │   ├── camera.js           bornée sur grande scène, centrée sur scène plus petite que le viewport
 │   ├── decor.js            décor procédural pondéré (PRNG mulberry32) + couleurTuile (variantes/teinte)
 │   ├── render.js           résolution logique/physique (DPR) — `echelleDepuisCanvas` est LA
@@ -117,7 +122,8 @@ rpg_v2/
 │   ├── intro.js            2 machines à états pures : intro (clignements+orbite, ≤8s) et départ
 │   │                       (follets non élus qui repartent) — propre à la Grotte, pas un moteur
 │   │                       de cinématiques généralisé
-│   ├── save.js             double tampon, versions + migrations (v5 : maison.stations), reinitialiserSauvegarde()
+│   ├── save.js             double tampon, versions + migrations (v7 : le contenu du coffre
+│   │                       descend dans l'instance qui le porte), reinitialiserSauvegarde()
 │   ├── flags.js            registre de flags + conditions all/any/not + `initial` (persistance)
 │   ├── stats.js            stats primaires + dérivées (formule linéaire) + modulateur de survie
 │   │                       (`appliquerModulateurSurvie`, Phase 3)
@@ -134,7 +140,13 @@ rpg_v2/
 │   │                       praticabilité du couloir, `poseValide()` — pur, aucun id en dur
 │   ├── resources.js        tuiles-ressources bloquées, `peutRecolter` branché sur la poche réelle
 │   │                       depuis Phase 3 (outil requis)
-│   ├── inventory.js        poche du héros (items comptés) : `ajouterItem`/`retirerItem`
+│   ├── inventory.js        poche ET coffre : `ajouterItem`/`retirerItem`, plus la CAPACITÉ
+│   │                       (`D-118`) — `resoudreCapacite` est LE point de résolution (slots, pile,
+│   │                       et le `filtre` que le porte-outils attend), `pileEffective` dit que la
+│   │                       pile appartient au conteneur et que l'objet ne fait que l'abaisser,
+│   │                       `slotsOccupes` que les slots sont une CONSÉQUENCE du contenu, et
+│   │                       `normaliserContenus` rattrape une vieille sauvegarde sans rien perdre
+│   │                       en silence
 │   ├── cooldowns.js        Phase 3 : cooldowns en temps actif, réutilise l'horloge de daynight.js
 │   │                       (`save.monde.heure`, désormais avancée dans toutes les scènes)
 │   ├── recipes.js          Phase 3, Palier A : `peutFabriquer`/`fabriquer`, catalogue `recipes.json`
@@ -180,7 +192,9 @@ rpg_v2/
 │                           recadré s'il déborde, « meilleur effort »), couleurs_ui.js (contraste
 │                           des `couleur_ui`, pur), hud.js (+ jauges survie/niveau-XP Phase 3)
 │                           + hud_hints.js + dialogue_box.js + hud_layout.js (canvas, résolution logique)
-├── data/                   catalogues JSON (voir specs/*.md §2.1 de chaque phase)
+├── data/                   catalogues JSON (voir specs/*.md §2.1 de chaque phase) — dont
+│                           `conteneurs.json` (`D-118`) : les quatre nombres de la poche et du
+│                           coffre, en un seul endroit, tous PROVISOIRES
 ├── locales/fr.json, en.json
 ├── specs/                  00_ROADMAP.md, 0N_*.md par phase
 ├── docs/                   DOC_suivi-dettes.md (registre vivant : LA liste de ce qui est dû) +
@@ -190,7 +204,11 @@ rpg_v2/
 │                           (album de référence par jalon) + sauvegardes/ (sauvegardes réelles
 │                           exportées par Xav, servent aux migrations)
 ├── tests/                  un fichier par contrat/diagnostic, headless, `node:assert/strict`
-└── tools/                  run_tests.js (lance tous les tests/*.js, = `npm test`) + des outils de DEV
+└── tools/                  run_tests.js (lance tous les tests/*.js, = `npm test`) + mesure_rythme.mjs
+                            (`R-19` : combien de temps de JEU pour atteindre un niveau, et d'où vient
+                            l'XP — un INSTRUMENT, jamais un test : un bot « vétéran » joue une partie
+                            neuve sur le vrai orchestrateur, et le temps compté est le temps de jeu
+                            ACTIF) + des outils de DEV
                             jamais chargés par le jeu : banc_menu_cartes.html (le composant seul,
                             sur le vrai catalogue), cadre_viewport.html (viewport imposé ; `&pas=oui`
                             = boucle de jeu avancée à la main, pour un onglet masqué) et
@@ -345,7 +363,19 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 | **Un motif de tuile est identique sur CHAQUE tuile de son type — donc tout motif qui se *lit* comme un motif devient un papier peint.** Il n'y a que deux issues, et le choix se fait par surface : un motif **continu d'une cellule à la suivante** (les lames du parquet : la périodicité devient le sujet, un plancher *doit* être régulier), ou un **champ dense de petites marques** sans forme dominante (l'herbe, le gravier du chemin : l'œil n'attrape pas de motif quand la cellule est remplie uniformément). Avec ce grain, les variantes de couleur d'une tuile perdent leur rôle : à ±8 % elles étaient le seul relief du sol, et un damier de carrés de 32 px — ramenées à ±2 %. Et un contrat neuf, verrouillé par test : **le grain d'une tuile NON SOLIDE tient dans sa cellule** (ce qui dépasse est effacé par la tuile suivante à droite et en bas, et peint par-dessus une tuile déjà finie à gauche et en haut — de l'herbe sur le chemin ou sur un mur), tandis qu'une tuile **solide** garde le droit de dépasser : c'est ce qui donne sa hauteur à la forêt. Contrairement à une station (`D-78`), redessiner une tuile ne déplace **aucun** mur : sa solidité est un booléen, pas une boîte englobante | 2026-09-22 | `D-105`, `docs/archives/JOURNAL_2026-09-22_grain-du-sol.md` |
 | **Le sol ne coûte rien à l'arrêt, et tout ce qu'on lui ajoute se paie au franchissement d'une tuile** — le calque statique n'est reconstruit que là. Un ticket qui touche au sol se mesure donc **en marchant** (`tools/scenarios/cout_calque.mjs`, deux exécutions du même scénario comparées entre elles, jamais à un relevé du §6 : Chrome y est sans fenêtre, les fps n'ont pas de sens). Le grain du sol a porté une reconstruction de **1,02 à 3,47 ms** pour ×14 primitives, sans une frame au-dessus de 20 ms. Corollaire d'outillage : le **banc visuel ne peut pas juger un sol** — il juge une silhouette sur un fond neutre choisi, or ici l'objet du ticket EST le fond ; ce qu'il faut voir (la répétition sur quinze tuiles, la couture entre deux surfaces, la densité à l'échelle d'un écran) ne tient dans aucune vignette | 2026-09-22 | `D-105`, `D-01`, même journal |
 
+| **Répartition des rôles, entre Claude et Xav** (décision de Xav, 22/09) : **Claude** tient la branche **réaliste, logique et générique** — ressources → intermédiaires → craft → équilibrage → capacités → règles d'inventaire ; il propose, chiffre, mesure, et retient des défauts `[OUVERT]`. **Xav** tient l'**identité**, ce qui « s'écrit » : synergies, effets élémentaires, lore, textes du follet, biomes. Ce n'est pas un partage de fichiers mais un partage de **nature de décision** : un nombre se mesure, une intention s'écrit | 2026-09-22 | `docs/archives/BRIEF_file-inventaire_2026-09-22.md` §0 |
+| **Un outil occupe un slot de poche**, comme n'importe quel objet — aucun cas particulier. C'est ce qui donne son sens au porte-outils à venir (`Q-65`), et c'est aussi ce qui fait que l'inventaire *coûte* quelque chose : avec quatre slots, hache + pioche + bois + pierre remplissent la poche et il faut aller vider avant de cueillir un fruit. Corollaire déjà appliqué : **un outil rangé au coffre ne récolte plus**, et c'est le comportement voulu | 2026-09-22 | `D-118`, même brief |
+| **La pile appartient au CONTENEUR, l'objet peut seulement l'abaisser** (`pile_max`, optionnel, sur l'item — outils et armes : 1). Le même bois s'empile donc par 5 en poche et par 20 au coffre. Et **les slots ne sont pas des cases** : ils sont une **conséquence** du contenu (`ceil(quantité / pile)`), ce qui veut dire que douze branches occupent trois slots et qu'**aucune sauvegarde ne change de forme**. Une vieille partie est **normalisée au chargement** (ce qui déborde descend au coffre, le reste est journalisé), jamais migrée : la donnée est valide, c'est la RÈGLE qui a changé — l'autre moitié de la classe que `save.js#migrer` ne couvre pas | 2026-09-22 | `D-118` |
+| **Un slot d'équipement se revalide à chaque frame, et AVANT toute branche d'UI.** Pas à chaque mutation de poche : chercher « tous les endroits qui touchent la poche » est exactement ce qui avait laissé passer les trois chemins divergents de `D-93`, et l'écran Coffre déplace des objets *pendant* qu'il est ouvert — une revalidation gelée sous UI manquerait le cas même qui a fait le bug. Conséquences de jeu : l'arme absente de la poche retombe sur le défaut du slot (la reprendre au coffre ne la rééquipe pas), un consommable épuisé passe au **suivant de la même catégorie** s'il y en a un, sinon **la case disparaît** — *révise* le loquet `flag_premier_consommable` du 21/09, retiré | 2026-09-22 | `D-92`, `D-93` |
+| **Un coffre = un type + une pose + un contenu.** Le contenu appartient à l'**instance** (`save.maison.stations[id].contenu`), et une instance créée en jeu **clone l'instance de catalogue de son type** — *l'instance de catalogue est le modèle de son type*, ce qui évite d'inventer un second endroit où déclarer à quoi ressemble un coffre. Elle devient alors un interactif ordinaire par `scene.puzzle(id)`, **LE** point de résolution : sans lui il aurait fallu ajouter « et cherche aussi dans les créées » aux sept endroits qui résolvent un id de puzzle, et le huitième aurait été oublié. Ce qui protège le joueur qui en pose cinq n'est pas un compteur, c'est `poseValide` et sa règle de couloir | 2026-09-22 | `D-121` |
+| **Une recette peut produire une STATION plutôt qu'un objet** (`sortie: { station }`, exactement l'un des deux, et la station doit être `placable`). Elle ne touche alors pas la poche — donc ne consulte pas son plafond, ce qui n'est pas un contournement mais la conséquence exacte de « rien n'entre en poche » : fabriquer un coffre **poche pleine** est le cas normal, trois slots de ressources viennent d'y passer. La fabrication enchaîne sur le mode Construction avec le fantôme, posé **sur la tuile du héros** — toute autre valeur le ferait apparaître ailleurs que là où le joueur regarde | 2026-09-22 | `D-121` |
+| **L'ordre des refus de craft est celui de l'utilité** : ce qu'on peut aller chercher (objet déjà possédé, ingrédient, éclats), puis ce qu'on ne peut qu'attendre (la recharge), la place en poche en dernier. Et **la place en poche n'a plus qu'une règle**, celle du verdict — `fabriquer` ne la refait plus, donc ce qui est grisé et ce qui échoue ne peuvent plus diverger. Le calcul se fait sur la poche **d'après le retrait des ingrédients** : cuire son dernier fruit dans une poche pleine libère justement le slot du fruit | 2026-09-22 | `D-122` |
+| **Un instrument de rythme n'est pas un test, et ne le deviendra pas** (`tools/mesure_rythme.mjs`, `R-19`) : il rend des chiffres qu'on compare avant/après un ticket d'équilibrage, et aucun n'a vocation à devenir une assertion (règle `D-52`). Ce qu'il mesure est le **temps de jeu actif**, celui que `maj()` fait avancer, et il simule un **vétéran** — ligne droite vers ce qu'il connaît — parce que c'est le pire cas : si le rythme tient contre lui, il tient contre les autres. Ce qu'il ne fait pas et qu'il faut lire avec : **il ne se bat pas** | 2026-09-22 | `R-19` |
+| **Une ligne de lore est une DONNÉE, et ce qu'elle interroge est un état du monde, jamais un état de lore.** Les cinq lignes du follet aux cinq premières fois (poche pleine, herbe, premier rangement, Nv.10, premier coffre posé) n'ont demandé **aucun déclencheur nouveau** : le mécanisme de `D-61` a suffi, nourri par trois **valeurs nommées** qui ne savent rien du follet — `slots_libres_poche`, `objets_au_coffre`, `stations_posees`, du même genre que `niveau`. Deux corollaires qui resserviront : une condition se pose sur ce qui **reste** (`slots_libres_poche` avec `max: 0`) plutôt que sur ce qui est occupé, pour qu'elle survive à l'agrandissement du conteneur (`Q-65`) ; et quand une ligne doit parler d'un **objet précis**, c'est l'objet qui déclare son flag (`items.json > flag_ramassage`, même forme que `objets_uniques > flag`) — jamais un id d'item dans le code. Les **textes**, eux, sont des propositions : ils appartiennent à Xav (répartition des rôles du 22/09), et aucun test ne les épingle (`D-52`) | 2026-09-22 | `D-125`, `docs/archives/JOURNAL_2026-09-22_file-inventaire.md` |
+| **On ne déplace pas un meuble plein** (décision de Xav, 22/09) — un coffre vide se déplace librement, un coffre qui porte **un seul** objet est scellé. La règle est **déclarée** (`stations.json > deplacable_si_vide`, optionnel : absent = aucune contrainte), la tuile est grisée et la fiche dit pourquoi (patron `D-122`). Elle vient d'un **accident gardé** : le premier coffre se scellait tout seul, et Xav a voulu le geste — mais une intention se **lit**, un `undefined` ne se lit pas, et il emportait autre chose avec lui. Car la cause était la moitié non faite de `D-121` : **une entrée de `save.maison.stations` n'est plus une pose, c'est une fiche** (contenu, type, scène), et sur les trois endroits qui la lisaient, **un seul** l'avait appris. D'où les deux règles qui restent : un seul **lecteur** de pose (`poseSauvegardeeDeStation`, niveau module), et une écriture qui **enrichit** l'entrée plutôt que de la remplacer — `D-71` appliqué à une donnée de **sauvegarde**, faute de quoi déplacer un coffre effaçait son contenu et un coffre fabriqué disparaîssait du monde. Corollaire général, né du même défaut : **une comparaison avec NaN étant toujours fausse, un validateur qui ne teste que des bornes répond `ok` sur une valeur qui n'existe pas** — `poseValide` refuse désormais une empreinte non finie | 2026-09-22 | `D-126`, `docs/archives/JOURNAL_2026-09-22_file-inventaire.md` |
+
 (Les décisions de `05_construction-stations.md` étaient déjà actées par Xav **dans la spec elle-même** avant tout code, v1.0.0 §9 — les lignes ci-dessus n'y renvoient que pour mémoire, elles ne tranchent rien de nouveau.)
+| **Une ligne de fiche peut MONTRER ce dont elle parle, et une monnaie déclare sa silhouette en données.** Une ligne était une **chaîne**, donc aucune fiche ne portait d'image — pas plus les ingrédients d'une recette que son coût. Elle accepte désormais `{ texte, icone? }` **en plus** de la chaîne, ramenées à une forme par une fonction **pure** sortie du DOM (`ecran_fiches.js#normaliserLigneFiche`) : la forme courte reste la règle, et ce qui n'a pas d'image n'a pas bougé d'un mot. L'icône s'**ajoute** au texte, elle ne le remplace jamais — un joueur qui ne reconnaît pas encore la forme lit toujours le nom. Côté monnaie, réponse **minimale** à `Q-49` (`data/monnaies.json` : un id, une icône, rien d'autre), qui suffit à faire sortir le dernier id de silhouette écrit dans `main.js` — `D-68` tient, une monnaie n'est toujours pas un item de poche, et **il n'y en aura pas de seconde** : `Q-49` est tranchée par Xav le 22/09 (« balanced éclats is better »), donc la monnaie n'aura ni nom, ni valeur, ni entrée d'items — rouvrir la question, ce serait rouvrir cette décision-là, pas le catalogue | 2026-09-22 | `D-103`, `docs/archives/JOURNAL_2026-09-22_file-inventaire.md` |
 | **Le héros est un personnage encapuchonné vu de trois quarts, et la couleur du follet est son VISAGE** (*révise* le corps entier teinté de la Phase 1) : une boule lumineuse logée dans l'ombre de la capuche, avec un glow serré — une lueur, jamais une aura qui éclairerait le sol. Ce qui rend une silhouette lisible à 14 px n'est pas son vêtement mais son **contraste** : un point lumineux dans une masse noire. Et une relation à ne plus contredire : **le héros n'est jamais plus large que ce qui entre en collision** — contrairement à une station, sa hitbox ne dérive PAS du dessin (`RAYON_HERO_BASE_PX × echelle`), donc redessiner ne déplace aucun mur, mais l'ourlet du manteau est calé sur la demi-boîte ; en hauteur il la dépasse librement, la boîte étant son emprise au sol et non sa taille | 2026-09-22 | `D-104`, `docs/JOURNAL_2026-09-22_heros-silhouette.md` |
 | **Ce qui doit être exact est exact, ce qui a le droit de traîner traîne.** Un curseur animé se partage en deux : la **tête** est un vrai `cursor: url(…)`, dessiné une fois au démarrage depuis `visuels.json` — donc **exactement** sous le pointeur, vivant **par-dessus les menus DOM** (là où la souris sert) et gratuit par frame ; les **particules et la traînée** vivent sur un calque de recouvrement (`pointer-events: none`), qui a le droit d'être en retard d'une frame puisque c'est une traînée. Deux bénéfices tombent tout seuls de ce découpage : l'orbe **occulte la moitié lointaine de son orbite** sans une ligne de tri de profondeur (le curseur système est composé par-dessus la page), et le calque passe **au-dessus des écrans d'UI**, ce qu'un dessin dans le canvas du jeu ne peut pas faire. Corollaire de lecture : **une capture d'écran ne contient jamais le curseur** — la vignette de l'album est une simulation collée à la main | 2026-09-22 | `D-108`, `docs/JOURNAL_2026-09-22_curseur.md` |
 | **Un réglage qui appartient à l'APPAREIL ne voyage pas avec la sauvegarde, et son absence est une valeur.** `settings.graphismes` absent veut dire « je n'ai jamais choisi », donc `auto` — le défaut vit dans le catalogue, une seule fois (patron du volume, `D-64`), et **aucune migration** n'est due, `schema_version` ne bouge pas. À l'import, la machine **reprend les siens** : une sauvegarde exportée d'un PC en « haut » ne l'impose pas au téléphone, et une machine qui n'a jamais choisi ne l'hérite pas non plus. Le moyen est une **liste** (`save.js#REGLAGES_APPAREIL`), pas un `if` : le prochain réglage d'appareil s'y ajoute et nulle part ailleurs. Enfin, le preset **résolu** par Auto n'est jamais persisté — seul le choix du joueur l'est | 2026-09-22 | `D-111`, palier B de `specs/09_reglages-graphiques.md` |
@@ -412,238 +442,12 @@ la session précédente a révélées, clos celles qu'elle a livrées.
 5. ~~**La nuit du 20/09** (file autonome n° 2)~~ — **les cinq tickets sont livrés et fusionnés** (`D-39`, `D-40`, `D-17`, `D-13`, `D-30`). Le playtest téléphone qui a suivi en a rouvert deux, `D-42` et `D-30` : ~~mini-file « menu tactile »~~ — **livrée, en ligne, validée par Xav** (`V-25`, `V-26`).
 5 bis. ~~**`specs/08_menus-cartes.md`** (`D-43`)~~ — **les trois paliers et le polish sont livrés, fusionnés dans `main` et en ligne** (21/09, clavier et manette validés par Xav). Restent à Xav : le téléphone (`V-27`, `V-28`, `V-29`), et confirmer ou réviser `Q-36` et `Q-39`. **Premier retour téléphone, 20/09 midi : les menus s'ouvraient à l'échelle 1080p** — `D-48`, corrigé et mesuré le jour même (une seule fonction, en px CSS) ; verdict en jeu dû `V-31`.
 6. `D-01` — **palier A livré le 22/09** (`specs/09_reglages-graphiques.md`) : le calque se reconstruit quand la vue sort de la zone pré-rendue, reconstructions et frames lentes **divisées par deux**. Le **défilement incrémental** (remède n° 2, le seul qui baisse le pic) attend la décision de Xav au vu des chiffres. **Paliers B, C et D livrés le 22/09** (`D-111` catalogue + résolution + sauvegarde ; `D-112`/`D-113`/`D-114` les trois leviers, un commit chacun ; `D-115` la carte dans Paramètres et le changement à chaud ; `D-117` le mode Auto, palier E). **La spec est livrée en entier** ; il ne reste d'elle que ce qui revient à Xav : `V-58` à `V-61` et les questions ouvertes (`Q-55` à `Q-61`). `D-16` (puits) est **close**. Puis reprise de `Q-07`.
+6 bis. ~~**File « inventaire survivaliste »**~~ — **livrée en entier, validée en jeu et fusionnée dans `main` le 22/09.** Poche et coffre qui comptent, slots qui disent la vérité, l'herbe, les outils au Nv.10, le coffre craftable, les raisons d'un refus de craft, le puits sous 90 %, la ligne du follet, le lore diffus. **`V-62` à `V-72` sont closes** (manette et clavier, 22/09). Des trois questions qu'elle ouvrait, deux sont tranchées : `Q-68` vue et non contestée (on y reviendra si les tests prolongés font mal), `Q-69` est **l'équilibrage voulu**. Reste `Q-62`, que Xav a **reportée** : l'instrument de rythme contredit l'impression de départ, et il veut d'abord ses propres boucles Nv.1 → Nv.20. **T9** (lore diffus) puis **T10** (`D-103`, les fiches qui montrent ce dont elles parlent) ont été livrés sur le « go » de Xav, un commit chacun ; T10 n'a touché **aucune** structure de menu — seulement le contenu d'une ligne. S'y ajoute `D-126` (le coffre plein), né d'un relevé de Xav pendant la file et **déjà validé en jeu**.
+
 7. Ce que Xav doit trancher avant d'aller plus loin sur le contenu : `Q-33` (apparitions de ressources) et `Q-34` (lisibilité de la première nuit dangereuse) — nées du constat d'équilibrage du 19/09 au soir.
 
 Les sept tickets de code du 19/09 (`D-22`, `D-21`, `D-20` A et B, `D-05`, `D-23`) sont livrés — détail et validations restantes dans `docs/DOC_suivi-dettes.md`. En parallèle, côté Xav : `A-06` (Firefox `about:support`, 2 min). `A-07` (profil USB de l'A04) **tombe sans objet** avec `D-31`.
 
 Les captures de la V1 (`docs/captures/v1/`) sont une **inspiration, jamais un cahier des charges** : aucun ticket ne les lit tant que `E-03` (une ligne d'intention par capture) n'est pas rempli.
 
-`Q-10`, `Q-11`, `Q-12`, `Q-24` et `Q-25` restent à trancher avec Xav ; `Q-07` est gelée. La spec de la barre d'action du bas (`E-01`) est écrite par Xav lui-même et attend le chiffrage `Q-11`. **Une spec non écrite ne se commence pas** (même règle que pour une phase).## Journal de session — `specs/09_reglages-graphiques.md`, PALIERS A À E (22/09)
-
-Les **cinq** paliers de `specs/09_reglages-graphiques.md` (arrivée écrite et
-décidée, §3), branche `reglages-graphiques`, **un commit par palier** — et
-**un par levier** au palier C, comme la spec le demande —, validation de Xav
-entre deux. La spec est **livrée en entier** ; ce qui reste d'elle est du
-ressort de Xav : `V-58` à `V-61`, et les questions qu'elle a ouvertes.
-
-### Palier A — `D-01` : le calque ne se refait plus à chaque tuile
-
-La marge du calque statique existait **depuis la Phase 2** — une tuile pleine de
-chaque côté, plus la fraction que `floor`/`ceil` ajoutent, soit 1,5 tuile en
-moyenne — et personne ne s'en servait : la condition de reconstruction comparait
-`xDebut`/`yDebut` d'une frame à l'autre, donc un franchissement de tuile
-reconstruisait **un calque qui couvrait encore parfaitement la vue**. Le remède
-n'ajoute rien, il pose la question que `drawImage` pose deux lignes plus bas —
-« le rectangle source tient-il dans le calque ? », en pixels **physiques**.
-
-Mesuré en marchant, deux exécutions par régime (`cout_calque.mjs` ; Chrome sans
-fenêtre, les fps n'y ont aucun sens) :
-
-| | reconstructions | moyenne | pic | frames > 20 ms |
-|---|---|---|---|---|
-| avant, ×1 | 15 | 3,64 ms | 5,70 ms | 0/600 |
-| après, ×1 | **8** | 3,65 ms | 4,50 ms | 0/600 |
-| avant, ×6 | 16 / 16 | 24,0 / 25,9 ms | 35,2 / 40,3 ms | **16/600** |
-| après, ×6 | **8 / 8** | 27,6 / 27,0 ms | 48,8 / 50,0 ms | **8/600** |
-
-Le bridage CPU ×6 est neuf (`chrome.bridageCpu`) et dit une chose nette : **une
-frame lente par reconstruction, avant comme après**. Donc la fréquence *est* la
-saccade — et **le pic ne baisse pas**, exactement ce que la spec annonçait. Le
-défilement incrémental (remède n° 2) reste le seul qui le ferait tomber ; il
-attend la décision de Xav, avec son piège déjà nommé (`D-105` : une tuile solide
-a le droit de déborder de sa cellule). **`V-58` close le jour même** (« game is
-still good »), `D-01` reste ouverte.
-
-### Palier B — le catalogue, la résolution, la sauvegarde (`D-111`)
-
-**Zéro changement visible, et c'est vérifiable autrement qu'à l'œil** : le seul
-appel de `valeurLevier` est le contrôle de démarrage — `render.js`, `decor.js`
-et `poussiere.js` ne sont pas touchés. Ce qui existe maintenant :
-`data/graphismes.json` (les quatre paliers, les trois leviers, les seuils
-d'Auto), `src/qualite.js` (pur, LE point de résolution), `role` requis sur
-chaque effet, `settings.graphismes` et l'import qui l'ignore.
-
-Trois choses tombent désormais **au démarrage** plutôt qu'en jeu : un palier qui
-n'a pas de valeur pour un levier déclaré · un effet sans `role` (aucun repli :
-ce que Bas retire est justement ce qui ne dit rien au joueur, donc un effet
-oublié disparaîtrait en silence) · un réglage inconnu venu d'une sauvegarde,
-qui est résolu comme le défaut **et** signalé (patron de `lireEchelleForcee`).
-
-Le contrat de non-régression est posé en **propriété**, jamais en nombres (règle
-`D-52`) : sous Moyen, aucun levier ne s'écarte de la `valeur_neutre` déclarée en
-données. Il restera vrai le jour où un levier s'ajoutera — c'est tout l'intérêt.
-
-Et le piège de l'export est traité à la source : **le réglage graphique
-appartient à l'appareil**, donc `REGLAGES_APPAREIL` est une *liste* (le prochain
-réglage d'appareil s'y ajoute et nulle part ailleurs), l'import reprend la
-valeur de la machine, et **l'absence est une valeur** — une machine qui n'a
-jamais choisi ne se fait pas imposer le « haut » d'un fichier venu d'un PC.
-Aucune migration, `schema_version` inchangée.
-
-### Palier C — les trois leviers branchés (`D-112`, `D-113`, `D-114`)
-
-Un commit chacun, retirable seul. La règle qui les gouverne tous les trois :
-**chaque système reçoit un NOMBRE**. `poussiere.js`, `curseur.js`, `decor.js`
-et la table de grains que lit `render.js` ignorent toujours qu'un preset
-existe — le seul endroit qui connaît le mot « bas » est l'orchestrateur, sur
-trois lignes.
-
-`particules` (`D-112`) multiplie les quantités déclarées par les effets
-**cosmétiques**, et elles seules : les deux effets `information` du catalogue
-sont intouchés dans les trois presets. **Zéro n'est pas une absence** — la
-réserve est vide, donc rien ne naît et rien n'est dessiné ; « n'émet pas et ne
-dessine pas » est une conséquence, pas une branche de plus. Avec, l'outil de
-debug `?qualite=bas|moyen|haut` (même contrat que `?echelle`).
-
-`grain_sol` (`D-113`) coupe la liste des primitives du grain d'une tuile **non
-solide**, par la fin — convention écrite dans le schéma des tuiles, et la
-coupe est un **préfixe**, vérifié. Un grain réduit à rien **sort de la table**
-que reçoit `render.js` : le rendu ne le cherche même plus. Deux immunités
-prouvées : la couleur de base (le sol perd son grain, jamais sa surface) et
-les tuiles solides (une silhouette d'arbre *est* le monde). Le repli prêt de
-`Q-55` est mesuré au passage : `0.2` laisse **3 brins sur 14**.
-
-`densite_decor` (`D-114`) multiplie la densité déclarée par la scène. La
-crainte de la spec — « si `decor.js` tire en séquence, le décor se réarrangera
-à chaque changement de preset » — a été **vérifiée à la cause, et elle ne se
-réalise pas** : le tirage est séquentiel, mais chaque itération consomme un
-nombre **constant** de tirages, donc réduire le compte tronque au lieu de
-décaler. Le décor réduit est le **préfixe** du décor complet. Il n'y avait
-rien à corriger, mais un contrat implicite à rendre explicite : il est écrit
-dans `genererDecor` et **tenu par test**. Le remède suggéré par la spec (un
-tirage par tuile comparé à un seuil) aurait déplacé **tous** les motifs de la
-Maison, **y compris sous Moyen** — une régression visible au nom d'un défaut
-qui n'existe pas.
-
-Mesuré en marchant, deux exécutions par régime (`cout_calque.mjs`, désormais
-piloté par `RPG_QUALITE`) :
-
-| | coût moyen d'une reconstruction | pic | frames > 20 ms |
-|---|---|---|---|
-| Bas, ×1 | **1,69 / 1,89 ms** | 3,7 / 5,8 ms | 0 / 1 sur 600 |
-| Moyen, ×1 | 6,11 / 5,92 ms | 8,6 / 11,9 ms | 0 / 0 |
-| Haut, ×1 | 6,70 / 5,56 ms | 12,8 / 8,5 ms | 0 / 0 |
-| Bas, ×6 | **6,29 / 7,36 ms** | 8,6 / 10,6 ms | **3 / 2** |
-| Moyen, ×6 | 38,4 / 34,5 ms | 51,2 / 44,4 ms | 8 / 9 |
-| Haut, ×6 | 38,8 / 39,0 ms | 73,9 / 76,7 ms | **12 / 13** |
-
-Sur un appareil lent simulé, **Bas divise le coût de reconstruction par ~5 et
-les frames lentes par ~4** : c'est exactement ce que le palier visait. Et Haut
-coûte ce qu'il promet — même calque que Moyen, mais plus de frames lentes et
-un pic bien plus haut, à cause des particules. Assumé : c'est le palier des
-machines qui s'ennuient.
-
-L'invariant §4.1 (**un preset ne change jamais le jeu**) est éprouvé sur la
-vraie scène Maison, 600 frames identiques dans les trois presets : solidité
-relue par `estSolideAuPoint` — la fonction de collision elle-même, jamais une
-grille recopiée —, empreintes des stations, héros, monstres, sauvegarde
-entière. 121 fichiers verts.
-
-### Palier D — la carte, et le changement à chaud (`D-115`)
-
-Carte `bascule` en **6ᵉ et dernière case** de Paramètres, cycle
-`auto → bas → moyen → haut → auto` pris dans l'**ordre du catalogue** :
-insérer un preset dans le tableau l'ajoute au cycle sans une ligne de code.
-
-Le libellé est **une seule clé**, jamais deux qu'un gabarit assemblerait ici —
-« Auto (…) » composé en code figerait parenthèses et ordre des mots pour
-toutes les langues. Chaque palier réel porte donc `cle_etat` **et**
-`cle_etat_auto`, la seconde **exigée par le schéma** : un preset ajouté demain
-ne peut pas faire afficher « Auto () ».
-
-L'état est relu à la **source**, et la source est l'orchestrateur — pas
-`save.settings`. La différence n'est pas théorique : sous `?qualite=`, c'est
-l'URL qui commande, et la carte doit dire ce que le jeu **rend**, jamais ce
-qui est enregistré.
-
-Changement à chaud (§4.5), prouvé sur le vrai orchestrateur. Ce qui bouge : la
-table des grains, le décor de la scène, les réserves de particules (recréées,
-donc **vidées** — même geste qu'à l'entrée en scène), et le calque statique
-**jeté une fois**. Ce qui ne bouge pas : le héros au pixel près, l'heure du
-monde, la sauvegarde — et le preset **résolu** n'est toujours pas persisté.
-Le retour en arrière rend exactement l'état d'avant.
-
-Captures aux **trois profils**, cycle complet par clics réels, **aucune erreur
-de console** (`tools/scenarios/reglages_graphiques.mjs`). Une réserve à dire :
-le profil `telephone` émule la taille et le DPR, **pas** `pointer: coarse` —
-il affiche donc « Auto (Moyen) » là où un vrai téléphone dirait « Auto (Bas) ».
-Limite de l'outil, pas du code ; seul `V-61` peut la lever.
-
-**Paramètres est plein** : les six cases sont prises, et une 7ᵉ ne rentre dans
-aucune grille — l'écran serait vide. Consigné, non traité (décision 5).
-
-Et une chose que les captures ont montrée et que la spec n'avait pas prévue :
-en Bas, **le parquet de la Maison perd ses lames**. Dehors un aplat d'herbe
-reste de l'herbe ; dedans, la lame *est* la lecture de la surface. `Q-59`.
-
-### Le retour de Xav sur les trois presets (22/09), et ce qu'il retourne
-
-Verbatim : « **bas** : aucun problème à l'œil, le jeu est léger. **moyen** : le
-plus "moche" des trois, fonctionnel. **haut** : pas encore de différence
-notable, à booster. »
-
-Trois conséquences, toutes consignées et aucune traitée :
-
-`Q-55` est **répondue, à l'envers de ce qu'on craignait**. On redoutait que Bas
-sans grain soit trop pauvre ; c'est **Moyen** — c'est-à-dire le jeu
-d'aujourd'hui — que Xav trouve le moins beau. `grain_sol: 0` reste, le repli
-`0.2` n'est pas posé, et `Q-59` (le parquet sans ses lames) tombe avec.
-
-`Q-60` naît de là, et elle est plus grosse qu'elle n'en a l'air : **le grain du
-sol gagne-t-il sa place ?** Bas est jugé bon à l'œil *et* il divise par ~5 le
-coût de reconstruction du calque — donc il est un candidat sérieux au **statut
-de défaut**, pas seulement à celui d'allègement. Mais toute suite autre que
-« rien » **rouvre le sol**, que `E-04` avait verrouillé (« garde le sol de la
-maison, améliore-le, mais ne le change pas ») : ça remonte, ça ne se fait pas.
-Réserve de lecture : grain et décor partent **ensemble** en Bas, donc ce retour
-ne dit pas lequel des deux est en cause.
-
-`D-116` — **Haut ne se voit pas**, et les mesures le disaient déjà : même
-calque que Moyen, seules les particules changent, et elles sont petites, brèves
-et périphériques. Ce qui manque à Haut est de la matière **dans le calque**,
-c'est-à-dire `E-04` — que la spec avait justement prévu comme son réceptacle.
-Premier levier disponible : `densite_decor` au-delà de 1, **bloqué par
-`D-106`** (sans lui, décupler la densité sème de l'herbe sur le chemin).
-
-### Palier E — Auto (`D-117`), et le chantier est fini
-
-Le signal de départ existait depuis le palier B (`pointer: coarse` → Bas,
-sinon Moyen, et **jamais Haut** : Auto ne suppose pas, il n'offre pas). Ce
-palier livre la **descente** et ce qu'on en dit.
-
-Les quatre promesses de §5.2 sont tenues **par construction** plus que par
-surveillance. « Au plus une descente par niveau » n'a demandé aucun compteur :
-chaque descente change de niveau et rien ne remonte jamais, donc aucun niveau
-ne se présente deux fois. « Jamais de remontée » n'a demandé aucun garde : il
-n'existe aucun chemin qui rende un preset au-dessus du courant. Ce qui a
-demandé du soin, c'est l'inverse — les frames qu'il ne faut **pas** compter.
-
-L'**annonce** passe par la bannière d'indice, à qui on apprend à dire une
-phrase du jeu et non d'un verbe : pas de glyphe, pas de flag. Elle **cède le
-pas** à un premier indice de commande et se represente jusqu'à ce qu'elle
-passe — un indice enseigne le jeu, l'annonce ne fait que l'expliquer. Elle est
-aussi journalisée : la bannière dure trois secondes, or c'est exactement ce
-qu'on voudra relire le jour où un « le jeu s'est allégé tout seul » arrivera
-d'une autre machine.
-
-Trois passes dans un vrai Chrome (`tools/scenarios/auto_graphismes.mjs`) :
-
-| | carte Paramètres après 25 s de marche | descentes |
-|---|---|---|
-| bridage ×20, Auto | « Auto (Moyen) » → **« Auto (Bas) »** | **1** |
-| sans bridage, Auto | « Auto (Moyen) » | 0 |
-| bridage ×20, **`haut` choisi à la main** | « Haut » | 0 |
-
-La deuxième passe n'est pas du zèle : sans elle, la première ne prouverait
-rien — un Auto qui descendrait toujours la passerait aussi.
-
-Et une mesure que personne n'avait demandée, qui devient `Q-61` : sous bridage
-**×2, ×3 et ×6**, Auto **ne descend jamais**. Le ×6 est pourtant le proxy
-d'appareil faible du palier A. Le seuil de 15 % n'est donc pas nerveux — il
-est peut-être trop lâche. C'est structurel : 20 ms, c'est 50 fps, donc une
-machine à 60 fps régulier passe et une machine à 45 fps régulier échoue à
-**100 %**. Conséquence à regarder en face : la saccade au franchissement de
-tuile (~1,3 % de frames lentes) ne déclenchera **jamais** Auto, alors que
-c'est justement la gêne que Bas soigne le mieux. Rien n'est changé — les trois
-seuils sont ceux que la spec a fixés, ils vivent en données, et c'est `V-61`
-sur les vraies machines qui doit parler avant qu'on touche un chiffre.
+`Q-10`, `Q-11`, `Q-12`, `Q-24` et `Q-25` restent à trancher avec Xav ; `Q-07` est gelée. La spec de la barre d'action du bas (`E-01`) est écrite par Xav lui-même et attend le chiffrage `Q-11`. **Une spec non écrite ne se commence pas** (même règle que pour une phase).

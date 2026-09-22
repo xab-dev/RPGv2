@@ -1,11 +1,25 @@
 [
-  { "id": "jauge_faim", "label_key": "survie.faim", "icone": "visuel_icone_faim", "decroissance_ms_plein_a_vide": 1200000 },
-  { "id": "jauge_soif", "label_key": "survie.soif", "icone": "visuel_icone_soif", "decroissance_ms_plein_a_vide": 900000 },
+  {
+    "id": "jauge_faim",
+    "label_key": "survie.faim",
+    "icone": "visuel_icone_faim",
+    "decroissance_ms_plein_a_vide": 1200000
+  },
+  {
+    "id": "jauge_soif",
+    "label_key": "survie.soif",
+    "icone": "visuel_icone_soif",
+    "decroissance_ms_plein_a_vide": 900000,
+    "seuil_xp": 0.9
+  },
   {
     "id": "survie_config",
     "plancher": 0.5,
     "pente": 0.5,
     "malus_respawn": 0.25,
-    "stats_modulees": ["stat_force", "stat_agilite"]
+    "stats_modulees": [
+      "stat_force",
+      "stat_agilite"
+    ]
   }
 ]

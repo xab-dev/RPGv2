@@ -1,10 +1,85 @@
 [
   {
+    "id": "amb_maison_premiere_visite",
+    "condition": "flag_maison_decouverte",
+    "scenes": [
+      "scene_maison_exterieur"
+    ],
+    "dialogue": "dlg_maison_premiere_visite",
+    "flag": "flag_ambiance_maison_premiere_visite"
+  },
+  {
     "id": "amb_vent_cendre",
-    "condition": { "valeur": "niveau", "min": 5 },
-    "phases": ["nuit"],
-    "scenes": ["scene_maison_exterieur"],
+    "condition": {
+      "valeur": "niveau",
+      "min": 5
+    },
+    "phases": [
+      "nuit"
+    ],
+    "scenes": [
+      "scene_maison_exterieur"
+    ],
     "dialogue": "dlg_ambiance_vent_cendre",
     "flag": "flag_ambiance_vent_cendre"
+  },
+  {
+    "id": "amb_lore_poche_pleine",
+    "condition": {
+      "all": [
+        "flag_maison_decouverte",
+        {
+          "valeur": "slots_libres_poche",
+          "max": 0
+        }
+      ]
+    },
+    "scenes": [
+      "scene_maison_exterieur"
+    ],
+    "dialogue": "dlg_lore_poche_pleine",
+    "flag": "flag_ambiance_poche_pleine"
+  },
+  {
+    "id": "amb_lore_premiere_herbe",
+    "condition": "flag_premiere_herbe",
+    "scenes": [
+      "scene_maison_exterieur"
+    ],
+    "dialogue": "dlg_lore_premiere_herbe",
+    "flag": "flag_ambiance_premiere_herbe"
+  },
+  {
+    "id": "amb_lore_premier_rangement",
+    "condition": {
+      "valeur": "objets_au_coffre",
+      "min": 1
+    },
+    "scenes": [
+      "scene_maison_exterieur"
+    ],
+    "dialogue": "dlg_lore_premier_rangement",
+    "flag": "flag_ambiance_premier_rangement"
+  },
+  {
+    "id": "amb_lore_niveau_10",
+    "condition": "flag_niveau_10",
+    "scenes": [
+      "scene_maison_exterieur"
+    ],
+    "dialogue": "dlg_lore_niveau_10",
+    "flag": "flag_ambiance_niveau_10"
+  },
+  {
+    "id": "amb_lore_coffre_pose",
+    "condition": {
+      "valeur": "stations_posees",
+      "min": 1
+    },
+    "scenes": [
+      "scene_maison_exterieur"
+    ],
+    "dialogue": "dlg_lore_coffre_pose",
+    "flag": "flag_ambiance_coffre_pose"
   }
 ]

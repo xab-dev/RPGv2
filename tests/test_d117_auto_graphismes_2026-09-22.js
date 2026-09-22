@@ -167,7 +167,11 @@ function partieEnCours(reglage) {
   save.hero.x = 85.5 * 32;
   save.hero.y = 52.5 * 32;
   save.hero.companion = 'comp_follet_eau';
-  save.flags = { flag_follet_choisi: true, flag_grotte_sortie: true, flag_maison_decouverte: true };
+  // `D-125` : les lignes d'ambiance, toutes, DÉRIVÉES du catalogue — un
+  // dialogue gèle le temps actif, et ce fichier éprouve autre chose. Déduites
+  // plutôt que recopiées, pour qu'une ligne de plus ne rouvre pas neuf
+  // fichiers (`Q-42`).
+  save.flags = { flag_follet_choisi: true, flag_grotte_sortie: true, flag_maison_decouverte: true, ...Object.fromEntries(registre.tous('ambiances').map((a) => [a.flag, true])), };
   if (reglage !== undefined) save.settings.graphismes = reglage;
   return save;
 }

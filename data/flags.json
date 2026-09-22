@@ -1,52 +1,226 @@
 [
-  { "id": "flag_follet_choisi", "label_key": "flag.follet_choisi" },
-  { "id": "flag_levier_salle1", "label_key": "flag.levier_salle1" },
-  { "id": "flag_grotte_monstre_tue", "label_key": "flag.grotte_monstre_tue" },
-  { "id": "flag_grotte_sequence", "label_key": "flag.grotte_sequence" },
-  { "id": "flag_grotte_sortie", "label_key": "flag.grotte_sortie" },
-  { "id": "flag_maison_decouverte", "label_key": "flag.maison_decouverte" },
-  { "id": "flag_premier_ramassage", "label_key": "flag.premier_ramassage" },
-  { "id": "flag_plume_ramassee", "label_key": "flag.plume_ramassee" },
-  { "id": "flag_ambiance_vent_cendre", "label_key": "flag.ambiance_vent_cendre" },
-  { "id": "flag_jardin_decouvert", "label_key": "flag.jardin_decouvert" },
-  { "id": "flag_hint_move", "label_key": "flag.hint_move" },
-  { "id": "flag_hint_interact", "label_key": "flag.hint_interact" },
-  { "id": "flag_hint_attack", "label_key": "flag.hint_attack" },
-  { "id": "flag_hint_consume", "label_key": "flag.hint_consume" },
-  { "id": "flag_premier_craft", "label_key": "flag.premier_craft" },
-  { "id": "flag_premier_consommable", "label_key": "flag.premier_consommable" },
-  { "id": "flag_competence_1", "label_key": "flag.competence_1" },
-  { "id": "flag_competence_2", "label_key": "flag.competence_2" },
-  { "id": "flag_competence_3", "label_key": "flag.competence_3" },
-  { "id": "flag_premiere_faim", "label_key": "flag.premiere_faim" },
-  { "id": "flag_niveau_1", "label_key": "flag.niveau_1" },
-  { "id": "flag_niveau_2", "label_key": "flag.niveau_2" },
-  { "id": "flag_niveau_3", "label_key": "flag.niveau_3" },
-  { "id": "flag_niveau_4", "label_key": "flag.niveau_4" },
-  { "id": "flag_niveau_5", "label_key": "flag.niveau_5" },
-  { "id": "flag_niveau_6", "label_key": "flag.niveau_6" },
-  { "id": "flag_niveau_7", "label_key": "flag.niveau_7" },
-  { "id": "flag_niveau_8", "label_key": "flag.niveau_8" },
-  { "id": "flag_niveau_9", "label_key": "flag.niveau_9" },
-  { "id": "flag_niveau_10", "label_key": "flag.niveau_10" },
-  { "id": "flag_niveau_11", "label_key": "flag.niveau_11" },
-  { "id": "flag_niveau_12", "label_key": "flag.niveau_12" },
-  { "id": "flag_niveau_13", "label_key": "flag.niveau_13" },
-  { "id": "flag_niveau_14", "label_key": "flag.niveau_14" },
-  { "id": "flag_niveau_15", "label_key": "flag.niveau_15" },
-  { "id": "flag_niveau_16", "label_key": "flag.niveau_16" },
-  { "id": "flag_niveau_17", "label_key": "flag.niveau_17" },
-  { "id": "flag_niveau_18", "label_key": "flag.niveau_18" },
-  { "id": "flag_niveau_19", "label_key": "flag.niveau_19" },
-  { "id": "flag_niveau_20", "label_key": "flag.niveau_20" },
-  { "id": "flag_niveau_21", "label_key": "flag.niveau_21" },
-  { "id": "flag_niveau_22", "label_key": "flag.niveau_22" },
-  { "id": "flag_niveau_23", "label_key": "flag.niveau_23" },
-  { "id": "flag_niveau_24", "label_key": "flag.niveau_24" },
-  { "id": "flag_niveau_25", "label_key": "flag.niveau_25" },
-  { "id": "flag_niveau_26", "label_key": "flag.niveau_26" },
-  { "id": "flag_niveau_27", "label_key": "flag.niveau_27" },
-  { "id": "flag_niveau_28", "label_key": "flag.niveau_28" },
-  { "id": "flag_niveau_29", "label_key": "flag.niveau_29" },
-  { "id": "flag_niveau_30", "label_key": "flag.niveau_30" }
+  {
+    "id": "flag_follet_choisi",
+    "label_key": "flag.follet_choisi"
+  },
+  {
+    "id": "flag_levier_salle1",
+    "label_key": "flag.levier_salle1"
+  },
+  {
+    "id": "flag_grotte_monstre_tue",
+    "label_key": "flag.grotte_monstre_tue"
+  },
+  {
+    "id": "flag_grotte_sequence",
+    "label_key": "flag.grotte_sequence"
+  },
+  {
+    "id": "flag_grotte_sortie",
+    "label_key": "flag.grotte_sortie"
+  },
+  {
+    "id": "flag_maison_decouverte",
+    "label_key": "flag.maison_decouverte"
+  },
+  {
+    "id": "flag_premier_ramassage",
+    "label_key": "flag.premier_ramassage"
+  },
+  {
+    "id": "flag_plume_ramassee",
+    "label_key": "flag.plume_ramassee"
+  },
+  {
+    "id": "flag_ambiance_vent_cendre",
+    "label_key": "flag.ambiance_vent_cendre"
+  },
+  {
+    "id": "flag_jardin_decouvert",
+    "label_key": "flag.jardin_decouvert"
+  },
+  {
+    "id": "flag_hint_move",
+    "label_key": "flag.hint_move"
+  },
+  {
+    "id": "flag_hint_interact",
+    "label_key": "flag.hint_interact"
+  },
+  {
+    "id": "flag_hint_attack",
+    "label_key": "flag.hint_attack"
+  },
+  {
+    "id": "flag_hint_consume",
+    "label_key": "flag.hint_consume"
+  },
+  {
+    "id": "flag_premier_craft",
+    "label_key": "flag.premier_craft"
+  },
+  {
+    "id": "flag_competence_1",
+    "label_key": "flag.competence_1"
+  },
+  {
+    "id": "flag_competence_2",
+    "label_key": "flag.competence_2"
+  },
+  {
+    "id": "flag_competence_3",
+    "label_key": "flag.competence_3"
+  },
+  {
+    "id": "flag_premiere_faim",
+    "label_key": "flag.premiere_faim"
+  },
+  {
+    "id": "flag_niveau_1",
+    "label_key": "flag.niveau_1"
+  },
+  {
+    "id": "flag_niveau_2",
+    "label_key": "flag.niveau_2"
+  },
+  {
+    "id": "flag_niveau_3",
+    "label_key": "flag.niveau_3"
+  },
+  {
+    "id": "flag_niveau_4",
+    "label_key": "flag.niveau_4"
+  },
+  {
+    "id": "flag_niveau_5",
+    "label_key": "flag.niveau_5"
+  },
+  {
+    "id": "flag_niveau_6",
+    "label_key": "flag.niveau_6"
+  },
+  {
+    "id": "flag_niveau_7",
+    "label_key": "flag.niveau_7"
+  },
+  {
+    "id": "flag_niveau_8",
+    "label_key": "flag.niveau_8"
+  },
+  {
+    "id": "flag_niveau_9",
+    "label_key": "flag.niveau_9"
+  },
+  {
+    "id": "flag_niveau_10",
+    "label_key": "flag.niveau_10"
+  },
+  {
+    "id": "flag_niveau_11",
+    "label_key": "flag.niveau_11"
+  },
+  {
+    "id": "flag_niveau_12",
+    "label_key": "flag.niveau_12"
+  },
+  {
+    "id": "flag_niveau_13",
+    "label_key": "flag.niveau_13"
+  },
+  {
+    "id": "flag_niveau_14",
+    "label_key": "flag.niveau_14"
+  },
+  {
+    "id": "flag_niveau_15",
+    "label_key": "flag.niveau_15"
+  },
+  {
+    "id": "flag_niveau_16",
+    "label_key": "flag.niveau_16"
+  },
+  {
+    "id": "flag_niveau_17",
+    "label_key": "flag.niveau_17"
+  },
+  {
+    "id": "flag_niveau_18",
+    "label_key": "flag.niveau_18"
+  },
+  {
+    "id": "flag_niveau_19",
+    "label_key": "flag.niveau_19"
+  },
+  {
+    "id": "flag_niveau_20",
+    "label_key": "flag.niveau_20"
+  },
+  {
+    "id": "flag_niveau_21",
+    "label_key": "flag.niveau_21"
+  },
+  {
+    "id": "flag_niveau_22",
+    "label_key": "flag.niveau_22"
+  },
+  {
+    "id": "flag_niveau_23",
+    "label_key": "flag.niveau_23"
+  },
+  {
+    "id": "flag_niveau_24",
+    "label_key": "flag.niveau_24"
+  },
+  {
+    "id": "flag_niveau_25",
+    "label_key": "flag.niveau_25"
+  },
+  {
+    "id": "flag_niveau_26",
+    "label_key": "flag.niveau_26"
+  },
+  {
+    "id": "flag_niveau_27",
+    "label_key": "flag.niveau_27"
+  },
+  {
+    "id": "flag_niveau_28",
+    "label_key": "flag.niveau_28"
+  },
+  {
+    "id": "flag_niveau_29",
+    "label_key": "flag.niveau_29"
+  },
+  {
+    "id": "flag_niveau_30",
+    "label_key": "flag.niveau_30"
+  },
+  {
+    "id": "flag_ambiance_maison_premiere_visite",
+    "label_key": "flag.ambiance_maison_premiere_visite"
+  },
+  {
+    "id": "flag_premiere_herbe",
+    "label_key": "flag.premiere_herbe"
+  },
+  {
+    "id": "flag_ambiance_poche_pleine",
+    "label_key": "flag.ambiance_poche_pleine"
+  },
+  {
+    "id": "flag_ambiance_premiere_herbe",
+    "label_key": "flag.ambiance_premiere_herbe"
+  },
+  {
+    "id": "flag_ambiance_premier_rangement",
+    "label_key": "flag.ambiance_premier_rangement"
+  },
+  {
+    "id": "flag_ambiance_niveau_10",
+    "label_key": "flag.ambiance_niveau_10"
+  },
+  {
+    "id": "flag_ambiance_coffre_pose",
+    "label_key": "flag.ambiance_coffre_pose"
+  }
 ]

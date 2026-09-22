@@ -1706,8 +1706,60 @@ export const SCHEMAS = {
       return erreurs;
     },
   },
+  // `D-103` (T10) : une MONNAIE déclare sa silhouette, et c'est tout ce
+  // qu'elle déclare. Les éclats vivaient jusqu'ici en dehors de tout
+  // catalogue (`save.inventaire.eclats`, `loot_tables.json` avec
+  // `item: "eclats"`, `recipes.json#cout_eclats`), si bien que l'id de leur
+  // icône était écrit dans `main.js` — le seul du jeu à l'être (`Q-49`).
+  //
+  // Réponse MINIMALE, et volontairement : pas de nom, pas de valeur, pas de
+  // règle. `D-68` tient — une monnaie n'est pas un item de poche, elle
+  // n'entre ni dans `entrees` d'une recette, ni dans un conteneur. Ce qu'une
+  // seconde monnaie exigera (un nom, un taux, un HUD qui la place) se
+  // décidera quand elle existera, pas avant (règle : aucun système
+  // généralisé avant un second cas d'usage réel).
+  monnaies: {
+    requiredFields: ['id', 'icone'],
+    idField: 'id',
+    // Une monnaie SANS silhouette se réduirait à son nombre : même exigence
+    // que pour une jauge de survie (`D-96`), donc une référence REQUISE.
+    refs: [{ field: 'icone', catalog: 'visuels' }],
+  },
+  // `D-118` : ce que peut contenir un contenant. UN seul endroit où vivent
+  // les quatre nombres de la poche et du coffre, tous PROVISOIRES — c'est
+  // `inventory.js#resoudreCapacite` qui les lit, et rien d'autre.
+  //
+  // `filtre` est déclaré mais jamais rempli : c'est le contrat que le
+  // porte-outils attend (`Q-65`, hors scope). Le déclarer maintenant coûte
+  // trois lignes et évite qu'il arrive un jour sous la forme d'un second
+  // mécanisme.
+  conteneurs: {
+    requiredFields: ['id', 'label_key', 'slots', 'pile'],
+    idField: 'id',
+    refs: [],
+    custom(entry, catalogs, path) {
+      const erreurs = [];
+      for (const champ of ['slots', 'pile']) {
+        if (!Number.isInteger(entry[champ]) || entry[champ] <= 0) {
+          erreurs.push(`${path} > ${champ} doit être un entier strictement positif`);
+        }
+      }
+      if (entry.filtre !== undefined) {
+        if (!Array.isArray(entry.filtre) || entry.filtre.length === 0) {
+          erreurs.push(`${path} > filtre doit être une liste non vide de catégories si présent`);
+        } else {
+          for (const categorie of entry.filtre) {
+            if (!CATEGORIES_ITEM.includes(categorie)) {
+              erreurs.push(`${path} > filtre : "${categorie}" n'est pas une catégorie d'item (${CATEGORIES_ITEM.join('/')})`);
+            }
+          }
+        }
+      }
+      return erreurs;
+    },
+  },
   items: {
-    requiredFields: ['id', 'label_key', 'categorie', 'stack_max', 'render'],
+    requiredFields: ['id', 'label_key', 'categorie', 'render'],
     idField: 'id',
     refs: [],
     custom(entry, catalogs, path) {
@@ -1719,11 +1771,29 @@ export const SCHEMAS = {
       if (!CATEGORIES_ITEM.includes(entry.categorie)) {
         erreurs.push(`${path} > categorie doit être l'une de ${CATEGORIES_ITEM.join('/')}`);
       }
-      if (typeof entry.stack_max !== 'number' || entry.stack_max <= 0) {
-        erreurs.push(`${path} > stack_max doit être un nombre positif`);
+      // `pile_max` (`D-118`) : OPTIONNEL, et c'est le point du ticket. La
+      // hauteur d'une pile appartient désormais au CONTENEUR
+      // (`conteneurs.json`) ; un objet ne fait que l'abaisser quand c'est
+      // vrai de lui partout — un outil ou une arme ne s'empile pas, dans
+      // n'importe quelle poche et dans n'importe quel coffre. Absent = le
+      // conteneur décide seul, ce qui est le cas de toutes les ressources.
+      if (entry.pile_max !== undefined && (!Number.isInteger(entry.pile_max) || entry.pile_max <= 0)) {
+        erreurs.push(`${path} > pile_max doit être un entier strictement positif s'il est présent`);
       }
       erreurs.push(...erreursRenderVisuel(entry, catalogs, path));
       erreurs.push(...erreursXpOptionnel(entry, path));
+      // `flag_ramassage` (`D-125`, T9) : OPTIONNEL — le flag posé la première
+      // fois que cet objet entre en poche depuis le sol. Même forme, et même
+      // raison d'être, que `scenes.json > objets_uniques > flag` : c'est la
+      // DONNÉE qui nomme le flag, pour qu'une ligne de lore puisse parler
+      // d'un objet sans qu'aucun id d'item n'entre dans le code. Un flag non
+      // déclaré tombe ici, au boot — pas au ramassage, c'est-à-dire en jouant
+      // (`flags.js#set` lèverait alors en pleine frame).
+      if (entry.flag_ramassage !== undefined) {
+        if (!(catalogs.flags || []).some((f) => f.id === entry.flag_ramassage)) {
+          erreurs.push(`${path} > flag_ramassage "${entry.flag_ramassage}" non déclaré dans flags.json`);
+        }
+      }
       // `arme` (`D-66`, T5) : l'objet de poche qui, une fois équipé, DEVIENT
       // cette arme. Une référence, pas un booléen : c'est elle qui fait le
       // pont entre `items.json` (ce qu'on possède) et `weapons.json` (ce que
@@ -1823,12 +1893,30 @@ export const SCHEMAS = {
           }
         });
       }
-      const s = entry.sortie;
-      if (!s || !itemsDeclares.has(s.item)) {
-        erreurs.push(`${path} > sortie.item "${s && s.item}" introuvable dans items.json`);
-      }
-      if (!s || typeof s.qte !== 'number' || s.qte <= 0) {
-        erreurs.push(`${path} > sortie.qte doit être un nombre positif`);
+      // `D-121` (T5) : une recette produit SOIT un objet de poche, SOIT une
+      // STATION. Les deux à la fois n'aurait pas de sens (où irait-elle ?),
+      // et aucun des deux non plus — d'où le « exactement un ».
+      const s = entry.sortie || {};
+      const sortieItem = s.item !== undefined;
+      const sortieStation = s.station !== undefined;
+      if (sortieItem === sortieStation) {
+        erreurs.push(`${path} > sortie doit déclarer soit "item", soit "station", jamais les deux ni aucun`);
+      } else if (sortieItem) {
+        if (!itemsDeclares.has(s.item)) {
+          erreurs.push(`${path} > sortie.item "${s.item}" introuvable dans items.json`);
+        }
+        if (typeof s.qte !== 'number' || s.qte <= 0) {
+          erreurs.push(`${path} > sortie.qte doit être un nombre positif`);
+        }
+      } else {
+        const station = (catalogs.stations || []).find((st) => st.id === s.station);
+        if (!station) {
+          erreurs.push(`${path} > sortie.station "${s.station}" introuvable dans stations.json`);
+        } else if (!station.placable) {
+          // Une station qu'on fabrique doit pouvoir être POSÉE : sans cela,
+          // la fabrication ouvrirait un mode de placement sans issue.
+          erreurs.push(`${path} > sortie.station "${s.station}" n'est pas "placable" : on ne pourrait pas la poser`);
+        }
       }
       if (entry.xp !== undefined && (typeof entry.xp !== 'number' || entry.xp < 0)) {
         erreurs.push(`${path} > xp doit être un nombre >= 0 si présent`);
@@ -1844,6 +1932,16 @@ export const SCHEMAS = {
       if (entry.cout_eclats !== undefined
         && (!Number.isInteger(entry.cout_eclats) || entry.cout_eclats < 0)) {
         erreurs.push(`${path} > cout_eclats doit être un entier >= 0 si présent`);
+      }
+      // `unique` (`D-122`, T6) : on n'en fabrique pas un second tant qu'on a
+      // le premier. Réservé aux recettes d'OBJET — une station se pose, on en
+      // veut cinq, et « déjà possédé » n'y voudrait rien dire.
+      if (entry.unique !== undefined) {
+        if (typeof entry.unique !== 'boolean') {
+          erreurs.push(`${path} > unique doit être un booléen si présent`);
+        } else if (entry.unique && !sortieItem) {
+          erreurs.push(`${path} > unique n'a de sens que pour une recette qui produit un OBJET`);
+        }
       }
       // `D-62` (T4) : `connue_au_depart` et `deblocage` ont été remplacés par
       // le `visible_si` générique, validé pour TOUS les catalogues dans
@@ -1876,11 +1974,26 @@ export const SCHEMAS = {
       if (!ROLES_STATION.includes(entry.role)) {
         erreurs.push(`${path} > role doit être l'un de ${ROLES_STATION.join('/')}`);
       }
-      if (entry.role === 'stockage' && (typeof entry.capacite !== 'number' || entry.capacite <= 0)) {
-        erreurs.push(`${path} > role "stockage" exige capacite (nombre positif)`);
+      // `D-118` : une station de stockage ne porte plus un nombre de piles,
+      // elle DÉSIGNE son conteneur. C'est ce qui permettra au coffre crafté
+      // (T5) d'avoir la même capacité que le coffre de base sans qu'un
+      // second nombre existe quelque part.
+      if (entry.role === 'stockage') {
+        if (!(catalogs.conteneurs || []).some((c) => c.id === entry.conteneur)) {
+          erreurs.push(`${path} > role "stockage" exige conteneur (id de conteneurs.json), reçu ${JSON.stringify(entry.conteneur)}`);
+        }
       }
       if (typeof entry.placable !== 'boolean') {
         erreurs.push(`${path} > placable doit être un booléen`);
+      }
+      // `D-126` (décision de Xav, 22/09) : OPTIONNEL — « on ne déplace pas un
+      // meuble plein ». Absent = la station se déplace quel que soit son
+      // contenu (c'est le cas des trois autres, qui n'en ont pas). Déclaré
+      // ici plutôt que déduit du rôle « stockage » : une scierie qui
+      // stockerait des bûches devra trancher pour elle-même, et une règle de
+      // jeu se LIT, elle ne se devine pas.
+      if (entry.deplacable_si_vide !== undefined && typeof entry.deplacable_si_vide !== 'boolean') {
+        erreurs.push(`${path} > deplacable_si_vide doit être un booléen s'il est présent`);
       }
       return erreurs;
     },
@@ -1992,6 +2105,13 @@ export const SCHEMAS = {
       if (typeof entry.icone !== 'string') erreurs.push(`${path} > icone manquante (la forme porte le sens, jamais la couleur seule)`);
       if (typeof entry.decroissance_ms_plein_a_vide !== 'number' || entry.decroissance_ms_plein_a_vide <= 0) {
         erreurs.push(`${path} > decroissance_ms_plein_a_vide doit être un nombre positif`);
+      }
+      // `D-123` (T7, `Q-43`) : le seuil au-dessous duquel se remplir rapporte
+      // de l'XP. OPTIONNEL — une jauge qui n'en déclare pas ne rapporte jamais
+      // d'XP, ce qui est le cas de la faim (on ne mange pas au puits).
+      if (entry.seuil_xp !== undefined
+        && (typeof entry.seuil_xp !== 'number' || entry.seuil_xp < 0 || entry.seuil_xp > 1)) {
+        erreurs.push(`${path} > seuil_xp doit être un nombre entre 0 et 1 s'il est présent`);
       }
       return erreurs;
     },

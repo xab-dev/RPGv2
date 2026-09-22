@@ -167,10 +167,19 @@ if (process.argv.includes('--ecrire')) {
   const chemin = path.join(RACINE, 'data', 'scenes.json');
   const source = await fs.readFile(chemin, 'utf8');
 
+  // Les fins de ligne du FICHIER, pas celles de ce script. Sous Windows,
+  // `data/scenes.json` est en CRLF : la marque de fin écrite en LF n'y était
+  // pas trouvée, `indexOf` rendait -1, la découpe partait donc de l'octet 6 et
+  // le fichier se dupliquait presque en entier. Le témoin `JSON.parse` ne l'a
+  // pas vu — le résultat restait du JSON valide, avec six scènes au lieu de
+  // trois. Une écriture chirurgicale doit lire la convention du fichier
+  // qu'elle modifie, jamais supposer la sienne.
+  const EOL = source.includes('\r\n') ? '\r\n' : '\n';
+
   const lignes = Object.entries(resultat)
     .map(([id, pts]) => `      "${id}": [${pts.map(([x, y]) => `[${x}, ${y}]`).join(', ')}]`)
-    .join(',\n');
-  const bloc = `    "points_ressources": {\n${lignes}\n    },\n`;
+    .join(`,${EOL}`);
+  const bloc = `    "points_ressources": {${EOL}${lignes}${EOL}    },${EOL}`;
 
   // On vise la scène par son id — jamais le premier `"layout"` du fichier,
   // qui appartient à la Grotte.
@@ -178,18 +187,26 @@ if (process.argv.includes('--ecrire')) {
   if (debutScene < 0) throw new Error(`${SCENE_ID} introuvable dans scenes.json`);
 
   const ancien = source.indexOf('    "points_ressources": {', debutScene);
-  const MARQUE_FIN = '\n    },\n';
+  const MARQUE_FIN = `${EOL}    },${EOL}`;
   let avecBloc;
   if (ancien >= 0) {
-    const fin = source.indexOf(MARQUE_FIN, ancien) + MARQUE_FIN.length;
-    avecBloc = source.slice(0, ancien) + bloc + source.slice(fin);
+    const finMarque = source.indexOf(MARQUE_FIN, ancien);
+    if (finMarque < 0) throw new Error('fin du bloc "points_ressources" introuvable — refus d\'écrire');
+    avecBloc = source.slice(0, ancien) + bloc + source.slice(finMarque + MARQUE_FIN.length);
   } else {
     const posLayout = source.indexOf('    "layout":', debutScene);
     if (posLayout < 0) throw new Error('clé "layout" introuvable après la scène visée');
     avecBloc = source.slice(0, posLayout) + bloc + source.slice(posLayout);
   }
 
-  JSON.parse(avecBloc); // témoin : on n'écrit jamais un JSON qu'on n'a pas relu
+  // Témoin : on n'écrit jamais un JSON qu'on n'a pas relu — ET on vérifie
+  // qu'il porte toujours le même nombre de scènes. « C'est du JSON valide » ne
+  // suffisait pas : le fichier dupliqué l'était aussi.
+  const relu = JSON.parse(avecBloc);
+  const avant = JSON.parse(source);
+  if (relu.length !== avant.length) {
+    throw new Error(`l'écriture aurait changé le nombre de scènes (${avant.length} -> ${relu.length}) — refus`);
+  }
   await fs.writeFile(chemin, avecBloc, 'utf8');
   console.log(`\npoints_ressources écrits dans data/scenes.json (${SCENE_ID}), sans toucher au reste du fichier`);
 } else {

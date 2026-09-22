@@ -472,6 +472,12 @@ export function clesTexteFiches() {
     'menu.fiche.ingredients_manquants', 'menu.fiche.aucune_recette',
     'menu.fiche.deplacer', 'menu.fiche.construction_vide', 'menu.fiche.manger',
     'menu.poche_equiper', 'menu.poche_vide',
+    // `D-121` : la fiche d'une recette qui produit une STATION.
+    'menu.fiche.a_poser',
+    // `D-122` : les raisons d'un refus de craft, dites en toutes lettres.
+    'menu.fiche.deja_possede', 'menu.fiche.ingredient_manquant',
+    'menu.fiche.eclats_manquants_n', 'menu.fiche.poche_pleine',
+    'menu.craft_deja_possede',
   ];
 }
 
@@ -1604,7 +1610,18 @@ export function creerOrchestrateurGrotte({
     // n'est pas dans la liste, donc elle ne peut pas être comptée.
     return entreesVisibles(recettesDeStation(registre, station.id), flags)
       .map((r) => {
-        const verdict = peutFabriquer(r, save.inventaire.items, flags, save.cooldowns, heureMs, save.inventaire.eclats);
+        // `D-122` (T6) : le plafond est passé au VERDICT, pas seulement à
+        // l'action — c'est ce qui permet de dire « ta poche est pleine »
+        // AVANT de tenter, au lieu de laisser une tuile non grisée ne rien
+        // faire.
+        const verdict = peutFabriquer(
+          r, save.inventaire.items, flags, save.cooldowns, heureMs, save.inventaire.eclats,
+          r.sortie.item
+            ? ((pocheApresEntrees) => plafondPourItem(
+              pocheApresEntrees, r.sortie.item, capacitePoche, obtenirItemDef,
+            ))
+            : null,
+        );
         let suffixe = '';
         if (verdict.raison === 'cooldown') {
           const resteS = Math.ceil(tempsRestantMs(save.cooldowns, r.id, r.cooldown_ms ?? 60000, heureMs) / 1000);
@@ -1613,6 +1630,8 @@ export function creerOrchestrateurGrotte({
           suffixe = ` (${i18n.t('menu.craft_manque')})`;
         } else if (verdict.raison === 'poche_pleine') {
           suffixe = ` (${i18n.t('menu.poche_pleine')})`;
+        } else if (verdict.raison === 'deja_possede') {
+          suffixe = ` (${i18n.t('menu.craft_deja_possede')})`;
         } else if (verdict.raison === 'eclats') {
           // `D-66` : un refus se DIT, comme les trois autres. Sans cette
           // ligne, la recette serait grisée sans raison affichée — et la
@@ -1634,13 +1653,21 @@ export function creerOrchestrateurGrotte({
           ? registre.obtenir('stations', r.sortie.station)
           : registre.obtenir('items', r.sortie.item);
         const visuelSortie = modeleSortie ? modeleSortie.render.visuel : defSortie.render.visuel;
+        // `D-122` : la fiche dit ce qui manque, et COMBIEN. Le détail vient
+        // de `peutFabriquer` — seul endroit qui le sache —, la phrase se
+        // compose ici, par un gabarit de locale : ni le module de recettes ni
+        // les locales ne portent l'autre moitié.
         const raisons = {
           cooldown: () => i18n.t('menu.fiche.recharge', {
             n: Math.ceil(tempsRestantMs(save.cooldowns, r.id, r.cooldown_ms ?? 60000, heureMs) / 1000),
           }),
-          ingredients: () => i18n.t('menu.fiche.ingredients_manquants'),
-          eclats: () => i18n.t('menu.fiche.eclats_manquants'),
-          poche_pleine: () => i18n.t('menu.fiche.pile_pleine'),
+          deja_possede: () => i18n.t('menu.fiche.deja_possede'),
+          ingredients: () => i18n.t('menu.fiche.ingredient_manquant', {
+            n: verdict.detail.manque,
+            item: i18n.t(registre.obtenir('items', verdict.detail.item).label_key),
+          }),
+          eclats: () => i18n.t('menu.fiche.eclats_manquants_n', { n: verdict.detail.manque }),
+          poche_pleine: () => i18n.t('menu.fiche.poche_pleine'),
         };
         return {
           texte: `${i18n.t(r.label_key)}${suffixe}`,

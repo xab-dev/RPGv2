@@ -18,6 +18,7 @@
       "qte": 1
     },
     "categorie": "outil",
+    "unique": true,
     "xp": 15,
     "cooldown_ms": 60000,
     "cout_eclats": 10,
@@ -45,6 +46,7 @@
       "qte": 1
     },
     "categorie": "outil",
+    "unique": true,
     "xp": 15,
     "cooldown_ms": 60000,
     "cout_eclats": 10,
@@ -91,6 +93,7 @@
       "qte": 1
     },
     "categorie": "arme",
+    "unique": true,
     "xp": 40,
     "cooldown_ms": 60000,
     "visible_si": {

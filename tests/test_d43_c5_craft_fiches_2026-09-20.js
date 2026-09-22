@@ -92,7 +92,15 @@ const nom = (idItem) => i18n.t(registre.obtenir('items', idItem).label_key);
   // La pioche demande 2 cailloux : on n'en a qu'un.
   const pioche = liste.find((x) => x.titre === i18n.t('recipe.pioche'));
   assert.equal(pioche.grisee, true);
-  assert.equal(pioche.lignes.at(-1), i18n.t('menu.fiche.ingredients_manquants'), 'la fiche dit pourquoi');
+  // `D-122` : la fiche nomme l'ingrédient et le nombre. Lu sur la RECETTE et
+  // la poche du banc, jamais recopié — le jour où la recette change, ce test
+  // suit.
+  const caillou = registre.obtenir('recipes', 'rec_pioche').entrees.find((e) => e.item === 'item_caillou');
+  assert.equal(
+    pioche.lignes.at(-1),
+    i18n.t('menu.fiche.ingredient_manquant', { n: caillou.qte - 1, item: nom('item_caillou') }),
+    'la fiche dit ce qui manque, et combien',
+  );
   console.log('OK Craft : une tuile par recette connue ; la fiche dit ce qu’il faut, ce qu’on a, ce que ça donne, et pourquoi non');
 }
 
@@ -104,12 +112,17 @@ const nom = (idItem) => i18n.t(registre.obtenir('items', idItem).label_key);
   assert.equal(save.inventaire.items[hache.id], 1, 'la hache est fabriquée');
   const apres = entrees().find((x) => x.titre === i18n.t(recetteHache.label_key));
   assert.equal(apres.lignes[0], i18n.t('menu.fiche.ingredient', { item: nom('item_branche'), n: 2, possede: 4 }), 'ce qu’on a en poche est relu');
-  assert.equal(apres.grisee, true, 'la recette vient de servir : en recharge');
-  assert.match(apres.lignes.at(-1), new RegExp(`^${i18n.t('menu.fiche.recharge', { n: 'X' }).replace('X', '\\d+')}$`), 'et la fiche dit dans combien de temps');
+  assert.equal(apres.grisee, true, 'la recette vient de servir : la tuile est grisée');
+  // `D-122` : la hache est `unique`, et « tu l'as déjà » passe AVANT « en
+  // recharge » — c'est la plus utile des deux raisons, et c'est elle qui
+  // explique le « 1/1 » que Xav avait vu sans comprendre. La ligne de
+  // recharge reste éprouvée sur une recette non unique
+  // (`test_phase3_recipes`, cas 4).
+  assert.equal(apres.lignes.at(-1), i18n.t('menu.fiche.deja_possede'), 'et la fiche dit pourquoi');
   // Grisée = un indice : l'action réelle est retentée, et ne donne rien.
   apres.action();
-  assert.equal(save.inventaire.items[hache.id], 1, 'pendant la recharge, retenter ne fabrique rien : le résultat fait foi');
-  console.log('OK Craft : fabriquer met à jour la poche et la fiche ; la recharge s’annonce, et tient');
+  assert.equal(save.inventaire.items[hache.id], 1, 'retenter ne fabrique pas un second exemplaire : le résultat fait foi');
+  console.log('OK Craft : fabriquer met à jour la poche et la fiche ; le refus s’annonce, et tient');
 }
 
 console.log('OK test_d43_c5_craft_fiches');

@@ -325,3 +325,37 @@ compteur — c'est `poseValide` et sa règle de couloir, qui date de la spec 05 
 `npm test` : **127 fichiers verts**, dont les treize sauvegardes réelles. Captures aux trois
 profils dans `docs/captures/coffre-2026-09-22/` (le jeu au Nv.10 avec la recette en poche, et
 la pièce à six coffres).
+
+## T6 — Une recette qui ne se fabrique pas dit pourquoi (`D-122`)
+
+Le défaut que Xav a relevé : une tuile de Craft pouvait ne rien faire à l'action, sans
+indication — la pioche déjà possédée s'affichait « 1/1 » et l'appui restait muet. La règle du
+21/09 ne bouge pas (**grisé est un indice, jamais un verrou** : l'action réelle est toujours
+tentée, le résultat fait foi) ; ce qui change, c'est qu'on peut enfin **écrire** la raison.
+
+`peutFabriquer` rend désormais un **détail** en plus du code : quel ingrédient manque et
+combien, combien d'éclats manquent, quel objet est déjà possédé. Le module ne connaît ni i18n
+ni gabarit — il rend ce que lui seul sait, la phrase se compose dans l'orchestrateur, par une
+clé de locale à trou. Quatre phrases neuves, FR et EN, au contrôle de démarrage.
+
+Deux choses qui ne figuraient pas dans le ticket mais qu'il a fallu trancher :
+
+**L'ordre des refus est celui de l'utilité.** Ce qu'on peut aller chercher d'abord (un objet
+déjà possédé, un ingrédient, des éclats), ce qu'on ne peut qu'attendre ensuite (la recharge),
+la place en poche en dernier. C'est visible sur la hache : après l'avoir fabriquée, la fiche
+dit « Tu possèdes déjà cet objet » plutôt que « Prêt dans 47 s » — la première explique le
+« 1/1 », la seconde ne dit rien de ce qui bloque vraiment.
+
+**La place en poche n'a plus qu'une règle, et elle vit dans le verdict.** Elle était jugée
+deux fois : une pour griser, une pour agir — et rien ne garantissait qu'elles disent la même
+chose. `fabriquer` ne la refait plus, il **suit le verdict**. Au passage, le calcul se fait sur
+la poche **d'après le retrait des ingrédients**, sinon cuire son dernier fruit dans une poche
+pleine serait refusé alors que le fruit libère justement la place — et le test en garde le
+témoin.
+
+`unique` est un champ de données (hache, pioche, épée), refusé par le schéma sur une recette de
+station : « déjà possédé » ne voudrait rien dire d'un coffre, dont on veut cinq. Le test
+vérifie aussi qu'une recette unique produit un objet dont `pile_max` vaut 1 — deux données qui
+disent la même chose, chacune à sa place, et qui ne doivent pas diverger.
+
+`npm test` : **128 fichiers verts**.

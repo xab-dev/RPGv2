@@ -254,5 +254,10 @@
   "menu.fiche.manger": "Eat: {glyphe}",
   "menu.fiche.a_poser": "To place in the house",
   "recipe.coffre": "Chest",
-  "station.coffre.description": "One more chest, to put wherever you like."
+  "station.coffre.description": "One more chest, to put wherever you like.",
+  "menu.fiche.deja_possede": "You already have this item",
+  "menu.fiche.ingredient_manquant": "{n} {item} missing",
+  "menu.fiche.eclats_manquants_n": "{n} shards missing",
+  "menu.fiche.poche_pleine": "Your pouch is full",
+  "menu.craft_deja_possede": "already carried"
 }

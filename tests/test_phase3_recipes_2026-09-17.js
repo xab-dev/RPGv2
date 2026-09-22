@@ -35,7 +35,9 @@ const flagsQuiDebloquentTout = { evaluate: () => true };
 // 2. Ingrédients suffisants, recette sans `visible_si` (donc visible) -> ok.
 {
   const verdict = peutFabriquer(recetteHache, { item_branche: 2, item_caillou: 1 }, flagsFactice, {}, 0);
-  assert.deepEqual(verdict, { ok: true, raison: null });
+  // `D-122` : le verdict porte un `detail` (quel ingrédient, combien),
+  // `null` quand il n'y a rien à préciser.
+  assert.deepEqual(verdict, { ok: true, raison: null, detail: null });
 }
 
 // 3. Recette verrouillée : `visible_si` qui n'est jamais vrai (`D-62`).

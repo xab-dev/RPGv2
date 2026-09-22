@@ -254,5 +254,10 @@
   "menu.fiche.manger": "Manger : {glyphe}",
   "menu.fiche.a_poser": "À poser dans la maison",
   "recipe.coffre": "Coffre",
-  "station.coffre.description": "Un coffre de plus, à ranger où l’on veut."
+  "station.coffre.description": "Un coffre de plus, à ranger où l’on veut.",
+  "menu.fiche.deja_possede": "Tu possèdes déjà cet objet",
+  "menu.fiche.ingredient_manquant": "Il manque {n} {item}",
+  "menu.fiche.eclats_manquants_n": "Il manque {n} éclats",
+  "menu.fiche.poche_pleine": "Ta poche est pleine",
+  "menu.craft_deja_possede": "déjà en poche"
 }

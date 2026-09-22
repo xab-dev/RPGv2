@@ -1902,6 +1902,16 @@ export const SCHEMAS = {
         && (!Number.isInteger(entry.cout_eclats) || entry.cout_eclats < 0)) {
         erreurs.push(`${path} > cout_eclats doit être un entier >= 0 si présent`);
       }
+      // `unique` (`D-122`, T6) : on n'en fabrique pas un second tant qu'on a
+      // le premier. Réservé aux recettes d'OBJET — une station se pose, on en
+      // veut cinq, et « déjà possédé » n'y voudrait rien dire.
+      if (entry.unique !== undefined) {
+        if (typeof entry.unique !== 'boolean') {
+          erreurs.push(`${path} > unique doit être un booléen si présent`);
+        } else if (entry.unique && !sortieItem) {
+          erreurs.push(`${path} > unique n'a de sens que pour une recette qui produit un OBJET`);
+        }
+      }
       // `D-62` (T4) : `connue_au_depart` et `deblocage` ont été remplacés par
       // le `visible_si` générique, validé pour TOUS les catalogues dans
       // `registry.js`. On refuse explicitement les anciens champs plutôt que

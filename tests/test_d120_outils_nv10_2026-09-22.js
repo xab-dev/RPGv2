@@ -144,9 +144,11 @@ const titres = (entrees) => entrees.map((e) => e.titre);
   });
   const entree = sansEclats.entrees().find((e) => e.titre === i18n.t(HACHE.label_key));
   assert.equal(entree.grisee, true, 'sans les éclats, la tuile est grisée');
+  // `D-122` : la fiche dit COMBIEN il en manque, pas seulement qu'il en
+  // manque — le nombre vient du verdict, jamais recompté ici.
   assert.ok(
-    entree.lignes.includes(i18n.t('menu.fiche.eclats_manquants')),
-    'et la fiche dit pourquoi',
+    entree.lignes.includes(i18n.t('menu.fiche.eclats_manquants_n', { n: 1 })),
+    'et la fiche dit pourquoi, avec le nombre',
   );
   // Grisée est un INDICE, jamais un verrou : l'action est retentée, et ne
   // donne rien (règle du 21/09, `Q-39` ⑥).

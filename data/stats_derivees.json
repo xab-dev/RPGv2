@@ -15,6 +15,6 @@
     "id": "derivee_vitesse_deplacement_px_s",
     "label_key": "derivee.vitesse_deplacement",
     "stat": "stat_agilite",
-    "formule": { "base": 75, "coefficient": 4, "min": 20 }
+    "formule": { "base": 80, "coefficient": 3, "min": 20 }
   }
 ]

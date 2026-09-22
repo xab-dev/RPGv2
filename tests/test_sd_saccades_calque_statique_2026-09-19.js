@@ -46,13 +46,13 @@ function compterRecalculs(traceCamera) {
 
 // 1. Traversée en ligne droite, 600 frames à ~16,68 ms (§1 du relevé de Xav),
 // vitesse = base de derivee_vitesse_deplacement_px_s (data/stats_derivees.json,
-// 75 px/s à agilité 0 depuis `D-33` — ordre de grandeur du relevé réel, cf.
+// 80 px/s à agilité 0 depuis `D-140` — ordre de grandeur du relevé réel, cf.
 // journal ; la borne du test se calcule depuis la distance, elle ne dépend pas
 // de ce nombre).
 // Borne CALCULÉE depuis la distance/tileSize (jamais un 40 en dur) : au plus
 // un changement de xDebut par tuile franchie, +2 pour l'alignement de bord.
 {
-  const vitesse = 75; // px/s logiques, cf. data/stats_derivees.json (`D-33`)
+  const vitesse = 80; // px/s logiques, cf. data/stats_derivees.json (`D-140`)
   const deltaS = 16.68 / 1000;
   const dx = vitesse * deltaS;
   const frames = 600;

@@ -269,7 +269,7 @@ export function erreursGrapheConversation(entry, path) {
 }
 
 // Toutes les clés de texte d'un catalogue de dialogues, avec leur chemin :
-// nœuds et options. Le registre ne voit
+// nœuds, options, et le nom de chaque locuteur. Le registre ne voit
 // jamais les dictionnaires, donc le contrôle « présente en FR ET en EN » vit
 // au démarrage (`main.js`), comme celui des menus.
 export function erreursTextesDialogues(dialogues, dictionnaires) {
@@ -277,6 +277,9 @@ export function erreursTextesDialogues(dialogues, dictionnaires) {
   for (const d of dialogues || []) {
     for (const [id, n] of Object.entries(d.noeuds || {})) {
       cles.push({ cle: n.text_key, chemin: `dialogues > ${d.id} > noeuds.${id}` });
+      // `D-167` : le nom affiché de chaque locuteur. Le follet a le sien
+      // (le nom du compagnon) mais peut parler avant d'être choisi.
+      cles.push({ cle: cleLocuteur(n.locuteur), chemin: `dialogues > ${d.id} > noeuds.${id} > locuteur` });
       optionsDe(n).forEach((o, i) => cles.push({ cle: o.text_key, chemin: `dialogues > ${d.id} > noeuds.${id} > options[${i}]` }));
     }
   }
@@ -522,12 +525,20 @@ export function creerDialogue({ paginer = null } = {}) {
 // le compagnon actif ICI, jamais codé en dur dans dialogues.json (qui doit
 // rester valable quel que soit le follet choisi), plus le texte de chaque
 // option.
+//
+// `D-167` (Xav, 23/09) : tout autre locuteur passe par une clé de locale,
+// `locuteur.<id>` — le narrateur s'y appelle « ... ». Avant, il sortait tel
+// quel dans la bulle, l'id des données affiché en minuscules. Un follet pas
+// encore choisi (aucun compagnon) prend le même chemin que les autres.
+export function cleLocuteur(locuteur) {
+  return `locuteur.${locuteur}`;
+}
+
 export function resoudreNoeud(donnees, noeudId, registre, i18n, companionId) {
   const noeud = donnees.noeuds[noeudId];
-  let locuteur = noeud.locuteur;
-  if (noeud.locuteur === 'follet' && companionId) {
-    locuteur = i18n.t(registre.obtenir('companions', companionId).label_key);
-  }
+  const locuteur = noeud.locuteur === 'follet' && companionId
+    ? i18n.t(registre.obtenir('companions', companionId).label_key)
+    : i18n.t(cleLocuteur(noeud.locuteur));
   return {
     locuteur,
     texte: i18n.t(noeud.text_key),

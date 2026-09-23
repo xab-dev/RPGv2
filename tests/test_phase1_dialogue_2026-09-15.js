@@ -70,7 +70,7 @@ function armer(dialogue) {
   assert.equal(dialogue.ligneCourante(), null);
 }
 
-// 5. resoudreNoeud (ex-resoudreLignes, spec 11 palier B) : "follet" se résout vers le compagnon actif, "narrateur" reste tel quel.
+// 5. resoudreNoeud (ex-resoudreLignes, spec 11 palier B) : "follet" se résout vers le compagnon actif, tout autre locuteur par sa clé `locuteur.<id>` (`D-167` : avant, "narrateur" sortait tel quel à l'écran).
 {
   const registre = construireRegistre({
     dialogues: [
@@ -86,11 +86,11 @@ function armer(dialogue) {
     ],
     companions: [{ id: 'comp_feu', label_key: 'nom.follet_feu', element: 'x', synergie: 'x', rayon_aura: 1, rayon_lumiere: 1, render: {} }],
   });
-  const i18n = creerI18n({ fr: { k1: 'Bonjour', k2: 'Salut', 'nom.follet_feu': 'Follet de Feu' } }, 'fr');
+  const i18n = creerI18n({ fr: { k1: 'Bonjour', k2: 'Salut', 'nom.follet_feu': 'Follet de Feu', 'locuteur.narrateur': '...' } }, 'fr');
 
   const donnees = registre.obtenir('dialogues', 'dlg_test');
   const lignes = ['l1', 'l2'].map((n) => resoudreNoeud(donnees, n, registre, i18n, 'comp_feu'));
-  assert.equal(lignes[0].locuteur, 'narrateur');
+  assert.equal(lignes[0].locuteur, '...');
   assert.equal(lignes[0].texte, 'Bonjour');
   assert.equal(lignes[1].locuteur, 'Follet de Feu');
   assert.equal(lignes[1].texte, 'Salut');

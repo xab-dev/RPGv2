@@ -270,6 +270,8 @@
   "menu.fiche.poche_pleine": "Ta poche est pleine",
   "menu.craft_deja_possede": "déjà en poche",
   "dlg.maison.premiere_visite": "Oh, regarde, quelqu’un a laissé des stations ici. Regarde vite, va voir ce qu’il y a à l’intérieur.",
+  "locuteur.narrateur": "...",
+  "locuteur.follet": "Follet",
   "dlg.maison.o_y_aller": "D’accord, j’y vais.",
   "dlg.maison.o_quelquun": "Attends. Quelqu’un vit peut-être ici.",
   "dlg.maison.o_a_nous": "Personne ? Alors tout est à nous.",

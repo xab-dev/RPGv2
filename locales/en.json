@@ -270,6 +270,8 @@
   "menu.fiche.poche_pleine": "Your pouch is full",
   "menu.craft_deja_possede": "already carried",
   "dlg.maison.premiere_visite": "Oh, look — someone left stations here. Go on, quick, see what’s inside.",
+  "locuteur.narrateur": "...",
+  "locuteur.follet": "Wisp",
   "dlg.maison.o_y_aller": "All right, I’m going.",
   "dlg.maison.o_quelquun": "Wait. Someone might live here.",
   "dlg.maison.o_a_nous": "Nobody? Then it’s all ours.",

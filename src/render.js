@@ -4,7 +4,7 @@
 // (contrainte de méthode : le rendu revient à Xav dans un vrai navigateur).
 
 import { dessinerVisuel } from './visuels.js';
-import { couleurTuile } from './decor.js';
+import { couleurTuile, tuileDeSol } from './decor.js';
 
 const DELTA_MAX_MS = 100; // provisoire : une frame ne rattrape jamais plus de 100 ms
 
@@ -426,6 +426,13 @@ function construireCoucheStatique(scene, decor, echelle, signaturePortes, estFla
       ctxCouche.fillRect(localX, localY, scene.tileSize, scene.tileSize);
 
       const tuile = scene.tuileA(x, y, estFlagActif);
+      // `Q-70` : le grain du sol d'abord (celui de la table, donc allégé par
+      // le preset exactement comme la surface voisine), l'objet par-dessus.
+      const sol = tuile && tuileDeSol(scene, tuile);
+      const grainSol = sol && sol !== tuile && visuelsTuiles.get(sol.id);
+      if (grainSol) {
+        dessinerVisuel(ctxCouche, grainSol, localX + scene.tileSize / 2, localY + scene.tileSize, {});
+      }
       const visuelTuile = tuile && visuelsTuiles.get(tuile.id);
       if (visuelTuile) {
         dessinerVisuel(ctxCouche, visuelTuile, localX + scene.tileSize / 2, localY + scene.tileSize, {});

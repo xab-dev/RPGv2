@@ -10,11 +10,11 @@
 //     largeur de sa cellule et ne descend pas sous son bord bas ;
 //   - vers le HAUT il a le droit de dépasser (la rangée du dessus est déjà
 //     peinte), c'est ce qui donne sa hauteur à un arbre.
-// Et deux contrats de sol, nés du diagnostic (un carré vert sombre et lisse
-// sous l'arbre, au milieu de la pelouse) :
-//   - l'aplat de la tuile EST celui de l'herbe, variantes comprises ;
-//   - le grain d'herbe recopié en tête du visuel EST celui de `visuel_grain_herbe`,
-//     à l'identique : une copie qui divergerait redessinerait le carré.
+// Et un contrat de sol, né du diagnostic (un carré vert sombre et lisse sous
+// l'arbre, au milieu de la pelouse) : la tuile DÉCLARE l'herbe comme sol
+// (`render.sol`, `Q-70`, 23/09) — couleur et grain viennent de l'herbe elle-même.
+// Il remplace l'ancienne copie du grain en tête du visuel, qui refaisait le
+// carré dès que l'herbe changeait.
 // Aucun nombre d'équilibrage n'est épinglé (règle `D-52`) : seulement des relations.
 import assert from 'node:assert/strict';
 import { chargerCataloguesDepuisDisque } from '../src/io_node.js';
@@ -31,13 +31,11 @@ const grain = visuel(herbe.render.visuel);
 
 // 1. Le sol sous l'arbre est de l'herbe.
 assert.equal(fruitier.solid, true, 'le fruitier reste solide (on ne le traverse pas)');
-for (const cle of ['valeur', 'variantes', 'variation_teinte']) {
-  assert.deepEqual(fruitier.render[cle], herbe.render[cle], `aplat du fruitier ≠ herbe (${cle})`);
-}
-assert.deepEqual(
+assert.equal(fruitier.render.sol, herbe.id, "le fruitier doit déclarer l'herbe comme sol");
+assert.notDeepEqual(
   arbre.primitives.slice(0, grain.primitives.length),
   grain.primitives,
-  'le grain recopié sous le fruitier a divergé de visuel_grain_herbe'
+  'le visuel du fruitier porte encore une copie du grain : il serait peint deux fois'
 );
 
 // 2. Le dessin respecte l'ordre de peinture du calque statique.

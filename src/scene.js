@@ -228,6 +228,10 @@ export function chargerScene(registre, sceneId, overridesInteractifs = {}, inter
     // seulement lu en interne par idTuileEffectif() ci-dessus.
     portes,
     tuileA,
+    // Une tuile par son id (`Q-70`) : le sol que déclare une tuile-objet
+    // (`render.sol`) se résout ici, par la même table que `tuileA` — jamais
+    // une seconde lecture du registre côté rendu.
+    tuile: (id) => tuileParId.get(id),
     estSolideAuPoint,
     // Exposé pour les tests (headless, jamais le rendu) et pour
     // trouverPositionLibrePlusProche ci-dessous — la géométrie brute, jamais

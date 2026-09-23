@@ -3,10 +3,10 @@
 // chaque commit de la session y ajoute sa ligne, rien d'autre.
 //
 // Contrat 1 — une tuile-OBJET posée sur un sol (même diagnostic que le fruitier,
-// `D-127`) : l'aplat de la tuile EST celui du sol qui l'entoure, et le grain de ce
-// sol est recopié à l'identique en tête du visuel. Sans ça, l'objet est planté
-// dans un carré d'une autre couleur. Une tuile ne portant qu'UN visuel, la copie
-// est le moyen (`Q-70`, reporté) : ce test refuse qu'elle diverge.
+// `D-127`) : la tuile DÉCLARE le sol qui l'entoure (`render.sol`, `Q-70`, livré
+// le 23/09), dont la couleur et le grain sont peints sous l'objet. Sans ça,
+// l'objet est planté dans un carré d'une autre couleur. Le visuel ne porte plus
+// la copie du grain qu'il portait jusqu'au 23/09 : elle serait peinte deux fois.
 //
 // Contrat 2 — l'ordre de peinture du calque statique (gauche → droite, haut →
 // bas) : ce qui dépasse à droite ou en bas d'une cellule est effacé par la
@@ -49,10 +49,8 @@ for (const [idObjet, idSol] of Object.entries(OBJETS_SUR_SOL)) {
   const v = visuel(objet.render.visuel);
   const grain = visuel(sol.render.visuel);
   assert.equal(objet.solid, true, `${idObjet} doit rester solide`);
-  for (const cle of ['valeur', 'variantes', 'variation_teinte']) {
-    assert.deepEqual(objet.render[cle], sol.render[cle], `${idObjet} : aplat ≠ ${idSol} (${cle})`);
-  }
-  assert.deepEqual(v.primitives.slice(0, grain.primitives.length), grain.primitives, `${idObjet} : grain de ${idSol} divergé`);
+  assert.equal(objet.render.sol, idSol, `${idObjet} doit déclarer ${idSol} comme sol`);
+  assert.notDeepEqual(v.primitives.slice(0, grain.primitives.length), grain.primitives, `${idObjet} : copie du grain de ${idSol} encore là`);
   for (const cote of COTES) {
     const e = etendue(v);
     assert.ok(e.minX >= -cote / 2 && e.maxX <= cote / 2, `${idObjet} plus large que sa cellule (${e.minX}..${e.maxX})`);

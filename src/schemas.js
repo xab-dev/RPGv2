@@ -203,6 +203,15 @@ function validerTile(entry, catalogs, path) {
     const existe = (catalogs.visuels || []).some((v) => v.id === entry.render.visuel);
     if (!existe) erreurs.push(`${path} > render.visuel "${entry.render.visuel}" introuvable dans visuels.json`);
   }
+  // render.sol (`Q-70`) : optionnel — la tuile de SURFACE sur laquelle un
+  // objet est posé (couleur et grain). Un sol est une surface : non solide,
+  // et sans sol à son tour (un seul niveau, jamais une chaîne à suivre).
+  if (entry.render && entry.render.sol !== undefined) {
+    const sol = (catalogs.tiles || []).find((t) => t.id === entry.render.sol);
+    if (!sol) erreurs.push(`${path} > render.sol "${entry.render.sol}" introuvable dans tiles.json`);
+    else if (sol.solid) erreurs.push(`${path} > render.sol "${entry.render.sol}" est solide : un sol est une surface`);
+    else if (sol.render && sol.render.sol !== undefined) erreurs.push(`${path} > render.sol "${entry.render.sol}" déclare lui-même un sol`);
+  }
   return erreurs;
 }
 

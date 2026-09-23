@@ -111,6 +111,16 @@ function assombrirOuEclaircir(hex, facteur) {
   return `#${versHex(ajuster(r))}${versHex(ajuster(g))}${versHex(ajuster(b))}`;
 }
 
+// `Q-70` — la tuile dont on peint la SURFACE : le sol déclaré par une
+// tuile-objet (`render.sol`, validé au boot : une tuile non solide, qui ne
+// déclare pas elle-même de sol), sinon la tuile elle-même. Un seul niveau
+// d'indirection, pour qu'un arbre posé sur l'herbe suive l'herbe quand
+// l'herbe change, sans jamais en porter une copie.
+export function tuileDeSol(scene, tuile) {
+  const idSol = tuile.render && tuile.render.sol;
+  return (idSol && scene.tuile && scene.tuile(idSol)) || tuile;
+}
+
 // Variante + teinte déterministe d'une tuile (§3.4, tiles.json > render.
 // variantes[]/variation_teinte) : casse la répétition visuelle sans nouvel
 // asset. Hash spatial (seed ^ position) plutôt qu'une avance séquentielle du
@@ -121,7 +131,10 @@ function assombrirOuEclaircir(hex, facteur) {
 export function couleurTuile(scene, x, y, estFlagActif) {
   const tuile = scene.tuileA(x, y, estFlagActif);
   if (!tuile) return null;
-  const render = tuile.render;
+  // `Q-70` : une tuile-objet (arbre, rocher…) posée sur un sol prend la
+  // couleur que CE sol aurait à cette position — même hash, même palette —,
+  // donc l'objet ne découpe plus de carré dans la surface qui l'entoure.
+  const render = tuileDeSol(scene, tuile).render;
   const alea = mulberry32((scene.seed ^ (x * 73856093) ^ (y * 19349663)) >>> 0);
   const palette = [render.valeur, ...(render.variantes || [])];
   const base = palette[Math.floor(alea() * palette.length)];

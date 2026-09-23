@@ -807,6 +807,14 @@ const COULEUR_VOILE = '6, 10, 16'; // bleuté, pas gris neutre ni noir pur
 // donne un disque flou sans jamais de zone bien éclairée.
 const RATIO_COEUR_LUMIERE = 0.35;
 
+// Polish ambiance (23/09) : un halo de scène qui déclare une `couleur` (les
+// cristaux de la Grotte, `decor.js#lumieresDuDecor`) teinte ce qu'il révèle,
+// par le même geste additif que la lumière du follet — sans quoi le trou
+// percé montre le sol en neutre, et une lumière magique éclaire comme une
+// lampe. Plus bas que le follet (0,35) : la lumière que PORTE le héros reste
+// la plus franche de l'écran. Provisoire, au jugé de la capture.
+const ALPHA_TEINTE_HALO = 0.22;
+
 function hexVersRgb(hex) {
   const n = parseInt(hex.replace('#', ''), 16);
   return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
@@ -932,6 +940,25 @@ export function dessinerObscurite(ctx, {
   // contient QUE les lumières type "halo") — un faisceau éclaire l'air, il
   // ne révèle pas le sol dessous comme un halo. Repère logique restauré par
   // le ctx.restore() ci-dessus.
+  const teintes = halos.filter((l) => l.couleur);
+  if (teintes.length > 0) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (const l of teintes) {
+      const { r, g, b } = hexVersRgb(l.couleur);
+      const x = l.x - camera.x;
+      const y = l.y - camera.y;
+      const degrade = ctx.createRadialGradient(x, y, 0, x, y, l.rayon);
+      degrade.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${ALPHA_TEINTE_HALO})`);
+      degrade.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
+      ctx.fillStyle = degrade;
+      ctx.beginPath();
+      ctx.arc(x, y, l.rayon, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
   const faisceaux = (scene.lumieres || []).filter((l) => l.type === 'faisceau');
   if (faisceaux.length > 0) {
     ctx.save();

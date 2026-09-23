@@ -19,7 +19,7 @@
         { "visuel": "visuel_flaque", "poids": 2 },
         { "visuel": "visuel_rocher_petit", "poids": 2 },
         { "visuel": "visuel_rocher_grand", "poids": 1 },
-        { "visuel": "visuel_cristal", "poids": 1 }
+        { "visuel": "visuel_cristal", "poids": 1, "lumiere": { "rayon": 28, "dy": 6, "couleur": "#7cc4ff" } }
       ]
     },
     "intro": {
@@ -75,7 +75,7 @@
         { "visuel": "visuel_flaque", "poids": 2 },
         { "visuel": "visuel_rocher_petit", "poids": 2 },
         { "visuel": "visuel_rocher_grand", "poids": 1 },
-        { "visuel": "visuel_cristal", "poids": 1 }
+        { "visuel": "visuel_cristal", "poids": 1, "lumiere": { "rayon": 28, "dy": 6, "couleur": "#7cc4ff" } }
       ]
     },
     "interactifs": ["puzzle_levier_s2_milieu", "puzzle_levier_s2_gauche", "puzzle_levier_s2_droite"],

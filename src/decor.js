@@ -111,6 +111,27 @@ function assombrirOuEclaircir(hex, facteur) {
   return `#${versHex(ajuster(r))}${versHex(ajuster(g))}${versHex(ajuster(b))}`;
 }
 
+// Polish ambiance (23/09) — un motif de décor peut ÉMETTRE de la lumière
+// (`decor.motifs[].lumiere: { rayon, dy?, couleur? }`, les cristaux de la Grotte) : ses
+// instances deviennent des halos qui percent le voile, exactement comme les
+// `lumieres` écrites à la main dans la scène. Dérivé du décor DÉJÀ tiré —
+// `genererDecor` n'en sait rien, donc son contrat de préfixe (`D-114`) et le
+// nombre de tirages ne bougent pas, et une densité réduite éteint autant de
+// cristaux qu'elle en retire. `dy` décale le cœur de la lueur au-dessus de
+// l'ancre (un cristal brille par sa pointe, pas par son pied).
+export function lumieresDuDecor(scene, decor) {
+  const parVisuel = new Map(((scene.decor && scene.decor.motifs) || [])
+    .filter((m) => m.lumiere)
+    .map((m) => [m.visuel, m.lumiere]));
+  if (parVisuel.size === 0) return [];
+  return decor
+    .filter((d) => parVisuel.has(d.visuel))
+    .map((d) => {
+      const l = parVisuel.get(d.visuel);
+      return { x: d.x, y: d.y - (l.dy || 0), rayon: l.rayon, ...(l.couleur ? { couleur: l.couleur } : {}) };
+    });
+}
+
 // Polish ambiance (23/09) — QUEL dessin une case de tuile reçoit, parmi ceux
 // que sa tuile déclare (`render.visuel` puis `render.visuel_variantes`), et
 // s'il est retourné en miroir horizontal (`render.miroir`). Né du constat de

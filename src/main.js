@@ -23,7 +23,7 @@ import { creerCoucheInput, etatNeutre } from './input/input.js';
 import { chargerScene, resoudreDeplacement, portailFranchi, trouverPositionLibrePlusProche } from './scene.js';
 import { calculerCamera } from './camera.js';
 import { RAYON_TOUCHE_FOLLET } from './ui/hud_layout.js';
-import { genererDecor } from './decor.js';
+import { genererDecor, lumieresDuDecor } from './decor.js';
 import {
   creerBoucle, dessinerScene, dessinerObscurite, dessinerSignalZones, dessinerPaupieres, dessinerTextesFlottants, presenter,
   RESOLUTION_LOGIQUE, calculerRectanglePresentation, versCoordonneesLogiques, AURA_TRAIT,
@@ -830,8 +830,11 @@ export function creerOrchestrateurGrotte({
   // réarrange pas quand on change de réglage (§4.3). Appelé à l'entrée en
   // scène, et une fois de plus à chaque changement de preset.
   function regenererDecor() {
-    decor = genererDecor(scene, levier('densite_decor'))
-      .map((d) => ({ ...d, visuel: registre.obtenir('visuels', d.visuel) }));
+    const tire = genererDecor(scene, levier('densite_decor'));
+    // Polish ambiance (23/09) : les halos des motifs lumineux, dérivés UNE
+    // fois ici, du décor tiré (ids encore bruts), jamais à chaque frame.
+    lumieresDecor = lumieresDuDecor(scene, tire);
+    decor = tire.map((d) => ({ ...d, visuel: registre.obtenir('visuels', d.visuel) }));
   }
 
   // §4.5 — changer de preset EN JEU, sans recharger. Ce qui bouge, et rien
@@ -1075,6 +1078,7 @@ export function creerOrchestrateurGrotte({
   let hero = creerHeros({ x: 0, y: 0, rayon: rayonHeros(), pvMax: 1 });
   hero.pv = save.hero.pv; // null tant que les stats dérivées n'ont pas encore tourné une fois
   let scene, decor, monstres, follet;
+  let lumieresDecor = [];
   let puzzlesEtat = {};
   // Objets au sol de la scène courante (03_maison-exterieur §3.3) :
   // { [itemId]: [{x,y}, ...] }, reconstruit/complété à chaque entrée en
@@ -3397,7 +3401,11 @@ export function creerOrchestrateurGrotte({
       : (scene.obscurite ? scene.obscurite.opacite : 0);
     const opaciteAmbiance = Math.max(opaciteCycle, opaciteOmbreZones(scene.zones, hero.x, hero.y, scene.tileSize));
     const sceneAffichage = scene.cycleJourNuit || scene.obscurite || opaciteAmbiance > 0
-      ? { ...scene, obscurite: { opacite: opaciteAmbiance } }
+      ? {
+        ...scene,
+        obscurite: { opacite: opaciteAmbiance },
+        lumieres: lumieresDecor.length ? [...(scene.lumieres || []), ...lumieresDecor] : scene.lumieres,
+      }
       : scene;
 
     // Fantôme de pose (specs/05_construction-stations.md §3) : résolu ici

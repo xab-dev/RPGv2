@@ -36,3 +36,4 @@ Branche `polish-ambiance-2026-09-23`, jamais poussée. Captures : scénario
 | — | `D-110`, `D-149` | Forêt : chêne et sapin en variantes de `visuel_arbre` (gardé en tête), miroir ; ombre de sous-bois déclarée sur la zone (`opaciteOmbreZones`, maximum avec le cycle, jamais une seconde couche). Valeur `[OUVERT]` en `Q-75` |
 | — | `D-150` | Grotte : sol de pierre (fissures, galets, mousse, gravier ; 3 grains × miroir), murs en moellons (2 appareils × miroir, dans la cellule), cristal luminescent en décor |
 | — | `D-151` | Icône éclat : halo, orbite, étincelles ; dans la boîte des icônes (test). Animation proposée en `Q-76` |
+| — | `D-152` | Harmonisation : un motif de décor émet de la lumière (`lumiere`), les cristaux percent le voile d'un halo teinté ; touche `render.js` (checklist visuelle) |

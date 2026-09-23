@@ -485,6 +485,15 @@ function validerScene(entry, catalogs, path) {
         if (typeof motif.poids !== 'number' || motif.poids <= 0) {
           erreurs.push(`${path} > decor.motifs[${i}] > poids doit être un nombre positif`);
         }
+        // `lumiere` (polish ambiance, 23/09) : optionnelle — le motif émet un
+        // halo qui perce le voile (`decor.js#lumieresDuDecor`).
+        if (motif.lumiere !== undefined) {
+          const l = motif.lumiere;
+          if (!l || typeof l.rayon !== 'number' || l.rayon <= 0 || (l.dy !== undefined && typeof l.dy !== 'number')
+            || (l.couleur !== undefined && !/^#[0-9a-fA-F]{6}$/.test(l.couleur))) {
+            erreurs.push(`${path} > decor.motifs[${i}] > lumiere doit être { rayon > 0, dy? numérique, couleur? #rrggbb }`);
+          }
+        }
         // `sur` (`D-106`) : les tuiles qui PORTENT ce motif. Absent = partout,
         // pour qu'un catalogue d'avant reste valide tel quel (la Grotte n'en
         // déclare pas). Présent, il ne peut pas être vide : un motif qui ne

@@ -3,7 +3,7 @@ projet: RPG V2
 episode/session: Diagnostic polish — ce que la passe d'ambiance n'avait pas touché
 type: fichier de bord
 version: 1.0.0
-statut: en cours
+statut: clos
 catégorie: Journal
 date: 2026-09-23
 genere_par: claude
@@ -100,6 +100,32 @@ révélera encore.
 | `a8d7d58` | `D-163` (suite) | Le commit `e04750e` est parti avec un test rouge (`test_d136` : son faux contexte ignorait les dégradés et les coins arrondis du cadre) — enchaînement de commandes qui ne s'arrêtait pas sur l'échec. Faux contexte complété ; suite verte. Les deux commits se retirent ensemble |
 | `ac6615c` | `D-164` | Icône Héros du menu : le héros encapuchonné à l'orbe, au lieu d'un avatar générique. Les autres pictogrammes restent (style des cartes, pas un retard) |
 | `82ebfd3` | `D-165` | Barre de PV des monstres : la jauge du bandeau, sortie dans `ui/barre.js` et partagée ; 4 px, remontée au-dessus des épines du rôdeur. Touche `render.js`/`hud.js` (checklist due) |
-| — | `D-166` | Anneau d'attaque : onde en dégradé à la couleur du follet au lieu d'un aplat blanc. **Pas vu en capture** (flash de 120 ms), signalé en `V-100` |
+| `2dc316e` | `D-166` | Anneau d'attaque : onde en dégradé à la couleur du follet au lieu d'un aplat blanc. **Pas vu en capture** (flash de 120 ms), signalé en `V-100` |
 <!-- fin-table-2 -->
+
+### Ce qu'il faut en retenir (partie 2)
+
+- **« Tout ce qui dénote » s'inventorie aux captures, pas aux listes** : le
+  nombre de primitives a montré les follets et le monstre, mais la bulle de
+  dialogue, la bannière des indices, la barre des monstres et l'icône Héros
+  ne se sont vus qu'en scène.
+- **Un parti pris reste un parti pris** : monstres et follets sont des
+  propositions (`V-95`, `V-96`) ; chaque commit se retire seul.
+- **Une pièce qui bouge est une pièce du visuel, son geste un état
+  d'affichage** (`D-158`) : rien de sauvegardé, rien d'un id en dur.
+- **Réutiliser plutôt que copier** : le cadre (`ui/cadre.js`) et la barre
+  (`ui/barre.js`) ont chacun deux usages réels.
+- **Un commit est parti rouge** (`e04750e`, rattrapé par `a8d7d58`) : la
+  commande enchaînait le commit sans s'arrêter sur l'échec des tests. Tous les
+  commits suivants sont conditionnés à la suite verte.
+- Pas touchés, volontairement : héros, stations, items, objets de récolte
+  (validés à leur standing) ; les pictogrammes du menu (plats par style, pas
+  en retard) ; l'aura pointillée (réglée par décision) ; `D-159`.
+
+### Ouvert pour Xav (partie 2)
+
+`V-93` à `V-100` ; `D-167` (le narrateur, un nom ou aucun) ; toujours
+`D-159`, `Q-77`. Quatre commits touchent le rendu ou les calques d'UI
+(`D-158`, `D-163`, `D-165`, `D-166`) : checklist visuelle due.
+
 

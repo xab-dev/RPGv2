@@ -74,6 +74,7 @@ import {
   ouverturePaupieres, dureeClignements,
 } from './intro.js';
 import { etatLogo } from './logo.js';
+import { creerPrologue, avancerPrologue, alphaPrologue, prologueArme } from './prologue.js';
 import {
   tablesDeScene, tableActive, tirerPositionApparition, tirerPointDomaine, estEnZoneSurePx, zonesSignalees,
 } from './spawns.js';
@@ -110,6 +111,7 @@ import {
 import { dessinerHud } from './ui/hud.js';
 import { dessinerHudHints } from './ui/hud_hints.js';
 import { dessinerDialogue, creerPaginateurDialogue } from './ui/dialogue_box.js';
+import { dessinerEcranPrologue } from './ui/ecran_prologue.js';
 import { creerMoniteurPerf, creerMoniteurInactif } from './ui/hud_debug.js';
 import { lireEchelleForcee } from './debug_perf.js';
 import {
@@ -683,6 +685,11 @@ export function creerOrchestrateurGrotte({
   // et SANS calques il n'y a pas d'ouverture — on ne tient pas le joueur
   // devant un écran noir pour un logo qui ne peut pas se dessiner.
   imagesLogo = [],
+  // `specs/12_prologue.md` : le jeu servi joue le prologue avant le symbole ;
+  // l'orchestrateur, par défaut, non. Le prologue ATTEND un appui du joueur :
+  // les tests du cold-open, qui ne le demandent pas, n'ont rien à presser et
+  // restent tels qu'ils étaient (même patron que les calques du symbole).
+  jouerPrologue = false,
 }) {
   // Les leviers sont lus UNE fois, ici : au-delà de cette ligne, plus personne
   // ne connaît le mot « bas ». Chaque système reçoit un nombre.
@@ -1312,6 +1319,11 @@ export function creerOrchestrateurGrotte({
   // changent pas. Même statut qu'elle : une UI ouverte, non skippable.
   let ouvertureLogoMs = null;
   const effetLogoOuverture = registre.obtenir('effets', 'effet_logo_ouverture');
+  // `specs/12_prologue.md` : les écrans de texte AVANT le symbole — l'état de
+  // `prologue.js`, ou `null` hors prologue. Le symbole naît à sa fin, comme
+  // l'intro naît à la fin du symbole : aucun des deux ne sait qu'il existe.
+  // Une UI ouverte, comme eux ; mais lui avance à l'appui, jamais seul.
+  let prologue = null;
 
   function choixFolletActif() {
     return choixFollet !== null;
@@ -1326,7 +1338,7 @@ export function creerOrchestrateurGrotte({
   function uiOuverteMaintenant() {
     return (
       menu.estOuvert() || dialogue.estOuvert() || choixFolletActif() || intro !== null || depart !== null ||
-      ouvertureLogoMs !== null || constructionActif()
+      ouvertureLogoMs !== null || prologue !== null || constructionActif()
     );
   }
 
@@ -1372,6 +1384,15 @@ export function creerOrchestrateurGrotte({
     if (etat.attack.pressed) confirmerChoixFollet();
   }
 
+  // Ticket L3 : le symbole d'abord, si ses calques existent — l'intro naît à
+  // sa fin (maj()). Sans calques, l'intro part tout de suite, comme avant : un
+  // logo absent ne coûte rien au joueur. Une fonction parce que deux chemins y
+  // mènent : l'entrée en scène sans prologue, et la fin du prologue.
+  function demarrerOuverture(sceneId) {
+    if (imagesLogo.length > 0) ouvertureLogoMs = 0;
+    else intro = creerIntro(registre.obtenir('scenes', sceneId).intro);
+  }
+
   // Événements scriptés à l'entrée d'une scène (§3.1/§3.3) : un script par
   // id de scène, pas un système générique — cf. note en tête de fichier.
   function declencherEvenementsEntree(sceneId) {
@@ -1380,11 +1401,11 @@ export function creerOrchestrateurGrotte({
       // (nouvelle partie / reset), jamais à un respawn (le flag est déjà posé
       // dès qu'un follet a été choisi une fois). demarrerChoixFollet() n'est
       // appelée qu'à la fin de l'intro (main.js#maj()), pas ici.
-      // Ticket L3 : le symbole d'abord, si ses calques existent — l'intro
-      // naît à sa fin (maj()). Sans calques, l'intro part tout de suite, comme
-      // avant : un logo absent ne coûte rien au joueur.
-      if (imagesLogo.length > 0) ouvertureLogoMs = 0;
-      else intro = creerIntro(registre.obtenir('scenes', sceneId).intro);
+      // `specs/12` : le prologue d'abord, dans le jeu servi — le symbole
+      // naît à sa fin (maj()). Sans lui, l'ouverture part tout de suite.
+      const ecransPrologue = jouerPrologue ? registre.tous('prologue') : [];
+      if (ecransPrologue.length > 0) prologue = creerPrologue(ecransPrologue);
+      else demarrerOuverture(sceneId);
     }
     if (sceneId === 'scene_grotte_salle_2' && !flags.has('flag_grotte_monstre_tue') && monstres.length > 0) {
       ouvrirDialogueCatalogue('dlg_grotte_tuto_combat');
@@ -3208,6 +3229,19 @@ export function creerOrchestrateurGrotte({
     // Ticket L3 : l'ouverture compte comme l'intro pour tout ce qui suit (menu
     // fermé, gameplay gelé) — y compris la frame où elle cède la place à
     // l'intro, qui naît ici et avance dès cette frame.
+    // `specs/12` : le prologue avance à l'appui — ATTACK, INTERACT ou un
+    // toucher n'importe où (ses écrans n'ont rien d'autre à toucher). Sa fin
+    // lance l'ouverture dans la MÊME frame : le symbole, s'il naît ici, avance
+    // dès le bloc suivant, et le gameplay reste gelé sur la frame de passage.
+    const prologueEtaitActif = prologue !== null;
+    if (prologueEtaitActif) {
+      const appui = etatBrut.attack.pressed || etatBrut.interact.pressed || contactsTactiles.length > 0;
+      prologue = avancerPrologue(prologue, deltaMs, appui);
+      if (prologue.termine) {
+        prologue = null;
+        demarrerOuverture(scene.id);
+      }
+    }
     const logoEtaitActif = ouvertureLogoMs !== null;
     if (logoEtaitActif) {
       ouvertureLogoMs += deltaMs;
@@ -3216,7 +3250,7 @@ export function creerOrchestrateurGrotte({
         intro = creerIntro(registre.obtenir('scenes', scene.id).intro);
       }
     }
-    const introEtaitActive = intro !== null || logoEtaitActif;
+    const introEtaitActive = intro !== null || logoEtaitActif || prologueEtaitActif;
     if (intro) {
       // MT_intro-follets-visibles_2026-09-19 : l'intro N'EST PLUS mise à
       // `null` ici. Avant, elle l'était à l'instant exact où le dialogue de
@@ -4154,7 +4188,15 @@ export function creerOrchestrateurGrotte({
     // DERNIER — il doit couvrir la scène, le HUD et même l'écran de choix
     // (inactif à ce stade, mais la règle reste "toujours en dernier" pour ne
     // jamais dépendre de l'ordre des autres calques).
-    if (ouvertureLogoMs !== null) {
+    if (prologue !== null) {
+      // `specs/12` : le prologue sur le même noir que le symbole qui le suit.
+      const ecran = prologue.ecrans[prologue.index];
+      dessinerPaupieres(ctxLogique, 0);
+      dessinerEcranPrologue(ctxLogique, {
+        titre: i18n.t(ecran.titre),
+        lignes: ecran.lignes.map((cle) => i18n.t(cle)),
+      }, alphaPrologue(prologue), prologueArme(prologue));
+    } else if (ouvertureLogoMs !== null) {
       // Ticket L3 : le symbole sur le noir des paupières fermées — le même
       // rideau que la première étape de l'intro, qui s'ouvrira juste après.
       dessinerPaupieres(ctxLogique, 0);
@@ -4204,6 +4246,7 @@ export function creerOrchestrateurGrotte({
     intro = null;
     depart = null;
     ouvertureLogoMs = null;
+    prologue = null;
     logoNiveauMs = null;
     basculesLeviers.clear();
     cooldownAttaqueHerosMs = 0;
@@ -4261,6 +4304,7 @@ export function creerOrchestrateurGrotte({
     obtenirChoixFollet: () => choixFollet,
     obtenirIntro: () => intro,
     obtenirOuvertureLogo: () => ouvertureLogoMs,
+    obtenirPrologue: () => prologue,
     obtenirLogoNiveau: () => logoNiveauMs,
     obtenirDepart: () => depart,
     obtenirSave: () => save,
@@ -4797,6 +4841,7 @@ export async function demarrerJeu() {
 
   const orchestrateur = creerOrchestrateurGrotte({
     imagesLogo: chargerImagesLogo(),
+    jouerPrologue: true,
     // Résolu plus haut, avec la fenêtre et l'URL : l'orchestrateur ne lit ni
     // l'une ni l'autre (il doit rester importable depuis Node).
     graphismes,

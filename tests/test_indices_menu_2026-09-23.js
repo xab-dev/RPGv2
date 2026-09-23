@@ -79,6 +79,7 @@ assert.deepEqual(erreurs, []);
   const apres = entrees(['cond_lisible', 'cond_visible']);
   assert.deepEqual(apres.map((e) => e.id), ['i_lisible', 'i_seuil', 'i_cache']);
   assert.deepEqual(apres[1].lignes, ['texte de l.b1', 'texte de l.b2'], 'lisible : le texte traduit, tel quel');
+  assert.deepEqual([avant[1].chasseFixe, apres[1].chasseFixe], [true, false], 'PS4 : les hiéroglyphes en chasse fixe, le texte en clair non');
   console.log('OK entrées : illisible en hiéroglyphes, lisible en clair, invisible absent');
 }
 

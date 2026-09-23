@@ -33,6 +33,8 @@
 //                  bouton, comme avant. Le composant ne sait pas ce qu'elle fait
 //   libelleActionTertiaire, actionTertiaire   (`D-145`) une TROISIÈME, même contrat,
 //                  portée par le verbe `skill_2` (Y) — aujourd'hui « Jeter » dans la Poche
+//   chasseFixe     vrai = le titre et les lignes ne sont pas une langue mais des signes
+//                  (un indice illisible, PS4) : ils s'écrivent en chasse fixe
 //   groupe         un intertitre : les entrées d'un même groupe se suivent, un groupe
 //                  commence sur une rangée neuve (Coffre : « Poche » / « Coffre »)
 //
@@ -187,13 +189,13 @@ export function creerEcranFiches({
       tete.appendChild(icone);
     }
     const elTitre = document.createElement('span');
-    elTitre.className = 'fiche-titre';
+    elTitre.className = entree.chasseFixe ? 'fiche-titre texte-code' : 'fiche-titre';
     elTitre.textContent = entree.titre;
     tete.appendChild(elTitre);
     fiche.appendChild(tete);
 
     const lignes = document.createElement('div');
-    lignes.className = 'fiche-lignes';
+    lignes.className = entree.chasseFixe ? 'fiche-lignes texte-code' : 'fiche-lignes';
     for (const brute of entree.lignes || []) {
       const { texte, icone } = normaliserLigneFiche(brute);
       const ligne = document.createElement('p');
@@ -284,7 +286,7 @@ export function creerEcranFiches({
     poserAttribut(elTuile, 'aria-label', entree.titre);
     if (!(niveau.nomsMasques && entree.icone)) {
       const nom = document.createElement('span');
-      nom.className = 'tuile-nom';
+      nom.className = entree.chasseFixe ? 'tuile-nom texte-code' : 'tuile-nom';
       nom.textContent = entree.titre;
       elTuile.appendChild(nom);
     }

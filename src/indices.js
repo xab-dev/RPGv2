@@ -55,7 +55,7 @@ export function lignesBrouillees(indice, traduire, hieroglyphes) {
 }
 
 // Les entrées de l'écran Indices, déjà résolues pour `ui/ecran_fiches.js` :
-// { id, lisible, titre, icone, lignes }. Les indices non visibles n'y sont
+// { id, lisible, titre, icone, lignes, chasseFixe }. Les indices non visibles n'y sont
 // pas (`D-62`) — `estVisible` est fourni par l'appelant, qui le tient de
 // `visibilite.js`, LE filtre anti-spoil.
 export function entreesIndices(indices, { estVisible, estLisible, traduire, hieroglyphes }) {
@@ -67,6 +67,8 @@ export function entreesIndices(indices, { estVisible, estLisible, traduire, hier
       titre: lisible ? traduire(indice.cle_titre) : brouillerTexte(traduire(indice.cle_titre), `${indice.id}#titre`, hieroglyphes),
       icone: indice.icone || null,
       lignes: lisible ? indice.lignes.map((cle) => traduire(cle)) : lignesBrouillees(indice, traduire, hieroglyphes),
+      // PS4 : les hiéroglyphes en chasse fixe, comme sur la pierre.
+      chasseFixe: !lisible,
     };
   });
 }

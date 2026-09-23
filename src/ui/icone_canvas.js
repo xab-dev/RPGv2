@@ -19,7 +19,7 @@ import { empreinteParDefaut } from '../structures.js';
 // unités autour de leur centre ; 14 laisse un filet d'air. C'est une
 // convention de dessin des icônes, pas un réglage de mise en page : la TAILLE
 // affichée, elle, est décidée par la feuille de style.
-const COTE_REFERENCE_ICONE = 14;
+export const COTE_REFERENCE_ICONE = 14;
 // Filet d'air, en unités du visuel, autour d'une silhouette RECADRÉE (voir
 // `cadrer`). *Provisoire.*
 const MARGE_RECADRAGE = 2;

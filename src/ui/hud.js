@@ -9,6 +9,7 @@
 import {
   boutonsTactilesVisibles, JOYSTICK, BANDEAU_HAUT, elementsBandeauHaut, echelleIconeArme,
   placerIconesBuffs, alphaPulsationBuff, echelleIconeBuff, ICONE_BUFF, echelleIconeBandeau,
+  ICONE_BOUTON_MENU, echelleIconeBoutonMenu,
 } from './hud_layout.js';
 import { RESOLUTION_LOGIQUE } from '../render.js';
 import { dessinerVisuel, TAILLE_REFERENCE_FOLLET_PX } from '../visuels.js';
@@ -119,7 +120,7 @@ function fondSlot(ctx, y, hauteur) {
   return degrade;
 }
 
-function dessinerBoutonsTactiles(ctx, iconesSlots, verbesActions, couleurActive) {
+function dessinerBoutonsTactiles(ctx, iconesSlots, verbesActions, couleurActive, iconeBoutonMenu) {
   for (const bouton of boutonsTactilesVisibles(verbesActions)) {
     ctx.beginPath();
     ctx.arc(bouton.cx, bouton.cy, bouton.rayon, 0, Math.PI * 2);
@@ -131,6 +132,14 @@ function dessinerBoutonsTactiles(ctx, iconesSlots, verbesActions, couleurActive)
     ctx.strokeStyle = bouton.verbe === 'attack' ? couleurActive : COULEUR_SLOT_BORD;
     ctx.stroke();
     dessinerIconeSlot(ctx, iconesSlots[bouton.verbe], bouton.cx, bouton.cy, bouton.rayon * ICONE_PART_DU_BOUTON);
+    // `D-176` : MENU n'est pas une case d'action, il n'a pas d'icône de slot ;
+    // il porte l'engrenage des Paramètres, en filigrane.
+    if (bouton.verbe === 'menu' && iconeBoutonMenu) {
+      dessinerVisuel(ctx, iconeBoutonMenu, bouton.cx, bouton.cy, {
+        echelle: echelleIconeBoutonMenu(ICONE_BOUTON_MENU.taille),
+        alpha: ICONE_BOUTON_MENU.alpha,
+      });
+    }
   }
 
   ctx.beginPath();
@@ -229,6 +238,10 @@ export function dessinerHud(ctx, {
   // d'aide se pose au même pied (`D-172`). Les boutons TACTILES ne sont pas concernés : ils montent
   // au-dessus de la bulle et le doigt doit toujours les voir où ils répondent.
   barreActions = true,
+  // `D-176` : l'engrenage du bouton MENU tactile, résolu par main.js depuis
+  // `menus.json` (racine, `icone_bouton`). Absent = bouton nu, jamais une
+  // erreur, comme toutes les tables d'icônes de ce module.
+  iconeBoutonMenu = null,
 }) {
   ctx.save();
 
@@ -361,7 +374,7 @@ export function dessinerHud(ctx, {
   // §4 : jamais les deux à la fois. Sur tactile, les boutons SONT les slots.
   const couleurActive = (companion && companion.render.couleur) || COULEUR_SLOT_ACTIF;
   if (tactileActif) {
-    dessinerBoutonsTactiles(ctx, iconesSlots, verbesActions, couleurActive);
+    dessinerBoutonsTactiles(ctx, iconesSlots, verbesActions, couleurActive, iconeBoutonMenu);
   } else if (barreActions) {
     // Diagnostic SD_dialogues-invisibles_2026-09-15 : même défaut que
     // dialogue_box.js — `ctx.canvas.width/height` est la taille PHYSIQUE

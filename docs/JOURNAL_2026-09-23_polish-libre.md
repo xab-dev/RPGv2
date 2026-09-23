@@ -50,4 +50,5 @@ s'améliorent.
 |---|---|---|
 | `72d9327` | `D-173` | Faim : un épi de blé à la place du triangle. Soif : la goutte dans une flaque. Données seules, deux passes au banc (la première faisait un épi de maïs) |
 | `2745457` | `D-174` | « Prêt dans » → « Disponible dans » (FR), « Ready in » → « Available in » (EN) : une clé de locale |
-| *(ce commit)* | `D-175` | La case d'attaque prend la couleur du follet choisi (barre du bas et bouton tactile) ; l'or tant qu'aucun follet. **165 fichiers verts** |
+| `4004653` | `D-175` | La case d'attaque prend la couleur du follet choisi (barre du bas et bouton tactile) ; l'or tant qu'aucun follet. **165 fichiers verts** |
+| *(ce commit)* | `D-176` | L'engrenage des Paramètres dans le bouton MENU tactile, en filigrane, statique, id en données (`menus.json#icone_bouton`). Premier scénario tactile (`menu_tactile.mjs`). **166 fichiers verts** |

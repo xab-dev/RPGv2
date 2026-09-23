@@ -1,3 +1,5 @@
+import { COTE_REFERENCE_ICONE } from './icone_canvas.js';
+
 // Layout HUD/tactile (§2.1/§3.9 de specs/02_grotte.md, repositionné par le
 // diagnostic SD_ui-lisibilite §3 pour la résolution logique 480x270,
 // désormais validée — cf. render.js) : positions et tailles en résolution
@@ -105,6 +107,19 @@ export const BOUTON_INTERACT = { cx: 454, cy: 97, rayon: 20, verbe: 'interact' }
 //
 // PROVISOIRE : jamais validé au pouce par Xav (`V-23`).
 export const BOUTON_MENU = { cx: 455, cy: 44, rayon: 16, verbe: 'menu' };
+
+// `D-176` (demande de Xav, 23/09) : un petit engrenage dans le bouton MENU,
+// en FILIGRANE — le bouton se reconnaît sans que l'icône ne pèse sur la scène.
+// Statique et sans dépendance au preset : il est là en Bas comme en Haut, et
+// ne coûte qu'un visuel de six primitives. `taille` en px logiques (le bouton
+// fait 32 de diamètre), `alpha` = le filigrane. PROVISOIRES, jugés à la
+// capture Chrome seulement. L'icône est celle de la carte Paramètres, dessinée
+// pour la boîte des icônes de menu (`icone_canvas.js#COTE_REFERENCE_ICONE`).
+export const ICONE_BOUTON_MENU = { taille: 16, alpha: 0.4 };
+
+export function echelleIconeBoutonMenu(tailleVoulue) {
+  return tailleVoulue / COTE_REFERENCE_ICONE;
+}
 
 // `Q-40`/`Q-41` (23/09, décision de Xav) : toucher le FOLLET émet
 // `target_next` — le geste « cible suivante » du doigt, qui sert aussi de

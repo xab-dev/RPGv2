@@ -1357,9 +1357,10 @@ function validerMenu(entry, catalogs, path) {
 
   // Les deux icônes de l'en-tête ([X] et [←], §2 décision 1) sont des
   // références comme les autres : déclarées par l'écran racine, jamais un id
-  // de catalogue écrit dans le composant.
+  // de catalogue écrit dans le composant. La troisième (`D-176`) est celle du
+  // bouton qui OUVRE le menu au tactile — l'engrenage en filigrane.
   if (entry.racine !== undefined && typeof entry.racine !== 'boolean') erreurs.push(`${path} > racine doit être un booléen`);
-  for (const champ of ['icone_fermer', 'icone_retour']) {
+  for (const champ of ['icone_fermer', 'icone_retour', 'icone_bouton']) {
     if (entry.racine === true && typeof entry[champ] !== 'string') erreurs.push(`${path} > l'écran racine exige "${champ}"`);
     if (entry[champ] !== undefined && !(catalogs.visuels || []).some((v) => v.id === entry[champ])) {
       erreurs.push(`${path} > ${champ} > "${entry[champ]}" introuvable dans visuels.json`);

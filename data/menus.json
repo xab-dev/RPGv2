@@ -5,6 +5,7 @@
     "cle_titre": "menu.titre",
     "icone_fermer": "visuel_icone_menu_fermer",
     "icone_retour": "visuel_icone_menu_retour",
+    "icone_bouton": "visuel_icone_menu_parametres",
     "cartes": [
       {
         "id": "carte_heros", "case": 0, "type": "dossier",

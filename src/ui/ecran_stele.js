@@ -31,6 +31,21 @@ const COULEUR_PIERRE_BAS = '#1a1c22';
 const COULEUR_ARETE = '#5a5e6a';
 const COULEUR_FISSURE = '#101216';
 const NB_GRAINS = 90;
+// PS3 : la profondeur. La lumière vient d'en haut à gauche (comme dans le
+// monde) : le flanc droit s'assombrit, un biseau clair court en haut à gauche
+// à quelques pixels du bord. La gravure est dans un panneau CREUSÉ — plus
+// sombre, ombre portée sur son bord haut, reflet sur son bord bas. De la
+// mousse au pied : la pierre est là depuis longtemps.
+const OMBRE_FLANC = 'rgba(0, 0, 0, 0.32)';
+const REFLET_FLANC = 'rgba(255, 255, 255, 0.04)';
+const RETRAIT_BISEAU = 5;
+const COULEUR_BISEAU = 'rgba(255, 255, 255, 0.07)';
+const FOND_PANNEAU = 'rgba(0, 0, 0, 0.22)';
+const OMBRE_PANNEAU = 'rgba(0, 0, 0, 0.45)';
+const REFLET_PANNEAU = 'rgba(255, 255, 255, 0.08)';
+const MARGE_PANNEAU = 8;
+const COULEURS_MOUSSE = ['rgba(22, 38, 26, 0.9)', 'rgba(30, 50, 32, 0.8)', 'rgba(18, 30, 22, 0.9)'];
+const NB_TOUFFES_MOUSSE = 18;
 // La zone gravée, en retrait des bords de la dalle.
 const MARGE_GRAVURE_X = 22;
 const HAUT_GRAVURE = 58;
@@ -105,6 +120,34 @@ export function dessinerEcranStele(ctx, contenu) {
     const t = 1 + hasard() * 2;
     ctx.fillRect(x + hasard() * LARGEUR_PIERRE, y + hasard() * HAUTEUR_PIERRE, t, t);
   }
+  // PS3 : le flanc droit dans l'ombre, le gauche à peine éclairé.
+  const flanc = ctx.createLinearGradient(x, 0, x + LARGEUR_PIERRE, 0);
+  flanc.addColorStop(0, REFLET_FLANC);
+  flanc.addColorStop(0.45, 'rgba(0, 0, 0, 0)');
+  flanc.addColorStop(1, OMBRE_FLANC);
+  ctx.fillStyle = flanc;
+  ctx.fillRect(x, y, LARGEUR_PIERRE, HAUTEUR_PIERRE);
+  // Le biseau : le contour de la dalle, en retrait, seulement sa moitié haute
+  // gauche éclairée (tracé coupé par un rectangle de découpe).
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, LARGEUR_PIERRE * 0.62, HAUTEUR_PIERRE * 0.7);
+  ctx.clip();
+  ctx.strokeStyle = COULEUR_BISEAU;
+  ctx.lineWidth = 1.5;
+  tracerDalle(ctx, x + RETRAIT_BISEAU, y + RETRAIT_BISEAU, LARGEUR_PIERRE - 2 * RETRAIT_BISEAU, HAUTEUR_PIERRE);
+  ctx.stroke();
+  ctx.restore();
+  // La mousse au pied : des touffes d'ellipses sombres, tirées à la même
+  // graine que le grain (la même pierre montre toujours la même mousse).
+  for (let i = 0; i < NB_TOUFFES_MOUSSE; i += 1) {
+    ctx.fillStyle = COULEURS_MOUSSE[Math.floor(hasard() * COULEURS_MOUSSE.length)];
+    const mx = x + hasard() * LARGEUR_PIERRE;
+    const my = y + HAUTEUR_PIERRE - 1 - hasard() * 9;
+    ctx.beginPath();
+    ctx.ellipse(mx, my, 2 + hasard() * 4, 1 + hasard() * 1.8, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
   ctx.strokeStyle = COULEUR_FISSURE;
   ctx.lineWidth = 1;
   ctx.beginPath();
@@ -125,6 +168,19 @@ export function dessinerEcranStele(ctx, contenu) {
   const gy = y + HAUT_GRAVURE;
   const gw = LARGEUR_PIERRE - 2 * MARGE_GRAVURE_X;
   const gh = HAUTEUR_PIERRE - HAUT_GRAVURE - BAS_GRAVURE;
+  // PS3 : le panneau creusé qui porte la gravure.
+  const px0 = gx - MARGE_PANNEAU;
+  const py0 = gy - MARGE_PANNEAU;
+  const pw = gw + 2 * MARGE_PANNEAU;
+  const ph = gh + 2 * MARGE_PANNEAU;
+  ctx.fillStyle = FOND_PANNEAU;
+  ctx.fillRect(px0, py0, pw, ph);
+  ctx.fillStyle = OMBRE_PANNEAU;
+  ctx.fillRect(px0, py0, pw, 2);
+  ctx.fillRect(px0, py0, 2, ph);
+  ctx.fillStyle = REFLET_PANNEAU;
+  ctx.fillRect(px0, py0 + ph - 1, pw, 1);
+  ctx.fillRect(px0 + pw - 1, py0, 1, ph);
   const halo = ctx.createRadialGradient(gx + gw / 2, gy + gh / 2, 4, gx + gw / 2, gy + gh / 2, gh * 0.75);
   halo.addColorStop(0, rgba(couleur, 0.22 * lueur));
   halo.addColorStop(1, rgba(couleur, 0));

@@ -20,7 +20,8 @@ PS1 fondu d'entrée et de sortie de la vue · PS2 la gravure qui respire ligne p
 | Ticket | Commit | Ce qui est livré |
 |---|---|---|
 | PS1 — le fondu | `4fa3316` | `stele.js` : `fermerVueStele`, `vueSteleTerminee`, `alphaVueStele` (fondu de 240 ms, PROVISOIRE) ; la pierre monte de 8 px en apparaissant. `main.js` : B ou un toucher lancent la sortie, la vue disparaît à sa fin, jeu gelé jusque-là. `tests/test_stele` : fondu et sortie. Captures : mi-fondu sous les trois profils |
-| PS2 — la gravure vivante | *(ce commit)* | `ui/ecran_stele.js` : la lueur descend la pierre en vague (déphasage de 0,09 période par ligne, PROVISOIRE) au lieu de clignoter d'un bloc ; les particules naissent SUR une ligne gravée, dans sa largeur réelle, et montent de là (`stele.js` garde `y0`, la hauteur de naissance). Aucun test ne voit le dessin ; captures sous les trois profils |
+| PS2 — la gravure vivante | `90e3339` | `ui/ecran_stele.js` : la lueur descend la pierre en vague (déphasage de 0,09 période par ligne, PROVISOIRE) au lieu de clignoter d'un bloc ; les particules naissent SUR une ligne gravée, dans sa largeur réelle, et montent de là (`stele.js` garde `y0`, la hauteur de naissance). Aucun test ne voit le dessin ; captures sous les trois profils |
+| PS3 — la profondeur de la pierre | *(ce commit)* | `ui/ecran_stele.js` : flanc droit dans l'ombre (lumière d'en haut à gauche, comme le monde), biseau clair en retrait sur la moitié haute gauche, panneau CREUSÉ autour de la gravure (fond plus sombre, ombre en haut et à gauche, reflet en bas et à droite), mousse sombre au pied (même graine que le grain). Première passe de mousse trop claire et trop grosse, vue à la capture et reprise avant le commit. Valeurs PROVISOIRES |
 
 **Prouvé par les tests** : la case contextuelle (Construction dedans, Indices dehors), le brouillage
 (déterministe, silhouette, alphabet seul), la bascule au Nv.15 sans réinitialisation, le catalogue et

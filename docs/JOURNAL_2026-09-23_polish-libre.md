@@ -28,4 +28,5 @@ facture.
 | `fa39a88` | Ménage | Journal du polish des dialogues archivé |
 | `11462a3` | `D-170` | La barre du bas se tait sous la bulle (même pied, cadre translucide partagé) ; tactile inchangé. **163 fichiers verts** |
 | `62e1522` | `D-170` | Test renommé à son identifiant |
-| `4068658` + *(ce commit)* | `D-171` | La touche d'un indice : un creux au liseré d'or, le glyphe en or ; bannière de largeur identique au pixel. L'or passe dans `cadre.js`. **164 fichiers verts** |
+| `4068658` + `c017eeb` | `D-171` | La touche d'un indice : un creux au liseré d'or, le glyphe en or ; bannière de largeur identique au pixel. L'or passe dans `cadre.js`. **164 fichiers verts** |
+| *(ce commit)* | `D-172` | En placement, la barre du bas se tait aussi (le bandeau d'aide DOM prend le même pied) ; lu sur `constructionActif()`. Trouvé en poursuivant l'état des lieux sur les écrans (`ecrans_palier_c.mjs`). **164 fichiers verts** |

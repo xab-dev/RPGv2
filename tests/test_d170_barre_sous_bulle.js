@@ -85,6 +85,9 @@ const cases = (registre) => registre.filter(
 {
   const main = fs.readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
   assert.match(main, /barreActions:\s*!dialogue\.estOuvert\(\)/, 'main.js tait la barre sur dialogue.estOuvert(), la source du dessin de la bulle');
+  // `D-172` : même règle pendant le placement, lue sur l'état qui gèle le
+  // jeu et lève le bandeau d'aide.
+  assert.match(main, /barreActions:[^\n]*!constructionActif\(\)/, 'main.js tait la barre pendant le placement');
 }
 
 console.log('OK test_d170_barre_sous_bulle');

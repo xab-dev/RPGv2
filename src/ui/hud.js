@@ -221,7 +221,8 @@ export function dessinerHud(ctx, {
   // translucide. Dessinées toutes deux, les cases transparaissaient sous le
   // texte et leur liseré dépassait sous le cadre. Le jeu étant gelé sous la
   // bulle, la barre n'y dit rien : main.js la tait tant qu'une bulle est
-  // ouverte. Les boutons TACTILES ne sont pas concernés : ils montent
+  // ouverte — et pendant le placement de la Construction, dont le bandeau
+  // d'aide se pose au même pied (`D-172`). Les boutons TACTILES ne sont pas concernés : ils montent
   // au-dessus de la bulle et le doigt doit toujours les voir où ils répondent.
   barreActions = true,
 }) {

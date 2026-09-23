@@ -49,4 +49,5 @@ s'améliorent.
 | Commit | Sujet | Ce qu'il faut en retenir |
 |---|---|---|
 | `72d9327` | `D-173` | Faim : un épi de blé à la place du triangle. Soif : la goutte dans une flaque. Données seules, deux passes au banc (la première faisait un épi de maïs) |
-| *(ce commit)* | `D-174` | « Prêt dans » → « Disponible dans » (FR), « Ready in » → « Available in » (EN) : une clé de locale |
+| `2745457` | `D-174` | « Prêt dans » → « Disponible dans » (FR), « Ready in » → « Available in » (EN) : une clé de locale |
+| *(ce commit)* | `D-175` | La case d'attaque prend la couleur du follet choisi (barre du bas et bouton tactile) ; l'or tant qu'aucun follet. **165 fichiers verts** |

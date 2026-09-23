@@ -16,7 +16,8 @@ const BORDURE = 'rgba(255, 255, 255, 0.28)';
 const ARETE = 'rgba(255, 255, 255, 0.10)';
 // L'or des calques d'UI : le nom et les flèches de la bulle, la touche d'un
 // indice de commande — « ce qui se presse » a une seule couleur. C'est aussi
-// celle du contour de la case d'attaque (`hud.js#COULEUR_SLOT_ACTIF`).
+// celle du contour de la case d'attaque avant le choix du follet
+// (`hud.js#COULEUR_SLOT_ACTIF` ; après, la case prend la couleur du follet).
 export const ACCENT = '#c2a83e';
 // La touche d'un indice : un CREUX dans le cadre (plus sombre que lui, jamais
 // en relief), liseré d'or éteint — elle se lit comme « la touche » sans

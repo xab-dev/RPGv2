@@ -19,6 +19,10 @@ import { dessinerBarre, PALETTE_JAUGES } from './barre.js';
 // plutôt qu'un dessin dédié (§3.3 : une seule fonction de rendu).
 const TAILLE_ICONE_FOLLET = 6;
 
+// Contour de la case d'attaque tant qu'aucun follet n'est choisi. Dès qu'il
+// l'est, la case prend SA couleur (`companion.render.couleur`, celle de son
+// icône en tête de bandeau) : l'arme frappe avec le follet, la case le dit
+// (demande de Xav, 23/09, `D-175` — la couleur seule, rien d'autre ne bouge).
 const COULEUR_SLOT_ACTIF = '#c2a83e';
 
 // `D-99` — la case d'action. Le blanc translucide d'avant prenait la couleur
@@ -115,7 +119,7 @@ function fondSlot(ctx, y, hauteur) {
   return degrade;
 }
 
-function dessinerBoutonsTactiles(ctx, iconesSlots, verbesActions) {
+function dessinerBoutonsTactiles(ctx, iconesSlots, verbesActions, couleurActive) {
   for (const bouton of boutonsTactilesVisibles(verbesActions)) {
     ctx.beginPath();
     ctx.arc(bouton.cx, bouton.cy, bouton.rayon, 0, Math.PI * 2);
@@ -124,7 +128,7 @@ function dessinerBoutonsTactiles(ctx, iconesSlots, verbesActions) {
     // de couleur sans le pavé, qui écrasait la silhouette.
     ctx.fillStyle = fondSlot(ctx, bouton.cy - bouton.rayon, bouton.rayon * 2);
     ctx.fill();
-    ctx.strokeStyle = bouton.verbe === 'attack' ? COULEUR_SLOT_ACTIF : COULEUR_SLOT_BORD;
+    ctx.strokeStyle = bouton.verbe === 'attack' ? couleurActive : COULEUR_SLOT_BORD;
     ctx.stroke();
     dessinerIconeSlot(ctx, iconesSlots[bouton.verbe], bouton.cx, bouton.cy, bouton.rayon * ICONE_PART_DU_BOUTON);
   }
@@ -137,7 +141,7 @@ function dessinerBoutonsTactiles(ctx, iconesSlots, verbesActions) {
 
 // Ligne statique en bas au centre (§4), même liste de verbes que les boutons
 // tactiles mais jamais leurs positions (celles-ci n'ont de sens qu'au doigt).
-function dessinerSlotsBas(ctx, resolution, iconesSlots, verbesActions) {
+function dessinerSlotsBas(ctx, resolution, iconesSlots, verbesActions, couleurActive) {
   if (verbesActions.length === 0) return;
   // La barre se RESSERRE sur ce qui existe, elle ne laisse pas de cases
   // vides : au tactile les boutons gardent leurs positions (le placement est
@@ -159,7 +163,7 @@ function dessinerSlotsBas(ctx, resolution, iconesSlots, verbesActions) {
     // Le repère de couleur de la case d'attaque, passé du blanc à l'or : il
     // vit désormais dans le CONTOUR, le seul endroit où il ne peut pas écraser
     // la silhouette qu'il désigne (cf. `dessinerIconeSlot`).
-    ctx.strokeStyle = verbe === 'attack' ? COULEUR_SLOT_ACTIF : COULEUR_SLOT_BORD;
+    ctx.strokeStyle = verbe === 'attack' ? couleurActive : COULEUR_SLOT_BORD;
     ctx.strokeRect(x, y, SLOT_TAILLE, SLOT_TAILLE);
     dessinerIconeSlot(ctx, iconesSlots[verbe], x + SLOT_TAILLE / 2, y + SLOT_TAILLE / 2, SLOT_TAILLE * ICONE_PART_DE_LA_CASE);
   });
@@ -355,13 +359,14 @@ export function dessinerHud(ctx, {
   ctx.restore();
 
   // §4 : jamais les deux à la fois. Sur tactile, les boutons SONT les slots.
+  const couleurActive = (companion && companion.render.couleur) || COULEUR_SLOT_ACTIF;
   if (tactileActif) {
-    dessinerBoutonsTactiles(ctx, iconesSlots, verbesActions);
+    dessinerBoutonsTactiles(ctx, iconesSlots, verbesActions, couleurActive);
   } else if (barreActions) {
     // Diagnostic SD_dialogues-invisibles_2026-09-15 : même défaut que
     // dialogue_box.js — `ctx.canvas.width/height` est la taille PHYSIQUE
     // depuis le MT rendu-net, jamais la résolution logique sous laquelle ce
     // dessin est réellement placé (transform f encore active).
-    dessinerSlotsBas(ctx, RESOLUTION_LOGIQUE, iconesSlots, verbesActions);
+    dessinerSlotsBas(ctx, RESOLUTION_LOGIQUE, iconesSlots, verbesActions, couleurActive);
   }
 }

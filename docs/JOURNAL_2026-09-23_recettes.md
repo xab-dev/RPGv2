@@ -24,3 +24,7 @@ dialogues ni les déblocages déjà en place.
 **Verdict** : Xav, 23/09, au Nv.30 avec la besace : « tout est ok (reset y compris). Tu peux valider les V- de cette session, je suis probablement passé devant » — `V-124`, `V-128`, `V-129` validées ; avec `V-125` à `V-127` déjà validées, toutes les `V-` de la session sont closes (consigné par Claude). Reste ouverte : `Q-123` à `Q-125` et `Q-127`, qui sont des questions et que seul Xav tranche.
 
 **Verdict** : Xav, 23/09 : « ok pour tout ! » — `Q-123`, `Q-124`, `Q-125` et `Q-127` closes, valeurs par défaut gardées (consigné par Claude). Plus rien d'ouvert de cette session.
+
+**Mise en ligne** : branche fusionnée dans `main` et poussée **à la demande explicite de Xav** (« oui, on clos la session. go push »), le 23/09. Session close.
+
+**Au prochain ménage** : archiver ce journal.

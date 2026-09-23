@@ -8,6 +8,7 @@ import { dessinerVisuel, TAILLE_REFERENCE_FOLLET_PX } from '../visuels.js';
 import { etincellesOrbite, facteurRespiration } from '../ornements.js';
 import { dessinerCadre, ACCENT } from './cadre.js';
 import { geometrieBoiteDialogue, BOITE_DIALOGUE } from './hud_layout.js';
+import { POLICE_CALLIGRAPHIE, POLICE_ONCIALE } from '../polices.js';
 
 // `D-136` : la géométrie du texte, en un seul endroit — le dessin ET la
 // pagination la lisent, jamais deux jeux de nombres qui divergeraient (une
@@ -18,7 +19,14 @@ import { geometrieBoiteDialogue, BOITE_DIALOGUE } from './hud_layout.js';
 // La marge de la bulle appartient à sa géométrie (`hud_layout.js`, spec 11).
 const MARGE_BOITE = BOITE_DIALOGUE.marge;
 const MARGE_TEXTE_X = 18;
-const POLICE_TEXTE = '13px sans-serif';
+// Polish libre du 24/09 : la voix du follet est celle du prologue qui la
+// précède — la calligraphie pour le texte et les options, l'onciale pour le
+// nom (le seul endroit où la bulle affiche un titre). En `sans-serif`, la
+// bulle se lisait comme une boîte de dialogue de logiciel. La calligraphie a
+// un œil plus petit que la linéale : un pixel de plus garde la même lecture.
+// Repli `serif` si la police manque (« meilleur effort », `polices.js`).
+const POLICE_TEXTE = `14px "${POLICE_CALLIGRAPHIE}", serif`;
+const POLICE_NOM = `13px "${POLICE_ONCIALE}", serif`;
 // Interligne : la bulle de 70 px porte le locuteur (y + 8), puis deux lignes
 // (y + 28, y + 44) qui finissent avant le marqueur d'armement (y + 60).
 const INTERLIGNE = 16;
@@ -151,7 +159,7 @@ export function dessinerDialogue(ctx, ligne, habillage = {}) {
     dessinerPortrait(ctx, y, habillage.portrait, habillage);
   } else {
     ctx.fillStyle = ACCENT;
-    ctx.font = 'bold 13px sans-serif';
+    ctx.font = POLICE_NOM;
     ctx.fillText(ligne.locuteur, MARGE_TEXTE_X, y + 8);
   }
 

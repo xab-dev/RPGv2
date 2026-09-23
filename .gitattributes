@@ -1,0 +1,13 @@
+# Fins de ligne : LF partout, dans le dépôt ET dans la copie de travail.
+# Le dépôt était déjà tout en LF ; c'est `core.autocrlf=true` sur le PC de Xav
+# qui remettait du CRLF à chaque checkout, d'où l'avertissement « LF will be
+# replaced by CRLF » à chaque commit, et deux fichiers aux fins mélangées.
+# Node, Chrome et les éditeurs lisent le LF sans broncher.
+* text=auto eol=lf
+
+# Les images ne se comparent pas ligne à ligne.
+*.png binary
+*.jpg binary
+
+# La barre des langages de GitHub n'a pas besoin de réglage : le Markdown de
+# docs/ et specs/ n'y compte pas, elle dit déjà « JavaScript » (~98 %).

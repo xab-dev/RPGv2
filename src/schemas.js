@@ -525,6 +525,11 @@ function validerScene(entry, catalogs, path) {
     if (!r || ['x', 'y', 'w', 'h'].some((c) => typeof r[c] !== 'number')) {
       erreurs.push(`${chemin} > rect doit être { x, y, w, h } numériques`);
     }
+    // `ombre` (polish ambiance, 23/09) : optionnelle, une opacité de voile
+    // (daynight.js#opaciteOmbreZones) — hors de [0, 1] le voile n'a pas de sens.
+    if (zone.ombre !== undefined && (typeof zone.ombre !== 'number' || zone.ombre < 0 || zone.ombre > 1)) {
+      erreurs.push(`${chemin} > ombre doit être un nombre dans [0, 1]`);
+    }
   });
 
   // structures[] (03_maison-exterieur §3.4) : rectangle + murs/sol/portes/

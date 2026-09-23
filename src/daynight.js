@@ -84,3 +84,34 @@ export function phaseAHeure(heureMs) {
   const t = heureMs % DUREE_CYCLE_MS;
   return PHASES_CYCLE[indexPhaseAHeure(t)].nom;
 }
+
+// Ombre de sous-bois (polish ambiance, 23/09) — une zone de scène peut
+// déclarer `ombre` (opacité de voile, dans [0, 1]) : sous ses arbres il fait
+// plus sombre qu'en plein champ, à toute heure, et la seule lumière qui perce
+// est celle que le héros porte (le follet). Ce n'est PAS un second mécanisme
+// d'assombrissement : `main.js` prend le maximum de cette ombre et de
+// l'opacité du cycle, et `dessinerObscurite` ne voit toujours qu'un seul
+// `{ opacite }` — la nuit, plus sombre, l'emporte.
+//
+// L'ombre se lit à la position du HÉROS (c'est l'ambiance qu'il traverse,
+// pas une carte d'ombres case par case) et monte sur `FONDU_OMBRE_TUILES`
+// depuis le bord de la zone : on entre dans le sous-bois, on ne franchit pas
+// un interrupteur. Provisoire, au jugé de la capture ; à valider en jeu.
+export const FONDU_OMBRE_TUILES = 5;
+
+export function opaciteOmbreZones(zones, x, y, tileSize) {
+  let opacite = 0;
+  for (const zone of zones || []) {
+    if (typeof zone.ombre !== 'number' || zone.ombre <= 0) continue;
+    const r = zone.rect;
+    // Profondeur dans la zone, en tuiles : distance au bord le plus proche,
+    // négative dehors.
+    const tx = x / tileSize;
+    const ty = y / tileSize;
+    const profondeur = Math.min(tx - r.x, r.x + r.w - tx, ty - r.y, r.y + r.h - ty);
+    if (profondeur <= 0) continue;
+    const fondu = Math.min(1, profondeur / FONDU_OMBRE_TUILES);
+    opacite = Math.max(opacite, zone.ombre * fondu);
+  }
+  return opacite;
+}

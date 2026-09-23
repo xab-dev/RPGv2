@@ -10406,5 +10406,34 @@
       {"forme":"rect","dx":-11.1,"dy":-7.9,"w":1,"h":1,"couleur":"#2f4a22","alpha":0.3},
       {"forme":"rect","dx":-5.2,"dy":-10.2,"w":1,"h":1,"couleur":"#2f4a22","alpha":0.3}
     ]
+  },
+  {
+    "id": "visuel_arbre_chene",
+    "ancre": "bas",
+    "ombre": {"dy":1,"w":22,"h":5,"alpha":0.32},
+    "primitives": [
+      {"forme":"polygone","dx":0,"dy":0,"points":[[-5.5,0],[-3.5,-3],[-3.5,-15],[3.5,-15],[3.5,-3],[5.5,0]],"couleur":"#4a3826"},
+      {"forme":"rect","dx":1.8,"dy":-8,"w":1.4,"h":12,"couleur":"#2e2115","alpha":0.45},
+      {"forme":"cercle","dx":-6,"dy":-23,"w":20,"h":20,"couleur":"#2f5623"},
+      {"forme":"cercle","dx":6,"dy":-24,"w":20,"h":20,"couleur":"#2f5623"},
+      {"forme":"cercle","dx":0,"dy":-29,"w":24,"h":24,"couleur":"#3d6a2c"},
+      {"forme":"ellipse","dx":0,"dy":-15.5,"w":26,"h":5,"couleur":"#1e3a16","alpha":0.4},
+      {"forme":"cercle","dx":-5,"dy":-34,"w":10,"h":10,"couleur":"#4d7d38","alpha":0.5},
+      {"forme":"cercle","dx":-9,"dy":-24,"w":6,"h":6,"couleur":"#4d7d38","alpha":0.35}
+    ]
+  },
+  {
+    "id": "visuel_arbre_sapin",
+    "ancre": "bas",
+    "ombre": {"dy":1,"w":16,"h":4,"alpha":0.32},
+    "primitives": [
+      {"forme":"rect","dx":0,"dy":-4,"w":4,"h":8,"couleur":"#4a3826"},
+      {"forme":"polygone","dx":0,"dy":0,"points":[[-13,-7],[13,-7],[0,-24]],"couleur":"#24441c"},
+      {"forme":"polygone","dx":0,"dy":0,"points":[[0,-24],[-13,-7],[-5,-7]],"couleur":"#3a6630","alpha":0.55},
+      {"forme":"polygone","dx":0,"dy":0,"points":[[-10.5,-16],[10.5,-16],[0,-32]],"couleur":"#2a4d21"},
+      {"forme":"polygone","dx":0,"dy":0,"points":[[0,-32],[-10.5,-16],[-4,-16]],"couleur":"#3f6d33","alpha":0.55},
+      {"forme":"polygone","dx":0,"dy":0,"points":[[-7.5,-25],[7.5,-25],[0,-40]],"couleur":"#305726"},
+      {"forme":"polygone","dx":0,"dy":0,"points":[[0,-40],[-7.5,-25],[-2.8,-25]],"couleur":"#4d7d38","alpha":0.55}
+    ]
   }
 ]

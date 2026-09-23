@@ -85,7 +85,7 @@ import {
 } from './ground_items.js';
 import { calculerOpaciteToit, distanceAuRectangle, empreinteAbsoluePuzzle } from './structures.js';
 import { dansRectangleTuile, poseValide } from './placement.js';
-import { avancerHeure, opaciteAHeure, phaseAHeure, PHASES_CYCLE } from './daynight.js';
+import { avancerHeure, opaciteAHeure, opaciteOmbreZones, phaseAHeure, PHASES_CYCLE } from './daynight.js';
 import { ambianceADeclencher } from './ambiances.js';
 import { armerAudio, definirMusiqueActive, definirVolumeMaitre, palierSuivant } from './audio.js';
 import { creerEtatIndices } from './hints.js';
@@ -3386,8 +3386,18 @@ export function creerOrchestrateurGrotte({
     // sinon l'opacité du voile est DÉRIVÉE de l'heure à chaque frame — jamais
     // un second mécanisme d'assombrissement, dessinerObscurite ne voit
     // toujours qu'un simple `{ opacite }`.
-    const sceneAffichage = scene.cycleJourNuit
-      ? { ...scene, obscurite: { opacite: opaciteAHeure(save.monde.heure) } }
+    //
+    // Polish ambiance (23/09) : l'ombre d'une zone (le sous-bois) s'ajoute
+    // par le MAXIMUM, jamais par une seconde couche — même voile, même trou
+    // percé par la lumière du follet. Le signal des zones de Chaos, plus bas,
+    // continue de lire l'opacité du seul CYCLE : c'est la nuit qui l'allume,
+    // pas l'ombre d'un bois.
+    const opaciteCycle = scene.cycleJourNuit
+      ? opaciteAHeure(save.monde.heure)
+      : (scene.obscurite ? scene.obscurite.opacite : 0);
+    const opaciteAmbiance = Math.max(opaciteCycle, opaciteOmbreZones(scene.zones, hero.x, hero.y, scene.tileSize));
+    const sceneAffichage = scene.cycleJourNuit || scene.obscurite || opaciteAmbiance > 0
+      ? { ...scene, obscurite: { opacite: opaciteAmbiance } }
       : scene;
 
     // Fantôme de pose (specs/05_construction-stations.md §3) : résolu ici
@@ -3473,7 +3483,7 @@ export function creerOrchestrateurGrotte({
       zones: zonesSignalees(scene, tablesDeScene(registre.tous('spawns'), scene.id), {
         phase: phaseAHeure(save.monde.heure),
         evaluerCondition: flags.evaluate,
-        opacite: sceneAffichage.obscurite ? sceneAffichage.obscurite.opacite : 0,
+        opacite: opaciteCycle,
         opaciteMax: OPACITE_NUIT_MAX,
         heureMs: save.monde.heure,
       }),

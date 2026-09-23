@@ -11,7 +11,7 @@
 // suivant si l'ordre de dessin change un jour.
 
 import { RESOLUTION_LOGIQUE } from '../render.js';
-import { dessinerCadre } from './cadre.js';
+import { dessinerCadre, dessinerTouche, ACCENT } from './cadre.js';
 
 // Sous le cartouche PV (haut-gauche, cf. hud.js), centré — jamais superposé.
 // Provisoire, position/durée non validées en jeu par Xav (§7, critère manuel).
@@ -25,6 +25,15 @@ const Y_BANNIERE = 26;
 const HAUTEUR_BANNIERE = 18;
 const PADDING_X = 8;
 const DUREE_FONDU_MS = 250;
+const POLICE = 'bold 10px monospace';
+// La touche : 14 px dans une bannière de 18 (2 px d'air en haut et en bas).
+// Son padding horizontal déborde dans l'air qui l'entoure au lieu d'élargir
+// la bannière : l'écart glyphe → texte vaut exactement les deux espaces
+// d'avant (12 px en `bold 10px monospace`), dont 4 pour le bord de la touche
+// et 8 d'air. Provisoire, jugé à la capture Chrome seulement.
+const HAUTEUR_TOUCHE = 14;
+const TOUCHE_PADDING_X = 4;
+const ECART_TOUCHE_TEXTE = 12;
 
 export function dessinerHudHints(ctx, indice) {
   if (!indice) return;
@@ -39,24 +48,43 @@ export function dessinerHudHints(ctx, indice) {
   if (alpha <= 0) return;
 
   // Glyphe et texte, dans cet ordre, en sautant ce qui manque. Une annonce du
-  // jeu (palier E de `specs/09`) n'a pas de glyphe : composer à l'aveugle lui
-  // mettrait deux espaces en tête, donc une phrase décentrée dans sa boîte.
-  const contenu = [glyphe, texte].filter(Boolean).join('  ');
-
+  // jeu (palier E de `specs/09`) n'a pas de glyphe : elle n'a donc ni touche
+  // ni écart, et sa phrase reste centrée dans sa boîte.
   ctx.save();
   ctx.globalAlpha = alpha;
-  ctx.font = 'bold 10px monospace';
-  const largeurTexte = ctx.measureText(contenu).width;
-  const largeurBanniere = largeurTexte + PADDING_X * 2;
+  ctx.font = POLICE;
+  const largeurGlyphe = glyphe ? ctx.measureText(glyphe).width : 0;
+  const largeurTexte = texte ? ctx.measureText(texte).width : 0;
+  const ecart = glyphe && texte ? ECART_TOUCHE_TEXTE : 0;
+  const largeurBanniere = largeurGlyphe + ecart + largeurTexte + PADDING_X * 2;
   const x = (RESOLUTION_LOGIQUE.largeur - largeurBanniere) / 2;
+  const yTexte = Y_BANNIERE + HAUTEUR_BANNIERE / 2 + 1;
 
   // `D-163` : même cadre que la bulle de dialogue (ui/cadre.js), de la
   // famille du bandeau — plus un aplat noir à liseré blanc.
   dessinerCadre(ctx, x, Y_BANNIERE, largeurBanniere, HAUTEUR_BANNIERE);
 
-  ctx.fillStyle = '#ffffff';
-  ctx.textAlign = 'center';
+  ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
-  ctx.fillText(contenu, x + largeurBanniere / 2, Y_BANNIERE + HAUTEUR_BANNIERE / 2 + 1);
+  let curseur = x + PADDING_X;
+  if (glyphe) {
+    // La touche mord sur l'air autour du glyphe, jamais sur la largeur : la
+    // bannière reste celle d'avant (le bouton MENU tactile, collé à droite,
+    // compte sur elle — test `d17`).
+    dessinerTouche(
+      ctx,
+      curseur - TOUCHE_PADDING_X,
+      Y_BANNIERE + (HAUTEUR_BANNIERE - HAUTEUR_TOUCHE) / 2,
+      largeurGlyphe + TOUCHE_PADDING_X * 2,
+      HAUTEUR_TOUCHE,
+    );
+    ctx.fillStyle = ACCENT;
+    ctx.fillText(glyphe, curseur, yTexte);
+    curseur += largeurGlyphe + ecart;
+  }
+  if (texte) {
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(texte, curseur, yTexte);
+  }
   ctx.restore();
 }

@@ -6,7 +6,7 @@ import { RESOLUTION_LOGIQUE } from '../render.js';
 import { decouperEnFenetres } from '../dialogue.js';
 import { dessinerVisuel, TAILLE_REFERENCE_FOLLET_PX } from '../visuels.js';
 import { etincellesOrbite, facteurRespiration } from '../ornements.js';
-import { dessinerCadre } from './cadre.js';
+import { dessinerCadre, ACCENT } from './cadre.js';
 import { geometrieBoiteDialogue, BOITE_DIALOGUE } from './hud_layout.js';
 
 // `D-136` : la géométrie du texte, en un seul endroit — le dessin ET la
@@ -37,7 +37,7 @@ const LARGEUR_TEXTE = RESOLUTION_LOGIQUE.largeur - MARGE_BOITE - MARQUEUR_RETRAI
 // même geste (« appuie ici ») qui ne se ressemblaient pas. C'est l'or du nom,
 // qui existait déjà. Le surlignage de l'option retenue reste blanc : teinté
 // d'or sur le fond sombre, il virait à l'olive.
-const ACCENT = '#c2a83e';
+// L'or vit dans `cadre.js` depuis que la touche des indices le partage.
 const SURLIGNAGE = 'rgba(255, 255, 255, 0.12)';
 // Le portrait du follet qui parle, à la place de son nom : un médaillon
 // centré sur la rangée du nom (y + 8, police de 13 px), qui finit avant la

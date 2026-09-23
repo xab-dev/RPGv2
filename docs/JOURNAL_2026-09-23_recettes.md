@@ -16,3 +16,5 @@ dialogues ni les déblocages déjà en place.
 | Ticket | Commit | Ce qui est livré |
 |---|---|---|
 | R4 — la corde et le papyrus | `95dcf33` | Données seules. Refus de Xav, consigné dans CLAUDE.md : pas de pierre fabriquée à partir de cailloux, qui sont réservés à la mine, à la ferronnerie et au concasseur. `item_corde` et `item_papyrus` (Ressource) ; `rec_corde` (3 herbes) et `rec_papyrus` (4 herbes) à l'Atelier, sans éclats, 3 XP, 60 s, Nv.4. Deux dessins, vus au banc : corde lovée ; papyrus redessiné une fois (la première version, rouleaux en haut et en bas, se lisait comme une bobine), rouleaux sur les côtés. Valeurs : `Q-126`. `tests/test_corde_papyrus_nv4` (dont : aucune recette ne produit de pierre). 180 fichiers verts. À voir : `V-127` |
+| Verdict | — | Xav : « 126 127 good » — `Q-126` close, `V-127` validée (consigné par Claude) |
+| R5 — le bois à la corde | `774a0ff` | Retour de Xav sur `V-124` : `rec_bois` passe de 5 branches + 2 herbes à **5 branches + 1 corde** (+1 éclat inchangé). Données seules ; `test_rec_bois_nv4` lit ses entrées au catalogue, rien à retoucher. 180 fichiers verts. `V-124` reste ouverte, à revoir avec la corde |

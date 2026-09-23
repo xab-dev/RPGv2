@@ -87,4 +87,4 @@ const cases = (registre) => registre.filter(
   assert.match(main, /barreActions:\s*!dialogue\.estOuvert\(\)/, 'main.js tait la barre sur dialogue.estOuvert(), la source du dessin de la bulle');
 }
 
-console.log('OK test_barre_sous_bulle');
+console.log('OK test_d170_barre_sous_bulle');

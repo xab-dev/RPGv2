@@ -249,5 +249,47 @@
       "valeur": "niveau",
       "min": 4
     }
+  },
+  {
+    "id": "rec_besace",
+    "label_key": "recipe.besace",
+    "station": "station_type_atelier",
+    "entrees": [
+      {
+        "item": "item_papyrus",
+        "qte": 2
+      },
+      {
+        "item": "item_corde",
+        "qte": 2
+      },
+      {
+        "item": "item_branche",
+        "qte": 1
+      },
+      {
+        "item": "item_caillou",
+        "qte": 1
+      }
+    ],
+    "cout_eclats": 10,
+    "sortie": {
+      "porte": "item_besace",
+      "flag": "flag_besace"
+    },
+    "categorie": "outil",
+    "xp": 10,
+    "cooldown_ms": 60000,
+    "visible_si": {
+      "all": [
+        {
+          "valeur": "niveau",
+          "min": 10
+        },
+        {
+          "not": "flag_besace"
+        }
+      ]
+    }
   }
 ]

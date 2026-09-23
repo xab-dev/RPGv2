@@ -18,16 +18,22 @@
 // de forme, et qu'un contenu venu d'avant ce ticket reste lisible tel quel.
 
 // LE point de résolution de la capacité (§0 du brief : « une valeur destinée
-// à grandir n'est jamais lue directement par un système »). Aujourd'hui elle
-// rend la base telle quelle ; demain une besace ou un porte-outils passeront
-// ici, et nulle part ailleurs.
+// à grandir n'est jamais lue directement par un système »). La besace (23/09)
+// y est passée, et nulle part ailleurs : un conteneur déclare en données des
+// `bonus` — `{ condition, slots }` — et chacun dont la condition tient ajoute
+// ses slots à la base. `evaluer` est injecté (le module ne connaît pas les
+// flags) ; absent, aucun bonus ne tient : c'est la base d'avant la besace.
 //
 // `filtre` est le contrat que le porte-outils attend (`Q-65`) : une liste de
 // catégories acceptées. Rien ne le remplit aujourd'hui — `null` veut dire
 // « ce conteneur accepte tout », et c'est le seul comportement livré.
-export function resoudreCapacite(conteneurDef) {
+export function resoudreCapacite(conteneurDef, evaluer = () => false) {
+  let slots = conteneurDef.slots;
+  for (const bonus of conteneurDef.bonus || []) {
+    if (evaluer(bonus.condition)) slots += bonus.slots;
+  }
   return {
-    slots: conteneurDef.slots,
+    slots,
     pile: conteneurDef.pile,
     filtre: conteneurDef.filtre || null,
   };

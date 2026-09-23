@@ -372,8 +372,11 @@ export function instanceDeStockageDeBase(registre) {
 // defined` à chaque ouverture de l'écran Poche, et aucun test ne pouvait le
 // voir : `demarrerJeu` n'est jamais exécuté headless. C'est la capture sous
 // Chrome qui l'a attrapée, comme pour `D-72`.
-export function texteRemplissagePoche(save, registre, i18n) {
-  const capacite = resoudreCapacite(registre.obtenir('conteneurs', ID_CONTENEUR_POCHE));
+// `evaluer` : la condition d'un bonus de capacité (la besace), par LE registre
+// de flags de l'orchestrateur — sans lui, le « 4/6 » d'un porteur de besace
+// se lirait « 4/4 ».
+export function texteRemplissagePoche(save, registre, i18n, evaluer) {
+  const capacite = resoudreCapacite(registre.obtenir('conteneurs', ID_CONTENEUR_POCHE), evaluer);
   return i18n.t('menu.fiche.coffre_piles', {
     n: slotsOccupes(save.inventaire.items, capacite, (id) => registre.obtenir('items', id)),
     max: capacite.slots,
@@ -835,7 +838,14 @@ export function creerOrchestrateurGrotte({
   const iconesBoutonsTactiles = Object.fromEntries(registre.tous('glyphes')
     .filter((g) => g.tactile_icone)
     .map((g) => [g.verbe, registre.obtenir('visuels', g.tactile_icone)]));
-  const capacitePoche = resoudreCapacite(registre.obtenir('conteneurs', ID_CONTENEUR_POCHE));
+  // La besace (23/09) : la poche GRANDIT en cours de partie. Sa capacité se
+  // relit donc à chaque question, avec les flags du moment — jamais une
+  // constante prise au démarrage, qui garderait quatre slots à un héros qui
+  // en porte six. `flags` est lu par la fermeture : `reinitialiserPartie` le
+  // remplace, et la poche d'une partie neuve retombe à sa base.
+  function capacitePoche() {
+    return resoudreCapacite(registre.obtenir('conteneurs', ID_CONTENEUR_POCHE), (c) => flags.evaluate(c));
+  }
   function capaciteDeStation(station) {
     return resoudreCapacite(registre.obtenir('conteneurs', station.conteneur));
   }
@@ -843,33 +853,10 @@ export function creerOrchestrateurGrotte({
   const capaciteCoffreDeBase = capaciteDeStation(typeStockageDeBase);
 
   function plafondPoche(itemId) {
-    return plafondPourItem(save.inventaire.items, itemId, capacitePoche, obtenirItemDef);
+    return plafondPourItem(save.inventaire.items, itemId, capacitePoche(), obtenirItemDef);
   }
 
   const coffreDeBase = instanceDeStockageDeBase(registre);
-
-  // Une sauvegarde d'avant `D-118` peut porter 20 bois en poche là où quatre
-  // slots de cinq n'en tiennent plus autant. Normalisé une fois, au
-  // démarrage, et DIT — jamais un objet qui s'évapore entre deux parties.
-  {
-    const bilan = normaliserContenus(
-      { poche: save.inventaire.items, coffre: contenuDeStation(coffreDeBase.id) },
-      { capacitePoche, capaciteCoffre: capaciteCoffreDeBase, obtenirItem: obtenirItemDef },
-    );
-    if (bilan.deplaces.length || bilan.perdus.length) {
-      save.inventaire.items = bilan.poche;
-      const entreeCoffre = save.maison.stations[coffreDeBase.id]
-        || (save.maison.stations[coffreDeBase.id] = {});
-      entreeCoffre.contenu = bilan.coffre;
-      etatModifie = true;
-      for (const d of bilan.deplaces) {
-        console.info(`[D-118] poche trop pleine au chargement : ${d.quantite} × ${d.item} descendu(s) au coffre.`);
-      }
-      for (const p of bilan.perdus) {
-        console.warn(`[D-118] poche ET coffre pleins au chargement : ${p.quantite} × ${p.item} n'a pas pu être rangé.`);
-      }
-    }
-  }
 
   // Extrait en fonction (plutôt qu'un simple `const`) : reinitialiserPartie()
   // (diagnostic SD_grotte-blocage-choix-follet_2026-09-15.md, §B) doit
@@ -917,8 +904,8 @@ export function creerOrchestrateurGrotte({
       // `max: 0` qui ne dépend pas du nombre de slots du conteneur — le jour
       // où la poche en gagne un (une besace, `Q-65`), la condition tient
       // toujours, là où un `min: 4` serait devenu faux en silence.
-      slots_libres_poche: capacitePoche.slots
-        - slotsOccupes(save.inventaire.items, capacitePoche, obtenirItemDef),
+      slots_libres_poche: capacitePoche().slots
+        - slotsOccupes(save.inventaire.items, capacitePoche(), obtenirItemDef),
       objets_au_coffre: objetsRangesAuCoffre(),
       // Spec 11 §7.3 : la part REMPLIE du coffre le plus plein de la scène, de
       // 0 à 1 — posée sur ce qui est rempli et non sur un nombre de slots, pour
@@ -932,6 +919,32 @@ export function creerOrchestrateurGrotte({
     };
   }
   let flags = construireFlags();
+
+  // Une sauvegarde d'avant `D-118` peut porter 20 bois en poche là où quatre
+  // slots de cinq n'en tiennent plus autant. Normalisé une fois, au
+  // démarrage, et DIT — jamais un objet qui s'évapore entre deux parties.
+  // APRÈS la création des flags (besace, 23/09) : mesurée avant, la poche
+  // d'un porteur de besace aurait eu sa base seule, et ses deux slots de plus
+  // seraient descendus au coffre à chaque chargement.
+  {
+    const bilan = normaliserContenus(
+      { poche: save.inventaire.items, coffre: contenuDeStation(coffreDeBase.id) },
+      { capacitePoche: capacitePoche(), capaciteCoffre: capaciteCoffreDeBase, obtenirItem: obtenirItemDef },
+    );
+    if (bilan.deplaces.length || bilan.perdus.length) {
+      save.inventaire.items = bilan.poche;
+      const entreeCoffre = save.maison.stations[coffreDeBase.id]
+        || (save.maison.stations[coffreDeBase.id] = {});
+      entreeCoffre.contenu = bilan.coffre;
+      etatModifie = true;
+      for (const d of bilan.deplaces) {
+        console.info(`[D-118] poche trop pleine au chargement : ${d.quantite} × ${d.item} descendu(s) au coffre.`);
+      }
+      for (const p of bilan.perdus) {
+        console.warn(`[D-118] poche ET coffre pleins au chargement : ${p.quantite} × ${p.item} n'a pas pu être rangé.`);
+      }
+    }
+  }
 
   // Indices de commande (specs/04_indices-commandes.md) : les flags qu'il
   // pose vivent dans le même registre de flags que le reste (§3.10 :
@@ -2171,7 +2184,7 @@ export function creerOrchestrateurGrotte({
           r, save.inventaire.items, flags, save.cooldowns, heureMs, save.inventaire.eclats,
           r.sortie.item
             ? ((pocheApresEntrees) => plafondPourItem(
-              pocheApresEntrees, r.sortie.item, capacitePoche, obtenirItemDef,
+              pocheApresEntrees, r.sortie.item, capacitePoche(), obtenirItemDef,
             ))
             : null,
         );
@@ -2202,9 +2215,11 @@ export function creerOrchestrateurGrotte({
         // dans un catalogue ou dans l'autre. Une seule paire de valeurs, lue
         // une fois : c'est ce qui évite d'écrire deux fois la fiche.
         const modeleSortie = r.sortie.station ? modeleDeStation(registre, r.sortie.station) : null;
+        // Un objet PORTÉ (la besace) se montre par sa fiche d'objet, comme un
+        // objet de poche : seul son devenir diffère.
         const defSortie = modeleSortie
           ? registre.obtenir('stations', r.sortie.station)
-          : registre.obtenir('items', r.sortie.item);
+          : registre.obtenir('items', r.sortie.item || r.sortie.porte);
         const visuelSortie = modeleSortie ? modeleSortie.render.visuel : defSortie.render.visuel;
         // `D-122` : la fiche dit ce qui manque, et COMBIEN. Le détail vient
         // de `peutFabriquer` — seul endroit qui le sache —, la phrase se
@@ -2264,7 +2279,7 @@ export function creerOrchestrateurGrotte({
               // qui fait qu'on peut cuire son dernier fruit sans avoir à
               // vider un slot d'abord.
               plafondSortie: (pocheApresEntrees) => (r.sortie.item
-                ? plafondPourItem(pocheApresEntrees, r.sortie.item, capacitePoche, obtenirItemDef)
+                ? plafondPourItem(pocheApresEntrees, r.sortie.item, capacitePoche(), obtenirItemDef)
                 : 0),
               eclats: save.inventaire.eclats,
             });
@@ -2276,6 +2291,10 @@ export function creerOrchestrateurGrotte({
               save.cooldowns = resultat.cooldowns;
               crediterXpHeros(resultat.xp);
               flags.set('flag_premier_craft');
+              // La besace : l'objet se porte dès sa fabrication. Le flag est
+              // toute sa présence — la poche grandit avec lui (`capacitePoche`),
+              // et la recette quitte l'Atelier par son `visible_si`.
+              if (resultat.porte) flags.set(resultat.porte);
               etatModifie = true;
               // `D-121` : une recette de station ne remplit pas la poche,
               // elle POSE quelque chose — donc elle enchaîne directement sur
@@ -4821,7 +4840,7 @@ export async function demarrerJeu() {
     // `D-118` : la poche dit ce qu'elle a d'occupé. Un seul calcul, celui du
     // module (`slotsOccupes`), donc ce nombre ne peut pas diverger de celui
     // qui refuse un ramassage.
-    sousTitrePoche: () => texteRemplissagePoche(save, registre, i18n),
+    sousTitrePoche: () => texteRemplissagePoche(save, registre, i18n, orchestrateur.evaluerCondition),
     listerPoche: () => Object.entries(save.inventaire.items)
       .filter(([, quantite]) => quantite > 0)
       .map(([itemId, quantite]) => entreePoche(registre.obtenir('items', itemId), quantite, {

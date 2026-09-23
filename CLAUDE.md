@@ -141,7 +141,8 @@ rpg_v2/
 │   │                       (`D-118`) — `resoudreCapacite` est LE point de résolution (slots, pile,
 │   │                       et le `filtre` que le porte-outils attend), `pileEffective` dit que la
 │   │                       pile appartient au conteneur et que l'objet ne fait que l'abaisser,
-│   │                       `slotsOccupes` que les slots sont une CONSÉQUENCE du contenu, et
+│   │                       `slotsOccupes` que les slots sont une CONSÉQUENCE du contenu (la
+│   │                       besace y ajoute ses `bonus` sous condition, 23/09), et
 │   │                       `normaliserContenus` rattrape une vieille sauvegarde sans rien perdre
 │   │                       en silence
 │   ├── cooldowns.js        Phase 3 : cooldowns en temps actif, réutilise l'horloge de daynight.js
@@ -323,6 +324,7 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 | **La stèle** : un interactif de type `stele` (`puzzles.json`), posé dès le début dans une clairière au sud-ouest de la forêt, non loin du chemin mais **invisible depuis lui** (tenu par test, avec la caméra du jeu) ; INTERACT ouvre sa vue rapprochée (jeu gelé, MENU muet), B ou un toucher la ferme, c'est tout. Sa gravure est **son indice brouillé par le même point que le menu** (`indices.js#lignesBrouillees`) : mêmes signes. Une **clairière se déclare** (`foret_procedurale.zones_exclues` + une zone), jamais en recopiant les cellules que le tirage aurait boisées | 2026-09-23 | demande de Xav, `Q-121`, `Q-122`, `V-123` |
 | **Un soin est un buff sur les PV, et son icône au bandeau est celle d'une stat, empruntée et teintée** (`icone_bandeau: { stat, teinte }`), jamais un dessin à lui — `D-13` tient toujours : une recette n'ajoute pas d'icône. Le soin se compte en temps actif, avant l'expiration du buff, plafonné aux PV max | 2026-09-23 | demande de Xav (pomme cuite), `status.js#tickSoinsBuffsActifs`, `#iconeBuffBandeau` |
 | **Pas de pierre fabriquée à partir de cailloux** : on lie des branches pour en faire du bois, mais lier des cailloux ne fait pas une pierre. Les cailloux sont réservés à la mine, à la ferronnerie et au concasseur, stations à venir. La **division** (bois → branches, etc.) vivra aussi dans d’autres stations | 2026-09-23 | décision de Xav, file des recettes (R4), tenu par `tests/test_corde_papyrus_nv4` |
+| **Un objet PORTÉ** (la besace) : fabriqué, il ne va ni en poche ni au coffre, il se porte pour toujours ; sa présence est un **flag** (`sortie: { porte, flag }` d'une recette), jamais un objet d'inventaire, et il est unique par nature. Ce qu'il donne se déclare sur ce qu'il change : la poche porte `bonus: [{ condition, slots }]`, résolu par `inventory.js#resoudreCapacite` seul. La capacité de la poche se relit donc à chaque question, et la normalisation du chargement passe après les flags | 2026-09-23 | choix de Xav (« portée d'office »), `Q-127`, `tests/test_besace` |
 | **Licence : source visible, tous droits réservés** (`LICENSE`, FR/EN) : on lit le dépôt, on joue à l’adresse officielle, on le lance chez soi pour un usage personnel ; ni reprise, ni hébergement ailleurs, ni usage commercial sans accord écrit. *Précise* P1 « open source assumé » : le code est ouvert à la lecture, pas à la réutilisation — ce qui garde ouverts la version payante et le portage | 2026-09-23 | choix de Xav, présentation du dépôt GitHub |
 
 ## Ce qui est dû : dettes, questions, validations

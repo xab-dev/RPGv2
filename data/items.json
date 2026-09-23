@@ -189,5 +189,15 @@
     "render": {
       "visuel": "visuel_papyrus"
     }
+  },
+  {
+    "id": "item_besace",
+    "label_key": "item.besace",
+    "description_key": "item.besace.description",
+    "categorie": "outil",
+    "pile_max": 1,
+    "render": {
+      "visuel": "visuel_besace"
+    }
   }
 ]

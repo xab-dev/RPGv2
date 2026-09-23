@@ -3,7 +3,13 @@
     "id": "conteneur_poche",
     "label_key": "conteneur.poche",
     "slots": 4,
-    "pile": 5
+    "pile": 5,
+    "bonus": [
+      {
+        "condition": "flag_besace",
+        "slots": 2
+      }
+    ]
   },
   {
     "id": "conteneur_coffre",

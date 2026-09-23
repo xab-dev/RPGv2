@@ -71,6 +71,11 @@ export function peutFabriquer(recette, poche, flags, cooldowns, heureMs, eclats 
   if (recette.unique && recette.sortie.item && (poche[recette.sortie.item] || 0) > 0) {
     return { ok: false, raison: 'deja_possede', detail: { item: recette.sortie.item } };
   }
+  // La besace (23/09) : un objet PORTÉ est possédé ou non, pour toujours — le
+  // flag de sa sortie le dit. Une seconde n'a rien à ajouter : même refus.
+  if (recette.sortie.porte && flags.evaluate(recette.sortie.flag)) {
+    return { ok: false, raison: 'deja_possede', detail: { item: recette.sortie.porte } };
+  }
 
   for (const entree of recette.entrees) {
     const possede = poche[entree.item] || 0;
@@ -138,7 +143,10 @@ export function fabriquer(recette, { poche, flags, cooldowns, heureMs, plafondSo
   // pas consulté, ce qui n'est pas un contournement mais la conséquence
   // exacte de « rien n'entre en poche ».
   const station = recette.sortie.station || null;
-  if (!station) {
+  // Un objet PORTÉ n'entre pas en poche non plus : c'est un flag que
+  // l'appelant pose (ce module ne touche pas aux flags, il les lit).
+  const porte = recette.sortie.porte ? recette.sortie.flag : null;
+  if (!station && !porte) {
     pocheFinale = ajouterItem(
       pocheFinale, recette.sortie.item, recette.sortie.qte, plafondSortie(pocheFinale),
     ).inventaire;
@@ -150,6 +158,8 @@ export function fabriquer(recette, { poche, flags, cooldowns, heureMs, plafondSo
     // `station` vaut `null` pour une recette d'objet : l'appelant n'a donc
     // aucune branche à écrire pour les recettes d'avant ce ticket.
     station,
+    // Le flag à poser pour un objet porté, `null` sinon.
+    porte,
     poche: pocheFinale,
     // Les éclats sont RENDUS, pas mutés : ce module reste pur, comme il l'est
     // pour la poche et les cooldowns. C'est l'appelant qui les repose dans la

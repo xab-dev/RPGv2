@@ -238,5 +238,9 @@
   {
     "id": "flag_chapitre_3_vu",
     "label_key": "flag.chapitre_3_vu"
+  },
+  {
+    "id": "flag_besace",
+    "label_key": "flag.besace"
   }
 ]

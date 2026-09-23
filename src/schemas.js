@@ -2153,6 +2153,22 @@ export const SCHEMAS = {
           erreurs.push(`${path} > ${champ} doit être un entier strictement positif`);
         }
       }
+      // La besace (23/09) : des slots de plus sous une condition de données,
+      // du même format que partout (`erreursConditionVisibilite`). Des slots
+      // négatifs retireraient de la place sous l'objet qu'on porte : refusé.
+      if (entry.bonus !== undefined) {
+        if (!Array.isArray(entry.bonus)) {
+          erreurs.push(`${path} > bonus doit être une liste de { condition, slots }`);
+        } else {
+          entry.bonus.forEach((b, i) => {
+            if (!b || b.condition === undefined) erreurs.push(`${path} > bonus[${i}] : condition requise`);
+            else erreurs.push(...erreursConditionVisibilite(b.condition, `${path} > bonus[${i}]`, catalogs));
+            if (!b || !Number.isInteger(b.slots) || b.slots <= 0) {
+              erreurs.push(`${path} > bonus[${i}] : slots doit être un entier strictement positif`);
+            }
+          });
+        }
+      }
       if (entry.filtre !== undefined) {
         if (!Array.isArray(entry.filtre) || entry.filtre.length === 0) {
           erreurs.push(`${path} > filtre doit être une liste non vide de catégories si présent`);
@@ -2308,8 +2324,20 @@ export const SCHEMAS = {
       const s = entry.sortie || {};
       const sortieItem = s.item !== undefined;
       const sortieStation = s.station !== undefined;
-      if (sortieItem === sortieStation) {
-        erreurs.push(`${path} > sortie doit déclarer soit "item", soit "station", jamais les deux ni aucun`);
+      // La besace (23/09) : une recette peut produire un objet PORTÉ — fabriqué,
+      // il ne va ni en poche ni au coffre, il se porte pour toujours. Ce qui le
+      // dit est un flag (`sortie.flag`, sauvegardé comme tout flag) ; l'objet
+      // (`sortie.porte`) ne sert qu'à le montrer : nom, silhouette, fiche.
+      const sortiePorte = s.porte !== undefined;
+      if ([sortieItem, sortieStation, sortiePorte].filter(Boolean).length !== 1) {
+        erreurs.push(`${path} > sortie doit déclarer exactement un de "item", "station" ou "porte"`);
+      } else if (sortiePorte) {
+        if (!itemsDeclares.has(s.porte)) {
+          erreurs.push(`${path} > sortie.porte "${s.porte}" introuvable dans items.json`);
+        }
+        if (!(catalogs.flags || []).some((f) => f.id === s.flag)) {
+          erreurs.push(`${path} > sortie.flag "${s.flag}" introuvable dans flags.json : c'est lui qui dit que l'objet est porté`);
+        }
       } else if (sortieItem) {
         if (!itemsDeclares.has(s.item)) {
           erreurs.push(`${path} > sortie.item "${s.item}" introuvable dans items.json`);
@@ -2344,7 +2372,9 @@ export const SCHEMAS = {
       }
       // `unique` (`D-122`, T6) : on n'en fabrique pas un second tant qu'on a
       // le premier. Réservé aux recettes d'OBJET — une station se pose, on en
-      // veut cinq, et « déjà possédé » n'y voudrait rien dire.
+      // veut cinq, et « déjà possédé » n'y voudrait rien dire. Un objet PORTÉ
+      // (la besace) n'en a pas besoin non plus : son flag le rend unique par
+      // nature (`recipes.js#peutFabriquer`), le dire deux fois ferait deux règles.
       if (entry.unique !== undefined) {
         if (typeof entry.unique !== 'boolean') {
           erreurs.push(`${path} > unique doit être un booléen si présent`);

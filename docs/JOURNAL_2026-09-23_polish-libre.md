@@ -48,4 +48,5 @@ s'améliorent.
 
 | Commit | Sujet | Ce qu'il faut en retenir |
 |---|---|---|
-| *(ce commit)* | `D-173` | Faim : un épi de blé à la place du triangle. Soif : la goutte dans une flaque. Données seules, deux passes au banc (la première faisait un épi de maïs) |
+| `72d9327` | `D-173` | Faim : un épi de blé à la place du triangle. Soif : la goutte dans une flaque. Données seules, deux passes au banc (la première faisait un épi de maïs) |
+| *(ce commit)* | `D-174` | « Prêt dans » → « Disponible dans » (FR), « Ready in » → « Available in » (EN) : une clé de locale |

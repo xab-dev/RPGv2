@@ -255,7 +255,7 @@
   "menu.fiche.fabriquer": "Craft",
   "menu.fiche.ingredient": "{item}: {possede} / {n}",
   "menu.fiche.donne": "Gives: {item} × {n}",
-  "menu.fiche.recharge": "Ready in {n} s",
+  "menu.fiche.recharge": "Available in {n} s",
   "menu.fiche.ingredients_manquants": "Missing ingredients",
   "menu.fiche.aucune_recette": "No known recipe",
   "menu.fiche.deplacer": "Move",

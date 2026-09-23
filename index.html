@@ -54,9 +54,11 @@
       /* Polish libre du 24/09 : les menus parlent avec les polices du
          prologue et de la bulle (`polices.js`, chargées pour tout le jeu).
          L'onciale ne porte que des titres ; elle n'a pas de gras, et un gras
-         imité par le navigateur l'empâte. Repli `serif` si elles manquent. */
-      --menu-police-titre: "Uncial Antiqua", serif;
-      --menu-police-texte: "Almendra", serif;
+         imité par le navigateur l'empâte. Repli `serif` si elles manquent.
+         « Chiffres alignes » en tête : elle ne porte que les dix chiffres
+         (`polices.js#POLICE_CHIFFRES`) — sans elle, « +1 » se lisait « +I ». */
+      --menu-police-titre: "Chiffres alignes", "Uncial Antiqua", serif;
+      --menu-police-texte: "Chiffres alignes", "Almendra", serif;
       /* Focus « léger » (à confirmer en jeu) : jamais la couleur seule — la
          bordure s'épaissit, un halo l'entoure ET la carte s'éclaircit. */
       --menu-focus-bordure-px: 1.5px;

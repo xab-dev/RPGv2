@@ -8,7 +8,7 @@ import { dessinerVisuel, TAILLE_REFERENCE_FOLLET_PX } from '../visuels.js';
 import { etincellesOrbite, facteurRespiration } from '../ornements.js';
 import { dessinerCadre, ACCENT } from './cadre.js';
 import { geometrieBoiteDialogue, BOITE_DIALOGUE } from './hud_layout.js';
-import { POLICE_CALLIGRAPHIE, POLICE_ONCIALE } from '../polices.js';
+import { POLICE_CALLIGRAPHIE, POLICE_ONCIALE, POLICE_CHIFFRES } from '../polices.js';
 
 // `D-136` : la géométrie du texte, en un seul endroit — le dessin ET la
 // pagination la lisent, jamais deux jeux de nombres qui divergeraient (une
@@ -25,8 +25,10 @@ const MARGE_TEXTE_X = 18;
 // bulle se lisait comme une boîte de dialogue de logiciel. La calligraphie a
 // un œil plus petit que la linéale : un pixel de plus garde la même lecture.
 // Repli `serif` si la police manque (« meilleur effort », `polices.js`).
-const POLICE_TEXTE = `14px "${POLICE_CALLIGRAPHIE}", serif`;
-const POLICE_NOM = `13px "${POLICE_ONCIALE}", serif`;
+// Les chiffres passent en tête : « Nv.15 » se dit dans la bulle, et la
+// calligraphie n'a que des chiffres bas de casse (`POLICE_CHIFFRES`).
+const POLICE_TEXTE = `14px "${POLICE_CHIFFRES}", "${POLICE_CALLIGRAPHIE}", serif`;
+const POLICE_NOM = `13px "${POLICE_CHIFFRES}", "${POLICE_ONCIALE}", serif`;
 // Interligne : la bulle de 70 px porte le locuteur (y + 8), puis deux lignes
 // (y + 28, y + 44) qui finissent avant le marqueur d'armement (y + 60).
 const INTERLIGNE = 16;

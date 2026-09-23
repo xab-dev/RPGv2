@@ -8,7 +8,7 @@
 // le grand écran et le téléphone à DPR 3 — c'est au téléphone qu'une police
 // trop fine se perd d'abord. Ce que ça prouve : « ça s'affiche ainsi sous
 // Chrome » ; le verdict reste celui de Xav, en jeu.
-import { ouvrirLeJeu, saveDansLaMaison, PROFILS } from './commun.mjs';
+import { ouvrirLeJeu, saveDansLaMaison, cliquer, positionPresDe, PROFILS } from './commun.mjs';
 
 const DOSSIER = 'docs/captures/scenarios/polish-libre-2026-09-24';
 const SUFFIXE = process.env.SUFFIXE || 'etat';
@@ -36,6 +36,49 @@ const VUES = {
     await chrome.touche('Space');
     await chrome.attendre(300);
     await chrome.capture(nom('poche'));
+  },
+  // Les écrans ajoutés pendant la nuit (24/09) : là où des CHIFFRES se mêlent
+  // aux lettres, et les rares textes restés en linéale.
+  parametres: async (chrome, nom) => {
+    const save = saveDansLaMaison();
+    save.monde.heure = PLEIN_JOUR;
+    await ouvrirLeJeu(chrome, { ...nom.profil, save });
+    await chrome.touche('Escape');
+    await cliquer(chrome, '[data-carte="carte_parametres"]');
+    await chrome.attendre(300);
+    await chrome.capture(nom('parametres'));
+  },
+  stats: async (chrome, nom) => {
+    const save = saveDansLaMaison();
+    save.monde.heure = PLEIN_JOUR;
+    save.hero.points_stats_libres = 2;
+    await ouvrirLeJeu(chrome, { ...nom.profil, save });
+    await chrome.touche('Escape');
+    await chrome.touche('Space');
+    await cliquer(chrome, '[data-carte="carte_stats"]');
+    await chrome.attendre(300);
+    await chrome.capture(nom('stats'));
+  },
+  coffre: async (chrome, nom) => {
+    const save = saveDansLaMaison();
+    save.monde.heure = PLEIN_JOUR;
+    Object.assign(save.hero, await positionPresDe('station_coffre'));
+    await ouvrirLeJeu(chrome, { ...nom.profil, save });
+    await chrome.touche('KeyE');
+    await chrome.attendre(300);
+    await chrome.capture(nom('coffre'));
+  },
+  // Hors de la Maison, la case contextuelle est la carte Indices.
+  indices: async (chrome, nom) => {
+    const save = saveDansLaMaison();
+    save.monde.heure = PLEIN_JOUR;
+    save.hero.x = 100.5 * 32;
+    save.hero.y = 55.5 * 32;
+    await ouvrirLeJeu(chrome, { ...nom.profil, save });
+    await chrome.touche('Escape');
+    await cliquer(chrome, '[data-carte="carte_indices"]');
+    await chrome.attendre(300);
+    await chrome.capture(nom('indices'));
   },
   jour: async (chrome, nom) => {
     const save = saveDansLaMaison();

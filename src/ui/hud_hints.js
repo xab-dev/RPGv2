@@ -11,6 +11,7 @@
 // suivant si l'ordre de dessin change un jour.
 
 import { RESOLUTION_LOGIQUE } from '../render.js';
+import { dessinerCadre } from './cadre.js';
 
 // Sous le cartouche PV (haut-gauche, cf. hud.js), centré — jamais superposé.
 // Provisoire, position/durée non validées en jeu par Xav (§7, critère manuel).
@@ -49,10 +50,9 @@ export function dessinerHudHints(ctx, indice) {
   const largeurBanniere = largeurTexte + PADDING_X * 2;
   const x = (RESOLUTION_LOGIQUE.largeur - largeurBanniere) / 2;
 
-  ctx.fillStyle = 'rgba(0,0,0,0.6)';
-  ctx.fillRect(x, Y_BANNIERE, largeurBanniere, HAUTEUR_BANNIERE);
-  ctx.strokeStyle = 'rgba(255,255,255,0.6)';
-  ctx.strokeRect(x, Y_BANNIERE, largeurBanniere, HAUTEUR_BANNIERE);
+  // `D-163` : même cadre que la bulle de dialogue (ui/cadre.js), de la
+  // famille du bandeau — plus un aplat noir à liseré blanc.
+  dessinerCadre(ctx, x, Y_BANNIERE, largeurBanniere, HAUTEUR_BANNIERE);
 
   ctx.fillStyle = '#ffffff';
   ctx.textAlign = 'center';

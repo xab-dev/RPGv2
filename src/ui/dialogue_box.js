@@ -4,6 +4,7 @@
 
 import { RESOLUTION_LOGIQUE } from '../render.js';
 import { decouperEnFenetres } from '../dialogue.js';
+import { dessinerCadre } from './cadre.js';
 
 // `D-136` : la géométrie du texte, en un seul endroit — le dessin ET la
 // pagination la lisent, jamais deux jeux de nombres qui divergeraient (une
@@ -54,10 +55,9 @@ export function dessinerDialogue(ctx, ligne) {
   const y = hauteur - boiteHauteur - 8;
 
   ctx.save();
-  ctx.fillStyle = 'rgba(10, 10, 10, 0.9)';
-  ctx.fillRect(MARGE_BOITE, y, largeur - 2 * MARGE_BOITE, boiteHauteur);
-  ctx.strokeStyle = '#ffffff';
-  ctx.strokeRect(MARGE_BOITE, y, largeur - 2 * MARGE_BOITE, boiteHauteur);
+  // `D-163` : le cadre de la famille du bandeau et des cases (ui/cadre.js),
+  // plus un rectangle noir à liseré blanc.
+  dessinerCadre(ctx, MARGE_BOITE, y, largeur - 2 * MARGE_BOITE, boiteHauteur);
 
   ctx.fillStyle = '#c2a83e';
   ctx.font = 'bold 13px sans-serif';
@@ -78,6 +78,7 @@ export function dessinerDialogue(ctx, ligne) {
   // uniquement quand la ligne est avançable. Absent tant que la machine à
   // écrire tourne ou que le délai d'armement n'est pas écoulé.
   if (ligne.arme) {
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
     const cx = largeur - MARGE_BOITE - MARQUEUR_RETRAIT;
     const cy = y + boiteHauteur - 10;
     ctx.beginPath();

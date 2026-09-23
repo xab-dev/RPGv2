@@ -52,6 +52,7 @@ export default async function (chrome) {
     sortie_1: { scene: 'scene_grotte_salle_1', case: [16.5, 6.5] },
     porte_2_fermee: { scene: 'scene_grotte_salle_2', case: [16.5, 6.5], sansFlags: ['flag_grotte_sortie', 'flag_grotte_sequence'] },
     porte_2_ouverte: { scene: 'scene_grotte_salle_2', case: [16.5, 6.5] },
+    monstre_grotte: { scene: 'scene_grotte_salle_2', case: [4.5, 6.5], sansFlags: ['flag_grotte_monstre_tue', 'flag_grotte_sortie', 'flag_grotte_sequence'] },
     grotte_tel: { scene: 'scene_grotte_salle_1', case: [9.5, 8.5], ecran: { largeur: 780, hauteur: 360, dpr: 3 } },
     pre: { scene: 'scene_maison_exterieur', case: [100.5, 55.5] },
     parquet: { scene: 'scene_maison_exterieur', case: maison.parquet },

@@ -96,6 +96,7 @@ révélera encore.
 | `83ef25f` | `D-158` | Leviers : le manche devient une pièce mobile du visuel, le geste un état d'affichage pur (`bascule.js`) ; voyant ambre à la butée, halo en fondu qui perce le voile. **Code** : `render.js` (checklist visuelle due) |
 | `869a99f` | `D-161` | Monstres : rampant en larve de caverne, rôdeur avec son propre dessin (masque de fer rivé) ; silhouettes sombres sans lueur (`Q-27`, tenu par test) |
 | `cc04bf9` | `D-162` | Follets : flamme, goutte, cube de pierre — la forme porte toujours l'élément ; volume, cœur lumineux, halo en dégradé. Test `D-36` réécrit sur son intention (étincelles discrètes), pas sur la structure |
-| — | `D-163` | Bulle de dialogue et bannière des indices : un cadre partagé (`ui/cadre.js`) de la famille du bandeau. Touche les calques d'UI (checklist due) |
+| `e04750e` | `D-163` | Bulle de dialogue et bannière des indices : un cadre partagé (`ui/cadre.js`) de la famille du bandeau. Touche les calques d'UI (checklist due) |
+| — | `D-163` (suite) | Le commit `e04750e` est parti avec un test rouge (`test_d136` : son faux contexte ignorait les dégradés et les coins arrondis du cadre) — enchaînement de commandes qui ne s'arrêtait pas sur l'échec. Faux contexte complété ; suite verte. Les deux commits se retirent ensemble |
 <!-- fin-table-2 -->
 

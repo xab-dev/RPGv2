@@ -89,6 +89,8 @@ const mots = (s) => s.split(/[\s]+/).filter(Boolean);
     save() { pile += 1; }, restore() { pile -= 1; },
     measureText: (t) => ({ width: t.length * parCar }),
     fillRect() {}, strokeRect() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, fill() {},
+    // `D-163` : le cadre (ui/cadre.js) trace des coins arrondis et un dégradé.
+    lineWidth: 1, arcTo() {}, stroke() {}, createLinearGradient: () => ({ addColorStop() {} }),
     fillText(t, x, y) { ecrits.push({ t, x, y }); },
   };
   const paginer = creerPaginateurDialogue(ctx);

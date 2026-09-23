@@ -346,5 +346,14 @@
   "menu.indices_vide": "Rien à déchiffrer pour l’instant.",
   "lore.grotte_entree.titre": "L’entrée de la grotte",
   "lore.grotte_entree.ligne_1": "Là où tu as ouvert les yeux, la roche n’a pas tout dit.",
-  "lore.grotte_entree.ligne_2": "Retourne voir l’entrée de la grotte."
+  "lore.grotte_entree.ligne_2": "Retourne voir l’entrée de la grotte.",
+  "flag.stele_miroir_lue": "Pierre qui répond lue",
+  "flag.etincelle_ramassee": "Étincelle d’argile ramassée",
+  "flag.ambiance_etincelle": "Le follet a vu l’étincelle",
+  "lore.pierre_qui_repond.titre": "La pierre qui répond",
+  "lore.pierre_qui_repond.ligne_1": "Ce monde a eu deux mains.",
+  "lore.pierre_qui_repond.ligne_2": "La seconde a laissé un mot là où l’on commence à lire.",
+  "item.etincelle_argile": "Étincelle d’argile",
+  "item.etincelle_argile.description": "Une petite étoile d’argile, encore tiède. Elle ne sert à rien, elle non plus. Elle voulait juste te dire merci.",
+  "dlg.lore.etincelle": "Tu l’as trouvée. Je ne pensais pas que quelqu’un lirait jusque-là… Merci d’avoir joué avec moi."
 }

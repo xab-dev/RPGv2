@@ -117,5 +117,14 @@
     ],
     "dialogue": "dlg_chapitre_3",
     "flag": "flag_chapitre_3_vu"
+  },
+  {
+    "id": "amb_lore_etincelle",
+    "condition": "flag_etincelle_ramassee",
+    "scenes": [
+      "scene_maison_exterieur"
+    ],
+    "dialogue": "dlg_lore_etincelle",
+    "flag": "flag_ambiance_etincelle"
   }
 ]

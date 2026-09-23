@@ -141,6 +141,12 @@
         "y": 2176,
         "rayon": 40,
         "couleur": "#3fb8ff"
+      },
+      {
+        "x": 688,
+        "y": 1488,
+        "rayon": 40,
+        "couleur": "#d97757"
       }
     ],
     "decor": {
@@ -229,6 +235,26 @@
           "y": 66,
           "w": 5,
           "h": 5
+        }
+      },
+      {
+        "type": "clairiere",
+        "id": "clairiere_stele_miroir",
+        "rect": {
+          "x": 19,
+          "y": 44,
+          "w": 5,
+          "h": 5
+        }
+      },
+      {
+        "type": "clairiere",
+        "id": "clairiere_coin_lecture",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "w": 3,
+          "h": 3
         }
       },
       {
@@ -323,7 +349,8 @@
       "station_coffre",
       "station_atelier",
       "station_puits",
-      "stele_grotte"
+      "stele_grotte",
+      "stele_miroir"
     ],
     "spawns": [],
     "portails": [],
@@ -335,7 +362,8 @@
       "F": "tile_arbre_fruitier"
     },
     "objets_uniques": [
-      { "item": "item_plume", "x": 12, "y": 57, "flag": "flag_plume_ramassee" }
+      { "item": "item_plume", "x": 12, "y": 57, "flag": "flag_plume_ramassee" },
+      { "item": "item_etincelle_argile", "x": 1, "y": 1, "flag": "flag_etincelle_ramassee" }
     ],
     "points_ressources": {
       "item_branche": [[2, 57], [9, 56], [14, 58], [16, 29], [18, 49], [23, 55], [26, 58], [28, 54], [36, 68], [49, 56], [54, 16], [60, 56], [64, 55], [73, 86], [75, 57], [77, 36], [83, 73], [100, 38], [101, 67], [103, 33], [129, 91], [132, 55], [142, 58], [144, 33], [146, 63], [147, 44], [152, 54], [158, 51], [161, 67], [164, 72]],

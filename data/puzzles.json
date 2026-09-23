@@ -80,5 +80,22 @@
     "indice": "indice_grotte_entree",
     "couleur": "#3fb8ff",
     "armement_ms": 250
+  },
+  {
+    "id": "stele_miroir",
+    "type": "stele",
+    "position": {
+      "x": 21,
+      "y": 46
+    },
+    "render": {
+      "visuel": "visuel_stele_argile"
+    },
+    "echelle": 2.1,
+    "solide": true,
+    "indice": "indice_pierre_qui_repond",
+    "couleur": "#d97757",
+    "armement_ms": 250,
+    "flag": "flag_stele_miroir_lue"
   }
 ]

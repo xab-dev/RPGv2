@@ -199,5 +199,16 @@
     "render": {
       "visuel": "visuel_besace"
     }
+  },
+  {
+    "id": "item_etincelle_argile",
+    "label_key": "item.etincelle_argile",
+    "description_key": "item.etincelle_argile.description",
+    "categorie": "valeur",
+    "xp": 1,
+    "render": {
+      "visuel": "visuel_etincelle_argile"
+    },
+    "pile_max": 1
   }
 ]

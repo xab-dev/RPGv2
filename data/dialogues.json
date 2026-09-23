@@ -255,5 +255,16 @@
     "noeuds": {
       "l1": { "locuteur": "follet", "text_key": "dlg.chapitre_3.tout_est_la" }
     }
+  },
+  {
+    "id": "dlg_lore_etincelle",
+    "declencheur": "lore_etincelle",
+    "entree": "l1",
+    "noeuds": {
+      "l1": {
+        "locuteur": "follet",
+        "text_key": "dlg.lore.etincelle"
+      }
+    }
   }
 ]

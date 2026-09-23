@@ -1050,6 +1050,13 @@ function validerPuzzle(entry, catalogs, path) {
     if (typeof entry.armement_ms !== 'number' || !(entry.armement_ms >= 0)) {
       erreurs.push(`${path} > armement_ms doit être un nombre de ms positif ou nul`);
     }
+    // `flag` (facultatif) : posé à la première lecture. Il sert à ce que la
+    // pierre soit TROUVÉE avant que son indice n'apparaisse au menu
+    // (`visible_si`) — sinon l'écran Indices annoncerait une pierre que le
+    // joueur n'a jamais vue.
+    if (entry.flag !== undefined && !(catalogs.flags || []).some((f) => f.id === entry.flag)) {
+      erreurs.push(`${path} > flag "${entry.flag}" non déclaré dans flags.json`);
+    }
     erreurs.push(...erreursRenderVisuel(entry, catalogs, path));
     erreurs.push(...erreursGeometrieInteractif(entry, catalogs, path));
   } else {
@@ -2652,6 +2659,11 @@ export const SCHEMAS = {
       }
       if (!Array.isArray(entry.lignes) || entry.lignes.length === 0 || !entry.lignes.every((c) => typeof c === 'string' && c.length > 0)) {
         erreurs.push(`${path} > lignes doit être une liste non vide de clés de locale`);
+      }
+      // `visible_si` : un indice encore caché n'est pas au menu (`D-62`). Un
+      // flag mal écrit le cacherait pour toujours, en silence.
+      if (entry.visible_si !== undefined) {
+        erreurs.push(...erreursConditionVisibilite(entry.visible_si, `${path} > visible_si`, catalogs));
       }
       if (entry.lisible_si !== undefined) {
         erreurs.push(...erreursConditionVisibilite(entry.lisible_si, `${path} > lisible_si`, catalogs));

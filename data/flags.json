@@ -242,5 +242,17 @@
   {
     "id": "flag_besace",
     "label_key": "flag.besace"
+  },
+  {
+    "id": "flag_stele_miroir_lue",
+    "label_key": "flag.stele_miroir_lue"
+  },
+  {
+    "id": "flag_etincelle_ramassee",
+    "label_key": "flag.etincelle_ramassee"
+  },
+  {
+    "id": "flag_ambiance_etincelle",
+    "label_key": "flag.ambiance_etincelle"
   }
 ]

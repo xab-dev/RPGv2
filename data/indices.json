@@ -9,5 +9,24 @@
     "lignes": ["lore.grotte_entree.ligne_1", "lore.grotte_entree.ligne_2"],
     "icone": "visuel_icone_menu_indices",
     "lisible_si": { "valeur": "niveau", "min": 15 }
+  },
+  {
+    "id": "indice_pierre_qui_repond",
+    "cle_titre": "lore.pierre_qui_repond.titre",
+    "lignes": [
+      "lore.pierre_qui_repond.ligne_1",
+      "lore.pierre_qui_repond.ligne_2"
+    ],
+    "icone": "visuel_icone_menu_indices",
+    "visible_si": "flag_stele_miroir_lue",
+    "lisible_si": {
+      "all": [
+        {
+          "valeur": "niveau",
+          "min": 15
+        },
+        "flag_plume_ramassee"
+      ]
+    }
   }
 ]

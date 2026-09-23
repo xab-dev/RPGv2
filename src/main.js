@@ -1942,6 +1942,7 @@ export function creerOrchestrateurGrotte({
       }
       if (puzzle.type === 'stele') {
         vueStele = creerVueStele(puzzleId);
+        if (puzzle.flag) flags.set(puzzle.flag);
         return;
       }
       // Reste `station`, le dernier type de `TYPES_INTERACTIFS_A_LA_MAIN`.

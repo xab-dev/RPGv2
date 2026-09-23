@@ -346,5 +346,14 @@
   "menu.indices_vide": "Nothing to decipher yet.",
   "lore.grotte_entree.titre": "The cave mouth",
   "lore.grotte_entree.ligne_1": "Where you first opened your eyes, the rock has not said everything.",
-  "lore.grotte_entree.ligne_2": "Go back and look at the cave entrance."
+  "lore.grotte_entree.ligne_2": "Go back and look at the cave entrance.",
+  "flag.stele_miroir_lue": "Answering stone read",
+  "flag.etincelle_ramassee": "Clay spark picked up",
+  "flag.ambiance_etincelle": "The wisp saw the spark",
+  "lore.pierre_qui_repond.titre": "The stone that answers",
+  "lore.pierre_qui_repond.ligne_1": "This world had two hands.",
+  "lore.pierre_qui_repond.ligne_2": "The second left a word where reading begins.",
+  "item.etincelle_argile": "Clay spark",
+  "item.etincelle_argile.description": "A small clay star, still warm. It is of no use either. It just wanted to say thank you.",
+  "dlg.lore.etincelle": "You found it. I didn’t think anyone would read that far… Thank you for playing with me."
 }

@@ -1,6 +1,6 @@
 // Contrat `D-176` : le bouton MENU tactile porte un engrenage en filigrane.
-//   1. l'id vient des DONNÉES (`menus.json`, racine, `icone_bouton`), exigé et
-//      vérifié au boot comme les icônes d'en-tête ;
+//   1. l'id vient des DONNÉES (`glyphes.json`, `tactile_icone` du verbe
+//      `menu` — comment le verbe se montre au doigt), vérifié au boot ;
 //   2. il n'est dessiné qu'au tactile, dans le bouton MENU, en filigrane
 //      (alpha < 1), et sans dépendre d'un preset graphique — il est donc là
 //      en Bas : `dessinerHud` ne reçoit aucun preset ;
@@ -11,19 +11,19 @@ import { validerCatalogues } from '../src/registry.js';
 import { SCHEMAS } from '../src/schemas.js';
 import { chargerCataloguesDepuisDisque } from '../src/io_node.js';
 import { dessinerHud } from '../src/ui/hud.js';
-import { BOUTON_MENU, ICONE_BOUTON_MENU } from '../src/ui/hud_layout.js';
+import { BOUTON_MENU, ICONE_BOUTON_TACTILE } from '../src/ui/hud_layout.js';
 
 const { donnees } = await chargerCataloguesDepuisDisque(new URL('../data', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'), Object.keys(SCHEMAS));
-const racine = donnees.menus.find((e) => e.racine);
-const engrenage = donnees.visuels.find((v) => v.id === racine.icone_bouton);
-assert.ok(engrenage, 'la racine du menu déclare une icône de bouton qui existe');
+const glypheMenu = donnees.glyphes.find((g) => g.verbe === 'menu');
+const engrenage = donnees.visuels.find((v) => v.id === glypheMenu.tactile_icone);
+assert.ok(engrenage, 'le verbe menu déclare une icône tactile qui existe');
 
-// 1. Le boot refuse une racine sans icône de bouton, ou une icône inconnue.
-for (const [casse, motif] of [[(r) => { delete r.icone_bouton; }, /exige "icone_bouton"/], [(r) => { r.icone_bouton = 'visuel_absent'; }, /icone_bouton > "visuel_absent" introuvable/]]) {
+// 1. Le boot refuse une icône inconnue, avec son chemin.
+{
   const copie = structuredClone(donnees);
-  casse(copie.menus.find((e) => e.racine));
+  copie.glyphes.find((g) => g.verbe === 'menu').tactile_icone = 'visuel_absent';
   const erreurs = validerCatalogues(copie);
-  assert.ok(erreurs.some((e) => motif.test(e)), `refusé : ${motif}`);
+  assert.ok(erreurs.some((e) => /tactile_icone/.test(e) && /visuel_absent/.test(e)), 'une icône tactile inconnue est refusée au boot');
 }
 
 // 2 et 3. Un faux contexte qui note où et avec quel alpha on dessine.
@@ -48,17 +48,17 @@ function remplissages(options) {
 }
 const auCentreDuMenu = (e) => e.t[0] === BOUTON_MENU.cx && e.t[1] === BOUTON_MENU.cy;
 {
-  const avec = remplissages({ tactileActif: true, iconeBoutonMenu: engrenage }).filter(auCentreDuMenu);
+  const avec = remplissages({ tactileActif: true, iconesBoutons: { menu: engrenage } }).filter(auCentreDuMenu);
   assert.ok(avec.length > 0, 'l\'engrenage est dessiné au centre du bouton MENU');
   // Rien au-dessus du filigrane : une primitive peut porter son propre alpha
   // (le moyeu), qui s'y multiplie.
-  assert.ok(ICONE_BOUTON_MENU.alpha < 1);
-  assert.ok(avec.every((e) => e.alpha <= ICONE_BOUTON_MENU.alpha), 'en filigrane');
-  assert.ok(avec.some((e) => e.alpha === ICONE_BOUTON_MENU.alpha));
+  assert.ok(ICONE_BOUTON_TACTILE.alpha < 1);
+  assert.ok(avec.every((e) => e.alpha <= ICONE_BOUTON_TACTILE.alpha), 'en filigrane');
+  assert.ok(avec.some((e) => e.alpha === ICONE_BOUTON_TACTILE.alpha));
   assert.equal(remplissages({ tactileActif: true }).filter(auCentreDuMenu).length, 0, 'sans icône, le bouton reste nu');
-  assert.equal(remplissages({ tactileActif: false, iconeBoutonMenu: engrenage }).filter(auCentreDuMenu).length, 0, 'jamais hors tactile');
+  assert.equal(remplissages({ tactileActif: false, iconesBoutons: { menu: engrenage } }).filter(auCentreDuMenu).length, 0, 'jamais hors tactile');
 }
-// `main.js` le lit sur la racine, une seule fois.
+// `main.js` le lit dans `glyphes.json`, une seule fois.
 const main = fs.readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
-assert.match(main, /\.find\(\(e\) => e\.racine\)\.icone_bouton/);
+assert.match(main, /registre\.tous\('glyphes'\)[\s\S]{0,80}tactile_icone/);
 console.log('OK test_d176_engrenage_menu');

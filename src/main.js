@@ -801,10 +801,12 @@ export function creerOrchestrateurGrotte({
   // `D-103` : la silhouette de la monnaie, résolue UNE fois — le bandeau et
   // les fiches de Craft la montrent, et c'est la même.
   const iconeMonnaie = registre.obtenir('monnaies', ID_MONNAIE).icone;
-  // `D-176` : l'engrenage du bouton MENU tactile, déclaré par la racine du
-  // menu (comme ses icônes d'en-tête) et résolu UNE fois — le HUD ne connaît
-  // aucun id de catalogue.
-  const visuelBoutonMenu = registre.obtenir('visuels', registre.tous('menus').find((e) => e.racine).icone_bouton);
+  // `D-176` : ce que chaque bouton TACTILE porte en filigrane (l'engrenage de
+  // MENU), déclaré par verbe dans `glyphes.json#tactile_icone` et résolu UNE
+  // fois — le HUD ne connaît aucun id de catalogue.
+  const iconesBoutonsTactiles = Object.fromEntries(registre.tous('glyphes')
+    .filter((g) => g.tactile_icone)
+    .map((g) => [g.verbe, registre.obtenir('visuels', g.tactile_icone)]));
   const capacitePoche = resoudreCapacite(registre.obtenir('conteneurs', ID_CONTENEUR_POCHE));
   function capaciteDeStation(station) {
     return resoudreCapacite(registre.obtenir('conteneurs', station.conteneur));
@@ -3920,7 +3922,7 @@ export function creerOrchestrateurGrotte({
       // (`D-172`) : on lit l'état qui GÈLE le jeu pendant le placement et
       // lève ce bandeau — la barre n'y dit rien.
       barreActions: !dialogue.estOuvert() && !constructionActif(),
-      iconeBoutonMenu: visuelBoutonMenu,
+      iconesBoutons: iconesBoutonsTactiles,
     });
     // Indices de commande (§2 : "masqué" sous UI) — résolution i18n ici (même
     // patron que les autres calques : hud_hints.js ne connaît jamais i18n).

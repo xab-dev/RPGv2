@@ -108,16 +108,18 @@ export const BOUTON_INTERACT = { cx: 454, cy: 97, rayon: 20, verbe: 'interact' }
 // PROVISOIRE : jamais validé au pouce par Xav (`V-23`).
 export const BOUTON_MENU = { cx: 455, cy: 44, rayon: 16, verbe: 'menu' };
 
-// `D-176` (demande de Xav, 23/09) : un petit engrenage dans le bouton MENU,
-// en FILIGRANE — le bouton se reconnaît sans que l'icône ne pèse sur la scène.
+// `D-176` (demande de Xav, 23/09) : l'icône d'un bouton tactile (l'engrenage
+// de MENU), en FILIGRANE — le bouton se reconnaît sans que l'icône ne pèse sur
+// la scène. Une taille pour tous : un bouton de rayon 20 garde la même icône
+// qu'un de 16, c'est la famille qui compte.
 // Statique et sans dépendance au preset : il est là en Bas comme en Haut, et
 // ne coûte qu'un visuel de six primitives. `taille` en px logiques (le bouton
 // fait 32 de diamètre), `alpha` = le filigrane. PROVISOIRES, jugés à la
-// capture Chrome seulement. L'icône est celle de la carte Paramètres, dessinée
-// pour la boîte des icônes de menu (`icone_canvas.js#COTE_REFERENCE_ICONE`).
-export const ICONE_BOUTON_MENU = { taille: 16, alpha: 0.4 };
+// capture Chrome seulement. Ces icônes sont dessinées pour la boîte des icônes
+// de menu (`icone_canvas.js#COTE_REFERENCE_ICONE`).
+export const ICONE_BOUTON_TACTILE = { taille: 16, alpha: 0.4 };
 
-export function echelleIconeBoutonMenu(tailleVoulue) {
+export function echelleIconeBoutonTactile(tailleVoulue) {
   return tailleVoulue / COTE_REFERENCE_ICONE;
 }
 

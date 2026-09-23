@@ -53,6 +53,7 @@
     "verbe": "menu",
     "clavier_key": "glyphe.clavier.menu",
     "manette_key": "glyphe.manette.menu",
-    "tactile_key": "glyphe.tactile.menu"
+    "tactile_key": "glyphe.tactile.menu",
+    "tactile_icone": "visuel_icone_menu_parametres"
   }
 ]

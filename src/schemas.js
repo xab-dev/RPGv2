@@ -1357,10 +1357,9 @@ function validerMenu(entry, catalogs, path) {
 
   // Les deux icônes de l'en-tête ([X] et [←], §2 décision 1) sont des
   // références comme les autres : déclarées par l'écran racine, jamais un id
-  // de catalogue écrit dans le composant. La troisième (`D-176`) est celle du
-  // bouton qui OUVRE le menu au tactile — l'engrenage en filigrane.
+  // de catalogue écrit dans le composant.
   if (entry.racine !== undefined && typeof entry.racine !== 'boolean') erreurs.push(`${path} > racine doit être un booléen`);
-  for (const champ of ['icone_fermer', 'icone_retour', 'icone_bouton']) {
+  for (const champ of ['icone_fermer', 'icone_retour']) {
     if (entry.racine === true && typeof entry[champ] !== 'string') erreurs.push(`${path} > l'écran racine exige "${champ}"`);
     if (entry[champ] !== undefined && !(catalogs.visuels || []).some((v) => v.id === entry[champ])) {
       erreurs.push(`${path} > ${champ} > "${entry[champ]}" introuvable dans visuels.json`);
@@ -2394,7 +2393,11 @@ export const SCHEMAS = {
   glyphes: {
     requiredFields: ['id', 'verbe', 'clavier_key', 'manette_key', 'tactile_key'],
     idField: 'id',
-    refs: [],
+    // `D-176` : `tactile_icone` (optionnel) — la silhouette que le BOUTON
+    // tactile du verbe porte en filigrane (l'engrenage de MENU). C'est la
+    // moitié dessinée de `tactile_key` : comment le verbe se montre au doigt,
+    // déclaré au même endroit, jamais un id écrit dans le HUD.
+    refs: [{ field: 'tactile_icone', catalog: 'visuels' }],
     custom: validerGlyphe,
   },
   // Palier C (specs/04_maison-interieur.md §2.1/§3.3) : catalogue ouvert —

@@ -45,6 +45,15 @@ export function brouillerTexte(texte, graine, alphabet) {
   return Array.from(texte).map((c) => (/\s/.test(c) ? c : signes[Math.floor(hasard() * signes.length)])).join('');
 }
 
+// Les lignes d'un indice en hiéroglyphes — LE brouillage d'un indice, lu par
+// l'écran Indices (quand il ne se lit pas) ET par la stèle qui le porte
+// gravé : le joueur doit pouvoir reconnaître sur la pierre les signes qu'il a
+// vus dans le menu. Deux appels à `brouillerTexte` avec leurs propres graines
+// finiraient par écrire deux textes différents.
+export function lignesBrouillees(indice, traduire, hieroglyphes) {
+  return indice.lignes.map((cle, i) => brouillerTexte(traduire(cle), `${indice.id}#${i}`, hieroglyphes));
+}
+
 // Les entrées de l'écran Indices, déjà résolues pour `ui/ecran_fiches.js` :
 // { id, lisible, titre, icone, lignes }. Les indices non visibles n'y sont
 // pas (`D-62`) — `estVisible` est fourni par l'appelant, qui le tient de
@@ -52,13 +61,12 @@ export function brouillerTexte(texte, graine, alphabet) {
 export function entreesIndices(indices, { estVisible, estLisible, traduire, hieroglyphes }) {
   return indices.filter((indice) => estVisible(indice)).map((indice) => {
     const lisible = indice.lisible_si === undefined || indice.lisible_si === null || !!estLisible(indice.lisible_si);
-    const ecrire = (cle, sel) => (lisible ? traduire(cle) : brouillerTexte(traduire(cle), `${indice.id}#${sel}`, hieroglyphes));
     return {
       id: indice.id,
       lisible,
-      titre: ecrire(indice.cle_titre, 'titre'),
+      titre: lisible ? traduire(indice.cle_titre) : brouillerTexte(traduire(indice.cle_titre), `${indice.id}#titre`, hieroglyphes),
       icone: indice.icone || null,
-      lignes: indice.lignes.map((cle, i) => ecrire(cle, i)),
+      lignes: lisible ? indice.lignes.map((cle) => traduire(cle)) : lignesBrouillees(indice, traduire, hieroglyphes),
     };
   });
 }

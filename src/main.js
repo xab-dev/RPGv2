@@ -97,7 +97,9 @@ import { creerEtatIndices } from './hints.js';
 import { estExpire, poserCooldown, tempsRestantMs } from './cooldowns.js';
 import { peutFabriquer, fabriquer, recettesDeStation } from './recipes.js';
 import { entreesVisibles, estVisible } from './visibilite.js';
-import { entreesIndices } from './indices.js';
+import { entreesIndices, lignesBrouillees } from './indices.js';
+import { creerVueStele, avancerVueStele, vueSteleArmee } from './stele.js';
+import { dessinerEcranStele } from './ui/ecran_stele.js';
 import {
   decroitre as decroitreSurvie, consommer as consommerSurvie, appliquerMalusRespawn,
   calculerModulateur as calculerModulateurSurvie, configSurvie, jaugeSousLeSeuil,
@@ -150,7 +152,7 @@ const DISTANCE_INTERACT_PX = 28;
 // Les types d'interactif qu'on prend « à la main » (INTERACT) ; un autre type
 // posé dans `scene.interactifs` est ignoré par le geste, qui passe au suivant.
 // Lu par `cibleInteraction` seule, qui dit ce que vise l'appui (`D-177`).
-const TYPES_INTERACTIFS_A_LA_MAIN = ['levier', 'station_placeholder', 'station'];
+const TYPES_INTERACTIFS_A_LA_MAIN = ['levier', 'station_placeholder', 'station', 'stele'];
 // MT_texte-flottant_2026-09-19 (`D-05`) : gabarit du texte de gain (« +{n}
 // {item} »), déclaré une seule fois ici. C'est une CLÉ de localisation, pas
 // un texte : le « + », l'ordre des morceaux et l'espace se traduisent comme
@@ -1326,6 +1328,10 @@ export function creerOrchestrateurGrotte({
   // l'intro naît à la fin du symbole : aucun des deux ne sait qu'il existe.
   // Une UI ouverte, comme eux ; mais lui avance à l'appui, jamais seul.
   let prologue = null;
+  // La stèle (23/09) : sa vue rapprochée, l'état de `stele.js`, ou `null`.
+  // Une UI ouverte comme les autres — le jeu gèle, MENU se tait — ouverte par
+  // INTERACT, fermée par B ou un toucher, et c'est tout.
+  let vueStele = null;
 
   function choixFolletActif() {
     return choixFollet !== null;
@@ -1340,7 +1346,7 @@ export function creerOrchestrateurGrotte({
   function uiOuverteMaintenant() {
     return (
       menu.estOuvert() || dialogue.estOuvert() || choixFolletActif() || intro !== null || depart !== null ||
-      ouvertureLogoMs !== null || prologue !== null || constructionActif()
+      ouvertureLogoMs !== null || prologue !== null || vueStele !== null || constructionActif()
     );
   }
 
@@ -1914,6 +1920,10 @@ export function creerOrchestrateurGrotte({
       }
       if (puzzle.type === 'station_placeholder') {
         ouvrirDialogueCatalogue(puzzle.dialogue);
+        return;
+      }
+      if (puzzle.type === 'stele') {
+        vueStele = creerVueStele(puzzleId);
         return;
       }
       // Reste `station`, le dernier type de `TYPES_INTERACTIFS_A_LA_MAIN`.
@@ -2781,6 +2791,22 @@ export function creerOrchestrateurGrotte({
     });
   }
 
+  // Ce que la vue de la stèle dessine : les lignes de SON indice, brouillées
+  // par le même point que l'écran Indices (`indices.js#lignesBrouillees`) —
+  // toujours en hiéroglyphes : c'est une gravure, elle ne se traduit pas
+  // quand le héros monte de niveau.
+  function contenuVueStele() {
+    const puzzle = scene.puzzle(vueStele.puzzleId);
+    const config = registre.obtenir('indices', 'indices_config');
+    const indice = registre.obtenir('indices', puzzle.indice);
+    return {
+      id: puzzle.id,
+      couleur: puzzle.couleur,
+      lignes: lignesBrouillees(indice, (cle) => i18n.t(cle), config.hieroglyphes),
+      vue: vueStele,
+    };
+  }
+
   // MT_hud-ligne-haute_2026-09-19 : la barre d'XP ayant quitté le HUD, la
   // progression doit rester lisible quelque part — c'est ici, avec les points
   // à dépenser, dans l'en-tête de l'écran Stats : visible quelle que soit la
@@ -3259,6 +3285,17 @@ export function creerOrchestrateurGrotte({
         demarrerOuverture(scene.id);
       }
     }
+    // La stèle : B (`skill_3`, le retour du menu) ou un toucher n'importe où
+    // la ferment — au doigt, les boutons du jeu sont sous la vue, le toucher
+    // est la seule sortie qu'on atteint (règle « fermable au tactile »).
+    // Capturée AVANT de la fermer : la frame de la fermeture reste gelée.
+    const steleEtaitActive = vueStele !== null;
+    if (steleEtaitActive) {
+      vueStele = avancerVueStele(vueStele, deltaMs, Math.random);
+      const puzzleStele = scene.puzzle(vueStele.puzzleId);
+      const retour = etatBrut.skill_3.pressed || contactsTactiles.length > 0;
+      if (retour && vueSteleArmee(vueStele, puzzleStele.armement_ms)) vueStele = null;
+    }
     const logoEtaitActif = ouvertureLogoMs !== null;
     if (logoEtaitActif) {
       ouvertureLogoMs += deltaMs;
@@ -3305,7 +3342,7 @@ export function creerOrchestrateurGrotte({
     // d'OUVRIR le menu dans cette même frame — le traiter là-bas le refermerait
     // aussitôt.
     let menuFermeParVerbe = false;
-    if (etatBrut.menu.pressed && !dialogueOuvertMaintenant && !choixFolletActif() && !introEtaitActive && !departEtaitActif) {
+    if (etatBrut.menu.pressed && !dialogueOuvertMaintenant && !choixFolletActif() && !introEtaitActive && !departEtaitActif && !steleEtaitActive) {
       if (constructionActif()) {
         quitterConstructionVersMenuPause();
       } else if (!menu.estOuvert()) {
@@ -3327,7 +3364,7 @@ export function creerOrchestrateurGrotte({
     // les verbes d'une frame qu'une UI a consommée, quel que soit le verbe.
     const uiOuverte = (
       menu.estOuvert() || dialogueOuvertMaintenant || choixFolletActif() || introEtaitActive || departEtaitActif ||
-      constructionActif() || menuFermeParVerbe
+      constructionActif() || menuFermeParVerbe || steleEtaitActive
     );
     // `D-92`/`D-93` : avant tout le reste, y compris avant l'UI — un écran
     // Coffre ouvert vide la poche, et la case d'attaque doit dire la vérité
@@ -4200,6 +4237,7 @@ export function creerOrchestrateurGrotte({
       const ligneDialogue = dialogue.ligneCourante();
       dessinerDialogue(ctxLogique, ligneDialogue, habillageDialogue(ligneDialogue));
     }
+    if (vueStele !== null) dessinerEcranStele(ctxLogique, contenuVueStele());
 
     // Paupières (§3.5 étape 1) : rideau de cinématique, dessiné en TOUT
     // DERNIER — il doit couvrir la scène, le HUD et même l'écran de choix
@@ -4265,6 +4303,7 @@ export function creerOrchestrateurGrotte({
     depart = null;
     ouvertureLogoMs = null;
     prologue = null;
+    vueStele = null;
     logoNiveauMs = null;
     basculesLeviers.clear();
     cooldownAttaqueHerosMs = 0;
@@ -4323,6 +4362,8 @@ export function creerOrchestrateurGrotte({
     obtenirIntro: () => intro,
     obtenirOuvertureLogo: () => ouvertureLogoMs,
     obtenirPrologue: () => prologue,
+    obtenirVueStele: () => vueStele,
+    contenuVueStele: () => contenuVueStele(),
     obtenirLogoNiveau: () => logoNiveauMs,
     obtenirDepart: () => depart,
     obtenirSave: () => save,

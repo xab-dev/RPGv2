@@ -525,6 +525,21 @@ function validerScene(entry, catalogs, path) {
   // dans le schéma (une région future peut introduire un type de zone sans
   // toucher ce fichier), utilisés par ground_items.js (spawn/zones_exclues)
   // et par les déclencheurs d'entrée de zone (main.js).
+  // `foret_procedurale.zones_exclues` (la stèle, 23/09) : des TYPES de zone
+  // où la forêt ne pousse pas. Un type que la scène ne déclare pas serait une
+  // clairière promise et jamais ouverte : refusée au boot.
+  const exclues = entry.foret_procedurale && entry.foret_procedurale.zones_exclues;
+  if (exclues !== undefined) {
+    if (!Array.isArray(exclues) || exclues.some((t) => typeof t !== 'string' || !t)) {
+      erreurs.push(`${path} > foret_procedurale.zones_exclues doit être un tableau de types de zone`);
+    } else {
+      for (const t of exclues) {
+        if (!(entry.zones || []).some((z) => z.type === t)) {
+          erreurs.push(`${path} > foret_procedurale.zones_exclues : aucune zone de type "${t}" dans la scène`);
+        }
+      }
+    }
+  }
   (entry.zones || []).forEach((zone, i) => {
     const chemin = `${path} > zones[${i}]`;
     if (typeof zone.type !== 'string' || !zone.type) {
@@ -989,8 +1004,26 @@ function validerPuzzle(entry, catalogs, path) {
     }
     erreurs.push(...erreursRenderVisuel(entry, catalogs, path));
     erreurs.push(...erreursGeometrieInteractif(entry, catalogs, path));
+  } else if (entry.type === 'stele') {
+    // La stèle (demande de Xav, 23/09) : INTERACT ouvre sa vue rapprochée, une
+    // pierre gravée des hiéroglyphes de son `indice` — les mêmes signes que
+    // l'écran Indices montre tant que l'indice ne se lit pas. Sans état.
+    if (!entry.position || typeof entry.position.x !== 'number' || typeof entry.position.y !== 'number') {
+      erreurs.push(`${path} > position doit être { x, y }`);
+    }
+    if (!(catalogs.indices || []).some((i) => i.id === entry.indice && i.id !== 'indices_config')) {
+      erreurs.push(`${path} > indice "${entry.indice}" introuvable dans indices.json`);
+    }
+    if (typeof entry.couleur !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(entry.couleur)) {
+      erreurs.push(`${path} > couleur doit être #rrggbb (la lueur des signes)`);
+    }
+    if (typeof entry.armement_ms !== 'number' || !(entry.armement_ms >= 0)) {
+      erreurs.push(`${path} > armement_ms doit être un nombre de ms positif ou nul`);
+    }
+    erreurs.push(...erreursRenderVisuel(entry, catalogs, path));
+    erreurs.push(...erreursGeometrieInteractif(entry, catalogs, path));
   } else {
-    erreurs.push(`${path} > type "${entry.type}" inconnu (levier | sequence | station_placeholder | station)`);
+    erreurs.push(`${path} > type "${entry.type}" inconnu (levier | sequence | station_placeholder | station | stele)`);
   }
   return erreurs;
 }

@@ -89,7 +89,11 @@ const [dictionnaires, { donnees }] = await Promise.all([
 const registre = construireRegistre(donnees);
 const scene = chargerScene(registre, 'scene_maison_exterieur');
 
-assert.equal(scene.empreintesSolides.length, 4, 'les 4 stations doivent produire une empreinte solide');
+// La stèle (23/09) est un interactif solide de plus : le compte se lit dans
+// les données, il ne s'épingle pas.
+const solidesDeclares = registre.obtenir('scenes', 'scene_maison_exterieur').interactifs
+  .filter((id) => registre.obtenir('puzzles', id).solide === true).length;
+assert.equal(scene.empreintesSolides.length, solidesDeclares, 'chaque interactif solide de la scène doit produire une empreinte solide');
 const table = scene.empreintesSolides.find((e) => e.id === 'station_table');
 assert.ok(table, 'station_table doit avoir une empreinte');
 

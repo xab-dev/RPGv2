@@ -69,5 +69,16 @@
     "render": { "visuel": "visuel_puits" },
     "echelle": 2.1,
     "solide": true
+  },
+  {
+    "id": "stele_grotte",
+    "type": "stele",
+    "position": { "x": 21, "y": 62 },
+    "render": { "visuel": "visuel_stele" },
+    "echelle": 2.1,
+    "solide": true,
+    "indice": "indice_grotte_entree",
+    "couleur": "#3fb8ff",
+    "armement_ms": 250
   }
 ]

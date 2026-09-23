@@ -44,11 +44,20 @@ function appliquerForetProcedurale(grille, donnees) {
   const config = donnees.foret_procedurale;
   if (!config) return;
   const zonesForet = (donnees.zones || []).filter((z) => z.type === 'foret');
+  // `zones_exclues` (la stèle, 23/09) : les TYPES de zone où la forêt ne
+  // pousse pas — une clairière se déclare par un rectangle, jamais en
+  // recopiant à la main les cellules que le tirage aurait boisées (il
+  // suffirait de changer la graine pour qu'un arbre y revienne).
+  const exclues = (donnees.zones || [])
+    .filter((z) => (config.zones_exclues || []).includes(z.type))
+    .map((z) => z.rect);
+  const estExclue = (x, y) => exclues.some((r) => x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h);
   for (const zone of zonesForet) {
     const { x: zx, y: zy, w, h } = zone.rect;
     for (let y = zy; y < zy + h && y < donnees.height; y++) {
       for (let x = zx; x < zx + w && x < donnees.width; x++) {
         if (grille[y][x] !== config.tile_libre) continue;
+        if (estExclue(x, y)) continue;
         const alea = mulberry32((donnees.seed ^ (x * 73856093) ^ (y * 19349663)) >>> 0);
         if (alea() < config.densite) grille[y][x] = config.tile_plein;
       }

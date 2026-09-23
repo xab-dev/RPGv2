@@ -170,9 +170,10 @@ function construireBanc({ dansLaMaison = true, compagnon, pleinEcranDisponible =
   // `D-125` (T9) : trois états du monde de plus, qu'une ligne d'ambiance
   // interroge. Ce témoin liste ce qui EXISTE — il n'épingle aucun réglage
   // (`D-52`), il dit seulement de quoi une condition de données dispose.
+  // Spec 11 palier D : `remplissage_coffre`, la porte du chapitre 3.
   assert.deepEqual(enregistres.valeurs.sort(),
     ['consommables_en_poche', 'niveau', 'objets_au_coffre', 'plein_ecran_disponible',
-      'slots_libres_poche', 'stations_placables', 'stations_posees']);
+      'remplissage_coffre', 'slots_libres_poche', 'stations_placables', 'stations_posees']);
   assert.deepEqual(enregistres.ecrans, ['ecran_poche', 'ecran_stats', 'ecran_construction'],
     'les trois écrans existants que le palier A rebranche — Craft et Coffre s’ouvrent par INTERACT, pas par une carte');
 

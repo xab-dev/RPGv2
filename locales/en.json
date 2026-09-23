@@ -301,5 +301,14 @@
   "dlg.chapitre_1.o_merci": "… Thanks.",
   "dlg.chapitre_1.o_reprendre": "No. Stone to mine, here. Where?",
   "dlg.chapitre_1.precis": "Follow the road west, toward the cave. Just below the path, a rock, alone in the grass. That one.",
-  "dlg.chapitre_1.seul": "Good. Then look — it’s what you do best."
+  "dlg.chapitre_1.seul": "Good. Then look — it’s what you do best.",
+  "flag.chapitre_3_vu": "The wisp “erased” your chest",
+  "dlg.chapitre_3.annonce": "I wanted to tidy up. I moved the chest… and everything inside was erased. Wait, I’m rolling it back.",
+  "dlg.chapitre_3.o_repare": "Fix it, quick.",
+  "dlg.chapitre_3.o_montre": "Show me.",
+  "dlg.chapitre_3.o_limite": "You had no business touching it.",
+  "dlg.chapitre_3.repare": "There. Done.",
+  "dlg.chapitre_3.montre": "See for yourself. I’m on it.",
+  "dlg.chapitre_3.limite": "You’re right. I won’t touch it again without you.",
+  "dlg.chapitre_3.tout_est_la": "Your chest… everything’s there."
 }

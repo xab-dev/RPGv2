@@ -301,5 +301,14 @@
   "dlg.chapitre_1.o_merci": "… Merci.",
   "dlg.chapitre_1.o_reprendre": "Non. Une pierre à miner, ici. Où ?",
   "dlg.chapitre_1.precis": "Suis la route vers l’ouest, vers la grotte. Juste sous le chemin, un rocher, seul dans l’herbe. Celui-là.",
-  "dlg.chapitre_1.seul": "Bien. Alors regarde : c’est ce que tu fais de mieux."
+  "dlg.chapitre_1.seul": "Bien. Alors regarde : c’est ce que tu fais de mieux.",
+  "flag.chapitre_3_vu": "Le follet a « effacé » ton coffre",
+  "dlg.chapitre_3.annonce": "J’ai voulu ranger. J’ai déplacé le coffre… et tout ce qu’il y avait dedans s’est effacé. Attends, je reviens en arrière.",
+  "dlg.chapitre_3.o_repare": "Répare, vite.",
+  "dlg.chapitre_3.o_montre": "Montre-moi.",
+  "dlg.chapitre_3.o_limite": "Tu n’avais pas à y toucher.",
+  "dlg.chapitre_3.repare": "Voilà. C’est fait.",
+  "dlg.chapitre_3.montre": "Regarde toi-même. Je m’en occupe.",
+  "dlg.chapitre_3.limite": "Tu as raison. Je n’y toucherai plus sans toi.",
+  "dlg.chapitre_3.tout_est_la": "Ton coffre… tout est là."
 }

@@ -169,9 +169,11 @@ rpg_v2/
 │   ├── hints.js            indices de commande (specs/04_indices-commandes.md) : un seul affiché
 │   │                       à la fois, montré une fois par partie (flag persisté), fermé dès
 │   │                       l'émission effective du verbe — pur, ignore i18n/DOM
-│   ├── effets_monde.js     `specs/11` §5 : les effets de monde (un NOM qui dure, `toit_occulte`),
-│   │                       posés par un dialogue, lus par le système concerné — état de SESSION,
-│   │                       jamais sauvegardé ; catalogue `data/effets_monde.json`
+│   ├── effets_monde.js     `specs/11` §5 : les effets de monde (un NOM qui dure, `toit_occulte`,
+│   │                       `coffre_apparence_vide`), posés par un dialogue, lus par le système
+│   │                       concerné — état de SESSION, jamais sauvegardé ; catalogue
+│   │                       `data/effets_monde.json` (`dialogue_fin` : ce que le follet dit quand
+│   │                       l'effet se lève, ouvert par `main.js#avancerEffetsMonde`)
 │   ├── texte_flottant.js   retour de gain dans le monde (« +1 Bois ») : réserve fixe, fusion des
 │   │                       gains d'une même frame — pur, ne connaît ni item, ni i18n, ni canvas ;
 │   │                       transporte des CLÉS, l'appelant compose le texte au rendu
@@ -329,7 +331,7 @@ la session précédente a révélées, clos celles qu'elle a livrées.
 
 ## Critère de passage courant
 
-**Fondations : closes** (23/09, `Q-20`). **Prochaine étape : finir la carte Maison**, par des **annexes et tunnels**, jamais une carte nouvelle (23/09). Sessions dans l'ordre, jamais mélangées (`docs/NS_alignement-dialogues-carte-mentale_2026-09-23.md` §4) : Doc-1 (**faite**) → Spec 10 `10_alignement-follet.md` (**livrée** le 23/09, trois paliers : A la stat et `?alignement=N`, B l'orbite inversée et `D-53`, C les régimes de synergie — A et B validés en jeu, C à voir : `V-103`) → Spec 11 `11_dialogues-consequences.md` (écrite, v1.1.0 ; **palier A** livré et validé le 23/09 : le choix, la bulle à options, spam et lecture comptés ; **palier B** livré et validé le 23/09 : effets de monde, toit occulté, tout le catalogue en nœuds ; **palier C** livré et validé le 23/09, en données seules : la porte du Nv.15 et le chapitre 1 « Description » — textes à réécrire : `Q-110` ; palier D à suivre) → contenu de l'arc Nv.15+ ; en file d'attente : Annexe 1, puis le journal d'indices et de traces. La Phase 4 n'est plus la suivante : ses systèmes (armes, équipement, compétences, tables d'apparition) arrivent d'abord sur la carte Maison, et la carte suivante s'ouvre quand la Maison est épuisée (Nv. 40-50, provisoire). Critère de clôture de la Région Maison : **la boucle de 2 heures** (sauvegarde neuve → 2 h de jeu → Nv. 30 → l'envie de changer d'endroit). Le rythme ne se rouvre pas avant le Boss 1 (`Q-62` : Xav mesure 15 à 20 min du Nv.0 au Nv.10).
+**Fondations : closes** (23/09, `Q-20`). **Prochaine étape : finir la carte Maison**, par des **annexes et tunnels**, jamais une carte nouvelle (23/09). Sessions dans l'ordre, jamais mélangées (`docs/NS_alignement-dialogues-carte-mentale_2026-09-23.md` §4) : Doc-1 (**faite**) → Spec 10 `10_alignement-follet.md` (**livrée** le 23/09, trois paliers : A la stat et `?alignement=N`, B l'orbite inversée et `D-53`, C les régimes de synergie — A et B validés en jeu, C à voir : `V-103`) → Spec 11 `11_dialogues-consequences.md` (écrite, v1.1.0 ; **palier A** livré et validé le 23/09 : le choix, la bulle à options, spam et lecture comptés ; **palier B** livré et validé le 23/09 : effets de monde, toit occulté, tout le catalogue en nœuds ; **palier C** livré et validé le 23/09, en données seules : la porte du Nv.15 et le chapitre 1 « Description » — textes à réécrire : `Q-110` ; **palier D** livré le 23/09 : le coffre effacé, chapitre 3 — à voir : `V-108`, choix à confirmer : `Q-111` ; la spec 11 est livrée en entier) → contenu de l'arc Nv.15+ ; en file d'attente : Annexe 1, puis le journal d'indices et de traces. La Phase 4 n'est plus la suivante : ses systèmes (armes, équipement, compétences, tables d'apparition) arrivent d'abord sur la carte Maison, et la carte suivante s'ouvre quand la Maison est épuisée (Nv. 40-50, provisoire). Critère de clôture de la Région Maison : **la boucle de 2 heures** (sauvegarde neuve → 2 h de jeu → Nv. 30 → l'envie de changer d'endroit). Le rythme ne se rouvre pas avant le Boss 1 (`Q-62` : Xav mesure 15 à 20 min du Nv.0 au Nv.10).
 
 **Méthode (Xav, 19/09) : on ne rajoute pas de contenu sur des bases non confirmées** — un ticket par session (ou une file de micro-tickets), un commit par ticket, validation en jeu entre deux. Ce que Xav doit encore voir en jeu : les lignes `V-` ouvertes du suivi.
 

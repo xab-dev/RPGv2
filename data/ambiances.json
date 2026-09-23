@@ -93,5 +93,29 @@
     ],
     "dialogue": "dlg_chapitre_1",
     "flag": "flag_chapitre_1_vu"
+  },
+  {
+    "id": "amb_chapitre_3",
+    "condition": {
+      "all": [
+        {
+          "valeur": "niveau",
+          "min": 15
+        },
+        {
+          "valeur": "remplissage_coffre",
+          "min": 0.7
+        },
+        {
+          "valeur": "stations_placables",
+          "min": 1
+        }
+      ]
+    },
+    "scenes": [
+      "scene_maison_exterieur"
+    ],
+    "dialogue": "dlg_chapitre_3",
+    "flag": "flag_chapitre_3_vu"
   }
 ]

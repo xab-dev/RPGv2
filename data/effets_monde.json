@@ -2,5 +2,10 @@
   {
     "id": "toit_occulte",
     "description": "Le toit de la Maison ne s’efface plus quand le héros passe dessous : il cache ce qu’il y a dedans. Lu par main.js#dessiner, seul point qui calcule l’opacité du toit."
+  },
+  {
+    "id": "coffre_apparence_vide",
+    "description": "L’écran Coffre montre un coffre vide ; le contenu réel ne bouge pas (un dépôt va dans le vrai coffre). Lu par main.js#contenuAfficheDeStation, seul point qui fabrique la liste du Coffre pour l’écran. Chapitre 3 de l’arc, spec 11 §7.3.",
+    "dialogue_fin": "dlg_coffre_tout_est_la"
   }
 ]

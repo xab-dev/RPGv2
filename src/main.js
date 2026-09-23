@@ -193,6 +193,11 @@ const FACTEUR_EFFACEMENT_TOIT = 1.125;
 // qui relie une option de dialogue à ce système ; il doit exister au
 // catalogue `effets_monde.json`, vérifié au démarrage de l'orchestrateur.
 const EFFET_TOIT_OCCULTE = 'toit_occulte';
+// Spec 11 §7.3 (chapitre 3, « le coffre effacé ») : tant qu'il est actif, l'écran
+// Coffre MONTRE un coffre vide. Le contenu réel ne bouge pas : l'effet est lu
+// par le seul point qui fabrique la liste du Coffre pour l'écran
+// (`contenuAfficheDeStation`), jamais par `ecran_fiches.js` ni par la sauvegarde.
+const EFFET_COFFRE_APPARENCE_VIDE = 'coffre_apparence_vide';
 const MARGE_FONDU_TOIT_PX = 30;
 const RAYON_TOIT_FOLLET_ABSENT_PX = 90;
 
@@ -694,10 +699,15 @@ export function creerOrchestrateurGrotte({
   // dans `save` (recharger la page les lève, `Q-103`). Avancés avec le jeu,
   // gelés sous UI comme tout le reste.
   let effetsMonde = creerEtatEffets();
+  // Les répliques de fin d'effet (`dialogue_fin`, spec 11 §7.3) qui attendent
+  // que la bulle soit libre : un effet peut se lever dans la frame même où une
+  // ligne d'ambiance s'ouvre, et une bulle n'en recouvre jamais une autre.
+  // Session, comme l'effet : recharger la page lève les deux (`Q-103`).
+  let finsEffetsEnAttente = [];
   // Les effets que le CODE lit par leur nom : absents du catalogue, ils ne
   // pourraient jamais être posés, et le système qui les lit se tairait. Échec
   // dur au démarrage plutôt qu'un toit qui ne réagit jamais.
-  for (const id of [EFFET_TOIT_OCCULTE]) {
+  for (const id of [EFFET_TOIT_OCCULTE, EFFET_COFFRE_APPARENCE_VIDE]) {
     if (!registre.obtenir('effets_monde', id)) throw new Error(`effets_monde.json : "${id}" absent, lu par main.js`);
   }
 
@@ -876,6 +886,10 @@ export function creerOrchestrateurGrotte({
       slots_libres_poche: capacitePoche.slots
         - slotsOccupes(save.inventaire.items, capacitePoche, obtenirItemDef),
       objets_au_coffre: objetsRangesAuCoffre(),
+      // Spec 11 §7.3 : la part REMPLIE du coffre le plus plein de la scène, de
+      // 0 à 1 — posée sur ce qui est rempli et non sur un nombre de slots, pour
+      // qu'une condition « 70 % » survive à l'agrandissement du coffre.
+      remplissage_coffre: remplissageCoffre(),
       // `D-121` : une instance CRÉÉE en jeu, donc posée par le joueur — les
       // stations du catalogue n'en sont pas. Compté par la même fonction que
       // la résolution des interactifs, jamais par un second parcours.
@@ -1365,6 +1379,23 @@ export function creerOrchestrateurGrotte({
   // du follet muette dès que le joueur range dans un coffre qu'il a posé.
   // Une entrée sans `contenu` est une simple POSE (`D-121` encore), et
   // n'apporte rien à la somme.
+  // Les coffres se trouvent par la résolution des interactifs de la scène
+  // (`scene.puzzle`, `D-121`) : un coffre posé en jeu en est un comme les
+  // autres. Hors d'une scène qui en porte, 0.
+  function remplissageCoffre() {
+    if (!scene) return 0;
+    let max = 0;
+    for (const id of scene.interactifs) {
+      const p = scene.puzzle(id);
+      if (!p || p.type !== 'station') continue;
+      const station = registre.obtenir('stations', p.station_type);
+      if (!station || station.role !== 'stockage') continue;
+      const capacite = capaciteDeStation(station);
+      max = Math.max(max, slotsOccupes(contenuDeStation(p.id), capacite, obtenirItemDef) / capacite.slots);
+    }
+    return max;
+  }
+
   function objetsRangesAuCoffre() {
     let total = 0;
     for (const entree of Object.values(save.maison.stations || {})) {
@@ -1415,6 +1446,23 @@ export function creerOrchestrateurGrotte({
     flags.set(ambiance.flag);
     ouvrirDialogueCatalogue(ambiance.dialogue);
     etatModifie = true;
+  }
+
+  // Spec 11 §5 et §7.3 : le temps des effets de monde, et ce qu'un effet dit
+  // quand il se lève. Le « quoi dire » est en données (`effets_monde.json >
+  // dialogue_fin`) : `effets_monde.js` ne sait toujours pas ce que fait un
+  // effet, et un effet de plus avec sa réplique est une entrée JSON de plus.
+  function avancerEffetsMonde(deltaMs) {
+    const avant = effetsMonde;
+    effetsMonde = tickEffets(effetsMonde, deltaMs);
+    for (const def of registre.tous('effets_monde')) {
+      if (def.dialogue_fin && effetActif(avant, def.id) && !effetActif(effetsMonde, def.id)) {
+        finsEffetsEnAttente.push(def.dialogue_fin);
+      }
+    }
+    if (finsEffetsEnAttente.length > 0 && !dialogue.estOuvert()) {
+      ouvrirDialogueCatalogue(finsEffetsEnAttente.shift());
+    }
   }
 
   // Spec 11 : LE point qui ouvre une entrée de `dialogues.json`. Depuis le
@@ -1881,7 +1929,8 @@ export function creerOrchestrateurGrotte({
       // l'instance passée avec son type.
       menu.ouvrirCoffre(() => entreesCoffre(puzzle, station), i18n.t(station.label_key), {
         sousTitre: () => i18n.t('menu.fiche.coffre_piles', {
-          n: slotsCoffre(puzzle, station), max: capaciteDeStation(station).slots,
+          n: slotsOccupes(contenuAfficheDeStation(puzzle.id), capaciteDeStation(station), obtenirItemDef),
+          max: capaciteDeStation(station).slots,
         }),
         texteVide: i18n.t('menu.poche_vide'),
       });
@@ -2102,6 +2151,15 @@ export function creerOrchestrateurGrotte({
     return (entree && entree.contenu) || {};
   }
 
+  // Ce que l'ÉCRAN montre d'un coffre : son contenu, sauf sous l'effet
+  // `coffre_apparence_vide` (spec 11 §7.3), où il paraît vide. Seules la liste
+  // des retraits et le compte de piles du sous-titre le lisent : les dépôts, eux,
+  // vont au vrai contenu, et leurs refus se calculent sur lui — un coffre
+  // vraiment plein refuse, même s'il paraît vide.
+  function contenuAfficheDeStation(puzzleId) {
+    return effetActif(effetsMonde, EFFET_COFFRE_APPARENCE_VIDE) ? {} : contenuDeStation(puzzleId);
+  }
+
   function slotsCoffre(puzzle, station) {
     return slotsOccupes(contenuDeStation(puzzle.id), capaciteDeStation(station), obtenirItemDef);
   }
@@ -2169,7 +2227,7 @@ export function creerOrchestrateurGrotte({
           },
         };
       });
-    const entreesRetrait = Object.entries(coffre.lire())
+    const entreesRetrait = Object.entries(contenuAfficheDeStation(puzzle.id))
       .filter(([, qte]) => qte > 0)
       .map(([itemId, qte]) => {
         const itemDef = registre.obtenir('items', itemId);
@@ -3162,7 +3220,7 @@ export function creerOrchestrateurGrotte({
       indices.maj(deltaMs);
       verifierIndicesNiveau();
       verifierLignesAmbiance();
-      effetsMonde = tickEffets(effetsMonde, deltaMs);
+      avancerEffetsMonde(deltaMs);
 
       // Horloge "temps de jeu actif" (daynight.js#avancerHeure) : avancée
       // dans TOUTES les scènes désormais (Palier A/C, specs/04_maison-
@@ -3872,6 +3930,7 @@ export function creerOrchestrateurGrotte({
     indices = creerEtatIndices(registre);
     dialogue.fermer();
     effetsMonde = creerEtatEffets();
+    finsEffetsEnAttente = [];
     choixFollet = null;
     pousseeChoixPrecedente = 0;
     intro = null;

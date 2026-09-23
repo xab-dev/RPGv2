@@ -1965,7 +1965,21 @@ export const SCHEMAS = {
   // Spec 11 §5 : les effets de monde. Un NOM par entrée, rien d'autre — ce
   // qu'un effet fait vit dans le système qui le lit. Le catalogue existe pour
   // qu'une option qui cite un effet inconnu tombe au boot.
-  effets_monde: schemaMinimal(),
+  // `dialogue_fin` (§7.3, le coffre effacé) : la réplique qui s'ouvre quand
+  // l'effet se lève — optionnelle, mais un id inconnu tombe ici, jamais à
+  // l'instant où l'effet expire.
+  effets_monde: {
+    requiredFields: ['id'],
+    idField: 'id',
+    refs: [],
+    custom(entry, catalogs, path) {
+      if (entry.dialogue_fin === undefined) return [];
+      if (!(catalogs.dialogues || []).some((d) => d.id === entry.dialogue_fin)) {
+        return [`${path} > dialogue_fin "${entry.dialogue_fin}" introuvable dans dialogues.json`];
+      }
+      return [];
+    },
+  },
   puzzles: {
     requiredFields: ['id', 'type'],
     idField: 'id',

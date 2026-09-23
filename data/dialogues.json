@@ -228,5 +228,32 @@
       "precis": { "locuteur": "follet", "text_key": "dlg.chapitre_1.precis" },
       "seul": { "locuteur": "follet", "text_key": "dlg.chapitre_1.seul" }
     }
+  },
+  {
+    "id": "dlg_chapitre_3",
+    "declencheur": "chapitre_3",
+    "entree": "annonce",
+    "noeuds": {
+      "annonce": {
+        "locuteur": "follet",
+        "text_key": "dlg.chapitre_3.annonce",
+        "options": [
+          { "text_key": "dlg.chapitre_3.o_repare", "defaut": true, "suite": "repare" },
+          { "text_key": "dlg.chapitre_3.o_montre", "alignement": 0.5, "effets_monde": [{ "id": "coffre_apparence_vide", "duree_ms": 56000 }], "suite": "montre" },
+          { "text_key": "dlg.chapitre_3.o_limite", "alignement": 0.5, "effets_monde": [{ "id": "coffre_apparence_vide", "duree_ms": 56000 }], "suite": "limite" }
+        ]
+      },
+      "repare": { "locuteur": "follet", "text_key": "dlg.chapitre_3.repare" },
+      "montre": { "locuteur": "follet", "text_key": "dlg.chapitre_3.montre" },
+      "limite": { "locuteur": "follet", "text_key": "dlg.chapitre_3.limite" }
+    }
+  },
+  {
+    "id": "dlg_coffre_tout_est_la",
+    "declencheur": "effet_coffre_apparence_vide_fin",
+    "entree": "l1",
+    "noeuds": {
+      "l1": { "locuteur": "follet", "text_key": "dlg.chapitre_3.tout_est_la" }
+    }
   }
 ]

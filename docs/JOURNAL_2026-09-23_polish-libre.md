@@ -34,8 +34,8 @@ facture.
 - Règle qui sort de la session : **la barre du bas se tait quand autre chose
   occupe le pied de l'écran et que le jeu est gelé** (bulle, placement) ; le
   tactile n'est jamais concerné, ses boutons montent au-dessus.
-- **Proposé, pas fait** (touche du validé) : `Q-113` (l'or du canvas et le
-  bleu des menus), `Q-114` (Force et faim, deux triangles).
+- **Proposé, pas fait** (touche du validé) : `Q-112` (l'or du canvas et le
+  bleu des menus), `Q-113` (Force et faim, deux triangles).
 - Commit raté puis refait : le renommage du test de `D-170` était parti dans
   `D-171` (une chaîne `&&` interrompue) ; séparé avant tout push.
 - À voir en jeu : `V-110`, `V-111`, `V-112`.

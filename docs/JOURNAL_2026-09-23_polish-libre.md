@@ -52,4 +52,5 @@ s'améliorent.
 | `2745457` | `D-174` | « Prêt dans » → « Disponible dans » (FR), « Ready in » → « Available in » (EN) : une clé de locale |
 | `4004653` | `D-175` | La case d'attaque prend la couleur du follet choisi (barre du bas et bouton tactile) ; l'or tant qu'aucun follet. **165 fichiers verts** |
 | `47f2d9e` | `D-176` | L'engrenage des Paramètres dans le bouton MENU tactile, en filigrane, statique, id en données (`menus.json#icone_bouton`). Premier scénario tactile (`menu_tactile.mjs`). **166 fichiers verts** |
-| *(ce commit)* | `D-176` | L'id de l'engrenage déménage dans `glyphes.json#tactile_icone` (par verbe), avant que le bouton INTERACT n'y déclare le sien. Rien ne change à l'écran (capture identique) |
+| `a387aad` | `D-176` | L'id de l'engrenage déménage dans `glyphes.json#tactile_icone` (par verbe), avant que le bouton INTERACT n'y déclare le sien. Rien ne change à l'écran (capture identique) |
+| *(ce commit)* | `D-177` | Le bouton INTERACT montre sa cible (même fonction que l'appui : `cibleInteraction`), une onde sinon. Trois passes à la capture : postes hors de portée, levier sans manche, manche qui sortait du bouton. **167 fichiers verts** |

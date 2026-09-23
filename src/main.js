@@ -142,6 +142,10 @@ const RAYON_MONSTRE_CHAOS_PX = 8;
 const OPACITE_NUIT_MAX = Math.max(...PHASES_CYCLE.map((p) => p.opacite));
 const INTERVALLE_AUTOSAVE_MS = 30000;
 const DISTANCE_INTERACT_PX = 28;
+// Les types d'interactif qu'on prend « à la main » (INTERACT) ; un autre type
+// posé dans `scene.interactifs` est ignoré par le geste, qui passe au suivant.
+// Lu par `cibleInteraction` seule, qui dit ce que vise l'appui (`D-177`).
+const TYPES_INTERACTIFS_A_LA_MAIN = ['levier', 'station_placeholder', 'station'];
 // MT_texte-flottant_2026-09-19 (`D-05`) : gabarit du texte de gain (« +{n}
 // {item} »), déclaré une seule fois ici. C'est une CLÉ de localisation, pas
 // un texte : le « + », l'ordre des morceaux et l'espace se traduisent comme
@@ -1746,7 +1750,13 @@ export function creerOrchestrateurGrotte({
   // appui) : levier/station de scene.interactifs (déjà des entités
   // positionnées), objet au sol, puis tuile-ressource (scan de grille, donc
   // en dernier — la moins probable d'être ambiguë avec autre chose).
-  function essayerInteraction() {
+  //
+  // `D-177` : CE QUE vise l'appui est une question à part de ce qu'il FAIT.
+  // Le bouton tactile d'interaction montre la silhouette de sa cible avant
+  // qu'on appuie ; il lit cette fonction-ci, et `essayerInteraction` aussi —
+  // jamais deux calculs de « la cible », qui finiraient par montrer un coffre
+  // et ouvrir un levier. Ne modifie rien : elle peut être lue à chaque frame.
+  function cibleInteraction() {
     for (const puzzleId of scene.interactifs) {
       // `D-121` : `scene.puzzle` et non `registre.obtenir` — un id venu de la
       // scène peut désigner une instance CRÉÉE (un coffre fabriqué), qui
@@ -1757,6 +1767,71 @@ export function creerOrchestrateurGrotte({
       // de son propre bord) — un levier (empreinte nulle) redonne exactement
       // la distance au centre d'avant cette fiche.
       if (distanceAuRectangle(hero.x, hero.y, rectangleInteractif(puzzle)) > DISTANCE_INTERACT_PX) continue;
+      // Un interactif d'un autre type ne se prend pas à la main : le suivant
+      // a sa chance, comme avant ce découpage.
+      if (TYPES_INTERACTIFS_A_LA_MAIN.includes(puzzle.type)) return { genre: 'interactif', puzzle, puzzleId };
+    }
+    const jeteProche = trouverObjetJeteProche(objetsJetesDeLaScene(), hero, DISTANCE_INTERACT_PX);
+    const semeProche = trouverItemProche(itemsSol, hero, DISTANCE_INTERACT_PX);
+    const distanceSeme = semeProche
+      ? Math.hypot(hero.x - semeProche.position.x, hero.y - semeProche.position.y) : Infinity;
+    // `D-145` : l'objet jeté passe avant quand il est au moins aussi près —
+    // c'est lui que le joueur vient de poser.
+    if (jeteProche && jeteProche.distance <= distanceSeme) return { genre: 'jete', jete: jeteProche };
+    if (semeProche) return { genre: 'seme', seme: semeProche };
+    const ressourceProche = trouverRessourceProche(scene, hero, DISTANCE_INTERACT_PX);
+    if (ressourceProche) return { genre: 'ressource', ressource: ressourceProche };
+    return null;
+  }
+
+  // `D-158` : un levier se lit à son GESTE (bascule.js) — allumé quand le
+  // manche a touché sa butée, pas à l'appui. Sans état de geste (la toute
+  // première frame), l'état réel, posé. `null` pour tout autre interactif.
+  function gesteDuLevier(puzzle) {
+    if (puzzle.type !== 'levier') return null;
+    return basculesLeviers.get(puzzle.id) || avancerBascule(null, !!puzzlesEtat[puzzle.id]?.actif, 0);
+  }
+
+  // Le manche d'un levier, à l'angle de son geste : lu par le dessin du monde
+  // ET par le bouton tactile qui le montre (`D-177`) — un seul calcul, sinon
+  // le bouton montrerait un manche baissé sur un levier levé.
+  function pieceMobileDuLevier(puzzle, visuel) {
+    const geste = gesteDuLevier(puzzle);
+    const mobile = geste && visuel.piece_mobile;
+    if (!mobile) return null;
+    return {
+      visuel: registre.obtenir('visuels', mobile.visuel),
+      pivot: mobile.pivot,
+      angle: mobile.angles[0] + (mobile.angles[1] - mobile.angles[0]) * positionBascule(geste),
+    };
+  }
+
+  // `D-177` : la silhouette de la cible, pour le bouton tactile — celle que le
+  // monde dessine déjà (l'interactif avec son manche, l'objet, la
+  // tuile-ressource), jamais une icône de plus à tenir. `{ visuel,
+  // pieceMobile }`, ou `null` = rien à montrer (le bouton garde son onde).
+  function visuelCibleInteraction(cible) {
+    if (!cible) return null;
+    if (cible.genre === 'interactif') {
+      const visuel = registre.obtenir('visuels', cible.puzzle.render.visuel);
+      return { visuel, pieceMobile: pieceMobileDuLevier(cible.puzzle, visuel) };
+    }
+    let id = null;
+    if (cible.genre === 'jete' || cible.genre === 'seme') {
+      const item = registre.obtenir('items', (cible.jete || cible.seme).itemId);
+      id = item.render && item.render.visuel;
+    } else if (cible.genre === 'ressource') {
+      const tuile = scene.tuileA(cible.ressource.tx, cible.ressource.ty);
+      id = tuile && tuile.render && tuile.render.visuel;
+    }
+    return id ? { visuel: registre.obtenir('visuels', id), pieceMobile: null } : null;
+  }
+
+  function essayerInteraction() {
+    const cible = cibleInteraction();
+    if (!cible) return;
+    if (cible.genre === 'interactif') {
+      const { puzzle, puzzleId } = cible;
       if (puzzle.type === 'levier') {
         puzzlesEtat = activerLevier(registre, puzzlesEtat, puzzleId, flags);
         save.puzzles = puzzlesEtat;
@@ -1767,10 +1842,9 @@ export function creerOrchestrateurGrotte({
         ouvrirDialogueCatalogue(puzzle.dialogue);
         return;
       }
-      if (puzzle.type === 'station') {
-        essayerStation(puzzle);
-        return;
-      }
+      // Reste `station`, le dernier type de `TYPES_INTERACTIFS_A_LA_MAIN`.
+      essayerStation(puzzle);
+      return;
     }
 
     // `D-145` : un objet JETÉ se ramasse comme un objet semé — même geste, un
@@ -1780,11 +1854,8 @@ export function creerOrchestrateurGrotte({
     // **aucune XP** (sinon jeter puis reprendre en boucle ferait monter de
     // niveau), aucune repousse, aucun flag de premier ramassage (l'objet a
     // déjà été ramassé une fois pour arriver en poche).
-    const jeteProche = trouverObjetJeteProche(objetsJetesDeLaScene(), hero, DISTANCE_INTERACT_PX);
-    const semeProche = trouverItemProche(itemsSol, hero, DISTANCE_INTERACT_PX);
-    const distanceSeme = semeProche
-      ? Math.hypot(hero.x - semeProche.position.x, hero.y - semeProche.position.y) : Infinity;
-    if (jeteProche && jeteProche.distance <= distanceSeme) {
+    if (cible.genre === 'jete') {
+      const jeteProche = cible.jete;
       const resultat = ajouterItem(save.inventaire.items, jeteProche.itemId, 1, plafondPoche(jeteProche.itemId));
       if (resultat.ajoute <= 0) {
         signalerRefusConteneur(CLE_TEXTE_POCHE_PLEINE, jeteProche.position.x, jeteProche.position.y);
@@ -1797,8 +1868,8 @@ export function creerOrchestrateurGrotte({
       return;
     }
 
-    const itemProche = semeProche;
-    if (itemProche) {
+    if (cible.genre === 'seme') {
+      const itemProche = cible.seme;
       const itemDef = registre.obtenir('items', itemProche.itemId);
       const resultat = ajouterItem(save.inventaire.items, itemProche.itemId, 1, plafondPoche(itemProche.itemId));
       // Poche pleine (§4 edge case) : l'item reste au sol — et depuis `D-118`
@@ -1860,8 +1931,8 @@ export function creerOrchestrateurGrotte({
       return;
     }
 
-    const ressourceProche = trouverRessourceProche(scene, hero, DISTANCE_INTERACT_PX);
-    if (ressourceProche) {
+    {
+      const ressourceProche = cible.ressource;
       const donneesRessource = registre.obtenir('resources', ressourceProche.ressourceId);
       // Palier B (§3.2) : peutRecolter() enfin branché sur la poche réelle —
       // sans l'outil, comportement Phase 2 inchangé (dialogue "pas encore").
@@ -3592,21 +3663,14 @@ export function creerOrchestrateurGrotte({
         // `D-158` : un levier se lit à son GESTE (bascule.js) — allumé quand
         // le manche a touché sa butée, pas à l'appui. Sans état de geste (la
         // toute première frame), l'état réel, posé.
-        const geste = p.type === 'levier'
-          ? (basculesLeviers.get(p.id) || avancerBascule(null, !!puzzlesEtat[p.id]?.actif, 0))
-          : null;
-        const mobile = geste && visuel.piece_mobile;
+        const geste = gesteDuLevier(p);
         return {
           x: (pose.x + 0.5) * scene.tileSize,
           y: (pose.y + 0.5) * scene.tileSize,
           actif: !!geste && voyantAllume(geste),
           halo: geste ? fonduHalo(geste) : 0,
           visuel,
-          pieceMobile: mobile ? {
-            visuel: registre.obtenir('visuels', mobile.visuel),
-            pivot: mobile.pivot,
-            angle: mobile.angles[0] + (mobile.angles[1] - mobile.angles[0]) * positionBascule(geste),
-          } : null,
+          pieceMobile: pieceMobileDuLevier(p, visuel),
           // specs/04_stations-proportions-collision.md : échelle par entrée
           // (`undefined` pour un levier -> dessinerVisuel applique son propre
           // défaut 1, jamais un second défaut dupliqué ici).
@@ -3923,6 +3987,9 @@ export function creerOrchestrateurGrotte({
       // lève ce bandeau — la barre n'y dit rien.
       barreActions: !dialogue.estOuvert() && !constructionActif(),
       iconesBoutons: iconesBoutonsTactiles,
+      // `D-177` : la cible d'INTERACT, par LA fonction qui décide de l'appui.
+      // Calculée seulement quand le doigt a la main : c'est là qu'elle se voit.
+      iconesCibles: input.tactileActif() ? { interact: visuelCibleInteraction(cibleInteraction()) } : {},
     });
     // Indices de commande (§2 : "masqué" sous UI) — résolution i18n ici (même
     // patron que les autres calques : hud_hints.js ne connaît jamais i18n).

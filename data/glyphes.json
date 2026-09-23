@@ -46,7 +46,8 @@
     "verbe": "interact",
     "clavier_key": "glyphe.clavier.interact",
     "manette_key": "glyphe.manette.interact",
-    "tactile_key": "glyphe.tactile.interact"
+    "tactile_key": "glyphe.tactile.interact",
+    "tactile_icone": "visuel_icone_interagir"
   },
   {
     "id": "glyphe_menu",

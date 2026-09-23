@@ -119,6 +119,15 @@ export const BOUTON_MENU = { cx: 455, cy: 44, rayon: 16, verbe: 'menu' };
 // de menu (`icone_canvas.js#COTE_REFERENCE_ICONE`).
 export const ICONE_BOUTON_TACTILE = { taille: 16, alpha: 0.4 };
 
+// `D-177` : la silhouette de CE QUE vise le bouton (un levier, un coffre,
+// une branche au sol), à la place de l'icône du bouton tant qu'une cible est
+// à portée. Plus grande et plus franche que le filigrane : c'est une
+// information, pas un ornement. `taille` = le côté de la boîte où la
+// silhouette est recadrée (`icone_canvas.js#cadrer`, la règle des tuiles de
+// la Poche), dans un bouton de 40 de diamètre. PROVISOIRES, jugés à la
+// capture Chrome seulement.
+export const ICONE_CIBLE_TACTILE = { taille: 26, alpha: 0.85 };
+
 export function echelleIconeBoutonTactile(tailleVoulue) {
   return tailleVoulue / COTE_REFERENCE_ICONE;
 }

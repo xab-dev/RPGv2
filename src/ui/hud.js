@@ -9,8 +9,9 @@
 import {
   boutonsTactilesVisibles, JOYSTICK, BANDEAU_HAUT, elementsBandeauHaut, echelleIconeArme,
   placerIconesBuffs, alphaPulsationBuff, echelleIconeBuff, ICONE_BUFF, echelleIconeBandeau,
-  ICONE_BOUTON_TACTILE, echelleIconeBoutonTactile,
+  ICONE_BOUTON_TACTILE, echelleIconeBoutonTactile, ICONE_CIBLE_TACTILE,
 } from './hud_layout.js';
+import { cadrer } from './icone_canvas.js';
 import { RESOLUTION_LOGIQUE } from '../render.js';
 import { dessinerVisuel, TAILLE_REFERENCE_FOLLET_PX } from '../visuels.js';
 import { dessinerBarre, PALETTE_JAUGES } from './barre.js';
@@ -120,7 +121,7 @@ function fondSlot(ctx, y, hauteur) {
   return degrade;
 }
 
-function dessinerBoutonsTactiles(ctx, iconesSlots, verbesActions, couleurActive, iconesBoutons) {
+function dessinerBoutonsTactiles(ctx, iconesSlots, verbesActions, couleurActive, iconesBoutons, iconesCibles) {
   for (const bouton of boutonsTactilesVisibles(verbesActions)) {
     ctx.beginPath();
     ctx.arc(bouton.cx, bouton.cy, bouton.rayon, 0, Math.PI * 2);
@@ -135,7 +136,25 @@ function dessinerBoutonsTactiles(ctx, iconesSlots, verbesActions, couleurActive,
     // `D-176` : un bouton qui n'est pas une case d'action (MENU) n'a pas
     // d'icône de slot ; il porte la sienne, en filigrane.
     const iconeBouton = iconesBoutons[bouton.verbe];
-    if (iconeBouton && !iconesSlots[bouton.verbe]) {
+    const cible = iconesCibles[bouton.verbe];
+    if (cible) {
+      // `D-177` : ce que l'appui va toucher. Une silhouette du MONDE (une
+      // station large de 22 unités, ancrée par le bas) se recadre comme dans
+      // une tuile de la Poche — une seule règle de « où tient ce visuel ».
+      const { taille, alpha } = ICONE_CIBLE_TACTILE;
+      const cadre = cadrer(cible.visuel, taille, cible.pieceMobile);
+      const x = bouton.cx - taille / 2 + cadre.x;
+      const y = bouton.cy - taille / 2 + cadre.y;
+      dessinerVisuel(ctx, cible.visuel, x, y, { echelle: cadre.echelle, alpha });
+      // Le manche d'un levier, pivoté comme dans le monde (render.js) : sans
+      // lui, un levier n'est qu'un socle.
+      if (cible.pieceMobile) {
+        const { visuel, pivot, angle } = cible.pieceMobile;
+        dessinerVisuel(ctx, visuel, x + pivot[0] * cadre.echelle, y + pivot[1] * cadre.echelle, {
+          echelle: cadre.echelle, alpha, rotation: angle,
+        });
+      }
+    } else if (iconeBouton && !iconesSlots[bouton.verbe]) {
       dessinerVisuel(ctx, iconeBouton, bouton.cx, bouton.cy, {
         echelle: echelleIconeBoutonTactile(ICONE_BOUTON_TACTILE.taille),
         alpha: ICONE_BOUTON_TACTILE.alpha,
@@ -244,6 +263,10 @@ export function dessinerHud(ctx, {
   // `glyphes.json#tactile_icone`. Un verbe absent = bouton nu, jamais une
   // erreur, comme toutes les tables d'icônes de ce module.
   iconesBoutons = {},
+  // `D-177` : `verbe → { visuel, pieceMobile }` de ce que le bouton vise
+  // MAINTENANT (la cible d'INTERACT à portée), résolu par main.js au même
+  // calcul que l'appui. Il remplace l'icône du bouton tant qu'il est là.
+  iconesCibles = {},
 }) {
   ctx.save();
 
@@ -376,7 +399,7 @@ export function dessinerHud(ctx, {
   // §4 : jamais les deux à la fois. Sur tactile, les boutons SONT les slots.
   const couleurActive = (companion && companion.render.couleur) || COULEUR_SLOT_ACTIF;
   if (tactileActif) {
-    dessinerBoutonsTactiles(ctx, iconesSlots, verbesActions, couleurActive, iconesBoutons);
+    dessinerBoutonsTactiles(ctx, iconesSlots, verbesActions, couleurActive, iconesBoutons, iconesCibles);
   } else if (barreActions) {
     // Diagnostic SD_dialogues-invisibles_2026-09-15 : même défaut que
     // dialogue_box.js — `ctx.canvas.width/height` est la taille PHYSIQUE

@@ -34,8 +34,13 @@ const MARGE_RECADRAGE = 2;
 // réduites pour y tenir. La boîte est celle de `structures.js` (la même règle
 // que l'empreinte solide des stations) : jamais un second calcul de « quelle
 // place prend ce visuel ». Pure, exportée pour être testée sans canvas.
-export function cadrer(visuel, cote) {
-  const boite = empreinteParDefaut(visuel, echelleVisuel(visuel));
+//
+// `pieceMobile` (`D-177`, optionnelle) : `{ visuel, pivot, angle }`, le manche
+// d'un levier tel que le monde le dessine. Sa boîte, pivotée puis posée au
+// pivot, s'ajoute à celle du socle : sans elle, le bouton tactile qui montre
+// un levier laissait dépasser la boule du manche.
+export function cadrer(visuel, cote, pieceMobile = null) {
+  const boite = unionBoites(empreinteParDefaut(visuel, echelleVisuel(visuel)), boitePieceMobile(pieceMobile));
   const demi = COTE_REFERENCE_ICONE / 2;
   const tient = boite.x >= -demi && boite.y >= -demi && boite.x + boite.w <= demi && boite.y + boite.h <= demi;
   if (tient) return { x: cote / 2, y: cote / 2, echelle: cote / COTE_REFERENCE_ICONE };
@@ -45,6 +50,25 @@ export function cadrer(visuel, cote) {
     y: cote / 2 - (boite.y + boite.h / 2) * echelle,
     echelle,
   };
+}
+
+function boitePieceMobile(pieceMobile) {
+  if (!pieceMobile) return null;
+  const { visuel, pivot, angle } = pieceMobile;
+  const b = empreinteParDefaut(visuel, echelleVisuel(visuel));
+  const rad = (angle * Math.PI) / 180;
+  const coins = [[b.x, b.y], [b.x + b.w, b.y], [b.x, b.y + b.h], [b.x + b.w, b.y + b.h]]
+    .map(([x, y]) => [pivot[0] + x * Math.cos(rad) - y * Math.sin(rad), pivot[1] + x * Math.sin(rad) + y * Math.cos(rad)]);
+  const xs = coins.map((c) => c[0]);
+  const ys = coins.map((c) => c[1]);
+  return { x: Math.min(...xs), y: Math.min(...ys), w: Math.max(...xs) - Math.min(...xs), h: Math.max(...ys) - Math.min(...ys) };
+}
+
+function unionBoites(a, b) {
+  if (!b) return a;
+  const x = Math.min(a.x, b.x);
+  const y = Math.min(a.y, b.y);
+  return { x, y, w: Math.max(a.x + a.w, b.x + b.w) - x, h: Math.max(a.y + a.h, b.y + b.h) - y };
 }
 
 // `obtenirVisuel(id)` : le registre, injecté. `fenetre` : pour le rapport de

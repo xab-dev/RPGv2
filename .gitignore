@@ -1,0 +1,24 @@
+# Sorties des scénarios de capture (tools/scenarios/, lancés par tools/capture_chrome.mjs) :
+# régénérées à la demande, jamais versionnées (ménage du 23/09, point 12). Un scénario
+# nouveau écrit sous docs/captures/scenarios/. Restent versionnés : l'album de référence
+# par jalon (annexe B du suivi, Q-15), les captures de la V1, les captures faites à la
+# main par Xav, et toute note écrite (LISEZ-MOI.md).
+docs/captures/scenarios/
+docs/captures/banc.png
+docs/captures/auto-graphismes-2026-09-22/
+docs/captures/coffre-2026-09-22/
+docs/captures/curseur-2026-09-22/
+docs/captures/fiches-2026-09-22/
+docs/captures/fruitier-2026-09-22/
+docs/captures/haut-2026-09-22/
+docs/captures/heros-2026-09-22/
+docs/captures/hud-2026-09-22/
+docs/captures/items-2026-09-21/
+docs/captures/jeter-2026-09-23/
+docs/captures/menus-cartes-2026-09-20/
+docs/captures/reglages-graphiques-2026-09-22/
+docs/captures/retouches-2026-09-22/
+docs/captures/sol-2026-09-22/
+docs/captures/stations-2026-09-21/
+docs/captures/diagnostic-unite-dpr/*
+!docs/captures/diagnostic-unite-dpr/LISEZ-MOI.md

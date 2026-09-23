@@ -216,7 +216,9 @@ rpg_v2/
                             zéro dépendance : vrais pixels sous les TROIS profils de
                             `scenarios/commun.mjs#PROFILS` — 703 × 280 et 1920 × 1080 à DPR 1, plus
                             `telephone` 780 × 360 à **DPR 3** (`D-48`) ; profil Chrome jetable —
-                            la sauvegarde de Xav n'est jamais touchée) et banc_visuel.html
+                            la sauvegarde de Xav n'est jamais touchée ; les images produites ne sont
+                            PAS versionnées : un scénario nouveau écrit sous docs/captures/scenarios/,
+                            cf. .gitignore) et banc_visuel.html
                             (`?id=a,b,c` : une ou plusieurs entrées de `data/visuels.json` rendues
                             AUX TAILLES RÉELLES du jeu — monde à DPR 1 et 3, tuile de la Poche —
                             puis agrandies au plus proche voisin ; agrandir la transform

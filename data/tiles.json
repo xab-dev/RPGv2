@@ -14,7 +14,8 @@
 
   { "id": "tile_herbe", "solid": false,
     "render": { "type": "couleur", "valeur": "#5a9147", "variantes": ["#5c9349", "#578c44"], "variation_teinte": 0.018,
-                "visuel": "visuel_grain_herbe" } },
+                "visuel": "visuel_grain_herbe",
+                "visuel_variantes": ["visuel_grain_herbe_2", "visuel_grain_herbe_3"], "miroir": true } },
   { "id": "tile_terre", "solid": false,
     "render": { "type": "couleur", "valeur": "#8a6a45", "variantes": ["#8c6c47", "#866542"], "variation_teinte": 0.025,
                 "visuel": "visuel_grain_terre" } },

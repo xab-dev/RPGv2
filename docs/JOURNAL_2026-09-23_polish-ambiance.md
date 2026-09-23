@@ -32,3 +32,4 @@ Branche `polish-ambiance-2026-09-23`, jamais poussée. Captures : scénario
 |---|---|---|
 | `f3a69a6` | `D-146` (`Q-70`) | Carré foncé sous chaque arbre de la forêt : `render.sol` (référence au sol, grain compris) remplace la copie du grain dans les visuels récoltables. Objets hors cible inchangés, seules les copies retirées |
 | — | `D-147` | Chemin : trois dessins × miroir par case (`render.visuel_variantes`, `render.miroir`, `decor.js#varianteTuile`), galets à ombre portée, fissures, gravier fin en queue (premier retiré par `grain_sol`). La table des grains devient une liste par tuile |
+| — | `D-148` | Herbe : trois dessins × miroir (touffes en V, brins épars), mouchetis en queue. Couleurs intouchées (`E-04`) ; le damier de teintes proposé en `Q-74` |

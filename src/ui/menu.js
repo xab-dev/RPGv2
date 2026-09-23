@@ -22,6 +22,7 @@
 import { creerMenuCartes } from './grille_cartes.js';
 import { creerEcranFiches } from './ecran_fiches.js';
 import { creerNavigationEcrans } from '../menu_cartes.js';
+import { POLICE_CALLIGRAPHIE, POLICE_CHIFFRES } from '../polices.js';
 
 // Provisoire, comme les autres mappings de gamepad.js : au-delà de ce
 // seuil, le stick/la flèche est considéré "poussé" dans une direction ;
@@ -316,8 +317,11 @@ export function initialiserMenu({
   bandeauConstruction.style.transform = 'translateX(-50%)';
   bandeauConstruction.style.background = 'rgba(0, 0, 0, 0.55)';
   bandeauConstruction.style.color = '#eee';
-  bandeauConstruction.style.fontFamily = 'sans-serif';
-  bandeauConstruction.style.fontSize = '0.8em';
+  // Polish libre du 24/09 : la plume des menus, dont il est la suite (la
+  // fiche Construction dit les mêmes commandes, avec la même police). La
+  // calligraphie a l'œil plus petit : 0.9em lit comme le 0.8em d'avant.
+  bandeauConstruction.style.fontFamily = `"${POLICE_CHIFFRES}", "${POLICE_CALLIGRAPHIE}", serif`;
+  bandeauConstruction.style.fontSize = '0.9em';
   bandeauConstruction.style.padding = '0.35rem 1rem';
   bandeauConstruction.style.borderRadius = '6px';
   bandeauConstruction.style.opacity = '0.75'; // filigrane, jamais au premier plan (Xav, §4)

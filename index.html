@@ -354,8 +354,10 @@
     /* Un intertitre occupe toute une ligne de la grille ; sa hauteur est la
        sienne (les rangées sont `auto`, ce sont les tuiles qui ont une hauteur). */
     .fiches-groupe {
-      grid-column: 1 / -1; font-size: calc(9 * var(--u)); font-weight: 700;
+      grid-column: 1 / -1; font-size: calc(9 * var(--u)); font-weight: 400;
       color: var(--menu-texte-phrase); padding-top: calc(2 * var(--u));
+      /* Un intertitre (« Poche », « Coffre ») : un titre, donc l'onciale. */
+      font-family: var(--menu-police-titre);
     }
     .tuile {
       --carte-trait: var(--menu-accent);

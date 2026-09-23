@@ -578,7 +578,7 @@ export function clesTexteFiches() {
 const SEUIL_POUSSEE_CHOIX = 0.5; // même seuil que ui/menu.js#SEUIL_POUSSEE_MENU, axe X ici
 
 // Positions à l'écran (résolution logique 480x270) des 3 follets sur l'écran
-// de choix — extraites ici (plutôt qu'inline dans dessinerEcranChoixFollet)
+// de choix — extraites ici (plutôt qu'inline dans dessinerFolletsCinematique)
 // car l'intro (§3.5, palier 4) converge vers ces mêmes 3 points : une seule
 // définition, jamais deux jeux de coordonnées qui pourraient diverger.
 const POSITIONS_ECRAN_FOLLETS = [150, 240, 330];
@@ -3185,9 +3185,10 @@ export function creerOrchestrateurGrotte({
       // MT_intro-follets-visibles_2026-09-19 : l'intro N'EST PLUS mise à
       // `null` ici. Avant, elle l'était à l'instant exact où le dialogue de
       // choix s'ouvrait, et comme `choixFollet` n'est posé qu'au `onFermer`
-      // de ce dialogue, plus aucun des deux calques (dessinerIntroConvergence
-      // / dessinerEcranChoixFollet) ne dessinait les follets pendant tout le
-      // texte — ils disparaissaient puis revenaient d'un coup à l'appui sur A.
+      // de ce dialogue, plus aucun des deux calques (la convergence, l'écran
+      // de choix — réunis depuis dans `folletsCinematique`, `D-178`) ne
+      // dessinait les follets pendant tout le texte — ils disparaissaient
+      // puis revenaient d'un coup à l'appui sur A.
       // Elle vit désormais jusqu'à confirmerChoixFollet(), en étape ATTENTE.
       // `terminee` est un FRONT (comparé à son état d'avant la frame), pas un
       // niveau : le dialogue ne doit s'ouvrir qu'une seule fois.

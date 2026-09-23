@@ -202,5 +202,31 @@
     "noeuds": {
       "l1": { "locuteur": "follet", "text_key": "dlg.lore.coffre_pose" }
     }
+  },
+  {
+    "id": "dlg_chapitre_1",
+    "declencheur": "chapitre_1",
+    "entree": "ouverture",
+    "noeuds": {
+      "ouverture": {
+        "locuteur": "follet",
+        "text_key": "dlg.chapitre_1.ouverture",
+        "options": [
+          { "text_key": "dlg.chapitre_1.o_vague", "defaut": true, "suite": "vague" },
+          { "text_key": "dlg.chapitre_1.o_precis", "alignement": 1, "flags": ["flag_chapitre_1_precis"], "suite": "precis" },
+          { "text_key": "dlg.chapitre_1.o_seul", "alignement": 0.5, "suite": "seul" }
+        ]
+      },
+      "vague": {
+        "locuteur": "follet",
+        "text_key": "dlg.chapitre_1.vague",
+        "options": [
+          { "text_key": "dlg.chapitre_1.o_merci", "defaut": true, "suite": null },
+          { "text_key": "dlg.chapitre_1.o_reprendre", "alignement": 0.5, "flags": ["flag_chapitre_1_precis"], "suite": "precis" }
+        ]
+      },
+      "precis": { "locuteur": "follet", "text_key": "dlg.chapitre_1.precis" },
+      "seul": { "locuteur": "follet", "text_key": "dlg.chapitre_1.seul" }
+    }
   }
 ]

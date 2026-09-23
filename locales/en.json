@@ -290,5 +290,16 @@
   "flag.ambiance_niveau_10": "The wisp spoke about level 10",
   "flag.ambiance_coffre_pose": "The wisp spoke about the placed chest",
   "flag.atelier_premiere_interaction": "The wisp spoke at the workshop",
-  "menu.fiche.refus_station_pleine": "Empty it before moving it"
+  "menu.fiche.refus_station_pleine": "Empty it before moving it",
+  "flag.chapitre_1_vu": "The wisp asked what you were looking for",
+  "flag.chapitre_1_precis": "You asked precisely",
+  "dlg.chapitre_1.ouverture": "You’ve been going in circles for a while. Looking for something?",
+  "dlg.chapitre_1.o_vague": "Where’s the stone?",
+  "dlg.chapitre_1.o_precis": "Stone I can mine, near here. Where?",
+  "dlg.chapitre_1.o_seul": "I’ll figure it out.",
+  "dlg.chapitre_1.vague": "Stone? Under your feet, in the walls of the house, deep in the cave. The world is made of it.",
+  "dlg.chapitre_1.o_merci": "… Thanks.",
+  "dlg.chapitre_1.o_reprendre": "No. Stone to mine, here. Where?",
+  "dlg.chapitre_1.precis": "Follow the road west, toward the cave. Just below the path, a rock, alone in the grass. That one.",
+  "dlg.chapitre_1.seul": "Good. Then look — it’s what you do best."
 }

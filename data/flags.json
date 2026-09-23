@@ -226,5 +226,13 @@
   {
     "id": "flag_atelier_premiere_interaction",
     "label_key": "flag.atelier_premiere_interaction"
+  },
+  {
+    "id": "flag_chapitre_1_vu",
+    "label_key": "flag.chapitre_1_vu"
+  },
+  {
+    "id": "flag_chapitre_1_precis",
+    "label_key": "flag.chapitre_1_precis"
   }
 ]

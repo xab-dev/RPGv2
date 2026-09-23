@@ -81,5 +81,17 @@
     ],
     "dialogue": "dlg_lore_coffre_pose",
     "flag": "flag_ambiance_coffre_pose"
+  },
+  {
+    "id": "amb_chapitre_1",
+    "condition": {
+      "valeur": "niveau",
+      "min": 15
+    },
+    "scenes": [
+      "scene_maison_exterieur"
+    ],
+    "dialogue": "dlg_chapitre_1",
+    "flag": "flag_chapitre_1_vu"
   }
 ]

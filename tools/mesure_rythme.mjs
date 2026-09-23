@@ -1,5 +1,5 @@
 // `R-19` — combien de temps de JEU faut-il pour atteindre un niveau, et d'où
-// vient l'XP ? (T0 de `docs/BRIEF_file-inventaire_2026-09-22.md`)
+// vient l'XP ? (T0 de `docs/archives/BRIEF_file-inventaire_2026-09-22.md`)
 //
 // Pourquoi un outil et pas un test : rien ici n'est un contrat. C'est un
 // INSTRUMENT, du même genre que `?debug=fps` — il rend des chiffres qu'on

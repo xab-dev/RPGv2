@@ -221,7 +221,7 @@ export function creerBoucle({ maj, dessiner, surFrame }) {
 // DPR : lu ici et nulle part ailleurs (avec `versCoordonneesLogiques`, qui
 // doit s'accorder sur le même chiffre) — deux lectures indépendantes de
 // `devicePixelRatio` pourraient diverger d'une frame à l'autre sur un
-// changement de zoom/écran (point 5 de specs/MT_rendu-net_2026-09-15.md).
+// changement de zoom/écran (point 5 de docs/archives/MT_rendu-net_2026-09-15.md).
 // 1 hors navigateur (headless), où `window` n'existe pas.
 function obtenirDpr() {
   return (typeof window !== 'undefined' && window.devicePixelRatio) || 1;

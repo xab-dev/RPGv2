@@ -157,5 +157,53 @@
       "valeur": "niveau",
       "min": 4
     }
+  },
+  {
+    "id": "rec_pomme_amour",
+    "label_key": "recipe.pomme_amour",
+    "station": "station_type_atelier",
+    "entrees": [
+      {
+        "item": "item_fruit_cuit",
+        "qte": 1
+      },
+      {
+        "item": "item_herbe",
+        "qte": 3
+      }
+    ],
+    "sortie": {
+      "item": "item_pomme_amour",
+      "qte": 1
+    },
+    "categorie": "ressource",
+    "xp": 5,
+    "cooldown_ms": 60000,
+    "visible_si": {
+      "valeur": "niveau",
+      "min": 4
+    }
+  },
+  {
+    "id": "rec_pomme_cuite",
+    "label_key": "recipe.pomme_cuite",
+    "station": "station_type_cuisine",
+    "entrees": [
+      {
+        "item": "item_pomme_amour",
+        "qte": 1
+      }
+    ],
+    "sortie": {
+      "item": "item_pomme_cuite",
+      "qte": 1
+    },
+    "categorie": "nourriture",
+    "xp": 10,
+    "cooldown_ms": 60000,
+    "visible_si": {
+      "valeur": "niveau",
+      "min": 4
+    }
   }
 ]

@@ -150,5 +150,28 @@
     "render": {
       "visuel": "visuel_pierre"
     }
+  },
+  {
+    "id": "item_pomme_amour",
+    "label_key": "item.pomme_amour",
+    "categorie": "ressource",
+    "render": {
+      "visuel": "visuel_pomme_amour"
+    }
+  },
+  {
+    "id": "item_pomme_cuite",
+    "label_key": "item.pomme_cuite",
+    "categorie": "nourriture",
+    "render": {
+      "visuel": "visuel_pomme_cuite"
+    },
+    "consommation": {
+      "faim": 0.4,
+      "soif": 0.1,
+      "effets": [
+        "buff_regeneration"
+      ]
+    }
   }
 ]

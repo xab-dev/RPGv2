@@ -49,6 +49,7 @@ session**.
 | `f842a1a` | ménage 10 | Trois noms de fichiers sans accents |
 | `1506a39` | ménage 11 | Constante morte `ECHELLE_STATION_PROVISOIRE` retirée |
 | `d4da6ac` | ménage 12 | `.gitignore` : les sorties de scénarios ne sont plus versionnées (162 images retirées de l'index, gardées sur le disque) |
+| `8342e5f`, `4d4b144` | ménage 13 | Les sauvegardes réelles passent dans `prive/`, ignoré par Git (« pas grave pour l'historique, au contraire, ça récompense les curieux »). Le test qui les éprouve (`test_d121`) lit le nouveau dossier et passe en le disant quand il est absent |
 
 Poussé sur `main` à deux reprises à la demande de Xav (`3c5a0f8`, puis `9463024`).
 
@@ -56,6 +57,5 @@ Poussé sur `main` à deux reprises à la demande de Xav (`3c5a0f8`, puis `94630
 
 Points 1 à 12 retenus par Xav. Les points 2 et 3 (supprimer les branches déjà
 fusionnées, locales et distantes) ont été **refusés par le garde-fou de l'outil**
-(opération Git destructive) : laissés à Xav, commandes dans le rapport. Point 13
-(sauvegardes réelles publiées) : question de Xav, « dossier privé ? », réponse
-dans le rapport, rien n'est fait.
+(opération Git destructive) : laissés à Xav, commandes dans le rapport. Point 13 : un dossier
+`prive/` ignoré par Git, sur la réponse de Xav.

@@ -710,6 +710,15 @@ export function creerOrchestrateurGrotte({
   // fois par seconde) : rien n'est poussé par frame, rien hors de ce mode.
   moniteurPerf.definirSourceAlignement(etatAlignement);
 
+  // `specs/10` §4.1 : le SEUL effet de l'alignement au palier B — le sens de
+  // l'orbite du follet. Relu à chaque frame, jamais déclenché à l'écriture :
+  // une modification en cours de partie (spec 11) se voit à la frame suivante,
+  // et le renversement amorti est l'affaire de `companion.js`. Seul le régime
+  // NÉGATIF inverse ; la bande morte (`abs(A) < 1`) ne touche à rien.
+  function sensOrbiteFollet() {
+    return etatAlignement().regime === 'negatif' ? -1 : 1;
+  }
+
   // Silhouettes de tuiles (03_maison-exterieur §3.3) : résolu UNE fois (pas
   // par scène, contrairement à `decor` — tiles.json est un catalogue global)
   // à partir du registre, jamais recalculé par frame. render.js ne connaît
@@ -1222,7 +1231,7 @@ export function creerOrchestrateurGrotte({
     choixFollet = null;
     save.hero.companion = companionId;
     flags.set('flag_follet_choisi');
-    follet = creerFollet(companionId, hero);
+    follet = creerFollet(companionId, hero, sensOrbiteFollet());
     etatModifie = true;
     // Étape 4 (§3.5) : les 2 follets non élus s'éloignent et s'éteignent en
     // surimpression pendant que le dialogue d'enthousiasme s'ouvre — purement
@@ -1530,7 +1539,7 @@ export function creerOrchestrateurGrotte({
     // repart de la nuit en cours, plafond vide (palier B, « non persistés »).
     accumulateursSpawn = {};
 
-    follet = save.hero.companion ? creerFollet(save.hero.companion, hero) : null;
+    follet = save.hero.companion ? creerFollet(save.hero.companion, hero, sensOrbiteFollet()) : null;
     puzzlesEtat = { ...etatInitialPuzzles(registre), ...save.puzzles };
 
     // Tuiles atteignables (SD_respawn-items-au-sol_2026-09-17) : calculées
@@ -2679,7 +2688,10 @@ export function creerOrchestrateurGrotte({
       if (etatGameplay.target_next.pressed) {
         follet = cibleSuivanteFollet(follet, hero, monstres, companionDuFollet);
       }
-      follet = avancerFollet(follet, hero, monstres, deltaS);
+      follet = avancerFollet(follet, hero, monstres, deltaS, {
+        sens: sensOrbiteFollet(),
+        dureeInversionMs: reglageAlignement.orbite.duree_inversion_ms,
+      });
     }
 
     // Géométrie de l'aura, résolue UNE fois pour la frame (`D-51`) : son centre

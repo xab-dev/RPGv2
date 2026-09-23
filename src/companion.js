@@ -5,7 +5,24 @@
 // Provisoires, non validés en jeu par Xav.
 const ORBITE_RAYON_PX = 24;
 const ORBITE_VITESSE_RAD_S = 2;
-const ORBITE_LERP = 0.15; // "retard ressort" du suivi
+// "Retard ressort" du suivi, exprimé PAR FRAME À 60 FPS — c'est l'unité dans
+// laquelle il a été réglé et validé à l'œil. Jamais appliqué tel quel : il
+// passe par `amortissement(deltaS)`, qui le convertit au pas de temps réel.
+const ORBITE_LERP = 0.15;
+// Fréquence de référence de ORBITE_LERP (voir ci-dessus), pas un réglage.
+const FPS_REFERENCE_LERP = 60;
+
+// `D-53` : la fraction du retard rattrapée pendant `deltaS`. Appliquer 0,15 à
+// chaque frame faisait dépendre la mollesse du follet du nombre de frames :
+// ~0,5 s pour rattraper son retard à 60 fps, ~0,8 s à 37 fps (téléphone) — le
+// follet était plus mou précisément quand le jeu ramait. Ici la loi est la
+// même exponentielle, mais du TEMPS : à 60 fps elle rend exactement 0,15, et
+// deux frames de 1/120 s font la même chose qu'une frame de 1/60 s.
+// Une seule fonction pour TOUS les amortissements du follet (orbite et
+// approche d'un monstre, qui partagent volontairement la même loi).
+function amortissement(deltaS) {
+  return 1 - (1 - ORBITE_LERP) ** (deltaS * FPS_REFERENCE_LERP);
+}
 
 // --- Valeurs de base destinées à grandir (principe d'équilibrage du 19/09) ---
 // « Les valeurs de base du début de jeu sont basses, et tout grandit ensuite »
@@ -59,7 +76,12 @@ export function echelleFolletEnTransition(echelleCinematique, echelleJeu, avance
   return echelleCinematique + (echelleJeu - echelleCinematique) * a;
 }
 
-export function creerFollet(companionId, hero) {
+// `sens` : 1 (le sens d'aujourd'hui) ou -1 (orbite inversée, régime négatif,
+// `specs/10` §4.1). Un follet créé alors que le régime est DÉJÀ négatif — un
+// chargement, une entrée de scène — tourne d'emblée à l'envers : le
+// renversement ne se joue que quand l'alignement CHANGE en cours de partie,
+// jamais à chaque porte franchie (`Q-89`).
+export function creerFollet(companionId, hero, sens = 1) {
   return {
     companionId,
     etat: 'suivre',
@@ -67,7 +89,30 @@ export function creerFollet(companionId, hero) {
     x: hero.x + resoudreOrbiteRayonPx(),
     y: hero.y,
     angleOrbite: 0,
+    // Multiplicateur signé de la vitesse angulaire, dans [-1 ; 1]. C'est LA
+    // grandeur que l'inversion fait glisser ; rayon, lumière, aura,
+    // engagement ne la lisent jamais.
+    facteurOrbite: sens,
   };
+}
+
+// Vitesse maximale du point logique en orbite, héros immobile — la borne que
+// le renversement ne doit jamais dépasser (§7, test du palier B). Dérivée des
+// valeurs de résolution, jamais recopiée.
+export function vitesseOrbiteMaxPxS() {
+  return ORBITE_VITESSE_RAD_S * resoudreOrbiteRayonPx();
+}
+
+// `specs/10` §4.1 : le facteur d'orbite glisse vers le sens voulu à vitesse
+// constante — de +1 à -1 en `dureeInversionMs`. Le follet RALENTIT, S'ARRÊTE,
+// REPART dans l'autre sens : c'est le signe visible de l'alignement, et il
+// doit se lire comme un geste, pas comme un accroc. La position, elle, ne
+// peut pas sauter : seule la vitesse angulaire change, l'angle s'intègre.
+function glisserFacteur(facteur, sens, deltaS, dureeInversionMs) {
+  if (facteur === sens) return facteur;
+  if (!(dureeInversionMs > 0)) return sens;
+  const pas = (2 / (dureeInversionMs / 1000)) * deltaS;
+  return sens > facteur ? Math.min(sens, facteur + pas) : Math.max(sens, facteur - pas);
 }
 
 function distance(a, b) {
@@ -144,8 +189,22 @@ export function mettreAJourEtat(follet, hero, monstres, companion) {
 
 // Position à la frame courante (orbite en `suivre`, collé au monstre en
 // `engager`) — la même fonction porte la position ET la lumière.
-export function avancerPosition(follet, hero, monstres, deltaS) {
-  const angleOrbite = follet.angleOrbite + deltaS * ORBITE_VITESSE_RAD_S;
+//
+// `orbite` (`specs/10` §4.1) : `{ sens, dureeInversionMs }`, le sens VOULU
+// (1 ou -1) que l'appelant a déduit du régime d'alignement, et la durée du
+// renversement lue dans les données. Ce module ne connaît ni la sauvegarde ni
+// l'alignement : il reçoit un signe. Par défaut, le sens d'aujourd'hui.
+export function avancerPosition(follet, hero, monstres, deltaS, orbite = {}) {
+  const { sens = 1, dureeInversionMs = 0 } = orbite;
+  // Un follet d'avant ce palier (tests, état construit à la main) n'a pas de
+  // facteur : il tourne dans le sens d'aujourd'hui, comme il l'a toujours fait.
+  const facteurAvant = typeof follet.facteurOrbite === 'number' ? follet.facteurOrbite : 1;
+  const facteurOrbite = glisserFacteur(facteurAvant, sens, deltaS, dureeInversionMs);
+  // Intégré au milieu du pas (moyenne des deux facteurs) : le chemin parcouru
+  // pendant le renversement ne dépend pas du nombre de frames (`D-53`).
+  const angleOrbite = follet.angleOrbite
+    + deltaS * ORBITE_VITESSE_RAD_S * (facteurAvant + facteurOrbite) / 2;
+  const k = amortissement(deltaS);
 
   // Aller ET retour amortis par la MÊME loi (décision Xav : « mouvement
   // fluide, jamais un flash »). L'approche copiait la position du monstre
@@ -158,9 +217,10 @@ export function avancerPosition(follet, hero, monstres, deltaS) {
     if (cible) {
       return {
         ...follet,
-        x: follet.x + (cible.x - follet.x) * ORBITE_LERP,
-        y: follet.y + (cible.y - follet.y) * ORBITE_LERP,
+        x: follet.x + (cible.x - follet.x) * k,
+        y: follet.y + (cible.y - follet.y) * k,
         angleOrbite,
+        facteurOrbite,
       };
     }
   }
@@ -171,9 +231,10 @@ export function avancerPosition(follet, hero, monstres, deltaS) {
   const cibleY = hero.y + Math.sin(angleOrbite) * rayon;
   return {
     ...follet,
-    x: follet.x + (cibleX - follet.x) * ORBITE_LERP,
-    y: follet.y + (cibleY - follet.y) * ORBITE_LERP,
+    x: follet.x + (cibleX - follet.x) * k,
+    y: follet.y + (cibleY - follet.y) * k,
     angleOrbite,
+    facteurOrbite,
   };
 }
 

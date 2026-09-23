@@ -54,12 +54,16 @@ function monstre(id, x, y, mort = false) {
 // (`D-37`) — l'approche est amortie comme le retour en orbite, et elle
 // converge. Ce test disait "collée au monstre dès la 1ʳᵉ frame" : c'était le
 // flash que la décision de Xav du 20/09 supprime.
+// `D-53` (`specs/10` palier B) : l'amortissement est désormais en temps réel,
+// donc « une frame » s'éprouve avec la durée d'une VRAIE frame (1/60 s). Le
+// pas de 0,1 s d'avant valait six frames, et le follet a le droit d'y
+// parcourir ce qu'il parcourt en six frames — plus de la moitié du chemin.
 {
   const h = hero(0, 0);
   const cible = monstre('m1', 10, 20);
   let follet = mettreAJourEtat(creerFollet('comp_feu', h), h, [cible]);
   const depart = { x: follet.x, y: follet.y };
-  follet = avancerPosition(follet, h, [cible], 0.1);
+  follet = avancerPosition(follet, h, [cible], 1 / 60);
   const saut = Math.hypot(follet.x - depart.x, follet.y - depart.y);
   assert.ok(saut > 0, 'le follet avance vers sa cible');
   assert.ok(saut < Math.hypot(cible.x - depart.x, cible.y - depart.y) * 0.5,

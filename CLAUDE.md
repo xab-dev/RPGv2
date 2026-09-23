@@ -120,6 +120,9 @@ rpg_v2/
 │   ├── entities.js         héros/monstres : PV, position, mort/respawn
 │   ├── combat.js           auto-attaque annulaire, cooldown, feedback (anneau/flash/barre de PV)
 │   ├── companion.js        follet : suivre/engager, position (+ lumière collée)
+│   │                       ; amortissement en temps réel (`D-53`), facteur d'orbite signé que
+│   │                       l'alignement fait glisser (`specs/10` palier B) — reçoit un SIGNE,
+│   │                       jamais la sauvegarde
 │   ├── loot.js             résolution de loot table (PRNG injectable)
 │   ├── puzzles.js          types `levier`/`sequence`/`station_placeholder`/`station` (instances en
 │   │                       données) — `station` référence un TYPE de `stations.json` (rôle/capacité,

@@ -229,7 +229,9 @@ const folletEn = (x, y) => ({ ...creerFollet(COMP.id, hero(0, 0)), x, y });
   const source = fs.readFileSync(path.join(RACINE, 'src', 'main.js'), 'utf8');
   const iAuto = source.indexOf('mettreAJourFollet(follet, hero, monstres, companionDuFollet)');
   const iChoix = source.indexOf('cibleSuivanteFollet(follet, hero, monstres, companionDuFollet)');
-  const iVol = source.indexOf('avancerFollet(follet, hero, monstres, deltaS)');
+  // Sans la parenthèse fermante : depuis `specs/10` palier B, l'appel porte
+  // un 5ᵉ argument (le sens de l'orbite).
+  const iVol = source.indexOf('avancerFollet(follet, hero, monstres, deltaS');
   assert.ok(iAuto > 0 && iChoix > 0 && iVol > 0, 'les trois appels existent');
   assert.ok(iAuto < iChoix && iChoix < iVol,
     'ordre : règle automatique -> cible ordonnée -> vol amorti');

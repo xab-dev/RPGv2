@@ -2,7 +2,7 @@
 projet: RPG V2
 episode/session: Fondations — suivi transversal
 type: registre de suivi (document vivant)
-version: 1.43.0
+version: 1.44.0
 statut: brouillon
 catégorie: Doc
 date: 2026-09-23
@@ -133,7 +133,6 @@ Emplacement : `docs/DOC_suivi-dettes.md`. Nom sans date : c'est un registre viva
 | V-98 | **L'icône Héros du menu** (`D-164`) | 23/09 | Ouvrir le menu (Start / Échap) : la carte **Héros** montre-t-elle **notre** héros (capuche, ouverture sombre, orbe au visage) au lieu d'un avatar de profil ? Reste-t-elle lisible au téléphone ? | pas vu | ouvert |
 | V-99 | **La barre de PV des monstres** (`D-165`, touche `render.js` et `ui/hud.js`) | 23/09 | Engager le rampant (salle 2) puis un rôdeur la nuit : la barre au-dessus du monstre a-t-elle la **facture de la jauge de PV du héros** (creux, reflet, arête) ? Passe-t-elle au-dessus du rôdeur sans cacher ses épines ? Et le bandeau lui-même n'a-t-il **pas bougé** (sa barre est sortie dans un module, sans changement voulu) ? Checklist visuelle | pas vu | ouvert |
 | V-100 | **L'onde de l'anneau d'attaque** (`D-166`, touche `render.js`) | 23/09 | **Jamais vu en capture** : le flash dure 120 ms et la latence du pilotage de Chrome le manque à chaque essai — c'est donc toi qui le vois le premier. Frapper à vide puis sur un monstre : l'anneau n'est plus un disque blanc uniforme mais une **onde** à la couleur du follet, vive au centre, éteinte au bord. Se lit-il mieux, ou devient-il trop discret ? Checklist visuelle | pas vu | ouvert |
-| V-103 | **Les régimes de synergie, palier C de `specs/10`** (touche le combat) | 23/09 | Follet **Feu**, `?alignement=-3`, un combat de nuit : la brûlure sur le héros **se sent** sans passer pour un bug (1 PV toutes les 1,5 s tant qu'un monstre est dans l'aura) ; les dégâts sont plus forts (Force +2 au palier 2) ; les monstres ne brûlent plus. **Eau** `-3` : on est plus lent, on frappe plus vite, les rôdeurs courent. **Terre** `-3` : on traîne en combat, on encaisse, ils traînent un peu moins. Puis `+3` sur chacun : rien de nouveau au palier 1, le +2 se sent-il ? Et la question de fond : **le côté négatif donne-t-il envie** — une contrepartie, pas une punition ? Note : `-3` est le **palier 2** (paliers « dès » 1 / 3 / 5, `Q-90`) ; `-5` donne le palier 3 | pas vu | ouvert |
 
 ## 4. À écrire par Xav
 
@@ -249,6 +248,7 @@ Ce qui a été clos le **21/09 ou avant** est dans `docs/archives/dettes_archive
 
 | Id | Quoi | Clos le | Verdict |
 |---|---|---|---|
+| V-103 | **Les régimes de synergie, palier C de `specs/10`** | 23/09 | **ok** — validée par Xav (« all good ») ; spec 10 close en jeu, publiée sur `main` le 23/09 |
 | V-102 | **L'orbite inversée, palier B de `specs/10`** (+ `D-53`) | 23/09 | **ok** — validée par Xav (« all checked, all good ») : sens inversé à partir de −1 seulement, suivi du follet inchangé au PC |
 | D-53 | **L'amortissement du follet est appliqué par FRAME, pas par seconde.** `companion.js#ORBITE_LERP` = 0,15 est multiplié tel quel à chaque frame : à 60 fps le follet rattrape ~99 % de son retard en 0,5 s, à 37 fps (téléphone) il lui faut ~0,8 s. Le suivi est donc **plus mou quand le jeu rame** — et depuis `D-37` l'approche de la cible hérite du même défaut, puisqu'elle reprend volontairement la même loi | 23/09 | **close le 23/09** (`specs/10` palier B) — `companion.js#amortissement(deltaS)` = `1 − (1 − 0,15) ** (deltaS × 60)`, UNE fonction pour l'orbite et l'approche d'un monstre. Témoin rouge sur l'ancien code (**2,63 px** d'écart entre 37 et 60 fps après 2 s, héros qui court puis s'arrête), **0,23 px** après. Deux tests ajustés : `test_phase1_companion` (« une frame » s'éprouve désormais avec 1/60 s, un pas de 0,1 s en vaut six) et `test_d54` (contrôle de source, l'appel porte un 5ᵉ argument). Ressenti à voir en jeu : `V-102` |
 | V-101 | **L'alignement caché, palier A de `specs/10`** — la stat seule, aucun effet en jeu | 23/09 | **ok** — validée par Xav (« all good ») : rien de changé en jeu, relevé `?debug=fps` juste, avertissement de `?alignement=9` vu en console |

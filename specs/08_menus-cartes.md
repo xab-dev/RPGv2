@@ -14,7 +14,7 @@ verifie_par: xav
 # RPG V2 — 08 : Menus en grille de cartes
 
 **Méthode.** Branche dédiée `menus-cartes`. **Un palier par session**, chaque palier est une file de micro-commits retirables seuls, validation de Xav en jeu entre deux paliers. Aucun `push` (`push` sur `main` = publication). Le suivi fait foi : un identifiant « à créer » déjà pris → prendre le suivant et le dire.
-Périmètre de lecture : `src/ui/menu.js`, `index.html` et sa feuille de style, `src/main.js` (câblage du menu seulement), `src/flags.js`, `data/` (catalogues cités), `locales/`, `docs/CARTE_cycle-de-vie-ui_2026-09-17.md` (palier B), le journal `JOURNAL_2026-09-20_menu-tactile.md`. Rien d'autre.
+Périmètre de lecture : `src/ui/menu.js`, `index.html` et sa feuille de style, `src/main.js` (câblage du menu seulement), `src/flags.js`, `data/` (catalogues cités), `locales/`, `docs/archives/CARTE_cycle-de-vie-ui_2026-09-17.md` (palier B), le journal `JOURNAL_2026-09-20_menu-tactile.md`. Rien d'autre.
 
 ## 1. Intention
 

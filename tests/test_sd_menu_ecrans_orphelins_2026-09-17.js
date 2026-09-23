@@ -1,5 +1,5 @@
 // Contrat SD_construction-ecrans-orphelins_2026-09-17.md, fondé sur
-// docs/CARTE_cycle-de-vie-ui_2026-09-17.md §1.2/§3 : `menu.estOuvert()`
+// docs/archives/CARTE_cycle-de-vie-ui_2026-09-17.md §1.2/§3 : `menu.estOuvert()`
 // OR-combine 7 signaux à DEUX contrats différents (booléen pur pour
 // `controleur`/`controleurConfirmation`, booléen ET `!el.hidden` pour les 5
 // écrans génériques). Le correctif d'`a70a089` (`controleur.fermer()` dans

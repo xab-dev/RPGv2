@@ -332,7 +332,7 @@ export function replierFocus(cases, focus) {
 
 // LA pile du menu entier (specs/08_menus-cartes.md, palier B). Elle remplace
 // les sous-contrats que `menu.estOuvert()` OR-combinait (sept à l'origine,
-// `docs/CARTE_cycle-de-vie-ui_2026-09-17.md` §1.2) : ouvrir = empiler, retour =
+// `docs/archives/CARTE_cycle-de-vie-ui_2026-09-17.md` §1.2) : ouvrir = empiler, retour =
 // dépiler, et « le menu est ouvert » = « la pile n'est pas vide ET son sommet
 // est visible ». Craft et Coffre, ouverts par INTERACT, y passent comme les
 // autres.

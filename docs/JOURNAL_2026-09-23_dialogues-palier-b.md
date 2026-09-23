@@ -24,7 +24,7 @@ Branche `dialogues-2026-09-23` (suite). Pas de push.
 | Commit | Sujet | Ce qu'il faut en retenir |
 |---|---|---|
 | `d9cf925` | Ménage | Journal du palier A archivé, ligne INDEX ; `Q-106` et `Q-108` closes sur le verdict de Xav |
-| (2) | Spec 11, palier B | Effets de monde, toit occulté, 22 dialogues migrés, un seul chemin. Suite : **158 fichiers verts** |
+| `28165da` | Spec 11, palier B | Effets de monde, toit occulté, 22 dialogues migrés, un seul chemin. Suite : **158 fichiers verts** |
 
 ## Ce qui a été fait
 

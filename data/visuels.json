@@ -1019,23 +1019,80 @@
   {
     "id": "visuel_herbe",
     "ancre": "bas",
+    "ombre": {
+      "dy": 0,
+      "w": 8,
+      "h": 2,
+      "alpha": 0.18
+    },
     "primitives": [
       {
         "forme": "ligne",
-        "dx": -2,
+        "dx": 0,
         "dy": 0,
         "points": [
           [
-            0,
+            -2.5,
             0
           ],
           [
-            -1,
-            -6
+            -5,
+            -4.5
           ]
         ],
-        "couleur": "#3a4a2e",
-        "epaisseur": 1
+        "couleur": "#3c5f2c",
+        "epaisseur": 1.1
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -1,
+            0
+          ],
+          [
+            -1.6,
+            -7
+          ]
+        ],
+        "couleur": "#3c5f2c",
+        "epaisseur": 1.1
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            1,
+            0
+          ],
+          [
+            2.2,
+            -6.2
+          ]
+        ],
+        "couleur": "#44692f",
+        "epaisseur": 1.1
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            2.5,
+            0
+          ],
+          [
+            5,
+            -3.8
+          ]
+        ],
+        "couleur": "#3c5f2c",
+        "epaisseur": 1.1
       },
       {
         "forme": "ligne",
@@ -1047,46 +1104,12 @@
             0
           ],
           [
-            0,
+            0.3,
             -8
           ]
         ],
-        "couleur": "#465c34",
-        "epaisseur": 1
-      },
-      {
-        "forme": "ligne",
-        "dx": 2,
-        "dy": 0,
-        "points": [
-          [
-            0,
-            0
-          ],
-          [
-            1,
-            -5
-          ]
-        ],
-        "couleur": "#3a4a2e",
-        "epaisseur": 1
-      },
-      {
-        "forme": "ligne",
-        "dx": -1,
-        "dy": 0,
-        "points": [
-          [
-            0,
-            0
-          ],
-          [
-            0,
-            -4
-          ]
-        ],
-        "couleur": "#526638",
-        "epaisseur": 1
+        "couleur": "#6f9a4c",
+        "epaisseur": 0.8
       }
     ]
   },
@@ -1095,34 +1118,79 @@
     "ancre": "centre",
     "primitives": [
       {
-        "forme": "degrade_radial",
+        "forme": "ellipse",
         "dx": 0,
         "dy": 0,
-        "w": 22,
+        "w": 24,
         "h": 12,
+        "couleur": "#000000",
+        "alpha": 0.14
+      },
+      {
+        "forme": "ellipse",
+        "dx": 0,
+        "dy": 0.3,
+        "w": 19,
+        "h": 8.6,
+        "couleur": "#26323b",
+        "alpha": 0.62
+      },
+      {
+        "forme": "degrade_radial",
+        "dx": 1,
+        "dy": 0.8,
+        "w": 15,
+        "h": 7,
         "degrade": {
           "stops": [
             {
               "offset": 0,
-              "couleur": "#4a5866",
-              "alpha": 0.35
+              "couleur": "#161e24",
+              "alpha": 0.55
             },
             {
               "offset": 1,
-              "couleur": "#4a5866",
+              "couleur": "#161e24",
               "alpha": 0
             }
           ]
         }
       },
       {
-        "forme": "ellipse",
-        "dx": -5,
-        "dy": -2,
-        "w": 6,
-        "h": 3,
-        "couleur": "#cfe0ea",
-        "alpha": 0.15
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -6,
+            -1.6
+          ],
+          [
+            -1.2,
+            -2.7
+          ]
+        ],
+        "couleur": "#a9c2d0",
+        "epaisseur": 0.8,
+        "alpha": 0.35
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            1.8,
+            -2.5
+          ],
+          [
+            3.6,
+            -2.7
+          ]
+        ],
+        "couleur": "#a9c2d0",
+        "epaisseur": 0.6,
+        "alpha": 0.25
       }
     ]
   },
@@ -1130,64 +1198,126 @@
     "id": "visuel_rocher_petit",
     "ancre": "bas",
     "ombre": {
-      "dy": 1,
-      "w": 10,
+      "dy": 0.5,
+      "w": 12,
       "h": 3,
-      "alpha": 0.3
+      "alpha": 0.35
     },
     "primitives": [
       {
         "forme": "polygone",
         "dx": 0,
-        "dy": -3,
+        "dy": 0,
         "points": [
           [
-            -5,
-            3
+            -5.5,
+            0.5
           ],
           [
-            -3,
-            -4
-          ],
-          [
-            3,
-            -5
-          ],
-          [
-            5,
-            2
-          ],
-          [
-            1,
-            4
-          ]
-        ],
-        "couleur": "#6b6b6b"
-      },
-      {
-        "forme": "polygone",
-        "dx": -1,
-        "dy": -4,
-        "points": [
-          [
-            -3,
-            0
-          ],
-          [
-            -1,
+            -4.5,
             -3
           ],
           [
-            2,
+            -1.5,
+            -5
+          ],
+          [
+            2.5,
+            -4.6
+          ],
+          [
+            5,
             -2
           ],
           [
-            0,
-            0
+            5.5,
+            0.5
           ]
         ],
-        "couleur": "#8a8a8a",
-        "alpha": 0.5
+        "couleur": "#3b4046"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -4.5,
+            -3
+          ],
+          [
+            -1.5,
+            -5
+          ],
+          [
+            2.5,
+            -4.6
+          ],
+          [
+            0.8,
+            -2.6
+          ],
+          [
+            -2.8,
+            -2.2
+          ]
+        ],
+        "couleur": "#555b62"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            2.5,
+            -4.6
+          ],
+          [
+            5,
+            -2
+          ],
+          [
+            5.5,
+            0.5
+          ],
+          [
+            2.2,
+            0.5
+          ],
+          [
+            0.8,
+            -2.6
+          ]
+        ],
+        "couleur": "#30353a"
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -4,
+            -3.1
+          ],
+          [
+            -1.4,
+            -4.7
+          ]
+        ],
+        "couleur": "#7a8188",
+        "epaisseur": 0.7,
+        "alpha": 0.6
+      },
+      {
+        "forme": "ellipse",
+        "dx": -2,
+        "dy": -4.2,
+        "w": 3.2,
+        "h": 1.2,
+        "couleur": "#4e6a3a",
+        "alpha": 0.55
       }
     ]
   },
@@ -1195,64 +1325,196 @@
     "id": "visuel_rocher_grand",
     "ancre": "bas",
     "ombre": {
-      "dy": 2,
-      "w": 16,
+      "dy": 1,
+      "w": 20,
       "h": 4,
-      "alpha": 0.3
+      "alpha": 0.35
     },
     "primitives": [
       {
         "forme": "polygone",
         "dx": 0,
-        "dy": -5,
+        "dy": 0,
         "points": [
+          [
+            -9,
+            0.5
+          ],
           [
             -8,
-            5
-          ],
-          [
-            -5,
-            -6
-          ],
-          [
-            5,
-            -8
-          ],
-          [
-            8,
-            3
-          ],
-          [
-            2,
-            6
-          ]
-        ],
-        "couleur": "#666666"
-      },
-      {
-        "forme": "polygone",
-        "dx": -2,
-        "dy": -6,
-        "points": [
-          [
-            -5,
-            0
-          ],
-          [
-            -1,
             -5
           ],
           [
-            3,
-            -3
+            -4.5,
+            -9
           ],
           [
-            0,
-            0
+            1,
+            -10
+          ],
+          [
+            6,
+            -8
+          ],
+          [
+            8.5,
+            -3.5
+          ],
+          [
+            9,
+            0.5
           ]
         ],
-        "couleur": "#868686",
+        "couleur": "#393e44"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -8,
+            -5
+          ],
+          [
+            -4.5,
+            -9
+          ],
+          [
+            1,
+            -10
+          ],
+          [
+            3.5,
+            -7.5
+          ],
+          [
+            -0.5,
+            -4.5
+          ],
+          [
+            -5,
+            -3.8
+          ]
+        ],
+        "couleur": "#545a61"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            1,
+            -10
+          ],
+          [
+            6,
+            -8
+          ],
+          [
+            8.5,
+            -3.5
+          ],
+          [
+            9,
+            0.5
+          ],
+          [
+            3,
+            0.5
+          ],
+          [
+            3.5,
+            -7.5
+          ]
+        ],
+        "couleur": "#2e3338"
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -3,
+            -8.6
+          ],
+          [
+            -1.5,
+            -6
+          ]
+        ],
+        "couleur": "#2a2e33",
+        "epaisseur": 0.8
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -1.5,
+            -6
+          ],
+          [
+            -2.6,
+            -4.3
+          ]
+        ],
+        "couleur": "#2a2e33",
+        "epaisseur": 0.8
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -7.5,
+            -5.2
+          ],
+          [
+            -4.4,
+            -8.6
+          ]
+        ],
+        "couleur": "#767d85",
+        "epaisseur": 0.8,
+        "alpha": 0.55
+      },
+      {
+        "forme": "ellipse",
+        "dx": -3,
+        "dy": -8.8,
+        "w": 5,
+        "h": 1.6,
+        "couleur": "#4e6a3a",
         "alpha": 0.5
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            9.5,
+            0.5
+          ],
+          [
+            10.2,
+            -1.6
+          ],
+          [
+            12,
+            -1.8
+          ],
+          [
+            12.8,
+            0.5
+          ]
+        ],
+        "couleur": "#3f444a"
       }
     ]
   },

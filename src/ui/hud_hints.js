@@ -12,6 +12,7 @@
 
 import { RESOLUTION_LOGIQUE } from '../render.js';
 import { dessinerCadre, dessinerTouche, ACCENT } from './cadre.js';
+import { POLICE_CALLIGRAPHIE, POLICE_CHIFFRES } from '../polices.js';
 
 // Sous le cartouche PV (haut-gauche, cf. hud.js), centré — jamais superposé.
 // Provisoire, position/durée non validées en jeu par Xav (§7, critère manuel).
@@ -25,7 +26,12 @@ const Y_BANNIERE = 26;
 const HAUTEUR_BANNIERE = 18;
 const PADDING_X = 8;
 const DUREE_FONDU_MS = 250;
-const POLICE = 'bold 10px monospace';
+// Polish libre du 24/09 : la plume de la bulle, dont la bannière porte déjà
+// le cadre (`D-163`), au lieu d'un `monospace` de console — c'était le
+// premier texte du jeu, dans la Grotte, et le dernier à parler en linéale.
+// Rien ne dépend d'une chasse fixe : les largeurs sont MESURÉES
+// (`measureText`), et l'écart touche → texte est un nombre de pixels.
+const POLICE = `bold 11px "${POLICE_CHIFFRES}", "${POLICE_CALLIGRAPHIE}", serif`;
 // La touche : 14 px dans une bannière de 18 (2 px d'air en haut et en bas).
 // Son padding horizontal déborde dans l'air qui l'entoure au lieu d'élargir
 // la bannière : l'écart glyphe → texte vaut exactement les deux espaces

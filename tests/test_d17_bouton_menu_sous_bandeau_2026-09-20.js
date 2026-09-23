@@ -52,9 +52,10 @@ const droiteBouton = BOUTON_MENU.cx + BOUTON_MENU.rayon;
   const Y_BANNIERE = 26;
   const HAUTEUR_BANNIERE = 18;
   const PADDING_X = 8;
-  // `hud_hints.js` compose `${glyphe}  ${texte}` en `bold 10px monospace`.
-  // Une monospace de 10 px fait environ 6 px de large ; on prend **9**, une
-  // marge de 50 %, pour que ce test ne dépende pas de la police du poste.
+  // `hud_hints.js` compose `${glyphe}  ${texte}` en calligraphie de 11 px
+  // depuis le polish du 24/09 (avant : `bold 10px monospace`, environ 6 px
+  // par caractère). On garde **9** px par caractère : plus large que l'une
+  // comme l'autre, pour que ce test ne dépende pas de la police du poste.
   const LARGEUR_CAR_PESSIMISTE = 9;
 
   let contenuLePlusLong = 0;

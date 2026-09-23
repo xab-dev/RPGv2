@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { dessinerHudHints } from '../src/ui/hud_hints.js';
 import { ACCENT } from '../src/ui/cadre.js';
 
-const LARGEUR_CAR = 6; // monospace : une largeur par caractère, quelle qu'elle soit
+const LARGEUR_CAR = 6; // une mesure factice, la même pour tout caractère : l'écart se lit en pixels
 class FauxCtx {
   constructor() { this.registre = []; this.fillStyle = null; }
   save() {} restore() {} beginPath() {} closePath() {} moveTo() {} arcTo() {}

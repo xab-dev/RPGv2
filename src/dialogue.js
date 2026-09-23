@@ -362,7 +362,7 @@ export function creerDialogue({ paginer = null } = {}) {
     const resolu = conversation.resoudre(conversation.etat.noeud);
     conversation.options = resolu.options;
     const fenetres = paginer ? paginer(resolu.texte) : [resolu.texte];
-    lignes = fenetres.map((texte) => ({ locuteur: resolu.locuteur, texte }));
+    lignes = fenetres.map((texte) => ({ locuteur: resolu.locuteur, portrait: resolu.portrait || null, texte }));
     index = 0;
     reinitialiserLigne();
   }
@@ -488,6 +488,8 @@ export function creerDialogue({ paginer = null } = {}) {
       const options = optionsVisibles() ? conversation.options : null;
       return {
         locuteur: ligne.locuteur,
+        // `D-169` : l'id du compagnon qui parle, ou `null` (le nom s'affiche).
+        portrait: ligne.portrait,
         texte: ligne.texte.slice(0, charsAffiches),
         arme: estArmee(),
         options,
@@ -534,13 +536,22 @@ export function cleLocuteur(locuteur) {
   return `locuteur.${locuteur}`;
 }
 
+//
+// `D-169` (polish des dialogues, 23/09) : quand c'est le follet choisi qui
+// parle, la bulle montre son PORTRAIT à la place de son nom. `portrait` porte
+// l'id du compagnon, jamais un visuel : ce module ne dessine rien, et main.js
+// résout la silhouette comme il le fait pour le HUD. Le nom reste calculé —
+// il sert de repli (pas encore de follet) et aux tests. Le narrateur n'a pas
+// de portrait : il reste « ... ».
 export function resoudreNoeud(donnees, noeudId, registre, i18n, companionId) {
   const noeud = donnees.noeuds[noeudId];
-  const locuteur = noeud.locuteur === 'follet' && companionId
+  const parleFollet = noeud.locuteur === 'follet' && Boolean(companionId);
+  const locuteur = parleFollet
     ? i18n.t(registre.obtenir('companions', companionId).label_key)
     : i18n.t(cleLocuteur(noeud.locuteur));
   return {
     locuteur,
+    portrait: parleFollet ? companionId : null,
     texte: i18n.t(noeud.text_key),
     options: optionsDe(noeud).map((o) => i18n.t(o.text_key)),
   };

@@ -125,5 +125,27 @@
     "ornement_min": 2,
     "periode_ms": 2800,
     "amplitude": 0.35
+  },
+  {
+    "id": "effet_lueur_dialogue",
+    "type": "respiration",
+    "role": "cosmetique",
+    "ornement_min": 1,
+    "periode_ms": 1800,
+    "amplitude": 0.5
+  },
+  {
+    "id": "effet_etincelles_dialogue",
+    "type": "orbite",
+    "role": "cosmetique",
+    "ornement_min": 2,
+    "visuel": "visuel_sillage_follet",
+    "echelle": 0.7,
+    "nb_particules": 3,
+    "rayon_orbite_px": 11,
+    "aplatissement": 0.5,
+    "periode_ms": 3200,
+    "sens": 1,
+    "phase_rad": 0
   }
 ]

@@ -949,6 +949,8 @@ export function creerOrchestrateurGrotte({
     sillageFollet = creerPoussiere(effetSillage);
     effetOrnement = ornementActif(effetOrnementCatalogue, levier('ornements'));
     effetHalo = ornementActif(effetHaloCatalogue, levier('ornements'));
+    effetLueurDialogue = ornementActif(effetLueurDialogueCatalogue, levier('ornements'));
+    effetEtincellesDialogue = ornementActif(effetEtincellesDialogueCatalogue, levier('ornements'));
     if (scene) regenererDecor();
     // Sans ça, l'ancien sol resterait à l'écran jusqu'au prochain
     // franchissement de tuile : la signature du calque (scène, échelle,
@@ -1066,6 +1068,18 @@ export function creerOrchestrateurGrotte({
   const effetHaloCatalogue = registre.obtenir('effets', 'effet_halo_follet');
   let effetOrnement = ornementActif(effetOrnementCatalogue, levier('ornements'));
   let effetHalo = ornementActif(effetHaloCatalogue, levier('ornements'));
+  // `D-169` (polish des dialogues, 23/09) : la bulle suit le même levier.
+  // Bas : rien qui bouge. Moyen (ornements 1) : une lueur qui respire sous
+  // les flèches ▸ et ▼. Haut (2) : en plus, les étincelles du follet autour
+  // de son portrait. Les seuils vivent dans `effets.json`, pas ici. Horloge
+  // propre, avancée seulement bulle ouverte : le jeu est gelé sous le
+  // dialogue, donc `tempsVolFolletMs` aussi.
+  const effetLueurDialogueCatalogue = registre.obtenir('effets', 'effet_lueur_dialogue');
+  const effetEtincellesDialogueCatalogue = registre.obtenir('effets', 'effet_etincelles_dialogue');
+  const visuelEtincelleDialogue = registre.obtenir('visuels', effetEtincellesDialogueCatalogue.visuel);
+  let effetLueurDialogue = ornementActif(effetLueurDialogueCatalogue, levier('ornements'));
+  let effetEtincellesDialogue = ornementActif(effetEtincellesDialogueCatalogue, levier('ornements'));
+  let tempsDialogueMs = 0;
 
   // MT_texte-flottant_2026-09-19 (`D-05`) : même patron exactement — réglages
   // en données (tous PROVISOIRES, à régler au ressenti par Xav) et réserve
@@ -3050,7 +3064,10 @@ export function creerOrchestrateurGrotte({
     const dialogueVientDeSOuvrir = dialogueOuvertMaintenant && !dialogueOuvertAuDebutFramePrecedente;
     dialogueOuvertAuDebutFramePrecedente = dialogueOuvertMaintenant;
 
-    if (dialogueOuvertMaintenant) dialogue.maj(deltaMs);
+    if (dialogueOuvertMaintenant) {
+      dialogue.maj(deltaMs);
+      tempsDialogueMs += deltaMs;
+    }
 
     // Intro (§3.5, palier 4) : minuteur pur, AUCUN input lu (non skippable).
     // `introEtaitActive`/`departEtaitActif` sont capturés AVANT d'avancer
@@ -3361,6 +3378,22 @@ export function creerOrchestrateurGrotte({
       });
     }
     return rendu;
+  }
+
+  // `D-169` : ce que la bulle reçoit en plus de sa ligne, résolu ici (le
+  // registre et le preset), comme `visuelFollet` pour le HUD. Le portrait
+  // prend la teinte du compagnon, la même que son icône au HUD.
+  function habillageDialogue(ligne) {
+    const compagnon = ligne && ligne.portrait ? registre.obtenir('companions', ligne.portrait) : null;
+    return {
+      portrait: compagnon
+        ? { visuel: registre.obtenir('visuels', compagnon.render.visuel), teinte: compagnon.render.couleur }
+        : null,
+      lueur: effetLueurDialogue,
+      etincelles: effetEtincellesDialogue,
+      visuelEtincelle: visuelEtincelleDialogue,
+      tMs: tempsDialogueMs,
+    };
   }
 
   // Étape 4 de l'intro (§3.5) : les 2 follets non élus s'éloignent et
@@ -3890,7 +3923,10 @@ export function creerOrchestrateurGrotte({
     dessinerEcranChoixFollet();
     const renduIntro = dessinerIntroConvergence();
     dessinerDepart();
-    if (dialogue.estOuvert()) dessinerDialogue(ctxLogique, dialogue.ligneCourante());
+    if (dialogue.estOuvert()) {
+      const ligneDialogue = dialogue.ligneCourante();
+      dessinerDialogue(ctxLogique, ligneDialogue, habillageDialogue(ligneDialogue));
+    }
 
     // Paupières (§3.5 étape 1) : rideau de cinématique, dessiné en TOUT
     // DERNIER — il doit couvrir la scène, le HUD et même l'écran de choix

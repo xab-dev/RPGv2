@@ -37,18 +37,29 @@ assert.ok(ornements.length >= 2, 'les deux ornements du follet sont déclarés')
   console.log('OK levier `ornements` déclaré, Moyen neutre, ordre des presets tenu');
 }
 
-// --- 2. Le seuil : Haut les a, Moyen et Bas non --------------------------
+// --- 2. Le seuil : chaque effet existe à partir du sien --------------------
+// `D-169` (23/09) : la lueur des flèches de la bulle est un ornement de
+// Moyen — tout ornement n'est donc plus un ornement de Haut. Le contrat
+// général est le seuil ; celui de `D-134`, que les deux ornements DU FOLLET
+// soient réservés à Haut, se vérifie par leurs ids.
 {
   for (const effet of ornements) {
-    assert.equal(ornementActif(effet, niveau('moyen')), null, `${effet.id} : absent en Moyen`);
-    assert.equal(ornementActif(effet, niveau('bas')), null, `${effet.id} : absent en Bas`);
-    assert.equal(ornementActif(effet, niveau('haut')), effet, `${effet.id} : présent en Haut`);
+    for (const p of ['bas', 'moyen', 'haut']) {
+      const attendu = niveau(p) >= effet.ornement_min ? effet : null;
+      assert.equal(ornementActif(effet, niveau(p)), attendu, `${effet.id} : seuil ${effet.ornement_min} sous ${p}`);
+    }
+  }
+  for (const id of ['effet_ornement_follet', 'effet_halo_follet']) {
+    const effet = registre.obtenir('effets', id);
+    assert.equal(ornementActif(effet, niveau('moyen')), null, `${id} : absent en Moyen`);
+    assert.equal(ornementActif(effet, niveau('bas')), null, `${id} : absent en Bas`);
+    assert.equal(ornementActif(effet, niveau('haut')), effet, `${id} : présent en Haut`);
   }
   // Un effet d'avant le levier ne peut pas disparaître à cause de lui.
   const sansSeuil = registre.obtenir('effets', 'effet_sillage_follet');
   for (const p of ['bas', 'moyen', 'haut']) assert.equal(ornementActif(sansSeuil, niveau(p)), sansSeuil);
   assert.equal(ornementActif(null, 5), null);
-  console.log(`OK ${ornements.length} ornements présents en Haut seulement ; sans seuil = partout`);
+  console.log(`OK ${ornements.length} ornements présents à partir de leur seuil, ceux du follet en Haut seulement ; sans seuil = partout`);
 }
 
 // --- 3. La respiration ----------------------------------------------------

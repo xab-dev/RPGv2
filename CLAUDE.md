@@ -215,7 +215,9 @@ rpg_v2/
 │                           icone_canvas.js (un visuel de `visuels.json` dans un <canvas> DOM,
 │                           recadré s'il déborde, « meilleur effort »), couleurs_ui.js (contraste
 │                           des `couleur_ui`, pur), hud.js (+ jauges survie/niveau-XP Phase 3)
-│                           + hud_hints.js + dialogue_box.js + hud_layout.js (canvas, résolution logique)
+│                           + hud_hints.js + dialogue_box.js (`D-169` : portrait du follet qui parle,
+│                           lueur des flèches en Moyen, étincelles en Haut — habillage résolu par
+│                           `main.js#habillageDialogue`) + hud_layout.js (canvas, résolution logique)
 │                           + cadre.js (`D-163` : LE cadre des calques d'UI canvas, bulle et indices)
 │                           + barre.js (`D-165` : LA barre de jauge — bandeau ET PV des monstres)
 ├── data/                   catalogues JSON (voir specs/*.md §2.1 de chaque phase) — dont

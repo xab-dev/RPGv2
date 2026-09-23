@@ -99,6 +99,7 @@ révélera encore.
 | `e04750e` | `D-163` | Bulle de dialogue et bannière des indices : un cadre partagé (`ui/cadre.js`) de la famille du bandeau. Touche les calques d'UI (checklist due) |
 | `a8d7d58` | `D-163` (suite) | Le commit `e04750e` est parti avec un test rouge (`test_d136` : son faux contexte ignorait les dégradés et les coins arrondis du cadre) — enchaînement de commandes qui ne s'arrêtait pas sur l'échec. Faux contexte complété ; suite verte. Les deux commits se retirent ensemble |
 | `ac6615c` | `D-164` | Icône Héros du menu : le héros encapuchonné à l'orbe, au lieu d'un avatar générique. Les autres pictogrammes restent (style des cartes, pas un retard) |
-| — | `D-165` | Barre de PV des monstres : la jauge du bandeau, sortie dans `ui/barre.js` et partagée ; 4 px, remontée au-dessus des épines du rôdeur. Touche `render.js`/`hud.js` (checklist due) |
+| `82ebfd3` | `D-165` | Barre de PV des monstres : la jauge du bandeau, sortie dans `ui/barre.js` et partagée ; 4 px, remontée au-dessus des épines du rôdeur. Touche `render.js`/`hud.js` (checklist due) |
+| — | `D-166` | Anneau d'attaque : onde en dégradé à la couleur du follet au lieu d'un aplat blanc. **Pas vu en capture** (flash de 120 ms), signalé en `V-100` |
 <!-- fin-table-2 -->
 

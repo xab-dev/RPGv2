@@ -731,7 +731,18 @@ export function dessinerScene(ctx, {
       ctx.moveTo(cx + rayonMin, cy);
       ctx.arc(cx, cy, rayonMin, 0, Math.PI * 2, true);
     }
-    ctx.fillStyle = `rgba(255, 255, 255, ${(Math.max(0, Math.min(1, alpha)) * 0.35).toFixed(3)})`;
+    // `D-166` : une ONDE, plus un aplat — vive au bord intérieur, éteinte au
+    // bord extérieur, à la couleur du compagnon (celle du héros : c'est lui
+    // qui frappe). Même alpha de pointe que l'aplat d'avant (0,35) : l'anneau
+    // ne se voit pas plus, il se lit mieux. Avant le choix du follet, la teinte
+    // neutre du héros ; blanc si aucune.
+    const a = Math.max(0, Math.min(1, alpha)) * 0.35;
+    const { r, g, b } = hexVersRgb(heroTeinte || '#ffffff');
+    const onde = ctx.createRadialGradient(cx, cy, rayonMin, cx, cy, rayonMax);
+    onde.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${a.toFixed(3)})`);
+    onde.addColorStop(0.35, `rgba(${r}, ${g}, ${b}, ${(a * 0.7).toFixed(3)})`);
+    onde.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
+    ctx.fillStyle = onde;
     ctx.fill('evenodd');
     ctx.restore();
   }

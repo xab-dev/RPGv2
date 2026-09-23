@@ -1,7 +1,7 @@
 // `D-165` — la barre de PV d'un monstre engagé, vue en scène. OUTIL DE DEV.
 //   node tools/capture_chrome.mjs tools/scenarios/barre_monstre.mjs
 // Salle 2 de la Grotte avant le combat du tutoriel ; le héros marche vers le
-// monstre (D réel) jusqu'à l'engager, un coup (Espace), capture.
+// monstre (D réel) jusqu'à l'engager, capture ; puis un coup (Espace), capture.
 import { ouvrirLeJeu, saveDansLaMaison } from './commun.mjs';
 
 const TUILE = 32;
@@ -17,5 +17,9 @@ export default async function (chrome) {
   await chrome.touche('KeyD', 900);
   await chrome.attendre(300);
   await chrome.capture('docs/captures/scenarios/polish-diagnostic-2026-09-23/d165_barre.png');
+  // `D-166` : l'onde de l'anneau d'attaque, juste après un coup.
+  await chrome.touche('Space', 10);
+  await chrome.attendre(0);
+  await chrome.capture('docs/captures/scenarios/polish-diagnostic-2026-09-23/d166_onde.png');
   console.log(chrome.erreurs().length ? JSON.stringify(chrome.erreurs()) : 'ok');
 }

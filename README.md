@@ -26,6 +26,10 @@
 
 <sub>gratuit · sans publicité · sans boutique · sans rien qui vous suive en rentrant chez vous</sub>
 
+<br>
+
+[![Les oracles](https://github.com/xab-dev/RPGv2/actions/workflows/tests.yml/badge.svg)](https://github.com/xab-dev/RPGv2/actions/workflows/tests.yml)
+
 </div>
 
 <br>

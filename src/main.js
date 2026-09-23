@@ -39,6 +39,7 @@ import {
   creerPoussiere, avancerPoussiere, bouffeesVisibles, viderPoussiere, CAPACITE_RESERVE,
 } from './poussiere.js';
 import { decalageCorpsFollet } from './vol_follet.js';
+import { avancerBascule, positionBascule, voyantAllume, fonduHalo } from './bascule.js';
 import {
   creerTextesFlottants, emettreTexte, avancerTextesFlottants, textesVisibles, viderTextesFlottants,
 } from './texte_flottant.js';
@@ -1080,6 +1081,10 @@ export function creerOrchestrateurGrotte({
   let scene, decor, monstres, follet;
   let lumieresDecor = [];
   let puzzlesEtat = {};
+  // `D-158` : le geste de chaque levier (bascule.js), par id — un état
+  // d'AFFICHAGE, jamais sauvegardé : la vérité reste `puzzlesEtat`. Un levier
+  // sans entrée ici se pose à sa place, sans rejouer son geste.
+  const basculesLeviers = new Map();
   // Objets au sol de la scène courante (03_maison-exterieur §3.3) :
   // { [itemId]: [{x,y}, ...] }, reconstruit/complété à chaque entrée en
   // scène (ground_items.js#remplirItemsSol), persisté par scène dans
@@ -2787,6 +2792,17 @@ export function creerOrchestrateurGrotte({
     }
   }
 
+  // `D-158` : avance le geste des leviers de la scène vers leur état réel.
+  // Tourne même sous UI : c'est un geste déjà lancé qui finit, pas du
+  // gameplay (le menu ne s'ouvre jamais pendant l'appui qui l'a déclenché).
+  function majBasculesLeviers(deltaMs) {
+    for (const id of scene.interactifs) {
+      const p = scene.puzzle(id);
+      if (p.type !== 'levier') continue;
+      basculesLeviers.set(id, avancerBascule(basculesLeviers.get(id), !!puzzlesEtat[id]?.actif, deltaMs));
+    }
+  }
+
   function maj(deltaMs) {
     const etatBrut = input.maj();
     verifierPremierGeste(etatBrut);
@@ -2898,6 +2914,7 @@ export function creerOrchestrateurGrotte({
     // Auto (§5.2) : lu sur la MÊME frame et le MÊME `uiOuverte` que tout le
     // reste — jamais un second calcul de « le jeu a-t-il la main ».
     majDescenteAuto(deltaMs, uiOuverte);
+    majBasculesLeviers(deltaMs);
     if (menu.estOuvert()) menu.traiterInput(etatBrut);
     else if (dialogueOuvertMaintenant) dialogue.traiterInput(dialogueVientDeSOuvrir ? etatNeutre(etatBrut) : etatBrut);
     else if (choixFolletActif()) traiterChoixFollet(etatBrut);
@@ -3308,11 +3325,25 @@ export function creerOrchestrateurGrotte({
         // (override validé ou défaut) — une station déplacée se dessine à sa
         // VRAIE position, jamais celle de puzzles.json.
         const pose = scene.poseEffectiveInteractif(p.id);
+        const visuel = registre.obtenir('visuels', p.render.visuel);
+        // `D-158` : un levier se lit à son GESTE (bascule.js) — allumé quand
+        // le manche a touché sa butée, pas à l'appui. Sans état de geste (la
+        // toute première frame), l'état réel, posé.
+        const geste = p.type === 'levier'
+          ? (basculesLeviers.get(p.id) || avancerBascule(null, !!puzzlesEtat[p.id]?.actif, 0))
+          : null;
+        const mobile = geste && visuel.piece_mobile;
         return {
           x: (pose.x + 0.5) * scene.tileSize,
           y: (pose.y + 0.5) * scene.tileSize,
-          actif: p.type === 'levier' && !!puzzlesEtat[p.id]?.actif,
-          visuel: registre.obtenir('visuels', p.render.visuel),
+          actif: !!geste && voyantAllume(geste),
+          halo: geste ? fonduHalo(geste) : 0,
+          visuel,
+          pieceMobile: mobile ? {
+            visuel: registre.obtenir('visuels', mobile.visuel),
+            pivot: mobile.pivot,
+            angle: mobile.angles[0] + (mobile.angles[1] - mobile.angles[0]) * positionBascule(geste),
+          } : null,
           // specs/04_stations-proportions-collision.md : échelle par entrée
           // (`undefined` pour un levier -> dessinerVisuel applique son propre
           // défaut 1, jamais un second défaut dupliqué ici).
@@ -3400,6 +3431,19 @@ export function creerOrchestrateurGrotte({
       ? opaciteAHeure(save.monde.heure)
       : (scene.obscurite ? scene.obscurite.opacite : 0);
     const opaciteAmbiance = Math.max(opaciteCycle, opaciteOmbreZones(scene.zones, hero.x, hero.y, scene.tileSize));
+    // `D-158` : un levier allumé perce le voile d'un halo qui monte en fondu
+    // (`lumiere_active` de son visuel) — même voie que les cristaux, une
+    // lumière de scène de plus, jamais un second voile.
+    const lumieresScene = () => {
+      const leviers = puzzlesAffiches
+        .filter((p) => p.halo > 0 && p.visuel.lumiere_active)
+        .map((p) => {
+          const l = p.visuel.lumiere_active;
+          return { x: p.x, y: p.y - (l.dy || 0), rayon: l.rayon * p.halo, ...(l.couleur ? { couleur: l.couleur } : {}) };
+        });
+      const actives = lumieresActives(scene, flags);
+      return lumieresDecor.length || leviers.length ? [...actives, ...lumieresDecor, ...leviers] : actives;
+    };
     const sceneAffichage = scene.cycleJourNuit || scene.obscurite || opaciteAmbiance > 0
       ? {
         ...scene,
@@ -3408,9 +3452,7 @@ export function creerOrchestrateurGrotte({
         // salle 2 ne s'éclaire qu'une fois la porte ouverte) — filtrée ici, au
         // seul endroit où la scène affichée est composée ; render.js ne voit
         // jamais une condition.
-        lumieres: lumieresDecor.length
-          ? [...lumieresActives(scene, flags), ...lumieresDecor]
-          : lumieresActives(scene, flags),
+        lumieres: lumieresScene(),
       }
       : scene;
 
@@ -3667,6 +3709,7 @@ export function creerOrchestrateurGrotte({
     pousseeChoixPrecedente = 0;
     intro = null;
     depart = null;
+    basculesLeviers.clear();
     cooldownAttaqueHerosMs = 0;
     anneauAttaqueMs = 0;
     dialogueOuvertAuDebutFramePrecedente = false;

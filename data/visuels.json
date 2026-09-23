@@ -935,7 +935,30 @@
         ],
         "couleur": "#ffffff",
         "alpha": 0.35
-      },
+      }
+    ],
+    "piece_mobile": {
+      "visuel": "visuel_levier_manche",
+      "pivot": [
+        0,
+        -5.8
+      ],
+      "angles": [
+        -26,
+        26
+      ]
+    },
+    "lumiere_active": {
+      "rayon": 30,
+      "dy": 10,
+      "couleur": "#ffb84a"
+    }
+  },
+  {
+    "id": "visuel_levier_manche",
+    "ancre": "bas",
+    "teintable": true,
+    "primitives": [
       {
         "forme": "ligne",
         "dx": 0,
@@ -943,11 +966,11 @@
         "points": [
           [
             0,
-            -5.8
+            0
           ],
           [
-            4.6,
-            -15.4
+            0,
+            -10.6
           ]
         ],
         "couleur": "#3a2a1a",
@@ -960,11 +983,11 @@
         "points": [
           [
             0,
-            -5.8
+            0
           ],
           [
-            4.6,
-            -15.4
+            0,
+            -10.6
           ]
         ],
         "couleur": "#6b5038",
@@ -976,12 +999,12 @@
         "dy": 0,
         "points": [
           [
-            -0.3,
-            -6.4
+            -0.5,
+            -0.5
           ],
           [
-            4.1,
-            -15.4
+            -0.5,
+            -10.2
           ]
         ],
         "couleur": "#8a6b4a",
@@ -989,8 +1012,8 @@
       },
       {
         "forme": "ellipse",
-        "dx": 4.8,
-        "dy": -16,
+        "dx": 0,
+        "dy": -11.3,
         "w": 6,
         "h": 6,
         "couleur": "#6b6b6b",
@@ -998,8 +1021,8 @@
       },
       {
         "forme": "ellipse",
-        "dx": 5.6,
-        "dy": -14.2,
+        "dx": 0.8,
+        "dy": -9.5,
         "w": 4,
         "h": 2,
         "couleur": "#000000",
@@ -1007,8 +1030,8 @@
       },
       {
         "forme": "ellipse",
-        "dx": 3.8,
-        "dy": -17.2,
+        "dx": -1,
+        "dy": -12.5,
         "w": 2.2,
         "h": 1.6,
         "couleur": "#ffffff",

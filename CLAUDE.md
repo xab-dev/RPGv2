@@ -166,6 +166,8 @@ rpg_v2/
 │   │                       objectif affiché), déclenchées par conditions en données
 │   ├── visibilite.js       `D-62` : le filtre anti-spoil — une entrée verrouillée est INVISIBLE
 │   ├── vol_follet.js       `D-39` : la petite orbite du corps du follet autour de son point logique
+│   ├── bascule.js          `D-158` : le geste d'un levier dans le temps (butée, dépassement, voyant
+│   │                       à la butée, halo en fondu) — pur, un état d'AFFICHAGE jamais sauvegardé
 │   ├── poussiere.js        traînée de poussière (héros, follet) : réserve de bouffées à capacité
 │   │                       en données, émission interpolée le long du segment parcouru
 │   ├── ornements.js        `D-134` : étincelles et halo qui respire (réglage Haut) — reçoit un
@@ -265,6 +267,7 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 | **Une ombre de zone s'ajoute au voile par le maximum, jamais par une seconde couche** : `dessinerObscurite` ne voit toujours qu'un `{ opacite }`, la lumière du follet y perce le même trou ; ce qui lit la NUIT (signal du Chaos) lit le seul cycle | 2026-09-23 | `D-149` |
 | **Une cible tactile qui bouge avec le monde est un cercle annoncé par l'orchestrateur à chaque frame** (`touch.js#zonesMonde`), calculé avec la même caméra que le dessin ; la couche tactile ne sait ni ce qu'est un follet ni où est la caméra. Le doigt du joystick n'en déclenche jamais | 2026-09-23 | `D-142` |
 | **Une lumière de scène peut attendre un flag** (`condition`, même forme et même validateur qu'un portail) ; le filtre est pur (`scene.js#lumieresActives`) et appliqué là où la scène affichée est composée — render.js ne voit jamais une condition. Une lumière posée sur une porte attend le flag de la porte (tenu par test) | 2026-09-23 | `D-157` |
+| **Une pièce qui bouge avec l'état d'un interactif est une pièce du VISUEL** (`piece_mobile` : dessin, pivot, angles ; `lumiere_active` pour la lumière de l'état allumé), et son geste est un état d'affichage (`bascule.js`), jamais sauvegardé : la vérité reste l'état du puzzle, un levier chargé allumé est posé | 2026-09-23 | `D-158` |
 
 ## Ce qui est dû : dettes, questions, validations
 

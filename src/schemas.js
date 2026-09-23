@@ -1044,6 +1044,27 @@ function validerVisuel(entry, catalogs, path) {
   if (entry.echelle !== undefined && (typeof entry.echelle !== 'number' || entry.echelle <= 0)) {
     erreurs.push(`${path} > echelle doit être un nombre strictement positif si présent`);
   }
+  // `D-158` : une pièce qui BASCULE avec l'état de l'interactif (le manche
+  // d'un levier) — un autre visuel, dessiné à `pivot` et tourné d'un angle
+  // pris entre `angles[0]` (éteint) et `angles[1]` (allumé), en degrés.
+  // Ainsi qu'une lumière qui ne brille qu'à l'état allumé (`lumiere_active`,
+  // même forme que la lumière d'un motif de décor, `D-152`).
+  if (entry.piece_mobile !== undefined) {
+    const m = entry.piece_mobile;
+    const paire = (v) => Array.isArray(v) && v.length === 2 && v.every((n) => typeof n === 'number');
+    if (!m || !paire(m.pivot) || !paire(m.angles)) {
+      erreurs.push(`${path} > piece_mobile doit être { visuel, pivot: [dx, dy], angles: [éteint, allumé] }`);
+    } else if (m.visuel === entry.id || !(catalogs.visuels || []).some((v) => v.id === m.visuel)) {
+      erreurs.push(`${path} > piece_mobile > visuel "${m.visuel}" introuvable dans visuels.json (ou le visuel lui-même)`);
+    }
+  }
+  if (entry.lumiere_active !== undefined) {
+    const l = entry.lumiere_active;
+    if (!l || typeof l.rayon !== 'number' || l.rayon <= 0 || (l.dy !== undefined && typeof l.dy !== 'number')
+      || (l.couleur !== undefined && !/^#[0-9a-fA-F]{6}$/.test(l.couleur))) {
+      erreurs.push(`${path} > lumiere_active doit être { rayon > 0, dy? numérique, couleur? #rrggbb }`);
+    }
+  }
   if (!Array.isArray(entry.primitives) || entry.primitives.length === 0) {
     erreurs.push(`${path} > primitives doit être un tableau non vide`);
     return erreurs;

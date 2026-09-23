@@ -282,10 +282,14 @@ function ajusterCanvasLogiquePhysique(ctx) {
 export const BARRE_PV_MONSTRE = { largeur: 20, hauteur: 3, decalage_y: -14 };
 
 // Couleur du témoin d'un levier activé (§3.3 03_grotte-polish) — seul
-// endroit : la primitive `teinte: true` de visuel_levier passe du gris par
-// défaut (JSON) à ce jaune allumé quand puzzlesEtat[id].actif est vrai, même
-// mécanisme que le flash blanc du monstre touché (`options.teinte`).
-const COULEUR_LEVIER_ACTIF = '#ffd94a';
+// endroit : les primitives `teinte: true` du levier (voyant du socle, pommeau
+// du manche) passent du gris par défaut (JSON) à cette couleur quand le geste
+// du levier a touché sa butée (`D-158`), même mécanisme que le flash blanc du
+// monstre touché (`options.teinte`). Ambre depuis le diagnostic polish du
+// 23/09 (médiéval post-industriel : une lampe qui chauffe plutôt qu'un jaune
+// de signalisation) — gardé LUMINEUX sur consigne de Xav : « on ne les
+// assombrit pas, il faut bien voir qu'ils s'allument ». Provisoire.
+const COULEUR_LEVIER_ACTIF = '#ffb84a';
 
 // Aura pointillée du follet engagé (§2.2/§3.4 03_grotte-polish) — remplace
 // l'ancien cercle plein épais du diagnostic SD_ui-lisibilite : purement
@@ -554,6 +558,21 @@ export function dessinerScene(ctx, {
       // `options.rotation` (degrés) que dessinerVisuel() expose déjà.
       rotation: levier.rotation || 0,
     });
+    // `D-158` : la pièce qui bascule (le manche), posée à son pivot — pivot
+    // tourné avec l'interactif (une station tournée par quart de tour
+    // garderait sa pièce en place), puis son propre angle par-dessus.
+    if (levier.pieceMobile) {
+      const { visuel, pivot, angle } = levier.pieceMobile;
+      const rad = ((levier.rotation || 0) * Math.PI) / 180;
+      const echelle = levier.echelle || 1;
+      const px = (pivot[0] * Math.cos(rad) - pivot[1] * Math.sin(rad)) * echelle;
+      const py = (pivot[0] * Math.sin(rad) + pivot[1] * Math.cos(rad)) * echelle;
+      dessinerVisuel(ctx, visuel, levier.x + px - camera.x, levier.y + py - camera.y, {
+        teinte: levier.actif ? COULEUR_LEVIER_ACTIF : null,
+        echelle: levier.echelle,
+        rotation: (levier.rotation || 0) + angle,
+      });
+    }
   }
 
   // Fantôme de pose (§3, mode Construction) : dessiné après les stations

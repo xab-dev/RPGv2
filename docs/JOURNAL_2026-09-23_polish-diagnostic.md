@@ -92,6 +92,7 @@ révélera encore.
 
 | Commit | Sujet | Ce qu'il faut en retenir |
 |---|---|---|
-| — | `D-160` | Porte de la Maison : le parquet passe sous un seuil de pierre du mur, ombre du linteau, rivets. Symétrique (deux portes dans deux murs opposés) |
+| `60a03c5` | `D-160` | Porte de la Maison : le parquet passe sous un seuil de pierre du mur, ombre du linteau, rivets. Symétrique (deux portes dans deux murs opposés) |
+| — | `D-158` | Leviers : le manche devient une pièce mobile du visuel, le geste un état d'affichage pur (`bascule.js`) ; voyant ambre à la butée, halo en fondu qui perce le voile. **Code** : `render.js` (checklist visuelle due) |
 <!-- fin-table-2 -->
 

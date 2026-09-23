@@ -678,6 +678,10 @@ export function creerOrchestrateurGrotte({
   // coûte plus une ligne (« 0 = ne dessine pas », pris au mot).
   // Reconstruite, et non recalculée par frame : au démarrage, et une fois de
   // plus à chaque changement de preset (§4.5).
+  // Une LISTE par tuile (polish ambiance, 23/09) : son visuel puis ses
+  // variantes (`render.visuel_variantes`), chacune allégée par le même levier ;
+  // la case choisit la sienne au dessin (`decor.js#varianteTuile`). Une tuile
+  // dont le preset a retiré tout le grain sort de la table, comme avant.
   function construireTableGrains() {
     const grainSol = levier('grain_sol');
     return new Map(
@@ -686,11 +690,12 @@ export function creerOrchestrateurGrotte({
         .filter((t) => t.render && t.render.visuel)
         .map((t) => [
           t.id,
-          t.solid
-            ? registre.obtenir('visuels', t.render.visuel)
-            : appliquerGrainSol(registre.obtenir('visuels', t.render.visuel), grainSol),
+          [t.render.visuel, ...(t.render.visuel_variantes || [])]
+            .map((id) => registre.obtenir('visuels', id))
+            .map((visuel) => (t.solid ? visuel : appliquerGrainSol(visuel, grainSol)))
+            .filter((visuel) => visuel !== null),
         ])
-        .filter(([, visuel]) => visuel !== null)
+        .filter(([, visuels]) => visuels.length > 0)
     );
   }
   let visuelsTuiles = construireTableGrains();

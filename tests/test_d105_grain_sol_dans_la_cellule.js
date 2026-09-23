@@ -64,9 +64,13 @@ function tient(visuel, cote) {
 
 // --- 1. Toute tuile non solide qui porte un visuel tient dans sa cellule ----
 let grains = 0;
+// Le visuel ET ses variantes (polish ambiance, 23/09) : n'importe lequel peut
+// tomber sur n'importe quelle case. Le miroir horizontal ne change rien au
+// contrat : la cellule est symétrique autour de l'ancre.
+const grainsDeTuile = (tuile) => [tuile.render.visuel, ...(tuile.render.visuel_variantes || [])];
 for (const tuile of donnees.tiles) {
-  const idVisuel = tuile.render && tuile.render.visuel;
-  if (!idVisuel || tuile.solid) continue;
+  if (!(tuile.render && tuile.render.visuel) || tuile.solid) continue;
+  for (const idVisuel of grainsDeTuile(tuile)) {
   const visuel = visuelParId.get(idVisuel);
   assert.ok(visuel, `${tuile.id} > render.visuel "${idVisuel}" introuvable`);
   grains += 1;
@@ -78,6 +82,7 @@ for (const tuile of donnees.tiles) {
       + `(x ${e.minX}..${e.maxX}, y ${e.minY}..${e.maxY}) — il serait rogné à droite/en bas `
       + 'et peindrait sur la tuile voisine à gauche/en haut',
     );
+  }
   }
 }
 assert.ok(grains >= 4, `attendu au moins 4 grains de sol en données, vu ${grains}`);

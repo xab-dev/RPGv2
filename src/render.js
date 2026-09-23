@@ -4,7 +4,7 @@
 // (contrainte de méthode : le rendu revient à Xav dans un vrai navigateur).
 
 import { dessinerVisuel } from './visuels.js';
-import { couleurTuile, tuileDeSol } from './decor.js';
+import { couleurTuile, tuileDeSol, varianteTuile } from './decor.js';
 
 const DELTA_MAX_MS = 100; // provisoire : une frame ne rattrape jamais plus de 100 ms
 
@@ -398,11 +398,18 @@ function signaturePortesScene(scene, estFlagActif) {
   return (scene.portes || []).map((p) => (estFlagActif && estFlagActif(p.flag) ? '1' : '0')).join('');
 }
 
-// `visuelsTuiles` : Map(id de tuile -> entrée visuels.json), résolue une fois
-// par main.js à l'entrée en scène (même patron que `decor` déjà résolu) —
-// une tuile qui en porte un (arbre, rocher…) est dessinée par-dessus son
-// aplat de couleur, ancrée au bas de sa cellule (§3.3 : formes distinctes,
-// jamais un simple carré plein).
+// `visuelsTuiles` : Map(id de tuile -> LISTE d'entrées visuels.json — le
+// visuel de la tuile puis ses variantes, déjà allégées par le preset), résolue
+// une fois par main.js à l'entrée en scène (même patron que `decor` déjà
+// résolu) — une tuile qui en porte un (arbre, rocher…) est dessinée par-dessus
+// son aplat de couleur, ancrée au bas de sa cellule (§3.3 : formes
+// distinctes, jamais un simple carré plein). La case choisit SON dessin et son
+// miroir par `decor.js#varianteTuile` (polish ambiance, 23/09).
+function dessinerVisuelDeTuile(ctx, scene, tuile, visuels, x, y, localX, localY) {
+  const { index, miroir } = varianteTuile(scene, x, y, visuels.length, tuile.render.miroir);
+  dessinerVisuel(ctx, visuels[index], localX + scene.tileSize / 2, localY + scene.tileSize, { miroir });
+}
+
 function construireCoucheStatique(scene, decor, echelle, signaturePortes, estFlagActif, fenetre, visuelsTuiles) {
   const { xDebut, yDebut, xFin, yFin } = fenetre;
   const largeurCanvas = (xFin - xDebut) * scene.tileSize;
@@ -430,13 +437,9 @@ function construireCoucheStatique(scene, decor, echelle, signaturePortes, estFla
       // le preset exactement comme la surface voisine), l'objet par-dessus.
       const sol = tuile && tuileDeSol(scene, tuile);
       const grainSol = sol && sol !== tuile && visuelsTuiles.get(sol.id);
-      if (grainSol) {
-        dessinerVisuel(ctxCouche, grainSol, localX + scene.tileSize / 2, localY + scene.tileSize, {});
-      }
-      const visuelTuile = tuile && visuelsTuiles.get(tuile.id);
-      if (visuelTuile) {
-        dessinerVisuel(ctxCouche, visuelTuile, localX + scene.tileSize / 2, localY + scene.tileSize, {});
-      }
+      if (grainSol) dessinerVisuelDeTuile(ctxCouche, scene, sol, grainSol, x, y, localX, localY);
+      const visuelsTuile = tuile && visuelsTuiles.get(tuile.id);
+      if (visuelsTuile) dessinerVisuelDeTuile(ctxCouche, scene, tuile, visuelsTuile, x, y, localX, localY);
     }
   }
 

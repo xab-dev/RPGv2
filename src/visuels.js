@@ -140,7 +140,7 @@ function dessinerPrimitive(ctx, primitive, teinte) {
 // d'inclinaison par graine" sur l'herbe, decor.js#genererDecor) plutôt que de
 // dupliquer une silhouette pré-tournée pour chaque instance.
 export function dessinerVisuel(ctx, visuel, x, y, options = {}) {
-  const { teinte = null, alpha = 1, echelle = 1, rotation = 0 } = options;
+  const { teinte = null, alpha = 1, echelle = 1, rotation = 0, miroir = false } = options;
   // MT_heros-echelle_2026-09-19 : `visuel.echelle` est l'échelle PROPRE de la
   // silhouette (sa taille de référence en données), multipliée par l'échelle
   // d'INSTANCE passée à l'appel (une station tournée, un follet au HUD). Deux
@@ -154,6 +154,11 @@ export function dessinerVisuel(ctx, visuel, x, y, options = {}) {
   ctx.translate(x, y);
   if (rotation !== 0) ctx.rotate((rotation * Math.PI) / 180);
   if (echelleEffective !== 1) ctx.scale(echelleEffective, echelleEffective);
+  // `options.miroir` (polish ambiance, 23/09) : retournement HORIZONTAL autour
+  // de l'ancre — une case de sol ou un arbre de la forêt tiré en miroir par
+  // `decor.js#varianteTuile`. Jamais vertical : la lumière vient d'en haut
+  // (reflets, ombres portées), et un brin d'herbe ne pousse pas vers le sol.
+  if (miroir) ctx.scale(-1, 1);
   if (alpha !== 1) ctx.globalAlpha *= alpha;
 
   // Ombre portée (§3.3) : ellipse sombre dessinée AVANT les primitives, sous

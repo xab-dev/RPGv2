@@ -150,10 +150,13 @@ try {
 
   // a) Moyen = l'état actuel : la table est celle du catalogue, entrée pour
   //    entrée, sans une primitive de moins.
+  // (La table porte une LISTE par tuile depuis le polish du 23/09 : le visuel
+  // puis ses variantes.)
+  const duCatalogue = (t) => [t.render.visuel, ...(t.render.visuel_variantes || [])].map((id) => registre.obtenir('visuels', id));
   for (const t of tuiles) {
     assert.deepEqual(
-      tables.moyen.get(t.id), registre.obtenir('visuels', t.render.visuel),
-      `${t.id} : sous Moyen, le visuel du catalogue, tel quel`,
+      tables.moyen.get(t.id), duCatalogue(t),
+      `${t.id} : sous Moyen, les visuels du catalogue, tels quels`,
     );
   }
 
@@ -161,7 +164,7 @@ try {
   for (const preset of PRESETS) {
     for (const t of solides) {
       assert.deepEqual(
-        tables[preset].get(t.id), registre.obtenir('visuels', t.render.visuel),
+        tables[preset].get(t.id), duCatalogue(t),
         `${t.id} est solide : sa silhouette EST le monde, "${preset}" n'y touche pas`,
       );
     }
@@ -175,7 +178,7 @@ try {
 
   // d) L'ordre, en relation plutôt qu'en nombres.
   const primitives = (table) => sols.reduce(
-    (n, t) => n + (table.has(t.id) ? table.get(t.id).primitives.length : 0), 0,
+    (n, t) => n + (table.has(t.id) ? table.get(t.id).reduce((m, v) => m + v.primitives.length, 0) : 0), 0,
   );
   assert.ok(primitives(tables.bas) < primitives(tables.moyen), 'Bas dessine moins de grain que Moyen');
   assert.ok(primitives(tables.haut) >= primitives(tables.moyen), 'Haut n\'en dessine jamais moins que Moyen');

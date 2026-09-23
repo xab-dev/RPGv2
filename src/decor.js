@@ -111,6 +111,23 @@ function assombrirOuEclaircir(hex, facteur) {
   return `#${versHex(ajuster(r))}${versHex(ajuster(g))}${versHex(ajuster(b))}`;
 }
 
+// Polish ambiance (23/09) — QUEL dessin une case de tuile reçoit, parmi ceux
+// que sa tuile déclare (`render.visuel` puis `render.visuel_variantes`), et
+// s'il est retourné en miroir horizontal (`render.miroir`). Né du constat de
+// `D-105` : un grain identique sur chaque case se lit comme un papier peint ;
+// deux ou trois dessins et leur miroir suffisent à ce que l'œil ne trouve plus
+// la période. Même hash spatial que `couleurTuile` (jamais une avance
+// séquentielle : le calque peut reconstruire dans un autre ordre), avec un
+// SEL propre pour que la variante ne suive pas la couleur — sinon toutes les
+// cases claires porteraient le même dessin.
+const SEL_VARIANTE = 0x5bd1e995;
+export function varianteTuile(scene, x, y, nbVisuels, miroir) {
+  const alea = mulberry32((scene.seed ^ SEL_VARIANTE ^ (x * 83492791) ^ (y * 50331653)) >>> 0);
+  const index = Math.min(nbVisuels - 1, Math.floor(alea() * nbVisuels));
+  const tirageMiroir = alea();
+  return { index: Math.max(0, index), miroir: !!miroir && tirageMiroir < 0.5 };
+}
+
 // `Q-70` — la tuile dont on peint la SURFACE : le sol déclaré par une
 // tuile-objet (`render.sol`, validé au boot : une tuile non solide, qui ne
 // déclare pas elle-même de sol), sinon la tuile elle-même. Un seul niveau

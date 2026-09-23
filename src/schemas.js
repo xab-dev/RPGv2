@@ -203,6 +203,25 @@ function validerTile(entry, catalogs, path) {
     const existe = (catalogs.visuels || []).some((v) => v.id === entry.render.visuel);
     if (!existe) erreurs.push(`${path} > render.visuel "${entry.render.visuel}" introuvable dans visuels.json`);
   }
+  // render.visuel_variantes / render.miroir (polish ambiance, 23/09) :
+  // optionnels — d'autres dessins pour la même tuile, et le droit d'être
+  // retournée en miroir horizontal ; la case choisit par hash spatial
+  // (`decor.js#varianteTuile`). Une variante sans visuel principal n'a rien
+  // à varier.
+  if (entry.render && entry.render.visuel_variantes !== undefined) {
+    const v = entry.render.visuel_variantes;
+    if (!Array.isArray(v) || v.some((id) => typeof id !== 'string')) {
+      erreurs.push(`${path} > render.visuel_variantes doit être un tableau d'ids de visuels`);
+    } else {
+      if (entry.render.visuel === undefined) erreurs.push(`${path} > render.visuel_variantes sans render.visuel`);
+      for (const id of v) {
+        if (!(catalogs.visuels || []).some((x) => x.id === id)) erreurs.push(`${path} > render.visuel_variantes "${id}" introuvable dans visuels.json`);
+      }
+    }
+  }
+  if (entry.render && entry.render.miroir !== undefined && typeof entry.render.miroir !== 'boolean') {
+    erreurs.push(`${path} > render.miroir doit être un booléen`);
+  }
   // render.sol (`Q-70`) : optionnel — la tuile de SURFACE sur laquelle un
   // objet est posé (couleur et grain). Un sol est une surface : non solide,
   // et sans sol à son tour (un seul niveau, jamais une chaîne à suivre).

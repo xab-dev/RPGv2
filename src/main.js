@@ -98,7 +98,7 @@ import { estExpire, poserCooldown, tempsRestantMs } from './cooldowns.js';
 import { peutFabriquer, fabriquer, recettesDeStation } from './recipes.js';
 import { entreesVisibles, estVisible } from './visibilite.js';
 import { entreesIndices, lignesBrouillees } from './indices.js';
-import { creerVueStele, avancerVueStele, vueSteleArmee } from './stele.js';
+import { creerVueStele, avancerVueStele, vueSteleArmee, fermerVueStele, vueSteleTerminee, alphaVueStele } from './stele.js';
 import { dessinerEcranStele } from './ui/ecran_stele.js';
 import {
   decroitre as decroitreSurvie, consommer as consommerSurvie, appliquerMalusRespawn,
@@ -2804,6 +2804,7 @@ export function creerOrchestrateurGrotte({
       couleur: puzzle.couleur,
       lignes: lignesBrouillees(indice, (cle) => i18n.t(cle), config.hieroglyphes),
       vue: vueStele,
+      alpha: alphaVueStele(vueStele),
     };
   }
 
@@ -3294,7 +3295,10 @@ export function creerOrchestrateurGrotte({
       vueStele = avancerVueStele(vueStele, deltaMs, Math.random);
       const puzzleStele = scene.puzzle(vueStele.puzzleId);
       const retour = etatBrut.skill_3.pressed || contactsTactiles.length > 0;
-      if (retour && vueSteleArmee(vueStele, puzzleStele.armement_ms)) vueStele = null;
+      // PS1 : fermer, c'est lancer la sortie en fondu ; la vue disparaît quand
+      // elle est finie, et le jeu reste gelé jusque-là.
+      if (retour && vueSteleArmee(vueStele, puzzleStele.armement_ms)) vueStele = fermerVueStele(vueStele);
+      if (vueSteleTerminee(vueStele)) vueStele = null;
     }
     const logoEtaitActif = ouvertureLogoMs !== null;
     if (logoEtaitActif) {

@@ -43,6 +43,8 @@ const INTERLIGNE = 17;
 const PERIODE_LUEUR_MS = 2600;
 const LUEUR_MIN = 0.7;
 const TAILLE_PARTICULE = 1.4;
+// PS1 : de combien la pierre monte pendant le fondu d'entrée.
+const MONTEE_FONDU = 8;
 
 function rgba(hex, alpha) {
   const n = parseInt(hex.slice(1), 16);
@@ -65,15 +67,20 @@ function tracerDalle(ctx, x, y, w, h) {
   ctx.closePath();
 }
 
-// `contenu` : { id, lignes (hiéroglyphes), couleur (#rrggbb), vue (`stele.js`) }.
+// `contenu` : { id, lignes (hiéroglyphes), couleur (#rrggbb), vue (`stele.js`),
+// alpha (le fondu d'entrée et de sortie, `stele.js#alphaVueStele`) }.
 export function dessinerEcranStele(ctx, contenu) {
   const { largeur, hauteur } = RESOLUTION_LOGIQUE;
+  const { vue, couleur, alpha = 1 } = contenu;
+  if (alpha <= 0) return;
+  // PS1 : la pierre monte de quelques pixels en apparaissant — un regard
+  // qui se lève vers elle, pas un panneau qui tombe.
   const x = Math.round((largeur - LARGEUR_PIERRE) / 2);
-  const y = Math.round((hauteur - HAUTEUR_PIERRE) / 2) + 4;
-  const { vue, couleur } = contenu;
+  const y = Math.round((hauteur - HAUTEUR_PIERRE) / 2) + 4 + Math.round((1 - alpha) * MONTEE_FONDU);
   const lueur = LUEUR_MIN + (1 - LUEUR_MIN) * (0.5 + 0.5 * Math.sin((vue.ms / PERIODE_LUEUR_MS) * Math.PI * 2));
 
   ctx.save();
+  ctx.globalAlpha = alpha;
   ctx.fillStyle = VOILE;
   ctx.fillRect(0, 0, largeur, hauteur);
 
@@ -128,21 +135,21 @@ export function dessinerEcranStele(ctx, contenu) {
   let ly = gy + Math.max(0, Math.round((gh - lignes.length * INTERLIGNE) / 2));
   for (const ligne of lignes) {
     ctx.fillStyle = couleur;
-    ctx.globalAlpha = 0.12 * lueur;
+    ctx.globalAlpha = alpha * 0.12 * lueur;
     for (const [dx, dy] of [[-2, 0], [2, 0], [0, -2], [0, 2]]) ctx.fillText(ligne, cx + dx, ly + dy);
-    ctx.globalAlpha = 0.28 * lueur;
+    ctx.globalAlpha = alpha * 0.28 * lueur;
     for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) ctx.fillText(ligne, cx + dx, ly + dy);
-    ctx.globalAlpha = 0.95;
+    ctx.globalAlpha = alpha * 0.95;
     ctx.fillText(ligne, cx, ly);
     ctx.fillStyle = '#ffffff';
-    ctx.globalAlpha = 0.5 * lueur;
+    ctx.globalAlpha = alpha * 0.5 * lueur;
     ctx.fillText(ligne, cx, ly);
     ly += INTERLIGNE;
   }
 
   // Les particules montent de la gravure.
   for (const p of vue.particules) {
-    ctx.globalAlpha = alphaParticule(p) * lueur;
+    ctx.globalAlpha = alpha * alphaParticule(p) * lueur;
     ctx.fillStyle = p.blanche ? '#ffffff' : couleur;
     ctx.fillRect(gx + p.x * gw, gy + p.y * gh, TAILLE_PARTICULE, TAILLE_PARTICULE);
   }

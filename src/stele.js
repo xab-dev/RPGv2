@@ -26,8 +26,32 @@ const DERIVE_MAX = 0.04;
 // Part des particules blanches (les autres prennent la couleur de la stèle).
 const PART_BLANCHES = 0.3;
 
+// PS1 : la vue entre et sort en fondu — ouverte d'un coup, la pierre
+// « claquait » devant le jeu. Court : c'est un regard qu'on lève, pas une
+// cinématique, et le jeu reste gelé pendant la sortie.
+const FONDU_MS = 240;
+
+// `fermetureMs` : `null` tant que la vue est ouverte, puis le temps écoulé
+// depuis la demande de fermeture.
 export function creerVueStele(puzzleId) {
-  return { puzzleId, ms: 0, reliquatMs: 0, particules: [] };
+  return { puzzleId, ms: 0, reliquatMs: 0, particules: [], fermetureMs: null };
+}
+
+// B (ou un toucher) a été accepté : la vue commence à sortir. Une seconde
+// demande pendant la sortie ne la relance pas.
+export function fermerVueStele(vue) {
+  return vue.fermetureMs === null ? { ...vue, fermetureMs: 0 } : vue;
+}
+
+export function vueSteleTerminee(vue) {
+  return vue.fermetureMs !== null && vue.fermetureMs >= FONDU_MS;
+}
+
+// L'opacité de toute la vue : monte à l'ouverture, descend à la fermeture.
+export function alphaVueStele(vue) {
+  const entree = Math.min(1, vue.ms / FONDU_MS);
+  const sortie = vue.fermetureMs === null ? 1 : Math.max(0, 1 - vue.fermetureMs / FONDU_MS);
+  return Math.min(entree, sortie);
 }
 
 function naitre(hasard) {
@@ -56,7 +80,8 @@ export function avancerVueStele(vue, deltaMs, hasard) {
     reliquatMs -= intervalle;
     if (particules.length < PARTICULES_MAX) particules.push(naitre(hasard));
   }
-  return { ...vue, ms: vue.ms + deltaMs, reliquatMs, particules };
+  const fermetureMs = vue.fermetureMs === null ? null : vue.fermetureMs + deltaMs;
+  return { ...vue, ms: vue.ms + deltaMs, reliquatMs, particules, fermetureMs };
 }
 
 // La fermeture n'est acceptée qu'après `armementMs` : l'appui qui a ouvert

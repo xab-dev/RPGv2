@@ -20,10 +20,13 @@ export default async function (chrome) {
       await chrome.capture(`${DOSSIER}/${profil.nom}_${moment}_monde.png`);
       if (moment === 'nuit' && profil.nom !== 'pc') continue;
       await chrome.touche('KeyE');
-      await chrome.attendre(1500);
+      // PS1 : un instant dans le fondu d'entrée.
+      await chrome.attendre(110);
+      await chrome.capture(`${DOSSIER}/${profil.nom}_${moment}_fondu.png`);
+      await chrome.attendre(1400);
       await chrome.capture(`${DOSSIER}/${profil.nom}_${moment}_vue.png`);
       await chrome.touche('Digit3');
-      await chrome.attendre(200);
+      await chrome.attendre(600);
       await chrome.capture(`${DOSSIER}/${profil.nom}_${moment}_ferme.png`);
     }
   }

@@ -34,7 +34,10 @@ import { mulberry32 } from '../src/decor.js';
 import { calculerCamera } from '../src/camera.js';
 import { RESOLUTION_LOGIQUE } from '../src/render.js';
 import { empreinteAbsoluePuzzle } from '../src/structures.js';
-import { creerVueStele, avancerVueStele, vueSteleArmee, alphaParticule, PARTICULES_MAX } from '../src/stele.js';
+import {
+  creerVueStele, avancerVueStele, vueSteleArmee, alphaParticule, PARTICULES_MAX,
+  fermerVueStele, vueSteleTerminee, alphaVueStele,
+} from '../src/stele.js';
 
 const RACINE = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const [dictionnaires, { donnees, erreurs }] = await Promise.all([
@@ -69,7 +72,22 @@ const SCENE_ID = donnees.scenes.find((s) => (s.interactifs || []).includes(STELE
   assert.equal(vueSteleArmee(creerVueStele('x'), 100), false);
   assert.equal(vueSteleArmee(avancerVueStele(creerVueStele('x'), 100, hasard), 100), true);
   assert.equal(vueSteleArmee(creerVueStele('x'), 0), true, 'armement nul : fermable tout de suite');
-  console.log('OK stele.js : naissance, mort, réserve bornée, armement');
+  // PS1 : le fondu. L'opacité monte de 0 à 1, puis la fermeture la ramène à 0
+  // et seulement alors la vue est finie ; une seconde fermeture ne relance rien.
+  let f = creerVueStele('x');
+  assert.equal(alphaVueStele(f), 0, "invisible à l'instant d'ouverture");
+  f = avancerVueStele(f, 10_000, hasard);
+  assert.equal(alphaVueStele(f), 1);
+  f = fermerVueStele(f);
+  assert.equal(vueSteleTerminee(f), false, "fermer lance la sortie, ne l'achève pas");
+  f = avancerVueStele(f, 50, hasard);
+  const pendant = alphaVueStele(f);
+  assert.ok(pendant > 0 && pendant < 1, 'à mi-sortie, à moitié visible');
+  assert.equal(fermerVueStele(f).fermetureMs, f.fermetureMs, 'une seconde demande ne relance pas la sortie');
+  f = avancerVueStele(f, 10_000, hasard);
+  assert.equal(vueSteleTerminee(f), true);
+  assert.equal(alphaVueStele(f), 0);
+  console.log('OK stele.js : naissance, mort, réserve bornée, armement, fondu');
 }
 
 // 2
@@ -189,13 +207,17 @@ const SCENE_ID = donnees.scenes.find((s) => (s.interactifs || []).includes(STELE
   assert.deepEqual(orch.contenuVueStele().lignes, menuIllisible.lignes, 'une gravure ne se traduit pas avec le niveau');
 
   frame(etat({ skill3: true }));
-  assert.equal(orch.obtenirVueStele(), null, 'B ferme la vue');
+  assert.notEqual(orch.obtenirVueStele().fermetureMs, null, 'B lance la sortie en fondu');
+  assert.equal(orch.uiOuverteMaintenant(), true, 'le jeu reste gelé pendant la sortie');
+  frame(etat(), 1000);
+  assert.equal(orch.obtenirVueStele(), null, 'B ferme la vue, une fois le fondu fini');
 
   frame(etat({ interact: true }));
   assert.ok(orch.obtenirVueStele(), 'elle se rouvre');
   frame(etat(), STELE.armement_ms + 16);
   contacts = [{ x: 10, y: 10 }];
   frame();
+  frame(etat(), 1000);
   assert.equal(orch.obtenirVueStele(), null, 'un toucher n\'importe où la ferme (seule sortie au doigt)');
   console.log('OK orchestrateur : INTERACT ouvre, jeu gelé, B / toucher ferment après l\'armement, MENU muet');
 }

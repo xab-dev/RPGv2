@@ -39,3 +39,13 @@ facture.
 - Commit raté puis refait : le renommage du test de `D-170` était parti dans
   `D-171` (une chaîne `&&` interrompue) ; séparé avant tout push.
 - À voir en jeu : `V-110`, `V-111`, `V-112`.
+
+## Suite, sur le retour de Xav
+
+« all good » : `V-110` à `V-112` validées. `Q-113` tranchée : la goutte de
+la soif reste (« l'indication la plus intuitive »), mais les deux icônes
+s'améliorent.
+
+| Commit | Sujet | Ce qu'il faut en retenir |
+|---|---|---|
+| *(ce commit)* | `D-173` | Faim : un épi de blé à la place du triangle. Soif : la goutte dans une flaque. Données seules, deux passes au banc (la première faisait un épi de maïs) |

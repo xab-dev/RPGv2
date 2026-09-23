@@ -96,5 +96,7 @@ Pas des journaux : des lignes sorties de deux documents vivants devenus trop lou
 |---|---|---|---|
 | 2026-09-23 | `docs/DOC_suivi-dettes.md` | [dettes_archives.md](dettes_archives.md) | Les 126 lignes `D-`/`Q-`/`V-`/`E-`/`A-`/`DOC-` closes le **21/09 ou avant**. Un identifiant archivé n'est jamais réutilisé. |
 | 2026-09-23 | `CLAUDE.md`, table des décisions datées (`DOC-07`) | [decisions_archives.md](decisions_archives.md) | Les 96 décisions du **15 au 21/09**. Archivées, **pas révisées** : toutes restent en vigueur. |
+| 2026-09-22 | Retouches graphiques : rocher, arbre du chemin, leviers, murs et toit de la Maison | [JOURNAL_2026-09-22_retouches-decor.md](JOURNAL_2026-09-22_retouches-decor.md) | `D-127` à `D-132` : un visuel propre pour ce qui est partagé avec un hors-périmètre, le grain du sol recopié sous une tuile-objet, le toit posé par motif répété (`createPattern`) |
+| 2026-09-22 | Le réglage **Haut** : une couche de plus que Moyen | [JOURNAL_2026-09-22_reglage-haut.md](JOURNAL_2026-09-22_reglage-haut.md) | `D-106`, `D-116`, `D-134` : le décor qui filtre ses surfaces, `ornement_min` (ce qu'un preset AJOUTE se déclare par un seuil), étincelles et halo qui respire |
 
 Le journal le plus récent reste dans `CLAUDE.md` jusqu'à la prochaine session, qui l'archivera ici à son tour (règle de méthode « ménage de journal », voir `CLAUDE.md`).

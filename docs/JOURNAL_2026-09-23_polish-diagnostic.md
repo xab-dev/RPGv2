@@ -3,7 +3,7 @@ projet: RPG V2
 episode/session: Diagnostic polish — ce que la passe d'ambiance n'avait pas touché
 type: fichier de bord
 version: 1.0.0
-statut: clos
+statut: en cours
 catégorie: Journal
 date: 2026-09-23
 genere_par: claude
@@ -46,7 +46,7 @@ parquet » se réduit au parquet.
 | `cd45a72` | `D-154` | Rochers de décor dans la valeur de la pierre (plus des galets pâles), touffe dans les verts de la pelouse, flaque d'eau noire. Garde-fou : un rocher de décor reste plus sombre que les pierres ramassables |
 | `0534f4f` | `D-155` | Parquet : trois dessins × miroir, un bout de lame par dessin (des lames longues), joint au bord bas de la case. Une passe « un joint par rangée » faisait carrelage : retirée à la capture. Damier de teintes proposé en `Q-77` |
 | `1811323` | `D-156` | Grotte : décor 0,10 → 0,04 sans herbe (21 → 8 objets par salle sous Moyen, des cristaux gardés dans chaque salle en réglant les poids), grain de sol 19-20 → 6-8 primitives (fissures, un galet, un peu de gravier). Relevé hors ticket : `D-159` (une `ligne` se referme) |
-| — | `D-157` | Sorties de la Grotte : deux tuiles (couloir sombre en salle 1, passage vers le jour en salle 2), halos déclarés dans la scène ; **code** : une lumière peut porter une `condition` (`scene.js#lumieresActives`), sans quoi le jour trahissait la porte fermée. Une première passe centrait le halo sur l'ouverture et effaçait le dégradé : reculé dans la salle |
+| `45771b0` | `D-157` | Sorties de la Grotte : deux tuiles (couloir sombre en salle 1, passage vers le jour en salle 2), halos déclarés dans la scène ; **code** : une lumière peut porter une `condition` (`scene.js#lumieresActives`), sans quoi le jour trahissait la porte fermée. Une première passe centrait le halo sur l'ouverture et effaçait le dégradé : reculé dans la salle |
 
 ## Ce qu'il faut en retenir
 
@@ -73,3 +73,25 @@ et revoir dix visuels, ou le déclarer voulu).
 
 Restent du diagnostic, non retenus dans cette file : la porte de la Maison
 (aplat beige), le monstre (losange violet en 2 formes, à dessiner avec toi).
+
+## Partie 2 — la nuit : « tout ce qui dénote avec le standing actuel »
+
+Go de Xav après la partie 1 : « go pour le reste (feu follet, monstre… tout ce
+qui dénote avec le standing actuel), je vais dormir, je rectifierai demain si
+ça ne me convient pas. Fais des commits réguliers sur branche, pas de push. »
+
+**Le feu follet n'est plus hors cible** (il l'était pour le polish ambiance) :
+Xav le nomme. Restent hors cible par défaut, faute d'avoir été nommés et parce
+qu'ils ont été validés à leur standing : héros, stations, items, objets de
+récolte. `D-159` (une `ligne` se referme) n'est **pas** traité : il change des
+dessins validés, c'est à Xav de trancher.
+
+File, dans l'ordre (chaque commit retirable seul) : porte de la Maison →
+leviers (`D-158`) → monstres → follets → ce que l'inventaire des visuels
+révélera encore.
+
+| Commit | Sujet | Ce qu'il faut en retenir |
+|---|---|---|
+| — | `D-160` | Porte de la Maison : le parquet passe sous un seuil de pierre du mur, ombre du linteau, rivets. Symétrique (deux portes dans deux murs opposés) |
+<!-- fin-table-2 -->
+

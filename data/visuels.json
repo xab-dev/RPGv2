@@ -2631,6 +2631,137 @@
     ]
   },
   {
+    "id": "visuel_porte_maison",
+    "ancre": "bas",
+    "primitives": [
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": -16,
+        "w": 10,
+        "h": 32,
+        "couleur": "#655d52"
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": -16,
+        "w": 8,
+        "h": 32,
+        "couleur": "#867d70"
+      },
+      {
+        "forme": "rect",
+        "dx": -1,
+        "dy": -16,
+        "w": 3,
+        "h": 32,
+        "couleur": "#a39a8b",
+        "alpha": 0.45
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -4,
+            -21
+          ],
+          [
+            4,
+            -21
+          ]
+        ],
+        "couleur": "#655d52",
+        "epaisseur": 0.8,
+        "alpha": 0.8
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -4,
+            -10
+          ],
+          [
+            4,
+            -10
+          ]
+        ],
+        "couleur": "#655d52",
+        "epaisseur": 0.8,
+        "alpha": 0.8
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": -15.5,
+        "w": 6,
+        "h": 9,
+        "couleur": "#000000",
+        "alpha": 0.08
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": -29,
+        "w": 32,
+        "h": 6,
+        "couleur": "#0b0d0c",
+        "degrade": {
+          "direction": "vertical",
+          "stops": [
+            {
+              "offset": 0,
+              "couleur": "#0b0d0c",
+              "alpha": 0.5
+            },
+            {
+              "offset": 1,
+              "couleur": "#0b0d0c",
+              "alpha": 0
+            }
+          ]
+        }
+      },
+      {
+        "forme": "cercle",
+        "dx": -2.6,
+        "dy": -27,
+        "w": 1.5,
+        "h": 1.5,
+        "couleur": "#2a2622"
+      },
+      {
+        "forme": "cercle",
+        "dx": 2.6,
+        "dy": -27,
+        "w": 1.5,
+        "h": 1.5,
+        "couleur": "#2a2622"
+      },
+      {
+        "forme": "cercle",
+        "dx": -2.6,
+        "dy": -4,
+        "w": 1.5,
+        "h": 1.5,
+        "couleur": "#2a2622"
+      },
+      {
+        "forme": "cercle",
+        "dx": 2.6,
+        "dy": -4,
+        "w": 1.5,
+        "h": 1.5,
+        "couleur": "#2a2622"
+      }
+    ]
+  },
+  {
     "id": "visuel_toit_bardeaux",
     "ancre": "bas",
     "primitives": [

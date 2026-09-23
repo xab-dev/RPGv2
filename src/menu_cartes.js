@@ -194,6 +194,20 @@ export function resoudreCases(ecran, evaluer) {
   return cases;
 }
 
+// L'icône d'une carte peut SUIVRE l'état du jeu (Xav, 23/09 : la carte Poche
+// prend la silhouette de la besace une fois celle-ci fabriquée ; le sac,
+// plus tard, fera de même). `icones_si` est une liste ORDONNÉE de
+// `{ condition, icone }` : la première dont la condition tient gagne, et
+// `icone` reste l'icône de base, celle d'avant tout équipement. Mettre la
+// plus avancée en tête : un sac fabriqué après la besace passe devant elle.
+// Relue à chaque affichage, comme les conditions de présence.
+export function iconeCarte(carte, evaluer) {
+  for (const variante of carte.icones_si || []) {
+    if (evaluer(variante.condition)) return variante.icone;
+  }
+  return carte.icone;
+}
+
 // §4.3 : « focus sur la première carte présente ». -1 si l'écran est vide.
 export function premiereCasePresente(cases) {
   return cases.findIndex((c) => c !== null);

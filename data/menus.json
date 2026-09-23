@@ -36,7 +36,10 @@
       {
         "id": "carte_poche", "case": 0, "type": "dossier",
         "cle_titre": "menu.poche", "cle_phrase": "menu.carte.poche_phrase",
-        "icone": "visuel_icone_menu_poche", "cible": "ecran_poche"
+        "icone": "visuel_icone_menu_poche", "cible": "ecran_poche",
+        "icones_si": [
+          { "condition": "flag_besace", "icone": "visuel_icone_menu_besace" }
+        ]
       },
       {
         "id": "carte_stats", "case": 1, "type": "dossier",

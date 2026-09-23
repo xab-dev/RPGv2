@@ -1363,6 +1363,22 @@ function validerCarteMenu(carte, catalogs, chemin, flagsDeclares) {
   if (carte.icone !== undefined && !(catalogs.visuels || []).some((v) => v.id === carte.icone)) {
     erreurs.push(`${chemin} > icone > "${carte.icone}" introuvable dans visuels.json`);
   }
+  // Les icônes sous condition (`menu_cartes.js#iconeCarte`) : chacune une vraie
+  // silhouette et une condition de flags valide, comme la présence d'une carte.
+  if (carte.icones_si !== undefined) {
+    if (!Array.isArray(carte.icones_si)) {
+      erreurs.push(`${chemin} > icones_si doit être une liste de { condition, icone }`);
+    } else {
+      carte.icones_si.forEach((v, i) => {
+        const ici = `${chemin} > icones_si[${i}]`;
+        if (!v || v.condition === undefined) erreurs.push(`${ici} : condition requise`);
+        else erreurs.push(...erreursCondition(v.condition, ici, flagsDeclares));
+        if (!v || !(catalogs.visuels || []).some((x) => x.id === v.icone)) {
+          erreurs.push(`${ici} > icone "${v && v.icone}" introuvable dans visuels.json`);
+        }
+      });
+    }
+  }
   for (const champ of CHAMPS_INTERDITS_PAR_TYPE[carte.type] || []) {
     if (carte[champ] !== undefined) erreurs.push(`${chemin} > "${champ}" n'a pas de sens sur une carte de type "${carte.type}"`);
   }

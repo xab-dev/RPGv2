@@ -22,7 +22,7 @@
 // Rien ne touche le DOM au chargement du module : tout se passe dans
 // `creerMenuCartes()`.
 import {
-  resoudreCases, premiereCasePresente, voisin, choisirGrille, nombreCases,
+  resoudreCases, premiereCasePresente, voisin, choisirGrille, nombreCases, iconeCarte,
   creerLecteurDirection, creerNavigationEcrans, construireConfirmation,
 } from '../menu_cartes.js';
 
@@ -184,7 +184,7 @@ export function creerMenuCartes({
     poserAttribut(elCarte, 'role', 'button');
     const icone = document.createElement('canvas');
     icone.className = 'carte-icone';
-    icone.dataset.icone = carte.icone;
+    icone.dataset.icone = iconeCarte(carte, evaluerCondition);
     const textes = document.createElement('div');
     textes.className = 'carte-textes';
     const elTitre = document.createElement('span');

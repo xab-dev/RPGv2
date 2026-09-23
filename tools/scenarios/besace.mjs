@@ -38,4 +38,21 @@ export default async function (chrome) {
   const sousTitre = await chrome.evaluer(`[...document.querySelectorAll('.ecran-ui')].filter((e) => !e.hidden)
     .map((e) => e.textContent.match(/\\d+\\s*\\/\\s*\\d+/)?.[0]).filter(Boolean)`);
   console.log('poche', JSON.stringify(sousTitre), chrome.erreurs().length ? `ERREURS ${JSON.stringify(chrome.erreurs())}` : 'ok');
+  await carteDuMenu(chrome);
+}
+
+// `Q-127` : la carte Poche du menu, sans puis avec la besace. Échap ouvre le
+// menu racine, Espace le dossier Héros, où vit la carte Poche.
+export async function carteDuMenu(chrome) {
+  for (const [nom, porte] of [['sans', false], ['avec', true]]) {
+    const save = saveDansLaMaison();
+    save.monde.heure = 0.25;
+    if (porte) save.flags.flag_besace = true;
+    await ouvrirLeJeu(chrome, { largeur: 1920, hauteur: 1080, save });
+    await chrome.touche('Escape');
+    await chrome.touche('Space');
+    await chrome.capture(`${DOSSIER}/menu_${nom}_besace_1920x1080.png`);
+    const icone = await chrome.evaluer(`document.querySelector('[data-carte="carte_poche"] .carte-icone')?.dataset.icone`);
+    console.log('menu', nom, icone, chrome.erreurs().length ? `ERREURS ${JSON.stringify(chrome.erreurs())}` : 'ok');
+  }
 }

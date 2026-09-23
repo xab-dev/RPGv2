@@ -325,5 +325,12 @@
   "prologue.description.2": "Le monde laisse des indices, parfois une phrase dans le vent, parfois rien du tout — et le rien du tout est aussi un indice.",
   "prologue.description.3": "Ce que vous choisissez, et la façon dont vous le faites, sera retenu. Même quand rien ne le montre.",
   "prologue.description.4": "le jour, on ramasse. la nuit, le monde se souvient qu’il a des dents.",
-  "prologue.go.titre": "Réveille-toi."
+  "prologue.go.titre": "Réveille-toi.",
+  "menu.carte.indices": "Indices",
+  "menu.carte.indices_phrase": "Des traces à déchiffrer.",
+  "menu.indices_titre": "Indices",
+  "menu.indices_vide": "Rien à déchiffrer pour l’instant.",
+  "lore.grotte_entree.titre": "L’entrée de la grotte",
+  "lore.grotte_entree.ligne_1": "Là où tu as ouvert les yeux, la roche n’a pas tout dit.",
+  "lore.grotte_entree.ligne_2": "Retourne voir l’entrée de la grotte."
 }

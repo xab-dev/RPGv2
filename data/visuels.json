@@ -10208,6 +10208,93 @@
     ]
   },
   {
+    "id": "visuel_icone_menu_indices",
+    "ancre": "centre",
+    "teintable": true,
+    "primitives": [
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": -3.4,
+        "w": 1.6,
+        "h": 4.6,
+        "rotation": 0,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "rect",
+        "dx": 2.05,
+        "dy": -2.05,
+        "w": 1.6,
+        "h": 2.8,
+        "rotation": 45,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "rect",
+        "dx": 3.4,
+        "dy": 0,
+        "w": 1.6,
+        "h": 4.6,
+        "rotation": 90,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "rect",
+        "dx": 2.05,
+        "dy": 2.05,
+        "w": 1.6,
+        "h": 2.8,
+        "rotation": 135,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": 3.4,
+        "w": 1.6,
+        "h": 4.6,
+        "rotation": 180,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "rect",
+        "dx": -2.05,
+        "dy": 2.05,
+        "w": 1.6,
+        "h": 2.8,
+        "rotation": 225,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "rect",
+        "dx": -3.4,
+        "dy": 0,
+        "w": 1.6,
+        "h": 4.6,
+        "rotation": 270,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "rect",
+        "dx": -2.05,
+        "dy": -2.05,
+        "w": 1.6,
+        "h": 2.8,
+        "rotation": 315,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      }
+    ]
+  },
+  {
     "id": "visuel_icone_menu_poche",
     "ancre": "centre",
     "teintable": true,

@@ -325,5 +325,12 @@
   "prologue.description.2": "The world leaves clues, sometimes a sentence in the wind, sometimes nothing at all — and nothing at all is a clue too.",
   "prologue.description.3": "What you choose, and how you do it, will be remembered. Even when nothing shows it.",
   "prologue.description.4": "by day, you gather. by night, the world remembers it has teeth.",
-  "prologue.go.titre": "Wake up."
+  "prologue.go.titre": "Wake up.",
+  "menu.carte.indices": "Clues",
+  "menu.carte.indices_phrase": "Traces to decipher.",
+  "menu.indices_titre": "Clues",
+  "menu.indices_vide": "Nothing to decipher yet.",
+  "lore.grotte_entree.titre": "The cave mouth",
+  "lore.grotte_entree.ligne_1": "Where you first opened your eyes, the rock has not said everything.",
+  "lore.grotte_entree.ligne_2": "Go back and look at the cave entrance."
 }

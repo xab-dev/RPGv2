@@ -174,8 +174,9 @@ function construireBanc({ dansLaMaison = true, compagnon, pleinEcranDisponible =
   assert.deepEqual(enregistres.valeurs.sort(),
     ['consommables_en_poche', 'niveau', 'objets_au_coffre', 'plein_ecran_disponible',
       'remplissage_coffre', 'slots_libres_poche', 'stations_placables', 'stations_posees']);
-  assert.deepEqual(enregistres.ecrans, ['ecran_poche', 'ecran_stats', 'ecran_construction'],
-    'les trois écrans existants que le palier A rebranche — Craft et Coffre s’ouvrent par INTERACT, pas par une carte');
+  // Indices (Xav, 23/09) : un quatrième écran ouvert par une carte.
+  assert.deepEqual(enregistres.ecrans, ['ecran_poche', 'ecran_stats', 'ecran_construction', 'ecran_indices'],
+    'les écrans ouverts par une carte — Craft et Coffre s’ouvrent par INTERACT, pas par une carte');
 
   // Les textes que le CODE choisit (états des bascules, composant) existent
   // dans les deux langues — aucune carte ne les cite, ce contrôle seul les voit.
@@ -196,11 +197,11 @@ function construireBanc({ dansLaMaison = true, compagnon, pleinEcranDisponible =
 
   const dehors = construireBanc({ dansLaMaison: false });
   dehors.jouer(etat({ menu: true }));
-  assert.deepEqual(dehors.menu.obtenirEtatCartes().cases, ['carte_heros', 'carte_parametres', null, null],
-    'hors de la Maison : la case contextuelle est VIDE, Héros et Paramètres n’ont pas bougé');
+  assert.deepEqual(dehors.menu.obtenirEtatCartes().cases, ['carte_heros', 'carte_parametres', null, 'carte_indices'],
+    'hors de la Maison : les Indices tiennent la case contextuelle (Xav, 23/09), Héros et Paramètres n’ont pas bougé');
   assert.equal(dehors.orchestrateur.evaluerCondition({ valeur: 'stations_placables', min: 1 }), false);
   assert.equal(dedans.orchestrateur.evaluerCondition({ valeur: 'stations_placables', min: 1 }), true);
-  console.log('OK case contextuelle : présente dans la Maison, vide ailleurs — évaluée par flags.js, sans format nouveau');
+  console.log('OK case contextuelle : Construction dans la Maison, Indices ailleurs — évaluée par flags.js, sans format nouveau');
 }
 
 // --- 3. Accent et géométrie -----------------------------------------------------

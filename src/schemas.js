@@ -2518,6 +2518,41 @@ export const SCHEMAS = {
       return erreurs;
     },
   },
+  // Les indices du menu (`indices.js`, demande de Xav du 23/09). Deux formes,
+  // distinguées par l'id comme `survie_config` : `indices_config` porte
+  // l'alphabet des hiéroglyphes (PROVISOIRE, Xav le retouche en données) ;
+  // chaque autre entrée est un indice — des CLÉS de locale, une condition
+  // `lisible_si` facultative (même validateur que toute condition), et
+  // `visible_si` (`D-62`) que `registry.js` valide pour tous les catalogues.
+  // Un indice qui peut être illisible exige l'alphabet : sans lui, le
+  // brouillage rendrait le texte en clair — un spoil, pas une panne.
+  indices: {
+    requiredFields: ['id'],
+    idField: 'id',
+    refs: [{ field: 'icone', catalog: 'visuels' }],
+    custom(entry, catalogs, path) {
+      const erreurs = [];
+      if (entry.id === 'indices_config') {
+        if (typeof entry.hieroglyphes !== 'string' || entry.hieroglyphes.trim().length === 0) {
+          erreurs.push(`${path} > hieroglyphes doit être une chaîne de signes non vide`);
+        }
+        return erreurs;
+      }
+      if (typeof entry.cle_titre !== 'string' || entry.cle_titre.length === 0) {
+        erreurs.push(`${path} > cle_titre doit être une clé de locale non vide`);
+      }
+      if (!Array.isArray(entry.lignes) || entry.lignes.length === 0 || !entry.lignes.every((c) => typeof c === 'string' && c.length > 0)) {
+        erreurs.push(`${path} > lignes doit être une liste non vide de clés de locale`);
+      }
+      if (entry.lisible_si !== undefined) {
+        erreurs.push(...erreursConditionVisibilite(entry.lisible_si, `${path} > lisible_si`, catalogs));
+        if (!(catalogs.indices || []).some((e) => e.id === 'indices_config')) {
+          erreurs.push(`${path} > lisible_si exige l'entrée "indices_config" (l'alphabet des hiéroglyphes)`);
+        }
+      }
+      return erreurs;
+    },
+  },
   menus: {
     requiredFields: ['id', 'cle_titre', 'cartes'],
     idField: 'id',

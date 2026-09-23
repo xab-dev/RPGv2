@@ -96,7 +96,8 @@ import { armerAudio, definirMusiqueActive, definirVolumeMaitre, palierSuivant } 
 import { creerEtatIndices } from './hints.js';
 import { estExpire, poserCooldown, tempsRestantMs } from './cooldowns.js';
 import { peutFabriquer, fabriquer, recettesDeStation } from './recipes.js';
-import { entreesVisibles } from './visibilite.js';
+import { entreesVisibles, estVisible } from './visibilite.js';
+import { entreesIndices } from './indices.js';
 import {
   decroitre as decroitreSurvie, consommer as consommerSurvie, appliquerMalusRespawn,
   calculerModulateur as calculerModulateurSurvie, configSurvie, jaugeSousLeSeuil,
@@ -2765,6 +2766,21 @@ export function creerOrchestrateurGrotte({
     });
   }
 
+  // Les Indices du menu (`indices.js`) : un indice illisible (sa `lisible_si`
+  // n'est pas tenue — le Nv.15 pour le premier) s'écrit en hiéroglyphes. Les
+  // conditions passent par LE registre de flags, relu à chaque affichage :
+  // l'indice devient lisible à l'instant où le héros monte de niveau.
+  function obtenirEntreesIndices() {
+    const catalogue = registre.tous('indices');
+    const config = catalogue.find((e) => e.id === 'indices_config');
+    return entreesIndices(catalogue.filter((e) => e !== config), {
+      estVisible: (indice) => estVisible(indice, flags),
+      estLisible: (condition) => flags.evaluate(condition),
+      traduire: (cle) => i18n.t(cle),
+      hieroglyphes: config ? config.hieroglyphes : '',
+    });
+  }
+
   // MT_hud-ligne-haute_2026-09-19 : la barre d'XP ayant quitté le HUD, la
   // progression doit rester lisible quelque part — c'est ici, avec les points
   // à dépenser, dans l'en-tête de l'écran Stats : visible quelle que soit la
@@ -4346,6 +4362,7 @@ export function creerOrchestrateurGrotte({
     // que cette seule fonction, jamais de connaître registre/save/i18n.
     obtenirEntreesStats: () => obtenirEntreesStats(),
     sousTitreStats: () => sousTitreStats(),
+    obtenirEntreesIndices: () => obtenirEntreesIndices(),
     // specs/05_construction-stations.md §3 : fournis à ui/menu.js via
     // menu.definirDisponibiliteConstruction()/definirEntreesConstruction()
     // (même patron que obtenirEntreesStats ci-dessus) — et exposés ici pour
@@ -4881,6 +4898,7 @@ export async function demarrerJeu() {
   // (le menu ne connaît ni la scène ni la position du héros).
   menu.definirEvaluateurCondition(orchestrateur.evaluerCondition);
   menu.definirEntreesConstruction(orchestrateur.entreesConstruction);
+  menu.definirEntreesIndices(orchestrateur.obtenirEntreesIndices);
 
   // specs/08_menus-cartes.md §5 — le câblage, dans les DEUX sens : toute carte
   // de `menus.json` trouve sa fonction, toute fonction enregistrée a sa carte,

@@ -21,6 +21,11 @@
         "cle_titre": "menu.construction", "cle_phrase": "menu.carte.construction_phrase",
         "icone": "visuel_icone_menu_construction", "cible": "ecran_construction",
         "condition": { "valeur": "stations_placables", "min": 1 }
+      },
+      {
+        "id": "carte_indices", "case": 3, "type": "dossier",
+        "cle_titre": "menu.carte.indices", "cle_phrase": "menu.carte.indices_phrase",
+        "icone": "visuel_icone_menu_indices", "cible": "ecran_indices"
       }
     ]
   },

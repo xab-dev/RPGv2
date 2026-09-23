@@ -102,7 +102,9 @@ const lireLocale = (l) => JSON.parse(fs.readFileSync(path.join(RACINE, 'locales'
 {
   const racine = MENUS.find((e) => e.racine);
   const dehors = resoudreCases(racine, () => false);
-  assert.deepEqual(dehors.map((c) => c && c.id), ['carte_heros', 'carte_parametres', null, null], 'hors de la Maison : la case contextuelle est VIDE, les autres ne glissent pas');
+  // Indices (Xav, 23/09) : hors de la Maison, la case contextuelle n'est plus
+  // vide — la candidate sans condition la prend.
+  assert.deepEqual(dehors.map((c) => c && c.id), ['carte_heros', 'carte_parametres', null, 'carte_indices'], 'hors de la Maison : les Indices prennent la case contextuelle, les autres ne glissent pas');
   const dedans = resoudreCases(racine, () => true);
   assert.deepEqual(dedans.map((c) => c && c.id), ['carte_heros', 'carte_parametres', null, 'carte_construction'], 'la case 2 est réservée : rien n\'y est jamais dessiné');
   assert.equal(dehors.length, 4, 'la taille de la grille ne dépend pas des conditions');
@@ -267,12 +269,14 @@ function monter({ vraies = ['stations_placables', 'plein_ecran_disponible'] } = 
   const [grille] = el.querySelectorAll('.cartes-grille');
   assert.equal(grille.children.length, 4);
   assert.deepEqual(grille.children.map((c) => c.dataset.case), ['0', '1', '2', '3']);
-  assert.deepEqual(grille.children.map((c) => c._classes[0]), ['carte', 'carte', 'carte-vide', 'carte-vide']);
+  // Hors de la Maison, les Indices tiennent la case 3 (Xav, 23/09) : la
+  // case 2, réservée, reste la case vide que la suite éprouve.
+  assert.deepEqual(grille.children.map((c) => c._classes[0]), ['carte', 'carte', 'carte-vide', 'carte']);
   assert.equal(grille.dataset.colonnes, '2');
 
   // Une case vide n'est pas focalisable : aucun écouteur, aucune classe de
   // carte, et ni le survol ni le clic n'y déplacent le focus.
-  const vide = grille.children[3];
+  const vide = grille.children[2];
   assert.deepEqual(vide._listeners, {}, 'une case vide n\'écoute rien');
   assert.equal(vide.children.length, 0, 'et ne dessine rien');
   vide.declencher('mouseenter');
@@ -403,13 +407,14 @@ function monter({ vraies = ['stations_placables', 'plein_ecran_disponible'] } = 
   menu.reafficher();
   assert.deepEqual([menu.estOuvert(), menu.obtenirEtat().ecran, menu.obtenirEtat().focus], [true, 'menu_heros', 1], 'elle réapparaît où on l\'avait laissée, focus sur Stats');
 
-  // La carte contextuelle disparaît pendant qu'un sous-écran est ouvert : le
-  // focus mémorisé ne doit jamais rester sur une case devenue vide.
+  // La carte contextuelle change pendant qu'un sous-écran est ouvert : depuis
+  // les Indices (Xav, 23/09), la case 3 ne devient plus vide — la candidate
+  // suivante la reprend, et le focus reste sur sa case.
   menu.ouvrir();
   parCarte('carte_construction').declencher('click');
   conditions.vraies = [];
   menu.reafficher();
-  assert.deepEqual([menu.obtenirEtat().focus, menu.obtenirEtat().cases[3]], [0, null], 'focus replié sur la première carte présente');
+  assert.deepEqual([menu.obtenirEtat().focus, menu.obtenirEtat().cases[3]], [3, 'carte_indices'], 'la case contextuelle passe à la candidate suivante, le focus reste sur elle');
 
   // Une fermeture programmatique ne rappelle pas `onFermer`, et `reafficher`
   // sur un menu fermé est sans effet.

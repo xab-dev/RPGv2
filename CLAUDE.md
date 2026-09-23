@@ -194,6 +194,8 @@ rpg_v2/
 │   ├── prologue.js         `specs/12` : les écrans de texte AVANT le symbole (pas de quête, pourquoi
 │   │                       c'est un jeu de rôle) — pur : fondu, appui armé, écran suivant ; écrans et
 │   │                       durées dans `data/prologue.json`, dessinés par `ui/ecran_prologue.js`
+│   ├── indices.js          les Indices du menu (23/09) : un indice illisible s'écrit en hiéroglyphes
+│   │                       (brouillage déterministe, alphabet dans `data/indices.json`) — pur
 │   ├── polices.js          `specs/12` : LES polices embarquées (`fonts/`, OFL) et leur chargement
 │   │                       `FontFace` au démarrage — « meilleur effort », repli `serif`
 │   ├── poussiere.js        traînée de poussière (héros, follet) : réserve de bouffées à capacité
@@ -313,6 +315,7 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 | **Éclats et coût des crafts : on ne touche pas** — la chaîne nuit → éclats → outils est voulue (« il faut faire un choix et ça se mérite ») | 2026-09-23 | NS alignement §1.11, `Q-69` |
 | **Produit** : à terme plus d'éléments que haTD, les trois actuels restent (D2) · open source assumé, payant ou portage possibles une fois fini, **aucune sollicitation directe de dons** (P1) · **pas de sauvegarde cloud** sans multijoueur réseau · double tampon OK, P3 (C5⑥) | 2026-09-23 | NS alignement §1.12-1.15 |
 | **Journal d'indices et de traces** : dernier bouton du menu principal (menu permanent), rappelle l'histoire parcourue, sous-page **Indices** de lore par zone, carnet du cryptex | 2026-09-23 | NS alignement §1.16 (D13/D16) |
+| **La carte Indices partage la case contextuelle** : dans la Maison, Construction ; partout ailleurs, Indices (seconde candidate, sans condition). Un indice se **voit** toujours mais ne se **lit** qu'une fois sa `lisible_si` tenue ; avant, il s'écrit en hiéroglyphes de Claude Code (brouillage déterministe, silhouette des mots gardée). Le premier, l'entrée de la grotte, se lit au Nv.15 et attend d'être câblé sur l'Annexe 1. *Précise* « menu permanent » : c'est le premier pas du journal d'indices et de traces | 2026-09-23 | demande de Xav, `src/indices.js`, `data/indices.json`, `Q-120`, `Q-121` |
 | **Licence : source visible, tous droits réservés** (`LICENSE`, FR/EN) : on lit le dépôt, on joue à l’adresse officielle, on le lance chez soi pour un usage personnel ; ni reprise, ni hébergement ailleurs, ni usage commercial sans accord écrit. *Précise* P1 « open source assumé » : le code est ouvert à la lecture, pas à la réutilisation — ce qui garde ouverts la version payante et le portage | 2026-09-23 | choix de Xav, présentation du dépôt GitHub |
 
 ## Ce qui est dû : dettes, questions, validations

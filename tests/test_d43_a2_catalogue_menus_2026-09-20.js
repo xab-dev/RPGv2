@@ -44,8 +44,11 @@ function refuse(abimer, motif, message) {
   assert.deepEqual(validerCatalogues(donnees), []);
   const racine = donnees.menus.find((e) => e.racine === true);
   assert.equal(racine.id, 'menu_racine');
-  assert.deepEqual(racine.cartes.map((c) => c.case), [0, 1, 3], 'Héros · Paramètres · (case 2 libre, rien n\'y est déclaré) · contextuelle');
+  // Indices (Xav, 23/09) : seconde candidate de la case contextuelle, SANS
+  // condition — elle occupe la case partout où Construction ne l'occupe pas.
+  assert.deepEqual(racine.cartes.map((c) => c.case), [0, 1, 3, 3], 'Héros · Paramètres · (case 2 libre, rien n\'y est déclaré) · contextuelle (Construction, sinon Indices)');
   assert.equal(carte(donnees.menus, 'carte_construction').condition !== undefined, true, 'la carte contextuelle porte une condition');
+  assert.equal(carte(donnees.menus, 'carte_indices').condition, undefined, 'les Indices sont la candidate par défaut');
   assert.deepEqual(ecran(donnees.menus, 'menu_heros').cartes.map((c) => c.cible), ['ecran_poche', 'ecran_stats'], 'pas de carte « Feu follet » tant que sa page n\'existe pas');
   // 'D-64' (T7) : une 4e bascule, le Volume. L'ecran passe de 2x2 a 3x2 —
   // la STRUCTURE des menus est gelee depuis le 21/09, une carte de plus dans
@@ -119,7 +122,9 @@ function refuse(abimer, motif, message) {
   refuse((menus) => { carte(menus, 'carte_construction').condition = { lieu: 'maison' }; }, /condition mal formée/, 'aucun nouveau format : { lieu } n\'existe pas');
   // Case contextuelle : des candidates ordonnées, jamais une carte morte.
   assert.deepEqual(erreursApres((menus) => {
-    ecran(menus, 'menu_racine').cartes.push({ ...carte(menus, 'carte_construction'), id: 'carte_jardinage', condition: { valeur: 'niveau', min: 99 } });
+    // Avant les Indices, la candidate sans condition qui ferme la case.
+    const cartes = ecran(menus, 'menu_racine').cartes;
+    cartes.splice(cartes.length - 1, 0, { ...carte(menus, 'carte_construction'), id: 'carte_jardinage', condition: { valeur: 'niveau', min: 99 } });
   }), [], 'deux candidates conditionnelles sur la même case : c\'est exactement la case contextuelle');
   refuse((menus) => {
     ecran(menus, 'menu_racine').cartes.push({ ...carte(menus, 'carte_heros'), id: 'carte_doublon', cible: 'menu_heros' });
@@ -147,7 +152,7 @@ function refuse(abimer, motif, message) {
   const enregistres = {
     actions: [...new Set(donnees.menus.flatMap((e) => e.cartes).map((c) => c.action).filter(Boolean))],
     etats: [...new Set(donnees.menus.flatMap((e) => e.cartes).map((c) => c.etat).filter(Boolean))],
-    ecrans: ['ecran_poche', 'ecran_stats', 'ecran_construction'],
+    ecrans: ['ecran_poche', 'ecran_stats', 'ecran_construction', 'ecran_indices'],
     valeurs: ['niveau', 'stations_placables', 'plein_ecran_disponible'],
   };
   assert.deepEqual(erreursCablageMenus(donnees.menus, enregistres), []);

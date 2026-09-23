@@ -196,6 +196,7 @@ export function afficherEcran(el, visible) {
 const ECRAN_POCHE = 'ecran_poche';
 const ECRAN_STATS = 'ecran_stats';
 const ECRAN_CONSTRUCTION = 'ecran_construction';
+const ECRAN_INDICES = 'ecran_indices';
 // Craft et Coffre ne sont cités par aucune carte (INTERACT les ouvre depuis le
 // monde) : ces deux ids ne servent qu'à nommer leur niveau dans la pile.
 const ECRAN_CRAFT = 'ecran_craft';
@@ -509,6 +510,9 @@ export function initialiserMenu({
   // Même patron pour Construction (§3) : liste des stations placable de la
   // structure où se trouve le héros — dépend de main.js (scène/position).
   let fournisseurEntreesConstruction = () => [];
+  // Et pour les Indices (`indices.js`) : ce qui est lisible dépend du niveau
+  // du héros et des flags, que seul main.js connaît.
+  let fournisseurEntreesIndices = () => [];
   // Et pour les conditions des cartes (`flags.evaluate`, qui vit dans
   // l'orchestrateur). Tant qu'il n'est pas fourni, AUCUNE condition n'est
   // vraie : une carte qu'on ne sait pas évaluer ne s'affiche pas (même
@@ -555,6 +559,12 @@ export function initialiserMenu({
       obtenirEntrees: () => fournisseurEntreesStats(), sousTitre: () => fournisseurSousTitreStats(),
     }),
     [ECRAN_CONSTRUCTION]: () => navigation.empiler(niveauConstruction()),
+    // Les Indices : maître-détail en lecture seule (aucune entrée n'a
+    // d'action — la fiche n'a donc pas de bouton).
+    [ECRAN_INDICES]: () => navigation.empiler({
+      vue: ecranFiches, id: ECRAN_INDICES, titre: i18n.t('menu.indices_titre'),
+      obtenirEntrees: () => fournisseurEntreesIndices(), texteVide: i18n.t('menu.indices_vide'),
+    }),
   };
 
   const menuCartes = creerMenuCartes({
@@ -666,6 +676,10 @@ export function initialiserMenu({
     // coup (dépend de la scène/position, que ce module ne connaît pas).
     definirEntreesConstruction(fn) {
       fournisseurEntreesConstruction = fn;
+    },
+    // Les entrées de l'écran Indices, fournies de même par main.js.
+    definirEntreesIndices(fn) {
+      fournisseurEntreesIndices = fn;
     },
     // Fournit l'action réelle de reinitialiserPartie() après la construction
     // de l'orchestrateur (voir commentaire sur `actionReinitialiser`

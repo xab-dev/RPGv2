@@ -13,6 +13,8 @@ une pierre cachée et un objet qui ne sert à rien. Les deux sont réunis : la p
 **Ce que ce ticket ne prouve pas** : le téléphone (pas capturé), ni le goût. Les captures PC sous Chrome
 sans fenêtre ne remplacent pas le regard de Xav.
 
+**Verdict** : Xav, 24/09 : « V-130: all good » — validée en jeu (consigné par Claude). Reste ouverte : `Q-128`, que seul Xav tranche. Branche **non fusionnée, non poussée**. Suite annoncée : relecture du projet par Xav, puis préparation de l'Annexe 1.
+
 <details>
 <summary><strong>Solution</strong> (ne l'ouvre que si tu veux savoir)</summary>
 

@@ -153,9 +153,10 @@ export function selectionnerOption(etat, dialogue, index) {
 // bulle). `arme` : la machine à écrire a fini ET le délai d'armement est écoulé
 // (état existant de la bulle, jamais recalculé ici).
 //
-// Un appui non armé est COMPTÉ, pas exaucé (§4.1, §4.2) : il ne complète plus
-// la ligne, il ne saute rien. C'est ce qui était jusqu'ici ignoré en silence,
-// et c'est la moitié de la mesure.
+// Un appui non armé est COMPTÉ (§4.1) : c'est ce qui était jusqu'ici ignoré en
+// silence, et c'est la moitié de la mesure. Ce module ne dit rien de ce que la
+// bulle en fait à l'écran : depuis `Q-107` (Xav, 23/09), elle complète la ligne
+// comme avant — le geste reste, seul son prix est nouveau.
 export function avancerConversation(etat, dialogue, verbeAvancer, arme) {
   if (!verbeAvancer || etat.termine) return etat;
   if (!arme) return { ...etat, spamCompte: etat.spamCompte + 1, lectureIntacte: false };
@@ -370,13 +371,21 @@ export function creerDialogue({ paginer = null } = {}) {
   }
 
   // Un appui, d'où qu'il vienne (bouton, touche, doigt sur la bulle) : UN
-  // chemin. Non armé : compté, rien d'autre — la ligne continue de s'écrire
-  // à son rythme. Armé sur une fenêtre intermédiaire : la fenêtre suivante,
-  // sans passer par le graphe (un nœud long reste UN nœud).
+  // chemin. Non armé : compté, ET la ligne en cours d'écriture se complète
+  // d'un coup, comme pour toute réplique (`Q-107`, Xav, 23/09 : « les deux en
+  // même temps » — le lecteur rapide garde son geste, il le paie). L'armement,
+  // lui, repart de zéro : la ligne complétée n'est pas encore avançable, donc
+  // un spam continu ne saute toujours rien. Armé sur une fenêtre
+  // intermédiaire : la fenêtre suivante, sans passer par le graphe (un nœud
+  // long reste UN nœud).
   function appuyerConversation() {
     const arme = estArmee();
     if (!arme) {
       conversation.etat = avancerConversation(conversation.etat, conversation.donnees, true, false);
+      if (!ligneComplete()) {
+        charsAffiches = texteLigne(index).length;
+        msDepuisAffichageComplet = 0;
+      }
       return;
     }
     if (index < lignes.length - 1) {

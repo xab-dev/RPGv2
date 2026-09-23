@@ -94,7 +94,7 @@ avancer(etat, dialogue, verbeAvancer, arme)   // arme = la machine à écrire a 
 deplacerSelection(etat, direction)
 resultat(etat)                           → { consequences: [...], vu: true }
 ```
-- **Spam** : `verbeAvancer` reçu alors que `arme === false` → `spamCompte += 1`. L'armement existant ne bouge pas (le texte finit toujours de s'écrire) ; on **compte** ce qui était jusqu'ici ignoré en silence.
+- **Spam** : `verbeAvancer` reçu alors que `arme === false` → `spamCompte += 1`. L'armement existant ne bouge pas ; on **compte** ce qui était jusqu'ici ignoré en silence. *Amendé le 23/09 (`Q-107`, Xav : « les deux en même temps »)* : l'appui pendant l'écriture **complète la ligne comme avant** et est compté ; la ligne complétée n'est pas encore armée, donc un spam continu ne saute toujours rien.
 - **Lecture complète** : `lectureIntacte` vaut `true` tant que `spamCompte === 0` **sur tout le dialogue**. Pas d'estimation de temps de lecture (`[OUVERT]` 1).
 - À la clôture, `resultat` rend la liste des conséquences **dans l'ordre** : celles des options choisies, puis le poids de spam (`spam_par_occurrence × spamCompte`, plafonné par `spam_plafond_par_dialogue`), puis `lecture_complete` si intacte. **Les répliques comptent aussi** : spammer une ligne de lore coûte, la lire rapporte — c'est la moitié de la mesure.
 - `dialogue.js` **n'écrit rien** : `main.js` reçoit le résultat et appelle `modifierAlignement(delta, 'dialogue:' + id)`, pose les flags, active les effets. Un seul appelant, un seul ordre.
@@ -102,7 +102,7 @@ resultat(etat)                           → { consequences: [...], vu: true }
 ### 4.2 Rendu et entrées
 - La boîte existante gagne une **liste d'options sous le texte**, dessinée au même calque, dans la même boîte (pas de menu, pas de DOM). Sélection = curseur `▸` et surlignage ; l'option `defaut` est sélectionnée à l'ouverture.
 - Verbes : `MOVE` haut/bas déplace la sélection (pas de répétition au maintien : une poussée, un cran — `D-18` n'est pas requise pour 4 lignes) ; **le verbe qui avance aujourd'hui** confirme. Aucun nouveau verbe. Clavier et manette : par les verbes, donc rien à mapper. **Tactile : chaque option est une zone qui répond au doigt**, comme les boutons du HUD (`hud_layout.js`, patron `D-142` des zones qui suivent le monde) ; un tap sur une option la sélectionne, un second tap ou le tap sur le texte confirme — `[OUVERT]` 2.
-- Les options n'apparaissent **qu'après l'armement** : on ne peut pas choisir ce qu'on n'a pas lu. Un spam pendant l'écriture est compté, pas exaucé.
+- Les options n'apparaissent **qu'après l'armement** : on ne peut pas choisir ce qu'on n'a pas lu. Un spam pendant l'écriture est compté ; il complète la ligne (`Q-107`) mais n'avance jamais.
 - Pendant une conversation, le jeu reste gelé ; le follet **reste dessiné** (on lui parle). Le texte flottant, la nuit, le Chaos attendent, comme aujourd'hui.
 
 ---

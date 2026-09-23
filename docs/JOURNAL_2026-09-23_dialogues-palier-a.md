@@ -26,6 +26,8 @@ Branche `dialogues-2026-09-23`. Pas de push.
 | `17f2c4d` | Ménage | Journal du palier C de la spec 10 archivé, ligne INDEX ; `Q-98` à `Q-103` ouvertes (les six `[OUVERT]` de la spec §11), `Q-104` (contradiction spec §6 / `D-09`) |
 | `56b18d4` | Spec 11, palier A | Le moteur de conversation, la bulle à options, le tap, le dialogue de la maison. Suite : **157 fichiers verts** |
 
+| (5) | `Q-107` : les deux à la fois | Retour de Xav après `V-104` (« tout fonctionne ») : l'appui pendant l'écriture complète la ligne **et** compte −0,25. `Q-104` tranchée (« on garde tel quel »), `V-104` validée |
+
 ## Ce qui a été fait
 
 - **`dialogue.js`** : une couche PURE de conversation (`ouvrirConversation`,
@@ -71,7 +73,7 @@ Branche `dialogues-2026-09-23`. Pas de push.
 - Un nœud sans option peut porter une `suite` (réplique qui continue) : il en
   faudra au palier B pour migrer `dlg_grotte_tuto_combat` (deux lignes).
 - Hors liste de fichiers : `touch.js`, `alignement.js` → `Q-106`.
-- Un appui pendant l'écriture ne complète plus la ligne, en conversation → `Q-107`.
+- Un appui pendant l'écriture ne complétait plus la ligne, en conversation → `Q-107`. **Tranchée par Xav** : il la complète de nouveau, et reste compté (commit 5).
 - Pas de compteur `spam: n` en direct dans le relevé → `Q-107`.
 - Textes des options : propositions → `Q-108`.
 - Trois tests d'avant ajustés, contrat inchangé : `test_d124` (la ligne de Xav
@@ -91,6 +93,6 @@ juge pas en capture.
 ## Ouvert pour Xav
 
 - `V-104` ; `Q-98` à `Q-108`.
-- Suite : le palier B (effets de monde, `toit_occulte`, migration de tous les
-  dialogues) — après `V-104`, et après ta réponse à `Q-104` et `Q-107`, qui
-  changent ce que la migration fait.
+- `V-104` validée, `Q-104` et `Q-107` tranchées : plus rien ne bloque le
+  palier B (effets de monde, `toit_occulte`, migration de tous les dialogues,
+  `dlg_recette_indisponible` gardé).

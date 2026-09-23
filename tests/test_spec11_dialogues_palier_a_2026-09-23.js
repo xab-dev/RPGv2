@@ -214,11 +214,18 @@ function armer(dialogue) {
   let resultat = null;
   dialogue.demarrerConversation(ESSAI, { resoudre, poids: POIDS, onResultat: (r) => { resultat = r; } });
   dialogue.maj(10);
-  const partiel = dialogue.ligneCourante().texte.length;
+  const complet = resoudre('n1').texte;
+  assert.ok(dialogue.ligneCourante().texte.length < complet.length);
   dialogue.traiterInput(verbes({ attack: true }));
-  assert.equal(dialogue.ligneCourante().texte.length, partiel, 'un appui pendant l’écriture ne complète plus la ligne');
-  assert.equal(dialogue.etatConversation().spamCompte, 1, 'il est compté');
-  assert.equal(dialogue.ligneCourante().options, null, 'pas d’options avant la fin de l’écriture');
+  // `Q-107` (Xav, 23/09) : les deux à la fois — la ligne se complète comme
+  // avant, et l'appui est compté.
+  assert.equal(dialogue.ligneCourante().texte, complet, 'un appui pendant l’écriture complète la ligne');
+  assert.equal(dialogue.etatConversation().spamCompte, 1, 'et il est compté');
+  assert.equal(dialogue.ligneCourante().arme, false, 'complétée à l’instant : pas encore armée');
+  assert.equal(dialogue.ligneCourante().options, null, 'donc pas encore d’options');
+  dialogue.traiterInput(verbes({ attack: true }));
+  assert.equal(dialogue.etatConversation().spamCompte, 2, 'un second appui avant l’armement est compté aussi');
+  assert.equal(dialogue.etatConversation().noeud, 'n1', 'et ne saute rien');
 
   armer(dialogue);
   assert.deepEqual(dialogue.ligneCourante().options, resoudre('n1').options, 'armée : les options apparaissent');

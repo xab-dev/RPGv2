@@ -32,4 +32,4 @@ pas de push.
   l'olive.
 - `test_d134` supposait que tout ornement est un ornement de Haut ; le seuil
   devient le contrat général, ceux du follet restent en Haut seul.
-- À voir en jeu : `V-109`.
+- `V-109` validée par Xav le 23/09 (« all good ! »), puis poussée sur sa demande.

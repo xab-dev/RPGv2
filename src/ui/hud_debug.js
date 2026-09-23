@@ -61,6 +61,7 @@ export function creerMoniteurInactif() {
     enregistrerPositionHero: rien,
     enregistrerPeripherique: rien,
     enregistrerEntites: rien,
+    definirSourceAlignement: rien,
   };
 }
 
@@ -93,6 +94,10 @@ export function creerMoniteurPerf({ document, search, peripheriqueActifInitial =
   let dernierRecalculHorodatageMs = null;
   let dernierEntites = { monstres: 0, puzzles: 0, objetsSol: 0 };
   let peripheriqueCourant = peripheriqueActifInitial;
+  // `specs/10` §6 : une SOURCE, interrogée au rythme de l'affichage (≤ 4 fois
+  // par seconde), plutôt qu'une valeur poussée à chaque frame — l'alignement
+  // bouge rarement, et le moniteur n'a pas à savoir qui l'écrit.
+  let sourceAlignement = null;
 
   // --- DOM : créé UNE fois ici, jamais si la branche ci-dessus est prise ---
   const el = document.createElement('div');
@@ -173,6 +178,7 @@ export function creerMoniteurPerf({ document, search, peripheriqueActifInitial =
       canvasVoile: statsCanvasVoile(),
       peripheriqueActif: peripheriqueCourant,
       basculesParSeconde: compteurPeripherique.basculesParSeconde(tMs),
+      alignement: sourceAlignement ? sourceAlignement() : null,
     };
   }
 
@@ -216,6 +222,9 @@ export function creerMoniteurPerf({ document, search, peripheriqueActifInitial =
     },
     enregistrerEntites(entites) {
       dernierEntites = entites;
+    },
+    definirSourceAlignement(source) {
+      sourceAlignement = source;
     },
   };
 }

@@ -175,6 +175,13 @@ export function formaterReleve(etat) {
     `calque statique : ${etat.coucheStatique ? `${etat.coucheStatique.largeur}x${etat.coucheStatique.hauteur}px` : 'pas encore construit'}`,
     `calque d'obscurité : ${etat.canvasVoile ? `${etat.canvasVoile.largeur}x${etat.canvasVoile.hauteur}px` : 'absent (scène sans obscurité)'}`,
     `périphérique actif : ${etat.peripheriqueActif} (${etat.basculesParSeconde.toFixed(2)} bascule(s)/s)`,
+    // `specs/10` §6 : sans cette ligne, un relevé pris sous `?alignement=N`
+    // serait indiscernable d'un autre — même raison que la ligne d'échelle.
+    // « non relevé » n'est pas un repli : c'est ce qu'on dit quand aucune
+    // source n'a été branchée, plutôt que d'afficher un 0 qu'on n'a pas lu.
+    etat.alignement
+      ? `alignement : ${etat.alignement.valeur}${etat.alignement.forcee ? ' (forcé par ?alignement)' : ''} — régime ${etat.alignement.regime}, palier ${etat.alignement.palier}`
+      : 'alignement : non relevé',
   ];
   return lignes.join('\n');
 }

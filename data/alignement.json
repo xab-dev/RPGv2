@@ -1,0 +1,18 @@
+[
+  {
+    "id": "alignement_config",
+    "bornes": { "min": -5, "max": 5 },
+    "paliers": [
+      { "des": 1, "palier": 1 },
+      { "des": 3, "palier": 2 },
+      { "des": 5, "palier": 3 }
+    ],
+    "orbite": { "duree_inversion_ms": 800 },
+    "poids_defaut": {
+      "spam_par_occurrence": -0.25,
+      "spam_plafond_par_dialogue": -1,
+      "lecture_complete": 0.1,
+      "mort": 0
+    }
+  }
+]

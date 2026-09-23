@@ -2415,6 +2415,70 @@ SCHEMAS.graphismes = {
 };
 
 // Catalogues déclarés mais non figés (contenu réel figé phase après phase).
+// `specs/10_alignement-follet.md` §5 : l'alignement caché. Son propre
+// catalogue, et surtout PAS `stats.json` — l'écran Stats et le bandeau de
+// buffs itèrent `stats.json` (`D-13`, `D-141`), y mettre l'alignement serait
+// l'afficher. Une entrée de configuration, même patron que `graphismes`.
+//
+// Ce que le schéma fait tenir : des bornes qui encadrent 0 (0 est le neutre,
+// §0), des paliers qui MONTENT (sinon « le plus haut palier atteint » de
+// `alignement.js#regime` ne voudrait plus rien dire) et dont le dernier seuil
+// est atteignable (au-delà des bornes, un palier serait déclaré et jamais vu).
+// `poids_defaut` n'est lu par personne avant la spec 11, mais il est validé
+// dès maintenant : une faute de frappe ne doit pas attendre qu'on s'en serve.
+SCHEMAS.alignement = {
+  requiredFields: ['id'],
+  idField: 'id',
+  refs: [],
+  custom(entry, catalogs, path) {
+    const erreurs = [];
+    if (entry.id !== 'alignement_config') {
+      erreurs.push(`${path} > seule l'entrée "alignement_config" est attendue dans ce catalogue`);
+      return erreurs;
+    }
+    const b = entry.bornes;
+    if (!b || typeof b.min !== 'number' || typeof b.max !== 'number' || !(b.min < 0 && b.max > 0)) {
+      erreurs.push(`${path} > bornes doit être { min < 0, max > 0 } (0 est le neutre)`);
+      return erreurs;
+    }
+    if (!Array.isArray(entry.paliers) || entry.paliers.length === 0) {
+      erreurs.push(`${path} > paliers doit être un tableau non vide de { des, palier }`);
+      return erreurs;
+    }
+    let precedent = null;
+    entry.paliers.forEach((p, i) => {
+      const chemin = `${path} > paliers[${i}]`;
+      if (!p || typeof p.des !== 'number' || p.des <= 0) {
+        erreurs.push(`${chemin} > des doit être un nombre > 0 (sous le premier seuil, c'est la bande morte)`);
+        return;
+      }
+      if (!Number.isInteger(p.palier) || p.palier <= 0) {
+        erreurs.push(`${chemin} > palier doit être un entier > 0 (0 est réservé au neutre)`);
+        return;
+      }
+      if (precedent && (p.des <= precedent.des || p.palier <= precedent.palier)) {
+        erreurs.push(`${chemin} > seuils et paliers doivent être strictement croissants`);
+      }
+      if (p.des > Math.min(-b.min, b.max)) {
+        erreurs.push(`${chemin} > des (${p.des}) dépasse les bornes : ce palier ne serait jamais atteint`);
+      }
+      precedent = p;
+    });
+    if (!entry.orbite || typeof entry.orbite.duree_inversion_ms !== 'number' || entry.orbite.duree_inversion_ms <= 0) {
+      erreurs.push(`${path} > orbite.duree_inversion_ms doit être un nombre > 0`);
+    }
+    const poids = entry.poids_defaut;
+    if (!poids || typeof poids !== 'object') {
+      erreurs.push(`${path} > poids_defaut manquant`);
+    } else {
+      for (const cle of ['spam_par_occurrence', 'spam_plafond_par_dialogue', 'lecture_complete', 'mort']) {
+        if (typeof poids[cle] !== 'number') erreurs.push(`${path} > poids_defaut.${cle} doit être un nombre`);
+      }
+    }
+    return erreurs;
+  },
+};
+
 const CATALOGUES_MINIMAUX = ['armors', 'accessories', 'skills', 'crops', 'journal_entries'];
 
 for (const nom of CATALOGUES_MINIMAUX) {

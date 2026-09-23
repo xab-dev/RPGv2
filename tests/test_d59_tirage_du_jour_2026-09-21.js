@@ -143,7 +143,7 @@ const items = registre.tous('items').filter((i) => i.spawn);
 // aube jouée — un joueur qui reprend sa partie de nuit ne verrait rien du
 // nouveau semis.
 {
-  assert.equal(VERSION_SCHEMA_COURANTE, 7);
+  assert.equal(VERSION_SCHEMA_COURANTE, 8);
   const v5 = {
     ...saveNeuve(),
     schema_version: 5,
@@ -154,7 +154,7 @@ const items = registre.tous('items').filter((i) => i.spawn);
     },
   };
   const migre = migrer(v5);
-  assert.equal(migre.schema_version, 7);
+  assert.equal(migre.schema_version, VERSION_SCHEMA_COURANTE);
   assert.deepEqual(migre.monde.items_sol, {}, "les positions de l'ancien tirage doivent partir");
   assert.deepEqual(migre.monde.respawns_en_attente, {}, "les délais en attente pointaient vers l'ancien monde");
   assert.equal(migre.monde.jour, 0);

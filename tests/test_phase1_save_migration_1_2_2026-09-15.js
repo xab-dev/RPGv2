@@ -31,7 +31,7 @@ import { migrer, VERSION_SCHEMA_COURANTE, creerStoreMemoire, sauvegarder, charge
 // que 1 -> 2, qui reste valide telle quelle en appelant migrer(..., 2)
 // explicitement ci-dessus.
 {
-  assert.equal(VERSION_SCHEMA_COURANTE, 7);
+  assert.equal(VERSION_SCHEMA_COURANTE, 8);
 }
 
 // 3. Cycle complet écrire/relire d'une sauvegarde v1 migrée automatiquement

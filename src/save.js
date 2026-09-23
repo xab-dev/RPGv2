@@ -3,7 +3,7 @@
 // valeur) } — IndexedDB en jeu (src/storage_indexeddb.js), un store en
 // mémoire dans les tests (creerStoreMemoire ci-dessous).
 
-export const VERSION_SCHEMA_COURANTE = 7;
+export const VERSION_SCHEMA_COURANTE = 8;
 const CLE_ACTUELLE = 'save_current';
 const CLE_SUIVANTE = 'save_next';
 
@@ -39,6 +39,13 @@ export const COULEUR_HERO_NEUTRE = '#8f8f8f';
 // point libre — cohérent avec levels.json[0] (niveau_1, xp_cumulee 0).
 const HERO_NIVEAU_DEPART = 1;
 
+// `specs/10` §2.1 : un héros naît neutre. Une seule source, reprise par
+// saveNeuve() ET par la migration 7 -> 8 (même raison qu'`etatInitialSurvie`).
+// Ce n'est pas un réglage d'équilibrage : 0 est le neutre par définition des
+// bornes `[-5 ; +5]`, et le schéma d'`alignement.json` exige qu'elles
+// l'encadrent.
+const ALIGNEMENT_DEPART = 0;
+
 // Palier C (§3.3) : une SEULE source pour l'état de survie initial, reprise
 // par saveNeuve() ET par la migration 3 -> 4 ci-dessous — deux littéraux
 // dupliqués avaient dérivé silencieusement sans se contredire pour l'instant,
@@ -73,6 +80,10 @@ export function saveNeuve() {
       // des effets temporaires en cours (ex. le fruit cuit) — status.js#
       // tickBuffsActifs/ajouterBuffActif.
       buffs_actifs: {},
+      // `specs/10` §2.1 : l'alignement caché, 0 = neutre. Écrit par UN seul
+      // point (`main.js#modifierAlignement`), relu par `alignement.js#
+      // lireAlignement`, qui refuse son absence plutôt que d'y substituer 0.
+      alignement: ALIGNEMENT_DEPART,
     },
     // items : poche (03_maison-exterieur §3.3), { id: quantite }.
     inventaire: { eclats: 0, items: {} },
@@ -272,11 +283,22 @@ function migrer_6_vers_7(payload) {
   return migre;
 }
 
+// Migration 7 -> 8 (`specs/10_alignement-follet.md` §2.1) : l'alignement
+// caché entre dans la sauvegarde, écrit EXPLICITEMENT à 0 sur toute partie
+// antérieure. Explicitement, parce qu'après cette migration l'absence du champ
+// est un échec dur au chargement (`alignement.js#lireAlignement`) : un champ
+// optionnel qu'on lirait « ?? 0 » masquerait un branchement oublié.
+// Une partie antérieure n'a rien fait qui pèse sur l'alignement (aucune source
+// n'existait) : 0 est sa vraie valeur, pas un défaut.
+function migrer_7_vers_8(payload) {
+  return { ...payload, schema_version: 8, hero: { ...payload.hero, alignement: ALIGNEMENT_DEPART } };
+}
+
 // Chaîne de migrations, une fonction par palier. Un paramètre permet aux
 // tests d'injecter une chaîne fictive sans toucher à la table de production.
 const MIGRATIONS_PRODUCTION = {
   1: migrer_1_vers_2, 2: migrer_2_vers_3, 3: migrer_3_vers_4, 4: migrer_4_vers_5,
-  5: migrer_5_vers_6, 6: migrer_6_vers_7,
+  5: migrer_5_vers_6, 6: migrer_6_vers_7, 7: migrer_7_vers_8,
 };
 
 export function migrer(payload, versionCible = VERSION_SCHEMA_COURANTE, migrations = MIGRATIONS_PRODUCTION) {

@@ -109,6 +109,9 @@ import { dessinerHudHints } from './ui/hud_hints.js';
 import { dessinerDialogue, creerPaginateurDialogue } from './ui/dialogue_box.js';
 import { creerMoniteurPerf, creerMoniteurInactif } from './ui/hud_debug.js';
 import { lireEchelleForcee } from './debug_perf.js';
+import {
+  configAlignement, regime as regimeAlignement, appliquerDelta, lireAlignement, lireAlignementForce,
+} from './alignement.js';
 
 // Provisoires, non validés en jeu par Xav — seuils uniques, commentés ici.
 // VITESSE_HERO_PX_S est retirée en Palier C (specs/04_maison-interieur.md
@@ -642,6 +645,10 @@ export function creerOrchestrateurGrotte({
   // notification, donc un seul endroit à relire — jamais une ligne recopiée
   // derrière chaque appelant (`D-72`). No-op par défaut, comme `onEtatUi`.
   onGraphismesAppliques = () => {},
+  // `specs/10` §6 : `?alignement=N`, DÉJÀ lu et validé par `demarrerJeu`
+  // (l'orchestrateur ne lit pas l'URL). `null` = ne force rien — c'est le
+  // défaut, un test headless n'a rien à fournir.
+  alignementForce = null,
 }) {
   // Les leviers sont lus UNE fois, ici : au-delà de cette ligne, plus personne
   // ne connaît le mot « bas ». Chaque système reçoit un nombre.
@@ -666,6 +673,42 @@ export function creerOrchestrateurGrotte({
   // (`hints.js#annoncer` rend faux) — jamais perdue, jamais forcée.
   let annoncePendante = null;
   let etatModifie = false;
+
+  // `specs/10_alignement-follet.md` §2.3 : l'alignement caché.
+  const reglageAlignement = configAlignement(registre);
+
+  // LE seul point qui écrit `save.hero.alignement`. Il borne, il journalise
+  // sous `?debug=fps`, et il ne fait RIEN d'autre : aucun effet n'est
+  // déclenché à l'écriture, les effets sont relus à chaque frame par le follet
+  // (paliers B et C). C'est ce point que la spec 11 branchera — spam, lecture,
+  // options de dialogue sont des appelants, jamais des cas particuliers.
+  // `source` est une étiquette libre pour le journal (`'debug'`, `'test'`,
+  // plus tard `'dialogue:dlg_maison'`), jamais lue par le jeu.
+  //
+  // Sous `?alignement=N`, l'écriture atteint quand même la sauvegarde : la
+  // valeur forcée masque la vraie pour la session, elle ne la remplace pas —
+  // retirer le paramètre rend exactement ce que la partie a accumulé.
+  function modifierAlignement(delta, source) {
+    const avant = lireAlignement(save.hero, reglageAlignement.bornes);
+    const { valeur, ecart } = appliquerDelta(avant, delta, reglageAlignement.bornes);
+    save.hero.alignement = valeur;
+    if (ecart !== 0) etatModifie = true;
+    if (moniteurPerf.actif) console.info('[alignement]', { source, delta, ecart, valeur });
+    return { valeur, ecart };
+  }
+
+  // Ce que le jeu voit : la valeur forcée par l'URL si elle existe, sinon celle
+  // de la sauvegarde, relue (et donc revérifiée) à chaque appel. Le régime
+  // passe par `alignement.js#regime` et par lui seul.
+  function etatAlignement() {
+    const valeur = alignementForce !== null
+      ? alignementForce
+      : lireAlignement(save.hero, reglageAlignement.bornes);
+    return { valeur, forcee: alignementForce !== null, ...regimeAlignement(valeur, reglageAlignement) };
+  }
+  // Le relevé `?debug=fps` interroge cette source à son propre rythme (≤ 4
+  // fois par seconde) : rien n'est poussé par frame, rien hors de ce mode.
+  moniteurPerf.definirSourceAlignement(etatAlignement);
 
   // Silhouettes de tuiles (03_maison-exterieur §3.3) : résolu UNE fois (pas
   // par scène, contrairement à `decor` — tiles.json est un catalogue global)
@@ -3766,6 +3809,10 @@ export function creerOrchestrateurGrotte({
     obtenirIntro: () => intro,
     obtenirDepart: () => depart,
     obtenirSave: () => save,
+    // `specs/10` §2.3 : LE point d'écriture, et ce que le jeu lit de
+    // l'alignement. Exposés pour les tests et pour la spec 11.
+    modifierAlignement,
+    etatAlignement,
     dialogueOuvert: () => dialogue.estOuvert(),
     dialogueLigneCourante: () => dialogue.ligneCourante(),
     obtenirAnneauAttaqueMs: () => anneauAttaqueMs,
@@ -3934,6 +3981,24 @@ export async function demarrerJeu() {
   const store = creerStoreIndexedDB();
   const { payload: save } = await chargerSave(store);
   i18n.definirLangue(save.settings.lang);
+
+  // `specs/10` §2.1 : après la migration 7 -> 8, une sauvegarde sans
+  // `hero.alignement` (ou hors bornes) est un échec DUR, dit par le même écran
+  // que les catalogues — jamais un repli sur 0, qui masquerait l'écrivain
+  // oublié. Vérifié ici, avant toute boucle : relu en pleine partie, le même
+  // défaut ferait lever la boucle de jeu.
+  const reglageAlignement = configAlignement(registre);
+  try {
+    lireAlignement(save.hero, reglageAlignement.bornes);
+  } catch (erreur) {
+    afficherErreurBoot([erreur.message]);
+    return;
+  }
+  // `?alignement=N` (§6) : lu ici, une seule fois, avec les bornes des
+  // données. Il masque la valeur de la sauvegarde pour la session et n'est
+  // JAMAIS persisté (l'orchestrateur ne l'écrit nulle part), comme `?qualite`.
+  const alignementDebug = lireAlignementForce(window.location.search, reglageAlignement.bornes);
+  if (alignementDebug.avertissement) console.warn(alignementDebug.avertissement);
 
   // `specs/09_reglages-graphiques.md` palier B : le réglage graphique est
   // RÉSOLU au démarrage, et rien n'en dépend encore — les leviers se branchent
@@ -4259,6 +4324,7 @@ export async function demarrerJeu() {
     // l'une ni l'autre (il doit rester importable depuis Node).
     graphismes,
     registre, i18n, save, store, dialogue, menu, input, ctxLogique, ctxVisible, canvasLogique,
+    alignementForce: alignementDebug.valeur,
     onPremierGeste: armerAudioUneFois,
     moniteurPerf,
     // La PRÉSENCE de la carte « Plein écran » est une condition de

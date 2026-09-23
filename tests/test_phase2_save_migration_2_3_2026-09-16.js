@@ -63,7 +63,7 @@ function payloadV2(scene = 'scene_grotte_salle_1') {
 // que 2 -> 3, qui reste valide telle quelle en appelant migrer(..., 3)
 // explicitement partout ci-dessus.
 {
-  assert.equal(VERSION_SCHEMA_COURANTE, 7);
+  assert.equal(VERSION_SCHEMA_COURANTE, 8);
 }
 
 // 5. Cycle complet écrire/relire d'une v2 migrée automatiquement au

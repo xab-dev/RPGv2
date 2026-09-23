@@ -107,7 +107,11 @@ rpg_v2/
 │   │                       (follets non élus qui repartent) — propre à la Grotte, pas un moteur
 │   │                       de cinématiques généralisé
 │   ├── save.js             double tampon, versions + migrations (v7 : le contenu du coffre
-│   │                       descend dans l'instance qui le porte), reinitialiserSauvegarde()
+│   │                       descend dans l'instance qui le porte ; v8 : `hero.alignement` écrit
+│   │                       à 0), reinitialiserSauvegarde()
+│   ├── alignement.js       `specs/10` : l'alignement CACHÉ — `regime` (LE calcul du régime et du
+│   │                       palier), bornage, `lireAlignement` (absence = échec dur, jamais 0),
+│   │                       `?alignement=N` ; seul écrivain : `main.js#modifierAlignement`
 │   ├── flags.js            registre de flags + conditions all/any/not + `initial` (persistance)
 │   ├── stats.js            stats primaires + dérivées (formule linéaire) + modulateur de survie
 │   │                       (`appliquerModulateurSurvie`, Phase 3)

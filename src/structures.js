@@ -43,7 +43,6 @@ export function calculerOpaciteToit(hero, structure, tileSize, { rayonEffacement
 // rien (tous les leviers aujourd'hui), donc AUCUN changement de rendu pour
 // eux (§3 : "leviers : 1, inchangés").
 export const ECHELLE_INTERACTIF_DEFAUT = 1;
-export const ECHELLE_STATION_PROVISOIRE = 2.1;
 
 // Boîte englobante des primitives d'un visuel (jamais l'ombre, purement
 // visuelle) à l'échelle donnée, relative au point (0,0) où dessinerVisuel()

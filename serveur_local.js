@@ -23,6 +23,8 @@ const TYPES_MIME = {
   // Ticket L2 : les calques du symbole. Servie en `octet-stream`, une image SVG
   // ne se décode pas — le logo serait absent sans erreur visible.
   '.svg': 'image/svg+xml',
+  // `specs/12` : les polices du prologue (`fonts/`), chargées par `FontFace`.
+  '.ttf': 'font/ttf',
 };
 
 // `D-181` : le chemin absolu à servir, ou `null` si la requête sort de la

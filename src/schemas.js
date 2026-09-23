@@ -1413,6 +1413,9 @@ function validerMenu(entry, catalogs, path) {
 // catalogue — d'où le champ `arme` validé en référence ci-dessous.
 export const CATEGORIES_ITEM = ['ressource', 'nourriture', 'valeur', 'outil', 'arme'];
 
+// `specs/12` : les signes alchimiques que le prologue sait dessiner.
+export const GLYPHES_PROLOGUE = ['air', 'eau', 'feu', 'terre'];
+
 export const SCHEMAS = {
   elements: {
     requiredFields: ['id', 'label_key', 'icon', 'shape'],
@@ -2505,6 +2508,12 @@ export const SCHEMAS = {
         if (typeof entry[champ] !== 'number' || !(entry[champ] >= 0)) {
           erreurs.push(`${path} > ${champ} doit être un nombre de ms positif ou nul`);
         }
+      }
+      // Facultatif : le signe alchimique au-dessus du titre, ceux du README
+      // (🜁 🜄 🜂 🜃). Une forme DESSINÉE (`ui/ecran_prologue.js`), jamais un
+      // caractère — aucune police du jeu ne les porte.
+      if (entry.glyphe !== undefined && !GLYPHES_PROLOGUE.includes(entry.glyphe)) {
+        erreurs.push(`${path} > glyphe doit valoir ${GLYPHES_PROLOGUE.map((g) => `"${g}"`).join(' ou ')}`);
       }
       return erreurs;
     },

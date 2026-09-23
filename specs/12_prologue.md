@@ -2,7 +2,7 @@
 projet: RPG V2
 episode/session: Prologue
 type: spec
-version: 1.0.0
+version: 1.1.0
 statut: brouillon
 catégorie: Spec
 date: 2026-09-23
@@ -36,31 +36,28 @@ Séquence complète d'une partie neuve : **prologue → symbole (inchangé) → 
 
 ## 3. Règles
 
-- **Données** : `data/prologue.json`, un écran par entrée, **dans l'ordre du fichier** : `id`, `titre` (clé de locale), `lignes` (liste de clés, un paragraphe chacune, peut être vide), `fondu_ms`, `armement_ms`. Ajouter, retirer ou réordonner un écran ne touche aucune ligne de code. Les textes vivent dans `locales/fr.json` et `en.json` (`prologue.*`).
+- **Données** : `data/prologue.json`, un écran par entrée, **dans l'ordre du fichier** : `id`, `titre` (clé de locale), `lignes` (liste de clés, un paragraphe chacune, peut être vide), `fondu_ms`, `armement_ms`, et `glyphe` facultatif (v1.1.0). Ajouter, retirer ou réordonner un écran ne touche aucune ligne de code. Les textes vivent dans `locales/fr.json` et `en.json` (`prologue.*`).
 - **Rythme** : chaque écran entre en fondu depuis le noir, reste tant que le joueur n'a pas appuyé, et sort en fondu. L'appui n'est accepté qu'après `armement_ms` (le geste qui a fermé l'écran précédent ne ferme pas le suivant) ; le marqueur ▼ de la bulle de dialogue, dessiné, dit quand on peut avancer.
 - **Avancer** : ATTACK ou INTERACT, ou un toucher n'importe où sur l'écran. Aucun autre verbe ; MENU n'ouvre rien (même statut que le symbole et l'intro : une UI ouverte, gameplay gelé).
 - **Quand** : **partie neuve seulement**, comme le symbole et le cold-open qu'il précède (flag `flag_follet_choisi` absent). Jamais au chargement d'une partie en cours, jamais au respawn.
 - **Pas de passage global** (« tout sauter ») : quatre appuis suffisent. `[OUVERT]` → `Q-118`.
-- **Le jeu servi seulement** : l'orchestrateur reçoit `prologue: true` de `demarrerJeu` ; par défaut il n'y en a pas, et les tests existants du cold-open restent tels quels (même patron que les calques du symbole).
+- **Le jeu servi seulement** : l’orchestrateur reçoit `jouerPrologue: true` de `demarrerJeu` ; par défaut il n'y en a pas, et les tests existants du cold-open restent tels quels (même patron que les calques du symbole).
 - **Le symbole ne se touche pas** : ni sa géométrie, ni `effet_logo_ouverture`, ni `logo.js`. Le prologue ne fait que le précéder.
 
-## 4. Textes proposés (FR / EN) — `[OUVERT]` → `Q-119`
+## 4. Textes et habillage — v1.1.0 (retour de Xav sur `V-121`, 23/09)
 
-Rédigés par Claude à partir de la carte mentale (D13① et ⑧ : on se réveille enfant, le follet apprend sans expliquer ; les choix comptent — sans rien dire de l'alignement, qui reste caché). **Xav les réécrit à volonté dans les locales**, aucun code à toucher.
+La v1.0.0 (textes neutres, police de la bulle) est validée comme **base** ; Xav demande : **police calligraphique, écriture elfique, le ton du README** (« Avertissement du laboratoire », « Ce que l'on sait du jeu », qu'il cite comme modèles).
 
-1. **Avant de commencer** / *Before you begin*
-   - Ce jeu ne te donnera aucune quête. Aucun objectif affiché, aucune flèche, aucune liste de choses à faire. / *This game will never give you a quest. No objective on screen, no arrow, no to-do list.*
-   - C’est voulu : ici, on comprend en explorant. / *That’s on purpose: here, you understand by exploring.*
-   - La partie se sauvegarde toute seule. / *Your progress saves itself.*
-2. **Un jeu de rôle** / *A role-playing game*
-   - Le rôle, c’est le tien. / *The role is yours.*
-   - Tu te réveilles sans rien savoir. Un follet t’accompagne : il apprend avec toi, il ne t’explique pas tout. / *You wake up knowing nothing. A wisp comes with you: it learns alongside you, it won’t explain everything.*
-   - Ce que tu choisis, et la façon dont tu le fais, compte. Même quand rien ne le montre. / *What you choose, and how you do it, matters. Even when nothing shows it.*
-3. **Ce que tu vas faire** / *What you’ll do*
-   - Récolter, fabriquer, cuisiner, t’équiper. / *Gather, craft, cook, gear up.*
-   - Survivre aux nuits, quand le Chaos rôde. / *Survive the nights, when the Chaos prowls.*
-   - Devenir plus fort, et ouvrir ce qui est fermé. / *Grow stronger, and open what is closed.*
-4. **Réveille-toi.** / *Wake up.* (titre seul)
+- **Polices** embarquées dans `fonts/` (SIL OFL 1.1, licences à côté), déclarées dans `src/polices.js` seul : **Uncial Antiqua** pour les titres, **Almendra** (calligraphie à la plume, d'inspiration elfique) pour le texte. Chargées au démarrage par `FontFace`, plafonnées à 3 s, « meilleur effort » : repli `serif`. Jamais tirées d'un service en ligne (100 % hors-ligne).
+- **Signes alchimiques** du README au-dessus de chaque titre (`glyphe` facultatif dans les données : `air`, `eau`, `feu`, `terre`), **tracés**, jamais des caractères.
+- **La voix** : le prologue parle comme le laboratoire du README, au **vous** ; le dernier écran passe au **tu** (« Réveille-toi. ») — c'est déjà le follet qui parle. `[OUVERT]` → `Q-119`.
+
+| # | Signe | Titre | Texte (FR ; l'EN suit le même ton dans `locales/en.json`) |
+|---|---|---|---|
+| 1 | 🜁 | Avertissement du laboratoire | Ce jeu contient des substances imaginaires à haute concentration. · Ne pas secouer. Ne pas lire à voix haute après minuit. · Il n'y a pas de journal de quêtes. Personne ne vous dira où aller : ce n'est pas un oubli, c'est la formule. · La partie se conserve d'elle-même, en flacon bien bouché. |
+| 2 | 🜄 | Ce que l'on sait du jeu | On sait peu de chose, et c'est très bien ainsi. · *il y a une grotte. / il y a quelque chose qui brille dans la grotte. / ce quelque chose vous choisit — ou vous le choisissez, les archives divergent.* · *dehors, une maison attend. elle n'est pas finie. / vous non plus.* |
+| 3 | 🜂 | Ce que l'on sait de vous | Vous tenez le rôle. Pas celui d'un héros écrit d'avance : le vôtre. · Le monde laisse des indices, parfois une phrase dans le vent, parfois rien du tout — et le rien du tout est aussi un indice. · Ce que vous choisissez, et la façon dont vous le faites, sera retenu. Même quand rien ne le montre. · *le jour, on ramasse. la nuit, le monde se souvient qu'il a des dents.* |
+| 4 | 🜃 | Réveille-toi. | (titre seul) |
 
 ## 5. Tickets
 
@@ -69,6 +66,7 @@ Rédigés par Claude à partir de la carte mentale (D13① et ⑧ : on se révei
 | P1 | La spec (ce fichier) et le suivi (`Q-118`, `Q-119`, `V-121`) |
 | P2 | `src/prologue.js` (machine à états PURE : écran, fondu, armement, fin) ; catalogue `prologue` (schéma + données + locales) ; `tests/test_p2_prologue` |
 | P3 | Le branchement : `main.js` (prologue avant le symbole, gameplay gelé, reset), `ui/ecran_prologue.js` (le dessin), `demarrerJeu` ; `tests/test_p3_prologue_ouverture` ; journal |
+| P4 | Retour de Xav sur `V-121` (§4, v1.1.0) : polices embarquées (`src/polices.js`, `fonts/`), signes alchimiques, textes dans le ton du README |
 
 ## 6. Validation en jeu (Xav) — `V-121`
 

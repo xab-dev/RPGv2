@@ -8,6 +8,7 @@
 # Les images ne se comparent pas ligne à ligne.
 *.png binary
 *.jpg binary
+*.ttf binary
 
 # La barre des langages de GitHub n'a pas besoin de réglage : le Markdown de
 # docs/ et specs/ n'y compte pas, elle dit déjà « JavaScript » (~98 %).

@@ -112,6 +112,7 @@ import { dessinerHud } from './ui/hud.js';
 import { dessinerHudHints } from './ui/hud_hints.js';
 import { dessinerDialogue, creerPaginateurDialogue } from './ui/dialogue_box.js';
 import { dessinerEcranPrologue } from './ui/ecran_prologue.js';
+import { chargerPolices } from './polices.js';
 import { creerMoniteurPerf, creerMoniteurInactif } from './ui/hud_debug.js';
 import { lireEchelleForcee } from './debug_perf.js';
 import {
@@ -4193,6 +4194,7 @@ export function creerOrchestrateurGrotte({
       const ecran = prologue.ecrans[prologue.index];
       dessinerPaupieres(ctxLogique, 0);
       dessinerEcranPrologue(ctxLogique, {
+        glyphe: ecran.glyphe ?? null,
         titre: i18n.t(ecran.titre),
         lignes: ecran.lignes.map((cle) => i18n.t(cle)),
       }, alphaPrologue(prologue), prologueArme(prologue));
@@ -4443,6 +4445,9 @@ export async function demarrerJeu() {
   const [dictionnaires, { donnees, erreurs: erreursChargement }] = await Promise.all([
     chargerLocalesDepuisReseau('locales'),
     chargerCataloguesDepuisReseau('data', noms),
+    // `specs/12` : attendues avec le reste, pour que le premier écran du
+    // prologue naisse dans sa police — plafonné, jamais bloquant (polices.js).
+    chargerPolices(),
   ]);
 
   const erreursCles = verifierJeuxDeCles(dictionnaires);

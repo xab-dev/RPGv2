@@ -194,6 +194,8 @@ rpg_v2/
 │   ├── prologue.js         `specs/12` : les écrans de texte AVANT le symbole (pas de quête, pourquoi
 │   │                       c'est un jeu de rôle) — pur : fondu, appui armé, écran suivant ; écrans et
 │   │                       durées dans `data/prologue.json`, dessinés par `ui/ecran_prologue.js`
+│   ├── polices.js          `specs/12` : LES polices embarquées (`fonts/`, OFL) et leur chargement
+│   │                       `FontFace` au démarrage — « meilleur effort », repli `serif`
 │   ├── poussiere.js        traînée de poussière (héros, follet) : réserve de bouffées à capacité
 │   │                       en données, émission interpolée le long du segment parcouru
 │   ├── ornements.js        `D-134` : étincelles et halo qui respire (réglage Haut) — reçoit un
@@ -227,6 +229,7 @@ rpg_v2/
 │                           `main.js#habillageDialogue`) + hud_layout.js (canvas, résolution logique)
 │                           + cadre.js (`D-163` : LE cadre des calques d'UI canvas, bulle et indices)
 │                           + barre.js (`D-165` : LA barre de jauge — bandeau ET PV des monstres)
+├── fonts/                 polices embarquées (Almendra, Uncial Antiqua), licence SIL OFL 1.1 à côté
 ├── images/logo/            les trois calques SVG du symbole, CUITS par
 │                           `docs/captures/logo/generer_logo.mjs` (seule source de la géométrie,
 │                           validée telle quelle par Xav le 23/09 : elle ne se retouche pas)

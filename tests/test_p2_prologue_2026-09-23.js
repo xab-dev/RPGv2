@@ -96,9 +96,11 @@ assert.equal(creerPrologue([]).termine, true, 'une liste vide est un prologue d�
   const casse = structuredClone(donnees);
   casse.prologue[0].fondu_ms = -1;
   casse.prologue[1].lignes = ['ok', 3];
+  casse.prologue[2].glyphe = 'foudre';
   const erreursCasse = validerCatalogues(casse).join('\n');
   assert.match(erreursCasse, /prologue.*fondu_ms/);
   assert.match(erreursCasse, /prologue.*lignes/);
+  assert.match(erreursCasse, /prologue.*glyphe/, 'un signe que le dessin ne connaît pas tombe au boot');
 }
 
 console.log('OK test_p2_prologue : un écran attend l’appui armé, sort en fondu, le suivant entre ; catalogue valide');

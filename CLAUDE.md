@@ -91,6 +91,9 @@ rpg_v2/
 │   │                       résolution d'un interactif, catalogue OU instance créée en jeu
 │   ├── camera.js           bornée sur grande scène, centrée sur scène plus petite que le viewport
 │   ├── decor.js            décor procédural pondéré (PRNG mulberry32) + couleurTuile (variantes/teinte)
+│   │                       + `tuileDeSol` (`render.sol`, une tuile-objet posée sur une surface),
+│   │                       `varianteTuile` (le dessin et le miroir d'une case, hash à sel propre)
+│   │                       et `lumieresDuDecor` (les halos des motifs lumineux, dérivés du tirage)
 │   ├── render.js           résolution logique/physique (DPR) — `echelleDepuisCanvas` est LA
 │   │                       dérivation de l'échelle, relue par tous les calques ; `?echelle=N`
 │   │                       (debug, `D-23`) la remplace en un seul point et ne touche jamais la
@@ -257,6 +260,9 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 |---|---|---|
 | **Toute stat primaire a au moins une dérivée**, et un système lit la dérivée, jamais la stat brute — les dégâts lisaient la Force brute, donc la Force n'avait aucune formule à régler en données. Tenu par test sur le catalogue réel | 2026-09-23 | `D-141` |
 | **Ce que le joueur pose au sol n'est pas du semis** : les objets jetés vivent à part (`save.monde.objets_jetes`), ne comptent pas dans `nb_au_sol`, ne repoussent pas, ne disparaissent pas à l'aube, et **ne rapportent aucune XP** quand on les reprend. Une tuile de sol a une capacité, déclarée comme un conteneur (`conteneur_sol`) | 2026-09-23 | `D-145` |
+| **Une tuile-objet se pose sur son sol, elle ne le recopie pas** : `render.sol` nomme la surface (non solide, un seul niveau) dont la couleur et le grain sont peints sous l'objet — une copie refait le carré dès que la surface change | 2026-09-23 | `D-146` (`Q-70`) |
+| **Une case choisit son dessin par sa position** (`decor.js#varianteTuile`, hash spatial à sel propre, jamais le rythme de la couleur) ; le miroir est horizontal seulement (la lumière vient d'en haut). La table des grains porte une liste par tuile, chaque dessin allégé par le même levier | 2026-09-23 | `D-147` |
+| **Une ombre de zone s'ajoute au voile par le maximum, jamais par une seconde couche** : `dessinerObscurite` ne voit toujours qu'un `{ opacite }`, la lumière du follet y perce le même trou ; ce qui lit la NUIT (signal du Chaos) lit le seul cycle | 2026-09-23 | `D-149` |
 | **Une cible tactile qui bouge avec le monde est un cercle annoncé par l'orchestrateur à chaque frame** (`touch.js#zonesMonde`), calculé avec la même caméra que le dessin ; la couche tactile ne sait ni ce qu'est un follet ni où est la caméra. Le doigt du joystick n'en déclenche jamais | 2026-09-23 | `D-142` |
 
 ## Ce qui est dû : dettes, questions, validations

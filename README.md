@@ -180,6 +180,7 @@ et elle a sauvé plus d'une nuit.
 | la liste de tout ce qui reste dû | [`docs/DOC_suivi-dettes.md`](docs/DOC_suivi-dettes.md) |
 | le récit de chaque nuit de travail | [`docs/archives/INDEX.md`](docs/archives/INDEX.md) |
 | la carte mentale, qui a déjà six versions et ne s'en porte pas plus mal | [`docs/carte_mentale_RPG_V2_v1_7_0.md`](docs/carte_mentale_RPG_V2_v1_7_0.md) |
+| ce qu’on a le droit d’en faire (le lire, y jouer — pas le reprendre) | [`LICENSE`](LICENSE) |
 
 <sub>Il paraît que l'historique Git contient des choses qui n'y sont plus.
 On ne confirme rien.</sub>

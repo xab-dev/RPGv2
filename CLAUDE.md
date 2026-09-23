@@ -300,6 +300,7 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 | **Éclats et coût des crafts : on ne touche pas** — la chaîne nuit → éclats → outils est voulue (« il faut faire un choix et ça se mérite ») | 2026-09-23 | NS alignement §1.11, `Q-69` |
 | **Produit** : à terme plus d'éléments que haTD, les trois actuels restent (D2) · open source assumé, payant ou portage possibles une fois fini, **aucune sollicitation directe de dons** (P1) · **pas de sauvegarde cloud** sans multijoueur réseau · double tampon OK, P3 (C5⑥) | 2026-09-23 | NS alignement §1.12-1.15 |
 | **Journal d'indices et de traces** : dernier bouton du menu principal (menu permanent), rappelle l'histoire parcourue, sous-page **Indices** de lore par zone, carnet du cryptex | 2026-09-23 | NS alignement §1.16 (D13/D16) |
+| **Licence : source visible, tous droits réservés** (`LICENSE`, FR/EN) : on lit le dépôt, on joue à l’adresse officielle, on le lance chez soi pour un usage personnel ; ni reprise, ni hébergement ailleurs, ni usage commercial sans accord écrit. *Précise* P1 « open source assumé » : le code est ouvert à la lecture, pas à la réutilisation — ce qui garde ouverts la version payante et le portage | 2026-09-23 | choix de Xav, présentation du dépôt GitHub |
 
 ## Ce qui est dû : dettes, questions, validations
 

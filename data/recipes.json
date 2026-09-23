@@ -161,7 +161,7 @@
   {
     "id": "rec_pomme_amour",
     "label_key": "recipe.pomme_amour",
-    "station": "station_type_atelier",
+    "station": "station_type_cuisine",
     "entrees": [
       {
         "item": "item_fruit_cuit",

@@ -1,8 +1,8 @@
-// La pomme d'amour et la pomme cuite (demande de Xav, 23/09).
+// La pomme d'amour et la pomme cuite (demande de Xav, 23/09 ; passée de l'Atelier à la Cuisine le 24/09, choix de Xav).
 //
-// DEMANDE : au Nv.4, à l'Atelier, 1 fruit cuit + 3 herbes → une pomme
+// DEMANDE : au Nv.4, à la Cuisine, 1 fruit cuit + 3 herbes → une pomme
 // d'amour, sans éclats. Elle ne se mange pas et ne s'équipe pas : elle doit
-// passer à la Cuisine, qui en fait une pomme cuite. C'est la pomme cuite qui
+// passer une seconde fois à la Cuisine, qui en fait une pomme cuite. C'est la pomme cuite qui
 // se mange, et elle donne la régénération de vie (R2).
 //
 // Ce qui est éprouvé est un CONTRAT, jamais un réglage (`D-52`) : les
@@ -10,8 +10,8 @@
 //   1. la pomme d'amour n'est ni mangeable ni équipable, la pomme cuite l'est
 //      et soigne ;
 //   2. les deux recettes, en données : la Cuisine n'annonce pas la pomme
-//      cuite avant que l'Atelier sache faire la pomme d'amour (`D-62`) ;
-//   3. sur le vrai orchestrateur : fruit cuit → Atelier → Cuisine → manger →
+//      cuite avant de savoir faire la pomme d'amour (`D-62`) ;
+//   3. sur le vrai orchestrateur : fruit cuit → Cuisine → Cuisine → manger →
 //      régénération, et la pomme d'amour refusée à la bouche.
 import assert from 'node:assert/strict';
 import path from 'node:path';
@@ -59,7 +59,7 @@ const REC_CUITE = registre.obtenir('recipes', 'rec_pomme_cuite');
 
 // --- 2. Les deux recettes, en données -----------------------------------
 {
-  assert.equal(REC_AMOUR.station, 'station_type_atelier');
+  assert.equal(REC_AMOUR.station, 'station_type_cuisine');
   assert.equal(REC_AMOUR.sortie.item, AMOUR.id);
   assert.ok(REC_AMOUR.entrees.some((e) => e.item === 'item_fruit_cuit'), 'elle part d’un fruit CUIT');
   assert.ok(!REC_AMOUR.cout_eclats, 'sans éclats');
@@ -75,7 +75,7 @@ const REC_CUITE = registre.obtenir('recipes', 'rec_pomme_cuite');
   assert.equal(REC_CUITE.visible_si.valeur, 'niveau');
   assert.ok(REC_CUITE.visible_si.min >= REC_AMOUR.visible_si.min,
     'la pomme cuite n’apparaît pas avant la pomme d’amour');
-  console.log(`OK les recettes : Atelier puis Cuisine, au Nv.${REC_AMOUR.visible_si.min}, sans éclats`);
+  console.log(`OK les recettes : toutes deux à la Cuisine, au Nv.${REC_AMOUR.visible_si.min}, sans éclats`);
 }
 
 // --- 3. La chaîne entière, sur le vrai orchestrateur --------------------
@@ -126,22 +126,22 @@ function demarrer({ niveau, poche }) {
 }
 
 const titre = (r) => i18n.t(r.label_key);
-const pocheAtelier = Object.fromEntries(REC_AMOUR.entrees.map((e) => [e.item, e.qte]));
+const pocheAmour = Object.fromEntries(REC_AMOUR.entrees.map((e) => [e.item, e.qte]));
 
 {
-  const avant = demarrer({ niveau: REC_AMOUR.visible_si.min - 1, poche: { ...pocheAtelier, [AMOUR.id]: 1 } });
-  assert.ok(!avant.station('station_atelier').some((e) => e.titre === titre(REC_AMOUR)), 'absente de l’Atelier sous le palier');
-  assert.ok(!avant.station('station_table').some((e) => e.titre === titre(REC_CUITE)), 'absente de la Cuisine sous le palier');
+  const avant = demarrer({ niveau: REC_AMOUR.visible_si.min - 1, poche: { ...pocheAmour, [AMOUR.id]: 1 } });
+  assert.ok(!avant.station('station_table').some((e) => e.titre === titre(REC_AMOUR)), 'absente de la Cuisine sous le palier');
+  assert.ok(!avant.station('station_table').some((e) => e.titre === titre(REC_CUITE)), 'la pomme cuite non plus');
   console.log(`OK sous le Nv.${REC_AMOUR.visible_si.min} : aucune des deux recettes n’existe`);
 }
 
 {
-  const jeu = demarrer({ niveau: REC_CUITE.visible_si.min, poche: pocheAtelier });
+  const jeu = demarrer({ niveau: REC_CUITE.visible_si.min, poche: pocheAmour });
   const items = () => jeu.save.inventaire.items;
 
-  const atelier = jeu.station('station_atelier').find((e) => e.titre === titre(REC_AMOUR));
-  assert.ok(atelier && atelier.grisee === false, 'l’Atelier la propose, fabricable');
-  atelier.action();
+  const amour = jeu.station('station_table').find((e) => e.titre === titre(REC_AMOUR));
+  assert.ok(amour && amour.grisee === false, 'la Cuisine la propose, fabricable');
+  amour.action();
   assert.equal(items()[AMOUR.id], 1, 'une pomme d’amour');
   for (const e of REC_AMOUR.entrees) assert.equal(items()[e.item] || 0, 0, `${e.item} consommé`);
 
@@ -159,5 +159,5 @@ const pocheAtelier = Object.fromEntries(REC_AMOUR.entrees.map((e) => [e.item, e.
   for (const effet of CUITE.consommation.effets) {
     assert.ok(jeu.save.hero.buffs_actifs[effet] > 0, `${effet} est actif`);
   }
-  console.log('OK la chaîne : fruit cuit → Atelier → Cuisine → manger → régénération active');
+  console.log('OK la chaîne : fruit cuit → Cuisine → Cuisine → manger → régénération active');
 }

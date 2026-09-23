@@ -44,4 +44,5 @@ parquet » se réduit au parquet.
 |---|---|---|
 | `435cf20` | Ménage | Journal polish ambiance archivé, INDEX à jour |
 | `cd45a72` | `D-154` | Rochers de décor dans la valeur de la pierre (plus des galets pâles), touffe dans les verts de la pelouse, flaque d'eau noire. Garde-fou : un rocher de décor reste plus sombre que les pierres ramassables |
-| — | `D-155` | Parquet : trois dessins × miroir, un bout de lame par dessin (des lames longues), joint au bord bas de la case. Une passe « un joint par rangée » faisait carrelage : retirée à la capture. Damier de teintes proposé en `Q-77` |
+| `0534f4f` | `D-155` | Parquet : trois dessins × miroir, un bout de lame par dessin (des lames longues), joint au bord bas de la case. Une passe « un joint par rangée » faisait carrelage : retirée à la capture. Damier de teintes proposé en `Q-77` |
+| — | `D-156` | Grotte : décor 0,10 → 0,04 sans herbe (21 → 8 objets par salle sous Moyen, des cristaux gardés dans chaque salle en réglant les poids), grain de sol 19-20 → 6-8 primitives (fissures, un galet, un peu de gravier). Relevé hors ticket : `D-159` (une `ligne` se referme) |

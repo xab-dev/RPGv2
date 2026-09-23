@@ -29,6 +29,6 @@ PS1 fondu d'entrée et de sortie de la vue · PS2 la gravure qui respire ligne p
 ses clés FR/EN, les refus au démarrage ; la stèle hors de vue du chemin. **Validé par Xav** : `V-122`, `V-123`, et les choix
 par défaut `Q-120` à `Q-122` (« on garde tout »).
 
-**Mise en ligne** : branche fusionnée dans `main` et poussée **à la demande explicite de Xav** (« go push », confirmé : fusionner dans main et pousser), le 23/09. PS1 à PS4 n'ont pas encore été validés en jeu : ils se voient sur la version en ligne.
+**Mise en ligne** : branche fusionnée dans `main` et poussée **à la demande explicite de Xav** (« go push », confirmé : fusionner dans main et pousser), le 23/09. PS1 à PS4 **validés par Xav en jeu** au fil de la file : il suivait le serveur local sous Chrome, à coups de F5 (« j'avais le local et chrome ouvert, j'ai vérifié en faisant des F5 réguliers »). Consigné par Claude.
 
 **Au prochain ménage** : archiver ce journal.

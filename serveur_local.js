@@ -9,6 +9,11 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 8080;
+// `D-181` : la boucle locale seulement. Sans hôte, `listen` écoute sur toutes
+// les interfaces, et n'importe qui sur le même Wi-Fi lisait le dépôt entier —
+// `.git/` et `prive/sauvegardes/` compris. Le jeu ne se teste plus que sur le
+// PC (Xav, 23/09) ; le téléphone passe par l'URL publique.
+const HOTE = '127.0.0.1';
 
 const TYPES_MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -17,31 +22,54 @@ const TYPES_MIME = {
   '.css': 'text/css; charset=utf-8',
 };
 
-const serveur = http.createServer(async (req, res) => {
-  const urlChemin = decodeURIComponent((req.url || '/').split('?')[0]);
-  const chemin = urlChemin === '/' ? '/index.html' : urlChemin;
-  const cheminAbsolu = path.normalize(path.join(__dirname, chemin));
-
-  if (!cheminAbsolu.startsWith(__dirname)) {
-    res.writeHead(403);
-    res.end('Interdit');
-    return;
-  }
-
+// `D-181` : le chemin absolu à servir, ou `null` si la requête sort de la
+// racine ou ne se décode pas. Pure, exportée pour le test. La garde compare à
+// `racine + séparateur` : un simple `startsWith(racine)` laissait passer un
+// dossier voisin au nom prolongé (`…/RPGv2x/`). Et `decodeURIComponent` lève
+// sur un `%` mal formé : non rattrapé dans le gestionnaire `async`, ce rejet
+// arrêtait le process Node entier.
+export function resoudreChemin(racine, urlBrute) {
+  let urlChemin;
   try {
-    const contenu = await readFile(cheminAbsolu);
-    const ext = path.extname(cheminAbsolu);
-    res.writeHead(200, {
-      'Content-Type': TYPES_MIME[ext] || 'application/octet-stream',
-      'Cache-Control': 'no-store',
-    });
-    res.end(contenu);
+    urlChemin = decodeURIComponent((urlBrute || '/').split('?')[0]);
   } catch {
-    res.writeHead(404);
-    res.end('Introuvable');
+    return null;
   }
-});
+  const chemin = urlChemin === '/' ? '/index.html' : urlChemin;
+  const cheminAbsolu = path.normalize(path.join(racine, chemin));
+  return cheminAbsolu.startsWith(racine + path.sep) ? cheminAbsolu : null;
+}
 
-serveur.listen(PORT, () => {
-  console.log(`RPG V2 servi sur http://localhost:${PORT}`);
-});
+function demarrer() {
+  const serveur = http.createServer(async (req, res) => {
+    const cheminAbsolu = resoudreChemin(__dirname, req.url);
+    if (!cheminAbsolu) {
+      res.writeHead(403);
+      res.end('Interdit');
+      return;
+    }
+
+    try {
+      const contenu = await readFile(cheminAbsolu);
+      const ext = path.extname(cheminAbsolu);
+      res.writeHead(200, {
+        'Content-Type': TYPES_MIME[ext] || 'application/octet-stream',
+        'Cache-Control': 'no-store',
+      });
+      res.end(contenu);
+    } catch {
+      res.writeHead(404);
+      res.end('Introuvable');
+    }
+  });
+
+  serveur.listen(PORT, HOTE, () => {
+    console.log(`RPG V2 servi sur http://localhost:${PORT}`);
+  });
+}
+
+// Lancé directement (`node serveur_local.js`) : on sert. Importé par un test :
+// on n'ouvre aucun port.
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  demarrer();
+}

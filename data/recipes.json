@@ -205,5 +205,49 @@
       "valeur": "niveau",
       "min": 4
     }
+  },
+  {
+    "id": "rec_corde",
+    "label_key": "recipe.corde",
+    "station": "station_type_atelier",
+    "entrees": [
+      {
+        "item": "item_herbe",
+        "qte": 3
+      }
+    ],
+    "sortie": {
+      "item": "item_corde",
+      "qte": 1
+    },
+    "categorie": "ressource",
+    "xp": 3,
+    "cooldown_ms": 60000,
+    "visible_si": {
+      "valeur": "niveau",
+      "min": 4
+    }
+  },
+  {
+    "id": "rec_papyrus",
+    "label_key": "recipe.papyrus",
+    "station": "station_type_atelier",
+    "entrees": [
+      {
+        "item": "item_herbe",
+        "qte": 4
+      }
+    ],
+    "sortie": {
+      "item": "item_papyrus",
+      "qte": 1
+    },
+    "categorie": "ressource",
+    "xp": 3,
+    "cooldown_ms": 60000,
+    "visible_si": {
+      "valeur": "niveau",
+      "min": 4
+    }
   }
 ]

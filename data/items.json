@@ -173,5 +173,21 @@
         "buff_regeneration"
       ]
     }
+  },
+  {
+    "id": "item_corde",
+    "label_key": "item.corde",
+    "categorie": "ressource",
+    "render": {
+      "visuel": "visuel_corde"
+    }
+  },
+  {
+    "id": "item_papyrus",
+    "label_key": "item.papyrus",
+    "categorie": "ressource",
+    "render": {
+      "visuel": "visuel_papyrus"
+    }
   }
 ]

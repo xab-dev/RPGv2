@@ -13268,5 +13268,422 @@
         "alpha": 0.8
       }
     ]
+  },
+  {
+    "id": "visuel_corde",
+    "ancre": "centre",
+    "ombre": {
+      "dy": 3.6,
+      "w": 9.6,
+      "h": 2.4,
+      "alpha": 0.24
+    },
+    "primitives": [
+      {
+        "forme": "ellipse",
+        "dx": 0,
+        "dy": 0.6,
+        "w": 9.4,
+        "h": 6.4,
+        "couleur": "#7a6430"
+      },
+      {
+        "forme": "ellipse",
+        "dx": 0,
+        "dy": 0.2,
+        "w": 8.8,
+        "h": 5.8,
+        "couleur": "#b89a4a"
+      },
+      {
+        "forme": "ellipse",
+        "dx": -0.3,
+        "dy": -0.1,
+        "w": 7,
+        "h": 4.3,
+        "couleur": "#d4bb6c"
+      },
+      {
+        "forme": "ellipse",
+        "dx": 0,
+        "dy": 0.2,
+        "w": 5.4,
+        "h": 3.1,
+        "couleur": "#9a7e3a"
+      },
+      {
+        "forme": "ellipse",
+        "dx": 0,
+        "dy": 0.3,
+        "w": 3.4,
+        "h": 1.7,
+        "couleur": "#4a3b18"
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -3.2,
+            -1.4
+          ],
+          [
+            -2.4,
+            -0.6
+          ]
+        ],
+        "couleur": "#7a6430",
+        "epaisseur": 0.45
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -1.2,
+            -2.4
+          ],
+          [
+            -0.6,
+            -1.5
+          ]
+        ],
+        "couleur": "#7a6430",
+        "epaisseur": 0.45
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            1.1,
+            -2.4
+          ],
+          [
+            1.5,
+            -1.5
+          ]
+        ],
+        "couleur": "#7a6430",
+        "epaisseur": 0.45
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            3.1,
+            -1.3
+          ],
+          [
+            2.5,
+            -0.5
+          ]
+        ],
+        "couleur": "#7a6430",
+        "epaisseur": 0.45
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -2.6,
+            2.3
+          ],
+          [
+            -2,
+            1.5
+          ]
+        ],
+        "couleur": "#7a6430",
+        "epaisseur": 0.45
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            2.4,
+            2.4
+          ],
+          [
+            2,
+            1.6
+          ]
+        ],
+        "couleur": "#7a6430",
+        "epaisseur": 0.45
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            3.6,
+            1.4
+          ],
+          [
+            5.4,
+            3.4
+          ]
+        ],
+        "couleur": "#7a6430",
+        "epaisseur": 1.3
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            3.6,
+            1.3
+          ],
+          [
+            5.3,
+            3.2
+          ]
+        ],
+        "couleur": "#c9ad5c",
+        "epaisseur": 0.7
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            5.3,
+            3.3
+          ],
+          [
+            6,
+            3.3
+          ]
+        ],
+        "couleur": "#d4bb6c",
+        "epaisseur": 0.4
+      },
+      {
+        "forme": "ellipse",
+        "dx": -1.6,
+        "dy": -1.6,
+        "w": 2.6,
+        "h": 0.9,
+        "couleur": "#efdc98",
+        "alpha": 0.7,
+        "rotation": -12
+      }
+    ]
+  },
+  {
+    "id": "visuel_papyrus",
+    "ancre": "centre",
+    "ombre": {
+      "dy": 4.1,
+      "w": 10,
+      "h": 2.2,
+      "alpha": 0.24
+    },
+    "primitives": [
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": 0.15,
+        "w": 7.4,
+        "h": 5.6,
+        "couleur": "#a8955e"
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": 0,
+        "w": 7.2,
+        "h": 5.4,
+        "couleur": "#e3d49e"
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -2.9,
+            -1.4
+          ],
+          [
+            2.9,
+            -1.4
+          ]
+        ],
+        "couleur": "#c4b077",
+        "epaisseur": 0.35
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -2.9,
+            -0.1
+          ],
+          [
+            2.9,
+            -0.1
+          ]
+        ],
+        "couleur": "#c4b077",
+        "epaisseur": 0.35
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -2.9,
+            1.2
+          ],
+          [
+            2.9,
+            1.2
+          ]
+        ],
+        "couleur": "#c4b077",
+        "epaisseur": 0.35
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -1,
+            -2.5
+          ],
+          [
+            -1,
+            2.5
+          ]
+        ],
+        "couleur": "#d2c188",
+        "epaisseur": 0.3
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            1.1,
+            -2.5
+          ],
+          [
+            1.1,
+            2.5
+          ]
+        ],
+        "couleur": "#d2c188",
+        "epaisseur": 0.3
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": -2.35,
+        "w": 7.2,
+        "h": 0.5,
+        "couleur": "#f3e8bf",
+        "alpha": 0.6
+      },
+      {
+        "forme": "rect",
+        "dx": -3.9,
+        "dy": 0,
+        "w": 1.9,
+        "h": 6.6,
+        "couleur": "#8e7a45"
+      },
+      {
+        "forme": "rect",
+        "dx": -4.15,
+        "dy": 0,
+        "w": 1.1,
+        "h": 6.6,
+        "couleur": "#c9b47a"
+      },
+      {
+        "forme": "ellipse",
+        "dx": -3.9,
+        "dy": -3.3,
+        "w": 1.9,
+        "h": 0.9,
+        "couleur": "#e8d9a4"
+      },
+      {
+        "forme": "ellipse",
+        "dx": -3.9,
+        "dy": -3.3,
+        "w": 0.8,
+        "h": 0.4,
+        "couleur": "#6e5c30"
+      },
+      {
+        "forme": "ellipse",
+        "dx": -3.9,
+        "dy": 3.3,
+        "w": 1.9,
+        "h": 0.9,
+        "couleur": "#8e7a45"
+      },
+      {
+        "forme": "rect",
+        "dx": 3.9,
+        "dy": 0,
+        "w": 1.9,
+        "h": 6.6,
+        "couleur": "#8e7a45"
+      },
+      {
+        "forme": "rect",
+        "dx": 3.65,
+        "dy": 0,
+        "w": 1.1,
+        "h": 6.6,
+        "couleur": "#c9b47a"
+      },
+      {
+        "forme": "ellipse",
+        "dx": 3.9,
+        "dy": -3.3,
+        "w": 1.9,
+        "h": 0.9,
+        "couleur": "#e8d9a4"
+      },
+      {
+        "forme": "ellipse",
+        "dx": 3.9,
+        "dy": -3.3,
+        "w": 0.8,
+        "h": 0.4,
+        "couleur": "#6e5c30"
+      },
+      {
+        "forme": "ellipse",
+        "dx": 3.9,
+        "dy": 3.3,
+        "w": 1.9,
+        "h": 0.9,
+        "couleur": "#8e7a45"
+      }
+    ]
   }
 ]

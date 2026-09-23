@@ -1201,6 +1201,13 @@ export function creerOrchestrateurGrotte({
   const ECLAT_NIVEAU_MS = 700; // PROVISOIRE, jamais validé en jeu par Xav
   let eclatNiveauMs = 0;
   let niveauPrecedent = save.hero.niveau;
+  // Ticket L4 (journal du 23/09) : le symbole du jeu, en petit, au-dessus du
+  // héros quand il monte de niveau — DISCRET (demande de Xav) : quelques
+  // pixels de haut, translucide, puis il s'éteint. Temps écoulé, ou `null`.
+  // Même détection que l'éclat ci-dessus (un seul endroit sait qu'un niveau
+  // est franchi) ; sans calques d'image, il ne se dessine simplement pas.
+  const effetLogoNiveau = registre.obtenir('effets', 'effet_logo_niveau');
+  let logoNiveauMs = null;
 
   // Apparitions nocturnes (specs/07_chaos-nocturne.md, palier B). Deux états,
   // volontairement **hors de la sauvegarde** : la spec l'exige (« non
@@ -3331,10 +3338,20 @@ export function creerOrchestrateurGrotte({
     // `save.hero.niveau` (jamais sur l'XP brute, qui bouge à chaque gain) —
     // donc un seul éclat par palier franchi, quelle que soit la source d'XP.
     if (save.hero.niveau !== niveauPrecedent) {
-      if (save.hero.niveau > niveauPrecedent) eclatNiveauMs = ECLAT_NIVEAU_MS;
+      if (save.hero.niveau > niveauPrecedent) {
+        eclatNiveauMs = ECLAT_NIVEAU_MS;
+        // Plusieurs niveaux d'un coup : un seul symbole, rejoué depuis le début.
+        logoNiveauMs = 0;
+      }
       niveauPrecedent = save.hero.niveau;
     }
     if (eclatNiveauMs > 0) eclatNiveauMs = Math.max(0, eclatNiveauMs - deltaMs);
+    // Avancé comme l'éclat, UI ouverte ou non : un dialogue qui s'ouvre sur la
+    // montée de niveau ne doit pas figer le symbole au-dessus du héros.
+    if (logoNiveauMs !== null) {
+      logoNiveauMs += deltaMs;
+      if (etatLogo(effetLogoNiveau, logoNiveauMs).termine) logoNiveauMs = null;
+    }
 
     if (!uiOuverte) {
       avancerPoussiere(poussiere, {
@@ -4013,6 +4030,17 @@ export function creerOrchestrateurGrotte({
     // et le nom de l'item sont résolus ICI (main.js a i18n et le registre) :
     // render.js ne reçoit que des chaînes déjà prêtes, exactement comme
     // `visuelArme`. Changer de langue traduit donc aussi un texte déjà en vol.
+    // Ticket L4 : le symbole de la montée de niveau, à la même place que les
+    // textes de gain (après l'obscurité, lisible de nuit ; avant le HUD), et
+    // accroché au héros : il le suit s'il bouge.
+    if (logoNiveauMs !== null) {
+      dessinerLogo(ctxLogique, imagesLogo, {
+        x: hero.x - camera.x,
+        y: hero.y - camera.y + effetLogoNiveau.offset_y_px,
+        hauteur: effetLogoNiveau.hauteur_px,
+        calques: etatLogo(effetLogoNiveau, logoNiveauMs).calques,
+      });
+    }
     dessinerTextesFlottants(ctxLogique, {
       camera,
       config: effetTexteGain,
@@ -4176,6 +4204,7 @@ export function creerOrchestrateurGrotte({
     intro = null;
     depart = null;
     ouvertureLogoMs = null;
+    logoNiveauMs = null;
     basculesLeviers.clear();
     cooldownAttaqueHerosMs = 0;
     anneauAttaqueMs = 0;
@@ -4232,6 +4261,7 @@ export function creerOrchestrateurGrotte({
     obtenirChoixFollet: () => choixFollet,
     obtenirIntro: () => intro,
     obtenirOuvertureLogo: () => ouvertureLogoMs,
+    obtenirLogoNiveau: () => logoNiveauMs,
     obtenirDepart: () => depart,
     obtenirSave: () => save,
     // `specs/10` §2.3 : LE point d'écriture, et ce que le jeu lit de

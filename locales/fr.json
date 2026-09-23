@@ -263,6 +263,7 @@
   "menu.fiche.manger": "Manger : {glyphe}",
   "menu.fiche.a_poser": "À poser dans la maison",
   "recipe.coffre": "Coffre",
+  "recipe.bois": "Bois",
   "station.coffre.description": "Un coffre de plus, à ranger où l’on veut.",
   "menu.fiche.deja_possede": "Tu possèdes déjà cet objet",
   "menu.fiche.ingredient_manquant": "Il manque {n} {item}",

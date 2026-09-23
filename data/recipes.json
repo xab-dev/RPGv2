@@ -130,5 +130,32 @@
       "valeur": "niveau",
       "min": 10
     }
+  },
+  {
+    "id": "rec_bois",
+    "label_key": "recipe.bois",
+    "station": "station_type_atelier",
+    "entrees": [
+      {
+        "item": "item_branche",
+        "qte": 5
+      },
+      {
+        "item": "item_herbe",
+        "qte": 2
+      }
+    ],
+    "cout_eclats": 1,
+    "sortie": {
+      "item": "item_bois",
+      "qte": 1
+    },
+    "categorie": "ressource",
+    "xp": 5,
+    "cooldown_ms": 60000,
+    "visible_si": {
+      "valeur": "niveau",
+      "min": 4
+    }
   }
 ]

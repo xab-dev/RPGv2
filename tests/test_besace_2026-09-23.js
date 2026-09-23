@@ -157,6 +157,13 @@ const palier = RECETTE.visible_si.all.find((c) => c.valeur === 'niveau').min;
   }), 'avant : la base');
   const entree = jeu.atelier().find((e) => e.titre === titre);
   assert.ok(entree && entree.grisee === false, 'fabricable au palier');
+  // Sa fiche ne dit ni « Donne : Besace × 1 » ni sa catégorie : elle n'entre
+  // jamais en poche (simplification demandée par Xav, 24/09). Sa description reste.
+  const textes = entree.lignes.map((l) => (typeof l === 'string' ? l : l.texte));
+  const objet = registre.obtenir('items', RECETTE.sortie.porte);
+  assert.ok(!textes.some((t) => t.startsWith(i18n.t('menu.fiche.donne', { item: '', n: '' }).split(' ')[0])), 'aucune ligne « Donne »');
+  assert.ok(!textes.includes(i18n.t(`item.categorie.${objet.categorie}`)), 'aucune ligne de catégorie');
+  assert.ok(textes.includes(i18n.t(objet.description_key)), 'la description reste');
   const xpAvant = jeu.save.hero.xp;
   entree.action();
 

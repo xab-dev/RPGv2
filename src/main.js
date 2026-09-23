@@ -2261,10 +2261,14 @@ export function creerOrchestrateurGrotte({
               texte: i18n.t('menu.fiche.cout_eclats', { n: r.cout_eclats, possede: save.inventaire.eclats }),
               icone: iconeMonnaie,
             }] : []),
-            i18n.t('menu.fiche.donne', { item: i18n.t(defSortie.label_key), n: r.sortie.qte || 1 }),
+            // Un objet PORTÉ (la besace) n'est pas « donné » et sa catégorie
+            // ne dit rien : il n'entre jamais en poche. Sa fiche se résume à
+            // sa description (simplification demandée par Xav, 24/09).
+            ...(r.sortie.porte ? [] : [i18n.t('menu.fiche.donne', { item: i18n.t(defSortie.label_key), n: r.sortie.qte || 1 })]),
             // La fiche d'un OBJET vient de `lignesFicheItem` ; une station
             // n'en a pas (elle ne se porte pas), elle dit ce qu'on en fera.
-            ...(modeleSortie ? [i18n.t('menu.fiche.a_poser')] : lignesFicheItem(defSortie, registre, i18n)),
+            ...(modeleSortie ? [i18n.t('menu.fiche.a_poser')]
+              : lignesFicheItem(defSortie, registre, i18n).slice(r.sortie.porte ? 1 : 0)),
             ...(raisons[verdict.raison] ? [raisons[verdict.raison]()] : []),
           ],
           libelleAction: i18n.t('menu.fiche.fabriquer'),

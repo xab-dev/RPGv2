@@ -187,6 +187,10 @@ rpg_v2/
 │   ├── vol_follet.js       `D-39` : la petite orbite du corps du follet autour de son point logique
 │   ├── bascule.js          `D-158` : le geste d'un levier dans le temps (butée, dépassement, voyant
 │   │                       à la butée, halo en fondu) — pur, un état d'AFFICHAGE jamais sauvegardé
+│   ├── logo.js             le symbole du jeu (« la sagesse pour tout et pour tous », Xav) : son
+│   │                       apparition signe après signe, dans l'ordre de lecture — pur ; dessiné par
+│   │                       `render.js#dessinerLogo` (trois calques d'`images/logo/`, meilleur effort)
+│   │                       avant le cold-open et, discret, à la montée de niveau
 │   ├── poussiere.js        traînée de poussière (héros, follet) : réserve de bouffées à capacité
 │   │                       en données, émission interpolée le long du segment parcouru
 │   ├── ornements.js        `D-134` : étincelles et halo qui respire (réglage Haut) — reçoit un
@@ -220,6 +224,9 @@ rpg_v2/
 │                           `main.js#habillageDialogue`) + hud_layout.js (canvas, résolution logique)
 │                           + cadre.js (`D-163` : LE cadre des calques d'UI canvas, bulle et indices)
 │                           + barre.js (`D-165` : LA barre de jauge — bandeau ET PV des monstres)
+├── images/logo/            les trois calques SVG du symbole, CUITS par
+│                           `docs/captures/logo/generer_logo.mjs` (seule source de la géométrie,
+│                           validée telle quelle par Xav le 23/09 : elle ne se retouche pas)
 ├── data/                   catalogues JSON (voir specs/*.md §2.1 de chaque phase) — dont
 │                           `conteneurs.json` (`D-118`) : les quatre nombres de la poche et du
 │                           coffre, en un seul endroit, tous PROVISOIRES

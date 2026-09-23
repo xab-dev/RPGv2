@@ -12,9 +12,9 @@ export default async function (chrome) {
   for (const profil of PROFILS) {
     for (const [moment, heure] of [['jour', 60_000], ['nuit', NUIT]]) {
       const save = saveDansLaMaison();
-      // Juste sous la stèle (tuile 21, 62), à portée d'INTERACT.
+      // Juste sous la stèle (tuile 21, 68), à portée d'INTERACT.
       save.hero.x = 21.5 * 32;
-      save.hero.y = 62 * 32 + 35;
+      save.hero.y = 68 * 32 + 35;
       save.monde.heure = heure;
       await ouvrirLeJeu(chrome, { ...profil, save });
       await chrome.capture(`${DOSSIER}/${profil.nom}_${moment}_monde.png`);

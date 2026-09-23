@@ -10,6 +10,9 @@
 //    écrite, un armement absent, une clairière sans zone tombent au boot.
 // 3. La clairière : la forêt procédurale n'y pousse pas — la stèle a au moins
 //    ses huit voisines libres, elle est dans la forêt, et un halo l'éclaire.
+//    Et on ne la voit PAS depuis le chemin (Xav : « non loin du chemin, sans
+//    être visible depuis le chemin ») : ni la pierre, ni son halo, ni sa
+//    clairière n'entrent dans la vue d'un héros debout sur une case de chemin.
 // 4. Le vrai orchestrateur : INTERACT à portée ouvre la vue (jeu gelé) ; B
 //    avant l'armement ne ferme rien ; MENU se tait ; B après l'armement ferme,
 //    un toucher aussi ; la gravure porte les MÊMES signes que l'écran Indices.
@@ -28,6 +31,9 @@ import { saveNeuve, creerStoreMemoire } from '../src/save.js';
 import { creerOrchestrateurGrotte } from '../src/main.js';
 import { chargerScene } from '../src/scene.js';
 import { mulberry32 } from '../src/decor.js';
+import { calculerCamera } from '../src/camera.js';
+import { RESOLUTION_LOGIQUE } from '../src/render.js';
+import { empreinteAbsoluePuzzle } from '../src/structures.js';
 import { creerVueStele, avancerVueStele, vueSteleArmee, alphaParticule, PARTICULES_MAX } from '../src/stele.js';
 
 const RACINE = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -103,7 +109,34 @@ const SCENE_ID = donnees.scenes.find((s) => (s.interactifs || []).includes(STELE
   const t = def.tile_size;
   assert.ok((def.lumieres || []).some((l) => l.couleur && Math.abs(l.x - (x + 0.5) * t) <= t && Math.abs(l.y - (y + 0.5) * t) <= t),
     'un halo coloré sur la stèle : elle brille la nuit');
-  console.log('OK clairière : huit voisines libres, dans la forêt, un halo dessus');
+  // Invisible depuis le chemin : la même caméra que le jeu, le héros au centre
+  // de chaque case de chemin de la scène.
+  const halo = def.lumieres.find((l) => l.couleur && Math.abs(l.x - (x + 0.5) * t) <= t && Math.abs(l.y - (y + 0.5) * t) <= t);
+  const pierre = empreinteAbsoluePuzzle(STELE, registre.obtenir('visuels', STELE.render.visuel), scene.poseEffectiveInteractif(STELE.id), t);
+  const clairiere = def.zones.find((z) => def.foret_procedurale.zones_exclues.includes(z.type) && dans(z.rect)).rect;
+  const aCacher = [
+    ['la pierre', pierre],
+    ['son halo', { x: halo.x - halo.rayon, y: halo.y - halo.rayon, w: 2 * halo.rayon, h: 2 * halo.rayon }],
+    ['sa clairière', { x: clairiere.x * t, y: clairiere.y * t, w: clairiere.w * t, h: clairiere.h * t }],
+  ];
+  const chemin = registre.obtenir('tiles', 'tile_chemin').id;
+  let casesChemin = 0;
+  for (let cy = 0; cy < def.height; cy += 1) {
+    for (let cx = 0; cx < def.width; cx += 1) {
+      if (scene.tuileA(cx, cy).id !== chemin) continue;
+      casesChemin += 1;
+      const cam = calculerCamera({
+        cibleX: (cx + 0.5) * t, cibleY: (cy + 0.5) * t, largeurScene: def.width * t, hauteurScene: def.height * t,
+        largeurVue: RESOLUTION_LOGIQUE.largeur, hauteurVue: RESOLUTION_LOGIQUE.hauteur,
+      });
+      for (const [nom, r] of aCacher) {
+        const vu = r.x < cam.x + RESOLUTION_LOGIQUE.largeur && r.x + r.w > cam.x && r.y < cam.y + RESOLUTION_LOGIQUE.hauteur && r.y + r.h > cam.y;
+        assert.ok(!vu, `${nom} se voit depuis la case de chemin (${cx}, ${cy})`);
+      }
+    }
+  }
+  assert.ok(casesChemin > 0, 'la scène a un chemin');
+  console.log(`OK clairière : huit voisines libres, dans la forêt, un halo dessus, invisible depuis les ${casesChemin} cases de chemin`);
 }
 
 // 4

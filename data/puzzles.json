@@ -73,7 +73,7 @@
   {
     "id": "stele_grotte",
     "type": "stele",
-    "position": { "x": 21, "y": 62 },
+    "position": { "x": 21, "y": 68 },
     "render": { "visuel": "visuel_stele" },
     "echelle": 2.1,
     "solide": true,

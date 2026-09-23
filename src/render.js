@@ -6,6 +6,7 @@
 import { dessinerVisuel } from './visuels.js';
 import { couleurTuile, tuileDeSol, varianteTuile } from './decor.js';
 import { dessinerBarre, PALETTE_JAUGES } from './ui/barre.js';
+import { POLICE_CALLIGRAPHIE, POLICE_CHIFFRES } from './polices.js';
 
 const DELTA_MAX_MS = 100; // provisoire : une frame ne rattrape jamais plus de 100 ms
 
@@ -1102,7 +1103,10 @@ export function dessinerTextesFlottants(ctx, { textes, camera, config }) {
     // dégradation pour un retour d'interface.
     const style = config.styles[t.style];
     if (!style) continue;
-    ctx.font = `bold ${style.taille_px}px monospace`;
+    // Polish libre du 24/09 : la même paire que le bandeau du HUD — chiffres
+    // alignés, lettres à la plume — au lieu d'un `monospace` de console. Le
+    // gras reste : c'est lui, avec le contour, qui tient le texte sur l'herbe.
+    ctx.font = `bold ${style.taille_px}px "${POLICE_CHIFFRES}", "${POLICE_CALLIGRAPHIE}", serif`;
     ctx.globalAlpha = t.alpha;
     const x = t.x - camera.x;
     // Décalage propre au style, en plus du décalage global : deux gains émis

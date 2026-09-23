@@ -15,11 +15,22 @@ import { cadrer } from './icone_canvas.js';
 import { RESOLUTION_LOGIQUE } from '../render.js';
 import { dessinerVisuel, TAILLE_REFERENCE_FOLLET_PX } from '../visuels.js';
 import { dessinerBarre, PALETTE_JAUGES } from './barre.js';
+import { POLICE_CALLIGRAPHIE, POLICE_CHIFFRES } from '../polices.js';
 
 // Taille de l'icône follet dans le cartouche HUD (px logiques) — inchangée
 // depuis avant 03_grotte-polish, désormais une échelle de visuel_follet_*
 // plutôt qu'un dessin dédié (§3.3 : une seule fonction de rendu).
 const TAILLE_ICONE_FOLLET = 6;
+
+// Polish libre du 24/09 : les nombres du bandeau quittent le `monospace`, qui
+// donnait au jeu l'air d'une console de débogage. Deux essais avaient échoué
+// (P3) : la calligraphie et l'onciale n'ont que des chiffres bas de casse.
+// Les chiffres alignés empruntés à l'appareil (`POLICE_CHIFFRES`) règlent ce
+// point ; les lettres (« Nv. ») restent à la plume du reste du jeu. Aucun
+// texte du bandeau n'a besoin d'une chasse fixe : PV centrés, éclats alignés
+// à gauche, niveau aligné à droite (`D-17`) — rien ne se cale sur la largeur
+// d'un caractère.
+const policeBandeau = (px) => `${px}px "${POLICE_CHIFFRES}", "${POLICE_CALLIGRAPHIE}", serif`;
 
 // Contour de la case d'attaque tant qu'aucun follet n'est choisi. Dès qu'il
 // l'est, la case prend SA couleur (`companion.render.couleur`, celle de son
@@ -315,7 +326,7 @@ export function dessinerHud(ctx, {
   const b = zones.pv;
   const ratio = pvMax > 0 ? Math.max(0, Math.min(1, pv / pvMax)) : 0;
   dessinerBarre(ctx, b, ratio, PALETTE_JAUGES.pv);
-  ctx.font = '8px monospace';
+  ctx.font = policeBandeau(8);
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   // Le nombre passe tantôt sur le rouge, tantôt sur le creux : une ombre
@@ -336,7 +347,7 @@ export function dessinerHud(ctx, {
   dessinerIconeBandeau(ctx, iconesBandeau.eclats, zoneEclats.x + TAILLE_ICONE_ECLAT / 2, milieuEclats, TAILLE_ICONE_ECLAT);
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
-  ctx.font = '9px monospace';
+  ctx.font = policeBandeau(10);
   ctx.fillStyle = '#fff';
   ctx.fillText(`${eclats}`, zoneEclats.x + TAILLE_ICONE_ECLAT + 4, milieuEclats);
 
@@ -361,7 +372,7 @@ export function dessinerHud(ctx, {
     // droit » veut dire.
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
-    ctx.font = '9px monospace';
+    ctx.font = policeBandeau(10);
     ctx.fillStyle = intensite > 0 ? COULEUR_ECLAT_NIVEAU : '#fff';
     ctx.fillText(
       `${i18n.t('hud.niveau_prefixe')}${niveau}`,

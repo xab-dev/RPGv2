@@ -80,6 +80,21 @@ const VUES = {
     await chrome.attendre(300);
     await chrome.capture(nom('indices'));
   },
+  // Le texte qui monte d'un ramassage (« +1 Branche » et l'XP) : une branche
+  // posée au pied du héros, sur la terre nue au nord de la Maison.
+  gain: async (chrome, nom) => {
+    const save = saveDansLaMaison();
+    save.monde.heure = PLEIN_JOUR;
+    save.hero.x = 85.5 * 32;
+    save.hero.y = 49.5 * 32;
+    save.monde.items_sol = { scene_maison_exterieur: { item_branche: [{ x: save.hero.x + 12, y: save.hero.y }] } };
+    save.monde.jour_items_sol = { scene_maison_exterieur: save.monde.jour };
+    save.flags.flag_premier_ramassage = true; // pas de bulle par-dessus
+    await ouvrirLeJeu(chrome, { ...nom.profil, save });
+    await chrome.touche('KeyE');
+    await chrome.attendre(250);
+    await chrome.capture(nom('gain'));
+  },
   jour: async (chrome, nom) => {
     const save = saveDansLaMaison();
     save.monde.heure = PLEIN_JOUR;
@@ -96,7 +111,9 @@ const VUES = {
 
 export default async function (chrome) {
   const choix = process.env.VUES ? process.env.VUES.split(',') : Object.keys(VUES);
-  for (const profil of PROFILS.filter((p) => p.nom !== 'pc')) {
+  // `PROFILS=pc` : le petit écran PC, pour juger un texte à sa taille minimale.
+  const profils = process.env.PROFILS ? process.env.PROFILS.split(',') : ['grand', 'telephone'];
+  for (const profil of PROFILS.filter((p) => profils.includes(p.nom))) {
     for (const vue of choix) {
       const nom = Object.assign((v) => `${DOSSIER}/${SUFFIXE}_${profil.nom}_${v}.png`, { profil });
       await VUES[vue](chrome, nom);

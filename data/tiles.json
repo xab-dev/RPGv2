@@ -36,7 +36,8 @@
     "render": { "type": "couleur", "valeur": "#5a9147", "sol": "tile_herbe", "visuel": "visuel_arbre_fruitier" } },
   { "id": "tile_parquet", "solid": false,
     "render": { "type": "couleur", "valeur": "#a9764f", "variantes": ["#aa784f", "#a6744d"], "variation_teinte": 0.012,
-                "visuel": "visuel_grain_parquet" } },
+                "visuel": "visuel_grain_parquet",
+                "visuel_variantes": ["visuel_grain_parquet_2", "visuel_grain_parquet_3"], "miroir": true } },
   { "id": "tile_mur_maison", "solid": true, "render": { "type": "couleur", "valeur": "#564e44", "visuel": "visuel_mur_maison" } },
   { "id": "tile_porte_maison", "solid": false, "render": { "type": "couleur", "valeur": "#c9a869" } },
   { "id": "tile_toit", "solid": false, "render": { "type": "couleur", "valeur": "#3a2a1c", "visuel": "visuel_toit_bardeaux" } }

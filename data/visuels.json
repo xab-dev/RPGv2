@@ -10262,6 +10262,24 @@
       {
         "forme": "ligne",
         "dx": 0,
+        "dy": -21.5,
+        "points": [
+          [
+            -16,
+            0
+          ],
+          [
+            16,
+            0
+          ]
+        ],
+        "couleur": "#6f4a2d",
+        "epaisseur": 1,
+        "alpha": 0.5
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
         "dy": -10.5,
         "points": [
           [
@@ -10280,25 +10298,7 @@
       {
         "forme": "ligne",
         "dx": 0,
-        "dy": -9.5,
-        "points": [
-          [
-            -16,
-            0
-          ],
-          [
-            16,
-            0
-          ]
-        ],
-        "couleur": "#cd9d70",
-        "epaisseur": 1,
-        "alpha": 0.3
-      },
-      {
-        "forme": "ligne",
-        "dx": 0,
-        "dy": -21.5,
+        "dy": -0.5,
         "points": [
           [
             -16,
@@ -10333,21 +10333,429 @@
       },
       {
         "forme": "ligne",
-        "dx": 7,
-        "dy": -21,
+        "dx": 0,
+        "dy": -9.5,
         "points": [
           [
-            0,
+            -16,
             0
           ],
           [
-            0,
-            10
+            16,
+            0
+          ]
+        ],
+        "couleur": "#cd9d70",
+        "epaisseur": 1,
+        "alpha": 0.3
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -9,
+            -31.5
+          ],
+          [
+            -9,
+            -22
           ]
         ],
         "couleur": "#6f4a2d",
         "epaisseur": 1,
         "alpha": 0.45
+      },
+      {
+        "forme": "cercle",
+        "dx": -11,
+        "dy": -26.75,
+        "w": 1.1,
+        "h": 1.1,
+        "couleur": "#3a2718",
+        "alpha": 0.4
+      },
+      {
+        "forme": "cercle",
+        "dx": -7,
+        "dy": -26.75,
+        "w": 1.1,
+        "h": 1.1,
+        "couleur": "#3a2718",
+        "alpha": 0.4
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": -28,
+        "points": [
+          [
+            -6,
+            0
+          ],
+          [
+            5,
+            0.4
+          ]
+        ],
+        "couleur": "#8a5c3a",
+        "epaisseur": 0.5,
+        "alpha": 0.35
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": -4,
+        "points": [
+          [
+            3,
+            0
+          ],
+          [
+            14,
+            0.4
+          ]
+        ],
+        "couleur": "#8a5c3a",
+        "epaisseur": 0.5,
+        "alpha": 0.35
+      }
+    ]
+  },
+  {
+    "id": "visuel_grain_parquet_3",
+    "ancre": "bas",
+    "primitives": [
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": -21.5,
+        "points": [
+          [
+            -16,
+            0
+          ],
+          [
+            16,
+            0
+          ]
+        ],
+        "couleur": "#6f4a2d",
+        "epaisseur": 1,
+        "alpha": 0.5
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": -10.5,
+        "points": [
+          [
+            -16,
+            0
+          ],
+          [
+            16,
+            0
+          ]
+        ],
+        "couleur": "#6f4a2d",
+        "epaisseur": 1,
+        "alpha": 0.5
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": -0.5,
+        "points": [
+          [
+            -16,
+            0
+          ],
+          [
+            16,
+            0
+          ]
+        ],
+        "couleur": "#6f4a2d",
+        "epaisseur": 1,
+        "alpha": 0.5
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": -20.5,
+        "points": [
+          [
+            -16,
+            0
+          ],
+          [
+            16,
+            0
+          ]
+        ],
+        "couleur": "#cd9d70",
+        "epaisseur": 1,
+        "alpha": 0.3
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": -9.5,
+        "points": [
+          [
+            -16,
+            0
+          ],
+          [
+            16,
+            0
+          ]
+        ],
+        "couleur": "#cd9d70",
+        "epaisseur": 1,
+        "alpha": 0.3
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            10,
+            -9.5
+          ],
+          [
+            10,
+            -1
+          ]
+        ],
+        "couleur": "#6f4a2d",
+        "epaisseur": 1,
+        "alpha": 0.45
+      },
+      {
+        "forme": "cercle",
+        "dx": 8,
+        "dy": -5.25,
+        "w": 1.1,
+        "h": 1.1,
+        "couleur": "#3a2718",
+        "alpha": 0.4
+      },
+      {
+        "forme": "cercle",
+        "dx": 12,
+        "dy": -5.25,
+        "w": 1.1,
+        "h": 1.1,
+        "couleur": "#3a2718",
+        "alpha": 0.4
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": -15,
+        "points": [
+          [
+            2,
+            0
+          ],
+          [
+            13,
+            0.4
+          ]
+        ],
+        "couleur": "#8a5c3a",
+        "epaisseur": 0.5,
+        "alpha": 0.35
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": -5.5,
+        "points": [
+          [
+            -12,
+            0
+          ],
+          [
+            4,
+            0.4
+          ]
+        ],
+        "couleur": "#8a5c3a",
+        "epaisseur": 0.5,
+        "alpha": 0.35
+      }
+    ]
+  },
+  {
+    "id": "visuel_grain_parquet_2",
+    "ancre": "bas",
+    "primitives": [
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": -21.5,
+        "points": [
+          [
+            -16,
+            0
+          ],
+          [
+            16,
+            0
+          ]
+        ],
+        "couleur": "#6f4a2d",
+        "epaisseur": 1,
+        "alpha": 0.5
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": -10.5,
+        "points": [
+          [
+            -16,
+            0
+          ],
+          [
+            16,
+            0
+          ]
+        ],
+        "couleur": "#6f4a2d",
+        "epaisseur": 1,
+        "alpha": 0.5
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": -0.5,
+        "points": [
+          [
+            -16,
+            0
+          ],
+          [
+            16,
+            0
+          ]
+        ],
+        "couleur": "#6f4a2d",
+        "epaisseur": 1,
+        "alpha": 0.5
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": -20.5,
+        "points": [
+          [
+            -16,
+            0
+          ],
+          [
+            16,
+            0
+          ]
+        ],
+        "couleur": "#cd9d70",
+        "epaisseur": 1,
+        "alpha": 0.3
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": -9.5,
+        "points": [
+          [
+            -16,
+            0
+          ],
+          [
+            16,
+            0
+          ]
+        ],
+        "couleur": "#cd9d70",
+        "epaisseur": 1,
+        "alpha": 0.3
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            5,
+            -20.5
+          ],
+          [
+            5,
+            -11
+          ]
+        ],
+        "couleur": "#6f4a2d",
+        "epaisseur": 1,
+        "alpha": 0.45
+      },
+      {
+        "forme": "cercle",
+        "dx": 3,
+        "dy": -15.75,
+        "w": 1.1,
+        "h": 1.1,
+        "couleur": "#3a2718",
+        "alpha": 0.4
+      },
+      {
+        "forme": "cercle",
+        "dx": 7,
+        "dy": -15.75,
+        "w": 1.1,
+        "h": 1.1,
+        "couleur": "#3a2718",
+        "alpha": 0.4
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": -26,
+        "points": [
+          [
+            -14,
+            0
+          ],
+          [
+            -2,
+            0.4
+          ]
+        ],
+        "couleur": "#8a5c3a",
+        "epaisseur": 0.5,
+        "alpha": 0.35
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": -17.5,
+        "points": [
+          [
+            -5,
+            0
+          ],
+          [
+            9,
+            0.4
+          ]
+        ],
+        "couleur": "#8a5c3a",
+        "epaisseur": 0.5,
+        "alpha": 0.35
       }
     ]
   },

@@ -43,4 +43,5 @@ parquet » se réduit au parquet.
 | Commit | Sujet | Ce qu'il faut en retenir |
 |---|---|---|
 | `435cf20` | Ménage | Journal polish ambiance archivé, INDEX à jour |
-| — | `D-154` | Rochers de décor dans la valeur de la pierre (plus des galets pâles), touffe dans les verts de la pelouse, flaque d'eau noire. Garde-fou : un rocher de décor reste plus sombre que les pierres ramassables |
+| `cd45a72` | `D-154` | Rochers de décor dans la valeur de la pierre (plus des galets pâles), touffe dans les verts de la pelouse, flaque d'eau noire. Garde-fou : un rocher de décor reste plus sombre que les pierres ramassables |
+| — | `D-155` | Parquet : trois dessins × miroir, un bout de lame par dessin (des lames longues), joint au bord bas de la case. Une passe « un joint par rangée » faisait carrelage : retirée à la capture. Damier de teintes proposé en `Q-77` |

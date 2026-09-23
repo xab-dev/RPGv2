@@ -19,6 +19,7 @@ PS1 fondu d'entrée et de sortie de la vue · PS2 la gravure qui respire ligne p
 
 | Ticket | Commit | Ce qui est livré |
 |---|---|---|
+| PS1 — le fondu | `4fa3316` | `stele.js` : `fermerVueStele`, `vueSteleTerminee`, `alphaVueStele` (fondu de 240 ms, PROVISOIRE) ; la pierre monte de 8 px en apparaissant. `main.js` : B ou un toucher lancent la sortie, la vue disparaît à sa fin, jeu gelé jusque-là. `tests/test_stele` : fondu et sortie. Captures : mi-fondu sous les trois profils |
 
 **Prouvé par les tests** : la case contextuelle (Construction dedans, Indices dehors), le brouillage
 (déterministe, silhouette, alphabet seul), la bascule au Nv.15 sans réinitialisation, le catalogue et
@@ -26,4 +27,3 @@ ses clés FR/EN, les refus au démarrage ; la stèle hors de vue du chemin. **Va
 par défaut `Q-120` à `Q-122` (« on garde tout »).
 
 **Au prochain ménage** : archiver ce journal.
-| PS1 — le fondu | *(ce commit)* | `stele.js` : `fermerVueStele`, `vueSteleTerminee`, `alphaVueStele` (fondu de 240 ms, PROVISOIRE) ; la pierre monte de 8 px en apparaissant. `main.js` : B ou un toucher lancent la sortie, la vue disparaît à sa fin, jeu gelé jusque-là. `tests/test_stele` : fondu et sortie. Captures : mi-fondu sous les trois profils |

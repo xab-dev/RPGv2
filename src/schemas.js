@@ -1563,7 +1563,10 @@ export const SCHEMAS = {
       // des étincelles qui lui tournent autour, et un halo qui respire. Ni
       // l'un ni l'autre ne vit hors de Haut aujourd'hui, et c'est `ornement_min`
       // qui le dit, pas le type.
-      const TYPES = ['particules', 'texte', 'vol', 'clignement', 'curseur', 'orbite', 'respiration'];
+      // `logo` (journal du 23/09, ticket L2) : l'apparition du symbole du jeu,
+      // ses trois signes l'un après l'autre (`src/logo.js`). Ni particule ni
+      // gabarit : une chronologie et une taille — d'où son jeu de champs.
+      const TYPES = ['particules', 'texte', 'vol', 'clignement', 'curseur', 'orbite', 'respiration', 'logo'];
       if (!TYPES.includes(entry.type)) {
         erreurs.push(`${path} > type doit valoir ${TYPES.map((t) => `"${t}"`).join(' ou ')}`);
         return erreurs;
@@ -1684,6 +1687,29 @@ export const SCHEMAS = {
         }
         if (entry.nb_particules > 0 && typeof entry.visuel_particule !== 'string') {
           erreurs.push(`${path} > visuel_particule est requis dès que nb_particules > 0`);
+        }
+        return erreurs;
+      }
+
+      if (entry.type === 'logo') {
+        // Une durée nulle est ACCEPTÉE (le signe apparaît ou s'éteint d'un coup :
+        // un réglage qui doit s'obtenir en changeant un nombre) ; une durée
+        // négative ou absente ferait une chronologie sans sens, jamais dessinée.
+        for (const champ of ['decalage_ms', 'apparition_ms', 'tenue_ms', 'fondu_ms']) {
+          if (typeof entry[champ] !== 'number' || !(entry[champ] >= 0)) {
+            erreurs.push(`${path} > ${champ} doit être un nombre de ms positif ou nul`);
+          }
+        }
+        if (typeof entry.hauteur_px !== 'number' || !(entry.hauteur_px > 0)) {
+          erreurs.push(`${path} > hauteur_px doit être un nombre strictement positif`);
+        }
+        if (typeof entry.alpha !== 'number' || !(entry.alpha > 0) || entry.alpha > 1) {
+          erreurs.push(`${path} > alpha doit être un nombre dans ]0, 1] (un symbole à 0 ne se verrait jamais)`);
+        }
+        for (const champ of ['montee_px', 'offset_y_px']) {
+          if (typeof entry[champ] !== 'number' || !Number.isFinite(entry[champ])) {
+            erreurs.push(`${path} > ${champ} doit être un nombre fini`);
+          }
         }
         return erreurs;
       }

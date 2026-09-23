@@ -20,6 +20,9 @@ const TYPES_MIME = {
   '.js': 'text/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
+  // Ticket L2 : les calques du symbole. Servie en `octet-stream`, une image SVG
+  // ne se décode pas — le logo serait absent sans erreur visible.
+  '.svg': 'image/svg+xml',
 };
 
 // `D-181` : le chemin absolu à servir, ou `null` si la requête sort de la

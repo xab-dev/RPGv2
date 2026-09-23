@@ -1140,6 +1140,25 @@ function obtenirCanvasPaupieres(largeur, hauteur) {
   return canvasPaupieres;
 }
 
+// Le symbole du jeu (ticket L2) : ses trois calques d'image superposés, chacun
+// à son alpha et à son décalage (`logo.js#etatLogo`), centrés sur (x, y) en px
+// logiques. `images` vient de `main.js#demarrerJeu` ; une image absente, pas
+// encore chargée ou en erreur ne se dessine pas — « meilleur effort », le jeu
+// tourne sans son logo comme il tourne sans sa musique. La transform du
+// contexte n'est pas touchée : seul l'alpha change, rendu par save/restore.
+export function dessinerLogo(ctx, images, { x, y, hauteur, calques }) {
+  if (!images || images.length === 0) return;
+  ctx.save();
+  calques.forEach((calque, i) => {
+    const image = images[i];
+    if (!image || !image.complete || !image.naturalWidth || calque.alpha <= 0) return;
+    const largeur = (hauteur * image.naturalWidth) / image.naturalHeight;
+    ctx.globalAlpha = calque.alpha;
+    ctx.drawImage(image, x - largeur / 2, y - hauteur / 2 + calque.dy, largeur, hauteur);
+  });
+  ctx.restore();
+}
+
 // Bord dégradé de l'ouverture (même principe que RATIO_COEUR_LUMIERE) : sans
 // lui, le contour de l'ellipse serait une coupure nette, contraire à la
 // direction artistique "assemblage moderne" (dégradés, jamais de flou/filtre).

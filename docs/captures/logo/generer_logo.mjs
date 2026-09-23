@@ -2,7 +2,8 @@
 // Ce script est LA source de la géométrie : les SVG et la planche de présentation en
 // sortent. Retoucher le logo, c'est retoucher un nombre ici puis relancer :
 //   node docs/captures/logo/generer_logo.mjs
-// Aucune dépendance ; rien de ce dossier n'est chargé par le jeu.
+// Aucune dépendance. Le jeu ne charge de ce script que ses SORTIES : les trois calques de
+// `images/logo/` (ticket L2) ; le reste de ce dossier est de la documentation.
 //
 // Lecture de haut en bas :
 //   1. la sagesse  — un losange (la silhouette de l'éclat), une orbe en son centre, et des
@@ -13,7 +14,7 @@
 //   3. pour tous   — la Terre : un triangle renversé qui part de la pointe basse du vase,
 //                    traits fins, sa base (en haut) descendue vers le centre du triangle.
 
-import { writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -148,6 +149,33 @@ const couleur = (id) => ({
 
 writeFileSync(join(ICI, 'logo.svg'), symbole({ p: MONO, id: 'm' }).replace('<svg ', '<svg style="color:#1b2433" ') + '\n');
 writeFileSync(join(ICI, 'logo_couleur.svg'), symbole({ p: couleur('c'), id: 'c' }) + '\n');
+
+// --- Les calques du JEU (ticket L2) ---
+// Le jeu fait apparaître les trois symboles l'un après l'autre, dans l'ordre de lecture :
+// il lui faut donc chacun sur son propre calque, les deux autres transparents. Les calques
+// gardent les masques du symbole entier — l'entrelacs (un trait de derrière interrompu là
+// où passe celui de devant) est cuit dedans, superposés ils redonnent exactement le logo.
+// Taille naturelle posée (`height`) : sans elle, une image SVG n'a pas de proportions
+// connues du canvas. Le jeu lit le rapport largeur / hauteur sur l'image chargée.
+const JEU = join(ICI, '..', '..', '..', 'images', 'logo');
+mkdirSync(JEU, { recursive: true });
+const TRANSPARENT = 'none';
+for (const n of [1, 2, 3]) {
+  const c = couleur(`j${n}`);
+  const p = {
+    degrades: n === 1 ? c.degrades : '',
+    terre: n === 3 ? c.terre : TRANSPARENT,
+    tout: n === 2 ? c.tout : TRANSPARENT,
+    vase: n === 1 ? c.vase : TRANSPARENT,
+    losange: n === 1 ? c.losange : TRANSPARENT,
+    fondLosange: n === 1 ? c.fondLosange : undefined,
+    orbe: n === 1 ? c.orbe : TRANSPARENT,
+  };
+  const hauteur = 512;
+  const svg = symbole({ p, id: `j${n}` })
+    .replace('<svg ', `<svg width="${f((hauteur * VB.w) / VB.h)}" height="${hauteur}" `);
+  writeFileSync(join(JEU, `logo_calque_${n}.svg`), svg + '\n');
+}
 
 // --- Planche de présentation ---
 const vue = (titre, svg, fond = 'sombre', note = '') =>

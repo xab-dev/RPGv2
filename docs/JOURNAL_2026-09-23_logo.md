@@ -10,4 +10,5 @@ en est la seule source ; les tickets ci-dessous n'ajoutent que des SORTIES à ce
 
 | Ticket | Commit | Ce qui est livré |
 |---|---|---|
-| L1 — le symbole et le README | (ce commit) | `docs/captures/logo/` (script, SVG mono et couleur, planche) ; le grimoire ASCII du README remplacé par le symbole (couleur en thème sombre, mono en thème clair) |
+| L1 — le symbole et le README | `47a76f5` | `docs/captures/logo/` (script, SVG mono et couleur, planche) ; le grimoire ASCII du README remplacé par le symbole (couleur en thème sombre, mono en thème clair) |
+| L2 — le moteur d'apparition | (ce commit) | `src/logo.js` (pur : un signe après l'autre, dans l'ordre de lecture, puis fondu commun) ; `render.js#dessinerLogo` (meilleur effort : image absente = rien) ; type d'effet `logo` validé au boot, deux entrées dans `effets.json` (ouverture, niveau — valeurs PROVISOIRES) ; les trois calques cuits par le script dans `images/logo/` ; `.svg` servi en `image/svg+xml` par le serveur local ; `tests/test_l2_logo` |

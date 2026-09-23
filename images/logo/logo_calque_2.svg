@@ -1,0 +1,24 @@
+<svg width="256.89" height="512" xmlns="http://www.w3.org/2000/svg" viewBox="-65.86 -64 131.73 262.54" role="img" aria-label="La sagesse pour tout et pour tous">
+  <defs>
+    <clipPath id="j2-coupe"><rect x="-65.86" y="-54" width="131.73" height="262.54"/></clipPath>
+    <mask id="j2-derriere1" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#j2-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+    </mask>
+    <mask id="j2-derriere2" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#j2-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+      <path d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="#000" stroke="#000" stroke-width="7"/>
+    </mask>
+  </defs>
+  <g mask="url(#j2-derriere2)" fill="none" stroke="none" stroke-width="2.5" stroke-linecap="butt">
+    <polyline points="-55.86,94.27 0,188.54 55.86,94.27" stroke-linejoin="miter"/>
+    <line x1="-50.53" y1="103.27" x2="50.53" y2="103.27"/>
+  </g>
+  <path mask="url(#j2-derriere1)" d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="#d9ae45"/>
+  <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="none" stroke-width="4" stroke-linejoin="miter" clip-path="url(#j2-coupe)"/>
+  <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="none" stroke-width="4" stroke-linejoin="miter"/>
+  <circle cx="0" cy="0" r="9" fill="none"/>
+</svg>

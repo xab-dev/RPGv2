@@ -18,7 +18,7 @@ Historique complet des sessions : **`docs/archives/INDEX.md`** — un fichier pa
 
 - `specs/00_ROADMAP.md` — brief autonome à lire en entier en premier. Contexte projet, décisions déjà tranchées (à ne jamais rouvrir), contraintes de méthode, détail de la phase en cours.
 - `specs/01_socle-technique.md` à `specs/09_reglages-graphiques.md` — specs détaillées des phases et chantiers, tous livrés (`ls specs/`).
-- `docs/carte_mentale_RPG_V2_v1_6_0.md` — décisions produit/techniques verrouillées (§0, §8) et règle d'architecture directrice (§7).
+- `docs/carte_mentale_RPG_V2_v1_7_0.md` — décisions produit/techniques verrouillées (§0, §8) et règle d'architecture directrice (§7).
 
 **Avant toute action de code**, lire `specs/00_ROADMAP.md` en entier, puis le fichier `0N_*.md` de la phase courante. Ne pas rouvrir une décision déjà actée dans ces documents — un point de design non tranché se marque `[OUVERT]` et remonte à l'utilisateur (dev = Xav), il ne se tranche jamais en silence.
 
@@ -205,7 +205,7 @@ rpg_v2/
 ├── locales/fr.json, en.json
 ├── specs/                  00_ROADMAP.md, 0N_*.md par phase
 ├── docs/                   DOC_suivi-dettes.md (registre vivant : LA liste de ce qui est dû) +
-│                           carte_mentale_RPG_V2_v1_6_0.md + fiches de diagnostic/ticket actives
+│                           carte_mentale_RPG_V2_v1_7_0.md + fiches de diagnostic/ticket actives
 │                           (SD_*.md, MT_*.md, NS_*.md, CHECKLIST_visuelle.md) + archives/
 │                           (journaux de session clos, fiches et NS closes) + captures/
 │                           (album de référence par jalon)
@@ -238,7 +238,7 @@ rpg_v2/
 
 ## Décisions produit verrouillées (ne pas rouvrir)
 
-Détail complet dans `docs/carte_mentale_RPG_V2_v1_6_0.md` §0 et §8. Points structurants pour le code :
+Détail complet dans `docs/carte_mentale_RPG_V2_v1_7_0.md` §0 et §8. Points structurants pour le code :
 
 - 3 éléments (Feu/Eau/Terre), extensibles en données uniquement.
 - 4 stats primaires : Force, Agilité, Vitalité, Esprit. Esprit = réserve de skills uniquement ; tout le scaling de dégâts converge sur Force, l'élément porte le type/les interactions, jamais la puissance brute.
@@ -247,7 +247,7 @@ Détail complet dans `docs/carte_mentale_RPG_V2_v1_6_0.md` §0 et §8. Points st
 - Système de recettes unique ; stations et catégories de sortie en données.
 - Cartes : tuiles réutilisables, layout écrit à la main (ou via script d'aide, jamais génération procédurale de layout jouable) + décor non-collisionnant procédural à graine fixe.
 - Narration diffuse, aucun journal de quêtes, aucun objectif affiché ; un journal de découvertes existe (ce qui a été trouvé, jamais ce qu'il faut faire).
-- Périmètre M1 fermé : Grotte-tutoriel → Région Maison → 1ère zone de monstres → Château → Boss 1 → Poste avancé. Console/cartouches/Codex/alignement bien-mal = M2+.
+- Périmètre M1 fermé : Grotte-tutoriel → Région Maison → 1ère zone de monstres → Château → Boss 1 → Poste avancé. Console/cartouches/Codex = M2+. **L'alignement est en M1** (révisé le 23/09, voir la table ci-dessous).
 
 Décisions datées, nées en cours de développement (détail dans l'archive citée ; une décision révisée n'apparaît qu'en version finale).
 
@@ -270,6 +270,15 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 | **Une cible tactile qui bouge avec le monde est un cercle annoncé par l'orchestrateur à chaque frame** (`touch.js#zonesMonde`), calculé avec la même caméra que le dessin ; la couche tactile ne sait ni ce qu'est un follet ni où est la caméra. Le doigt du joystick n'en déclenche jamais | 2026-09-23 | `D-142` |
 | **Une lumière de scène peut attendre un flag** (`condition`, même forme et même validateur qu'un portail) ; le filtre est pur (`scene.js#lumieresActives`) et appliqué là où la scène affichée est composée — render.js ne voit jamais une condition. Une lumière posée sur une porte attend le flag de la porte (tenu par test) | 2026-09-23 | `D-157` |
 | **Une pièce qui bouge avec l'état d'un interactif est une pièce du VISUEL** (`piece_mobile` : dessin, pivot, angles ; `lumiere_active` pour la lumière de l'état allumé), et son geste est un état d'affichage (`bascule.js`), jamais sauvegardé : la vérité reste l'état du puzzle, un levier chargé allumé est posé | 2026-09-23 | `D-158` |
+| **Esprit reste la réserve des compétences** (D1⑧ confirmée) ; l'idée « Esprit = alignement » du 22/09 est abandonnée | 2026-09-23 | NS alignement §1.1 |
+| **L'alignement est une stat CACHÉE, distincte, en M1** (*révise* « M2+ ») : jamais affichée (ni Stats ni HUD), jamais modifiable par le joueur, présente dès le début ; bornes `[−5 ; +5]`, 0 neutre, pondération par action. Paliers : `abs(A) < 1` neutre · 1–2 · 3–4 · 5 ; bonus principal +1/+2/+3, malus sur le héros aux mêmes paliers. Poids par défaut : option de dialogue en données, spam −0,25 (plafond −1 par dialogue), lecture complète +0,1, morts 0 | 2026-09-23 | NS alignement §1.2-1.3, §1.5, §2 A et D — spec `10` à écrire |
+| **Les effets de l'alignement passent par le follet seul** : orbite inversée (sens de rotation seul, rayon de l'équipement `Q-29`) dès `A ≤ −1`, et la synergie **change de camp** selon la table des régimes négatifs (carte mentale v1.7.0 §8). La lumière du follet n'est pas touchée (`D-35` ne se reprend toujours pas) ; « follet en bord d'écran » abandonné. Un régime qui touche une **dérivée** (Eau) se déclare en données par un modificateur de dérivée, un seul point de résolution (patron `D-141`) ; la vitesse d'un monstre dans l'aura accepte les deux sens, un « /2 » est un facteur | 2026-09-23 | NS alignement §1.4, §2 B-C |
+| **Dialogues à conséquences** : tous les dialogues existants (FR/EN) sont à revoir ; choix multiples dès la Grotte (dialogue de la maison = premier cas, fusionné avec la ligne de `D-124`) ; **le follet est un LLM scripté** (le héros c'est Xav, le follet c'est Claude), arc pédagogique et suite narrative au Nv.15, épine = le cadre 4D de Xav | 2026-09-23 | NS alignement §1.6-1.7, §2 E-G — spec `11` à écrire |
+| **Boucle 5 min** : sortir → récupérer → combattre → revenir → stocker → cuisiner → équiper ; Nv.0 → 10 en ~20 min, Nv.15 avec la nuit (mesure de Xav). Le bot de `R-19` le contredit : c'est **son trajet** qu'il faut revoir, pas le rythme | 2026-09-23 | NS alignement §1.8, `Q-62` |
+| **Pas de nouvelle carte** : la carte Maison s'agrandit par des annexes et tunnels. Maison → **Annexe 1** (mini-boss 1 + énigme 1, récompense régulière du lieu, respec et re-choix du follet **illimités et gratuits depuis le menu** — *révise* « après Boss 1 » —, premières compétences) → **Annexe 2** (zone de mobs + tunnel, mini-boss 2, énigme 2) → nouvelle zone ; Château et Boss 1 après | 2026-09-23 | NS alignement §1.9-1.10 |
+| **Éclats et coût des crafts : on ne touche pas** — la chaîne nuit → éclats → outils est voulue (« il faut faire un choix et ça se mérite ») | 2026-09-23 | NS alignement §1.11, `Q-69` |
+| **Produit** : à terme plus d'éléments que haTD, les trois actuels restent (D2) · open source assumé, payant ou portage possibles une fois fini, **aucune sollicitation directe de dons** (P1) · **pas de sauvegarde cloud** sans multijoueur réseau · double tampon OK, P3 (C5⑥) | 2026-09-23 | NS alignement §1.12-1.15 |
+| **Journal d'indices et de traces** : dernier bouton du menu principal (menu permanent), rappelle l'histoire parcourue, sous-page **Indices** de lore par zone, carnet du cryptex | 2026-09-23 | NS alignement §1.16 (D13/D16) |
 
 ## Ce qui est dû : dettes, questions, validations
 
@@ -303,7 +312,7 @@ la session précédente a révélées, clos celles qu'elle a livrées.
 
 ## Critère de passage courant
 
-**Fondations : closes** (23/09, `Q-20`). **Prochaine étape : finir la carte Maison.** La Phase 4 n'est plus la suivante : ses systèmes (armes, équipement, compétences, tables d'apparition) arrivent d'abord sur la carte Maison, et la carte suivante s'ouvre quand la Maison est épuisée (Nv. 40-50, provisoire). Critère de clôture de la Région Maison : **la boucle de 2 heures** (sauvegarde neuve → 2 h de jeu → Nv. 30 → l'envie de changer d'endroit). Le rythme ne se rouvre pas avant le Boss 1 (`Q-62` : Xav mesure 15 à 20 min du Nv.0 au Nv.10).
+**Fondations : closes** (23/09, `Q-20`). **Prochaine étape : finir la carte Maison**, par des **annexes et tunnels**, jamais une carte nouvelle (23/09). Sessions dans l'ordre, jamais mélangées (`docs/NS_alignement-dialogues-carte-mentale_2026-09-23.md` §4) : Doc-1 (**faite**) → Instrument (`?alignement=N`, `save.hero.alignement`, orbite inversée, `D-53`) → Spec 10 `10_alignement-follet.md` → Spec 11 `11_dialogues-consequences.md` → contenu de l'arc Nv.15+ ; en file d'attente : Annexe 1, puis le journal d'indices et de traces. La Phase 4 n'est plus la suivante : ses systèmes (armes, équipement, compétences, tables d'apparition) arrivent d'abord sur la carte Maison, et la carte suivante s'ouvre quand la Maison est épuisée (Nv. 40-50, provisoire). Critère de clôture de la Région Maison : **la boucle de 2 heures** (sauvegarde neuve → 2 h de jeu → Nv. 30 → l'envie de changer d'endroit). Le rythme ne se rouvre pas avant le Boss 1 (`Q-62` : Xav mesure 15 à 20 min du Nv.0 au Nv.10).
 
 **Méthode (Xav, 19/09) : on ne rajoute pas de contenu sur des bases non confirmées** — un ticket par session (ou une file de micro-tickets), un commit par ticket, validation en jeu entre deux. Ce que Xav doit encore voir en jeu : les lignes `V-` ouvertes du suivi.
 

@@ -1,6 +1,8 @@
 # Carte mentale — RPG V2
 
-**Version : 1.6.0** — **cadrage clos. Roadmap rédigée : `specs/00_ROADMAP.md`. Phases 0, 1, 1b, 2 et 3 livrées et validées, chantier Construction clos, polish post-Construction (étapes 1 à 6) livré et validé en jeu le 2026-09-19. Chantier courant : la carte Maison elle-même — systèmes et contenu — jusqu'à la boucle de 2 heures. Ordre détaillé dans `specs/00_ROADMAP.md`, ce qui reste dû dans `docs/DOC_suivi-dettes.md`.**
+**Version : 1.7.0** — **cadrage clos. Roadmap rédigée : `specs/00_ROADMAP.md`. Fondations closes le 2026-09-23 (`Q-20`). Chantier courant : la carte Maison elle-même — systèmes et contenu, annexes et tunnels — jusqu'à la boucle de 2 heures. Ordre détaillé dans `specs/00_ROADMAP.md`, ce qui reste dû dans `docs/DOC_suivi-dettes.md`.**
+
+**Changelog depuis 1.6.0 (2026-09-23)** : session de documentation (`NS_alignement-dialogues-carte-mentale_2026-09-23.md` v1.1.0, décisions de Xav des 22 et 23/09), aucun code touché. **L'alignement entre en M1** (D11⑦) : stat **cachée**, distincte d'Esprit (D1⑧ confirmée), bornes `[−5 ; +5]`, effets **par le follet seul** — orbite inversée, synergie qui change de camp (table des régimes négatifs en §8). **Dialogues à conséquences** en chantier (D12), **follet = LLM scripté** (D13). **Pas de nouvelle carte** : la carte Maison s'agrandit par des **annexes** (mini-boss + énigme) et des tunnels (§2, §3, §3bis) ; respec et re-choix du follet **après l'Annexe 1, illimités et gratuits** (D1⑥, D11⑤). Boucle 5 min chiffrée par Xav (§2). **Journal d'indices et de traces** en menu permanent (D16). P1 : open source assumé, aucune sollicitation directe de dons ; pas de cloud sans multijoueur réseau (P3, C5⑦) ; double tampon ✅ (C5⑥). Quatre risques de §0bis clos ou reformulés.
 
 **Changelog depuis 1.5.0 (2026-09-19)** : session de revue des dettes (`NS_decisions-revue-dettes_2026-09-19.md`), aucun code touché. **Le seuil « 1ère zone de monstres gatée par niveau ~5 » est abandonné** (§3bis, D21, §8) : la carte suivante s'ouvre quand la carte Maison est épuisée, vers le Nv. 40-50 (provisoire), et les *systèmes* de la Phase 4 arrivent d'abord sur la carte Maison. **Arc de progression de la carte Maison** inscrit en §3bis (Nv. 5 / 10 / 15 décidés, Nv. 20 / 30 / 40-50 en idées) avec son critère de clôture, **la boucle de 2 heures**. **Vocabulaire de la Région Maison révisé** (§3bis) : Forêt = côté ouest, Campagne = bande centrale **neutre**, Champs = deux grandes zones en L, zone sûre étendue à un rectangle autour de la sortie de la Grotte, **toutes les zones en rectangles**. Comportement des monstres acté en §5 : **« un domaine, pas un piquet »**, seuils en données. `Q-18` ouverte : concilier « compétences au Nv. 30 » avec le double axe D21① (piste : *le niveau ouvre le lieu, le lieu donne la capacité*).
 
@@ -44,15 +46,15 @@ Les 8 🟡 restants ne sont plus des modules non traités : ce sont des sous-bra
 | **C2** 🟢 | V1 → V2 | **Refonte.** La V1 est un prototype jetable. Aucune ligne de `rpg_v0_1_0.js` n'est reprise par défaut. Ce qui se réutilise se justifie au cas par cas (patrons, pas code). |
 | **C4** 🟢 | Data-driven | **JSON externes chargés au runtime**, un fichier par catalogue, validés au chargement par un schéma. Pipeline Sheet → JSON possible en amont (patron `sync_cards.js` déjà éprouvé sur haTD). |
 | **C9** 🟢 | Packaging | **Wrapper WebView** (Capacitor ou équivalent) pour le Play Store. Le jeu reste jouable en navigateur. Conséquences à respecter dès la conception : pas de dépendance à `localStorage` seul, audio initialisé sur geste utilisateur, budget de rendu canvas contraint. |
-| **D2** 🟢 | Éléments | **3 éléments : Feu / Eau / Terre.** Le moteur ne code jamais « 3 » en dur : la table d'éléments et la table de forces/faiblesses sont des données, extensibles sans toucher au combat. |
-| **P1** 🟢 | Modèle économique | **Gratuit + dons externes. Zéro publicité, zéro achat intégré, zéro monnaie premium** (ces trois exclusions restent des certitudes non négociables). Une **V3 sur un vrai moteur de jeu pourra, elle, être payante** — la V2 HTML assume son rôle de vitrine et de terrain d'apprentissage. Aucune mécanique de frustration monétisable : ni timer, ni énergie, ni gacha. *Révise la décision « payant une fois » du 2026-09-15.* |
+| **D2** 🟢 | Éléments | **3 éléments : Feu / Eau / Terre.** Le moteur ne code jamais « 3 » en dur : la table d'éléments et la table de forces/faiblesses sont des données, extensibles sans toucher au combat. *Précisé le 2026-09-23* : le RPG prévoira **à terme plus d'éléments que haTD** ; les trois actuels restent. |
+| **P1** 🟢 | Modèle économique | **Gratuit + dons externes. Zéro publicité, zéro achat intégré, zéro monnaie premium** (ces trois exclusions restent des certitudes non négociables). Une **V3 sur un vrai moteur de jeu pourra, elle, être payante** — la V2 HTML assume son rôle de vitrine et de terrain d'apprentissage. Aucune mécanique de frustration monétisable : ni timer, ni énergie, ni gacha. *Révise la décision « payant une fois » du 2026-09-15.* *Précisé le 2026-09-23* : **open source assumé**, vitrine et compte rendu de stage en solo game dev assisté par IA ; si quelqu'un reprend le jeu avec plus de moyens, tant mieux. Version payante ou portage avec équipe possibles **une fois le jeu fini**. **Aucune sollicitation directe de dons** : ça se fera dans la communauté. |
 | **P2** 🟢 | Périmètre V2.0 | **L'ère M1, fermée à cette chaîne exacte** : Grotte-tutoriel → Région Maison → 1ère zone de monstres → Château → **Boss 1** → **Poste avancé** (clôture de M1, pont vers M2). Tout le reste est M2+. Liste close : aucun ajout sans décision datée au §8. *Précisé le 2026-09-15 : le Poste avancé ferme M1.* |
 | **D5⑤** 🟢 | Barre d'actions | **5 actions simultanées** : 1 attaque + 3 compétences + 1 consommable (potion/bandage). Le nombre de slots est une donnée, pas une constante de code. |
 | **D19③** 🟢 | Survie hors-ligne | **Les jauges gèlent hors session.** Aucune décroissance quand le jeu est fermé. Cohérent avec P1 : aucune mécanique de frustration monétisable, aucune punition de l'absence. |
 | **D1①** 🟢 | Stats primaires | **4 stats : Force, Agilité, Vitalité, Esprit.** Liste stockée en données. Toute stat dérivée se calcule à partir de ces 4, jamais ajoutée en dur. |
 | **D21①** 🟢 | Double axe de progression | **XP → stats. Jalons narratifs → capacités.** Les deux axes sont indépendants : farmer ne débloque jamais une capacité, progresser dans l'histoire ne donne jamais de stats. Un joueur bloqué peut toujours avancer sur l'autre axe. |
 | **D9①** 🟢 | Recettes | **Un seul système de recettes, une seule mécanique.** Ce qui varie est en données : la **station requise** (cuisine, forge, atelier…) et la **catégorie de sortie**. Ajouter la forge en M3 = ajouter des entrées JSON, zéro code. |
-| **D1⑧** 🟢 | Rôle d'Esprit | **Réserve de lancement des compétences, rien d'autre.** Esprit ne fait pas scaler les dégâts. Conséquence à trancher en D2⑦. |
+| **D1⑧** 🟢 | Rôle d'Esprit | **Réserve de lancement des compétences, rien d'autre.** Esprit ne fait pas scaler les dégâts. Conséquence à trancher en D2⑦. **Confirmé le 2026-09-23** (l'idée « Esprit = alignement » du 22/09 est abandonnée : l'alignement est une stat cachée distincte, D11⑦) ; dérivée `réserve d'esprit` posée par `D-141`. |
 | **D3①** 🟢 | Slots d'équipement | **3 slots : arme, armure, accessoire.** Nombre et noms en données — ajouter un slot en M3+ ne touche pas le système. |
 | **D2⑦** 🟢 | Scaling élémentaire | **Trois sources cumulatives** — équipement, affinité du choix initial, maîtrise qui monte à l'usage — **et toutes passent par la stat Force**, qui porte les dégâts de base. L'élément détermine le *type* de dégât et les interactions (forces/faiblesses, synergies), jamais la puissance brute. Une seule voie de scaling à équilibrer. |
 | **D8①** 🟢 | Loot | **Deux tables combinées** : une table par ennemi (butin thématique) + une table par zone (ressources d'ambiance). Les deux sont des données, résolues indépendamment à chaque mort. |
@@ -68,7 +70,7 @@ Les 8 🟡 restants ne sont plus des modules non traités : ce sont des sous-bra
 | **P4②** 🟢 | Accessibilité élémentaire | **Chaque élément est identifiable sans la couleur, dès la conception.** Forme, icône ou motif portent l'information autant que la teinte. Non négociable, pas une passe de polish : un jeu dont tout le combat repose sur 3 éléments codés en couleur est injouable pour ~8 % des joueurs masculins. |
 | **C10⑤** 🟢 | Chargement | **Catalogues chargés intégralement au boot** (quelques dizaines de Ko, validés d'un bloc — un échec de schéma doit apparaître au démarrage, jamais en plein combat). **Assets de zone en chargement paresseux** à l'entrée de la zone. |
 | **C11①** 🟢 | Performance | **Deux budgets distincts.** Référence : **60 fps sur PC**. Plancher : **30 fps stables sur mobile**. Le budget d'entités simultanées à l'écran se cale sur le **plancher mobile**, jamais sur le confort PC. |
-| **P3①** 🟢 | Hors-ligne | **Jeu entièrement jouable hors-ligne**, aucune fonctionnalité de jeu ne dépend du réseau. Sauvegarde cloud **optionnelle** uniquement — voir son coût réel en §0bis. |
+| **P3①** 🟢 | Hors-ligne | **Jeu entièrement jouable hors-ligne**, aucune fonctionnalité de jeu ne dépend du réseau. Sauvegarde cloud **optionnelle** uniquement — voir son coût réel en §0bis. *Tranché le 2026-09-23* : **pas de cloud tant qu'il n'y a pas de multijoueur en réseau** ; export/import + sauvegarde locale. |
 | **D15①** 🟢 | Fabrication des cartes | **Assemblage de tuiles réutilisables.** Layout de chaque zone écrit à la main en JSON (level design intentionnel, indispensable aux énigmes et au gating), palette de tuiles réutilisable (coût de production compatible avec C1), décor non-collisionnant généré par-dessus de façon **déterministe à graine fixe** (patron validé en V1). Aucune génération procédurale de layout jouable. |
 
 ---
@@ -79,14 +81,14 @@ Les 8 🟡 restants ne sont plus des modules non traités : ce sont des sous-bra
 
 | Risque | Origine | Conséquence à anticiper |
 |---|---|---|
-| **Cohérence élémentaire RPG ↔ haTD** | D2 = 3 éléments, alors que haTD en expose 9 (`feu, eau, terre, vent, foudre, âme, ombre, lave, lumière`) | Si haTD devient une cartouche de console, un joueur verra 9 éléments dans le mini-jeu et 3 dans le RPG. Le contrat de cartouche (D17) doit soit isoler totalement les deux vocabulaires, soit prévoir une table de correspondance. À trancher avec D17. |
+| **Cohérence élémentaire RPG ↔ haTD** — *reformulé le 2026-09-23* | D2 = 3 éléments aujourd'hui, haTD en expose 9 (`feu, eau, terre, vent, foudre, âme, ombre, lave, lumière`) — mais le RPG en prévoira **à terme davantage** que haTD | Ce n'est plus haTD qui en a trop : c'est le RPG qui en aura plus. La correspondance reste à faire dans le contrat de cartouche (D17), **dans l'autre sens** — chaque élément de haTD devra trouver le sien dans la table du RPG, pas l'inverse. À trancher avec D17. |
 | ~~Découvrabilité d'un jeu payant d'emblée~~ **RÉSOLU** | P1 | Résolu le 2026-09-15 par le passage à gratuit + dons : plus aucune barrière à l'essai, et surtout plus de contrat commercial implicite — livrer M1 puis M2 puis M3 ne lèse personne, alors qu'un jeu payant arrêté à M3 aurait vendu un produit inachevé. |
-| **Revenu réel proche de zéro** | P1 | À assumer les yeux ouverts : les dons convertissent typiquement bien en dessous de 1 % des joueurs. Si l'objectif de la V2 est la vitrine, le portfolio et l'apprentissage, c'est cohérent. Si un revenu était attendu de ce projet, il ne viendra pas de là — il viendra, le cas échéant, de la V3 payante sur moteur natif. |
-| **Sollicitation de dons et politique Play Store** | P1 + C9 | Google Play encadre strictement les paiements sortants d'une application, et un bouton de don pointant vers un paiement externe est une zone à risque pour un développeur qui n'est pas une association. Voie prudente : ne rien solliciter dans l'app, héberger les dons sur une page externe (itch.io, Ko-fi, Liberapay). **À vérifier sur la politique en vigueur avant publication** — cette règle bouge souvent. |
+| ~~Revenu réel proche de zéro~~ **ASSUMÉ, CLOS (2026-09-23)** — open source et vitrine, P1 précisé | P1 | À assumer les yeux ouverts : les dons convertissent typiquement bien en dessous de 1 % des joueurs. Si l'objectif de la V2 est la vitrine, le portfolio et l'apprentissage, c'est cohérent. Si un revenu était attendu de ce projet, il ne viendra pas de là — il viendra, le cas échéant, de la V3 payante sur moteur natif. |
+| ~~Sollicitation de dons et politique Play Store~~ **ASSUMÉ, CLOS (2026-09-23)** — aucune sollicitation directe de dons, ça se fera dans la communauté | P1 + C9 | Google Play encadre strictement les paiements sortants d'une application, et un bouton de don pointant vers un paiement externe est une zone à risque pour un développeur qui n'est pas une association. Voie prudente : ne rien solliciter dans l'app, héberger les dons sur une page externe (itch.io, Ko-fi, Liberapay). **À vérifier sur la politique en vigueur avant publication** — cette règle bouge souvent. |
 | ~~« Ère M1 complète » ≠ vertical slice~~ **RÉSOLU** | P2 | Résolu le 2026-09-15 : M1 est défini comme exactement Grotte → Maison → 1ère zone → Château → Boss 1. Le périmètre coïncide avec le vertical slice d'origine. Console, cartouches et Codex sont explicitement hors M1. |
 | ~~Pas de plancher de performance~~ **RÉSOLU** | C11① | Résolu le 2026-09-15 : 60 fps PC en référence, 30 fps mobile en plancher, budget d'entités calé sur le plancher. Reste à chiffrer l'appareil mobile minimum retenu (C11①ter). |
-| **Coût réel du cloud** | P3① + P1 | Une sauvegarde cloud implique un backend, des comptes, une politique de confidentialité et un hébergement à vie — désormais sur un jeu **gratuit**, donc sans aucun revenu pour le financer. L'argument s'est renforcé, pas affaibli. L'export/import de fichier (C5⑦) apporte l'essentiel du bénéfice pour 0 € et zéro infrastructure. À arbitrer consciemment avant de s'engager. |
-| **Volume de texte doublé** | C6③ + D13① | Le bilinguisme FR/EN s'applique à tout — et D13① fait du lore diffus le principal vecteur narratif, donc le volume de texte est élevé par construction. Deux conséquences : chiffrer le volume de M1 avant d'écrire (D13⑤), et figer tôt le pipeline de localisation pour ne pas retraduire deux fois. La traduction EN d'un lore allusif n'est pas un travail mécanique. |
+| ~~Coût réel du cloud~~ **CLOS (2026-09-23)** — pas de cloud sans multijoueur en réseau (P3①, C5⑦) | P3① + P1 | Une sauvegarde cloud implique un backend, des comptes, une politique de confidentialité et un hébergement à vie — désormais sur un jeu **gratuit**, donc sans aucun revenu pour le financer. L'argument s'est renforcé, pas affaibli. L'export/import de fichier (C5⑦) apporte l'essentiel du bénéfice pour 0 € et zéro infrastructure. À arbitrer consciemment avant de s'engager. |
+| **Volume de texte doublé** | C6③ + D13① | Le bilinguisme FR/EN s'applique à tout — et D13① fait du lore diffus le principal vecteur narratif, donc le volume de texte est élevé par construction. Deux conséquences : chiffrer le volume de M1 avant d'écrire (D13⑤), et figer tôt le pipeline de localisation pour ne pas retraduire deux fois. La traduction EN d'un lore allusif n'est pas un travail mécanique. **Aggravé le 2026-09-23** : dialogues à réponses multiples (D12) et arc du follet-LLM au Nv.15+ (D13) — volume à rechiffrer. |
 | **Sauvegarde unique sans filet** | C5①② + C9 | Une seule sauvegarde automatique, dans un WebView, sans cloud : une écriture interrompue, un vidage de stockage par le système Android ou une désinstallation efface toute la partie. Sur un jeu payant, un joueur qui perd 15 h de progression laisse un avis à une étoile définitif. Deux garde-fous n'ajoutent presque aucune complexité et se décident en C5⑥⑦ : écriture en **double tampon** (on n'écrase jamais la sauvegarde valide avant que la nouvelle soit complète) et **export/import manuel** d'un fichier de sauvegarde. Le modèle « une seule sauvegarde » n'est pas remis en cause. |
 | ~~Aucun journal vs sessions mobiles courtes~~ **RÉSOLU** | D13① + D16① | Résolu le 2026-09-15 : le journal existe et enregistre ce qui a été découvert, sans jamais lister d'objectif. Le mystère et la liberté sont préservés, l'orientation aussi. |
 | **Aucun journal vs sessions mobiles courtes (détail d'origine)** | D13① + P3 | Un joueur qui revient après trois jours n'a aucun moyen de retrouver ce qu'il faisait. Le risque est aggravé par D21① : si les capacités sont gatées par jalons narratifs et qu'aucune trace n'existe, un joueur bloqué ne peut pas se débloquer et désinstalle. Piste qui préserverait le mystère sans sacrifier l'orientation : pas de liste d'objectifs, mais un **carnet de traces** qui n'enregistre que ce que le joueur a *déjà* vu ou entendu (indices, lieux, dialogues marquants) — il ne dit jamais quoi faire, il rappelle ce qui a été découvert. À croiser avec D16 (Codex). |
@@ -115,9 +117,10 @@ mindmap
       Inventaire
       Compétences
       Survie
+      Alignement (caché)
     MONDE
       Zones
-      PNJ & dialogues
+      Dialogues à conséquences
       Quêtes & narration
       Énigmes
       Spawn & loot
@@ -135,6 +138,7 @@ mindmap
       Combat
       Exploration
       Lien
+      Alignement
     CONSOLE
       Contrat cartouche
       haTD
@@ -154,21 +158,26 @@ mindmap
 ```mermaid
 flowchart LR
     subgraph B5["Boucle 5 min"]
-        A[Sortir] --> B[Récolter / Combattre]
-        B --> C[Revenir]
-        C --> D[Stocker / Cuisiner / Équiper]
-        D --> A
+        A[Sortir] --> B[Récupérer]
+        B --> C[Combattre]
+        C --> D[Revenir]
+        D --> E[Stocker]
+        E --> F[Cuisiner]
+        F --> G[Équiper]
+        G --> A
     end
     subgraph B60["Boucle 1 h"]
-        E[Nouvelle zone] --> F[Mini-boss]
-        F --> G[Nouveau système débloqué]
-        G --> H[Maison agrandie]
-        H --> E
+        H[Annexe : mini-boss + énigme] --> I[Système débloqué]
+        I --> J[Récompense régulière du lieu]
+        J --> K[Maison enrichie]
+        K --> L[Annexe suivante]
+        L --> H
     end
     B5 -.alimente.-> B60
 ```
 
-⚪ Les deux boucles doivent être **chiffrées** (durée réelle, gain par cycle) avant le cahier des charges.
+✅ **Boucle 5 min chiffrée** : Nv.0 → 10 en ~20 min, Nv.15 avec la nuit (mesure de Xav en jouant tranquillement, 2026-09-23).
+⚪ La boucle 1 h reste à chiffrer (durée réelle, gain par cycle) une fois l'Annexe 1 jouable. La « nouvelle zone » en est **sortie** (2026-09-23) : la boucle tourne dans la carte Maison, d'annexe en annexe.
 
 ---
 
@@ -177,18 +186,19 @@ flowchart LR
 ```mermaid
 flowchart TD
     I[Réveil grotte] --> EL{Feu / Eau / Terre}
-    EL --> CR[Création perso]
-    CR --> HOME[(MAISON — hub)]
-    HOME --> REC[Récolte / Jardin / Craft]
-    HOME --> CBT[Farm zones de mobs]
-    REC --> Z1[Première zone]
-    CBT --> Z1
-    Z1 --> MB[Mini-boss]
-    MB --> CH[Château]
-    CH --> B1[BOSS 1]
-    B1 --> RESPEC[/Respec stats + compagnon/]
-    B1 --> R2[Nouvelle région]
+    EL --> TER[Terroir]
+    TER --> HOME[(MAISON — hub)]
+    HOME --> VIE[Récolte · craft · survie · chasse nocturne]
+    VIE --> A1[ANNEXE 1 : mini-boss 1 + énigme 1]
+    A1 --> REC1[/Récompense régulière du lieu/]
+    A1 --> RESPEC[/Respec des stats + re-choix du follet, illimités et gratuits depuis le menu/]
+    A1 --> COMP[/Premières compétences/]
+    A1 --> A2[ANNEXE 2 : zone de mobs + tunnel à travers la carte]
+    A2 --> MB2[Mini-boss 2 + énigme 2]
+    MB2 --> NZ[Nouvelle zone débloquée]
 ```
+
+*Révisé le 2026-09-23* (décision 10 de Xav, `NS_alignement-dialogues-carte-mentale_2026-09-23.md`) : Réveil grotte → feu → terroir → Maison → Annexe 1 → Annexe 2 → nouvelle zone. **Le Château et le Boss 1 restent après l'Annexe 2**, hors du diagramme M1 courant. Le respec et le re-choix du follet ne sont plus la récompense du Boss 1 : ils arrivent avec l'Annexe 1.
 
 ---
 
@@ -203,7 +213,7 @@ flowchart TD
 | **Maison — intérieur** | Petite scène | **Stations à placement libre** (cuisine, table de craft), coffre de base, inventaire poche → sac de craft, déco légère. Plus tard : armurerie, alchimie… (entrées JSON). Zone de camp : se ressourcer, se préparer. | — | Chill | 1 pièce |
 | **1ère zone de monstres** | Région façon V1 : salles, passages | Farm de mobs, **mini-boss et boss farmables**. Synergies du follet en **double action** (boost attaque / vitesse d'attaque / vitesse de déplacement côté joueur ; ralentissement / dégâts côté monstres). | Mène au Château | Chaos, sombre | ≥ 5400 × 3700 |
 | **Château** | Intérieur multi-salles | Mini-boss à tir à distance, énigmes uniques | Boss 1 | Tendu | multi-salles |
-| **Boss 1** | Arène | Boss en phases, télégraphié | Débloque **respec + changement de compagnon** | — | 1 arène |
+| **Boss 1** | Arène | Boss en phases, télégraphié | ~~Débloque respec + changement de compagnon~~ — *révisé le 2026-09-23* : respec et re-choix du follet arrivent avec l'**Annexe 1** (§3) | — | 1 arène |
 | **Poste avancé** | Équivalent de la Maison + **Hub** | Stockage, craft, et point de départ vers M2 | Clôture de M1 | — | 1 scène |
 
 **Grande modularité (grandes pièces, agencement) : réservée au Château / Poste avancé, pas à la première Maison.**
@@ -235,6 +245,8 @@ Le seuil « accès à la 1ère zone de monstres gaté par niveau ~5 » est **aba
 
 **Avant toute nouvelle carte** (liste de Xav) : plus de ressources, écrire les crafts, écrire les armes, écrire les compétences. Des portes, cavernes ou tunnels viendront sur la carte Maison, dans l'esprit de la V1 ; les monstres en rendront l'accès intéressant.
 
+**Aucune nouvelle carte tant que la carte Maison n'est pas épuisée par les annexes et tunnels** (Xav, 2026-09-23). Le contenu s'agrandit **dans** la carte Maison : annexes (mini-boss + énigme, le lieu reste et donne une récompense régulière une fois l'énigme résolue), tunnels, petites découvertes — voir §3.
+
 **Critère de clôture de la Région Maison — la boucle de 2 heures** : sauvegarde neuve → deux heures de jeu → niveau 30 → l'envie de changer d'endroit. Vérifiable à la main par Xav **et** par le bot headless, comme la boucle 5 minutes de la Phase 3. Retour de playtest à conserver : monter de niveau par la seule cuisine devient pénible vers le niveau 7.
 
 > **`[OUVERT]` (`Q-18`, à ne pas trancher en silence)** : « compétences au niveau 30 » frotte contre D21① (« XP → stats, jalons narratifs → capacités », deux axes indépendants). Piste proposée, non actée : *le niveau ouvre le lieu, le lieu donne la capacité* — la caverne du Nv. 20 s'ouvre par le niveau, son casse-tête est le jalon qui débloque. À trancher quand Xav écrira les compétences.
@@ -248,7 +260,7 @@ Note de lecture (Xav) : « fluidité » désigne le **ressenti des mouvements** 
 | # | Module | Statut | Sous-branches à traiter |
 |---|---|---|---|
 | C3 | **Input abstrait** | 🟡 | ① liste définitive des verbes (`MOVE ATTACK SKILL DODGE INTERACT MENU` + ?) · ② mapping tactile · ③ mapping manette ABXY · ④ mapping clavier · ⑤ remapping par le joueur ? · ⑥ détection auto du périphérique · ⑦ gestion du hot-swap manette en cours de partie |
-| C5 | **Save & migration** | 🟡 | ✅② sauvegarde unique automatique · ① support de stockage (IndexedDB recommandé, jamais localStorage seul — cf. C9) · ③ versionnement du schéma + migration · ④ sauvegarde auto (quand ?) · ⑤ cloud / reprise multi-appareil · ⑥ anti-corruption (double buffer) · ⑦ export/import manuel |
+| C5 | **Save & migration** | 🟡 | ✅② sauvegarde unique automatique · ① support de stockage (IndexedDB recommandé, jamais localStorage seul — cf. C9) · ③ versionnement du schéma + migration · ④ sauvegarde auto (quand ?) · ⑤ cloud / reprise multi-appareil · ✅⑥ anti-corruption (double tampon) — « OK, petite sécurité en plus, aucun problème constaté », priorité basse P3 (Xav, 2026-09-23) · ⑦ export/import manuel — **pas de cloud sans multijoueur en réseau** (2026-09-23) |
 | C6 | **Settings / Audio / i18n** | 🟡 | ✅③ FR + EN dès la V2.0, zéro chaîne en dur · ① options graphiques (budget perf) · ② volumes séparés · ④ format des fichiers de localisation et clés · ⑤ gestion des largeurs de texte variables à l'écran |
 | C7 | **UI / HUD** | 🟡 | ⓪ **la manette est la référence, le tactile l'adaptation** (C0) · ① portrait ou paysage (ou les deux) · ② résolution de référence + scaling · ③ zones de pouce / safe areas (encoches) · ④ taille minimale des cibles tactiles · ⑤ structure des menus (inventaire, carte, journal) · ⑥ feedback haptique · ⑦ règle « zéro pop-up commercial » actée |
 | C8 | **Flags & déblocages** | 🟡 | ✅① registre central, conditions en données · ② format exact d'une condition · ③ graphe de dépendances des systèmes · ④ comportement si un flag est atteint hors ordre prévu |
@@ -261,22 +273,22 @@ Note de lecture (Xav) : « fluidité » désigne le **ressenti des mouvements** 
 
 | # | Catalogue | Statut | Sous-branches à traiter |
 |---|---|---|---|
-| D1 | **Stats & formules** | 🟡 | ✅① Force / Agilité / Vitalité / Esprit · ② stats dérivées (PV, dégâts, vitesse, crit, résistances) · ③ formule de dégâts · ④ courbe de scaling par niveau · ⑤ plafonds · ⑥ respec (débloqué après Boss 1) · ⑦ où vivent les formules : code ou données · ⑧ **rôle exact d'Esprit** — dégâts élémentaires ? ressource de skill ? les deux ? (à croiser avec D5④) |
-| D2 | **Éléments & synergies** | 🟡 | ✅ nombre = 3 (Feu/Eau/Terre), table extensible en données · ② table de forces/faiblesses · ③ définition d'une synergie · ④ ce que le choix initial verrouille vraiment · ⑤ correspondance avec les 9 éléments haTD (voir §0bis) · ⑥ rendu visuel d'un élément sans dépendre de la couleur seule (voir P4) · ✅⑦ scaling via équipement + affinité + maîtrise, tout converge sur Force · ⑧ comment la maîtrise élémentaire monte exactement |
+| D1 | **Stats & formules** | 🟡 | ✅① Force / Agilité / Vitalité / Esprit · ② stats dérivées (PV, dégâts, vitesse, crit, résistances) · ③ formule de dégâts · ④ courbe de scaling par niveau · ⑤ plafonds · ⑥ respec — **après l'Annexe 1, illimité et gratuit depuis le menu** (*révise* « après Boss 1 », 2026-09-23) · ⑦ où vivent les formules : code ou données · ✅⑧ **rôle d'Esprit** : réserve des compétences — confirmé le 2026-09-23 ; dérivée `réserve d'esprit` posée par `D-141` |
+| D2 | **Éléments & synergies** | 🟡 | ✅ nombre = 3 (Feu/Eau/Terre), table extensible en données · ② table de forces/faiblesses · ③ définition d'une synergie · ④ ce que le choix initial verrouille vraiment · ⑤ correspondance avec les 9 éléments haTD (voir §0bis) — à terme le RPG en aura **plus** que haTD, la correspondance se fait dans l'autre sens (2026-09-23) · ⑥ rendu visuel d'un élément sans dépendre de la couleur seule (voir P4) · ✅⑦ scaling via équipement + affinité + maîtrise, tout converge sur Force · ⑧ comment la maîtrise élémentaire monte exactement |
 | D3 | **Équipement / armes** | 🟡 | ✅① 3 slots : arme, armure, accessoire · ② schéma d'une arme (`name type damage element speed abilities requirements effects`) · ③ raretés · ④ upgrade / enchantement · ⑤ sets · ⑥ conditions de port · ⑦ apparence liée ou cosmétique séparée |
 | D4 | **Inventaire & ressources** | 🟡 | ① inventaire générique unifié (acté en V1) · ② capacité / stacks · ③ coffre de la Maison vs sac porté · ④ tri & filtres · ⑤ que fait-on quand c'est plein · ⑥ catégories de ressources |
 | D5 | **Compétences** | 🟡 | ✅⑤ 5 slots : 1 attaque + 3 skills + 1 consommable · ① actives vs passives · ② arbre, slots ou déblocage linéaire · ③ schéma d'une compétence · ④ ressource de lancement (mana ? cooldown ? les deux ?) · ⑥ compétences liées à l'arme ou au personnage · ⑦ le slot consommable est-il fixe ou libre |
-| D6 | **Effets d'état** | 🟡 | ✅① les 3 familles, dérivées logiquement de l'élément · ② durée / stacking / refresh · ③ **table des synergies élémentaires à écrire** (bloquant pour D2③) · ④ affichage HUD avec 5 slots d'action déjà occupés · ⑤ source (repas, compétence, environnement) |
+| D6 | **Effets d'état** | 🟡 | ✅① les 3 familles, dérivées logiquement de l'élément · ② durée / stacking / refresh · ✅③ table des synergies élémentaires actée le 2026-09-15 (§8), **plus une colonne « régime négatif »** le 2026-09-23 (alignement ≤ −1, table en §8) · ④ affichage HUD avec 5 slots d'action déjà occupés · ⑤ source (repas, compétence, environnement) |
 | D7 | **Ennemis & boss** | 🟡 | ① schéma d'un ennemi · ② archétypes de comportement (mêlée, tir à distance, téléport) · ③ patterns de boss en données ou en code · ④ phases · ⑤ scaling par zone · ⑥ spawn (voir D15) |
 | D8 | **Loot & récompenses** | 🟡 | ✅① table par ennemi + table par zone, combinées · ② pondérations / rareté · ③ pity timer · ④ récompenses de première fois vs répétables · ⑤ sources hors combat (récolte, énigme, mini-jeu) |
 | D9 | **Recettes** | 🟡 | ✅① système unique, stations et catégories en données · ② schéma d'une recette · ③ découverte (connue vs à trouver) · ④ liste des stations en M1 (cuisine seule ?) · ⑤ temps de fabrication · ⑥ buffs alimentaires = vrai système de build · ⑦ échec / qualité |
 | D10 | **Jardinage** | 🟡 | ✅① croissance à l'action, jamais au temps réel · ② schéma d'une culture · ③ nombre de parcelles / extension · ④ arrosage, saisons, aléas · ⑤ lien avec la cuisine |
-| D11 | **Compagnons** | 🟡 | ✅ le follet suit dès la Grotte, **double action** (joueur : attaque / vitesse d'attaque / déplacement — monstres : ralentissement / dégâts) et **seule source de lumière la nuit** · ① stats propres · ③ capacités d'exploration · ④ équipable ? · ✅⑤ changement débloqué après Boss 1 · ⑥ lien comportemental (M2+) · ⑦ alignement (M2+) |
-| D12 | **PNJ & dialogues** | 🟡 | ① schéma d'un dialogue · ② branches et conditions · ③ conséquences persistantes · ④ marchands · ⑤ PNJ récurrents vs décor · ⑥ dialogue influencé par l'élément choisi |
-| D13 | **Quêtes & narration** | 🟡 | ✅① lore diffus, aucun journal d'objectifs · ② comment un jalon narratif (D21①) est déclenché sans quête formelle · ③ comment un joueur revenu après une semaine se réoriente (voir §0bis) · ④ rattachement de M1 à la trame M1→M7 · ⑤ volume de texte à écrire pour M1 |
-| D14 | **Énigmes / puzzles** | 🟡 | ✅① types réutilisables + pièces uniques · ② rôle du compagnon dans la résolution · ③ difficulté / indices · ④ blocage dur ou contournable · ⑤ piste « DaVinciCode » · ✅⑥ **fil « Crypte X »** (*acté 2026-09-16, gros point*) : un casse-tête **réparti sur tout le monde** — un bouton dans la Maison, un levier dans le Château, des symboles éparpillés dont un seul est à noter dans un cryptex une fois ouvert, la grotte de départ en fait partie ; **conçu comme un circuit imprimé superposé à la carte du monde, avec des portes logiques à connecter et une combinaison finale**. Dépend d'une **vision globale du monde** : **rien n'est dessiné avant le Poste avancé**. Dès la Phase 2, chaque scène réserve en données les emplacements (bouton, levier, symboles) sans poser d'objet, pour ne jamais redessiner une carte pour lui. Jeu de mots assumé : crypte X / secret eggs |
+| D11 | **Compagnons** | 🟡 | ✅ le follet suit dès la Grotte, **double action** (joueur : attaque / vitesse d'attaque / déplacement — monstres : ralentissement / dégâts) et **seule source de lumière la nuit** · ① stats propres · ③ capacités d'exploration · ④ équipable ? · ✅⑤ re-choix du follet **après l'Annexe 1, illimité et gratuit depuis le menu** (*révise* « après Boss 1 », 2026-09-23) · ⑥ lien comportemental (M2+) · ✅⑦ **alignement M1**, stat cachée séparée d'Esprit, bornes `[−5 ; +5]`, effets par le follet seul (orbite inversée, synergie qui change de camp) — 2026-09-23, spec `10_alignement-follet.md` à écrire |
+| D12 | **Dialogues à conséquences** (ex « PNJ & dialogues ») | 🟡 | ①②③ **en chantier** (2026-09-23) : options avec conséquences typées (alignement, flag, effet de monde), branches par conditions du registre de flags, conséquences persistantes en sauvegarde — spec `11_dialogues-consequences.md` à écrire ; tous les dialogues existants (FR et EN) sont à revoir · ④ marchands · ⑤ PNJ récurrents vs décor · ⑥ dialogue influencé par l'élément choisi |
+| D13 | **Quêtes & narration** | 🟡 | ✅① lore diffus, aucun journal d'objectifs · ② déclenché par les **dialogues à conséquences et les flags** (2026-09-23) · ③ comment un joueur revenu après une semaine se réoriente (voir §0bis, et D16 : journal d'indices et de traces) · ④ rattachement de M1 à la trame M1→M7 · ⑤ volume de texte à écrire pour M1 — **à rechiffrer avec l'arc Nv.15+** · ✅⑧ **le follet est un LLM scripté, hors-ligne — le héros c'est Xav, le follet c'est Claude** (2026-09-23) : on se réveille enfant, on ne sait rien ; le follet apprend la vie sans expliquer et laisse découvrir étape par étape ; arc de l'usage simple au power user, les échanges poussés donnant alignement, compétences, résolution d'énigmes ; réponses multiples et suite narrative au Nv.15 |
+| D14 | **Énigmes / puzzles** | 🟡 | ✅① types réutilisables + pièces uniques · ② rôle du compagnon dans la résolution · ③ difficulté / indices · ④ blocage dur ou contournable · ⑤ piste « DaVinciCode » · ✅⑥ **fil « Crypte X »** (*acté 2026-09-16, gros point*) : un casse-tête **réparti sur tout le monde** — un bouton dans la Maison, un levier dans le Château, des symboles éparpillés dont un seul est à noter dans un cryptex une fois ouvert, la grotte de départ en fait partie ; **conçu comme un circuit imprimé superposé à la carte du monde, avec des portes logiques à connecter et une combinaison finale**. Dépend d'une **vision globale du monde** : **rien n'est dessiné avant le Poste avancé**. Dès la Phase 2, chaque scène réserve en données les emplacements (bouton, levier, symboles) sans poser d'objet, pour ne jamais redessiner une carte pour lui. Jeu de mots assumé : crypte X / secret eggs. *2026-09-23* : le fil gagne un **lieu d'écriture**, le carnet du cryptex dans le journal d'indices et de traces (D16①) |
 | D15 | **Zones / maps / spawn** | 🟡 | ✅① tuiles réutilisables + layout main-made + décor procédural déterministe — *précisé 2026-09-16* : sur une grande carte, le layout manuel pose chemins, clairières, structures, bords et **les pièces interactives placées une à une (un arbre interactif par-ci par-là)** ; les masses (forêt) sont remplies par **densité à graine fixe** sous ce calque manuel — même carte pour tous, illusion du fait-main pour le joueur · ② schéma d'une zone · ③ portails déclaratifs (patron V1 validé) · ④ tables de spawn par zone · ⑤ densité et repop · ⑥ conditions d'accès · ⑦ mode Chaos/Normal : repris en V2 ou abandonné |
-| D16 | **Journal / Codex** | 🟡 | ✅① journal sans quêtes ni objectifs, enregistre les découvertes · ② catégories exactes (lieux, créatures, recettes, lore, compagnons) · ③ récompense de complétion ou valeur purement intrinsèque · ④ les entrées non découvertes sont-elles visibles en silhouette · ⑤ le journal est-il une pièce de la Maison ou un menu permanent |
+| D16 | **Journal / Codex** | 🟡 | ✅① journal sans quêtes ni objectifs, enregistre les découvertes — *précisé le 2026-09-23* : **journal d'indices et de traces**, dernier bouton du menu principal, rappelle l'histoire parcourue ; sous-page **Indices** dont le contenu est du lore **par zone** (Maison : « tu ferais bien d'utiliser la cuisine… » ; Forêt : « les arbres ici ne sont pas à récolter, le seul qui l'est est déjà sur ta route ») ; y câbler le **carnet du cryptex** (lettres importantes, D14⑥) · ② catégories exactes (lieux, créatures, recettes, lore, compagnons) · ③ récompense de complétion ou valeur purement intrinsèque · ④ les entrées non découvertes sont-elles visibles en silhouette · ✅⑤ **menu permanent** (2026-09-23) |
 | D17 | **Mini-jeux (cartouches)** | 🟡 | ① **contrat d'interface commun cartouche ↔ RPG** (le point critique) · ② isolation (iframe ? module ?) · ③ ce qu'une cartouche peut lire/écrire dans la sauvegarde RPG · ④ récompenses renvoyées au RPG · ⑤ acquisition des cartouches · ⑥ haTD, poker TCG, snake-like, mode balade · ⑦ ajout d'une cartouche sans toucher au RPG |
 | D18 | **Économie** | 🟡 | ✅① éclats = valeur d'échange, ressources de craft distinctes · ② sources et puits d'éclats · ③ y a-t-il un marchand en M1 · ④ prix en données · ⑤ **tension à arbitrer** : les éclats servent déjà aux paliers de vitalité (V1) — dépenser chez un marchand entre alors en concurrence directe avec la survie |
 | D19 | **Survie** | 🟡 | ✅③ gel total hors session · ① nature exacte des pénalités progressives · ② vitesse de décroissance en jeu · ④ mort possible par faim ? · ⑤ lien cuisine → buffs · ⑥ désactivable / mode détente |
@@ -293,9 +305,9 @@ Note de lecture (Xav) : « fluidité » désigne le **ressenti des mouvements** 
 
 | # | Module | Statut | Sous-branches |
 |---|---|---|---|
-| P1 | **Modèle économique** | 🟢 | ✅ gratuit + dons externes, zéro pub, zéro achat intégré · ✅ aucune mécanique de frustration monétisable · ✅ V3 sur moteur natif potentiellement payante · reste ① plateforme de don · ② conformité Play Store (§0bis) |
+| P1 | **Modèle économique** | 🟢 | ✅ gratuit, zéro pub, zéro achat intégré · ✅ aucune mécanique de frustration monétisable · ✅ **open source assumé, vitrine ; version payante ou portage possibles une fois fini ; aucune sollicitation directe de dons** (2026-09-23) · ✅① plateforme de don et ② conformité Play Store : sans objet, rien n'est sollicité dans le jeu (§0bis, clos le 2026-09-23) |
 | P2 | **Périmètre V2.0** | 🟢 | ✅ M1 = Grotte → Maison → 1ère zone → Château → Boss 1 · ✅ console, cartouches et Codex hors M1 · reste ① durée de jeu visée (à chiffrer avec les boucles §2) |
-| P3 | **Session courte / offline** | 🟡 | ✅① 100 % hors-ligne, cloud optionnel seulement · ② reprise instantanée · ✅③ aucun timer punitif (garanti par D10①/D19③/P1) · ④ le cloud est-il vraiment retenu (§0bis) |
+| P3 | **Session courte / offline** | 🟡 | ✅① 100 % hors-ligne, cloud optionnel seulement · ② reprise instantanée · ✅③ aucun timer punitif (garanti par D10①/D19③/P1) · ✅④ **pas de cloud sans multijoueur en réseau** (2026-09-23) |
 | P4 | **Accessibilité** | 🟡 | ✅② éléments identifiables sans la couleur, dès la conception · ① taille minimale des cibles tactiles · ③ mode une main · ④ vitesse de texte / temps de lecture |
 | P5 | **Store / âge / conformité** | 🔵 | Repoussé après la V2.0 |
 
@@ -388,6 +400,30 @@ Ajouter une entrée (arme, ennemi, recette, cartouche, compagnon…)
 | 2026-09-19 | §3bis | **Arc de progression de la carte Maison** (Nv. 5/10/15 décidés, Nv. 20/30/40-50 en idées) et **critère de clôture : la boucle de 2 heures** (sauvegarde neuve → Nv. 30 → l'envie de changer d'endroit) | Même patron que la boucle 5 minutes de la Phase 3 : un critère jouable, vérifiable à la main et par bot |
 | 2026-09-19 | D7② | **Comportement des monstres : « un domaine, pas un piquet »** (*remplace* l'idée de laisse) — errance dans un domaine de zones, poursuite bornée, désintérêt, anti-blocage ; seuils de niveau **en données** | Une laisse attachée à un piquet se lit comme un bug ; un domaine se lit comme un territoire |
 | 2026-09-19 | D10/D19 (⑦) | **Intrusion nocturne du Chaos dans la Région Maison** — *révise* « aucun monstre, ton chill » de `03_maison-exterieur.md` §5 ; cadre : nuit seulement, zone de Chaos dans les Champs, quelques monstres épars en Forêt, demi-tour à l'entrée en zone sûre (Maison+Jardin) | Carte bien plus grande que prévu ; la nuit au seul follet est l'ambiance la plus forte du jeu à ce stade — spec à écrire, `07_chaos-nocturne.md` |
+| 2026-09-23 | D1⑧ | **Esprit reste la réserve des compétences** ; l'idée « Esprit = alignement » du 22/09 est abandonnée | Dérivée `réserve d'esprit` déjà posée par `D-141` ; l'alignement a sa propre stat |
+| 2026-09-23 | **D11⑦ (révisé)** | **L'alignement entre en M1** : stat **cachée**, distincte, jamais affichée (ni Stats ni HUD), jamais modifiable par le joueur, présente dès le début du jeu ; bornes `[−5 ; +5]`, 0 neutre, pondération par action (un dialogue peut peser +5, −5 ou 0,5) | Bornes resserrées pour que le retour du négatif au positif reste possible ; le seul indice est l'effet visible en jeu |
+| 2026-09-23 | D11 / D6③ | **Les effets de l'alignement passent uniquement par le follet** : orbite inversée (sens de rotation seul, le rayon reste celui de l'équipement, `Q-29`) dès `A ≤ −1`, sans effet de jeu ; la synergie **change de camp** (table ci-dessous). La lumière du follet n'est pas touchée ; « follet en bord d'écran » abandonné | Un signe d'expérience avant tout effet mécanique ; contrepartie positive assumée côté négatif, des consommables de régénération viendront plus tard |
+| 2026-09-23 | Alignement | **Paliers** : le signe donne le régime, la valeur absolue l'intensité — `abs(A) < 1` neutre · `1–2` palier 1 · `3–4` palier 2 · `5` palier 3 ; bonus principal +1/+2/+3, malus sur le héros aux mêmes paliers. **Poids par défaut** : option de dialogue en données · spam (avancer avant la fin de la machine à écrire) −0,25 par occurrence, plafonné à −1 par dialogue · lecture complète +0,1 par dialogue · morts 0 | Tranché par Xav (NS v1.1.0 §2 A, C, D) ; spec `10_alignement-follet.md` |
+| 2026-09-23 | D12 / D13 | **Dialogues à conséquences et follet-LLM scripté** : tous les dialogues existants (FR/EN) à revoir ; choix multiples **dès la Grotte** (le dialogue de la maison est le premier cas, fusionné avec la ligne de `D-124`) ; arc pédagogique et suite narrative au Nv.15, épine = le cadre 4D de Xav, une dimension par étape | Le héros c'est Xav, le follet c'est Claude : le jeu raconte l'apprentissage d'un outil, de l'usage simple au power user ; spec `11_dialogues-consequences.md` |
+| 2026-09-23 | §2 | **Boucle 5 min** : sortir → récupérer → combattre → revenir → stocker → cuisiner → équiper ; **chiffrée** : Nv.0 → 10 en ~20 min, Nv.15 avec la nuit | Mesure de Xav en jouant tranquillement ; le bot de `R-19` le contredit, c'est son trajet qui est à revoir (`Q-62`) |
+| 2026-09-23 | §3 / §3bis | **Pas de nouvelle carte pour l'instant** : la carte Maison s'agrandit par des annexes et tunnels. Progression : Réveil grotte → feu → terroir → Maison → **Annexe 1** (mini-boss 1 + énigme 1, récompense régulière du lieu, respec et re-choix du follet, premières compétences) → **Annexe 2** (zone de mobs + tunnel, mini-boss 2, énigme 2) → nouvelle zone | La boucle 1 h tourne dans la carte déjà construite ; Château et Boss 1 restent après l'Annexe 2 |
+| 2026-09-23 | **D1⑥ / D11⑤ (révisés)** | Respec des stats et re-choix du follet **après l'Annexe 1, illimités et gratuits depuis le menu** — *révise* « après Boss 1 » | Le choix du follet engage l'alignement et les synergies : il doit pouvoir se rejouer tôt |
+| 2026-09-23 | D18 / `Q-69` | **Éclats et coût des crafts : on ne touche pas** — la chaîne nuit → éclats → outils est **voulue** | « Il faut faire un choix et ça se mérite » (Xav) |
+| 2026-09-23 | D2 | À terme **plus** d'éléments que haTD ; les trois actuels restent, la table reste extensible en données | Reformule le risque §0bis : la correspondance haTD se fait dans l'autre sens |
+| 2026-09-23 | **P1 (précisé)** | Open source assumé, vitrine et compte rendu de stage en solo game dev assisté par IA ; version payante ou portage possibles une fois le jeu fini ; **aucune sollicitation directe de dons** | Clôt deux risques de §0bis (revenu, dons / Play Store) |
+| 2026-09-23 | P3① / C5⑦ | **Pas de sauvegarde cloud** tant qu'il n'y a pas de multijoueur en réseau ; export/import + local | Clôt le risque « coût réel du cloud » |
+| 2026-09-23 | C5⑥ | Double tampon ✅ — « OK, petite sécurité en plus, aucun problème constaté », priorité basse (P3) | Verdict de Xav |
+| 2026-09-23 | D13 / D16 | **Journal d'indices et de traces** : dernier bouton du menu principal (menu permanent), rappelle l'histoire parcourue, sous-page **Indices** de lore par zone, carnet du cryptex | Répond au risque « joueur revenu après une semaine » sans jamais afficher d'objectif |
+
+### Table des régimes de synergie (2026-09-23, Xav) — complète D6③ et `specs/02_grotte.md` §3.4
+
+| Élément | Régime positif (en jeu aujourd'hui) | Régime négatif (alignement ≤ −1) |
+|---|---|---|
+| **Feu** | Force +1 joueur · brûlure sur le monstre dans l'aura | **Brûlure sur le héros** · Force joueur amplifiée (+1/+2/+3 par palier) · plus aucune brûlure sur les monstres |
+| **Eau** | Agilité +1 joueur · affaiblissement du monstre (dégâts de base réduits) | **Le héros perd de la vitesse de déplacement au profit de la vitesse d'attaque** (redistribution entre les deux dérivées d'Agilité, pas un bonus de stat) · les monstres dans l'aura **se déplacent plus vite** mais n'infligent pas plus de dégâts · ils **perdent l'affaiblissement** (dégâts de base) |
+| **Terre** | Vitalité +1 joueur · entrave du monstre (ralenti) | **Entrave sur le héros** · Vitalité amplifiée (+1/+2/+3) · l'entrave sur les monstres est **conservée, divisée par 2** |
+
+Deux notes d'architecture, à poser dans la spec 10 : Eau négatif touche des **dérivées** et non la stat — la synergie doit pouvoir déclarer un **modificateur de dérivée** en données, un seul point de résolution (patron `D-141`), sinon Eau devient un cas particulier dans le code ; et le modificateur de vitesse d'un monstre dans l'aura accepte **les deux sens** (entrave ralentit, Eau négatif accélère), le « /2 » de Terre étant un **facteur**, jamais une seconde constante.
 
 ---
 

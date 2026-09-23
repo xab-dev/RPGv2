@@ -1,8 +1,10 @@
 # RPG V2 — Roadmap + prompt d'exécution autonome
 
-**Version : 1.8.0** — document vivant.
+**Version : 1.9.0** — document vivant.
 
 **Statut** : Phases 0, 1, 1b, 2 et 3 (Palier A-E, boucle 5 minutes), le chantier `05_construction-stations.md` (placement libre des stations) **et les étapes 1 à 6 du polish post-Construction** sont livrés et validés en jeu par Xav (manette, 2026-09-19 : « ça fonctionne, le jeu est fluide »). On travaille sur `main`. **Chantier courant : les fondations.** Le **volet rendu est clos sur PC, sous Chrome** (59,9 fps sans une frame sautée jusqu'à l'échelle forcée 8, `R-11`) ; il ne l'est **pas sur mobile** (Galaxy A04 à ~37 fps, cause inconnue, `D-31` gelée jusqu'au profil `A-07`). **Chrome est le navigateur de développement, de jeu et de référence** — registre `docs/DOC_navigateurs.md`. Décision de méthode de Xav (2026-09-19) : **on ne rajoute pas de contenu sur des bases non confirmées** ; les **deux relevés de base sous Chrome sont pris** (`A-03` close : `R-14` jour, `R-03` nuit, 59,9 fps et zéro frame sautée), et la file repart par les **tailles, la vitesse et la lumière** (`D-32` à `D-35`), puis `specs/07_chaos-nocturne.md` palier par palier (voir « Ordre d'injection » ci-dessous). Ce document sert de brief autonome ; **ce qui reste dû (dettes, questions, validations) vit dans `docs/DOC_suivi-dettes.md`, et nulle part ailleurs**.
+
+**Changelog 1.9.0 (2026-09-23)** : session de documentation (`docs/NS_alignement-dialogues-carte-mentale_2026-09-23.md`), aucun code touché. **L'alignement bien/mal passe de M2+ à M1** (périmètre ci-dessous) ; **pas de nouvelle carte** tant que la carte Maison n'est pas épuisée par les annexes et tunnels (§ « Avant toute nouvelle carte »). Carte mentale passée en **v1.7.0**. Les deux specs débloquées, `10_alignement-follet.md` et `11_dialogues-consequences.md`, ne sont pas encore écrites.
 
 **Changelog 1.8.0 (nuit du 19 au 20/09)** : `A-03` **close** — les deux relevés de base sont pris sous Chrome, F11, échelle naturelle 4, manette : `R-14` (jour) et `R-03` (nuit), **59,9 fps et zéro frame sautée** tous les deux, `dessiner()` 0,33 ms, `maj()` 0,06 ms. `07_chaos-nocturne.md` a désormais son point de comparaison, et son §6 cite `R-03` au lieu de `R-02` (qui mesurait des millisecondes de Firefox). **Principe d'équilibrage acté** (Xav) : *les valeurs de base du début de jeu sont basses, et tout grandit ensuite* — conséquence d'architecture unique : une valeur destinée à grandir passe par une **fonction pure de résolution**, jamais lue directement par un système ; aucun buff, aucun équipement livré avec. **Le follet est équipable** (un emplacement : amulette **ou** talisman — `Q-29`, rien de livré, spec avec `E-02`). **Ordre d'injection amendé** par `BRIEF_nuit-2026-09-19.md` : tailles/vitesse/lumière (`D-32` à `D-35`), puis `07` paliers A à D, puis `D-36` (follet « aérien », proposition détachable), **puis** `D-17` + `D-30`, `D-13`, `D-01`/`D-16` et la reprise de `Q-07`. Identifiants : ceux proposés par le brief (`D-27` à `D-31`, `Q-24`/`Q-25`) étaient **déjà pris** par les sessions de code de la soirée — renumérotés en `D-32` à `D-36` et `Q-26` à `Q-30`.
 
@@ -39,7 +41,7 @@
 
 ## Décisions déjà tranchées (ne pas rouvrir)
 
-Référence complète : `docs/carte_mentale_RPG_V2_v1_6_0.md` §0 et §8. Résumé opérationnel :
+Référence complète : `docs/carte_mentale_RPG_V2_v1_7_0.md` §0 et §8. Résumé opérationnel :
 
 ### Plateforme & technique
 | Décision | Valeur |
@@ -58,7 +60,7 @@ Référence complète : `docs/carte_mentale_RPG_V2_v1_6_0.md` §0 et §8. Résum
 ### Design
 | Décision | Valeur |
 |---|---|
-| Périmètre M1 | Grotte → Région Maison → 1ère zone → Château → Boss 1 → Poste avancé. **Liste close.** Console portable, cartouches (haTD, poker TCG, snake), Codex de collection au sens large, alignement bien/mal : **M2+**. |
+| Périmètre M1 | Grotte → Région Maison → 1ère zone → Château → Boss 1 → Poste avancé. **Liste close.** Console portable, cartouches (haTD, poker TCG, snake), Codex de collection au sens large : **M2+**. **L'alignement bien/mal entre en M1** (*révisé le 2026-09-23*, D11⑦ de la carte mentale v1.7.0) : stat cachée, distincte d'Esprit, bornes `[−5 ; +5]`, effets par le follet seul — spec `10_alignement-follet.md` à écrire. |
 | Éléments | 3 : Feu / Eau / Terre. Table extensible en données, rien de codé en dur. |
 | Stats | 4 primaires : **Force, Agilité, Vitalité, Esprit**. Esprit = réserve de lancement des skills, rien d'autre. Tout scaling de dégâts (équipement, affinité initiale, maîtrise) converge sur Force ; l'élément porte le *type* et les interactions, jamais la puissance brute. |
 | Progression | **XP → stats** (points de stat par niveau). **Jalons narratifs → capacités.** Deux axes indépendants. Sources d'XP : combat **et craft**. **Le gating de la 1ère zone par niveau ~5 est abandonné (2026-09-19)** : la carte suivante s'ouvre quand la carte Maison est épuisée (Nv. 40-50, provisoire) — voir « Arc de progression de la carte Maison » plus bas. |
@@ -79,7 +81,7 @@ Référence complète : `docs/carte_mentale_RPG_V2_v1_6_0.md` §0 et §8. Résum
 | Modèle | Gratuit + dons externes. Zéro pub, zéro achat, zéro monnaie premium, aucune mécanique de frustration monétisable. |
 
 ### Risques inscrits, à ne pas redécouvrir
-Voir `docs/carte_mentale_RPG_V2_v1_6_0.md` §0bis : cohérence 3 éléments RPG vs 9 haTD (à traiter au contrat de cartouche, M2+) ; tension éclats/paliers de vitalité si un marchand existe ; volume de texte doublé par le bilinguisme ; densité de 5 actions sous le pouce droit en tactile ; conformité Play Store sur la sollicitation de dons.
+Voir `docs/carte_mentale_RPG_V2_v1_7_0.md` §0bis : cohérence 3 éléments RPG vs 9 haTD (à traiter au contrat de cartouche, M2+) ; tension éclats/paliers de vitalité si un marchand existe ; volume de texte doublé par le bilinguisme ; densité de 5 actions sous le pouce droit en tactile ; conformité Play Store sur la sollicitation de dons.
 
 ---
 
@@ -173,7 +175,7 @@ Les six fiches ont été écrites, livrées en code et validées à la manette p
 | 30 | Les compétences | idée — `Q-18` ouverte (frotte contre le double axe XP/jalons) |
 | 40-50 | La carte suivante (Phase 4) | idée |
 
-**Avant toute nouvelle carte** (`E-02`) : plus de ressources, écrire les crafts, écrire les armes, écrire les compétences. **Critère de clôture de la Région Maison : la boucle de 2 heures** — sauvegarde neuve → deux heures de jeu → niveau 30 → l'envie de changer d'endroit, vérifiable à la main par Xav **et** par le bot headless.
+**Avant toute nouvelle carte** (`E-02`) : plus de ressources, écrire les crafts, écrire les armes, écrire les compétences. **Aucune nouvelle carte tant que la carte Maison n'est pas épuisée par les annexes et tunnels** (Xav, 2026-09-23) : le contenu s'agrandit **dans** la carte Maison — Maison → **Annexe 1** (mini-boss 1 + énigme 1, récompense régulière du lieu, respec et re-choix du follet illimités et gratuits, premières compétences) → **Annexe 2** (zone de mobs + tunnel à travers la carte, mini-boss 2, énigme 2) → nouvelle zone. Château et Boss 1 viennent après l'Annexe 2 (carte mentale v1.7.0 §3). **Critère de clôture de la Région Maison : la boucle de 2 heures** — sauvegarde neuve → deux heures de jeu → niveau 30 → l'envie de changer d'endroit, vérifiable à la main par Xav **et** par le bot headless.
 
 ### Ordre d'injection (nuit du 19 au 20/09) — un ticket par session, un commit par ticket
 

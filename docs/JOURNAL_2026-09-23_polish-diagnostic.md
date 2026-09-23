@@ -94,6 +94,7 @@ révélera encore.
 |---|---|---|
 | `60a03c5` | `D-160` | Porte de la Maison : le parquet passe sous un seuil de pierre du mur, ombre du linteau, rivets. Symétrique (deux portes dans deux murs opposés) |
 | `83ef25f` | `D-158` | Leviers : le manche devient une pièce mobile du visuel, le geste un état d'affichage pur (`bascule.js`) ; voyant ambre à la butée, halo en fondu qui perce le voile. **Code** : `render.js` (checklist visuelle due) |
-| — | `D-161` | Monstres : rampant en larve de caverne, rôdeur avec son propre dessin (masque de fer rivé) ; silhouettes sombres sans lueur (`Q-27`, tenu par test) |
+| `869a99f` | `D-161` | Monstres : rampant en larve de caverne, rôdeur avec son propre dessin (masque de fer rivé) ; silhouettes sombres sans lueur (`Q-27`, tenu par test) |
+| — | `D-162` | Follets : flamme, goutte, cube de pierre — la forme porte toujours l'élément ; volume, cœur lumineux, halo en dégradé. Test `D-36` réécrit sur son intention (étincelles discrètes), pas sur la structure |
 <!-- fin-table-2 -->
 

@@ -79,11 +79,15 @@ const FRAME_MS = 16;
   for (const id of ['visuel_follet_feu', 'visuel_follet_eau', 'visuel_follet_terre']) {
     const visuel = catalogues.visuels.find((v) => v.id === id);
     assert.ok(visuel.primitives.length >= 5, `${id} porte ses ornements (${visuel.primitives.length} primitives)`);
-    // Fins : aucune primitive ajoutée ne doit écraser la silhouette.
-    const ajoutees = visuel.primitives.slice(2);
+    // Fins : les ornements n'écrasent pas la silhouette. Depuis `D-162`
+    // (23/09), la silhouette est faite de PLUSIEURS pièces opaques (contour,
+    // corps, cœur) : les ornements du vol sont les deux étincelles, dernières
+    // pièces du dessin — c'est elles qui restent translucides.
+    assert.ok(visuel.primitives.some((p) => p.alpha === undefined && !p.degrade), `${id} : aucune pièce opaque ne porte la silhouette`);
+    const etincelles = visuel.primitives.slice(-2);
     assert.ok(
-      ajoutees.every((p) => (p.alpha === undefined ? false : p.alpha <= 0.6)),
-      `${id} : les ornements restent discrets (alpha <= 0,6)`,
+      etincelles.every((p) => p.forme === 'polygone' && p.alpha !== undefined && p.alpha <= 0.6),
+      `${id} : les étincelles restent discrètes (alpha <= 0,6)`,
     );
   }
 

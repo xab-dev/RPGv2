@@ -24,7 +24,7 @@ Branche `dialogues-2026-09-23`. Pas de push.
 |---|---|---|
 | `bf7ec0e` | Spec 11 versée | Elle était restée non suivie par Git depuis son écriture |
 | `17f2c4d` | Ménage | Journal du palier C de la spec 10 archivé, ligne INDEX ; `Q-98` à `Q-103` ouvertes (les six `[OUVERT]` de la spec §11), `Q-104` (contradiction spec §6 / `D-09`) |
-| (3) | Spec 11, palier A | Le moteur de conversation, la bulle à options, le tap, le dialogue de la maison. Suite : **157 fichiers verts** |
+| `56b18d4` | Spec 11, palier A | Le moteur de conversation, la bulle à options, le tap, le dialogue de la maison. Suite : **157 fichiers verts** |
 
 ## Ce qui a été fait
 

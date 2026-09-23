@@ -2,7 +2,7 @@
 projet: RPG V2
 episode/session: Fondations — suivi transversal
 type: registre de suivi (document vivant)
-version: 1.39.0
+version: 1.40.0
 statut: brouillon
 catégorie: Doc
 date: 2026-09-23
@@ -127,7 +127,6 @@ Emplacement : `docs/DOC_suivi-dettes.md`. Nom sans date : c'est un registre viva
 | V-98 | **L'icône Héros du menu** (`D-164`) | 23/09 | Ouvrir le menu (Start / Échap) : la carte **Héros** montre-t-elle **notre** héros (capuche, ouverture sombre, orbe au visage) au lieu d'un avatar de profil ? Reste-t-elle lisible au téléphone ? | pas vu | ouvert |
 | V-99 | **La barre de PV des monstres** (`D-165`, touche `render.js` et `ui/hud.js`) | 23/09 | Engager le rampant (salle 2) puis un rôdeur la nuit : la barre au-dessus du monstre a-t-elle la **facture de la jauge de PV du héros** (creux, reflet, arête) ? Passe-t-elle au-dessus du rôdeur sans cacher ses épines ? Et le bandeau lui-même n'a-t-il **pas bougé** (sa barre est sortie dans un module, sans changement voulu) ? Checklist visuelle | pas vu | ouvert |
 | V-100 | **L'onde de l'anneau d'attaque** (`D-166`, touche `render.js`) | 23/09 | **Jamais vu en capture** : le flash dure 120 ms et la latence du pilotage de Chrome le manque à chaque essai — c'est donc toi qui le vois le premier. Frapper à vide puis sur un monstre : l'anneau n'est plus un disque blanc uniforme mais une **onde** à la couleur du follet, vive au centre, éteinte au bord. Se lit-il mieux, ou devient-il trop discret ? Checklist visuelle | pas vu | ouvert |
-| V-101 | **L'alignement caché, palier A de `specs/10`** — la stat seule, **aucun effet en jeu** | 23/09 | Ta vraie sauvegarde (elle passe de v7 à v8), puis une partie neuve : **rien** n'a changé — aucune carte, aucun texte, aucune icône nouvelle. `?debug=fps` : la dernière ligne du relevé dit `alignement : 0 — régime neutre, palier 0`. `?debug=fps&alignement=3` → `3 (forcé par ?alignement) — régime positif, palier 2`. `?alignement=9` → avertissement en console, valeur de la sauvegarde conservée. Déjà vu sous Chrome sans fenêtre (les quatre cas, plus une sauvegarde privée du champ, qui s'arrête sur l'écran d'erreur de démarrage) — c'est ton œil sur **ta** sauvegarde qui manque | pas vu | ouvert |
 
 ## 4. À écrire par Xav
 
@@ -244,6 +243,7 @@ Ce qui a été clos le **21/09 ou avant** est dans `docs/archives/dettes_archive
 
 | Id | Quoi | Clos le | Verdict |
 |---|---|---|---|
+| V-101 | **L'alignement caché, palier A de `specs/10`** — la stat seule, aucun effet en jeu | 23/09 | **ok** — validée par Xav (« all good ») : rien de changé en jeu, relevé `?debug=fps` juste, avertissement de `?alignement=9` vu en console |
 | A-06 | Firefox → `about:support` → section « Graphiques » : relever « Compositing » et toute ligne signalant une accélération désactivée ou bloquée. ~2 min | — | clos — Dit si le Firefox lent est propre à la machine de Xav ou à Firefox en général — donc si le conseil aux joueurs Firefox est « changez de navigateur » ou « activez l'accélération ». Alimente `Q-24`. **Fait le 22/09** : « ça n'a rien changé, Firefox n'était pas la cause principale ; c'est l'A04 qui est trop faible » (verdict de Xav, `docs/archives/BRIEF_file-inventaire_2026-09-22.md` §5) |
 | Q-43 | **Le puits rapporte-t-il de l'XP quand la gourde est déjà pleine ?** | — | **oui, seuil 90 %** (verdict de Xav, `docs/archives/BRIEF_file-inventaire_2026-09-22.md` §5) — livré par `D-123` (T7) — Détail : Retenu par défaut dans `D-58` : **non** — boire sans soif ne rapporte rien (la jauge est relue avant et après, l'XP ne tombe que si elle a bougé). Sans cela le puits deviendrait une source d'XP à volonté, bornée par le seul cooldown anti-spam de 30 s. L'autre lecture se défend : un joueur qui boit par réflexe et ne voit rien monter peut croire que le puits est cassé. Une ligne à changer dans un sens comme dans l'autre |
 | Q-45 | **Le nombre d'objets au sol et le plafond d'XP de récolte tirent l'un contre l'autre.** | — | **le minimum d'XP (1)** pour l'herbe ; le plafond des 30 % n'est pas rouvert, c'est la cible de rythme qui commande (verdict de Xav, `docs/archives/BRIEF_file-inventaire_2026-09-22.md` §5). **Conséquence non prévue** : l'herbe le fait sauter quand même, à 40 % — `Q-68` — Détail : Mesuré en livrant T2 : chaque ramassage vaut au minimum **1 XP** (les entiers n'offrent pas moins), donc « la récolte ≤ 30 % de l'XP de Nv.0 → 5 » plafonne mécaniquement le nombre de ramassages d'une première journée à **27**. Avec 10 branches, 10 cailloux, 4 cueillettes de fruit et 2 gorgées au puits, on est à **26** : la marge est d'un objet. Poser plus de ressources — ce que `Q-33` demandait — oblige donc à choisir : relever le plafond des 30 %, ou accepter que la récolte ne rapporte plus rien au-delà d'un quota. Rien n'est appliqué : les deux nombres actuels tiennent, c'est la **prochaine** augmentation qui butera · équilibrage, `D-58`, `D-59` |

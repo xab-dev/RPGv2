@@ -198,6 +198,7 @@ rpg_v2/
 │                           des `couleur_ui`, pur), hud.js (+ jauges survie/niveau-XP Phase 3)
 │                           + hud_hints.js + dialogue_box.js + hud_layout.js (canvas, résolution logique)
 │                           + cadre.js (`D-163` : LE cadre des calques d'UI canvas, bulle et indices)
+│                           + barre.js (`D-165` : LA barre de jauge — bandeau ET PV des monstres)
 ├── data/                   catalogues JSON (voir specs/*.md §2.1 de chaque phase) — dont
 │                           `conteneurs.json` (`D-118`) : les quatre nombres de la poche et du
 │                           coffre, en un seul endroit, tous PROVISOIRES

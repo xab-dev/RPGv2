@@ -12,6 +12,7 @@ import {
 } from './hud_layout.js';
 import { RESOLUTION_LOGIQUE } from '../render.js';
 import { dessinerVisuel, TAILLE_REFERENCE_FOLLET_PX } from '../visuels.js';
+import { dessinerBarre, PALETTE_JAUGES } from './barre.js';
 
 // Taille de l'icône follet dans le cartouche HUD (px logiques) — inchangée
 // depuis avant 03_grotte-polish, désormais une échelle de visuel_follet_*
@@ -20,30 +21,6 @@ const TAILLE_ICONE_FOLLET = 6;
 
 const COULEUR_SLOT_ACTIF = '#c2a83e';
 
-// `D-95` — LA jauge du bandeau, en quatre valeurs, et une seule fonction pour
-// les trois (PV, faim, soif). Avant, les PV étaient dessinés inline et les
-// deux jauges de survie par une autre fonction : deux factures pour le même
-// objet, et la seule façon d'en changer une sans l'autre. Le reproche de Xav
-// (« par rapport aux feux follets, la barre de vie peut être améliorée »)
-// porte exactement là : un follet a un corps, un cœur clair et un halo, la
-// barre n'avait qu'un aplat et un contour blanc.
-//
-// Les quatre valeurs, et ce que chacune dit — c'est la charte d'item du 21/09
-// transposée à une barre :
-//   `creux`  le fond, plus sombre que le corps : la barre est CREUSÉE, et une
-//            jauge vide reste lisible sur le bandeau ;
-//   `corps`  le remplissage ;
-//   `haut`   la moitié haute du remplissage, éclairée — le volume vient d'une
-//            seconde forme, jamais d'un flou (règle de visuels.js) ;
-//   `lisere` un pixel vif au sommet, l'accent.
-// Le CONTOUR passe du blanc pur à un trait sombre : c'est le blanc qui
-// écrasait les trois valeurs qu'on vient de poser.
-const PALETTE_JAUGES = {
-  pv: { creux: '#2a0f10', corps: '#a8302f', haut: '#d8574c', lisere: '#ff9b8a' },
-  faim: { creux: '#241d0a', corps: '#a8882a', haut: '#d9bb45', lisere: '#ffe79b' },
-  soif: { creux: '#0e1b2a', corps: '#2a6aa8', haut: '#4a9ad9', lisere: '#a6dcff' },
-};
-const COULEUR_JAUGE_CONTOUR = 'rgba(8, 9, 12, 0.75)';
 // `D-99` — la case d'action. Le blanc translucide d'avant prenait la couleur
 // de ce qu'il y avait derrière : sur la terre de la Maison, les cases
 // viraient au beige et l'icône s'y noyait. Un fond SOMBRE tient sur
@@ -201,46 +178,8 @@ function dessinerIconeBandeau(ctx, visuel, x, y, taille) {
   dessinerVisuel(ctx, visuel, x, y, { echelle: echelleIconeBandeau(taille) });
 }
 
-// `D-95` — LA barre du bandeau. Les PV, la faim et la soif la traversent
-// tous les trois : une seule facture, donc jamais deux jauges qui divergent
-// au premier réglage. Elle ne connaît ni PV ni faim — elle reçoit un
-// rectangle, un ratio et une palette.
-//
-// L'ordre de dessin EST le relief, exactement comme pour une silhouette de
-// `visuels.json` : creux, corps, moitié haute éclairée, liseré d'un pixel,
-// puis le contour sombre par-dessus tout. Le liseré ne dépasse jamais le
-// remplissage (il s'arrête où le corps s'arrête), sinon la barre vide
-// garderait un trait vif qui la ferait lire comme pleine.
-function dessinerBarre(ctx, rect, ratio, palette) {
-  const { x, y, largeur, hauteur } = rect;
-  const rempli = largeur * Math.max(0, Math.min(1, ratio));
-
-  ctx.fillStyle = palette.creux;
-  ctx.fillRect(x, y, largeur, hauteur);
-  // Le creux a sa propre ombre haute : un pixel plus sombre sous le bord
-  // supérieur, qui donne l'épaisseur de la gouttière même quand la jauge est
-  // à zéro.
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
-  ctx.fillRect(x, y, largeur, 1);
-
-  if (rempli > 0) {
-    ctx.fillStyle = palette.corps;
-    ctx.fillRect(x, y, rempli, hauteur);
-    ctx.fillStyle = palette.haut;
-    ctx.fillRect(x, y, rempli, Math.max(1, Math.round(hauteur * 0.42)));
-    ctx.fillStyle = palette.lisere;
-    ctx.globalAlpha *= 0.55;
-    ctx.fillRect(x, y, rempli, 1);
-    ctx.globalAlpha /= 0.55;
-    // Le pied du remplissage retombe dans l'ombre : sans lui, la moitié haute
-    // éclairée se lit comme deux bandes collées, pas comme un volume.
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.22)';
-    ctx.fillRect(x, y + hauteur - 1, rempli, 1);
-  }
-
-  ctx.strokeStyle = COULEUR_JAUGE_CONTOUR;
-  ctx.strokeRect(x, y, largeur, hauteur);
-}
+// `D-95` : la barre elle-même vit dans `ui/barre.js` depuis `D-165` — la
+// barre de PV des monstres la partage (une seule facture de jauge).
 
 // Une jauge de survie = icône (forme) + la barre ci-dessus.
 function dessinerJauge(ctx, x, y, ratio, palette, visuelIcone) {

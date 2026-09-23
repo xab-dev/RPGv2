@@ -5,6 +5,7 @@
 
 import { dessinerVisuel } from './visuels.js';
 import { couleurTuile, tuileDeSol, varianteTuile } from './decor.js';
+import { dessinerBarre, PALETTE_JAUGES } from './ui/barre.js';
 
 const DELTA_MAX_MS = 100; // provisoire : une frame ne rattrape jamais plus de 100 ms
 
@@ -278,8 +279,10 @@ function ajusterCanvasLogiquePhysique(ctx) {
 
 // §2.2 03_grotte-polish, provisoire, un seul endroit : dimensions de la
 // barre de PV au-dessus d'un monstre "actif" (combat.js#estMonstreActif),
-// px logiques.
-export const BARRE_PV_MONSTRE = { largeur: 20, hauteur: 3, decalage_y: -14 };
+// px logiques. `D-165` : 4 px de haut (à 3, le reflet et l'arête de la barre
+// du bandeau se confondaient) et remontée à −19 — le rôdeur redessiné
+// (`D-161`) porte des épines jusqu'à −14, que la barre recouvrait.
+export const BARRE_PV_MONSTRE = { largeur: 20, hauteur: 4, decalage_y: -19 };
 
 // Couleur du témoin d'un levier activé (§3.3 03_grotte-polish) — seul
 // endroit : les primitives `teinte: true` du levier (voyant du socle, pommeau
@@ -634,11 +637,13 @@ export function dessinerScene(ctx, {
       const { largeur: barreLargeur, hauteur: barreHauteur, decalage_y } = BARRE_PV_MONSTRE;
       const barreX = mx - barreLargeur / 2;
       const barreY = my + decalage_y;
-      ctx.fillStyle = 'rgba(0,0,0,0.6)';
-      ctx.fillRect(barreX, barreY, barreLargeur, barreHauteur);
       const ratioPv = monstre.pvMax > 0 ? Math.max(0, Math.min(1, monstre.pv / monstre.pvMax)) : 0;
-      ctx.fillStyle = '#c23a3a';
-      ctx.fillRect(barreX, barreY, barreLargeur * ratioPv, barreHauteur);
+      // `D-165` : la barre du bandeau (creux, corps, reflet, arête), plus un
+      // fond noir et un aplat rouge — un monstre touché parle la même langue
+      // que la jauge de PV du héros.
+      ctx.save();
+      dessinerBarre(ctx, { x: barreX, y: barreY, largeur: barreLargeur, hauteur: barreHauteur }, ratioPv, PALETTE_JAUGES.pv);
+      ctx.restore();
     }
 
     // `D-40` (décision de Xav, 20/09) : **plus de nom au-dessus des

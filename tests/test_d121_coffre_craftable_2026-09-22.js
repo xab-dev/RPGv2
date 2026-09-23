@@ -266,9 +266,16 @@ function monterPartie(stations = null) {
 // soit la forme d'arrivée.
 {
   const fs = await import('node:fs/promises');
-  const dossier = path.join(RACINE, 'docs', 'sauvegardes');
-  const fichiers = (await fs.readdir(dossier)).filter((f) => f.endsWith('.json'));
-  assert.ok(fichiers.length > 0, 'il doit y avoir des sauvegardes réelles à éprouver');
+  // Depuis le 23/09, les sauvegardes réelles vivent dans `prive/`, ignoré par
+  // Git (elles ne sont plus publiées) : ce dossier n'existe que sur le PC de
+  // Xav. Ailleurs — une copie fraîche du dépôt — le bloc le DIT et passe, au
+  // lieu d'échouer sur une absence qui est voulue. Là où il existe, il doit
+  // contenir quelque chose : un dossier vide, lui, serait une erreur.
+  const dossier = path.join(RACINE, 'prive', 'sauvegardes');
+  const present = await fs.stat(dossier).then(() => true, () => false);
+  const fichiers = present ? (await fs.readdir(dossier)).filter((f) => f.endsWith('.json')) : [];
+  if (!present) console.log('-- prive/sauvegardes/ absent (copie sans dossier privé) : sauvegardes réelles non éprouvées');
+  else assert.ok(fichiers.length > 0, 'il doit y avoir des sauvegardes réelles à éprouver');
   for (const fichier of fichiers) {
     const brut = JSON.parse(await fs.readFile(path.join(dossier, fichier), 'utf8'));
     const payload = brut.payload || brut;

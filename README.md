@@ -1,20 +1,11 @@
 <div align="center">
 
-```
-              .  *   .        ✦          .     *
-         *        ___________________        .
-      .          |  ~ GRIMOIRE  N°2 ~  |   *        .
-    ✦       .    |___________________|        *
-        .        /  o    .    *    o  \    .
-   *            /   .   ( ✧ )   .      \        ✦
-       .       |  *    .-"""-.    .  *  |   .
-    .          |      /  ~~~  \        |        *
-          *    |     |  ~~~~~  |   .   |    .
-     ✦         |      \  ~~~  /    *   |
-          .     \  .   '-...-'  .     /   *     .
-     *           \_______________ ___/        ✦
-                    .    *    .     .
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/captures/logo/logo_couleur.svg">
+  <img src="docs/captures/logo/logo.svg" height="220" alt="Le symbole du jeu : la sagesse pour tout et pour tous">
+</picture>
+
+<sub><i>la sagesse · pour tout · et pour tous</i></sub>
 
 # ⚗ RPG v2 ⚗
 

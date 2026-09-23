@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Symbole du jeu — premier jet</title>
+<style>
+  :root { --fond:#0f131b; --carte:#171d28; --texte:#dfe7f2; --doux:#8a97aa; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--fond); color:var(--texte); font:15px/1.55 system-ui, sans-serif; padding:24px 16px 48px; }
+  main { max-width:1040px; margin:0 auto; }
+  h1 { font-size:22px; margin:0 0 4px; } h2 { font-size:16px; margin:36px 0 12px; color:#bfe3ff; }
+  p.sous { color:var(--doux); margin:0 0 20px; }
+  .rangee { display:flex; flex-wrap:wrap; gap:14px; }
+  figure { margin:0; flex:1 1 220px; border-radius:10px; padding:18px 14px 12px; display:flex; flex-direction:column; align-items:center; }
+  figure.sombre { background:var(--carte); color:#dfe7f2; }
+  figure.clair { background:#f4f1ea; color:#1b2433; }
+  figure svg { height:300px; width:auto; max-width:100%; }
+  figure.grand svg { height:440px; }
+  figcaption { margin-top:10px; font-size:13px; text-align:center; }
+  figcaption small { display:block; color:var(--doux); }
+  figure.clair figcaption small { color:#6b6456; }
+  .tailles { display:flex; gap:22px; align-items:flex-end; flex-wrap:wrap; background:var(--carte); border-radius:10px; padding:18px; color:#dfe7f2; }
+  .tailles.clair { background:#f4f1ea; color:#1b2433; }
+  .taille { display:flex; flex-direction:column; align-items:center; gap:6px; font-size:12px; }
+  .taille svg { width:100%; height:100%; display:block; }
+  ol li, ul li { margin:6px 0; } code { color:#bfe3ff; }
+</style></head><body><main>
+<h1>La sagesse pour tout et pour tous</h1>
+<p class="sous">Symbole du jeu, logo et emblème du bouclier — premier jet d'après la description de Xav, 23/09. Géométrie : <code>generer_logo.mjs</code> (un nombre à changer, puis relancer).</p>
+
+<div class="rangee">
+  <figure class="sombre grand"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-65.86 -64 131.73 262.54" role="img" aria-label="La sagesse pour tout et pour tous">
+  <defs>
+    <clipPath id="a-coupe"><rect x="-65.86" y="-54" width="131.73" height="262.54"/></clipPath>
+    <mask id="a-derriere1" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#a-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+    </mask>
+    <mask id="a-derriere2" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#a-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+      <path d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="#000" stroke="#000" stroke-width="7"/>
+    </mask>
+  </defs>
+  <g mask="url(#a-derriere2)" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="butt">
+    <polyline points="-55.86,94.27 0,188.54 55.86,94.27" stroke-linejoin="miter"/>
+    <line x1="-50.53" y1="103.27" x2="50.53" y2="103.27"/>
+  </g>
+  <path mask="url(#a-derriere1)" d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="currentColor"/>
+  <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="miter" clip-path="url(#a-coupe)"/>
+  <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="miter"/>
+  <circle cx="0" cy="0" r="9" fill="currentColor"/>
+</svg><figcaption>Monochrome<small>la version de référence : un seul trait, une seule couleur</small></figcaption></figure>
+  <figure class="sombre grand"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-65.86 -64 131.73 262.54" role="img" aria-label="La sagesse pour tout et pour tous">
+  <defs>
+    <clipPath id="b-coupe"><rect x="-65.86" y="-54" width="131.73" height="262.54"/></clipPath>
+    <mask id="b-derriere1" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#b-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+    </mask>
+    <mask id="b-derriere2" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#b-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+      <path d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="#000" stroke="#000" stroke-width="7"/>
+    </mask>
+    <radialGradient id="b-orbe"><stop offset="0" stop-color="#ffffff"/><stop offset="0.55" stop-color="#bfe6ff"/><stop offset="1" stop-color="#6fb6f0"/></radialGradient>
+  </defs>
+  <g mask="url(#b-derriere2)" fill="none" stroke="#7fa36a" stroke-width="2.5" stroke-linecap="butt">
+    <polyline points="-55.86,94.27 0,188.54 55.86,94.27" stroke-linejoin="miter"/>
+    <line x1="-50.53" y1="103.27" x2="50.53" y2="103.27"/>
+  </g>
+  <path mask="url(#b-derriere1)" d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="#d9ae45"/>
+  <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#bfe3ff" stroke-width="4" stroke-linejoin="miter" clip-path="url(#b-coupe)"/>
+  <polygon points="0,-54 32,0 0,54 -32,0" fill="rgba(111,182,240,0.10)" stroke="#8fd0ff" stroke-width="4" stroke-linejoin="miter"/>
+  <circle cx="0" cy="0" r="9" fill="url(#b-orbe)"/>
+</svg><figcaption>En couleur<small>éclat · or · mousse — proposition</small></figcaption></figure>
+  <figure class="clair grand"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-65.86 -64 131.73 262.54" role="img" aria-label="La sagesse pour tout et pour tous">
+  <defs>
+    <clipPath id="c2-coupe"><rect x="-65.86" y="-54" width="131.73" height="262.54"/></clipPath>
+    <mask id="c2-derriere1" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#c2-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+    </mask>
+    <mask id="c2-derriere2" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#c2-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+      <path d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="#000" stroke="#000" stroke-width="7"/>
+    </mask>
+  </defs>
+  <g mask="url(#c2-derriere2)" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="butt">
+    <polyline points="-55.86,94.27 0,188.54 55.86,94.27" stroke-linejoin="miter"/>
+    <line x1="-50.53" y1="103.27" x2="50.53" y2="103.27"/>
+  </g>
+  <path mask="url(#c2-derriere1)" d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="currentColor"/>
+  <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="miter" clip-path="url(#c2-coupe)"/>
+  <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="miter"/>
+  <circle cx="0" cy="0" r="9" fill="currentColor"/>
+</svg><figcaption>Sur fond clair<small>comme sur un README en thème clair</small></figcaption></figure>
+</div>
+
+<h2>Lecture, de haut en bas</h2>
+<div class="rangee">
+  <figure class="sombre"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-65.86 -64 131.73 262.54" role="img" aria-label="La sagesse pour tout et pour tous">
+  <defs>
+    <clipPath id="s1-coupe"><rect x="-65.86" y="-54" width="131.73" height="262.54"/></clipPath>
+    <mask id="s1-derriere1" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#s1-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+    </mask>
+    <mask id="s1-derriere2" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#s1-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+      <path d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="#000" stroke="#000" stroke-width="7"/>
+    </mask>
+  </defs>
+  <g mask="url(#s1-derriere2)" fill="none" stroke="rgba(160,180,210,0.16)" stroke-width="2.5" stroke-linecap="butt">
+    <polyline points="-55.86,94.27 0,188.54 55.86,94.27" stroke-linejoin="miter"/>
+    <line x1="-50.53" y1="103.27" x2="50.53" y2="103.27"/>
+  </g>
+  <path mask="url(#s1-derriere1)" d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="rgba(160,180,210,0.16)"/>
+  <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#bfe3ff" stroke-width="4" stroke-linejoin="miter" clip-path="url(#s1-coupe)"/>
+  <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#8fd0ff" stroke-width="4" stroke-linejoin="miter"/>
+  <circle cx="0" cy="0" r="9" fill="#ffffff"/>
+</svg><figcaption>1 · la sagesse<small>losange de l'éclat, orbe au centre, vase ouvert</small></figcaption></figure>
+  <figure class="sombre"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-65.86 -64 131.73 262.54" role="img" aria-label="La sagesse pour tout et pour tous">
+  <defs>
+    <clipPath id="s2-coupe"><rect x="-65.86" y="-54" width="131.73" height="262.54"/></clipPath>
+    <mask id="s2-derriere1" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#s2-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+    </mask>
+    <mask id="s2-derriere2" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#s2-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+      <path d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="#000" stroke="#000" stroke-width="7"/>
+    </mask>
+  </defs>
+  <g mask="url(#s2-derriere2)" fill="none" stroke="rgba(160,180,210,0.16)" stroke-width="2.5" stroke-linecap="butt">
+    <polyline points="-55.86,94.27 0,188.54 55.86,94.27" stroke-linejoin="miter"/>
+    <line x1="-50.53" y1="103.27" x2="50.53" y2="103.27"/>
+  </g>
+  <path mask="url(#s2-derriere1)" d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="#d9ae45"/>
+  <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="rgba(160,180,210,0.16)" stroke-width="4" stroke-linejoin="miter" clip-path="url(#s2-coupe)"/>
+  <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="rgba(160,180,210,0.16)" stroke-width="4" stroke-linejoin="miter"/>
+  <circle cx="0" cy="0" r="9" fill="rgba(160,180,210,0.16)"/>
+</svg><figcaption>2 · pour tout<small>second plan ; haut et gauche épais, droit fin</small></figcaption></figure>
+  <figure class="sombre"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-65.86 -64 131.73 262.54" role="img" aria-label="La sagesse pour tout et pour tous">
+  <defs>
+    <clipPath id="s3-coupe"><rect x="-65.86" y="-54" width="131.73" height="262.54"/></clipPath>
+    <mask id="s3-derriere1" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#s3-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+    </mask>
+    <mask id="s3-derriere2" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#s3-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+      <path d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="#000" stroke="#000" stroke-width="7"/>
+    </mask>
+  </defs>
+  <g mask="url(#s3-derriere2)" fill="none" stroke="#7fa36a" stroke-width="2.5" stroke-linecap="butt">
+    <polyline points="-55.86,94.27 0,188.54 55.86,94.27" stroke-linejoin="miter"/>
+    <line x1="-50.53" y1="103.27" x2="50.53" y2="103.27"/>
+  </g>
+  <path mask="url(#s3-derriere1)" d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="rgba(160,180,210,0.16)"/>
+  <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="rgba(160,180,210,0.16)" stroke-width="4" stroke-linejoin="miter" clip-path="url(#s3-coupe)"/>
+  <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="rgba(160,180,210,0.16)" stroke-width="4" stroke-linejoin="miter"/>
+  <circle cx="0" cy="0" r="9" fill="rgba(160,180,210,0.16)"/>
+</svg><figcaption>3 · pour tous — la Terre<small>traits fins ; base descendue vers le centre</small></figcaption></figure>
+</div>
+
+<h2>Aux petites tailles (favicon, onglet, bouclier)</h2>
+<div class="tailles"><div class="taille"><div style="width:8.027866848050625px;height:16px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-65.86 -64 131.73 262.54" role="img" aria-label="La sagesse pour tout et pour tous">
+  <defs>
+    <clipPath id="t16-coupe"><rect x="-65.86" y="-54" width="131.73" height="262.54"/></clipPath>
+    <mask id="t16-derriere1" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#t16-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+    </mask>
+    <mask id="t16-derriere2" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#t16-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+      <path d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="#000" stroke="#000" stroke-width="7"/>
+    </mask>
+  </defs>
+  <g mask="url(#t16-derriere2)" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="butt">
+    <polyline points="-55.86,94.27 0,188.54 55.86,94.27" stroke-linejoin="miter"/>
+    <line x1="-50.53" y1="103.27" x2="50.53" y2="103.27"/>
+  </g>
+  <path mask="url(#t16-derriere1)" d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="currentColor"/>
+  <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="miter" clip-path="url(#t16-coupe)"/>
+  <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="miter"/>
+  <circle cx="0" cy="0" r="9" fill="currentColor"/>
+</svg></div><span>16 px</span></div><div class="taille"><div style="width:12.041800272075937px;height:24px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-65.86 -64 131.73 262.54" role="img" aria-label="La sagesse pour tout et pour tous">
+  <defs>
+    <clipPath id="t24-coupe"><rect x="-65.86" y="-54" width="131.73" height="262.54"/></clipPath>
+    <mask id="t24-derriere1" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#t24-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+    </mask>
+    <mask id="t24-derriere2" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#t24-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+      <path d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="#000" stroke="#000" stroke-width="7"/>
+    </mask>
+  </defs>
+  <g mask="url(#t24-derriere2)" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="butt">
+    <polyline points="-55.86,94.27 0,188.54 55.86,94.27" stroke-linejoin="miter"/>
+    <line x1="-50.53" y1="103.27" x2="50.53" y2="103.27"/>
+  </g>
+  <path mask="url(#t24-derriere1)" d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="currentColor"/>
+  <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="miter" clip-path="url(#t24-coupe)"/>
+  <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="miter"/>
+  <circle cx="0" cy="0" r="9" fill="currentColor"/>
+</svg></div><span>24 px</span></div><div class="taille"><div style="width:16.05573369610125px;height:32px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-65.86 -64 131.73 262.54" role="img" aria-label="La sagesse pour tout et pour tous">
+  <defs>
+    <clipPath id="t32-coupe"><rect x="-65.86" y="-54" width="131.73" height="262.54"/></clipPath>
+    <mask id="t32-derriere1" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#t32-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+    </mask>
+    <mask id="t32-derriere2" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#t32-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+      <path d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="#000" stroke="#000" stroke-width="7"/>
+    </mask>
+  </defs>
+  <g mask="url(#t32-derriere2)" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="butt">
+    <polyline points="-55.86,94.27 0,188.54 55.86,94.27" stroke-linejoin="miter"/>
+    <line x1="-50.53" y1="103.27" x2="50.53" y2="103.27"/>
+  </g>
+  <path mask="url(#t32-derriere1)" d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="currentColor"/>
+  <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="miter" clip-path="url(#t32-coupe)"/>
+  <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="miter"/>
+  <circle cx="0" cy="0" r="9" fill="currentColor"/>
+</svg></div><span>32 px</span></div><div class="taille"><div style="width:24.083600544151874px;height:48px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-65.86 -64 131.73 262.54" role="img" aria-label="La sagesse pour tout et pour tous">
+  <defs>
+    <clipPath id="t48-coupe"><rect x="-65.86" y="-54" width="131.73" height="262.54"/></clipPath>
+    <mask id="t48-derriere1" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#t48-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+    </mask>
+    <mask id="t48-derriere2" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#t48-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+      <path d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="#000" stroke="#000" stroke-width="7"/>
+    </mask>
+  </defs>
+  <g mask="url(#t48-derriere2)" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="butt">
+    <polyline points="-55.86,94.27 0,188.54 55.86,94.27" stroke-linejoin="miter"/>
+    <line x1="-50.53" y1="103.27" x2="50.53" y2="103.27"/>
+  </g>
+  <path mask="url(#t48-derriere1)" d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="currentColor"/>
+  <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="miter" clip-path="url(#t48-coupe)"/>
+  <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="miter"/>
+  <circle cx="0" cy="0" r="9" fill="currentColor"/>
+</svg></div><span>48 px</span></div><div class="taille"><div style="width:32.1114673922025px;height:64px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-65.86 -64 131.73 262.54" role="img" aria-label="La sagesse pour tout et pour tous">
+  <defs>
+    <clipPath id="t64-coupe"><rect x="-65.86" y="-54" width="131.73" height="262.54"/></clipPath>
+    <mask id="t64-derriere1" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#t64-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+    </mask>
+    <mask id="t64-derriere2" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#t64-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+      <path d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="#000" stroke="#000" stroke-width="7"/>
+    </mask>
+  </defs>
+  <g mask="url(#t64-derriere2)" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="butt">
+    <polyline points="-55.86,94.27 0,188.54 55.86,94.27" stroke-linejoin="miter"/>
+    <line x1="-50.53" y1="103.27" x2="50.53" y2="103.27"/>
+  </g>
+  <path mask="url(#t64-derriere1)" d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="currentColor"/>
+  <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="miter" clip-path="url(#t64-coupe)"/>
+  <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="miter"/>
+  <circle cx="0" cy="0" r="9" fill="currentColor"/>
+</svg></div><span>64 px</span></div></div>
+<div class="tailles clair" style="margin-top:10px"><div class="taille"><div style="width:8.027866848050625px;height:16px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-65.86 -64 131.73 262.54" role="img" aria-label="La sagesse pour tout et pour tous">
+  <defs>
+    <clipPath id="u16-coupe"><rect x="-65.86" y="-54" width="131.73" height="262.54"/></clipPath>
+    <mask id="u16-derriere1" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#u16-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+    </mask>
+    <mask id="u16-derriere2" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#u16-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+      <path d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="#000" stroke="#000" stroke-width="7"/>
+    </mask>
+  </defs>
+  <g mask="url(#u16-derriere2)" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="butt">
+    <polyline points="-55.86,94.27 0,188.54 55.86,94.27" stroke-linejoin="miter"/>
+    <line x1="-50.53" y1="103.27" x2="50.53" y2="103.27"/>
+  </g>
+  <path mask="url(#u16-derriere1)" d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="currentColor"/>
+  <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="miter" clip-path="url(#u16-coupe)"/>
+  <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="miter"/>
+  <circle cx="0" cy="0" r="9" fill="currentColor"/>
+</svg></div><span>16 px</span></div><div class="taille"><div style="width:12.041800272075937px;height:24px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-65.86 -64 131.73 262.54" role="img" aria-label="La sagesse pour tout et pour tous">
+  <defs>
+    <clipPath id="u24-coupe"><rect x="-65.86" y="-54" width="131.73" height="262.54"/></clipPath>
+    <mask id="u24-derriere1" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#u24-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+    </mask>
+    <mask id="u24-derriere2" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#u24-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+      <path d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="#000" stroke="#000" stroke-width="7"/>
+    </mask>
+  </defs>
+  <g mask="url(#u24-derriere2)" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="butt">
+    <polyline points="-55.86,94.27 0,188.54 55.86,94.27" stroke-linejoin="miter"/>
+    <line x1="-50.53" y1="103.27" x2="50.53" y2="103.27"/>
+  </g>
+  <path mask="url(#u24-derriere1)" d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="currentColor"/>
+  <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="miter" clip-path="url(#u24-coupe)"/>
+  <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="miter"/>
+  <circle cx="0" cy="0" r="9" fill="currentColor"/>
+</svg></div><span>24 px</span></div><div class="taille"><div style="width:16.05573369610125px;height:32px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-65.86 -64 131.73 262.54" role="img" aria-label="La sagesse pour tout et pour tous">
+  <defs>
+    <clipPath id="u32-coupe"><rect x="-65.86" y="-54" width="131.73" height="262.54"/></clipPath>
+    <mask id="u32-derriere1" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#u32-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+    </mask>
+    <mask id="u32-derriere2" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#u32-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+      <path d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="#000" stroke="#000" stroke-width="7"/>
+    </mask>
+  </defs>
+  <g mask="url(#u32-derriere2)" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="butt">
+    <polyline points="-55.86,94.27 0,188.54 55.86,94.27" stroke-linejoin="miter"/>
+    <line x1="-50.53" y1="103.27" x2="50.53" y2="103.27"/>
+  </g>
+  <path mask="url(#u32-derriere1)" d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="currentColor"/>
+  <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="miter" clip-path="url(#u32-coupe)"/>
+  <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="miter"/>
+  <circle cx="0" cy="0" r="9" fill="currentColor"/>
+</svg></div><span>32 px</span></div><div class="taille"><div style="width:24.083600544151874px;height:48px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-65.86 -64 131.73 262.54" role="img" aria-label="La sagesse pour tout et pour tous">
+  <defs>
+    <clipPath id="u48-coupe"><rect x="-65.86" y="-54" width="131.73" height="262.54"/></clipPath>
+    <mask id="u48-derriere1" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#u48-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+    </mask>
+    <mask id="u48-derriere2" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#u48-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+      <path d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="#000" stroke="#000" stroke-width="7"/>
+    </mask>
+  </defs>
+  <g mask="url(#u48-derriere2)" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="butt">
+    <polyline points="-55.86,94.27 0,188.54 55.86,94.27" stroke-linejoin="miter"/>
+    <line x1="-50.53" y1="103.27" x2="50.53" y2="103.27"/>
+  </g>
+  <path mask="url(#u48-derriere1)" d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="currentColor"/>
+  <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="miter" clip-path="url(#u48-coupe)"/>
+  <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="miter"/>
+  <circle cx="0" cy="0" r="9" fill="currentColor"/>
+</svg></div><span>48 px</span></div><div class="taille"><div style="width:32.1114673922025px;height:64px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-65.86 -64 131.73 262.54" role="img" aria-label="La sagesse pour tout et pour tous">
+  <defs>
+    <clipPath id="u64-coupe"><rect x="-65.86" y="-54" width="131.73" height="262.54"/></clipPath>
+    <mask id="u64-derriere1" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#u64-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+    </mask>
+    <mask id="u64-derriere2" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#u64-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+      <path d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="#000" stroke="#000" stroke-width="7"/>
+    </mask>
+  </defs>
+  <g mask="url(#u64-derriere2)" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="butt">
+    <polyline points="-55.86,94.27 0,188.54 55.86,94.27" stroke-linejoin="miter"/>
+    <line x1="-50.53" y1="103.27" x2="50.53" y2="103.27"/>
+  </g>
+  <path mask="url(#u64-derriere1)" d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="currentColor"/>
+  <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="miter" clip-path="url(#u64-coupe)"/>
+  <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="miter"/>
+  <circle cx="0" cy="0" r="9" fill="currentColor"/>
+</svg></div><span>64 px</span></div></div>
+
+<h2>Ce que j'ai lu dans la description — à confirmer ou corriger</h2>
+<ol>
+  <li><b>Le vase.</b> Les lignes parallèles sont le losange agrandi, à la distance orbe ↔ losange (bord à bord : 16.53 unités pour un trait de 4). La tangente sur la pointe haute les <i>coupe</i> mais n'est <i>pas tracée</i> : sinon le vase serait fermé. Variante avec la tangente visible ci-dessous.</li>
+  <li><b>Le losange</b> reprend les proportions de l'éclat (5,4 × 3,3) mais symétrisé haut/bas ; l'éclat du jeu a son ventre un peu au-dessus du centre.</li>
+  <li><b>Les triangles</b> : ni leur largeur ni leur hauteur n'étaient dites. Je les ai faits aussi larges que le ventre du vase et j'ai rendu <i>tous</i> les traits descendants parallèles à ceux du losange — d'où le rythme de chevrons.</li>
+  <li><b>Le second plan</b> se dit par l'entrelacs : là où un trait de devant croise un trait de derrière, celui de derrière s'interrompt (vase &gt; triangle 2 &gt; triangle 3).</li>
+  <li><b>La base du triangle de la Terre</b> descend de 9 unités vers le centre ; ses côtés dépassent au-dessus — un écho du vase ouvert.</li>
+  <li><b>Couleurs</b> : aucune n'était dite ; la version de référence est monochrome.</li>
+</ol>
+
+<h2>Variante : la tangente tracée</h2>
+<div class="rangee">
+  <figure class="sombre"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-65.86 -64 131.73 262.54" role="img" aria-label="La sagesse pour tout et pour tous">
+  <defs>
+    <clipPath id="v1-coupe"><rect x="-65.86" y="-54" width="131.73" height="262.54"/></clipPath>
+    <mask id="v1-derriere1" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#v1-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+    </mask>
+    <mask id="v1-derriere2" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#v1-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+      <path d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="#000" stroke="#000" stroke-width="7"/>
+    </mask>
+  </defs>
+  <g mask="url(#v1-derriere2)" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="butt">
+    <polyline points="-55.86,94.27 0,188.54 55.86,94.27" stroke-linejoin="miter"/>
+    <line x1="-50.53" y1="103.27" x2="50.53" y2="103.27"/>
+  </g>
+  <path mask="url(#v1-derriere1)" d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="currentColor"/>
+  <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="miter" clip-path="url(#v1-coupe)"/>
+  <line x1="-55.86" y1="-56" x2="55.86" y2="-56" stroke="currentColor" stroke-width="2"/>
+  <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="miter"/>
+  <circle cx="0" cy="0" r="9" fill="currentColor"/>
+</svg><figcaption>Tangente visible<small>un trait fin qui ferme le haut du vase</small></figcaption></figure>
+  <figure class="sombre"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-65.86 -64 131.73 262.54" role="img" aria-label="La sagesse pour tout et pour tous">
+  <defs>
+    <clipPath id="v2-coupe"><rect x="-65.86" y="-54" width="131.73" height="262.54"/></clipPath>
+    <mask id="v2-derriere1" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#v2-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+    </mask>
+    <mask id="v2-derriere2" maskUnits="userSpaceOnUse" x="-65.86" y="-64" width="131.73" height="262.54">
+      <rect x="-65.86" y="-64" width="131.73" height="262.54" fill="#fff"/>
+      <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="miter" clip-path="url(#v2-coupe)"/>
+      <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="#000" stroke-width="11"/>
+      <path d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="#000" stroke="#000" stroke-width="7"/>
+    </mask>
+  </defs>
+  <g mask="url(#v2-derriere2)" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="butt">
+    <polyline points="-55.86,94.27 0,188.54 55.86,94.27" stroke-linejoin="miter"/>
+    <line x1="-50.53" y1="103.27" x2="50.53" y2="103.27"/>
+  </g>
+  <path mask="url(#v2-derriere1)" d="M-55.86,54 55.86,54 0,148.27Z M-42.7,61.5 48.51,61.5 2.91,138.46Z" fill-rule="evenodd" fill="currentColor"/>
+  <polygon points="0,-94.27 55.86,0 0,94.27 -55.86,0" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="miter" clip-path="url(#v2-coupe)"/>
+  <polygon points="0,-54 32,0 0,54 -32,0" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="miter"/>
+  <circle cx="0" cy="0" r="9" fill="currentColor"/>
+</svg><figcaption>Tangente invisible (proposée)<small>le vase reste ouvert</small></figcaption></figure>
+</div>
+</main></body></html>

@@ -147,5 +147,13 @@
     "periode_ms": 3200,
     "sens": 1,
     "phase_rad": 0
+  },
+  {
+    "id": "effet_anneau_choix",
+    "type": "respiration",
+    "role": "cosmetique",
+    "ornement_min": 1,
+    "periode_ms": 1800,
+    "amplitude": 0.35
   }
 ]

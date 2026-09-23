@@ -593,6 +593,11 @@ const TAILLE_FOLLET_REPOS_PX = 14;
 // recopiés auraient pu diverger, et la transition aurait sauté sans que rien
 // ne le signale. Les tailles de la cinématique, elles, ne changent pas.
 const TAILLE_FOLLET_SELECTIONNE_PX = 20;
+// `D-178` : l'anneau du follet sélectionné sur l'écran de choix — le rayon
+// d'avant (28), son opacité de repos (celle qui respire dès Moyen).
+// PROVISOIRE, jugé à la capture seulement.
+const RAYON_ANNEAU_CHOIX_PX = 28;
+const ALPHA_ANNEAU_CHOIX = 0.75;
 
 function afficherErreurBoot(erreurs) {
   document.body.innerHTML = `
@@ -961,6 +966,8 @@ export function creerOrchestrateurGrotte({
     effetHalo = ornementActif(effetHaloCatalogue, levier('ornements'));
     effetLueurDialogue = ornementActif(effetLueurDialogueCatalogue, levier('ornements'));
     effetEtincellesDialogue = ornementActif(effetEtincellesDialogueCatalogue, levier('ornements'));
+    effetAnneauChoix = ornementActif(effetAnneauChoixCatalogue, levier('ornements'));
+    sillagesCinematique = ORDRE_CHOIX_FOLLET.map(() => creerPoussiere(effetSillage));
     if (scene) regenererDecor();
     // Sans ça, l'ancien sol resterait à l'écran jusqu'au prochain
     // franchissement de tuile : la signature du calque (scène, échelle,
@@ -1090,6 +1097,21 @@ export function creerOrchestrateurGrotte({
   let effetLueurDialogue = ornementActif(effetLueurDialogueCatalogue, levier('ornements'));
   let effetEtincellesDialogue = ornementActif(effetEtincellesDialogueCatalogue, levier('ornements'));
   let tempsDialogueMs = 0;
+
+  // `D-178` (relevé de Xav, 23/09 : « bas, moyen, haut ne font pas de
+  // différence » pendant la sélection du follet) : la cinématique d'une
+  // partie neuve suit les MÊMES leviers que le follet en jeu, par les mêmes
+  // effets. Bas : rien qui bouge en plus. Moyen : le sillage (levier
+  // `particules`, comme en jeu) et l'anneau de sélection qui respire
+  // (`effet_anneau_choix`, seuil 1). Haut : en plus, les étincelles en orbite
+  // (`effet_ornement_follet`, celui du follet en jeu). Horloge propre, avancée
+  // seulement pendant la cinématique (le jeu y est gelé, `tempsVolFolletMs`
+  // aussi). Une réserve de sillage par follet de l'écran de choix.
+  const effetAnneauChoixCatalogue = registre.obtenir('effets', 'effet_anneau_choix');
+  let effetAnneauChoix = ornementActif(effetAnneauChoixCatalogue, levier('ornements'));
+  let tempsCinematiqueMs = 0;
+  let sillagesCinematique = ORDRE_CHOIX_FOLLET.map(() => creerPoussiere(effetSillage));
+  let positionsSillageCinematique = ORDRE_CHOIX_FOLLET.map(() => null);
 
   // MT_texte-flottant_2026-09-19 (`D-05`) : même patron exactement — réglages
   // en données (tous PROVISOIRES, à régler au ressenti par Xav) et réserve
@@ -1628,6 +1650,10 @@ export function creerOrchestrateurGrotte({
     // téléporté) — la réserve est vidée sur place, jamais réallouée.
     viderPoussiere(poussiere);
     viderPoussiere(sillageFollet);
+    // `D-178` : ceux de la cinématique aussi (une partie neuve la rejoue).
+    sillagesCinematique.forEach(viderPoussiere);
+    positionsSillageCinematique = ORDRE_CHOIX_FOLLET.map(() => null);
+    tempsCinematiqueMs = 0;
     tempsVolFolletMs = 0;
     corpsFollet = decalageCorpsFollet(0, configVolFollet);
     // `D-05`, même raison exactement : un « +1 Bois » gagné dans la scène
@@ -3174,6 +3200,7 @@ export function creerOrchestrateurGrotte({
       depart = avancerDepart(depart, deltaMs);
       if (depart.terminee) depart = null;
     }
+    avancerSillagesCinematique(deltaMs);
 
     // MT_construction-bandeau-placement_2026-09-17 §4 : `MENU` pendant le
     // placement a désormais un effet (annule + revient au menu Pause,
@@ -3407,54 +3434,130 @@ export function creerOrchestrateurGrotte({
     }
   }
 
-  function dessinerEcranChoixFollet() {
-    if (!choixFolletActif()) return;
-    // Positions à 480x270 (résolution logique validée, diagnostic
-    // SD_ui-lisibilite §9) : mêmes proportions qu'avant (×0,75 de l'ancien
-    // 640x360), arrangement toujours arbitraire (§3.1, sans effet gameplay).
-    ORDRE_CHOIX_FOLLET.forEach((id, i) => {
-      const companion = registre.obtenir('companions', id);
-      const visuel = registre.obtenir('visuels', companion.render.visuel);
-      const x = POSITIONS_ECRAN_FOLLETS[i];
-      const y = Y_ECRAN_FOLLETS;
-      const taille = i === choixFollet.index ? TAILLE_FOLLET_SELECTIONNE_PX : TAILLE_FOLLET_REPOS_PX;
-      dessinerVisuel(ctxLogique, visuel, x, y, {
-        teinte: companion.render.couleur,
-        echelle: taille / TAILLE_REFERENCE_FOLLET_PX,
+  // `D-178` : OÙ sont les follets de la cinématique à cet instant — la seule
+  // source, lue par le dessin ET par le sillage (qui naît là où l'œil les
+  // voit). Trois étapes, dans cet ordre de priorité :
+  //   - l'écran de choix (`choixFolletActif()`) : les trois à leur place, le
+  //     sélectionné plus grand. Il passe avant l'intro, restée vivante en
+  //     étape ATTENTE (cf. maj()) — sans quoi ils seraient dessinés deux fois ;
+  //   - l'intro (étapes 1-2, §3.5) : lévitation puis convergence
+  //     (`intro.js#etatRendu`, pur) ;
+  //   - le départ (étape 4) : les deux non élus s'éloignent et s'éteignent ;
+  //     l'élu est déjà le vrai follet (companion.js), dessiné par la scène.
+  // `[{ index, x, y, alpha, taille, selectionne }]`, en px logiques d'écran.
+  function folletsCinematique() {
+    const cibles = POSITIONS_ECRAN_FOLLETS.map((x) => ({ x, y: Y_ECRAN_FOLLETS }));
+    if (choixFolletActif()) {
+      return cibles.map((c, index) => {
+        const selectionne = index === choixFollet.index;
+        return {
+          index, x: c.x, y: c.y, alpha: 1, selectionne,
+          taille: selectionne ? TAILLE_FOLLET_SELECTIONNE_PX : TAILLE_FOLLET_REPOS_PX,
+        };
       });
-      if (i === choixFollet.index) {
-        ctxLogique.strokeStyle = '#ffffff';
-        ctxLogique.beginPath();
-        ctxLogique.arc(x, y, 28, 0, Math.PI * 2);
-        ctxLogique.stroke();
+    }
+    if (intro) {
+      const rendu = etatRenduIntro(intro, cibles);
+      return (rendu.follets || []).map((f, index) => ({
+        index, x: f.x, y: f.y, alpha: f.alpha, taille: TAILLE_FOLLET_REPOS_PX, selectionne: false,
+      }));
+    }
+    if (depart) {
+      return etatRenduDepart(depart, cibles).map(({ index, x, y, alpha }) => ({
+        index, x, y, alpha, taille: TAILLE_FOLLET_REPOS_PX, selectionne: false,
+      }));
+    }
+    return [];
+  }
+
+  // Le sillage de la cinématique : même effet qu'en jeu (`effetSillage`, déjà
+  // allégé par le levier `particules` — Bas n'émet rien), une réserve par
+  // follet, la densité suivant la distance parcourue. Avancé à chaque frame,
+  // cinématique ou pas : les dernières bouffées d'un départ doivent finir de
+  // s'éteindre après lui, jamais disparaître d'un coup.
+  function avancerSillagesCinematique(deltaMs) {
+    const presents = folletsCinematique();
+    if (presents.length > 0) tempsCinematiqueMs += deltaMs;
+    sillagesCinematique.forEach((reserve, i) => {
+      const f = presents.find((p) => p.index === i);
+      const avant = positionsSillageCinematique[i];
+      if (f) {
+        avancerPoussiere(reserve, {
+          x: f.x,
+          y: f.y + effetSillage.offset_y_px,
+          distancePx: avant ? Math.hypot(f.x - avant.x, f.y - avant.y) : 0,
+          deltaMs,
+          emettre: true,
+        });
+        positionsSillageCinematique[i] = { x: f.x, y: f.y };
+      } else {
+        avancerPoussiere(reserve, { x: 0, y: 0, distancePx: 0, deltaMs, emettre: false });
+        positionsSillageCinematique[i] = null;
       }
     });
   }
 
-  // Étapes 1-2 de l'intro (§3.5) : follets en lévitation/convergence vers les
-  // 3 positions de l'écran de choix — jamais les formes de dessinerVisuel
-  // dupliquées ailleurs, seule la position/alpha changent d'un appel à
-  // l'autre (cf. src/intro.js#etatRendu, pur).
-  function dessinerIntroConvergence() {
-    // `choixFolletActif()` a la priorité : dès que l'écran de choix est ouvert,
-    // c'est LUI qui dessine les 3 follets (avec le halo de sélection). Sans
-    // cette garde, l'intro restée vivante (étape ATTENTE, cf. maj()) les
-    // dessinerait une 2ᵉ fois par-dessus.
-    if (!intro || choixFolletActif()) return null;
-    const cibles = POSITIONS_ECRAN_FOLLETS.map((x) => ({ x, y: Y_ECRAN_FOLLETS }));
-    const rendu = etatRenduIntro(intro, cibles);
-    if (rendu.follets) {
-      rendu.follets.forEach((f, i) => {
-        const companion = registre.obtenir('companions', ORDRE_CHOIX_FOLLET[i]);
-        const visuel = registre.obtenir('visuels', companion.render.visuel);
-        dessinerVisuel(ctxLogique, visuel, f.x, f.y, {
-          teinte: companion.render.couleur,
-          echelle: TAILLE_FOLLET_REPOS_PX / TAILLE_REFERENCE_FOLLET_PX,
-          alpha: f.alpha,
+  // Le dessin des follets de la cinématique, dans l'ordre du monde (render.js
+  // pour le follet en jeu) : sillage dessous, étincelles de derrière, la
+  // silhouette, étincelles de devant — puis l'anneau de sélection.
+  function dessinerFolletsCinematique() {
+    const presents = folletsCinematique();
+    sillagesCinematique.forEach((reserve, i) => {
+      const companion = registre.obtenir('companions', ORDRE_CHOIX_FOLLET[i]);
+      for (const b of bouffeesVisibles(reserve)) {
+        dessinerVisuel(ctxLogique, visuelSillage, b.x, b.y, {
+          teinte: companion.render.couleur, alpha: b.alpha, echelle: b.echelle,
         });
+      }
+    });
+    for (const f of presents) {
+      const companion = registre.obtenir('companions', ORDRE_CHOIX_FOLLET[f.index]);
+      const teinte = companion.render.couleur;
+      const echelle = f.taille / TAILLE_REFERENCE_FOLLET_PX;
+      // Un tiers de tour de décalage par follet : trois orbites en phase se
+      // liraient comme une seule mécanique posée sur trois objets.
+      const tOrbite = tempsCinematiqueMs + (effetOrnement ? (f.index * effetOrnement.periode_ms) / 3 : 0);
+      // L'orbite est réglée pour le follet À SA TAILLE DE JEU ; ici il est
+      // dessiné plus grand, et les étincelles tournaient dans la silhouette.
+      // L'ORBITE suit le rapport des deux échelles ; l'étincelle, elle, garde
+      // sa taille de jeu — agrandie avec, elle devenait un disque. Aucun
+      // second réglage en données.
+      const rapport = echelle / resoudreEchelleJeuFollet(companion);
+      const etincelles = etincellesOrbite(effetOrnement, tOrbite, f.x, f.y).map((e) => ({
+        ...e, x: f.x + (e.x - f.x) * rapport, y: f.y + (e.y - f.y) * rapport,
+      }));
+      const dessinerEtincelles = (devant) => {
+        for (const e of etincelles) {
+          if (e.devant !== devant) continue;
+          dessinerVisuel(ctxLogique, visuelOrnement, e.x, e.y, { teinte, alpha: e.alpha * f.alpha, echelle: e.echelle });
+        }
+      };
+      dessinerEtincelles(false);
+      dessinerVisuel(ctxLogique, registre.obtenir('visuels', companion.render.visuel), f.x, f.y, {
+        teinte, echelle, alpha: f.alpha,
       });
+      dessinerEtincelles(true);
+      if (f.selectionne) {
+        // L'anneau de sélection prend la couleur du follet (comme la case
+        // d'attaque, `D-175`), au lieu d'un trait blanc que rien d'autre ne
+        // porte dans le jeu. Il respire dès Moyen ; en Bas, il est posé.
+        ctxLogique.save();
+        ctxLogique.globalAlpha = Math.min(1, ALPHA_ANNEAU_CHOIX * facteurRespiration(effetAnneauChoix, tempsCinematiqueMs));
+        ctxLogique.strokeStyle = teinte;
+        ctxLogique.lineWidth = 1.5;
+        ctxLogique.beginPath();
+        ctxLogique.arc(f.x, f.y, RAYON_ANNEAU_CHOIX_PX, 0, Math.PI * 2);
+        ctxLogique.stroke();
+        ctxLogique.restore();
+      }
     }
-    return rendu;
+  }
+
+  // Les paupières de l'intro (étape 1) : ce que `etatRendu` dit de l'étape en
+  // cours, sans dessiner — les follets passent par `dessinerFolletsCinematique`.
+  function renduIntroCourant() {
+    if (!intro || choixFolletActif()) return null;
+    return etatRenduIntro(intro, POSITIONS_ECRAN_FOLLETS.map((x) => ({ x, y: Y_ECRAN_FOLLETS })));
   }
 
   // `D-169` : ce que la bulle reçoit en plus de sa ligne, résolu ici (le
@@ -3471,24 +3574,6 @@ export function creerOrchestrateurGrotte({
       visuelEtincelle: visuelEtincelleDialogue,
       tMs: tempsDialogueMs,
     };
-  }
-
-  // Étape 4 de l'intro (§3.5) : les 2 follets non élus s'éloignent et
-  // s'éteignent depuis leur position sur l'écran de choix — l'élu n'est
-  // jamais redessiné ici, le vrai follet (companion.js, déjà `follet`) le
-  // remplace (dessinerScene le dessine chaque frame comme toute entité).
-  function dessinerDepart() {
-    if (!depart) return;
-    const cibles = POSITIONS_ECRAN_FOLLETS.map((x) => ({ x, y: Y_ECRAN_FOLLETS }));
-    for (const { index, x, y, alpha } of etatRenduDepart(depart, cibles)) {
-      const companion = registre.obtenir('companions', ORDRE_CHOIX_FOLLET[index]);
-      const visuel = registre.obtenir('visuels', companion.render.visuel);
-      dessinerVisuel(ctxLogique, visuel, x, y, {
-        teinte: companion.render.couleur,
-        echelle: TAILLE_FOLLET_REPOS_PX / TAILLE_REFERENCE_FOLLET_PX,
-        alpha,
-      });
-    }
   }
 
   // Échelle à laquelle le vrai follet (celui de companion.js) est dessiné
@@ -4000,9 +4085,8 @@ export function creerOrchestrateurGrotte({
       resteMs: donneesIndice.resteMs,
       dureeMs: donneesIndice.dureeMs,
     } : null);
-    dessinerEcranChoixFollet();
-    const renduIntro = dessinerIntroConvergence();
-    dessinerDepart();
+    dessinerFolletsCinematique();
+    const renduIntro = renduIntroCourant();
     if (dialogue.estOuvert()) {
       const ligneDialogue = dialogue.ligneCourante();
       dessinerDialogue(ctxLogique, ligneDialogue, habillageDialogue(ligneDialogue));

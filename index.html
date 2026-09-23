@@ -51,6 +51,12 @@
       /* Blanc cassé et gris bleuté : deux niveaux de lecture, pas trois. */
       --menu-texte-titre: #f4f1ea;
       --menu-texte-phrase: #9aa3b2;
+      /* Polish libre du 24/09 : les menus parlent avec les polices du
+         prologue et de la bulle (`polices.js`, chargées pour tout le jeu).
+         L'onciale ne porte que des titres ; elle n'a pas de gras, et un gras
+         imité par le navigateur l'empâte. Repli `serif` si elles manquent. */
+      --menu-police-titre: "Uncial Antiqua", serif;
+      --menu-police-texte: "Almendra", serif;
       /* Focus « léger » (à confirmer en jeu) : jamais la couleur seule — la
          bordure s'épaissit, un halo l'entoure ET la carte s'éclaircit. */
       --menu-focus-bordure-px: 1.5px;
@@ -440,6 +446,11 @@
     /* PS4 : un texte qui n'est pas une langue (les hiéroglyphes d'un indice
        illisible) s'écrit en chasse fixe, comme la gravure de la stèle — le
        joueur reconnaît les mêmes signes au même dessin. */
+    /* Les titres en onciale, sans gras (voir `--menu-police-titre`). */
+    .cartes-titre, .carte-titre, .fiche-titre { font-family: var(--menu-police-titre); font-weight: 400; }
+    .carte-phrase, .fiche-ligne, .tuile-nom, .fiche-action, .fiches-sous-titre, .cartes-message, .fiche-vide {
+      font-family: var(--menu-police-texte);
+    }
     .texte-code { font-family: ui-monospace, Consolas, "Courier New", monospace; letter-spacing: 0.04em; }
     /* `D-103` : une ligne qui montre ce dont elle parle (un ingrédient, un
        coût en monnaie). La vignette est calée sur la HAUTEUR du texte — une

@@ -1,0 +1,30 @@
+[
+  {
+    "id": "prologue_avertissement",
+    "titre": "prologue.avertissement.titre",
+    "lignes": ["prologue.avertissement.1", "prologue.avertissement.2", "prologue.avertissement.3"],
+    "fondu_ms": 600,
+    "armement_ms": 1500
+  },
+  {
+    "id": "prologue_presentation",
+    "titre": "prologue.presentation.titre",
+    "lignes": ["prologue.presentation.1", "prologue.presentation.2", "prologue.presentation.3"],
+    "fondu_ms": 600,
+    "armement_ms": 1500
+  },
+  {
+    "id": "prologue_description",
+    "titre": "prologue.description.titre",
+    "lignes": ["prologue.description.1", "prologue.description.2", "prologue.description.3"],
+    "fondu_ms": 600,
+    "armement_ms": 1500
+  },
+  {
+    "id": "prologue_go",
+    "titre": "prologue.go.titre",
+    "lignes": [],
+    "fondu_ms": 800,
+    "armement_ms": 900
+  }
+]

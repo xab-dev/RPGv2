@@ -2485,6 +2485,30 @@ export const SCHEMAS = {
   // imposée par le schéma, xp.js trie lui-même) — une entrée de plus
   // (niveau 11+) ne demande aucun code.
   // specs/08_menus-cartes.md : les écrans de cartes du menu Pause.
+  // `specs/12_prologue.md` : les écrans du prologue, dans l'ordre du fichier.
+  // Du texte (des CLÉS de locale, jamais une chaîne) et deux durées par écran,
+  // lues par `prologue.js`. Une durée nulle est acceptée (fondu franc, appui
+  // accepté tout de suite) ; négative ou absente, elle ne voudrait rien dire.
+  prologue: {
+    requiredFields: ['id', 'titre', 'lignes', 'fondu_ms', 'armement_ms'],
+    idField: 'id',
+    refs: [],
+    custom(entry, catalogs, path) {
+      const erreurs = [];
+      if (typeof entry.titre !== 'string' || entry.titre.length === 0) {
+        erreurs.push(`${path} > titre doit être une clé de locale non vide`);
+      }
+      if (!Array.isArray(entry.lignes) || !entry.lignes.every((c) => typeof c === 'string' && c.length > 0)) {
+        erreurs.push(`${path} > lignes doit être une liste (éventuellement vide) de clés de locale`);
+      }
+      for (const champ of ['fondu_ms', 'armement_ms']) {
+        if (typeof entry[champ] !== 'number' || !(entry[champ] >= 0)) {
+          erreurs.push(`${path} > ${champ} doit être un nombre de ms positif ou nul`);
+        }
+      }
+      return erreurs;
+    },
+  },
   menus: {
     requiredFields: ['id', 'cle_titre', 'cartes'],
     idField: 'id',

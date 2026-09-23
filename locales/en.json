@@ -310,5 +310,18 @@
   "dlg.chapitre_3.repare": "There. Done.",
   "dlg.chapitre_3.montre": "See for yourself. I’m on it.",
   "dlg.chapitre_3.limite": "You’re right. I won’t touch it again without you.",
-  "dlg.chapitre_3.tout_est_la": "Your chest… everything’s there."
+  "dlg.chapitre_3.tout_est_la": "Your chest… everything’s there.",
+  "prologue.avertissement.titre": "Before you begin",
+  "prologue.avertissement.1": "This game will never give you a quest. No objective on screen, no arrow, no to-do list.",
+  "prologue.avertissement.2": "That’s on purpose: here, you understand by exploring.",
+  "prologue.avertissement.3": "Your progress saves itself.",
+  "prologue.presentation.titre": "A role-playing game",
+  "prologue.presentation.1": "The role is yours.",
+  "prologue.presentation.2": "You wake up knowing nothing. A wisp comes with you: it learns alongside you, it won’t explain everything.",
+  "prologue.presentation.3": "What you choose, and how you do it, matters. Even when nothing shows it.",
+  "prologue.description.titre": "What you’ll do",
+  "prologue.description.1": "Gather, craft, cook, gear up.",
+  "prologue.description.2": "Survive the nights, when the Chaos prowls.",
+  "prologue.description.3": "Grow stronger, and open what is closed.",
+  "prologue.go.titre": "Wake up."
 }

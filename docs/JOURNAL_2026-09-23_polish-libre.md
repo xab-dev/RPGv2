@@ -26,4 +26,6 @@ facture.
 | Commit | Sujet | Ce qu'il faut en retenir |
 |---|---|---|
 | `fa39a88` | Ménage | Journal du polish des dialogues archivé |
-| *(ce commit)* | `D-170` | La barre du bas se tait sous la bulle (même pied, cadre translucide partagé) ; tactile inchangé. **163 fichiers verts** |
+| `11462a3` | `D-170` | La barre du bas se tait sous la bulle (même pied, cadre translucide partagé) ; tactile inchangé. **163 fichiers verts** |
+| `62e1522` | `D-170` | Test renommé à son identifiant |
+| `4068658` + *(ce commit)* | `D-171` | La touche d'un indice : un creux au liseré d'or, le glyphe en or ; bannière de largeur identique au pixel. L'or passe dans `cadre.js`. **164 fichiers verts** |

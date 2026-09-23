@@ -81,6 +81,7 @@ import {
 import {
   remplirItemsSol, trouverItemProche, ramasser, planifierRespawn, tickRespawns,
   calculerTuilesAtteignables, reposerItemsDuJour,
+  compterObjetsSurTuile, poserObjetJete, trouverObjetJeteProche, retirerObjetJete, decalageDansPile,
 } from './ground_items.js';
 import { calculerOpaciteToit, distanceAuRectangle, empreinteAbsoluePuzzle } from './structures.js';
 import { dansRectangleTuile, poseValide } from './placement.js';
@@ -150,10 +151,15 @@ const CLE_TEXTE_GAIN_XP = 'monde.gain_xp';
 // transporte une quantité que ces gabarits n'utilisent pas, ce qui est
 // exactement ce que « transporter des clés opaques » veut dire.
 const CLE_TEXTE_POCHE_PLEINE = 'monde.poche_pleine';
+const CLE_TEXTE_PLUS_DE_PLACE = 'monde.plus_de_place_ici';
 // La poche du héros est un conteneur comme un autre, et son id vit ici pour
 // la même raison que `effet_texte_gain` : c'est le code qui en a besoin, donc
 // c'est le code qui le nomme — un id inconnu tombe au boot (`registre.obtenir`).
 const ID_CONTENEUR_POCHE = 'conteneur_poche';
+// `D-145` : une tuile de sol tient autant d'objets que ce conteneur a de
+// slots (pile 1 : un objet par slot). Le nombre vit dans les données, à côté
+// de ceux de la poche et du coffre.
+const ID_CONTENEUR_SOL = 'conteneur_sol';
 const CLE_TEXTE_COFFRE_PLEIN = 'monde.coffre_plein';
 // Respawn différé des items au sol (Palier B §3.2) : défaut appliqué quand
 // l'item ne surcharge pas `spawn.respawn_ms` — même esprit que
@@ -1556,7 +1562,31 @@ export function creerOrchestrateurGrotte({
       }
     }
 
-    const itemProche = trouverItemProche(itemsSol, hero, DISTANCE_INTERACT_PX);
+    // `D-145` : un objet JETÉ se ramasse comme un objet semé — même geste, un
+    // par un, le plus proche d'abord (et sur une pile, celui du dessus). Il
+    // passe avant quand il est au moins aussi près : c'est lui que le joueur
+    // vient de poser. Ce qui diffère est tout ce qui suit l'entrée en poche :
+    // **aucune XP** (sinon jeter puis reprendre en boucle ferait monter de
+    // niveau), aucune repousse, aucun flag de premier ramassage (l'objet a
+    // déjà été ramassé une fois pour arriver en poche).
+    const jeteProche = trouverObjetJeteProche(objetsJetesDeLaScene(), hero, DISTANCE_INTERACT_PX);
+    const semeProche = trouverItemProche(itemsSol, hero, DISTANCE_INTERACT_PX);
+    const distanceSeme = semeProche
+      ? Math.hypot(hero.x - semeProche.position.x, hero.y - semeProche.position.y) : Infinity;
+    if (jeteProche && jeteProche.distance <= distanceSeme) {
+      const resultat = ajouterItem(save.inventaire.items, jeteProche.itemId, 1, plafondPoche(jeteProche.itemId));
+      if (resultat.ajoute <= 0) {
+        signalerRefusConteneur(CLE_TEXTE_POCHE_PLEINE, jeteProche.position.x, jeteProche.position.y);
+        return;
+      }
+      save.inventaire.items = resultat.inventaire;
+      signalerGainItem(jeteProche.itemId, resultat.ajoute, jeteProche.position.x, jeteProche.position.y);
+      ecrireObjetsJetesDeLaScene(retirerObjetJete(objetsJetesDeLaScene(), jeteProche.index));
+      etatModifie = true;
+      return;
+    }
+
+    const itemProche = semeProche;
     if (itemProche) {
       const itemDef = registre.obtenir('items', itemProche.itemId);
       const resultat = ajouterItem(save.inventaire.items, itemProche.itemId, 1, plafondPoche(itemProche.itemId));
@@ -2387,6 +2417,47 @@ export function creerOrchestrateurGrotte({
   // objet précis, le verbe CONSUME mange celui de la case. UN seul chemin de
   // consommation pour les deux — jauges, retrait, buffs —, jamais un second
   // qui oublierait les buffs. Rend vrai si quelque chose a été mangé.
+  // --- `D-145` : jeter un objet de la Poche ----------------------------------
+  // La liste vit dans `save.monde.objets_jetes[sceneId]`, et son ABSENCE est
+  // une valeur (aucun objet jeté) : une sauvegarde d'avant ce ticket est donc
+  // valide telle quelle, sans migration ni changement de `schema_version` —
+  // même patron que `settings.graphismes` (`D-111`).
+  function objetsJetesDeLaScene() {
+    return (save.monde.objets_jetes && save.monde.objets_jetes[scene.id]) || [];
+  }
+  function ecrireObjetsJetesDeLaScene(liste) {
+    if (!save.monde.objets_jetes) save.monde.objets_jetes = {};
+    save.monde.objets_jetes[scene.id] = liste;
+  }
+  function tuileDuHeros() {
+    return { tx: Math.floor(hero.x / scene.tileSize), ty: Math.floor(hero.y / scene.tileSize) };
+  }
+  // La tuile du héros est-elle pleine ? Semés et jetés comptent ensemble : le
+  // joueur voit une pile, il ne sait pas d'où vient chaque objet.
+  function solPleinSousHeros() {
+    if (!scene) return false;
+    const { tx, ty } = tuileDuHeros();
+    const capacite = resoudreCapacite(registre.obtenir('conteneurs', ID_CONTENEUR_SOL)).slots;
+    return compterObjetsSurTuile(itemsSol, objetsJetesDeLaScene(), tx, ty, scene.tileSize) >= capacite;
+  }
+  // UN exemplaire, posé sous le héros — l'objet n'est jamais détruit. Tuile
+  // pleine : rien ne bouge, et ça se DIT (un texte au-dessus du héros, et la
+  // fiche de la Poche l'annonce déjà avant l'essai, cf. `solPleinSousHeros`).
+  // Un objet équipé qu'on jette quitte sa case tout seul : c'est la
+  // revalidation de chaque frame qui s'en charge (`D-92`), rien à faire ici.
+  function essayerJeter(itemId) {
+    if (!scene || !itemId || (save.inventaire.items[itemId] || 0) <= 0) return false;
+    if (solPleinSousHeros()) {
+      signalerRefusConteneur(CLE_TEXTE_PLUS_DE_PLACE, hero.x, hero.y);
+      return false;
+    }
+    const { tx, ty } = tuileDuHeros();
+    save.inventaire.items = retirerItem(save.inventaire.items, itemId, 1);
+    ecrireObjetsJetesDeLaScene(poserObjetJete(objetsJetesDeLaScene(), itemId, tx, ty, scene.tileSize));
+    etatModifie = true;
+    return true;
+  }
+
   function essayerConsommer(itemId = save.hero.equipement.consommable) {
     if (!itemId || (save.inventaire.items[itemId] || 0) <= 0) return false;
     const itemDef = registre.obtenir('items', itemId);
@@ -3259,6 +3330,22 @@ export function creerOrchestrateurGrotte({
       const visuel = registre.obtenir('visuels', itemDef.render.visuel);
       return positions.map((p) => ({ x: p.x, y: p.y, visuel }));
     });
+    // `D-145` : les objets jetés, par-dessus, chacun décalé de son rang dans
+    // la pile de sa tuile — sinon cinq objets au même centre se liraient
+    // comme un seul. Le rang compte aussi un objet semé sur la même tuile.
+    const rangParTuile = new Map();
+    for (const o of objetsSolAffiches) {
+      const cle = `${Math.floor(o.x / scene.tileSize)},${Math.floor(o.y / scene.tileSize)}`;
+      rangParTuile.set(cle, (rangParTuile.get(cle) || 0) + 1);
+    }
+    for (const j of objetsJetesDeLaScene()) {
+      const cle = `${Math.floor(j.x / scene.tileSize)},${Math.floor(j.y / scene.tileSize)}`;
+      const rang = rangParTuile.get(cle) || 0;
+      rangParTuile.set(cle, rang + 1);
+      const [dx, dy] = decalageDansPile(rang);
+      const visuel = registre.obtenir('visuels', registre.obtenir('items', j.item).render.visuel);
+      objetsSolAffiches.push({ x: j.x + dx, y: j.y + dy, visuel });
+    }
 
     // MT_mesure-saccades_2026-09-19, piste 4 ("entités dessinées") : no-op
     // hors `?debug=fps`.
@@ -3579,6 +3666,10 @@ export function creerOrchestrateurGrotte({
     dessiner,
     // `D-08` : « Manger » depuis la Poche — le même chemin que CONSUME.
     consommerItem: (itemId) => essayerConsommer(itemId),
+    // `D-145` : jeter depuis la Poche, et ce que la fiche doit annoncer.
+    jeterItem: (itemId) => essayerJeter(itemId),
+    solPleinSousHeros,
+    obtenirObjetsJetes: () => objetsJetesDeLaScene(),
     choixFolletActif,
     reinitialiserPartie,
     obtenirHero: () => hero,
@@ -4016,6 +4107,8 @@ export async function demarrerJeu() {
     },
     // `D-08` : manger un objet précis depuis la Poche, sans l'équiper.
     consommer: (itemId) => orchestrateur.consommerItem(itemId),
+    jeter: (itemId) => orchestrateur.jeterItem(itemId),
+    solPlein: () => orchestrateur.solPleinSousHeros(),
     // MT_construction-bandeau-placement_2026-09-17 : glyphes du bandeau
     // résolus sur le périphérique réellement actif, jamais manette en dur.
     peripheriqueActif: () => input.peripheriqueActif(),

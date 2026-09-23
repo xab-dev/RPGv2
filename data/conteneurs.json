@@ -10,5 +10,11 @@
     "label_key": "conteneur.coffre",
     "slots": 10,
     "pile": 20
+  },
+  {
+    "id": "conteneur_sol",
+    "label_key": "conteneur.sol",
+    "slots": 5,
+    "pile": 1
   }
 ]

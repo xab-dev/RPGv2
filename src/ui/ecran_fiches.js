@@ -31,6 +31,8 @@
 //   libelleActionSecondaire, actionSecondaire   (`D-08`) une SECONDE action, portée par
 //                  un second bouton et par le verbe `skill_1` (X). Absente = rien : un seul
 //                  bouton, comme avant. Le composant ne sait pas ce qu'elle fait
+//   libelleActionTertiaire, actionTertiaire   (`D-145`) une TROISIÈME, même contrat,
+//                  portée par le verbe `skill_2` (Y) — aujourd'hui « Jeter » dans la Poche
 //   groupe         un intertitre : les entrées d'un même groupe se suivent, un groupe
 //                  commence sur une rangée neuve (Coffre : « Poche » / « Coffre »)
 //
@@ -89,6 +91,7 @@ export function normaliserLigneFiche(ligne) {
 //   aLaRacine       () => bool   rien sous cet écran dans la pile : la sortie FERME (`[X]`)
 //   icones          { fermer, retour }   ids de `visuels.json`, lus sur l'écran racine du catalogue
 //   glypheActionSecondaire () => chaîne | null  même chose pour le bouton secondaire (`D-08`)
+//   glypheActionTertiaire  () => chaîne | null  et pour le troisième (`D-145`)
 //   glypheAction    () => chaîne | null  le glyphe du verbe qui actionne le bouton de la fiche
 //                                        (« A », « Espace ») ; null = ne rien afficher (au doigt,
 //                                        le bouton se touche : il n'a pas de verbe à annoncer)
@@ -96,7 +99,7 @@ export function creerEcranFiches({
   document, i18n, afficherEcran, seuilPoussee,
   couleurAccent = () => null, rectangleJeu = () => null, dessinerIcone = () => {},
   onRetour, aLaRacine = () => false, icones = { fermer: null, retour: null },
-  glypheAction = () => null, glypheActionSecondaire = () => null,
+  glypheAction = () => null, glypheActionSecondaire = () => null, glypheActionTertiaire = () => null,
 }) {
   // Même découpe que tous les écrans depuis `D-42`, même ordre dans le DOM :
   // le corps d'abord, l'en-tête (donc la sortie) en dernier enfant, remonté à
@@ -224,6 +227,12 @@ export function creerEcranFiches({
         entree.libelleActionSecondaire, glypheActionSecondaire(), false, activerSecondaire, true,
       ));
     }
+    // `D-145` : la troisième, sous la seconde et de la même facture.
+    if (entree.libelleActionTertiaire && entree.actionTertiaire) {
+      fiche.appendChild(creerBoutonFiche(
+        entree.libelleActionTertiaire, glypheActionTertiaire(), false, activerTertiaire, true, 'fiche-tertiaire',
+      ));
+    }
     dessinerIcones(fiche);
   }
 
@@ -233,11 +242,11 @@ export function creerEcranFiches({
   // À la manette et au clavier le bouton n'est pas focalisable — c'est la
   // TUILE qui l'est, et le verbe agit. Le glyphe du verbe, posé sur le bouton,
   // fait le lien : « ce bouton, c'est A » (ou X pour le second).
-  function creerBoutonFiche(texte, glyphe, grisee, surClic, secondaire) {
+  function creerBoutonFiche(texte, glyphe, grisee, surClic, secondaire, nomAction = null) {
     const bouton = document.createElement('div');
     bouton.className = ['fiche-action', grisee ? 'fiche-action-grisee' : '', secondaire ? 'fiche-action-secondaire' : '']
       .filter(Boolean).join(' ');
-    bouton.dataset.action = secondaire ? 'fiche-secondaire' : 'fiche';
+    bouton.dataset.action = nomAction || (secondaire ? 'fiche-secondaire' : 'fiche');
     poserAttribut(bouton, 'role', 'button');
     if (glyphe) {
       const elGlyphe = document.createElement('span');
@@ -394,6 +403,14 @@ export function creerEcranFiches({
     if (niveau && !el.hidden) rendre();
   }
 
+  // `D-145` : Y, ou le troisième bouton. Même relecture.
+  function activerTertiaire() {
+    const entree = entreeFocalisee();
+    if (!entree || !entree.actionTertiaire) return;
+    entree.actionTertiaire();
+    if (niveau && !el.hidden) rendre();
+  }
+
   boutonEntete.addEventListener('click', () => onRetour());
 
   return {
@@ -425,6 +442,7 @@ export function creerEcranFiches({
       }
       if (etat.attack && etat.attack.pressed) activer();
       else if (etat.skill_1 && etat.skill_1.pressed) activerSecondaire();
+      else if (etat.skill_2 && etat.skill_2.pressed) activerTertiaire();
     },
     // Observation pour les tests headless.
     obtenirEtat: () => ({

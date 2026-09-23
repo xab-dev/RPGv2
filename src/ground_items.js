@@ -278,3 +278,69 @@ export function reposerItemsDuJour(scene, items, jour) {
   }
   return resultat;
 }
+
+// --- Objets JETÉS par le joueur (`D-145`, 23/09) ---------------------------
+//
+// Une liste à part, jamais mêlée à `itemsSol` : un objet jeté n'est pas un
+// objet SEMÉ. Rangé avec eux, il compterait dans `nb_au_sol` (le semis du
+// jour poserait une branche de moins), il repousserait une fois ramassé
+// (`planifierRespawn`), et le repos de l'aube l'effacerait — trois règles
+// faites pour le semis, qui n'ont aucun sens pour ce que le joueur a posé.
+//
+// Forme : `[{ item, x, y }]`, en pixels monde, au CENTRE de la tuile — tous
+// les objets d'une même tuile partagent donc la même position logique, et
+// l'ordre de la liste dit lequel est dessus (le dernier posé).
+
+function tuileDe(p, tileSize) {
+  return { tx: Math.floor(p.x / tileSize), ty: Math.floor(p.y / tileSize) };
+}
+
+// Combien d'objets occupent la tuile (tx, ty), SEMÉS ET JETÉS confondus : le
+// joueur voit une pile, il ne distingue pas l'origine de chaque objet.
+export function compterObjetsSurTuile(itemsSol, jetes, tx, ty, tileSize) {
+  const surTuile = (p) => {
+    const t = tuileDe(p, tileSize);
+    return t.tx === tx && t.ty === ty;
+  };
+  let n = 0;
+  for (const positions of Object.values(itemsSol || {})) n += positions.filter(surTuile).length;
+  n += (jetes || []).filter(surTuile).length;
+  return n;
+}
+
+// Pose un objet au centre de la tuile, par-dessus la pile. La place se
+// vérifie AVANT (`compterObjetsSurTuile`) : cette fonction ne refuse rien,
+// elle n'a pas la capacité — c'est l'appelant qui la lit dans les données.
+export function poserObjetJete(jetes, itemId, tx, ty, tileSize) {
+  return [...(jetes || []), { item: itemId, x: (tx + 0.5) * tileSize, y: (ty + 0.5) * tileSize }];
+}
+
+// Le plus proche objet jeté à portée — et, sur une pile, celui du DESSUS (le
+// dernier posé) : `<=` sur la distance, en parcourant la liste dans l'ordre,
+// fait gagner le plus récent à égalité. Même forme de retour que
+// `trouverItemProche`, pour que l'appelant compare les deux sans cas à part.
+export function trouverObjetJeteProche(jetes, hero, distanceMax) {
+  let meilleur = null;
+  let meilleureDistance = Infinity;
+  (jetes || []).forEach((p, index) => {
+    const distance = Math.hypot(hero.x - p.x, hero.y - p.y);
+    if (distance <= distanceMax && distance <= meilleureDistance) {
+      meilleureDistance = distance;
+      meilleur = { itemId: p.item, index, position: p, distance };
+    }
+  });
+  return meilleur;
+}
+
+export function retirerObjetJete(jetes, index) {
+  return jetes.filter((_, i) => i !== index);
+}
+
+// Décalage de DESSIN d'un objet dans sa pile (0 = le premier posé). Sans lui,
+// cinq objets au même centre se dessineraient les uns sur les autres et la
+// pile se lirait comme un seul objet. Purement visuel : la position logique,
+// celle qu'on ramasse, ne bouge pas.
+const DECALAGES_PILE_PX = [[0, 0], [3, -1], [-3, -2], [2, -3], [-2, -4]];
+export function decalageDansPile(rang) {
+  return DECALAGES_PILE_PX[rang % DECALAGES_PILE_PX.length];
+}

@@ -50,7 +50,7 @@ const TOUCHES = {
   ArrowLeft: { key: 'ArrowLeft', vk: 37 }, ArrowUp: { key: 'ArrowUp', vk: 38 },
   ArrowRight: { key: 'ArrowRight', vk: 39 }, ArrowDown: { key: 'ArrowDown', vk: 40 },
   Digit1: { key: '1', vk: 49 }, Digit2: { key: '2', vk: 50 }, Digit3: { key: '3', vk: 51 },
-  KeyE: { key: 'e', vk: 69 }, KeyQ: { key: 'q', vk: 81 },
+  KeyE: { key: 'e', vk: 69 }, KeyQ: { key: 'q', vk: 81 }, Backspace: { key: 'Backspace', vk: 8 },
   KeyW: { key: 'w', vk: 87 }, KeyA: { key: 'a', vk: 65 }, KeyS: { key: 's', vk: 83 }, KeyD: { key: 'd', vk: 68 },
 };
 

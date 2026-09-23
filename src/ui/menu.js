@@ -262,6 +262,12 @@ export function initialiserMenu({
   // `D-08` : manger un objet précis depuis la Poche (même chemin que CONSUME,
   // côté orchestrateur).
   consommer = () => {},
+  // `D-145` : jeter UN exemplaire d'un objet de la Poche au sol, sous le
+  // héros — l'objet n'est pas détruit. `solPlein` dit, à chaque affichage, si
+  // la tuile du héros est déjà pleine : la fiche l'annonce avant qu'on essaie.
+  // Ce module ne sait ni ce qu'est une tuile ni combien elle en tient.
+  jeter = () => {},
+  solPlein = () => false,
   peripheriqueActif = () => 'manette',
   // `D-30` : le plein écran est injecté comme tout le reste — ce module ne
   // connaît ni `document.fullscreenElement`, ni `requestFullscreen`.
@@ -345,10 +351,15 @@ export function initialiserMenu({
       action: equiper_ ? () => equiper(eq.slot, e.id) : null,
       libelleActionSecondaire: e.consommable ? i18n.t('menu.poche_manger') : null,
       actionSecondaire: e.consommable ? () => consommer(e.id) : null,
+      // `D-145` : tout objet de la Poche se jette — Y, ⌫, ou le bouton.
+      // Seulement ici : l'écran Coffre a ses propres entrées, et n'en a pas.
+      libelleActionTertiaire: i18n.t('menu.poche_jeter'),
+      actionTertiaire: () => jeter(e.id),
     };
   }
 
   function entreesPoche() {
+    const pleinIci = solPlein();
     return listerPoche().map((e) => {
       const eq = e.equipement || null;
       const equipe = Boolean(eq && eq.deja);
@@ -360,7 +371,7 @@ export function initialiserMenu({
         lignes: [...(e.lignes || []), ...(equipe ? [
           i18n.t('menu.fiche.equipe'),
           ...((eq && eq.lignes) || []),
-        ] : [])],
+        ] : []), ...(pleinIci ? [i18n.t('monde.plus_de_place_ici')] : [])],
         ...actionsPoche(e, eq, equipe),
       };
     });
@@ -574,6 +585,7 @@ export function initialiserMenu({
     // Au doigt le bouton de la fiche se touche : pas de verbe à annoncer.
     glypheAction: () => (peripheriqueActif() === 'tactile' ? null : i18n.t(`glyphe.${peripheriqueActif()}.attack`)),
     glypheActionSecondaire: () => (peripheriqueActif() === 'tactile' ? null : i18n.t(`glyphe.${peripheriqueActif()}.skill_1`)),
+    glypheActionTertiaire: () => (peripheriqueActif() === 'tactile' ? null : i18n.t(`glyphe.${peripheriqueActif()}.skill_2`)),
   });
 
   return {

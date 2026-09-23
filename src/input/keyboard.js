@@ -10,7 +10,10 @@ export const MAPPING_CLAVIER_PROVISOIRE = {
   bas: ['KeyS', 'ArrowDown'],
   attack: ['Space'],
   skill_1: ['Digit1'],
-  skill_2: ['Digit2'],
+  // `D-145` : Retour arrière s'ajoute à 2 — c'est la touche de « Jeter » dans
+  // la Poche (Y à la manette, même verbe), demandée par Xav le 23/09. Le
+  // glyphe affiché devient ⌫ ; 2 reste valide.
+  skill_2: ['Digit2', 'Backspace'],
   skill_3: ['Digit3'],
   // E porte l'action la plus fréquente (interagir, récolter, ramasser) :
   // la main gauche posée sur les touches de déplacement y tombe seule.

@@ -2,7 +2,7 @@
 projet: RPG V2
 episode/session: Polish libre (24/09)
 type: fichier de bord
-version: 1.0.0
+version: 1.1.0
 statut: livré, à valider
 catégorie: Journal
 date: 2026-09-24
@@ -74,3 +74,62 @@ Un commit par étape, capture avant/après à chaque fois, suite de tests verte.
 - **Ce que la session ne prouve pas** : le goût, et la lisibilité au pouce sur
   le vrai téléphone. Les captures sous Chrome sans fenêtre ne remplacent pas
   le regard de Xav.
+
+## 4. Nuit du 24/09 : second tour
+
+Demande de Xav : « Continue, polish libre. On ne touche pas aux
+fonctionnalités, que du graphisme. Prends ton temps. C'est une session
+nocturne. Je valide demain matin. » Même branche, mêmes trois étapes.
+
+### Diagnostic
+
+Captures neuves de tout le jeu après P1 et P2 : les cinq écrans maître-détail
+(`ecrans_palier_c.mjs`, `RPG_DOSSIER_CAPTURES` vers `nuit/`), les postes du
+monde (`polish_diagnostic.mjs`, suffixe `n24`), et de nouvelles vues dans
+`polish_libre_24.mjs` (Paramètres, Stats, Coffre, Indices, un ramassage ;
+`PROFILS=pc` pour le petit écran). Une sonde DOM a listé tout texte visible
+resté en `sans-serif`.
+
+- **P2 avait créé un défaut** : les chiffres d'Almendra sont en bas de casse
+  dans les menus aussi. Le bouton de Stats disait « +I », le Coffre
+  « 2 / IO », l'en-tête de Stats « Nv.ı — o % ». La règle « les chiffres
+  restent en linéale » n'était tenue que là où je l'avais vue.
+- Restaient en `monospace` : le bandeau du HUD, les textes de gain et
+  **l'indice de commande**, premier texte du jeu, dans la Grotte.
+- Restaient en linéale : les intertitres « Poche » / « Coffre » du Coffre,
+  le bandeau de placement, les quantités des tuiles.
+- Apostrophes droites mêlées aux typographiques dans les locales.
+- Le monde lui-même (Grotte, pré, Maison, nuit) : rien à reprendre, il
+  sort de passes validées.
+
+### Plan
+
+Un banc de comparaison (Almendra seule, puis Palatino, Times, Cambria,
+Arial et Segoe pour les chiffres) a désigné **Palatino** : ses chiffres
+alignés se fondent dans la plume (Zapf était calligraphe). Aucune des polices
+embarquées n'a de chiffres alignés (pas de `lnum`), et le jeu est hors ligne :
+les chiffres sont **empruntés à l'appareil** par `local()`, dans une famille
+qui ne porte que les dix chiffres (`unicodeRange`), en tête de chaque pile.
+
+### Itération
+
+| Commit | Étape | Ce qu'il faut en retenir |
+|---|---|---|
+| `421f11b` | P4 — chiffres alignés | `polices.js#POLICE_CHIFFRES` ; bulle et jetons CSS des menus. « +1 », « 2 / 10 », « Nv.1 — 0 % ». Débordements remesurés : zéro. Scénario enrichi |
+| `fa22435` | P5 — HUD et textes de gain | La même paire : chiffres alignés, lettres à la plume (« Nv. »). PV à 8 px, éclats et niveau à 10. Gains en gras (le contour et le gras tiennent le texte sur l'herbe). **P3 abandonné est repris ici** : son obstacle était les chiffres, levé par P4 |
+| `f3a49f3` | P6 — derniers textes en linéale | Intertitres du Coffre en onciale, bandeau de placement à la plume (0.9em, tient à 703 px) |
+| `fbb32c9` | P7 — indice de commande | Plume en gras de 11 px, bannière plus étroite. Rien ne dépendait d'une chasse fixe (`measureText`) ; seuls les commentaires de `D-17` et `D-171` changent |
+| `074081e` | P8 — quantités des tuiles | Les mêmes chiffres que le HUD : un nombre a une seule forme dans le jeu |
+| `667302c` | P9 — apostrophes | Onze textes d'interface (FR et EN). **Les dialogues ne bougent pas** : ce sont les textes de Xav, tenus mot pour mot par test → `Q-129` |
+
+- Règle, révisée : **les lettres prennent les polices du jeu, les chiffres
+  prennent des chiffres alignés** — plus jamais de chiffres bas de casse, et
+  plus de `monospace` hors de la stèle et des hiéroglyphes.
+- Suivi : `D-185` ouverte et close, `V-132` ouverte (révise la phrase sur
+  les chiffres de `V-131`), `Q-129` ouverte (apostrophes des dialogues,
+  ligature « ſt »).
+- **Ce que la nuit ne prouve pas** : les captures sont prises sous Windows,
+  qui a Palatino. Sur le téléphone, la liste `local()` cherche Noto Serif
+  puis d'autres ; si aucune ne répond, les chiffres d'Almendra reviennent
+  (l'état de P2, rien ne casse). C'est à regarder en premier dans `V-132`.
+- Tests : **183 fichiers verts** à chaque commit.

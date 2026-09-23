@@ -54,4 +54,12 @@ s'améliorent.
 | `47f2d9e` | `D-176` | L'engrenage des Paramètres dans le bouton MENU tactile, en filigrane, statique, id en données (`menus.json#icone_bouton`). Premier scénario tactile (`menu_tactile.mjs`). **166 fichiers verts** |
 | `a387aad` | `D-176` | L'id de l'engrenage déménage dans `glyphes.json#tactile_icone` (par verbe), avant que le bouton INTERACT n'y déclare le sien. Rien ne change à l'écran (capture identique) |
 | `669d271` | `D-177` | Le bouton INTERACT montre sa cible (même fonction que l'appui : `cibleInteraction`), une onde sinon. Trois passes à la capture : postes hors de portée, levier sans manche, manche qui sortait du bouton. **167 fichiers verts** |
-| *(ce commit)* | `D-178` | La cinématique du choix suit Bas / Moyen / Haut par les effets du follet en jeu (sillage, étincelles), anneau à la couleur du follet qui respire dès Moyen. Une source des positions au lieu de trois dessins. Trois passes à la capture (étincelles dans la silhouette, puis en disques). **168 fichiers verts** |
+| `2633390` + `63c0bcc` | `D-178` | La cinématique du choix suit Bas / Moyen / Haut par les effets du follet en jeu (sillage, étincelles), anneau à la couleur du follet qui respire dès Moyen. Une source des positions au lieu de trois dessins. Trois passes à la capture (étincelles dans la silhouette, puis en disques). **168 fichiers verts** |
+
+**Clôture** (23/09) : « j'ai vérifié, très joli ! On peut clore cette
+session, fusion puis push dans main. » Validées en jeu : `V-110` à `V-112`,
+`V-114`, `V-117`. Restent à voir (aucun verdict dit, donc rien consigné) :
+`V-113` (icônes faim et soif), `V-115` (engrenage MENU), `V-116` (bouton
+INTERACT). Propositions ouvertes : `Q-112` (or du canvas / bleu des menus).
+Branche `polish-libre-2026-09-23` fusionnée dans `main` et poussée sur la
+demande de Xav.

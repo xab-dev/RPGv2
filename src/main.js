@@ -3910,6 +3910,9 @@ export function creerOrchestrateurGrotte({
       // d'XP a quitté le bandeau) — la progression est désormais lisible dans
       // l'écran Stats, cf. obtenirEntreesStats().
       eclatNiveau: ECLAT_NIVEAU_MS > 0 ? eclatNiveauMs / ECLAT_NIVEAU_MS : 0,
+      // La bulle et la barre du bas partagent la même bande (cf. hud.js) :
+      // lu à la même source que le `if` qui dessine la bulle plus bas.
+      barreActions: !dialogue.estOuvert(),
     });
     // Indices de commande (§2 : "masqué" sous UI) — résolution i18n ici (même
     // patron que les autres calques : hud_hints.js ne connaît jamais i18n).

@@ -216,6 +216,14 @@ export function dessinerHud(ctx, {
   // module ne sait pas ce qu'est un slot, pas plus qu'il ne sait ce qu'est un
   // status_effect. Aucun défaut : voir le commentaire de `dessinerSlotsBas`.
   verbesActions = [],
+  // La barre des cases du bas (clavier/manette) occupe la même bande que la
+  // bulle de dialogue : même pied (`8` px du bord), et la bulle est un cadre
+  // translucide. Dessinées toutes deux, les cases transparaissaient sous le
+  // texte et leur liseré dépassait sous le cadre. Le jeu étant gelé sous la
+  // bulle, la barre n'y dit rien : main.js la tait tant qu'une bulle est
+  // ouverte. Les boutons TACTILES ne sont pas concernés : ils montent
+  // au-dessus de la bulle et le doigt doit toujours les voir où ils répondent.
+  barreActions = true,
 }) {
   ctx.save();
 
@@ -348,7 +356,7 @@ export function dessinerHud(ctx, {
   // §4 : jamais les deux à la fois. Sur tactile, les boutons SONT les slots.
   if (tactileActif) {
     dessinerBoutonsTactiles(ctx, iconesSlots, verbesActions);
-  } else {
+  } else if (barreActions) {
     // Diagnostic SD_dialogues-invisibles_2026-09-15 : même défaut que
     // dialogue_box.js — `ctx.canvas.width/height` est la taille PHYSIQUE
     // depuis le MT rendu-net, jamais la résolution logique sous laquelle ce

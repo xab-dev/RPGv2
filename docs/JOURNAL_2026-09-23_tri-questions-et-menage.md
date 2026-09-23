@@ -41,6 +41,14 @@ session**.
 | `fde1e13` | `Q-73` | ⌫ confirmée |
 | `f526912` | ménage 1 | `.nojekyll` sans extension |
 | `e03f61c` | ménage 4 | 27 lignes closes rangées dans « Clos » |
+| `054c7ea` | ménage 5 | Journaux du 22/09 archivés, INDEX à jour, ce journal ouvert |
+| `6fecf8c` | ménage 6 | Deux documents de travail archivés ; `MT_ventilation-dessiner` reste dans `docs/` (remis là par Xav le jour même, `DOC-08` : ticket prêt à lancer) |
+| `d8fef3c` | ménage 7 | Liens vers les documents archivés réparés (documents vivants seulement ; les specs anciennes restent telles quelles) |
+| `7ba5736` | ménage 8 | `CLAUDE.md` de 80 à 38 Ko : en-tête et critère archivés verbatim (`docs/archives/CLAUDE_etat_2026-09-23.md`), 37 décisions du 22/09 versées à `decisions_archives.md`, arbre complété de 9 modules |
+| `56165f2` | ménage 9 | Description de `package.json` |
+| `f842a1a` | ménage 10 | Trois noms de fichiers sans accents |
+| `1506a39` | ménage 11 | Constante morte `ECHELLE_STATION_PROVISOIRE` retirée |
+| `d4da6ac` | ménage 12 | `.gitignore` : les sorties de scénarios ne sont plus versionnées (162 images retirées de l'index, gardées sur le disque) |
 
 Poussé sur `main` à deux reprises à la demande de Xav (`3c5a0f8`, puis `9463024`).
 

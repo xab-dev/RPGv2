@@ -42,6 +42,10 @@ const INTERLIGNE = 17;
 // La respiration de la lueur : période et amplitude.
 const PERIODE_LUEUR_MS = 2600;
 const LUEUR_MIN = 0.7;
+// PS2 : la lueur descend la pierre en vague — chaque ligne respire avec ce
+// déphasage (en fraction de période) sur la précédente. Toutes ensemble,
+// elles clignotaient comme une enseigne ; en vague, la pierre semble vivre.
+const DEPHASAGE_LIGNE = 0.09;
 const TAILLE_PARTICULE = 1.4;
 // PS1 : de combien la pierre monte pendant le fondu d'entrée.
 const MONTEE_FONDU = 8;
@@ -77,7 +81,8 @@ export function dessinerEcranStele(ctx, contenu) {
   // qui se lève vers elle, pas un panneau qui tombe.
   const x = Math.round((largeur - LARGEUR_PIERRE) / 2);
   const y = Math.round((hauteur - HAUTEUR_PIERRE) / 2) + 4 + Math.round((1 - alpha) * MONTEE_FONDU);
-  const lueur = LUEUR_MIN + (1 - LUEUR_MIN) * (0.5 + 0.5 * Math.sin((vue.ms / PERIODE_LUEUR_MS) * Math.PI * 2));
+  const lueurA = (dephasage) => LUEUR_MIN + (1 - LUEUR_MIN) * (0.5 + 0.5 * Math.sin((vue.ms / PERIODE_LUEUR_MS - dephasage) * Math.PI * 2));
+  const lueur = lueurA(0);
 
   ctx.save();
   ctx.globalAlpha = alpha;
@@ -132,26 +137,35 @@ export function dessinerEcranStele(ctx, contenu) {
   const lignes = contenu.lignes.flatMap((texte) =>
     decouperEnFenetres(texte, (t) => ctx.measureText(t).width, gw, Infinity)[0].split('\n'));
   const cx = gx + gw / 2;
-  let ly = gy + Math.max(0, Math.round((gh - lignes.length * INTERLIGNE) / 2));
-  for (const ligne of lignes) {
+  const hautBloc = gy + Math.max(0, Math.round((gh - lignes.length * INTERLIGNE) / 2));
+  const largeurs = lignes.map((l) => ctx.measureText(l).width);
+  let ly = hautBloc;
+  lignes.forEach((ligne, i) => {
+    const lueurLigne = lueurA(i * DEPHASAGE_LIGNE);
     ctx.fillStyle = couleur;
-    ctx.globalAlpha = alpha * 0.12 * lueur;
+    ctx.globalAlpha = alpha * 0.12 * lueurLigne;
     for (const [dx, dy] of [[-2, 0], [2, 0], [0, -2], [0, 2]]) ctx.fillText(ligne, cx + dx, ly + dy);
-    ctx.globalAlpha = alpha * 0.28 * lueur;
+    ctx.globalAlpha = alpha * 0.28 * lueurLigne;
     for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) ctx.fillText(ligne, cx + dx, ly + dy);
-    ctx.globalAlpha = alpha * 0.95;
+    ctx.globalAlpha = alpha * (0.75 + 0.2 * lueurLigne);
     ctx.fillText(ligne, cx, ly);
     ctx.fillStyle = '#ffffff';
-    ctx.globalAlpha = alpha * 0.5 * lueur;
+    ctx.globalAlpha = alpha * 0.5 * lueurLigne;
     ctx.fillText(ligne, cx, ly);
     ly += INTERLIGNE;
-  }
+  });
 
-  // Les particules montent de la gravure.
-  for (const p of vue.particules) {
-    ctx.globalAlpha = alpha * alphaParticule(p) * lueur;
-    ctx.fillStyle = p.blanche ? '#ffffff' : couleur;
-    ctx.fillRect(gx + p.x * gw, gy + p.y * gh, TAILLE_PARTICULE, TAILLE_PARTICULE);
+  // Les particules naissent SUR une ligne gravée (PS2), à l'intérieur de sa
+  // largeur réelle, puis montent : ce sont les signes qui s'effritent en
+  // lumière, pas une poussière posée devant la pierre.
+  if (lignes.length > 0) {
+    for (const p of vue.particules) {
+      const rang = Math.min(lignes.length - 1, Math.floor(p.y0 * lignes.length));
+      const w = largeurs[rang];
+      ctx.globalAlpha = alpha * alphaParticule(p) * lueurA(rang * DEPHASAGE_LIGNE);
+      ctx.fillStyle = p.blanche ? '#ffffff' : couleur;
+      ctx.fillRect(cx - w / 2 + p.x * w, hautBloc + (rang + 0.5) * INTERLIGNE + (p.y - p.y0) * gh, TAILLE_PARTICULE, TAILLE_PARTICULE);
+    }
   }
   ctx.restore();
 }

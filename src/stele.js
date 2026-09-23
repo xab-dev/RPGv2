@@ -54,10 +54,15 @@ export function alphaVueStele(vue) {
   return Math.min(entree, sortie);
 }
 
+// PS2 : `y0` garde la hauteur de naissance — le dessin s'en sert pour faire
+// naître la particule SUR une ligne gravée (la ligne choisie par `y0`), puis
+// la laisse monter de ce que `y` a parcouru depuis.
 function naitre(hasard) {
+  const y = hasard();
   return {
     x: hasard(),
-    y: hasard(),
+    y,
+    y0: y,
     vx: (hasard() * 2 - 1) * DERIVE_MAX,
     vy: -(MONTEE_MIN + hasard() * (MONTEE_MAX - MONTEE_MIN)),
     vieMs: 0,

@@ -20,6 +20,7 @@ PS1 fondu d'entrée et de sortie de la vue · PS2 la gravure qui respire ligne p
 | Ticket | Commit | Ce qui est livré |
 |---|---|---|
 | PS1 — le fondu | `4fa3316` | `stele.js` : `fermerVueStele`, `vueSteleTerminee`, `alphaVueStele` (fondu de 240 ms, PROVISOIRE) ; la pierre monte de 8 px en apparaissant. `main.js` : B ou un toucher lancent la sortie, la vue disparaît à sa fin, jeu gelé jusque-là. `tests/test_stele` : fondu et sortie. Captures : mi-fondu sous les trois profils |
+| PS2 — la gravure vivante | *(ce commit)* | `ui/ecran_stele.js` : la lueur descend la pierre en vague (déphasage de 0,09 période par ligne, PROVISOIRE) au lieu de clignoter d'un bloc ; les particules naissent SUR une ligne gravée, dans sa largeur réelle, et montent de là (`stele.js` garde `y0`, la hauteur de naissance). Aucun test ne voit le dessin ; captures sous les trois profils |
 
 **Prouvé par les tests** : la case contextuelle (Construction dedans, Indices dehors), le brouillage
 (déterministe, silhouette, alphabet seul), la bascule au Nv.15 sans réinitialisation, le catalogue et

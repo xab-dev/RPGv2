@@ -25,7 +25,7 @@ import { calculerCamera } from './camera.js';
 import { RAYON_TOUCHE_FOLLET, geometrieBoiteDialogue, toucherBoiteDialogue } from './ui/hud_layout.js';
 import { genererDecor, lumieresDuDecor } from './decor.js';
 import {
-  creerBoucle, dessinerScene, dessinerObscurite, dessinerSignalZones, dessinerPaupieres, dessinerTextesFlottants, presenter,
+  creerBoucle, dessinerScene, dessinerObscurite, dessinerSignalZones, dessinerPaupieres, dessinerTextesFlottants, dessinerLogo, presenter,
   RESOLUTION_LOGIQUE, calculerRectanglePresentation, versCoordonneesLogiques, AURA_TRAIT,
   definirEchelleForcee, dimensionsEcranPhysiquesActuelles, invaliderCoucheStatique,
 } from './render.js';
@@ -73,6 +73,7 @@ import {
   // que l'intro, en version courte — aucune seconde implémentation.
   ouverturePaupieres, dureeClignements,
 } from './intro.js';
+import { etatLogo } from './logo.js';
 import {
   tablesDeScene, tableActive, tirerPositionApparition, tirerPointDomaine, estEnZoneSurePx, zonesSignalees,
 } from './spawns.js';
@@ -676,6 +677,12 @@ export function creerOrchestrateurGrotte({
   // frame, au début de `maj()` ; seule la bulle de dialogue s'en sert. Vide
   // par défaut : un test headless n'a rien à fournir.
   lireContactsTactiles = () => [],
+  // Ticket L2-L3 (journal du 23/09) : les trois calques du symbole du jeu, déjà
+  // lancés en chargement par `demarrerJeu` (des `Image` DOM, que l'orchestrateur
+  // ne sait pas créer). Vide par défaut : un test headless n'a rien à fournir,
+  // et SANS calques il n'y a pas d'ouverture — on ne tient pas le joueur
+  // devant un écran noir pour un logo qui ne peut pas se dessiner.
+  imagesLogo = [],
 }) {
   // Les leviers sont lus UNE fois, ici : au-delà de cette ligne, plus personne
   // ne connaît le mot « bas ». Chaque système reçoit un nombre.
@@ -1291,6 +1298,13 @@ export function creerOrchestrateurGrotte({
   // réutilisées, §4 : "reinitialiserPartie() pendant l'intro").
   let intro = null;
   let depart = null;
+  // Ticket L3 (journal du 23/09) : le symbole du jeu, avant le cold-open. Le
+  // temps écoulé depuis son début, ou `null` hors ouverture. Il PRÉCÈDE l'intro
+  // (le symbole sur le noir, puis les paupières qui s'ouvrent) : l'intro n'est
+  // créée qu'à sa fin, et ses durées, son budget de 8 s et ses tests ne
+  // changent pas. Même statut qu'elle : une UI ouverte, non skippable.
+  let ouvertureLogoMs = null;
+  const effetLogoOuverture = registre.obtenir('effets', 'effet_logo_ouverture');
 
   function choixFolletActif() {
     return choixFollet !== null;
@@ -1305,7 +1319,7 @@ export function creerOrchestrateurGrotte({
   function uiOuverteMaintenant() {
     return (
       menu.estOuvert() || dialogue.estOuvert() || choixFolletActif() || intro !== null || depart !== null ||
-      constructionActif()
+      ouvertureLogoMs !== null || constructionActif()
     );
   }
 
@@ -1359,7 +1373,11 @@ export function creerOrchestrateurGrotte({
       // (nouvelle partie / reset), jamais à un respawn (le flag est déjà posé
       // dès qu'un follet a été choisi une fois). demarrerChoixFollet() n'est
       // appelée qu'à la fin de l'intro (main.js#maj()), pas ici.
-      intro = creerIntro(registre.obtenir('scenes', sceneId).intro);
+      // Ticket L3 : le symbole d'abord, si ses calques existent — l'intro
+      // naît à sa fin (maj()). Sans calques, l'intro part tout de suite, comme
+      // avant : un logo absent ne coûte rien au joueur.
+      if (imagesLogo.length > 0) ouvertureLogoMs = 0;
+      else intro = creerIntro(registre.obtenir('scenes', sceneId).intro);
     }
     if (sceneId === 'scene_grotte_salle_2' && !flags.has('flag_grotte_monstre_tue') && monstres.length > 0) {
       ouvrirDialogueCatalogue('dlg_grotte_tuto_combat');
@@ -3180,7 +3198,18 @@ export function creerOrchestrateurGrotte({
     // demarrerChoixFollet(), qui ouvre un dialogue) alors que le gameplay ne
     // doit pas non plus se réveiller un instant avant que ce dialogue ne soit
     // vu la frame suivante (même patron que dialogueVientDeSOuvrir ci-dessus).
-    const introEtaitActive = intro !== null;
+    // Ticket L3 : l'ouverture compte comme l'intro pour tout ce qui suit (menu
+    // fermé, gameplay gelé) — y compris la frame où elle cède la place à
+    // l'intro, qui naît ici et avance dès cette frame.
+    const logoEtaitActif = ouvertureLogoMs !== null;
+    if (logoEtaitActif) {
+      ouvertureLogoMs += deltaMs;
+      if (etatLogo(effetLogoOuverture, ouvertureLogoMs).termine) {
+        ouvertureLogoMs = null;
+        intro = creerIntro(registre.obtenir('scenes', scene.id).intro);
+      }
+    }
+    const introEtaitActive = intro !== null || logoEtaitActif;
     if (intro) {
       // MT_intro-follets-visibles_2026-09-19 : l'intro N'EST PLUS mise à
       // `null` ici. Avant, elle l'était à l'instant exact où le dialogue de
@@ -4097,7 +4126,17 @@ export function creerOrchestrateurGrotte({
     // DERNIER — il doit couvrir la scène, le HUD et même l'écran de choix
     // (inactif à ce stade, mais la règle reste "toujours en dernier" pour ne
     // jamais dépendre de l'ordre des autres calques).
-    if (renduIntro && renduIntro.etape === ETAPE_CLIGNEMENTS) {
+    if (ouvertureLogoMs !== null) {
+      // Ticket L3 : le symbole sur le noir des paupières fermées — le même
+      // rideau que la première étape de l'intro, qui s'ouvrira juste après.
+      dessinerPaupieres(ctxLogique, 0);
+      dessinerLogo(ctxLogique, imagesLogo, {
+        x: RESOLUTION_LOGIQUE.largeur / 2,
+        y: RESOLUTION_LOGIQUE.hauteur / 2 + effetLogoOuverture.offset_y_px,
+        hauteur: effetLogoOuverture.hauteur_px,
+        calques: etatLogo(effetLogoOuverture, ouvertureLogoMs).calques,
+      });
+    } else if (renduIntro && renduIntro.etape === ETAPE_CLIGNEMENTS) {
       dessinerPaupieres(ctxLogique, renduIntro.paupieres);
     } else if (clignementRespawnMs !== null) {
       // `D-65` : même calque, même fonction, même place — en TOUT DERNIER.
@@ -4136,6 +4175,7 @@ export function creerOrchestrateurGrotte({
     pousseeChoixPrecedente = 0;
     intro = null;
     depart = null;
+    ouvertureLogoMs = null;
     basculesLeviers.clear();
     cooldownAttaqueHerosMs = 0;
     anneauAttaqueMs = 0;
@@ -4191,6 +4231,7 @@ export function creerOrchestrateurGrotte({
     obtenirMonstres: () => monstres,
     obtenirChoixFollet: () => choixFollet,
     obtenirIntro: () => intro,
+    obtenirOuvertureLogo: () => ouvertureLogoMs,
     obtenirDepart: () => depart,
     obtenirSave: () => save,
     // `specs/10` §2.3 : LE point d'écriture, et ce que le jeu lit de
@@ -4307,6 +4348,20 @@ export function resoudreGraphismes(registre, save, fenetre, search = null) {
     auto: force.preset ? false : resolu.auto,
     avertissement: [resolu.avertissement, force.avertissement].filter(Boolean).join(' · ') || null,
   };
+}
+
+// Ticket L3 : les trois calques du symbole, dans l'ordre de lecture, cuits par
+// `docs/captures/logo/generer_logo.mjs`. Lancés en chargement sans être
+// attendus : le premier dessin a lieu quelques frames plus tard, et une image
+// encore en route ou en erreur n'est simplement pas dessinée
+// (`render.js#dessinerLogo`, « meilleur effort »). Appelée par `demarrerJeu`
+// seulement — jamais au chargement du module, qui reste importable par Node.
+function chargerImagesLogo() {
+  return [1, 2, 3].map((n) => {
+    const image = new Image();
+    image.src = `images/logo/logo_calque_${n}.svg`;
+    return image;
+  });
 }
 
 export async function demarrerJeu() {
@@ -4711,6 +4766,7 @@ export async function demarrerJeu() {
   const moniteurPerf = creerMoniteurPerf({ document, search: window.location.search });
 
   const orchestrateur = creerOrchestrateurGrotte({
+    imagesLogo: chargerImagesLogo(),
     // Résolu plus haut, avec la fenêtre et l'URL : l'orchestrateur ne lit ni
     // l'une ni l'autre (il doit rester importable depuis Node).
     graphismes,

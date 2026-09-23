@@ -1,3 +1,9 @@
+# Dossier PRIVÉ : ce qui reste sur le PC de Xav et ne part jamais en ligne (un push sur
+# main publie le dépôt entier par GitHub Pages). Aujourd'hui : ses sauvegardes réelles
+# exportées, qui servent aux migrations (prive/sauvegardes/). Décision de Xav, 23/09 ;
+# celles déjà poussées restent dans l'historique, et c'est voulu.
+prive/
+
 # Sorties des scénarios de capture (tools/scenarios/, lancés par tools/capture_chrome.mjs) :
 # régénérées à la demande, jamais versionnées (ménage du 23/09, point 12). Un scénario
 # nouveau écrit sous docs/captures/scenarios/. Restent versionnés : l'album de référence

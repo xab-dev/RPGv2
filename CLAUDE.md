@@ -201,8 +201,9 @@ rpg_v2/
 │                           carte_mentale_RPG_V2_v1_6_0.md + fiches de diagnostic/ticket actives
 │                           (SD_*.md, MT_*.md, NS_*.md, CHECKLIST_visuelle.md) + archives/
 │                           (journaux de session clos, fiches et NS closes) + captures/
-│                           (album de référence par jalon) + sauvegardes/ (sauvegardes réelles
-│                           exportées par Xav, servent aux migrations)
+│                           (album de référence par jalon)
+├── prive/                  IGNORÉ par Git, jamais publié : sauvegardes/ (sauvegardes réelles
+│                           exportées par Xav, servent aux migrations — existe sur son PC seulement)
 ├── tests/                  un fichier par contrat/diagnostic, headless, `node:assert/strict`
 └── tools/                  run_tests.js (lance tous les tests/*.js, = `npm test`) + mesure_rythme.mjs
                             (`R-19` : combien de temps de JEU pour atteindre un niveau, et d'où vient

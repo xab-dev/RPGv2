@@ -358,6 +358,18 @@ export function resoudreDeplacement(scene, hitbox, dx, dy, estFlagActif) {
   return { x, y, largeur, hauteur };
 }
 
+// Lumières de la scène dont la condition (optionnelle) est remplie — même
+// forme et même évaluateur que la condition d'un portail (`D-157`) : le jour
+// qui entre par la sortie de la salle 2 ne doit pas trahir une porte que la
+// séquence n'a pas encore ouverte. Sans aucune lumière conditionnelle, la
+// liste de la scène est rendue telle quelle : appelée à chaque frame, elle
+// n'alloue rien dans le cas courant.
+export function lumieresActives(scene, flags) {
+  const lumieres = scene.lumieres || [];
+  if (!lumieres.some((l) => l.condition != null)) return lumieres;
+  return lumieres.filter((l) => l.condition == null || flags.evaluate(l.condition));
+}
+
 // Portail franchi par la hitbox du héros à la position courante, dont la
 // condition (optionnelle) est remplie — sinon "simple mur, aucun message"
 // (§4) : on renvoie simplement aucun portail, jamais une exception.

@@ -459,6 +459,12 @@ function validerScene(entry, catalogs, path) {
       erreurs.push(`${path} > lumieres[] doit contenir { x, y } numériques`);
       continue;
     }
+    // `condition` (D-157) : même forme qu'une condition de portail, validée
+    // par le même validateur — une lumière peut attendre un flag.
+    erreurs.push(...erreursCondition(lumiere.condition, `${path} > lumieres[]`, flagsDeclares));
+    if (lumiere.couleur !== undefined && !/^#[0-9a-fA-F]{6}$/.test(lumiere.couleur)) {
+      erreurs.push(`${path} > lumieres[] > couleur doit être #rrggbb`);
+    }
     if (type === 'halo') {
       if (typeof lumiere.rayon !== 'number') {
         erreurs.push(`${path} > lumieres[] (halo) doit contenir rayon numérique`);

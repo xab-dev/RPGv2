@@ -3,7 +3,7 @@ projet: RPG V2
 episode/session: Diagnostic polish — ce que la passe d'ambiance n'avait pas touché
 type: fichier de bord
 version: 1.0.0
-statut: en cours
+statut: clos
 catégorie: Journal
 date: 2026-09-23
 genere_par: claude
@@ -45,4 +45,31 @@ parquet » se réduit au parquet.
 | `435cf20` | Ménage | Journal polish ambiance archivé, INDEX à jour |
 | `cd45a72` | `D-154` | Rochers de décor dans la valeur de la pierre (plus des galets pâles), touffe dans les verts de la pelouse, flaque d'eau noire. Garde-fou : un rocher de décor reste plus sombre que les pierres ramassables |
 | `0534f4f` | `D-155` | Parquet : trois dessins × miroir, un bout de lame par dessin (des lames longues), joint au bord bas de la case. Une passe « un joint par rangée » faisait carrelage : retirée à la capture. Damier de teintes proposé en `Q-77` |
-| — | `D-156` | Grotte : décor 0,10 → 0,04 sans herbe (21 → 8 objets par salle sous Moyen, des cristaux gardés dans chaque salle en réglant les poids), grain de sol 19-20 → 6-8 primitives (fissures, un galet, un peu de gravier). Relevé hors ticket : `D-159` (une `ligne` se referme) |
+| `1811323` | `D-156` | Grotte : décor 0,10 → 0,04 sans herbe (21 → 8 objets par salle sous Moyen, des cristaux gardés dans chaque salle en réglant les poids), grain de sol 19-20 → 6-8 primitives (fissures, un galet, un peu de gravier). Relevé hors ticket : `D-159` (une `ligne` se referme) |
+| — | `D-157` | Sorties de la Grotte : deux tuiles (couloir sombre en salle 1, passage vers le jour en salle 2), halos déclarés dans la scène ; **code** : une lumière peut porter une `condition` (`scene.js#lumieresActives`), sans quoi le jour trahissait la porte fermée. Une première passe centrait le halo sur l'ouverture et effaçait le dégradé : reculé dans la salle |
+
+## Ce qu'il faut en retenir
+
+- **Un décor qui accompagne se tient dans la valeur de son sol** ; seul ce qui
+  émet de la lumière (cristaux, sortie, follet) a le droit de ressortir. Les
+  anciens rochers ressortaient en clair sur la pierre : c'était le défaut.
+- **Vider une salle se règle au tirage, pas seulement à la densité** : à 8
+  objets par salle, la graine fixe laissait zéro cristal en salle 2. Les poids
+  se règlent en regardant le décor tiré (Moyen ET Haut), pas la moyenne.
+- **Deux sorties qui ne mènent pas au même endroit n'ont pas le même
+  dessin** : un couloir vers une autre salle s'enfonce dans le noir, un
+  passage vers le dehors s'éclaircit.
+- **Une lumière peut trahir un secret** : le halo d'une porte doit attendre le
+  flag de la porte — d'où la `condition` sur les lumières.
+- Les captures en scène ont fait retirer deux premières passes (parquet en
+  carrelage, halo qui effaçait l'ouverture) : aucune ne se voyait au banc.
+
+## Ouvert pour Xav
+
+`V-89` à `V-92` (une validation par ticket), `Q-77` (damier de teintes du
+parquet, bloqué par `E-04`), `D-158` (animation des leviers, avec ta consigne
+sur la lumière, à lancer sur ton go), `D-159` (une `ligne` se referme : corriger
+et revoir dix visuels, ou le déclarer voulu).
+
+Restent du diagnostic, non retenus dans cette file : la porte de la Maison
+(aplat beige), le monstre (losange violet en 2 formes, à dessiner avec toi).

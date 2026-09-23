@@ -264,6 +264,7 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 | **Une case choisit son dessin par sa position** (`decor.js#varianteTuile`, hash spatial à sel propre, jamais le rythme de la couleur) ; le miroir est horizontal seulement (la lumière vient d'en haut). La table des grains porte une liste par tuile, chaque dessin allégé par le même levier | 2026-09-23 | `D-147` |
 | **Une ombre de zone s'ajoute au voile par le maximum, jamais par une seconde couche** : `dessinerObscurite` ne voit toujours qu'un `{ opacite }`, la lumière du follet y perce le même trou ; ce qui lit la NUIT (signal du Chaos) lit le seul cycle | 2026-09-23 | `D-149` |
 | **Une cible tactile qui bouge avec le monde est un cercle annoncé par l'orchestrateur à chaque frame** (`touch.js#zonesMonde`), calculé avec la même caméra que le dessin ; la couche tactile ne sait ni ce qu'est un follet ni où est la caméra. Le doigt du joystick n'en déclenche jamais | 2026-09-23 | `D-142` |
+| **Une lumière de scène peut attendre un flag** (`condition`, même forme et même validateur qu'un portail) ; le filtre est pur (`scene.js#lumieresActives`) et appliqué là où la scène affichée est composée — render.js ne voit jamais une condition. Une lumière posée sur une porte attend le flag de la porte (tenu par test) | 2026-09-23 | `D-157` |
 
 ## Ce qui est dû : dettes, questions, validations
 

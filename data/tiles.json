@@ -12,7 +12,8 @@
                 "visuel_variantes": ["visuel_mur_grotte_2"], "miroir": true }
   },
   { "id": "tile_eau", "solid": true, "render": { "type": "couleur", "valeur": "#2f6f9f" } },
-  { "id": "tile_sortie", "solid": false, "render": { "type": "couleur", "valeur": "#c2a83e" } },
+  { "id": "tile_sortie", "solid": false, "render": { "type": "couleur", "valeur": "#3e4640", "sol": "tile_sol", "visuel": "visuel_sortie_grotte" } },
+  { "id": "tile_sortie_jour", "solid": false, "render": { "type": "couleur", "valeur": "#3e4640", "sol": "tile_sol", "visuel": "visuel_sortie_jour" } },
   { "id": "tile_vide", "solid": true, "render": { "type": "couleur", "valeur": "#000000" } },
 
   { "id": "tile_herbe", "solid": false,

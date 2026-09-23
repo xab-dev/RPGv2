@@ -11333,5 +11333,235 @@
       {"forme":"cercle","dx":-1,"dy":-16.5,"w":1.4,"h":1.4,"couleur":"#e6f8ff","alpha":0.8},
       {"forme":"cercle","dx":6.5,"dy":-11,"w":1,"h":1,"couleur":"#e6f8ff","alpha":0.6}
     ]
+  },
+  {
+    "id": "visuel_sortie_grotte",
+    "ancre": "bas",
+    "primitives": [
+      {
+        "forme": "rect",
+        "dx": 4,
+        "dy": -16,
+        "w": 24,
+        "h": 32,
+        "couleur": "#0b0d0c",
+        "degrade": {
+          "direction": "horizontal",
+          "stops": [
+            {
+              "offset": 0,
+              "couleur": "#0b0d0c",
+              "alpha": 0
+            },
+            {
+              "offset": 1,
+              "couleur": "#0b0d0c",
+              "alpha": 0.9
+            }
+          ]
+        }
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": -29,
+        "w": 32,
+        "h": 6,
+        "couleur": "#0b0d0c",
+        "degrade": {
+          "direction": "vertical",
+          "stops": [
+            {
+              "offset": 0,
+              "couleur": "#0b0d0c",
+              "alpha": 0.6
+            },
+            {
+              "offset": 1,
+              "couleur": "#0b0d0c",
+              "alpha": 0
+            }
+          ]
+        }
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -9.5,
+            -28
+          ],
+          [
+            -9.5,
+            -3
+          ]
+        ],
+        "couleur": "#1d221f",
+        "epaisseur": 1,
+        "alpha": 0.55
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -8.5,
+            -28
+          ],
+          [
+            -8.5,
+            -3
+          ]
+        ],
+        "couleur": "#6d766f",
+        "epaisseur": 0.8,
+        "alpha": 0.25
+      },
+      {
+        "forme": "ellipse",
+        "dx": -4,
+        "dy": -9,
+        "w": 3.6,
+        "h": 1.8,
+        "couleur": "#4c544e",
+        "alpha": 0.6
+      },
+      {
+        "forme": "rect",
+        "dx": 3,
+        "dy": -18,
+        "w": 1,
+        "h": 1,
+        "couleur": "#6f7871",
+        "alpha": 0.3
+      }
+    ]
+  },
+  {
+    "id": "visuel_sortie_jour",
+    "ancre": "bas",
+    "primitives": [
+      {
+        "forme": "rect",
+        "dx": 4,
+        "dy": -16,
+        "w": 24,
+        "h": 32,
+        "couleur": "#f2e6c4",
+        "degrade": {
+          "direction": "horizontal",
+          "stops": [
+            {
+              "offset": 0,
+              "couleur": "#f2e6c4",
+              "alpha": 0
+            },
+            {
+              "offset": 1,
+              "couleur": "#f2e6c4",
+              "alpha": 0.55
+            }
+          ]
+        }
+      },
+      {
+        "forme": "rect",
+        "dx": 0,
+        "dy": -29,
+        "w": 32,
+        "h": 6,
+        "couleur": "#0b0d0c",
+        "degrade": {
+          "direction": "vertical",
+          "stops": [
+            {
+              "offset": 0,
+              "couleur": "#0b0d0c",
+              "alpha": 0.6
+            },
+            {
+              "offset": 1,
+              "couleur": "#0b0d0c",
+              "alpha": 0
+            }
+          ]
+        }
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -9.5,
+            -28
+          ],
+          [
+            -9.5,
+            -3
+          ]
+        ],
+        "couleur": "#1d221f",
+        "epaisseur": 1,
+        "alpha": 0.55
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -8.5,
+            -28
+          ],
+          [
+            -8.5,
+            -3
+          ]
+        ],
+        "couleur": "#6d766f",
+        "epaisseur": 0.8,
+        "alpha": 0.25
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            11,
+            -6
+          ],
+          [
+            13,
+            -9
+          ]
+        ],
+        "couleur": "#6f8a4c",
+        "epaisseur": 0.9,
+        "alpha": 0.6
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            13,
+            -5
+          ],
+          [
+            14.5,
+            -10
+          ]
+        ],
+        "couleur": "#7fa05a",
+        "epaisseur": 0.9,
+        "alpha": 0.6
+      }
+    ]
   }
 ]

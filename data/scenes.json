@@ -10,7 +10,8 @@
     "lumieres": [
       { "x": 172, "y": 208, "rayon": 172 },
       { "type": "faisceau", "x": 224, "y": 32, "angle": -8, "ouverture": 12, "longueur": 170, "alpha": 0.14 },
-      { "type": "faisceau", "x": 480, "y": 32, "angle": 6, "ouverture": 10, "longueur": 150, "alpha": 0.12 }
+      { "type": "faisceau", "x": 480, "y": 32, "angle": 6, "ouverture": 10, "longueur": 150, "alpha": 0.12 },
+      { "x": 596, "y": 208, "rayon": 34, "couleur": "#9fb8c8" }
     ],
     "decor": {
       "densite": 0.04,
@@ -65,7 +66,8 @@
     "lumieres": [
       { "type": "faisceau", "x": 160, "y": 32, "angle": 5, "ouverture": 12, "longueur": 160, "alpha": 0.13 },
       { "type": "faisceau", "x": 352, "y": 32, "angle": -6, "ouverture": 11, "longueur": 175, "alpha": 0.12 },
-      { "type": "faisceau", "x": 544, "y": 32, "angle": 9, "ouverture": 10, "longueur": 150, "alpha": 0.14 }
+      { "type": "faisceau", "x": 544, "y": 32, "angle": 9, "ouverture": 10, "longueur": 150, "alpha": 0.14 },
+      { "x": 604, "y": 208, "rayon": 56, "couleur": "#fff0c8", "condition": "flag_grotte_sortie" }
     ],
     "decor": {
       "densite": 0.04,
@@ -97,7 +99,7 @@
         "position": { "x": 19, "y": 6 },
         "flag": "flag_grotte_sortie",
         "tile_avant": "tile_mur",
-        "tile_apres": "tile_sortie"
+        "tile_apres": "tile_sortie_jour"
       }
     ],
     "layout": [

@@ -20,7 +20,7 @@ import { verrouillerMenuContextuel } from './souris.js';
 import { creerCurseur } from './curseur.js';
 import { ornementActif, etincellesOrbite, facteurRespiration } from './ornements.js';
 import { creerCoucheInput, etatNeutre } from './input/input.js';
-import { chargerScene, resoudreDeplacement, portailFranchi, trouverPositionLibrePlusProche } from './scene.js';
+import { chargerScene, resoudreDeplacement, portailFranchi, trouverPositionLibrePlusProche, lumieresActives } from './scene.js';
 import { calculerCamera } from './camera.js';
 import { RAYON_TOUCHE_FOLLET } from './ui/hud_layout.js';
 import { genererDecor, lumieresDuDecor } from './decor.js';
@@ -3404,7 +3404,13 @@ export function creerOrchestrateurGrotte({
       ? {
         ...scene,
         obscurite: { opacite: opaciteAmbiance },
-        lumieres: lumieresDecor.length ? [...(scene.lumieres || []), ...lumieresDecor] : scene.lumieres,
+        // `D-157` : une lumière de scène peut attendre un flag (la sortie de la
+        // salle 2 ne s'éclaire qu'une fois la porte ouverte) — filtrée ici, au
+        // seul endroit où la scène affichée est composée ; render.js ne voit
+        // jamais une condition.
+        lumieres: lumieresDecor.length
+          ? [...lumieresActives(scene, flags), ...lumieresDecor]
+          : lumieresActives(scene, flags),
       }
       : scene;
 

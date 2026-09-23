@@ -1,12 +1,15 @@
 [
   {
     "id": "tile_sol", "solid": false,
-    "render": { "type": "couleur", "valeur": "#4a7c3c", "variantes": ["#4f8241", "#456f38"], "variation_teinte": 0.04 }
+    "render": { "type": "couleur", "valeur": "#3e4640", "variantes": ["#3c443e", "#404842"], "variation_teinte": 0.02,
+                "visuel": "visuel_grain_grotte",
+                "visuel_variantes": ["visuel_grain_grotte_2", "visuel_grain_grotte_3"], "miroir": true }
   },
   { "id": "tile_sol_2", "solid": false, "render": { "type": "couleur", "valeur": "#3f6c33" } },
   {
     "id": "tile_mur", "solid": true,
-    "render": { "type": "couleur", "valeur": "#555555", "variantes": ["#5a5a5a", "#505050"], "variation_teinte": 0.04 }
+    "render": { "type": "couleur", "valeur": "#1d1f22", "visuel": "visuel_mur_grotte",
+                "visuel_variantes": ["visuel_mur_grotte_2"], "miroir": true }
   },
   { "id": "tile_eau", "solid": true, "render": { "type": "couleur", "valeur": "#2f6f9f" } },
   { "id": "tile_sortie", "solid": false, "render": { "type": "couleur", "valeur": "#c2a83e" } },

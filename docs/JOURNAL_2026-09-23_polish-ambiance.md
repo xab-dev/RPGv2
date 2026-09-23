@@ -34,3 +34,4 @@ Branche `polish-ambiance-2026-09-23`, jamais poussée. Captures : scénario
 | — | `D-147` | Chemin : trois dessins × miroir par case (`render.visuel_variantes`, `render.miroir`, `decor.js#varianteTuile`), galets à ombre portée, fissures, gravier fin en queue (premier retiré par `grain_sol`). La table des grains devient une liste par tuile |
 | — | `D-148` | Herbe : trois dessins × miroir (touffes en V, brins épars), mouchetis en queue. Couleurs intouchées (`E-04`) ; le damier de teintes proposé en `Q-74` |
 | — | `D-110`, `D-149` | Forêt : chêne et sapin en variantes de `visuel_arbre` (gardé en tête), miroir ; ombre de sous-bois déclarée sur la zone (`opaciteOmbreZones`, maximum avec le cycle, jamais une seconde couche). Valeur `[OUVERT]` en `Q-75` |
+| — | `D-150` | Grotte : sol de pierre (fissures, galets, mousse, gravier ; 3 grains × miroir), murs en moellons (2 appareils × miroir, dans la cellule), cristal luminescent en décor |

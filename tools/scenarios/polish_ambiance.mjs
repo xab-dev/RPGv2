@@ -65,6 +65,7 @@ export default async function (chrome) {
     rocher: { scene: 'scene_maison_exterieur', case: maison.rocher, heure: PLEIN_JOUR },
     grotte_1: { scene: 'scene_grotte_salle_1', case: [9.5, 8.5], heure: PLEIN_JOUR },
     grotte_2: { scene: 'scene_grotte_salle_2', case: [9.5, 7.5], heure: PLEIN_JOUR },
+    grotte_mur: { scene: 'scene_grotte_salle_1', case: [3.5, 3.5], heure: PLEIN_JOUR },
     grotte_tel: { scene: 'scene_grotte_salle_1', case: [9.5, 8.5], heure: PLEIN_JOUR, ecran: { largeur: 780, hauteur: 360, dpr: 3 } },
   };
   const choix = process.env.POSTES ? process.env.POSTES.split(',') : Object.keys(POSTES);

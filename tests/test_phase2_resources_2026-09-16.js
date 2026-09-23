@@ -20,8 +20,8 @@ function catalogueDeTest() {
   donnees.flags = [{ id: 'flag_test', label_key: 'flag.test' }];
   donnees.unlocks = [{ id: 'unlock_test', condition: { all: ['flag_test'] }, target: 'flag_test' }];
   donnees.dialogues = [
-    { id: 'dlg_bloque_bois', declencheur: 'x', lignes: [{ locuteur: 'follet', text_key: 'dlg.bois' }] },
-    { id: 'dlg_bloque_argile', declencheur: 'x', lignes: [{ locuteur: 'follet', text_key: 'dlg.argile' }] },
+    { id: 'dlg_bloque_bois', declencheur: 'x', entree: 'l1', noeuds: { l1: { locuteur: 'follet', text_key: 'dlg.bois' } } },
+    { id: 'dlg_bloque_argile', declencheur: 'x', entree: 'l1', noeuds: { l1: { locuteur: 'follet', text_key: 'dlg.argile' } } },
   ];
   donnees.items = [
     { id: 'item_branche', label_key: 'item.branche', categorie: 'ressource', stack_max: 20, render: { visuel: 'visuel_x' } },

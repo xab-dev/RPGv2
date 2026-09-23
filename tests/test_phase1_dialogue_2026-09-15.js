@@ -8,7 +8,7 @@
 import assert from 'node:assert/strict';
 import { construireRegistre } from '../src/registry.js';
 import { creerI18n } from '../src/i18n.js';
-import { creerDialogue, resoudreLignes, DELAI_ARMEMENT_DIALOGUE_MS } from '../src/dialogue.js';
+import { creerDialogue, resoudreNoeud, DELAI_ARMEMENT_DIALOGUE_MS } from '../src/dialogue.js';
 
 function etat({ attack = false, interact = false } = {}) {
   return {
@@ -70,24 +70,26 @@ function armer(dialogue) {
   assert.equal(dialogue.ligneCourante(), null);
 }
 
-// 5. resoudreLignes : "follet" se résout vers le compagnon actif, "narrateur" reste tel quel.
+// 5. resoudreNoeud (ex-resoudreLignes, spec 11 palier B) : "follet" se résout vers le compagnon actif, "narrateur" reste tel quel.
 {
   const registre = construireRegistre({
     dialogues: [
       {
         id: 'dlg_test',
         declencheur: 'x',
-        lignes: [
-          { locuteur: 'narrateur', text_key: 'k1' },
-          { locuteur: 'follet', text_key: 'k2' },
-        ],
+        entree: 'l1',
+        noeuds: {
+          l1: { locuteur: 'narrateur', text_key: 'k1', suite: 'l2' },
+          l2: { locuteur: 'follet', text_key: 'k2' },
+        },
       },
     ],
     companions: [{ id: 'comp_feu', label_key: 'nom.follet_feu', element: 'x', synergie: 'x', rayon_aura: 1, rayon_lumiere: 1, render: {} }],
   });
   const i18n = creerI18n({ fr: { k1: 'Bonjour', k2: 'Salut', 'nom.follet_feu': 'Follet de Feu' } }, 'fr');
 
-  const lignes = resoudreLignes('dlg_test', registre, i18n, 'comp_feu');
+  const donnees = registre.obtenir('dialogues', 'dlg_test');
+  const lignes = ['l1', 'l2'].map((n) => resoudreNoeud(donnees, n, registre, i18n, 'comp_feu'));
   assert.equal(lignes[0].locuteur, 'narrateur');
   assert.equal(lignes[0].texte, 'Bonjour');
   assert.equal(lignes[1].locuteur, 'Follet de Feu');

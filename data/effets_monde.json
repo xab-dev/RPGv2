@@ -1,0 +1,6 @@
+[
+  {
+    "id": "toit_occulte",
+    "description": "Le toit de la Maison ne s’efface plus quand le héros passe dessous : il cache ce qu’il y a dedans. Lu par main.js#dessiner, seul point qui calcule l’opacité du toit."
+  }
+]

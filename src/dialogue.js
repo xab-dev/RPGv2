@@ -2,8 +2,9 @@
 // rendu vit dans ui/dialogue_box.js. Un dialogue est un écran d'UI comme un
 // autre — même principe de priorité que ui/menu.js (une UI ouverte reçoit
 // les verbes, le gameplay reçoit etatNeutre() au point unique de main.js),
-// mais sans navigation par liste : avancer/fermer suffisent, d'où un
-// contrôleur dédié plutôt que creerControleurMenu() (§6).
+// mais ce n'est pas un menu : avancer, fermer, et depuis la spec 11 choisir
+// parmi deux à quatre options sous le texte — d'où un contrôleur dédié
+// plutôt que creerControleurMenu() (§6), et aucun composant de menu repris.
 //
 // Anti-spam (03_grotte-polish §3.2) : ATTACK sert à la fois à frapper et à
 // confirmer, donc spammer ATTACK en combat ferme des dialogues sans les avoir
@@ -76,9 +77,9 @@ export function decouperEnFenetres(texte, mesurer, largeurMax, lignesParFenetre)
 // sort, rien n'est écrit ailleurs — `main.js` reçoit le résultat à la clôture
 // et l'applique, seul appelant (§4.1).
 //
-// Au palier A, seules les entrées de `dialogues.json` qui portent `noeuds`
-// passent par ici ; les autres gardent leurs `lignes` jusqu'à la migration du
-// palier B.
+// Depuis le palier B, TOUT le catalogue est en nœuds : la bulle n'a plus
+// qu'un chemin. Une réplique d'avant est une chaîne de nœuds sans option,
+// reliés par `suite`.
 
 // §3 : jamais plus de 4 options — la bulle ne défile pas (règle tactile : ce
 // qui s'ouvre au doigt se ferme au doigt, sans défilement). Pas moins de 2 :
@@ -191,7 +192,15 @@ export function resultatConversation(etat, dialogue, poids) {
       consequences.push({ type: 'alignement', delta: o.alignement, source: 'option' });
     }
     for (const flag of o.flags || []) consequences.push({ type: 'flag', id: flag });
+    for (const e of o.effets_monde || []) consequences.push({ type: 'effet_monde', id: e.id, duree_ms: e.duree_ms });
   }
+  // `mesure: false` (palier B, `[OUVERT]` `Q-109`) : une réplique qui revient
+  // à chaque fois (un arbre en recharge, un refus de construction) ne mesure
+  // ni le spam ni la lecture. Sinon relire le même refus rapporterait +0,1 à
+  // chaque fois — un alignement qui se farme — et frapper un arbre en recharge
+  // en martelant A coûterait −0,25 par coup. Les options, elles, comptent
+  // toujours : une option est un choix, pas une lecture.
+  if (dialogue.mesure === false) return { dialogueId: etat.dialogueId, consequences, vu: true };
   if (etat.spamCompte > 0) {
     // Le plafond borne la VALEUR ABSOLUE, quel que soit le signe choisi en
     // données : un poids de spam positif un jour n'inverserait pas le plafond.
@@ -260,13 +269,12 @@ export function erreursGrapheConversation(entry, path) {
 }
 
 // Toutes les clés de texte d'un catalogue de dialogues, avec leur chemin :
-// nœuds, options, et les `lignes` d'avant la migration. Le registre ne voit
+// nœuds et options. Le registre ne voit
 // jamais les dictionnaires, donc le contrôle « présente en FR ET en EN » vit
 // au démarrage (`main.js`), comme celui des menus.
 export function erreursTextesDialogues(dialogues, dictionnaires) {
   const cles = [];
   for (const d of dialogues || []) {
-    (d.lignes || []).forEach((l, i) => cles.push({ cle: l.text_key, chemin: `dialogues > ${d.id} > lignes[${i}]` }));
     for (const [id, n] of Object.entries(d.noeuds || {})) {
       cles.push({ cle: n.text_key, chemin: `dialogues > ${d.id} > noeuds.${id}` });
       optionsDe(n).forEach((o, i) => cles.push({ cle: o.text_key, chemin: `dialogues > ${d.id} > noeuds.${id} > options[${i}]` }));
@@ -344,13 +352,6 @@ export function creerDialogue({ paginer = null } = {}) {
     if (callback) callback();
   }
 
-  function avancer() {
-    if (!ouvert || !estArmee()) return;
-    index += 1;
-    if (index >= lignes.length) fermer();
-    else reinitialiserLigne();
-  }
-
   // Le texte d'un nœud, découpé comme une réplique d'avant : même pagination,
   // même machine à écrire, même armement. Les options ne sont que la fin de
   // la dernière fenêtre.
@@ -400,9 +401,8 @@ export function creerDialogue({ paginer = null } = {}) {
     }
     // Le résultat part AVANT la fermeture : un `onFermer` (ouvrir un écran,
     // enchaîner un autre dialogue) doit trouver les conséquences déjà posées.
-    const resultat = resultatConversation(conversation.etat, conversation.donnees, conversation.poids);
     const onResultat = conversation.onResultat;
-    if (onResultat) onResultat(resultat);
+    if (onResultat) onResultat(resultatConversation(conversation.etat, conversation.donnees, conversation.poids));
     fermer();
   }
 
@@ -436,33 +436,42 @@ export function creerDialogue({ paginer = null } = {}) {
     if (etat.attack.pressed || etat.interact.pressed) appuyerConversation();
   }
 
+  function demarrer(donnees, { resoudre, poids, onResultat = null, onFermer = null }) {
+    conversation = { donnees, etat: ouvrirConversation(donnees), resoudre, poids, onResultat, options: [] };
+    ouvert = true;
+    onFermeture = onFermer;
+    pousseePrecedente = 0;
+    chargerNoeud();
+  }
+
   return {
     // Spec 11 : ouvrir un dialogue à NŒUDS. `resoudre(noeudId)` rend
     // `{ locuteur, texte, options: [texte] }` déjà traduits (l'appelant tient
     // i18n) ; `poids` est `alignement.json#poids_defaut` ; `onResultat` reçoit
     // les conséquences ordonnées, une fois, à la fin naturelle.
-    demarrerConversation(donnees, { resoudre, poids, onResultat = null, onFermer = null }) {
-      conversation = { donnees, etat: ouvrirConversation(donnees), resoudre, poids, onResultat, options: [] };
-      ouvert = true;
-      onFermeture = onFermer;
-      pousseePrecedente = 0;
-      chargerNoeud();
-    },
+    demarrerConversation: demarrer,
     // L'état pur de la conversation en cours (tests, relevé) — `null` hors
     // conversation. Une copie : personne ne le modifie de l'extérieur.
     etatConversation: () => (conversation ? { ...conversation.etat } : null),
+    // Des répliques déjà résolues (`[{ locuteur, texte }]`), sans catalogue
+    // ni conséquence : une chaîne de nœuds fabriquée sur place, qui passe par
+    // LE même chemin qu'un dialogue du catalogue (palier B, « la bulle n'a
+    // qu'un chemin »). Aucun `onResultat` : rien n'est jugé.
     ouvrir(nouvellesLignes, { onFermer } = {}) {
-      // Une réplique devient autant d'entrées que de fenêtres, même locuteur :
-      // tout le reste (machine à écrire, armement, avancer) ne voit que des
-      // répliques, et n'a donc rien à apprendre.
-      lignes = paginer
-        ? nouvellesLignes.flatMap((l) => paginer(l.texte).map((texte) => ({ ...l, texte })))
-        : nouvellesLignes;
-      index = 0;
-      ouvert = lignes.length > 0;
-      onFermeture = onFermer || null;
-      conversation = null;
-      reinitialiserLigne();
+      if (nouvellesLignes.length === 0) {
+        ouvert = false;
+        return;
+      }
+      const noeuds = {};
+      nouvellesLignes.forEach((l, i) => {
+        noeuds[`l${i}`] = { locuteur: l.locuteur, texte: l.texte };
+        if (i + 1 < nouvellesLignes.length) noeuds[`l${i}`].suite = `l${i + 1}`;
+      });
+      demarrer({ id: null, entree: 'l0', noeuds }, {
+        resoudre: (id) => ({ locuteur: noeuds[id].locuteur, texte: noeuds[id].texte, options: [] }),
+        poids: null,
+        onFermer: onFermer || null,
+      });
     },
     estOuvert: () => ouvert,
     ligneCourante: () => {
@@ -498,51 +507,21 @@ export function creerDialogue({ paginer = null } = {}) {
       }
     },
     // ATTACK/INTERACT (front montant) : complète la ligne si elle est encore
-    // en cours d'affichage, sinon avance (si armée) — jamais les deux à la
-    // fois sur un seul appui.
-    //
-    // En conversation, le chemin est celui de la spec 11 (un appui non armé
-    // est compté, jamais exaucé) ; `toucher` n'a de sens que là.
+    // en cours d'affichage (et compte l'appui), sinon avance si elle est
+    // armée — jamais les deux à la fois sur un seul appui. `toucher` : ce que
+    // le doigt a désigné sur la bulle (spec 11).
     traiterInput(etat, toucher = null) {
       if (!ouvert) return;
-      if (conversation) {
-        traiterInputConversation(etat, toucher);
-        return;
-      }
-      if (!(etat.attack.pressed || etat.interact.pressed)) return;
-      if (!ligneComplete()) {
-        charsAffiches = texteLigne(index).length;
-        msDepuisAffichageComplet = 0;
-      } else {
-        avancer();
-      }
+      traiterInputConversation(etat, toucher);
     },
-    avancer,
     fermer,
   };
 }
 
-// Résout les { locuteur, text_key } d'une entrée dialogues.json vers des
-// lignes affichables : "follet" est résolu vers le compagnon actif ici,
-// jamais codé en dur dans dialogues.json (qui doit rester valable quel que
-// soit le follet choisi).
-export function resoudreLignes(dialogueId, registre, i18n, companionId) {
-  const donnees = registre.obtenir('dialogues', dialogueId);
-  if (!donnees) throw new Error(`dialogue "${dialogueId}" introuvable dans dialogues.json`);
-
-  return donnees.lignes.map((ligne) => {
-    let locuteur = ligne.locuteur;
-    if (ligne.locuteur === 'follet' && companionId) {
-      const companion = registre.obtenir('companions', companionId);
-      locuteur = i18n.t(companion.label_key);
-    }
-    return { locuteur, texte: i18n.t(ligne.text_key) };
-  });
-}
-
-// Spec 11 : le pendant de `resoudreLignes` pour un nœud — même résolution du
-// locuteur (« follet » devient le compagnon actif, jamais écrit en dur dans
-// les données), plus le texte de chaque option.
+// Un nœud du catalogue vers ce que la bulle affiche : "follet" est résolu vers
+// le compagnon actif ICI, jamais codé en dur dans dialogues.json (qui doit
+// rester valable quel que soit le follet choisi), plus le texte de chaque
+// option.
 export function resoudreNoeud(donnees, noeudId, registre, i18n, companionId) {
   const noeud = donnees.noeuds[noeudId];
   let locuteur = noeud.locuteur;

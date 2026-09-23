@@ -998,35 +998,21 @@ function validerPuzzle(entry, catalogs, path) {
 const LOCUTEURS_DIALOGUE = ['narrateur', 'follet'];
 
 function validerDialogue(entry, catalogs, path) {
-  const erreurs = [];
-  // Spec 11 : un dialogue à nœuds. Les deux formes ne cohabitent jamais dans
-  // une même entrée — laquelle le moteur lirait-il ?
-  if (entry.noeuds !== undefined) {
-    if (entry.lignes !== undefined) return [`${path} > lignes et noeuds à la fois : un dialogue a l'une OU l'autre forme`];
-    return validerConversation(entry, catalogs, path);
+  // Spec 11, palier B : les `lignes` d'avant ont toutes migré. Une entrée qui
+  // en porterait encore serait écrite pour un moteur qui n'existe plus.
+  if (entry.lignes !== undefined) return [`${path} > lignes : forme retirée au palier B de la spec 11, écrire des noeuds`];
+  if (entry.mesure !== undefined && typeof entry.mesure !== 'boolean') {
+    return [`${path} > mesure doit être un booléen (false : ni spam ni lecture comptés)`];
   }
-  if (!Array.isArray(entry.lignes) || entry.lignes.length === 0) {
-    erreurs.push(`${path} > lignes doit être un tableau non vide`);
-    return erreurs;
-  }
-  entry.lignes.forEach((ligne, i) => {
-    if (!LOCUTEURS_DIALOGUE.includes(ligne.locuteur)) {
-      erreurs.push(`${path} > lignes[${i}] > locuteur doit être l'un de ${LOCUTEURS_DIALOGUE.join('/')}`);
-    }
-    if (typeof ligne.text_key !== 'string') {
-      erreurs.push(`${path} > lignes[${i}] > text_key manquant`);
-    }
-  });
-  return erreurs;
+  return validerConversation(entry, catalogs, path);
 }
 
-// Ce qu'une option peut faire au palier A de la spec 11. `effets_monde`
-// arrive au palier B, `valeurs` attend une décision (`Q-105` : les valeurs
-// nommées de `flags.js` sont LUES dans l'état du monde, aucune n'a de quoi
-// recevoir un delta). Les deux sont REFUSÉS plutôt qu'ignorés : une donnée
+// Ce qu'une option peut faire. `valeurs` attend une décision (`Q-105` : les
+// valeurs nommées de `flags.js` sont LUES dans l'état du monde, aucune n'a de
+// quoi recevoir un delta) : elle est REFUSÉE plutôt qu'ignorée — une donnée
 // écrite pour rien ne doit pas passer pour une donnée qui marche.
-const CONSEQUENCES_OPTION = ['alignement', 'flags'];
-const CONSEQUENCES_A_VENIR = ['effets_monde', 'valeurs'];
+const CONSEQUENCES_OPTION = ['alignement', 'flags', 'effets_monde'];
+const CONSEQUENCES_A_VENIR = ['valeurs'];
 
 function validerConversation(entry, catalogs, path) {
   const erreurs = [];
@@ -1082,13 +1068,28 @@ function validerConversation(entry, catalogs, path) {
         if (portees.length > 0) erreurs.push(`${cheminOption} > l'option defaut ne porte aucune conséquence (trouvé : ${portees.join(', ')})`);
       }
       for (const c of CONSEQUENCES_A_VENIR) {
-        if (option[c] !== undefined) erreurs.push(`${cheminOption} > ${c} n'est pas encore pris en charge (spec 11 : effets_monde au palier B, valeurs en attente de Q-105)`);
+        if (option[c] !== undefined) erreurs.push(`${cheminOption} > ${c} n'est pas encore pris en charge (en attente de Q-105)`);
       }
       if (option.alignement !== undefined) {
         if (typeof option.alignement !== 'number' || !Number.isFinite(option.alignement)) {
           erreurs.push(`${cheminOption} > alignement doit être un nombre`);
         } else if (bornes && (option.alignement < bornes.min || option.alignement > bornes.max)) {
           erreurs.push(`${cheminOption} > alignement ${option.alignement} hors des bornes [${bornes.min} ; ${bornes.max}]`);
+        }
+      }
+      // Un effet de monde est un NOM du catalogue `effets_monde.json` (spec 11
+      // §5) et une durée : un id inconnu tombe ici, jamais en jeu.
+      if (option.effets_monde !== undefined) {
+        const connus = new Set((catalogs.effets_monde || []).map((e) => e.id));
+        if (!Array.isArray(option.effets_monde) || option.effets_monde.length === 0) {
+          erreurs.push(`${cheminOption} > effets_monde doit être une liste non vide de { id, duree_ms }`);
+        } else {
+          option.effets_monde.forEach((e, j) => {
+            if (!e || !connus.has(e.id)) erreurs.push(`${cheminOption} > effets_monde[${j}] : "${e && e.id}" introuvable dans effets_monde.json`);
+            if (!e || typeof e.duree_ms !== 'number' || !(e.duree_ms > 0)) {
+              erreurs.push(`${cheminOption} > effets_monde[${j}] > duree_ms doit être un nombre de ms positif`);
+            }
+          });
         }
       }
       if (option.flags !== undefined) {
@@ -1961,6 +1962,10 @@ export const SCHEMAS = {
       return erreurs;
     },
   },
+  // Spec 11 §5 : les effets de monde. Un NOM par entrée, rien d'autre — ce
+  // qu'un effet fait vit dans le système qui le lit. Le catalogue existe pour
+  // qu'une option qui cite un effet inconnu tombe au boot.
+  effets_monde: schemaMinimal(),
   puzzles: {
     requiredFields: ['id', 'type'],
     idField: 'id',
@@ -1968,9 +1973,8 @@ export const SCHEMAS = {
     custom: validerPuzzle,
   },
   dialogues: {
-    // `lignes` OU `noeuds` (spec 11), vérifié par `validerDialogue` : un
-    // champ requis ne sait pas dire « l'un des deux ».
-    requiredFields: ['id', 'declencheur'],
+    // Spec 11, palier B : une seule forme, le graphe de nœuds.
+    requiredFields: ['id', 'declencheur', 'entree', 'noeuds'],
     idField: 'id',
     refs: [],
     custom: validerDialogue,

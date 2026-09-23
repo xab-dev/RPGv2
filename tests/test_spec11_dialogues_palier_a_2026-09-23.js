@@ -112,14 +112,16 @@ function copie(o) {
   flagInconnu.noeuds.n1.options[1].flags = ['flag_qui_n_existe_pas'];
   assert.ok(erreursAvec([flagInconnu]).some((e) => e.includes('flag_qui_n_existe_pas')), 'un flag non déclaré est refusé');
 
+  // Palier B : `effets_monde` est pris en charge (cf. le test du palier B) ;
+  // `valeurs` reste refusée plutôt qu'ignorée en silence (`Q-105`).
   const aVenir = copie(ESSAI);
-  aVenir.noeuds.n1.options[2].effets_monde = [{ id: 'toit_occulte', duree_ms: 60000 }];
+  aVenir.noeuds.n1.options[2].valeurs = { niveau: 1 };
   assert.ok(erreursAvec([aVenir]).some((e) => e.includes('pas encore pris en charge')),
-    'effets_monde est refusé au palier A plutôt qu’ignoré en silence');
+    'valeurs est refusée plutôt qu’ignorée en silence');
 
   const deuxFormes = copie(ESSAI);
   deuxFormes.lignes = [{ locuteur: 'follet', text_key: 'k' }];
-  assert.ok(erreursAvec([deuxFormes]).some((e) => e.includes('lignes et noeuds')), 'une seule forme par dialogue');
+  assert.ok(erreursAvec([deuxFormes]).some((e) => e.includes('forme retirée')), 'les lignes d’avant ne reviennent pas');
 
   // Toute clé des vrais dialogues existe en FR et en EN — le contrôle de boot.
   assert.deepEqual(erreursTextesDialogues(donnees.dialogues, dictionnaires), []);

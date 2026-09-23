@@ -12,7 +12,7 @@ import { chargerCataloguesDepuisDisque, chargerLocalesDepuisDisque } from '../sr
 import { SCHEMAS } from '../src/schemas.js';
 import { validerCatalogues, construireRegistre } from '../src/registry.js';
 import { creerI18n } from '../src/i18n.js';
-import { creerDialogue, resoudreLignes, DELAI_ARMEMENT_DIALOGUE_MS, MACHINE_ECRIRE_MS_PAR_CARACTERE } from '../src/dialogue.js';
+import { creerDialogue, DELAI_ARMEMENT_DIALOGUE_MS, MACHINE_ECRIRE_MS_PAR_CARACTERE } from '../src/dialogue.js';
 import { saveNeuve, creerStoreMemoire } from '../src/save.js';
 import { creerOrchestrateurGrotte } from '../src/main.js';
 

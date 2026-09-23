@@ -64,7 +64,8 @@ import {
 } from './companion.js';
 import { creerGenerateur, resoudreLoot } from './loot.js';
 import { etatInitial as etatInitialPuzzles, activerLevier } from './puzzles.js';
-import { creerDialogue, resoudreLignes, resoudreNoeud, erreursTextesDialogues } from './dialogue.js';
+import { creerDialogue, resoudreNoeud, erreursTextesDialogues } from './dialogue.js';
+import { creerEtatEffets, activer as activerEffet, tick as tickEffets, actif as effetActif } from './effets_monde.js';
 import {
   creerIntro, avancerIntro, etatRendu as etatRenduIntro,
   creerDepart, avancerDepart, etatRenduDepart, avancementDepart, ETAPE_CLIGNEMENTS,
@@ -186,6 +187,12 @@ const COOLDOWN_PUITS_MS = 60000;
 // change ; la courbe reste la même (dégressive sur MARGE_FONDU_TOIT_PX,
 // jamais un on/off — décision verrouillée du 2026-09-16).
 const FACTEUR_EFFACEMENT_TOIT = 1.125;
+// Spec 11 §5 : l'effet de monde « toit occulté » — tant qu'il est actif, le
+// toit ne s'efface plus au passage du héros (`FACTEUR_EFFACEMENT_TOIT` n'est
+// pas touché : l'effacement est suspendu, pas réglé autrement). Le NOM est ce
+// qui relie une option de dialogue à ce système ; il doit exister au
+// catalogue `effets_monde.json`, vérifié au démarrage de l'orchestrateur.
+const EFFET_TOIT_OCCULTE = 'toit_occulte';
 const MARGE_FONDU_TOIT_PX = 30;
 const RAYON_TOIT_FOLLET_ABSENT_PX = 90;
 
@@ -682,6 +689,17 @@ export function creerOrchestrateurGrotte({
 
   // `specs/10_alignement-follet.md` §2.3 : l'alignement caché.
   const reglageAlignement = configAlignement(registre);
+
+  // Spec 11 §5 : les effets de monde actifs — état de SESSION, jamais écrit
+  // dans `save` (recharger la page les lève, `Q-103`). Avancés avec le jeu,
+  // gelés sous UI comme tout le reste.
+  let effetsMonde = creerEtatEffets();
+  // Les effets que le CODE lit par leur nom : absents du catalogue, ils ne
+  // pourraient jamais être posés, et le système qui les lit se tairait. Échec
+  // dur au démarrage plutôt qu'un toit qui ne réagit jamais.
+  for (const id of [EFFET_TOIT_OCCULTE]) {
+    if (!registre.obtenir('effets_monde', id)) throw new Error(`effets_monde.json : "${id}" absent, lu par main.js`);
+  }
 
   // LE seul point qui écrit `save.hero.alignement`. Il borne, il journalise
   // sous `?debug=fps`, et il ne fait RIEN d'autre : aucun effet n'est
@@ -1232,7 +1250,7 @@ export function creerOrchestrateurGrotte({
   }
 
   function demarrerChoixFollet() {
-    dialogue.ouvrir(resoudreLignes('dlg_grotte_choix_follet', registre, i18n, null), {
+    ouvrirDialogueCatalogue('dlg_grotte_choix_follet', {
       onFermer: () => {
         choixFollet = { index: 1 };
         pousseeChoixPrecedente = 0;
@@ -1260,7 +1278,7 @@ export function creerOrchestrateurGrotte({
     intro = null;
     const donneesScene = registre.obtenir('scenes', scene.id);
     if (donneesScene.intro) depart = creerDepart(donneesScene.intro, index);
-    dialogue.ouvrir(resoudreLignes('dlg_grotte_follet_enthousiaste', registre, i18n, companionId));
+    ouvrirDialogueCatalogue('dlg_grotte_follet_enthousiaste', { companionId });
   }
 
   function traiterChoixFollet(etat) {
@@ -1284,7 +1302,7 @@ export function creerOrchestrateurGrotte({
       intro = creerIntro(registre.obtenir('scenes', sceneId).intro);
     }
     if (sceneId === 'scene_grotte_salle_2' && !flags.has('flag_grotte_monstre_tue') && monstres.length > 0) {
-      dialogue.ouvrir(resoudreLignes('dlg_grotte_tuto_combat', registre, i18n, save.hero.companion));
+      ouvrirDialogueCatalogue('dlg_grotte_tuto_combat');
     }
   }
 
@@ -1399,18 +1417,15 @@ export function creerOrchestrateurGrotte({
     etatModifie = true;
   }
 
-  // Spec 11 : ouvrir une entrée de `dialogues.json` quelle que soit sa forme.
-  // Au palier A, seules les lignes d'ambiance passent ici (le dialogue de la
-  // maison est l'une d'elles) ; les autres appels ouvrent encore des
-  // `lignes` directement, jusqu'à la migration du palier B.
-  function ouvrirDialogueCatalogue(dialogueId, { onFermer } = {}) {
+  // Spec 11 : LE point qui ouvre une entrée de `dialogues.json`. Depuis le
+  // palier B, tout dialogue du jeu passe ici, et la bulle n'a qu'un chemin.
+  // `companionId` : le follet qui parle, quand il n'est pas encore dans la
+  // sauvegarde (l'enthousiasme du follet qu'on vient d'élire).
+  function ouvrirDialogueCatalogue(dialogueId, { onFermer = null, companionId = save.hero.companion } = {}) {
     const donnees = registre.obtenir('dialogues', dialogueId);
-    if (!donnees.noeuds) {
-      dialogue.ouvrir(resoudreLignes(dialogueId, registre, i18n, save.hero.companion), { onFermer });
-      return;
-    }
+    if (!donnees) throw new Error(`dialogue "${dialogueId}" introuvable dans dialogues.json`);
     dialogue.demarrerConversation(donnees, {
-      resoudre: (noeudId) => resoudreNoeud(donnees, noeudId, registre, i18n, save.hero.companion),
+      resoudre: (noeudId) => resoudreNoeud(donnees, noeudId, registre, i18n, companionId),
       poids: reglageAlignement.poids_defaut,
       onResultat: appliquerResultatDialogue,
       onFermer,
@@ -1428,6 +1443,8 @@ export function creerOrchestrateurGrotte({
         modifierAlignement(c.delta, source);
       } else if (c.type === 'flag') {
         flags.set(c.id);
+      } else if (c.type === 'effet_monde') {
+        effetsMonde = activerEffet(effetsMonde, c.id, c.duree_ms);
       }
     }
     etatModifie = true;
@@ -1679,7 +1696,7 @@ export function creerOrchestrateurGrotte({
         return;
       }
       if (puzzle.type === 'station_placeholder') {
-        dialogue.ouvrir(resoudreLignes(puzzle.dialogue, registre, i18n, save.hero.companion));
+        ouvrirDialogueCatalogue(puzzle.dialogue);
         return;
       }
       if (puzzle.type === 'station') {
@@ -1768,7 +1785,7 @@ export function creerOrchestrateurGrotte({
         if (itemDef.flag_ramassage) flags.set(itemDef.flag_ramassage);
         if (!flags.has('flag_premier_ramassage')) {
           flags.set('flag_premier_ramassage');
-          dialogue.ouvrir(resoudreLignes('dlg_premier_ramassage', registre, i18n, save.hero.companion));
+          ouvrirDialogueCatalogue('dlg_premier_ramassage');
         }
         etatModifie = true;
       }
@@ -1781,14 +1798,14 @@ export function creerOrchestrateurGrotte({
       // Palier B (§3.2) : peutRecolter() enfin branché sur la poche réelle —
       // sans l'outil, comportement Phase 2 inchangé (dialogue "pas encore").
       if (!peutRecolter(donneesRessource, save.inventaire.items)) {
-        dialogue.ouvrir(resoudreLignes(donneesRessource.dialogue_bloque, registre, i18n, save.hero.companion));
+        ouvrirDialogueCatalogue(donneesRessource.dialogue_bloque);
         return;
       }
       // Cooldown PAR TUILE (§9 point ouvert : "par tuile", deux arbres = deux
       // cooldowns) — clé stable tant que la tuile ne bouge pas.
       const cleCooldown = `res:${scene.id}:${ressourceProche.tx}:${ressourceProche.ty}`;
       if (!estExpire(save.cooldowns, cleCooldown, donneesRessource.cooldown_ms, save.monde.heure)) {
-        dialogue.ouvrir(resoudreLignes('dlg_ressource_cooldown', registre, i18n, save.hero.companion));
+        ouvrirDialogueCatalogue('dlg_ressource_cooldown');
         return;
       }
       const itemDefProduit = registre.obtenir('items', donneesRessource.item_produit);
@@ -1848,7 +1865,7 @@ export function creerOrchestrateurGrotte({
     if (premiere && !flags.has(premiere.flag)) {
       flags.set(premiere.flag);
       etatModifie = true;
-      dialogue.ouvrir(resoudreLignes(premiere.dialogue, registre, i18n, save.hero.companion), {
+      ouvrirDialogueCatalogue(premiere.dialogue, {
         onFermer: () => essayerStation(puzzle),
       });
       return;
@@ -1875,7 +1892,7 @@ export function creerOrchestrateurGrotte({
     // puits (une seule en M1, mais §6 : ne jamais supposer sa position/id).
     const cleCooldown = `eau:${puzzle.id}`;
     if (!estExpire(save.cooldowns, cleCooldown, COOLDOWN_PUITS_MS, save.monde.heure)) {
-      dialogue.ouvrir(resoudreLignes('dlg_puits_cooldown', registre, i18n, save.hero.companion));
+      ouvrirDialogueCatalogue('dlg_puits_cooldown');
       return;
     }
     // `D-123` (T7) : l'XP du puits tombe si la jauge était SOUS SON SEUIL
@@ -2440,13 +2457,11 @@ export function creerOrchestrateurGrotte({
       if (construction.verdict.ok) {
         confirmerConstruction();
       } else if (DIALOGUE_REFUS_CONSTRUCTION[construction.verdict.raison]) {
-        dialogue.ouvrir(
-          resoudreLignes(DIALOGUE_REFUS_CONSTRUCTION[construction.verdict.raison], registre, i18n, save.hero.companion)
-        );
+        ouvrirDialogueCatalogue(DIALOGUE_REFUS_CONSTRUCTION[construction.verdict.raison]);
       } else {
         // `D-126` : `pose_invalide` n'est pas une situation de jeu, c'est une
         // faute de code. On la JOURNALISE ; la raconter au follet ferait
-        // passer un bug pour une règle, et `resoudreLignes(undefined)` lèverait
+        // passer un bug pour une règle, et `ouvrirDialogueCatalogue(undefined)` lèverait
         // dans la boucle.
         console.warn(`main.js#traiterConstruction : refus sans dialogue (${construction.verdict.raison})`);
       }
@@ -2647,7 +2662,7 @@ export function creerOrchestrateurGrotte({
 
     if (donneesEnnemi.id === 'enemy_grotte_rampant' && !flags.has('flag_grotte_monstre_tue')) {
       flags.set('flag_grotte_monstre_tue');
-      dialogue.ouvrir(resoudreLignes('dlg_grotte_eclats', registre, i18n, save.hero.companion));
+      ouvrirDialogueCatalogue('dlg_grotte_eclats');
     }
   }
 
@@ -3147,6 +3162,7 @@ export function creerOrchestrateurGrotte({
       indices.maj(deltaMs);
       verifierIndicesNiveau();
       verifierLignesAmbiance();
+      effetsMonde = tickEffets(effetsMonde, deltaMs);
 
       // Horloge "temps de jeu actif" (daynight.js#avancerHeure) : avancée
       // dans TOUTES les scènes désormais (Palier A/C, specs/04_maison-
@@ -3203,7 +3219,7 @@ export function creerOrchestrateurGrotte({
       save.survie = decroitreSurvie(registre, save.survie, deltaMs);
       if (etaitAuDessusDuSeuil && jaugeSousLeSeuil(save.survie) && !flags.has('flag_premiere_faim')) {
         flags.set('flag_premiere_faim');
-        dialogue.ouvrir(resoudreLignes('dlg_premiere_faim', registre, i18n, save.hero.companion));
+        ouvrirDialogueCatalogue('dlg_premiere_faim');
       }
 
       // Buffs temporaires (Palier C §3.3, ex. le fruit cuit) : tiqués comme
@@ -3559,7 +3575,7 @@ export function creerOrchestrateurGrotte({
         rect: structure.rect,
         couleur: rendu.valeur,
         visuel: rendu.visuel ? registre.obtenir('visuels', rendu.visuel) : null,
-        opacite: calculerOpaciteToit(hero, structure, scene.tileSize, {
+        opacite: effetActif(effetsMonde, EFFET_TOIT_OCCULTE) ? 1 : calculerOpaciteToit(hero, structure, scene.tileSize, {
           rayonEffacement,
           margeFondu: MARGE_FONDU_TOIT_PX,
         }),
@@ -3855,6 +3871,7 @@ export function creerOrchestrateurGrotte({
     flags = construireFlags();
     indices = creerEtatIndices(registre);
     dialogue.fermer();
+    effetsMonde = creerEtatEffets();
     choixFollet = null;
     pousseeChoixPrecedente = 0;
     intro = null;
@@ -3921,6 +3938,9 @@ export function creerOrchestrateurGrotte({
     modifierAlignement,
     etatAlignement,
     dialogueOuvert: () => dialogue.estOuvert(),
+    // Spec 11 §5 : l'état des effets de monde, pour les tests (il ne vit
+    // nulle part ailleurs, surtout pas dans la sauvegarde).
+    obtenirEffetsMonde: () => effetsMonde,
     dialogueLigneCourante: () => dialogue.ligneCourante(),
     obtenirAnneauAttaqueMs: () => anneauAttaqueMs,
     // Indices de commande (specs/04_indices-commandes.md) : observe l'indice

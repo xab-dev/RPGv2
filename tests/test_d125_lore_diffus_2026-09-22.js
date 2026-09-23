@@ -72,10 +72,12 @@ const LIGNES = [
     // C'est le FOLLET qui parle. C'est ce qui distingue le lore diffus d'une
     // ligne d'ambiance du monde (le vent de cendre, lui, est au narrateur).
     const dialogue = registre.obtenir('dialogues', ambiance.dialogue);
-    assert.deepEqual(dialogue.lignes.map((l) => l.locuteur), ['follet'], `${id} : le follet, pas le narrateur`);
+    // Depuis la spec 11 (palier B), une réplique est une chaîne de nœuds.
+    const noeuds = Object.values(dialogue.noeuds);
+    assert.deepEqual(noeuds.map((n) => n.locuteur), ['follet'], `${id} : le follet, pas le narrateur`);
 
     // Une ligne, dans les deux langues, sans marqueur oublié.
-    const cle = dialogue.lignes[0].text_key;
+    const cle = dialogue.noeuds[dialogue.entree].text_key;
     for (const [langue, traducteur] of [['fr', i18n], ['en', en]]) {
       const texte = traducteur.t(cle);
       assert.ok(!texte.startsWith('[['), `${cle} doit exister en ${langue}`);

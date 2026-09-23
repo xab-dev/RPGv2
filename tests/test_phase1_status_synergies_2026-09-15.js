@@ -21,15 +21,28 @@ function donneesTroisElements() {
       { id: 'controle_entrave', label_key: 'x', famille: 'controle', cible: 'monstre', param: 'vitesse_deplacement', valeur: -0.5, mode: 'pourcent', duree: 'aura', cumul: false, icone: 'x' },
     ],
     synergies: [
-      { id: 'syn_feu', element: 'elem_feu', effet_joueur: 'buff_force', effet_monstre: 'dot_brulure' },
-      { id: 'syn_eau', element: 'elem_eau', effet_joueur: 'buff_agilite', effet_monstre: 'debuff_affaiblissement' },
-      { id: 'syn_terre', element: 'elem_terre', effet_joueur: 'buff_force', effet_monstre: 'controle_entrave' },
+      synergie('syn_feu', 'elem_feu', 'buff_force', 'dot_brulure'),
+      synergie('syn_eau', 'elem_eau', 'buff_agilite', 'debuff_affaiblissement'),
+      synergie('syn_terre', 'elem_terre', 'buff_force', 'controle_entrave'),
     ],
     companions: [
       { id: 'comp_feu', label_key: 'x', element: 'elem_feu', synergie: 'syn_feu', rayon_aura: 40, rayon_lumiere: 90, render: {} },
       { id: 'comp_eau', label_key: 'x', element: 'elem_eau', synergie: 'syn_eau', rayon_aura: 40, rayon_lumiere: 90, render: {} },
       { id: 'comp_terre', label_key: 'x', element: 'elem_terre', synergie: 'syn_terre', rayon_aura: 40, rayon_lumiere: 90, render: {} },
     ],
+  };
+}
+
+// `specs/10` palier C : une synergie porte deux régimes. Ce fichier éprouve le
+// jeu d'avant l'alignement (régime neutre = `positif`) ; le négatif est vide
+// ici, il a son propre test (`test_spec10_alignement_palier_c`).
+function synergie(id, element, effetJoueur, effetMonstre) {
+  return {
+    id, element,
+    regimes: {
+      positif: { heros: [{ effet: effetJoueur }], monstres_aura: [{ effet: effetMonstre }] },
+      negatif: { heros: [], monstres_aura: [] },
+    },
   };
 }
 
@@ -97,7 +110,7 @@ const hors = { position: { x: 100, y: 0 }, aura: AURA };
     { id: 'buff_vent', label_key: 'x', famille: 'buff', cible: 'joueur', stat: 'stat_agilite', valeur: 2, mode: 'plat', duree: 'permanente', cumul: false, icone: 'x' },
     { id: 'controle_vent', label_key: 'x', famille: 'controle', cible: 'monstre', param: 'vitesse_deplacement', valeur: 0.5, mode: 'pourcent', duree: 'aura', cumul: false, icone: 'x' }
   );
-  donnees.synergies.push({ id: 'syn_vent', element: 'elem_vent', effet_joueur: 'buff_vent', effet_monstre: 'controle_vent' });
+  donnees.synergies.push(synergie('syn_vent', 'elem_vent', 'buff_vent', 'controle_vent'));
   donnees.companions.push({ id: 'comp_vent', label_key: 'x', element: 'elem_vent', synergie: 'syn_vent', rayon_aura: 40, rayon_lumiere: 90, render: {} });
 
   const registre = construireRegistre(donnees);

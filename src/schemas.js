@@ -764,6 +764,53 @@ const FAMILLES_STATUS = ['buff', 'dot', 'debuff', 'controle'];
 const CIBLES_STATUS = ['joueur', 'monstre'];
 const MODES_STATUS = ['plat', 'pourcent'];
 
+// Les deux régimes sont REQUIS : pas de repli du négatif sur le positif — on
+// ne veut pas découvrir en jeu qu'un follet ignore l'alignement (§5). Chaque
+// entrée cite un effet de `status_effects.json` rangé du bon côté : un effet
+// de héros (`cible: joueur`) sous `heros`, un effet de monstre sous
+// `monstres_aura`. `par_palier` multiplie la valeur par le palier ;
+// `multiplicateur` la multiplie par un nombre fixe (Terre négatif : l'entrave
+// des monstres « × 0,5 » — un facteur sur l'effet, jamais un second effet).
+const REGIMES_SYNERGIE = ['positif', 'negatif'];
+const COTES_REGIME = [['heros', 'joueur'], ['monstres_aura', 'monstre']];
+function validerRegimesSynergie(entry, catalogs, path) {
+  const erreurs = [];
+  const regimes = entry.regimes;
+  if (!regimes || typeof regimes !== 'object') return [`${path} > regimes doit être un objet { positif, negatif }`];
+  for (const nom of REGIMES_SYNERGIE) {
+    const regime = regimes[nom];
+    if (!regime || typeof regime !== 'object') {
+      erreurs.push(`${path} > regimes.${nom} manquant (pas de repli d'un régime sur l'autre)`);
+      continue;
+    }
+    for (const [cote, cible] of COTES_REGIME) {
+      const liste = regime[cote];
+      if (!Array.isArray(liste)) {
+        erreurs.push(`${path} > regimes.${nom}.${cote} doit être un tableau (vide s'il n'y a rien)`);
+        continue;
+      }
+      liste.forEach((e, i) => {
+        const chemin = `${path} > regimes.${nom}.${cote}[${i}]`;
+        const effet = (catalogs.status_effects || []).find((s) => s.id === (e && e.effet));
+        if (!effet) {
+          erreurs.push(`${chemin} > effet "${e && e.effet}" introuvable dans status_effects.json`);
+          return;
+        }
+        if (effet.cible !== cible) {
+          erreurs.push(`${chemin} > "${effet.id}" vise "${effet.cible}", attendu "${cible}" de ce côté`);
+        }
+        if (e.par_palier !== undefined && typeof e.par_palier !== 'boolean') {
+          erreurs.push(`${chemin} > par_palier doit être un booléen`);
+        }
+        if (e.multiplicateur !== undefined && (typeof e.multiplicateur !== 'number' || e.multiplicateur <= 0)) {
+          erreurs.push(`${chemin} > multiplicateur doit être un nombre > 0`);
+        }
+      });
+    }
+  }
+  return erreurs;
+}
+
 function validerStatusEffect(entry, catalogs, path) {
   const erreurs = [];
   if (!FAMILLES_STATUS.includes(entry.famille)) {
@@ -775,13 +822,27 @@ function validerStatusEffect(entry, catalogs, path) {
   if (!MODES_STATUS.includes(entry.mode)) {
     erreurs.push(`${path} > mode doit être l'un de ${MODES_STATUS.join('/')}`);
   }
+  // `specs/10` §4.3 : un effet cible une stat primaire, un paramètre de
+  // monstre, OU une DÉRIVÉE (Eau négatif ralentit le héros et raccourcit son
+  // cooldown sans toucher l'Agilité : une redistribution entre deux dérivées,
+  // pas un bonus de stat). Toujours exactement une cible.
   const aStat = entry.stat !== undefined;
   const aParam = entry.param !== undefined;
-  if (aStat === aParam) {
-    erreurs.push(`${path} > exactement un de "stat" ou "param" doit être présent`);
+  const aDerivee = entry.derivee !== undefined;
+  if ([aStat, aParam, aDerivee].filter(Boolean).length !== 1) {
+    erreurs.push(`${path} > exactement un de "stat", "param" ou "derivee" doit être présent`);
   }
   if (aStat && !(catalogs.stats || []).some((s) => s.id === entry.stat)) {
     erreurs.push(`${path} > stat "${entry.stat}" introuvable dans stats.json`);
+  }
+  if (aDerivee && !(catalogs.stats_derivees || []).some((d) => d.id === entry.derivee)) {
+    erreurs.push(`${path} > derivee "${entry.derivee}" introuvable dans stats_derivees.json`);
+  }
+  if (aDerivee && entry.cible !== 'joueur') {
+    erreurs.push(`${path} > une dérivée n'existe que pour le héros (cible "joueur")`);
+  }
+  if (entry.famille === 'dot' && (typeof entry.intervalle_ms !== 'number' || entry.intervalle_ms <= 0)) {
+    erreurs.push(`${path} > un effet "dot" doit déclarer intervalle_ms > 0`);
   }
   if (typeof entry.valeur !== 'number') {
     erreurs.push(`${path} > valeur doit être numérique`);
@@ -1352,15 +1413,14 @@ export const SCHEMAS = {
     refs: [],
     custom: validerStatusEffect,
   },
+  // `specs/10` §4.2 : une synergie porte DEUX régimes, choisis par le signe de
+  // l'alignement. L'ancienne paire `effet_joueur` / `effet_monstre` est
+  // devenue `regimes.positif`, valeurs identiques (tenu par test).
   synergies: {
-    requiredFields: ['id', 'element', 'effet_joueur', 'effet_monstre'],
+    requiredFields: ['id', 'element', 'regimes'],
     idField: 'id',
-    refs: [
-      { field: 'element', catalog: 'elements' },
-      { field: 'effet_joueur', catalog: 'status_effects' },
-      { field: 'effet_monstre', catalog: 'status_effects' },
-    ],
-    custom: null,
+    refs: [{ field: 'element', catalog: 'elements' }],
+    custom: validerRegimesSynergie,
   },
   // MT_trainee-poussiere_2026-09-19 : catalogue des réglages d'effets
   // purement visuels du monde. Même patron que `survie_config` dans

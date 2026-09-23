@@ -51,6 +51,7 @@ import { creerRegistreFlags } from './flags.js';
 import { calculerStatsPrimaires, calculerStatsDerivees, appliquerModulateurSurvie } from './stats.js';
 import {
   modificateursHeros, statsEffectivesMonstre, tickBuffsActifs, ajouterBuffActif, modificateursBuffsActifs,
+  modificateursDeriveesHeros, appliquerModificateursDerivees, dotsHeros, estDansAura,
 } from './status.js';
 import { creerHeros, creerMonstre, approcherEnLigneDroite, infligerDegats, mourir, respawn, reconcilierPvMax } from './entities.js';
 import {
@@ -1155,6 +1156,15 @@ export function creerOrchestrateurGrotte({
   // que itemsSol ci-dessus.
   let respawnsEnAttente = {};
   let cooldownAttaqueHerosMs = 0;
+  // `specs/10` palier C : l'aura du follet contient-elle un monstre vivant ?
+  // Calculé une fois par frame de combat, lu par les effets de héros à durée
+  // « aura » (la brûlure et l'entrave qui ont changé de camp) : ils vivent le
+  // temps du combat, jamais en permanence. Lu à la frame suivante par
+  // `calculerStatsHeros`, une frame de retard sans conséquence.
+  let auraOccupee = false;
+  // Accumulateurs des brûlures du HÉROS, un par effet — même boucle que celle
+  // d'un monstre (`dotAccumulateurMs`) ; un effet qui cesse perd le sien.
+  let dotsHerosAccumulateursMs = {};
   // §3.1 03_grotte-polish : compte à rebours du flash de l'anneau d'attaque,
   // purement visuel (dessiner() le convertit en donut translucide) — tiqué
   // dans mettreAJourCombat() comme cooldownAttaqueHerosMs, donc gelé sous UI
@@ -2409,7 +2419,10 @@ export function creerOrchestrateurGrotte({
     // constante (même discipline que la portée, décision verrouillée).
     const arme = resoudreArmeEquipee(registre, save.hero.equipement.arme);
     for (const source of [
-      modificateursHeros(registre, save.hero.companion),
+      // `specs/10` §4.2 : la synergie sous le régime d'alignement COURANT,
+      // relu à chaque appel — un changement en plein combat n'a aucune
+      // transition à coder.
+      modificateursHeros(registre, save.hero.companion, etatAlignement(), { auraOccupee }),
       modificateursBuffsActifs(registre, save.hero.buffs_actifs),
       (arme && arme.modificateurs) || {},
     ]) {
@@ -2615,7 +2628,13 @@ export function creerOrchestrateurGrotte({
     // trois dérivées depuis `D-141`, suivent sans code dédié.
     const modulateur = calculerModulateurSurvie(registre, save.survie);
     const statsPrimaires = appliquerModulateurSurvie(statsBrutes, modulateur, configSurvie(registre).stats_modulees);
-    const statsDerivees = calculerStatsDerivees(registre, statsPrimaires);
+    // `specs/10` §4.3 : Eau négatif module des DÉRIVÉES (vitesse, cadence) sans
+    // toucher une stat. Appliqué ici, après la formule de `D-141` — la source
+    // des modificateurs s'enrichit, la résolution des dérivées ne change pas.
+    const statsDerivees = appliquerModificateursDerivees(
+      calculerStatsDerivees(registre, statsPrimaires),
+      modificateursDeriveesHeros(registre, save.hero.companion, etatAlignement(), { auraOccupee }),
+    );
     // SD_phase3-stations-pv-jauges_2026-09-17.md §B : reconcilierPvMax()
     // fait tenir sa promesse à un buff qui monte pv_max (Vitalité), jamais
     // un simple `hero.pvMax = ...` qui ouvrirait un headroom invisible.
@@ -2703,13 +2722,14 @@ export function creerOrchestrateurGrotte({
       ? { centre: { x: follet.x, y: follet.y }, rayonPx: resoudreRayonAuraPx(companionDuFollet) }
       : null;
 
+    const regimeFrame = etatAlignement();
     monstres = monstres.map((monstre) => {
       if (monstre.mort) return monstre;
       const donneesEnnemi = registre.obtenir('enemies', monstre.enemyId);
       const { force, vitesse, dot } = statsEffectivesMonstre(registre, donneesEnnemi, follet, {
         position: { x: monstre.x, y: monstre.y },
         aura: auraFollet,
-      });
+      }, regimeFrame);
 
       // Palier C : les monstres du Chaos décident (errance / poursuite /
       // désintérêt) ; ceux de la Grotte vont droit au but, comme en Phase 1.
@@ -2745,6 +2765,23 @@ export function creerOrchestrateurGrotte({
       if (suivant.mort && !monstre.mort) onMonstreMort(donneesEnnemi);
       return suivant;
     });
+
+    // `specs/10` §4.3 point 3 : le héros peut porter un effet à dégâts sur la
+    // durée (Feu négatif). Même catalogue, même boucle d'intervalle que la
+    // brûlure d'un monstre ; les PV descendent comme pour un coup reçu, jamais
+    // `pv_max`. La mort par brûlure est possible et rejoue le réveil (`Q-86`).
+    auraOccupee = monstres.some((m) => !m.mort && estDansAura({ x: m.x, y: m.y }, auraFollet));
+    const brulures = dotsHeros(registre, save.hero.companion, regimeFrame, { auraOccupee });
+    const accumulateurs = {};
+    for (const brulure of brulures) {
+      let reste = (dotsHerosAccumulateursMs[brulure.id] || 0) + deltaMs;
+      while (reste >= brulure.intervalle_ms) {
+        reste -= brulure.intervalle_ms;
+        hero.pv = Math.max(0, hero.pv - brulure.valeur);
+      }
+      accumulateurs[brulure.id] = reste;
+    }
+    dotsHerosAccumulateursMs = accumulateurs;
 
     cooldownAttaqueHerosMs = tickCooldown(cooldownAttaqueHerosMs, deltaMs);
     if (etatGameplay.attack.pressed && cooldownAttaqueHerosMs <= 0) {

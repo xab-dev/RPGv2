@@ -83,5 +83,66 @@
     "duree": "aura",
     "cumul": false,
     "icone": "controle_entrave"
+  },
+  {
+    "id": "dot_brulure_heros",
+    "label_key": "status.dot_brulure",
+    "famille": "dot",
+    "cible": "joueur",
+    "param": "pv",
+    "valeur": 1,
+    "mode": "plat",
+    "intervalle_ms": 1500,
+    "duree": "aura",
+    "cumul": false,
+    "icone": "dot_brulure"
+  },
+  {
+    "id": "controle_entrave_heros",
+    "label_key": "status.controle_entrave",
+    "famille": "controle",
+    "cible": "joueur",
+    "derivee": "derivee_vitesse_deplacement_px_s",
+    "valeur": -0.3,
+    "mode": "pourcent",
+    "duree": "aura",
+    "cumul": false,
+    "icone": "controle_entrave"
+  },
+  {
+    "id": "debuff_lenteur_heros",
+    "label_key": "status.debuff_lenteur",
+    "famille": "debuff",
+    "cible": "joueur",
+    "derivee": "derivee_vitesse_deplacement_px_s",
+    "valeur": -0.1,
+    "mode": "pourcent",
+    "duree": "permanente",
+    "cumul": false,
+    "icone": "debuff_lenteur"
+  },
+  {
+    "id": "buff_cadence_heros",
+    "label_key": "status.buff_cadence",
+    "famille": "buff",
+    "cible": "joueur",
+    "derivee": "derivee_cooldown_attaque_ms",
+    "valeur": -0.1,
+    "mode": "pourcent",
+    "duree": "permanente",
+    "cumul": false,
+    "icone": "buff_cadence"
+  },
+  {
+    "id": "controle_acceleration",
+    "label_key": "status.controle_acceleration",
+    "famille": "controle",
+    "cible": "monstre",
+    "param": "vitesse_deplacement",
+    "valeur": 0.3,
+    "mode": "pourcent",
+    "duree": "aura",
+    "cumul": false,
+    "icone": "controle_acceleration"
   }
 ]

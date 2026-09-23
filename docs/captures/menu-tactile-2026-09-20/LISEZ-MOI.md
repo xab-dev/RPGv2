@@ -1,7 +1,7 @@
 # Captures des tickets `D-42` et `D-30` — à 703 × 280
 
 Ce ne sont **pas** des captures d'album (celles-là suivent la convention de
-`docs/captures/mémo_captures.md`, six vues fixes à chaque clôture de jalon).
+`docs/captures/memo_captures.md`, six vues fixes à chaque clôture de jalon).
 Ce sont quatre **preuves de ticket**, prises sous Chrome PC, dans une fenêtre
 réellement redimensionnée à **703 × 280 px CSS** — la taille exacte que Xav a
 mesurée sur son téléphone le 20/09 à 03 h 15, en paysage, hors plein écran.

@@ -1,7 +1,7 @@
 # Captures du ticket `D-48` — l'unité `--u` des menus, avant et après
 
 Ce ne sont **pas** des captures d'album (celles-là suivent la convention de
-`docs/captures/mémo_captures.md`, six vues fixes à chaque clôture de jalon).
+`docs/captures/memo_captures.md`, six vues fixes à chaque clôture de jalon).
 Ce sont des **preuves de ticket**, prises sous Chrome **sans fenêtre** par
 `node tools/capture_chrome.mjs tools/scenarios/diagnostic_unite_dpr.mjs`, sous
 les trois profils de `tools/scenarios/commun.mjs#PROFILS`. Toutes montrent le

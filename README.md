@@ -158,7 +158,7 @@ Il y a un journal de ce que vous avez **trouvé**. Jamais de ce que vous **devez
 # ouvrir le cercle
 node serveur_local.js          # puis : http://localhost:8080
 
-# interroger les oracles (ils sont 143, et ils ont tous un avis)
+# interroger les oracles (ils sont plus de cent soixante, et ils ont tous un avis)
 npm test
 ```
 

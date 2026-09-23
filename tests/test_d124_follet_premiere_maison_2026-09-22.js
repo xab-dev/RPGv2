@@ -8,6 +8,11 @@
 // `ambiances.json`, et rien de plus.
 //
 // Le TEXTE est de Xav, gardé mot pour mot. L'anglais est une proposition.
+//
+// Depuis la spec 11 (palier A, 23/09), la ligne est l'OUVERTURE du premier
+// choix du jeu (§6 : « D-124 + dialogue de la maison » fusionnent) : elle vit
+// dans le nœud d'entrée, et c'est lui que ce fichier relit. Le contrat de
+// `D-124` ne change pas — une fois, à l'entrée, le texte de Xav.
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -46,13 +51,14 @@ const AMBIANCE = registre.obtenir('ambiances', 'amb_maison_premiere_visite');
   assert.ok(zones.some((z) => z.type === 'maison'), 'la scène doit déclarer une zone "maison"');
   // Et c'est le FOLLET qui parle, pas le narrateur.
   const dialogue = registre.obtenir('dialogues', AMBIANCE.dialogue);
-  assert.deepEqual(dialogue.lignes.map((l) => l.locuteur), ['follet']);
+  assert.equal(dialogue.noeuds[dialogue.entree].locuteur, 'follet');
   console.log('OK la ligne est une entrée d’ambiance, accrochée au flag de zone existant');
 }
 
 // --- 2. Le texte de Xav, mot pour mot, et son pendant anglais ------------
 {
-  const cle = registre.obtenir('dialogues', AMBIANCE.dialogue).lignes[0].text_key;
+  const donnees = registre.obtenir('dialogues', AMBIANCE.dialogue);
+  const cle = donnees.noeuds[donnees.entree].text_key;
   assert.equal(
     i18n.t(cle),
     'Oh, regarde, quelqu’un a laissé des stations ici. Regarde vite, va voir ce qu’il y a à l’intérieur.',

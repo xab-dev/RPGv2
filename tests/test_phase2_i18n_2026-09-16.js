@@ -53,7 +53,13 @@ const NOUVELLES_CLES = [
     assert.ok(typeof entry.label_key === 'string' && !('label' in entry));
   }
   for (const entry of donnees.dialogues) {
-    for (const ligne of entry.lignes) {
+    // Spec 11 : les nœuds et les options d'une conversation, au même titre.
+    const porteurs = [
+      ...(entry.lignes || []),
+      ...Object.values(entry.noeuds || {}).flatMap((n) => [n, ...(n.options || [])]),
+    ];
+    assert.ok(porteurs.length > 0, `${entry.id} ne porte aucun texte`);
+    for (const ligne of porteurs) {
       assert.ok(typeof ligne.text_key === 'string' && !('texte' in ligne) && !('text' in ligne));
     }
   }

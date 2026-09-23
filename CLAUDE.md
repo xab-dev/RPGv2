@@ -162,7 +162,10 @@ rpg_v2/
 │   │                       la TÊTE est un `cursor: url()` généré au boot depuis `visuels.json`,
 │   │                       les particules et la traînée vivent sur un calque de recouvrement
 │   ├── audio.js            musique en boucle, armée au premier verbe abstrait (DOM)
-│   ├── dialogue.js         file de lignes, machine à écrire + armement anti-spam, résolution locuteur
+│   ├── dialogue.js         file de lignes, machine à écrire + armement anti-spam, résolution locuteur ;
+│   │                       `specs/11` : la CONVERSATION (nœuds, options, spam compté, lecture,
+│   │                       résultat ordonné) — pure, n'écrit rien : `main.js#appliquerResultatDialogue`
+│   │                       est le seul qui applique
 │   ├── hints.js            indices de commande (specs/04_indices-commandes.md) : un seul affiché
 │   │                       à la fois, montré une fois par partie (flag persisté), fermé dès
 │   │                       l'émission effective du verbe — pur, ignore i18n/DOM
@@ -323,7 +326,7 @@ la session précédente a révélées, clos celles qu'elle a livrées.
 
 ## Critère de passage courant
 
-**Fondations : closes** (23/09, `Q-20`). **Prochaine étape : finir la carte Maison**, par des **annexes et tunnels**, jamais une carte nouvelle (23/09). Sessions dans l'ordre, jamais mélangées (`docs/NS_alignement-dialogues-carte-mentale_2026-09-23.md` §4) : Doc-1 (**faite**) → Spec 10 `10_alignement-follet.md` (**livrée** le 23/09, trois paliers : A la stat et `?alignement=N`, B l'orbite inversée et `D-53`, C les régimes de synergie — A et B validés en jeu, C à voir : `V-103`) → Spec 11 `11_dialogues-consequences.md` → contenu de l'arc Nv.15+ ; en file d'attente : Annexe 1, puis le journal d'indices et de traces. La Phase 4 n'est plus la suivante : ses systèmes (armes, équipement, compétences, tables d'apparition) arrivent d'abord sur la carte Maison, et la carte suivante s'ouvre quand la Maison est épuisée (Nv. 40-50, provisoire). Critère de clôture de la Région Maison : **la boucle de 2 heures** (sauvegarde neuve → 2 h de jeu → Nv. 30 → l'envie de changer d'endroit). Le rythme ne se rouvre pas avant le Boss 1 (`Q-62` : Xav mesure 15 à 20 min du Nv.0 au Nv.10).
+**Fondations : closes** (23/09, `Q-20`). **Prochaine étape : finir la carte Maison**, par des **annexes et tunnels**, jamais une carte nouvelle (23/09). Sessions dans l'ordre, jamais mélangées (`docs/NS_alignement-dialogues-carte-mentale_2026-09-23.md` §4) : Doc-1 (**faite**) → Spec 10 `10_alignement-follet.md` (**livrée** le 23/09, trois paliers : A la stat et `?alignement=N`, B l'orbite inversée et `D-53`, C les régimes de synergie — A et B validés en jeu, C à voir : `V-103`) → Spec 11 `11_dialogues-consequences.md` (écrite, v1.1.0 ; **palier A livré** le 23/09 : le choix, la bulle à options, spam et lecture comptés, le dialogue de la maison — à voir : `V-104` ; paliers B, C, D à suivre) → contenu de l'arc Nv.15+ ; en file d'attente : Annexe 1, puis le journal d'indices et de traces. La Phase 4 n'est plus la suivante : ses systèmes (armes, équipement, compétences, tables d'apparition) arrivent d'abord sur la carte Maison, et la carte suivante s'ouvre quand la Maison est épuisée (Nv. 40-50, provisoire). Critère de clôture de la Région Maison : **la boucle de 2 heures** (sauvegarde neuve → 2 h de jeu → Nv. 30 → l'envie de changer d'endroit). Le rythme ne se rouvre pas avant le Boss 1 (`Q-62` : Xav mesure 15 à 20 min du Nv.0 au Nv.10).
 
 **Méthode (Xav, 19/09) : on ne rajoute pas de contenu sur des bases non confirmées** — un ticket par session (ou une file de micro-tickets), un commit par ticket, validation en jeu entre deux. Ce que Xav doit encore voir en jeu : les lignes `V-` ouvertes du suivi.
 

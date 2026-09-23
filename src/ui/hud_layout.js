@@ -338,3 +338,58 @@ export function elementsBandeauHaut({ follet = false, survie = false, niveau = f
   };
   return elements;
 }
+
+// `specs/11_dialogues-consequences.md` §4.2 : la GÉOMÉTRIE de la bulle de
+// dialogue, en un seul endroit — le dessin (`ui/dialogue_box.js`) et le doigt
+// (`main.js`, qui résout un contact en option) la lisent tous les deux. Deux
+// jeux de nombres finiraient par ne plus désigner la même ligne : on verrait
+// une option et on en toucherait une autre.
+//
+// Sans option, c'est exactement la bulle d'avant (70 de haut, 8 de marge).
+// Avec options, elle GRANDIT PAR LE HAUT d'une rangée par option, sous le
+// texte : le bas de l'écran ne bouge pas, et le texte déjà lu reste à sa place
+// relative.
+//
+// Une rangée fait 18 de haut : 13 px de police et de quoi ne pas faire
+// toucher deux options d'un même doigt — PROVISOIRE, jamais validé au pouce
+// (`V-104`). Elle s'arrête à `finOptionsX`, avant le cercle du bouton
+// d'attaque (`BOUTON_ATTAQUE`, de 392 à 448 en x) qu'elle croiserait en y :
+// un doigt posé à cet endroit confirmerait par le bouton au lieu de
+// sélectionner. Le bouton, lui, reste un « appui » ordinaire — c'est la
+// parité voulue.
+export const BOITE_DIALOGUE = {
+  marge: 8,
+  hauteurTexte: 70,
+  debutOptions: 64,
+  hauteurOption: 18,
+  finOptionsX: BOUTON_ATTAQUE.cx - BOUTON_ATTAQUE.rayon - 4,
+};
+
+export function geometrieBoiteDialogue(nbOptions, { largeur, hauteur }) {
+  const { marge, hauteurTexte, debutOptions, hauteurOption, finOptionsX } = BOITE_DIALOGUE;
+  const n = nbOptions > 0 ? nbOptions : 0;
+  const hauteurBoite = hauteurTexte + n * hauteurOption;
+  const boite = { x: marge, y: hauteur - hauteurBoite - marge, largeur: largeur - 2 * marge, hauteur: hauteurBoite };
+  const options = [];
+  for (let i = 0; i < n; i += 1) {
+    options.push({ x: boite.x, y: boite.y + debutOptions + i * hauteurOption, largeur: finOptionsX - boite.x, hauteur: hauteurOption });
+  }
+  return { boite, options };
+}
+
+function dansRect(p, r) {
+  return p.x >= r.x && p.x < r.x + r.largeur && p.y >= r.y && p.y < r.y + r.hauteur;
+}
+
+// Ce qu'un contact désigne sur la bulle : `{ option: i }`, `{ texte: true }`
+// (partout ailleurs dans la bulle — « un tap sur le texte confirme ») ou
+// `null` hors de la bulle. Le premier contact qui désigne quelque chose
+// l'emporte : deux doigts posés la même frame ne font qu'un geste.
+export function toucherBoiteDialogue(geometrie, contacts) {
+  for (const p of contacts || []) {
+    const i = geometrie.options.findIndex((r) => dansRect(p, r));
+    if (i >= 0) return { option: i };
+    if (dansRect(p, geometrie.boite)) return { texte: true };
+  }
+  return null;
+}

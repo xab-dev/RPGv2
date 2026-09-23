@@ -22,7 +22,7 @@ import { ornementActif, etincellesOrbite, facteurRespiration } from './ornements
 import { creerCoucheInput, etatNeutre } from './input/input.js';
 import { chargerScene, resoudreDeplacement, portailFranchi, trouverPositionLibrePlusProche, lumieresActives } from './scene.js';
 import { calculerCamera } from './camera.js';
-import { RAYON_TOUCHE_FOLLET } from './ui/hud_layout.js';
+import { RAYON_TOUCHE_FOLLET, geometrieBoiteDialogue, toucherBoiteDialogue } from './ui/hud_layout.js';
 import { genererDecor, lumieresDuDecor } from './decor.js';
 import {
   creerBoucle, dessinerScene, dessinerObscurite, dessinerSignalZones, dessinerPaupieres, dessinerTextesFlottants, presenter,
@@ -64,7 +64,7 @@ import {
 } from './companion.js';
 import { creerGenerateur, resoudreLoot } from './loot.js';
 import { etatInitial as etatInitialPuzzles, activerLevier } from './puzzles.js';
-import { creerDialogue, resoudreLignes } from './dialogue.js';
+import { creerDialogue, resoudreLignes, resoudreNoeud, erreursTextesDialogues } from './dialogue.js';
 import {
   creerIntro, avancerIntro, etatRendu as etatRenduIntro,
   creerDepart, avancerDepart, etatRenduDepart, avancementDepart, ETAPE_CLIGNEMENTS,
@@ -650,6 +650,11 @@ export function creerOrchestrateurGrotte({
   // (l'orchestrateur ne lit pas l'URL). `null` = ne force rien — c'est le
   // défaut, un test headless n'a rien à fournir.
   alignementForce = null,
+  // Spec 11 §4.2 : les doigts posés depuis la frame précédente, en
+  // coordonnées logiques (`touch.js#lireContactsNouveaux`). Lus UNE fois par
+  // frame, au début de `maj()` ; seule la bulle de dialogue s'en sert. Vide
+  // par défaut : un test headless n'a rien à fournir.
+  lireContactsTactiles = () => [],
 }) {
   // Les leviers sont lus UNE fois, ici : au-delà de cette ligne, plus personne
   // ne connaît le mot « bas ». Chaque système reçoit un nombre.
@@ -1390,8 +1395,53 @@ export function creerOrchestrateurGrotte({
     });
     if (!ambiance) return;
     flags.set(ambiance.flag);
-    dialogue.ouvrir(resoudreLignes(ambiance.dialogue, registre, i18n, save.hero.companion));
+    ouvrirDialogueCatalogue(ambiance.dialogue);
     etatModifie = true;
+  }
+
+  // Spec 11 : ouvrir une entrée de `dialogues.json` quelle que soit sa forme.
+  // Au palier A, seules les lignes d'ambiance passent ici (le dialogue de la
+  // maison est l'une d'elles) ; les autres appels ouvrent encore des
+  // `lignes` directement, jusqu'à la migration du palier B.
+  function ouvrirDialogueCatalogue(dialogueId, { onFermer } = {}) {
+    const donnees = registre.obtenir('dialogues', dialogueId);
+    if (!donnees.noeuds) {
+      dialogue.ouvrir(resoudreLignes(dialogueId, registre, i18n, save.hero.companion), { onFermer });
+      return;
+    }
+    dialogue.demarrerConversation(donnees, {
+      resoudre: (noeudId) => resoudreNoeud(donnees, noeudId, registre, i18n, save.hero.companion),
+      poids: reglageAlignement.poids_defaut,
+      onResultat: appliquerResultatDialogue,
+      onFermer,
+    });
+  }
+
+  // Spec 11 §4.1 : LE point qui applique ce qu'une conversation a produit, dans
+  // l'ordre où `dialogue.js` le rend — options, spam, lecture. Un seul
+  // appelant de `modifierAlignement` pour tout ce qui vient d'un dialogue ;
+  // la source dit d'où vient chaque poids, pour le journal de `?debug=fps`.
+  function appliquerResultatDialogue(resultat) {
+    for (const c of resultat.consequences) {
+      if (c.type === 'alignement') {
+        const source = c.source === 'option' ? `dialogue:${resultat.dialogueId}` : `dialogue:${resultat.dialogueId}:${c.source}`;
+        modifierAlignement(c.delta, source);
+      } else if (c.type === 'flag') {
+        flags.set(c.id);
+      }
+    }
+    etatModifie = true;
+  }
+
+  // Ce que le doigt désigne sur la bulle cette frame, contre la géométrie
+  // DESSINÉE (celle de `ligneCourante()` : une option invisible ne se touche
+  // pas). Hors conversation, rien : les répliques d'avant avancent par le
+  // bouton, comme toujours.
+  function toucherDialogue(contacts) {
+    if (contacts.length === 0 || !dialogue.etatConversation()) return null;
+    const ligne = dialogue.ligneCourante();
+    const geometrie = geometrieBoiteDialogue(ligne && ligne.options ? ligne.options.length : 0, RESOLUTION_LOGIQUE);
+    return toucherBoiteDialogue(geometrie, contacts);
   }
 
   // specs/05_construction-stations.md §3/§4 : résout les poses sauvegardées
@@ -2897,6 +2947,9 @@ export function creerOrchestrateurGrotte({
 
   function maj(deltaMs) {
     const etatBrut = input.maj();
+    // Lus à CHAQUE frame, qu'une bulle soit ouverte ou non : un contact posé
+    // pendant le jeu ne doit pas ressurgir, plus tard, comme un choix.
+    const contactsTactiles = lireContactsTactiles();
     verifierPremierGeste(etatBrut);
     // MT_mesure-saccades_2026-09-19 : rien hors `?debug=fps` — gardé sur
     // `moniteurPerf.actif` (jamais juste le no-op par défaut) pour que les
@@ -3008,7 +3061,12 @@ export function creerOrchestrateurGrotte({
     majDescenteAuto(deltaMs, uiOuverte);
     majBasculesLeviers(deltaMs);
     if (menu.estOuvert()) menu.traiterInput(etatBrut);
-    else if (dialogueOuvertMaintenant) dialogue.traiterInput(dialogueVientDeSOuvrir ? etatNeutre(etatBrut) : etatBrut);
+    else if (dialogueOuvertMaintenant) {
+      // La frame d'ouverture reste neutre pour le doigt aussi (même défense
+      // que pour les verbes : le geste qui a ouvert ne choisit pas).
+      if (dialogueVientDeSOuvrir) dialogue.traiterInput(etatNeutre(etatBrut), null);
+      else dialogue.traiterInput(etatBrut, toucherDialogue(contactsTactiles));
+    }
     else if (choixFolletActif()) traiterChoixFollet(etatBrut);
     else if (constructionActif()) traiterConstruction(etatBrut);
 
@@ -4006,6 +4064,10 @@ export async function demarrerJeu() {
   // ne connaissent pas le code. C'est le garde-fou qui vivait dans la boucle
   // de dessin, remis là où une faute de catalogue se voit : au démarrage.
   const erreursStyles = erreursChargement.length ? [] : erreursStylesTexteFlottant(donnees.effets);
+  // Spec 11 §3 : toute clé de texte d'un dialogue (nœud, option, ligne)
+  // existe en FR ET en EN — même raison que les menus : le registre ne voit
+  // jamais les dictionnaires.
+  const erreursTextesDlg = erreursChargement.length ? [] : erreursTextesDialogues(donnees.dialogues, dictionnaires);
   // `D-121` : toute recette qui produit une station a-t-elle un modèle à
   // cloner ? Même famille que le contrôle ci-dessus — le schéma vérifie que
   // le TYPE existe, il ne peut pas savoir qu'aucune INSTANCE de ce type n'a
@@ -4016,7 +4078,7 @@ export async function demarrerJeu() {
     : erreursRecettesDeStation(donnees.recipes, donnees.puzzles);
   const toutesErreurs = [
     ...erreursChargement, ...erreursValidation, ...erreursCles,
-    ...erreursCouleurs, ...erreursTextes, ...erreursStyles, ...erreursStations,
+    ...erreursCouleurs, ...erreursTextes, ...erreursStyles, ...erreursStations, ...erreursTextesDlg,
   ];
 
   if (toutesErreurs.length > 0) {
@@ -4383,6 +4445,7 @@ export async function demarrerJeu() {
     onEtatUi: (ouverte) => { uiCapteLesVerbes = ouverte; },
     onVerbesActions: (verbes) => { verbesActionsDebloques = verbes; },
     onZonesMonde: (zones) => { zonesMondeTactiles = zones; },
+    lireContactsTactiles: () => sourceTactile.lireContactsNouveaux(),
     // Le curseur n'est pas dans la scène, mais ses étincelles sont des
     // particules cosmétiques comme les autres : les laisser derrière ferait un
     // Bas à moitié appliqué, visible à la souris. Ici, et pas derrière chaque

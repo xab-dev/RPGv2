@@ -54,12 +54,20 @@ export function regime(valeur, config) {
   return { regime: valeur > 0 ? 'positif' : 'negatif', palier };
 }
 
-// Aucun arrondi : les poids sont déjà des multiples de 0,25 (§2.1), on ne
-// borne que les extrémités. `ecart` dit ce qui a RÉELLEMENT bougé — un +1 sur
-// un alignement déjà à +5 rend un écart nul, et c'est ce que le journal de
-// `?debug=fps` doit montrer.
+// `ecart` dit ce qui a RÉELLEMENT bougé — un +1 sur un alignement déjà à +5
+// rend un écart nul, et c'est ce que le journal de `?debug=fps` doit montrer.
+//
+// Arrondi au millionième (spec 11, 23/09). Le palier A disait « aucun
+// arrondi : les poids sont des multiples de 0,25 » — plus vrai depuis la
+// lecture complète à +0,1 : dix lectures sommées en flottants font
+// 0,9999999999999999, SOUS le seuil du palier 1 (`regime` compare `>= 1`).
+// Un joueur qui a tout lu dix fois resterait neutre, sans que rien ne le
+// dise. Le millionième est bien plus fin que tout poids écrit en données, et
+// bien plus gros que la dérive des flottants.
+const PRECISION_ALIGNEMENT = 1e6;
+
 export function appliquerDelta(valeur, delta, bornes) {
-  const nouvelle = borner(valeur + delta, bornes);
+  const nouvelle = borner(Math.round((valeur + delta) * PRECISION_ALIGNEMENT) / PRECISION_ALIGNEMENT, bornes);
   return { valeur: nouvelle, ecart: nouvelle - valeur };
 }
 

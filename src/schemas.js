@@ -3,6 +3,7 @@ import { empreinteParDefaut } from './structures.js';
 import { echelleVisuel } from './visuels.js';
 import { resoudreEchelleJeu } from './companion.js';
 import { TYPES_CARTE, CASES_MAX } from './menu_cartes.js';
+import { OPTIONS_MIN, OPTIONS_MAX, erreursGrapheConversation } from './dialogue.js';
 
 // `D-39` — « le corps ne sort jamais de son aura », vérifié AU CHARGEMENT.
 //
@@ -998,6 +999,12 @@ const LOCUTEURS_DIALOGUE = ['narrateur', 'follet'];
 
 function validerDialogue(entry, catalogs, path) {
   const erreurs = [];
+  // Spec 11 : un dialogue à nœuds. Les deux formes ne cohabitent jamais dans
+  // une même entrée — laquelle le moteur lirait-il ?
+  if (entry.noeuds !== undefined) {
+    if (entry.lignes !== undefined) return [`${path} > lignes et noeuds à la fois : un dialogue a l'une OU l'autre forme`];
+    return validerConversation(entry, catalogs, path);
+  }
   if (!Array.isArray(entry.lignes) || entry.lignes.length === 0) {
     erreurs.push(`${path} > lignes doit être un tableau non vide`);
     return erreurs;
@@ -1011,6 +1018,91 @@ function validerDialogue(entry, catalogs, path) {
     }
   });
   return erreurs;
+}
+
+// Ce qu'une option peut faire au palier A de la spec 11. `effets_monde`
+// arrive au palier B, `valeurs` attend une décision (`Q-105` : les valeurs
+// nommées de `flags.js` sont LUES dans l'état du monde, aucune n'a de quoi
+// recevoir un delta). Les deux sont REFUSÉS plutôt qu'ignorés : une donnée
+// écrite pour rien ne doit pas passer pour une donnée qui marche.
+const CONSEQUENCES_OPTION = ['alignement', 'flags'];
+const CONSEQUENCES_A_VENIR = ['effets_monde', 'valeurs'];
+
+function validerConversation(entry, catalogs, path) {
+  const erreurs = [];
+  if (typeof entry.entree !== 'string') erreurs.push(`${path} > entree manquante (l'id du premier nœud)`);
+  const noeuds = entry.noeuds && typeof entry.noeuds === 'object' && !Array.isArray(entry.noeuds) ? entry.noeuds : {};
+  const flagsDeclares = new Set((catalogs.flags || []).map((f) => f.id));
+  // Les bornes d'une option sont celles de l'alignement lui-même : un poids
+  // plus grand que l'échelle entière ne veut rien dire.
+  const config = (catalogs.alignement || []).find((a) => a.id === 'alignement_config');
+  const bornes = config && config.bornes ? config.bornes : null;
+  for (const [id, noeud] of Object.entries(noeuds)) {
+    const chemin = `${path} > noeuds.${id}`;
+    if (!noeud || typeof noeud !== 'object') {
+      erreurs.push(`${chemin} doit être un objet`);
+      continue;
+    }
+    if (!LOCUTEURS_DIALOGUE.includes(noeud.locuteur)) {
+      erreurs.push(`${chemin} > locuteur doit être l'un de ${LOCUTEURS_DIALOGUE.join('/')}`);
+    }
+    if (typeof noeud.text_key !== 'string') erreurs.push(`${chemin} > text_key manquant`);
+    const options = noeud.options === undefined ? [] : noeud.options;
+    if (!Array.isArray(options)) {
+      erreurs.push(`${chemin} > options doit être un tableau`);
+      continue;
+    }
+    if (options.length > 0 && (options.length < OPTIONS_MIN || options.length > OPTIONS_MAX)) {
+      erreurs.push(`${chemin} > ${options.length} options : un choix en porte de ${OPTIONS_MIN} à ${OPTIONS_MAX} (la bulle ne défile pas)`);
+    }
+    // Un nœud à options part par ses options ; sa propre `suite` serait une
+    // seconde sortie que personne ne prend.
+    if (options.length > 0 && noeud.suite !== undefined) {
+      erreurs.push(`${chemin} > suite sur un nœud à options : ce sont les options qui mènent quelque part`);
+    }
+    if (options.length > 0) {
+      const defauts = options.filter((o) => o && o.defaut === true).length;
+      if (defauts !== 1) erreurs.push(`${chemin} > ${defauts} option(s) defaut : il en faut exactement une (celle de qui avance sans choisir)`);
+    }
+    options.forEach((option, i) => {
+      const cheminOption = `${chemin} > options[${i}]`;
+      if (!option || typeof option !== 'object') {
+        erreurs.push(`${cheminOption} doit être un objet`);
+        return;
+      }
+      if (typeof option.text_key !== 'string') erreurs.push(`${cheminOption} > text_key manquant`);
+      if (option.suite !== undefined && option.suite !== null && typeof option.suite !== 'string') {
+        erreurs.push(`${cheminOption} > suite doit être un id de nœud ou null`);
+      }
+      // §3 : l'option par défaut est celle de qui spamme A — sa conséquence
+      // est TOUJOURS vide, sans quoi spammer rapporterait (ou coûterait) autre
+      // chose que le poids du spam lui-même.
+      if (option.defaut === true) {
+        const portees = [...CONSEQUENCES_OPTION, ...CONSEQUENCES_A_VENIR].filter((c) => option[c] !== undefined);
+        if (portees.length > 0) erreurs.push(`${cheminOption} > l'option defaut ne porte aucune conséquence (trouvé : ${portees.join(', ')})`);
+      }
+      for (const c of CONSEQUENCES_A_VENIR) {
+        if (option[c] !== undefined) erreurs.push(`${cheminOption} > ${c} n'est pas encore pris en charge (spec 11 : effets_monde au palier B, valeurs en attente de Q-105)`);
+      }
+      if (option.alignement !== undefined) {
+        if (typeof option.alignement !== 'number' || !Number.isFinite(option.alignement)) {
+          erreurs.push(`${cheminOption} > alignement doit être un nombre`);
+        } else if (bornes && (option.alignement < bornes.min || option.alignement > bornes.max)) {
+          erreurs.push(`${cheminOption} > alignement ${option.alignement} hors des bornes [${bornes.min} ; ${bornes.max}]`);
+        }
+      }
+      if (option.flags !== undefined) {
+        if (!Array.isArray(option.flags)) erreurs.push(`${cheminOption} > flags doit être un tableau d'ids`);
+        else {
+          for (const f of option.flags) {
+            if (!flagsDeclares.has(f)) erreurs.push(`${cheminOption} > flag "${f}" introuvable dans flags.json`);
+          }
+        }
+      }
+    });
+  }
+  if (erreurs.length > 0) return erreurs;
+  return erreursGrapheConversation(entry, path);
 }
 
 function validerLootTable(entry, catalogs, path) {
@@ -1876,7 +1968,9 @@ export const SCHEMAS = {
     custom: validerPuzzle,
   },
   dialogues: {
-    requiredFields: ['id', 'declencheur', 'lignes'],
+    // `lignes` OU `noeuds` (spec 11), vérifié par `validerDialogue` : un
+    // champ requis ne sait pas dire « l'un des deux ».
+    requiredFields: ['id', 'declencheur'],
     idField: 'id',
     refs: [],
     custom: validerDialogue,

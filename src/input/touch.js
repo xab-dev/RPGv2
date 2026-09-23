@@ -70,6 +70,13 @@ export function creerSourceTactile(cible, {
   let nbContacts = 0;
   let idJoystick = null; // le doigt qui a "pris" le joystick, jusqu'à son relâchement
   const doigts = new Map(); // identifier -> position logique { x, y }
+  // Spec 11 §4.2 : les doigts POSÉS depuis la dernière lecture, en
+  // coordonnées logiques. Un contact est une position, pas un verbe : il sort
+  // par un accesseur séparé, jamais dans l'état de verbes (même règle que le
+  // pointeur du stick droit, `D-109`) — le gameplay n'en voit rien, seule la
+  // bulle de dialogue le résout en option. Vidé à chaque lecture : un contact
+  // n'est lu qu'une fois, et un contact que personne ne lit ne s'accumule pas.
+  let contactsNouveaux = [];
 
   function positionsLogiques(touchList) {
     return Array.from(touchList).map((t) => ({ identifier: t.identifier, ...versLogique(t.clientX, t.clientY) }));
@@ -98,6 +105,9 @@ export function creerSourceTactile(cible, {
     actif = true;
     nbContacts += 1;
     const points = positionsLogiques(e.touches);
+    for (const p of points) {
+      if (!doigts.has(p.identifier)) contactsNouveaux.push({ x: p.x, y: p.y });
+    }
     for (const p of points) doigts.set(p.identifier, p);
     attribuerJoystickSiBesoin(points);
   }
@@ -139,6 +149,11 @@ export function creerSourceTactile(cible, {
   return {
     estActif: () => actif,
     compteurContacts: () => nbContacts,
+    lireContactsNouveaux() {
+      const lus = contactsNouveaux;
+      contactsNouveaux = [];
+      return lus;
+    },
     instantane() {
       let move = { x: 0, y: 0 };
       const doigtJoystick = idJoystick !== null ? doigts.get(idJoystick) : undefined;

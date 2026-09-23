@@ -176,12 +176,20 @@
   {
     "id": "dlg_maison_premiere_visite",
     "declencheur": "maison_premiere_visite",
-    "lignes": [
-      {
+    "entree": "ouverture",
+    "noeuds": {
+      "ouverture": {
         "locuteur": "follet",
-        "text_key": "dlg.maison.premiere_visite"
-      }
-    ]
+        "text_key": "dlg.maison.premiere_visite",
+        "options": [
+          { "text_key": "dlg.maison.o_y_aller", "defaut": true, "suite": null },
+          { "text_key": "dlg.maison.o_quelquun", "alignement": 1, "suite": "invites" },
+          { "text_key": "dlg.maison.o_a_nous", "alignement": -1, "suite": "si_tu_le_dis" }
+        ]
+      },
+      "invites": { "locuteur": "follet", "text_key": "dlg.maison.invites" },
+      "si_tu_le_dis": { "locuteur": "follet", "text_key": "dlg.maison.si_tu_le_dis" }
+    }
   },
   {
     "id": "dlg_lore_poche_pleine",

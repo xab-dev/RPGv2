@@ -179,7 +179,13 @@ function bot({ niveau, heure, flagsSupplementaires = {} }) {
     const dlg = registre.obtenir('dialogues', ambiance.dialogue);
     for (const langue of i18n.languesDisponibles()) {
       i18n.definirLangue(langue);
-      for (const ligne of dlg.lignes) {
+      // Spec 11 : une ligne d'ambiance peut être devenue un choix (la maison) —
+      // ses nœuds et ses options portent des textes au même titre.
+      const porteurs = [
+        ...(dlg.lignes || []),
+        ...Object.values(dlg.noeuds || {}).flatMap((n) => [n, ...(n.options || [])]),
+      ];
+      for (const ligne of porteurs) {
         assert.ok(
           !i18n.t(ligne.text_key).startsWith('[['),
           `${ambiance.id} : ${ligne.text_key} manque en ${langue}`,

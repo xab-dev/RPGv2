@@ -239,7 +239,7 @@ export function dessinerHud(ctx, {
   // tables d'icônes de ce module.
   iconesBandeau = {},
   // `D-13` : buffs actifs, dans l'ordre d'activation. Chaque entrée est
-  // { visuel, resteMs } — la silhouette est DÉJÀ résolue par main.js (qui a
+  // { visuel, teinte, resteMs } — la silhouette est DÉJÀ résolue par main.js (qui a
   // le registre), exactement comme `visuelFollet` et `iconesSlots`. Ce module
   // ne sait pas ce qu'est un status_effect, et ne recalcule rien : la table
   // des buffs est tenue par status.js, il la LIT.
@@ -388,7 +388,9 @@ export function dessinerHud(ctx, {
         buff.visuel,
         rect.x + rect.largeur / 2,
         rect.y + rect.hauteur / 2,
-        { echelle: echelleIconeBuff(ICONE_BUFF.taille) },
+        // `teinte` : un soin emprunte l'icône d'une stat et la colore
+        // (status.js#iconeBuffBandeau) ; `null` laisse ses couleurs d'auteur.
+        { echelle: echelleIconeBuff(ICONE_BUFF.taille), teinte: buff.teinte || null },
       );
       ctx.restore();
     }

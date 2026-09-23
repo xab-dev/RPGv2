@@ -136,6 +136,45 @@ export function modificateursBuffsActifs(registre, buffs) {
   return modificateurs;
 }
 
+// Les soins sur la durée des buffs temporaires (la pomme cuite, 23/09) : un
+// buff de `param: "pv"` rend `valeur` PV tous les `intervalle_ms` tant qu'il
+// est actif — la brûlure du héros à l'envers, même forme d'effet, même boucle
+// d'intervalle. Pure : rend le soin de la frame et les accumulateurs suivants,
+// l'appelant l'applique (plafonné aux PV max, jamais sur un héros mort). Un
+// buff expiré perd son accumulateur : repris plus tard, il repart de zéro.
+export function tickSoinsBuffsActifs(registre, buffs, accumulateurs, deltaMs) {
+  let soin = 0;
+  const suivants = {};
+  for (const id of Object.keys(buffs)) {
+    const effet = registre.obtenir('status_effects', id);
+    if (effet.cible !== 'joueur' || effet.param !== 'pv') continue;
+    let reste = (accumulateurs[id] || 0) + deltaMs;
+    while (reste >= effet.intervalle_ms) {
+      reste -= effet.intervalle_ms;
+      soin += effet.valeur;
+    }
+    suivants[id] = reste;
+  }
+  return { soin, accumulateurs: suivants };
+}
+
+// L'icône d'un buff au bandeau (`D-13`) : c'est TOUJOURS l'icône d'une stat,
+// jamais un dessin propre à l'effet — ajouter une recette n'ajoute pas
+// d'icône. Un buff de stat montre la sienne. Un effet sans stat (un soin, qui
+// touche les PV) EMPRUNTE celle d'une stat en données (`icone_bandeau.stat`)
+// et peut la teinter (`icone_bandeau.teinte`) : même silhouette, autre nature
+// (demande de Xav, 23/09 : « même icône que le fruit cuit, mais verte »).
+// Rend `{ visuel, teinte }` (ids et couleur, rien de dessiné), ou `null` :
+// un effet qui n'a rien à montrer est absent du bandeau, pas un trou.
+export function iconeBuffBandeau(registre, effet) {
+  if (effet.cible !== 'joueur') return null;
+  const statId = effet.icone_bandeau ? effet.icone_bandeau.stat : effet.stat;
+  if (!statId) return null;
+  const { icone } = registre.obtenir('stats', statId);
+  if (!icone) return null;
+  return { visuel: icone, teinte: (effet.icone_bandeau && effet.icone_bandeau.teinte) || null };
+}
+
 // Un monstre est-il DANS l'aura ? Question purement géométrique (`D-51`, décision
 // de Xav du 20/09 : « il faut que l'aura serve à quelque chose » — ce qui est
 // DESSINÉ est ce qui AGIT, comme la lumière du follet, à la fois halo et trou

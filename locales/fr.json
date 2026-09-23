@@ -130,6 +130,7 @@
   "derivee.degats_attaque": "Dégâts d'attaque",
   "derivee.reserve_esprit": "Réserve d'esprit",
   "status.buff_repas": "Repas chaud",
+  "status.buff_regeneration": "Régénération",
   "flag.hint_consume": "Indice de consommation montré",
   "flag.competence_1": "Première compétence",
   "flag.competence_2": "Deuxième compétence",

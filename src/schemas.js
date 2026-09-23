@@ -860,6 +860,36 @@ function validerStatusEffect(entry, catalogs, path) {
   if (entry.famille === 'dot' && (typeof entry.intervalle_ms !== 'number' || entry.intervalle_ms <= 0)) {
     erreurs.push(`${path} > un effet "dot" doit déclarer intervalle_ms > 0`);
   }
+  // Un SOIN (la pomme cuite, 23/09) : un buff sur les PV du héros. Il ne vit
+  // que dans la table des buffs temporaires (`status.js#tickSoinsBuffsActifs`),
+  // d'où la durée numérique ; sans intervalle, la boucle ne finirait pas ; une
+  // valeur négative serait une brûlure déguisée, qui a déjà sa famille (`dot`).
+  if (entry.famille === 'buff' && entry.param === 'pv') {
+    if (entry.cible !== 'joueur') erreurs.push(`${path} > un soin ("buff" sur "pv") ne vise que le héros (cible "joueur")`);
+    if (typeof entry.duree !== 'number') erreurs.push(`${path} > un soin doit avoir une durée en ms`);
+    if (typeof entry.intervalle_ms !== 'number' || entry.intervalle_ms <= 0) {
+      erreurs.push(`${path} > un soin doit déclarer intervalle_ms > 0`);
+    }
+    if (typeof entry.valeur === 'number' && entry.valeur <= 0) erreurs.push(`${path} > un soin rend des PV : valeur > 0`);
+  }
+  // `D-13` : l'icône au bandeau est celle d'une STAT, jamais un dessin propre.
+  // Un effet peut en emprunter une (`stat`) et la teinter (`teinte`) — ce qui
+  // exige une silhouette teintable, sinon la couleur demandée ne se verrait pas.
+  if (entry.icone_bandeau !== undefined) {
+    const ib = entry.icone_bandeau;
+    const stat = ib && (catalogs.stats || []).find((s) => s.id === ib.stat);
+    if (!stat) {
+      erreurs.push(`${path} > icone_bandeau.stat "${ib && ib.stat}" introuvable dans stats.json`);
+    } else if (ib.teinte !== undefined) {
+      if (typeof ib.teinte !== 'string' || !/^#[0-9a-f]{6}$/i.test(ib.teinte)) {
+        erreurs.push(`${path} > icone_bandeau.teinte doit être une couleur #rrggbb`);
+      }
+      const visuel = (catalogs.visuels || []).find((v) => v.id === stat.icone);
+      if (visuel && !visuel.teintable) {
+        erreurs.push(`${path} > icone_bandeau.teinte : l'icône "${stat.icone}" de ${stat.id} n'est pas teintable`);
+      }
+    }
+  }
   if (typeof entry.valeur !== 'number') {
     erreurs.push(`${path} > valeur doit être numérique`);
   }

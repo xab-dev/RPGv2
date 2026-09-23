@@ -121,6 +121,8 @@ rpg_v2/
 │   │                       dérivée, brûlure) et effets de monstres dans l'aura, depuis
 │   │                       `synergies.json#regimes` seul
 │   │                       (`tickBuffsActifs`/`ajouterBuffActif`, Phase 3), un seul chemin de calcul
+│   │                       ; un SOIN est un buff sur `pv` (`tickSoinsBuffsActifs`, 23/09) et
+│   │                       `iconeBuffBandeau` est LE choix de l'icône d'un buff (toujours celle d'une stat)
 │   ├── entities.js         héros/monstres : PV, position, mort/respawn
 │   ├── combat.js           auto-attaque annulaire, cooldown, feedback (anneau/flash/barre de PV)
 │   ├── companion.js        follet : suivre/engager, position (+ lumière collée)
@@ -319,6 +321,7 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 | **Journal d'indices et de traces** : dernier bouton du menu principal (menu permanent), rappelle l'histoire parcourue, sous-page **Indices** de lore par zone, carnet du cryptex | 2026-09-23 | NS alignement §1.16 (D13/D16) |
 | **La carte Indices partage la case contextuelle** : dans la Maison, Construction ; partout ailleurs, Indices (seconde candidate, sans condition). Un indice se **voit** toujours mais ne se **lit** qu'une fois sa `lisible_si` tenue ; avant, il s'écrit en hiéroglyphes de Claude Code (brouillage déterministe, silhouette des mots gardée). Le premier, l'entrée de la grotte, se lit au Nv.15 et attend d'être câblé sur l'Annexe 1. *Précise* « menu permanent » : c'est le premier pas du journal d'indices et de traces | 2026-09-23 | demande de Xav, `src/indices.js`, `data/indices.json`, `Q-120`, `Q-121` |
 | **La stèle** : un interactif de type `stele` (`puzzles.json`), posé dès le début dans une clairière au sud-ouest de la forêt, non loin du chemin mais **invisible depuis lui** (tenu par test, avec la caméra du jeu) ; INTERACT ouvre sa vue rapprochée (jeu gelé, MENU muet), B ou un toucher la ferme, c'est tout. Sa gravure est **son indice brouillé par le même point que le menu** (`indices.js#lignesBrouillees`) : mêmes signes. Une **clairière se déclare** (`foret_procedurale.zones_exclues` + une zone), jamais en recopiant les cellules que le tirage aurait boisées | 2026-09-23 | demande de Xav, `Q-121`, `Q-122`, `V-123` |
+| **Un soin est un buff sur les PV, et son icône au bandeau est celle d'une stat, empruntée et teintée** (`icone_bandeau: { stat, teinte }`), jamais un dessin à lui — `D-13` tient toujours : une recette n'ajoute pas d'icône. Le soin se compte en temps actif, avant l'expiration du buff, plafonné aux PV max | 2026-09-23 | demande de Xav (pomme cuite), `status.js#tickSoinsBuffsActifs`, `#iconeBuffBandeau` |
 | **Licence : source visible, tous droits réservés** (`LICENSE`, FR/EN) : on lit le dépôt, on joue à l’adresse officielle, on le lance chez soi pour un usage personnel ; ni reprise, ni hébergement ailleurs, ni usage commercial sans accord écrit. *Précise* P1 « open source assumé » : le code est ouvert à la lecture, pas à la réutilisation — ce qui garde ouverts la version payante et le portage | 2026-09-23 | choix de Xav, présentation du dépôt GitHub |
 
 ## Ce qui est dû : dettes, questions, validations

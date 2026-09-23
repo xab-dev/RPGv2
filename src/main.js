@@ -51,6 +51,7 @@ import { creerRegistreFlags } from './flags.js';
 import { calculerStatsPrimaires, calculerStatsDerivees, appliquerModulateurSurvie } from './stats.js';
 import {
   modificateursHeros, statsEffectivesMonstre, tickBuffsActifs, ajouterBuffActif, modificateursBuffsActifs,
+  tickSoinsBuffsActifs, iconeBuffBandeau,
   modificateursDeriveesHeros, appliquerModificateursDerivees, dotsHeros, estDansAura,
 } from './status.js';
 import { creerHeros, creerMonstre, approcherEnLigneDroite, infligerDegats, mourir, respawn, reconcilierPvMax } from './entities.js';
@@ -1273,6 +1274,10 @@ export function creerOrchestrateurGrotte({
   // Accumulateurs des brûlures du HÉROS, un par effet — même boucle que celle
   // d'un monstre (`dotAccumulateurMs`) ; un effet qui cesse perd le sien.
   let dotsHerosAccumulateursMs = {};
+  // Même rôle, pour les SOINS des buffs temporaires (la pomme cuite) : état
+  // de session, jamais sauvegardé — au pire un rechargement perd moins d'un
+  // intervalle de soin.
+  let soinsBuffsAccumulateursMs = {};
   // §3.1 03_grotte-polish : compte à rebours du flash de l'anneau d'attaque,
   // purement visuel (dessiner() le convertit en donut translucide) — tiqué
   // dans mettreAJourCombat() comme cooldownAttaqueHerosMs, donc gelé sous UI
@@ -3542,6 +3547,12 @@ export function creerOrchestrateurGrotte({
 
       // Buffs temporaires (Palier C §3.3, ex. le fruit cuit) : tiqués comme
       // les cooldowns de combat, purgés à expiration (status.js#tickBuffsActifs).
+      // Les soins d'abord, sur la table AVANT expiration : le dernier
+      // intervalle d'un buff compte, comme le premier. En temps actif, donc
+      // gelés sous UI avec la durée du buff qui les porte.
+      const soins = tickSoinsBuffsActifs(registre, save.hero.buffs_actifs, soinsBuffsAccumulateursMs, deltaMs);
+      soinsBuffsAccumulateursMs = soins.accumulateurs;
+      if (soins.soin > 0 && !hero.mort) hero.pv = Math.min(hero.pvMax, hero.pv + soins.soin);
       save.hero.buffs_actifs = tickBuffsActifs(save.hero.buffs_actifs, deltaMs);
 
       // Respawn différé des items au sol (Palier B §3.2).
@@ -4183,16 +4194,15 @@ export function creerOrchestrateurGrotte({
       // l'icône affichée et le bonus réellement appliqué ne peuvent pas
       // diverger. L'ordre des clés EST l'ordre d'activation.
       //
-      // L'icône vient de la STAT renforcée, pas de l'effet : `buff_repas` et
-      // un futur `buff_potion_vitalite` montrent la même. Un buff sans stat
-      // (un effet qui toucherait un `param` plutôt qu'une stat) n'a rien à
-      // montrer : il est simplement absent du bandeau, pas dessiné en trou.
+      // L'icône vient d'une STAT, jamais de l'effet : `buff_repas` et un
+      // futur `buff_potion_vitalite` montrent la même, et un soin emprunte
+      // celle d'une stat, teintée — la règle vit en un seul point,
+      // `status.js#iconeBuffBandeau`. Un effet sans icône est simplement
+      // absent du bandeau, pas dessiné en trou.
       buffs: Object.entries(save.hero.buffs_actifs || {}).flatMap(([effetId, resteMs]) => {
-        const effet = registre.obtenir('status_effects', effetId);
-        if (effet.cible !== 'joueur' || !effet.stat) return [];
-        const { icone } = registre.obtenir('stats', effet.stat);
+        const icone = iconeBuffBandeau(registre, registre.obtenir('status_effects', effetId));
         if (!icone) return [];
-        return [{ visuel: registre.obtenir('visuels', icone), resteMs }];
+        return [{ visuel: registre.obtenir('visuels', icone.visuel), teinte: icone.teinte, resteMs }];
       }),
       // `D-96` : les trois silhouettes du bandeau, résolues ICI comme tout ce
       // que le HUD dessine — c'est cet orchestrateur qui a le registre, pas

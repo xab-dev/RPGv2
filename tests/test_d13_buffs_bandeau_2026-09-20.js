@@ -31,7 +31,7 @@ import { validerCatalogues, construireRegistre } from '../src/registry.js';
 import {
   elementsBandeauHaut, placerIconesBuffs, alphaPulsationBuff, PULSATION_BUFF, ICONE_BUFF,
 } from '../src/ui/hud_layout.js';
-import { ajouterBuffActif, tickBuffsActifs } from '../src/status.js';
+import { ajouterBuffActif, tickBuffsActifs, iconeBuffBandeau } from '../src/status.js';
 import { empreinteParDefaut } from '../src/structures.js';
 
 const RACINE = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -68,10 +68,12 @@ const registre = construireRegistre(catalogues);
 // C'est « une icône par stat, pas une par recette », vérifié sur le catalogue
 // réel plutôt qu'affirmé en commentaire.
 {
+  // LA fonction du jeu (status.js#iconeBuffBandeau), jamais une recopie :
+  // depuis le soin de la pomme cuite (23/09), un effet sans stat peut
+  // emprunter l'icône d'une stat, et c'est elle qui le sait.
   const iconeDeBuff = (effetId) => {
-    const effet = registre.obtenir('status_effects', effetId);
-    if (effet.cible !== 'joueur' || !effet.stat) return null;
-    return registre.obtenir('stats', effet.stat).icone;
+    const icone = iconeBuffBandeau(registre, registre.obtenir('status_effects', effetId));
+    return icone ? icone.visuel : null;
   };
 
   // `buff_vitalite` (permanent) et `buff_repas` (temporaire, une recette)

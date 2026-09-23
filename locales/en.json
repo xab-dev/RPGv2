@@ -130,6 +130,7 @@
   "derivee.degats_attaque": "Attack damage",
   "derivee.reserve_esprit": "Spirit reserve",
   "status.buff_repas": "Warm meal",
+  "status.buff_regeneration": "Regeneration",
   "flag.hint_consume": "Consume hint shown",
   "flag.competence_1": "First skill",
   "flag.competence_2": "Second skill",

@@ -144,5 +144,19 @@
     "duree": "aura",
     "cumul": false,
     "icone": "controle_acceleration"
+  },
+  {
+    "id": "buff_regeneration",
+    "label_key": "status.buff_regeneration",
+    "famille": "buff",
+    "cible": "joueur",
+    "param": "pv",
+    "valeur": 1,
+    "mode": "plat",
+    "intervalle_ms": 2000,
+    "duree": 60000,
+    "cumul": false,
+    "icone": "buff_regeneration",
+    "icone_bandeau": { "stat": "stat_vitalite", "teinte": "#5ec46a" }
   }
 ]

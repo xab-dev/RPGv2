@@ -46,8 +46,13 @@ const LEGENDE = {
 const table = tableLisieres(registre.tous('tiles'), (id) => registre.obtenir('visuels', id));
 const BORD = registre.obtenir('visuels', 'visuel_lisiere_herbe_bord');
 const COIN = registre.obtenir('visuels', 'visuel_lisiere_herbe_coin');
+const OMBRE = registre.obtenir('visuels', 'visuel_lisiere_herbe_bord_ombre');
+const OMBRE_COIN = registre.obtenir('visuels', 'visuel_lisiere_herbe_coin_ombre');
 const poses = (scene, x, y) => lisieresCase(scene, x, y, () => false, table);
-const resume = (liste) => liste.map((p) => `${p.visuel === BORD ? 'bord' : 'coin'}@${p.rotation}`);
+const NOMS = new Map([[BORD, 'bord'], [COIN, 'coin'], [OMBRE, 'ombre'], [OMBRE_COIN, 'ombre_coin']]);
+const nommer = (liste) => liste.map((p) => `${NOMS.get(p.visuel)}@${p.rotation}`);
+// Les sections 2 à 5 parlent des bords et des coins ; les ombres ont la leur (10).
+const resume = (liste) => nommer(liste.filter((p) => p.visuel !== OMBRE && p.visuel !== OMBRE_COIN));
 
 // --- 1. Le catalogue réel : l'herbe domine le chemin ---------------------------
 {
@@ -121,7 +126,7 @@ const resume = (liste) => liste.map((p) => `${p.visuel === BORD ? 'bord' : 'coin
     'TCT',
     'TTT',
   ], LEGENDE);
-  assert.deepEqual(poses(terre, 1, 1), [], 'la terre n\'a pas encore de rang (palier E) : rien');
+  assert.deepEqual(poses(terre, 1, 1), [], 'la terre n\'a pas de rang (aucune carte n\'en pose, `Q-151`) : rien');
   // Deux surfaces de même rang, construites à la main.
   const egal = new Map([['tile_herbe', { rang: 2, bord: BORD, coin: COIN }], ['tile_chemin', { rang: 2, bord: BORD, coin: COIN }]]);
   const scene = sceneDe(['...', '.C.', '...'], LEGENDE);
@@ -177,6 +182,12 @@ const resume = (liste) => liste.map((p) => `${p.visuel === BORD ? 'bord' : 'coin
     ['tuile posée sur un sol', (d) => { tuile(d, 'tile_sortie').render.lisiere = { rang: 2 }; }, /c'est son sol qui déborde/],
     ['domine sans dessin', (d) => { tuile(d, 'tile_terre').render.lisiere = { rang: 2 }; }, /domine "tile_chemin".*sans bord/],
     ['pas un objet', (d) => { tuile(d, 'tile_chemin').render.lisiere = 3; }, /doit être un objet/],
+    ['ombre sans bord', (d) => { tuile(d, 'tile_chemin').render.lisiere.ombre = structuredClone(tuile(d, 'tile_herbe').render.lisiere.ombre); }, /une ombre suit un bord/],
+    ['ombre sans coin', (d) => { delete tuile(d, 'tile_herbe').render.lisiere.ombre.coin_interieur; }, /ombre > coin_interieur manquant/],
+    ['ombre ancrée en bas', (d) => { tuile(d, 'tile_herbe').render.lisiere.ombre.bord = 'visuel_grain_herbe'; }, /ombre > bord "visuel_grain_herbe" doit être ancré au centre/],
+    ['côté inconnu', (d) => { tuile(d, 'tile_herbe').render.lisiere.ombre.cotes = ['S', 'X']; }, /cotes doit être une liste/],
+    ['côté en double', (d) => { tuile(d, 'tile_herbe').render.lisiere.ombre.cotes = ['S', 'S']; }, /cotes doit être une liste/],
+    ['aucun côté', (d) => { tuile(d, 'tile_herbe').render.lisiere.ombre.cotes = []; }, /cotes doit être une liste/],
   ];
   for (const [nom, modifier, attendu] of cas) {
     const erreurs = avec(modifier);
@@ -201,6 +212,38 @@ const resume = (liste) => liste.map((p) => `${p.visuel === BORD ? 'bord' : 'coin
   assert.equal(rayonInfluence({ visuelsTuiles: sansArbre, visuelsLisieres: [debordant], tileSize: TILE }), 1,
     'un bord qui sort de sa case agrandit le rayon');
   console.log('OK le rayon d\'influence compte les lisières');
+}
+
+// --- 10. L'ombre (`D-202`) : des côtés FIXES à l'écran, et sous tous les bords ----------
+{
+  // La lumière se lit d'en haut : l'ombre ne tourne pas avec le bord. L'herbe
+  // la déclare à l'est, au sud et à l'ouest ; au nord, le bord se pose sans elle.
+  assert.deepEqual(registre.obtenir('tiles', 'tile_herbe').render.lisiere.ombre.cotes, ['E', 'S', 'O'],
+    'le catalogue : pas d\'ombre au nord (Xav : « the path is on top of the north herbs »)');
+  const ilot = sceneDe(['...', '.C.', '...'], LEGENDE);
+  const liste = poses(ilot, 1, 1);
+  assert.deepEqual(nommer(liste), ['ombre@90', 'ombre@180', 'ombre@270', 'bord@0', 'bord@90', 'bord@180', 'bord@270'],
+    'les ombres des côtés déclarés, puis TOUS les bords : à un coin extérieur, une ombre ne couvre pas l\'herbe d\'à côté');
+  for (const r of [90, 180, 270]) {
+    const ombre = liste.find((p) => p.visuel === OMBRE && p.rotation === r);
+    const bord = liste.find((p) => p.visuel === BORD && p.rotation === r);
+    assert.equal(ombre.miroir, bord.miroir, `l'ombre suit le contour de son bord, miroir compris (${r}°)`);
+  }
+  const nord = sceneDe(['...', 'CCC', 'CCC'], LEGENDE);
+  assert.deepEqual(nommer(poses(nord, 1, 1)), ['bord@0'], 'l\'herbe au nord : le bord, sans ombre');
+  const sud = sceneDe(['CCC', 'CCC', '...'], LEGENDE);
+  assert.deepEqual(nommer(poses(sud, 1, 1)), ['ombre@180', 'bord@180'], 'l\'herbe au sud : son ombre, puis son bord');
+  const croisement = sceneDe(['.C.', 'CCC', '.C.'], LEGENDE);
+  assert.deepEqual(nommer(poses(croisement, 1, 1)),
+    ['ombre_coin@180', 'ombre_coin@270', 'coin@0', 'coin@90', 'coin@180', 'coin@270'],
+    'un coin n\'a d\'ombre que si ses DEUX côtés en ont : SE et SO, jamais NO ni NE');
+  // Une surface sans ombre déclarée : ses bords seuls, comme au palier D.
+  const sansOmbre = new Map([...table].map(([id, e]) => [id, { ...e, ombre: null }]));
+  assert.deepEqual(nommer(lisieresCase(ilot, 1, 1, () => false, sansOmbre)), ['bord@0', 'bord@90', 'bord@180', 'bord@270'],
+    'sans `ombre`, aucune ombre');
+  const toutes = visuelsDesLisieres(table);
+  assert.ok(toutes.includes(OMBRE) && toutes.includes(OMBRE_COIN), 'le rayon d\'influence connaît aussi les ombres');
+  console.log('OK l\'ombre : côtés fixes à l\'écran, sous les bords');
 }
 
 // --- 9. L'ordre dans une case : grain, lisières, objet (§4.3) --------------------------
@@ -233,8 +276,9 @@ const resume = (liste) => liste.map((p) => `${p.visuel === BORD ? 'bord' : 'coin
   global.window = { devicePixelRatio: 1, innerWidth: 1920, innerHeight: 1080, addEventListener() {}, location: { search: '' } };
   try {
     definirTamponsActifs(false);
-    // Une case : l'arbre à récolter, posé sur le chemin, l'herbe au nord.
-    const scene = sceneDe(['.', 'a'], LEGENDE);
+    // Une case : l'arbre à récolter, posé sur le chemin, l'herbe au SUD (le
+    // côté où l'herbe pose son ombre, `D-202` : c'est elle qu'on suit ici).
+    const scene = sceneDe(['a', '.'], LEGENDE);
     const visuelsTuiles = new Map(['tile_herbe', 'tile_chemin', 'tile_arbre'].map((id) => {
       const t = registre.obtenir('tiles', id);
       return [id, [t.render.visuel, ...(t.render.visuel_variantes || [])].map((v) => registre.obtenir('visuels', v))];

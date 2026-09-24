@@ -92,6 +92,7 @@ Le bord dentelé est aussi ce que fait la nature : **l'herbe mange le bord du ch
 - **Un coin intérieur** se pose quand la diagonale domine **et qu'aucun des deux côtés qui touchent ce coin n'est dominé** (sinon un bord couvre déjà l'angle). Le coin ne se retourne jamais : son miroir serait le coin d'à côté.
 - `bord` et `coin_interieur` **vont ensemble**. Une surface sans dessin peut être dominée, jamais dominer : le chemin déclare `{ "rang": 1 }` seul. Une tuile posée sur un sol (`render.sol`) ne déclare pas de lisière : c'est son sol qui déborde.
 - Le miroir d'un bord passe par `decor.js#varianteTuile`, qui reçoit maintenant un **sel** optionnel (le défaut ne change pas), un sel par côté.
+- **L'ombre est un dessin à part** (`D-202`, 24/09, avant le palier E) : `render.lisiere.ombre : { bord, coin_interieur, cotes }`. Dans le bord, elle tournait avec lui, et le nord et le sud du chemin disaient deux profondeurs opposées. Elle suit toujours le contour de son bord, mais ne se pose que sur les côtés **de l'écran** qu'elle nomme (l'herbe : est, sud, ouest), et toutes les ombres d'une case passent avant tous ses bords.
 
 ### 4.3 Ordre de dessin d'une case (invariant)
 

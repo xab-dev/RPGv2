@@ -4,6 +4,7 @@ import { echelleVisuel } from './visuels.js';
 import { resoudreEchelleJeu } from './companion.js';
 import { TYPES_CARTE, CASES_MAX } from './menu_cartes.js';
 import { OPTIONS_MIN, OPTIONS_MAX, erreursGrapheConversation } from './dialogue.js';
+import { NOMS_COTES } from './lisieres.js';
 
 // `D-39` — « le corps ne sort jamais de son aura », vérifié AU CHARGEMENT.
 //
@@ -251,7 +252,10 @@ function validerTile(entry, catalogs, path) {
 //   tuile posée sur un sol (`render.sol` : sa surface est ce sol, c'est lui
 //   qui déborde ou non) ;
 // - une surface qui en domine une autre (rang plus grand) a un bord : sinon
-//   elle dominerait sans rien dessiner.
+//   elle dominerait sans rien dessiner ;
+// - `ombre` (`D-202`, facultative) suit un bord : ses deux dessins (`bord` et
+//   `coin_interieur`, ancrés au centre comme eux) et les côtés de l'ÉCRAN où
+//   elle se pose (`cotes`, une liste non vide et sans doublon de N, E, S, O).
 function erreursLisiere(entry, catalogs, chemin) {
   const erreurs = [];
   const lisiere = entry.render.lisiere;
@@ -264,11 +268,30 @@ function erreursLisiere(entry, catalogs, chemin) {
   if ((lisiere.bord === undefined) !== (lisiere.coin_interieur === undefined)) {
     erreurs.push(`${chemin} : bord et coin_interieur vont ensemble`);
   }
+  const verifierDessin = (id, champ) => {
+    const visuel = (catalogs.visuels || []).find((v) => v.id === id);
+    if (!visuel) erreurs.push(`${chemin} > ${champ} "${id}" introuvable dans visuels.json`);
+    else if (visuel.ancre !== 'centre') erreurs.push(`${chemin} > ${champ} "${id}" doit être ancré au centre`);
+  };
   for (const champ of ['bord', 'coin_interieur']) {
-    if (lisiere[champ] === undefined) continue;
-    const visuel = (catalogs.visuels || []).find((v) => v.id === lisiere[champ]);
-    if (!visuel) erreurs.push(`${chemin} > ${champ} "${lisiere[champ]}" introuvable dans visuels.json`);
-    else if (visuel.ancre !== 'centre') erreurs.push(`${chemin} > ${champ} "${lisiere[champ]}" doit être ancré au centre`);
+    if (lisiere[champ] !== undefined) verifierDessin(lisiere[champ], champ);
+  }
+  if (lisiere.ombre !== undefined) {
+    const ombre = lisiere.ombre;
+    if (!ombre || typeof ombre !== 'object' || Array.isArray(ombre)) {
+      erreurs.push(`${chemin} > ombre doit être un objet { bord, coin_interieur, cotes }`);
+    } else {
+      if (lisiere.bord === undefined) erreurs.push(`${chemin} > ombre : une ombre suit un bord, et il n'y en a pas`);
+      for (const champ of ['bord', 'coin_interieur']) {
+        if (typeof ombre[champ] !== 'string') erreurs.push(`${chemin} > ombre > ${champ} manquant`);
+        else verifierDessin(ombre[champ], `ombre > ${champ}`);
+      }
+      const cotes = ombre.cotes;
+      if (!Array.isArray(cotes) || cotes.length === 0
+        || cotes.some((c) => !NOMS_COTES.includes(c)) || new Set(cotes).size !== cotes.length) {
+        erreurs.push(`${chemin} > ombre > cotes doit être une liste non vide, sans doublon, de ${NOMS_COTES.join(', ')}`);
+      }
+    }
   }
   if (lisiere.bord === undefined && Number.isInteger(lisiere.rang)) {
     const dominee = (catalogs.tiles || []).find((t) => t !== entry && t.render && t.render.lisiere

@@ -19,12 +19,14 @@ import { tuileDeSol, varianteTuile } from './decor.js';
 // Les quatre côtés, dans l'ordre des poses (N-E-S-O, `specs/13` §4.2). Le bord
 // est dessiné pour le côté NORD ; les autres sont ce dessin tourné d'un quart
 // de tour, dans le sens des aiguilles d'une montre (y vers le bas).
+// `nom` : le côté À L'ÉCRAN, tel que `render.lisiere.ombre.cotes` le cite.
 const COTES = [
-  { dx: 0, dy: -1, rotation: 0 },
-  { dx: 1, dy: 0, rotation: 90 },
-  { dx: 0, dy: 1, rotation: 180 },
-  { dx: -1, dy: 0, rotation: 270 },
+  { dx: 0, dy: -1, rotation: 0, nom: 'N' },
+  { dx: 1, dy: 0, rotation: 90, nom: 'E' },
+  { dx: 0, dy: 1, rotation: 180, nom: 'S' },
+  { dx: -1, dy: 0, rotation: 270, nom: 'O' },
 ];
+export const NOMS_COTES = COTES.map(({ nom }) => nom);
 // Les quatre coins, après les côtés. Le coin est dessiné pour le NORD-OUEST ;
 // `cotes` : les deux côtés qui touchent ce coin (indices dans `COTES`).
 const COINS = [
@@ -41,20 +43,30 @@ const COINS = [
 const SEL_LISIERE = 0x2c1b3c6d;
 const SEL_PAR_COTE = 0x9e3779b9;
 
-// La table des lisières, une fois par catalogue (et par preset, au palier E) :
-// id de la SURFACE → `{ rang, bord, coin }`, les deux dessins déjà résolus par
-// `resoudre(id)` (le registre, côté `main.js`). Une surface sans `bord` peut
-// être dominée, jamais dominer. `render.js` reçoit cette table sans la lire :
-// il la rend à `lisieresCase`, et ne voit jamais un rang.
+// La table des lisières, une fois par catalogue et par preset : id de la
+// SURFACE → `{ rang, bord, coin, ombre }`, les dessins déjà résolus par
+// `resoudre(id)` (le registre, côté `main.js`, qui y applique le levier
+// `lisiere` du preset : un dessin que le levier réduit à rien vaut `null`, et
+// ne se pose pas). Une surface sans `bord` peut être dominée, jamais dominer.
+// `render.js` reçoit cette table sans la lire : il la rend à `lisieresCase`,
+// et ne voit jamais un rang.
 export function tableLisieres(tuiles, resoudre) {
   const table = new Map();
   for (const tuile of tuiles) {
     const lisiere = tuile.render && tuile.render.lisiere;
     if (!lisiere) continue;
+    const ombre = lisiere.ombre;
     table.set(tuile.id, {
       rang: lisiere.rang,
       bord: lisiere.bord ? resoudre(lisiere.bord) : null,
       coin: lisiere.coin_interieur ? resoudre(lisiere.coin_interieur) : null,
+      ombre: ombre
+        ? {
+          bord: resoudre(ombre.bord),
+          coin: resoudre(ombre.coin_interieur),
+          cotes: COTES.map(({ nom }) => ombre.cotes.includes(nom)),
+        }
+        : null,
     });
   }
   return table;
@@ -90,13 +102,24 @@ function domine(voisine, ici) {
 }
 
 // Les POSES de la case `(x, y)` : la liste ordonnée des `{ visuel, rotation,
-// miroir }` qu'elle reçoit, les quatre côtés N-E-S-O puis les quatre coins.
+// miroir }` qu'elle reçoit — d'abord les OMBRES (côtés N-E-S-O, puis coins),
+// ensuite les bords N-E-S-O, puis les coins.
 // - un côté reçoit le bord de la voisine qui la domine ;
 // - un coin reçoit le coin intérieur de la voisine en DIAGONALE qui la domine,
 //   quand aucun des deux côtés qui touchent ce coin n'est dominé : sinon un bord
 //   couvre déjà l'angle. Sans lui, un angle de chemin garderait sa marche.
 // Un coin EXTÉRIEUR (deux côtés adjacents dominés) n'a pas de dessin propre :
 // les deux bords s'y recouvrent (§4.1, à juger à l'œil : `Q-131`).
+//
+// L'OMBRE (`D-202`) est un dessin à part, parce qu'elle se lit dans une
+// direction FIXE à l'écran, alors que le bord tourne : quand elle faisait partie
+// du bord, elle tournait avec lui, et le nord et le sud du chemin disaient deux
+// profondeurs opposées (Xav : « the path is on top of the north herbs »). Elle
+// tourne toujours comme son bord (elle suit son contour, miroir compris), mais
+// ne se pose que sur les côtés de l'écran que la surface nomme
+// (`render.lisiere.ombre.cotes`) ; un coin n'a d'ombre que si ses deux côtés en
+// ont. Toutes les ombres passent AVANT tous les bords : à un coin extérieur,
+// l'ombre d'un côté ne couvre pas l'herbe de l'autre.
 // Liste vide, et c'est le cas de presque toutes les cases : aucune allocation
 // de plus qu'un tableau.
 export function lisieresCase(scene, x, y, estFlagActif, table) {
@@ -112,18 +135,28 @@ export function lisieresCase(scene, x, y, estFlagActif, table) {
     const voisine = entreeDe(scene, x + dx, y + dy, estFlagActif, table);
     return domine(voisine, ici) && voisine.bord ? voisine : null;
   });
+  const bords = [];
   COTES.forEach(({ rotation }, i) => {
     const voisine = dominants[i];
     if (!voisine) return;
     const { miroir } = varianteTuile(scene, x, y, 1, true, (SEL_LISIERE ^ Math.imul(i + 1, SEL_PAR_COTE)) >>> 0);
-    poses.push({ visuel: voisine.bord, rotation, miroir });
+    const { ombre } = voisine;
+    if (ombre && ombre.cotes[i] && ombre.bord) poses.push({ visuel: ombre.bord, rotation, miroir });
+    if (voisine.bord) bords.push({ visuel: voisine.bord, rotation, miroir });
   });
+  const coins = [];
   for (const { dx, dy, rotation, cotes } of COINS) {
     if (dominants[cotes[0]] || dominants[cotes[1]]) continue;
     const voisine = entreeDe(scene, x + dx, y + dy, estFlagActif, table);
+    if (!domine(voisine, ici) || !voisine.coin) continue;
     // Un coin ne se retourne pas : son miroir serait le coin d'à côté.
-    if (domine(voisine, ici) && voisine.coin) poses.push({ visuel: voisine.coin, rotation, miroir: false });
+    const { ombre } = voisine;
+    if (ombre && ombre.cotes[cotes[0]] && ombre.cotes[cotes[1]] && ombre.coin) {
+      poses.push({ visuel: ombre.coin, rotation, miroir: false });
+    }
+    coins.push({ visuel: voisine.coin, rotation, miroir: false });
   }
+  poses.push(...bords, ...coins);
   return poses;
 }
 
@@ -131,9 +164,11 @@ export function lisieresCase(scene, x, y, estFlagActif, table) {
 // connaître pour savoir si une lisière peint hors de sa case.
 export function visuelsDesLisieres(table) {
   const visuels = [];
-  for (const { bord, coin } of table.values()) {
+  for (const { bord, coin, ombre } of table.values()) {
     if (bord) visuels.push(bord);
     if (coin) visuels.push(coin);
+    if (ombre && ombre.bord) visuels.push(ombre.bord);
+    if (ombre && ombre.coin) visuels.push(ombre.coin);
   }
   return visuels;
 }

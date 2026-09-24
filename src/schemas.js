@@ -1289,6 +1289,20 @@ function validerVisuel(entry, catalogs, path) {
       erreurs.push(`${path} > lumiere_active doit être { rayon > 0, dy? numérique, couleur? #rrggbb }`);
     }
   }
+  // `D-191` : un liseré qui ne se montre qu'à certaines phases du cycle (la
+  // plume la nuit). C'est un AUTRE visuel, dessiné au même point et à la même
+  // échelle que celui-ci — même patron que `piece_mobile`, donc validé comme
+  // tout visuel. Une phase qui n'existe pas dans le cycle ne s'allumerait
+  // jamais, sans que personne le voie : refusée au boot.
+  if (entry.surlignage !== undefined) {
+    const s = entry.surlignage;
+    const nomsPhases = PHASES_CYCLE.map((p) => p.nom);
+    if (!s || !Array.isArray(s.phases) || s.phases.length === 0 || !s.phases.every((p) => nomsPhases.includes(p))) {
+      erreurs.push(`${path} > surlignage doit être { visuel, phases: [${nomsPhases.join(' | ')}, …] } (liste non vide)`);
+    } else if (s.visuel === entry.id || !(catalogs.visuels || []).some((v) => v.id === s.visuel)) {
+      erreurs.push(`${path} > surlignage > visuel "${s.visuel}" introuvable dans visuels.json (ou le visuel lui-même)`);
+    }
+  }
   if (!Array.isArray(entry.primitives) || entry.primitives.length === 0) {
     erreurs.push(`${path} > primitives doit être un tableau non vide`);
     return erreurs;
@@ -1655,7 +1669,11 @@ export const SCHEMAS = {
       // `logo` (journal du 23/09, ticket L2) : l'apparition du symbole du jeu,
       // ses trois signes l'un après l'autre (`src/logo.js`). Ni particule ni
       // gabarit : une chronologie et une taille — d'où son jeu de champs.
-      const TYPES = ['particules', 'texte', 'vol', 'clignement', 'curseur', 'orbite', 'respiration', 'logo'];
+      // `filet` (`D-191`, 24/09) : quelques particules qui montent d'un objet
+      // en décrivant une boucle, comme un filet d'éruption solaire — sans
+      // réserve ni état (`ornements.js#particulesFilet` les calcule du seul
+      // temps). Son jeu de champs : une montée, une courbure, une dérive.
+      const TYPES = ['particules', 'texte', 'vol', 'clignement', 'curseur', 'orbite', 'respiration', 'logo', 'filet'];
       if (!TYPES.includes(entry.type)) {
         erreurs.push(`${path} > type doit valoir ${TYPES.map((t) => `"${t}"`).join(' ou ')}`);
         return erreurs;
@@ -1701,6 +1719,33 @@ export const SCHEMAS = {
         }
         if (typeof entry.visuel !== 'string') {
           erreurs.push(`${path} > visuel (l'étincelle) est requis pour un effet de type "orbite"`);
+        }
+        return erreurs;
+      }
+
+      if (entry.type === 'filet') {
+        if (!Number.isInteger(entry.nb_particules) || entry.nb_particules < 0) {
+          erreurs.push(`${path} > nb_particules doit être un entier positif ou nul`);
+        }
+        if (typeof entry.periode_ms !== 'number' || entry.periode_ms <= 0) {
+          erreurs.push(`${path} > periode_ms doit être un nombre strictement positif`);
+        }
+        if (typeof entry.hauteur_px !== 'number' || entry.hauteur_px < 0) {
+          erreurs.push(`${path} > hauteur_px doit être un nombre positif ou nul`);
+        }
+        for (const champ of ['courbure_px', 'derive_px']) {
+          if (typeof entry[champ] !== 'number' || !Number.isFinite(entry[champ])) {
+            erreurs.push(`${path} > ${champ} doit être un nombre fini`);
+          }
+        }
+        if (typeof entry.echelle !== 'number' || entry.echelle <= 0) {
+          erreurs.push(`${path} > echelle doit être un nombre strictement positif`);
+        }
+        if (typeof entry.alpha !== 'number' || entry.alpha <= 0 || entry.alpha > 1) {
+          erreurs.push(`${path} > alpha doit être un nombre dans ]0, 1]`);
+        }
+        if (typeof entry.visuel !== 'string') {
+          erreurs.push(`${path} > visuel (la particule) est requis pour un effet de type "filet"`);
         }
         return erreurs;
       }

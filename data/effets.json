@@ -149,6 +149,28 @@
     "phase_rad": 0
   },
   {
+    "id": "effet_surlignage_respire",
+    "type": "respiration",
+    "role": "cosmetique",
+    "ornement_min": 1,
+    "periode_ms": 2400,
+    "amplitude": 0.45
+  },
+  {
+    "id": "effet_surlignage_filet",
+    "type": "filet",
+    "role": "cosmetique",
+    "ornement_min": 2,
+    "visuel": "visuel_etincelle_blanche",
+    "nb_particules": 3,
+    "periode_ms": 2600,
+    "hauteur_px": 11,
+    "courbure_px": 3,
+    "derive_px": 2,
+    "echelle": 1,
+    "alpha": 0.8
+  },
+  {
     "id": "effet_anneau_choix",
     "type": "respiration",
     "role": "cosmetique",

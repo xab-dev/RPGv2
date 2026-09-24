@@ -18,7 +18,7 @@ import { creerSourceTactile } from './input/touch.js';
 import { creerPleinEcranTactile } from './plein_ecran.js';
 import { verrouillerMenuContextuel } from './souris.js';
 import { creerCurseur } from './curseur.js';
-import { ornementActif, etincellesOrbite, facteurRespiration } from './ornements.js';
+import { ornementActif, etincellesOrbite, facteurRespiration, particulesFilet } from './ornements.js';
 import { creerCoucheInput, etatNeutre } from './input/input.js';
 import { chargerScene, resoudreDeplacement, portailFranchi, trouverPositionLibrePlusProche, lumieresActives } from './scene.js';
 import { calculerCamera } from './camera.js';
@@ -28,13 +28,14 @@ import {
   creerBoucle, dessinerScene, dessinerObscurite, dessinerSignalZones, dessinerPaupieres, dessinerTextesFlottants, dessinerLogo, presenter,
   RESOLUTION_LOGIQUE, calculerRectanglePresentation, versCoordonneesLogiques, AURA_TRAIT,
   definirEchelleForcee, dimensionsEcranPhysiquesActuelles, invaliderCoucheStatique,
+  dessinerSurlignages,
 } from './render.js';
 import { creerStoreIndexedDB } from './storage_indexeddb.js';
 import {
   charger as chargerSave, sauvegarder, importerSauvegarde as importerSauvegardeDansStore,
   saveNeuve, reinitialiserSauvegarde, VISUEL_HEROS_ID, COULEUR_HERO_NEUTRE,
 } from './save.js';
-import { dessinerVisuel, echelleVisuel, TAILLE_REFERENCE_FOLLET_PX } from './visuels.js';
+import { dessinerVisuel, echelleVisuel, surlignageActif, TAILLE_REFERENCE_FOLLET_PX } from './visuels.js';
 import {
   creerPoussiere, avancerPoussiere, bouffeesVisibles, viderPoussiere, CAPACITE_RESERVE,
 } from './poussiere.js';
@@ -998,6 +999,8 @@ export function creerOrchestrateurGrotte({
     effetHalo = ornementActif(effetHaloCatalogue, levier('ornements'));
     effetLueurDialogue = ornementActif(effetLueurDialogueCatalogue, levier('ornements'));
     effetEtincellesDialogue = ornementActif(effetEtincellesDialogueCatalogue, levier('ornements'));
+    effetSurlignageRespire = ornementActif(effetSurlignageRespireCatalogue, levier('ornements'));
+    effetSurlignageFilet = ornementActif(effetSurlignageFiletCatalogue, levier('ornements'));
     effetAnneauChoix = ornementActif(effetAnneauChoixCatalogue, levier('ornements'));
     sillagesCinematique = ORDRE_CHOIX_FOLLET.map(() => creerPoussiere(effetSillage));
     if (scene) regenererDecor();
@@ -1117,6 +1120,18 @@ export function creerOrchestrateurGrotte({
   const effetHaloCatalogue = registre.obtenir('effets', 'effet_halo_follet');
   let effetOrnement = ornementActif(effetOrnementCatalogue, levier('ornements'));
   let effetHalo = ornementActif(effetHaloCatalogue, levier('ornements'));
+  // `D-191` : le liseré nocturne d'un objet au sol (la plume). Bas : fixe.
+  // Moyen (ornements 1) : il respire. Haut (2) : en plus, un filet de
+  // particules blanches qui monte de l'objet. Même levier, même horloge.
+  const effetSurlignageRespireCatalogue = registre.obtenir('effets', 'effet_surlignage_respire');
+  const effetSurlignageFiletCatalogue = registre.obtenir('effets', 'effet_surlignage_filet');
+  const visuelParticuleFilet = registre.obtenir('visuels', effetSurlignageFiletCatalogue.visuel);
+  let effetSurlignageRespire = ornementActif(effetSurlignageRespireCatalogue, levier('ornements'));
+  let effetSurlignageFilet = ornementActif(effetSurlignageFiletCatalogue, levier('ornements'));
+  // La phase du cycle telle que le liseré la lit : `null` dans une scène sans
+  // cycle (la Grotte est sombre, elle n'a pas de nuit). Une seule lecture,
+  // partagée par le sol et les icônes des menus (exposée plus bas).
+  const phaseDuCycle = () => (scene.cycleJourNuit ? phaseAHeure(save.monde.heure) : null);
   // `D-169` (polish des dialogues, 23/09) : la bulle suit le même levier.
   // Bas : rien qui bouge. Moyen (ornements 1) : une lueur qui respire sous
   // les flèches ▸ et ▼. Haut (2) : en plus, les étincelles du follet autour
@@ -4131,6 +4146,25 @@ export function creerOrchestrateurGrotte({
       // `D-134` : 1 exactement sans l'effet, donc Moyen inchangé.
       respirationLumiereFollet: facteurRespiration(effetHalo, tempsVolFolletMs),
     });
+    // `D-191` : le liseré nocturne, APRÈS le voile (sinon la nuit l'éteint).
+    // Moyen : l'alpha suit la respiration, ramenée dans ]0, 1] (le facteur
+    // oscille autour de 1). Sans l'effet, 1 exactement : Bas est fixe.
+    const phaseCycle = phaseDuCycle();
+    const alphaSurlignage = facteurRespiration(effetSurlignageRespire, tempsVolFolletMs)
+      / (1 + (effetSurlignageRespire ? effetSurlignageRespire.amplitude : 0));
+    const surlignagesAffiches = objetsSolAffiches
+      .filter((o) => surlignageActif(o.visuel, phaseCycle))
+      .map((o) => ({ x: o.x, y: o.y, visuel: registre.obtenir('visuels', o.visuel.surlignage.visuel), alpha: alphaSurlignage }));
+    dessinerSurlignages(ctxLogique, {
+      camera,
+      surlignages: surlignagesAffiches,
+      // La graine vient de la position : deux plumes voisines ne soufflent
+      // pas en même temps, et une plume ne change pas de rythme d'une frame
+      // à l'autre.
+      particules: surlignagesAffiches.flatMap((o) => particulesFilet(
+        effetSurlignageFilet, tempsVolFolletMs, o.x, o.y, (o.x * 0.37 + o.y * 0.61) % 1,
+      ).map((p) => ({ ...p, visuel: visuelParticuleFilet }))),
+    });
     // Signal des zones de Chaos (specs/07 palier D) : APRÈS le calque
     // d'obscurité — il se voit à travers la nuit sans percer le voile (on
     // devine une présence, on ne voit pas où l'on marche). Le calcul est pur
@@ -4392,6 +4426,8 @@ export function creerOrchestrateurGrotte({
     jeterItem: (itemId) => essayerJeter(itemId),
     solPleinSousHeros,
     obtenirObjetsJetes: () => objetsJetesDeLaScene(),
+    // `D-191` : les icônes des menus allument le même liseré que le sol.
+    phaseDuCycle,
     choixFolletActif,
     reinitialiserPartie,
     obtenirHero: () => hero,
@@ -4794,7 +4830,12 @@ export async function demarrerJeu() {
       const { largeurCss, hauteurCss, dpr } = dimensionsEcranPhysiquesActuelles();
       return rectangleMenuCss({ largeurCss, hauteurCss, dpr });
     },
-    dessinerIcone: creerDessinateurIcones({ obtenirVisuel: (id) => registre.obtenir('visuels', id), fenetre: window }),
+    dessinerIcone: creerDessinateurIcones({
+      obtenirVisuel: (id) => registre.obtenir('visuels', id),
+      fenetre: window,
+      // `D-191` : lue à l'ouverture du menu (le jeu y est gelé, l'icône aussi).
+      phaseDuCycle: () => orchestrateur.phaseDuCycle(),
+    }),
     exporterSauvegarde() {
       const blob = new Blob([JSON.stringify(save, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);

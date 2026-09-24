@@ -181,3 +181,12 @@ export function dessinerVisuel(ctx, visuel, x, y, options = {}) {
 
   ctx.restore();
 }
+
+// `D-191` : le liseré d'un visuel (`surlignage`) est-il allumé à cette phase ?
+// `phase` est le nom de la phase du cycle, ou `null` dans une scène sans cycle
+// (la Grotte n'a pas de nuit, elle est seulement sombre). Pure : le même
+// verdict sert au sol (render.js) et dans les icônes des menus
+// (ui/icone_canvas.js), jamais deux règles.
+export function surlignageActif(visuel, phase) {
+  return !!(visuel && visuel.surlignage && phase && visuel.surlignage.phases.includes(phase));
+}

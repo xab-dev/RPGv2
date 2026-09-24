@@ -1062,6 +1062,27 @@ export function dessinerSignalZones(ctx, { zones = [], camera }) {
   ctx.restore();
 }
 
+// --- Surlignages nocturnes (`D-191`) ----------------------------------------
+// Le liseré blanc d'un objet au sol, la nuit (la plume), et son filet de
+// particules en réglage Haut. APRÈS le calque d'obscurité, pour la même raison
+// que les textes de gain : sous le voile, un blanc deviendrait gris. Ce n'est
+// PAS une lumière : rien n'est projeté autour, le voile reste entier, seul le
+// trait brille.
+//
+// Tout arrive résolu de main.js : `surlignages` = { x, y, visuel, alpha },
+// `particules` = { x, y, visuel, alpha, echelle }. render.js ne sait ni quelle
+// phase est la nuit, ni quel objet en porte un, ni quel réglage est actif.
+// `dessinerVisuel` encadre chaque dessin d'un save/restore : la transform et
+// l'alpha du contexte ressortent tels qu'ils sont entrés.
+export function dessinerSurlignages(ctx, { surlignages = [], particules = [], camera }) {
+  for (const s of surlignages) {
+    dessinerVisuel(ctx, s.visuel, s.x - camera.x, s.y - camera.y, { alpha: s.alpha });
+  }
+  for (const p of particules) {
+    dessinerVisuel(ctx, p.visuel, p.x - camera.x, p.y - camera.y, { alpha: p.alpha, echelle: p.echelle });
+  }
+}
+
 // --- Textes flottants de gain (MT_texte-flottant_2026-09-19, `D-05`) ------
 // « +1 Bois » qui monte depuis la source du gain et s'efface. Dessiné en
 // coordonnées du MONDE (comme toute entité) mais APRÈS le calque

@@ -43,3 +43,31 @@ export function facteurRespiration(effet, tMs) {
   if (!effet) return 1;
   return 1 + effet.amplitude * Math.sin((tMs / effet.periode_ms) * Math.PI * 2);
 }
+
+// Le filet (`D-191`) : `nb_particules` qui montent d'un point en décrivant une
+// boucle, comme un filet d'éruption solaire. Chacune vit une période, décalée
+// des autres d'une fraction ; son âge `a` ∈ [0, 1[ dit tout : elle monte de
+// `hauteur_px`, s'écarte de `courbure_px` au milieu de sa course (sin πa) et
+// dérive de `derive_px` en tout. Elle naît et meurt transparente (sin πa
+// encore) et rapetisse en montant. AUCUN état : tout sort du temps, donc rien
+// à tenir entre deux frames ni à vider quand l'objet disparaît. `graine`
+// décale la phase d'un objet à l'autre (deux plumes voisines ne soufflent pas
+// en même temps).
+export function particulesFilet(effet, tMs, x, y, graine = 0) {
+  if (!effet) return [];
+  const particules = [];
+  for (let i = 0; i < effet.nb_particules; i++) {
+    const brut = tMs / effet.periode_ms + i / effet.nb_particules + graine;
+    const a = brut - Math.floor(brut);
+    const vie = Math.sin(Math.PI * a);
+    // Une particule sur deux boucle de l'autre côté : un filet, pas une file.
+    const cote = i % 2 === 0 ? 1 : -1;
+    particules.push({
+      x: x + cote * effet.courbure_px * vie + effet.derive_px * a,
+      y: y - effet.hauteur_px * a,
+      alpha: effet.alpha * vie,
+      echelle: effet.echelle * (1 - 0.5 * a),
+    });
+  }
+  return particules;
+}

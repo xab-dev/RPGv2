@@ -12,7 +12,7 @@
 // freeze-musique d'`audio.js`) — il est appelé depuis `menu.traiterInput`,
 // donc depuis la boucle de jeu, qui ne se replanifie pas après une exception.
 // Une icône qui rate laisse une carte sans icône ; elle ne fige jamais le jeu.
-import { dessinerVisuel, echelleVisuel } from '../visuels.js';
+import { dessinerVisuel, surlignageActif, echelleVisuel } from '../visuels.js';
 import { empreinteParDefaut } from '../structures.js';
 
 // Les icônes de `visuels.json` sont dessinées dans une boîte d'environ ± 6
@@ -73,7 +73,11 @@ function unionBoites(a, b) {
 
 // `obtenirVisuel(id)` : le registre, injecté. `fenetre` : pour le rapport de
 // pixels et `getComputedStyle` — ce module ne touche à aucun global.
-export function creerDessinateurIcones({ obtenirVisuel, fenetre }) {
+// `phaseDuCycle` (`D-191`) : la phase du cycle au moment du dessin, ou `null`.
+// Un visuel qui porte un `surlignage` allumé à cette phase reçoit son liseré
+// par-dessus, au même cadre — fixe ici : une icône de menu est dessinée une
+// fois, à l'ouverture, jamais animée.
+export function creerDessinateurIcones({ obtenirVisuel, fenetre, phaseDuCycle = () => null }) {
   return function dessinerIcone(canvas, idVisuel) {
     try {
       const visuel = obtenirVisuel(idVisuel);
@@ -96,6 +100,9 @@ export function creerDessinateurIcones({ obtenirVisuel, fenetre }) {
       // contexte-ci ressort de l'appel tel qu'il y est entré.
       const cadre = cadrer(visuel, cote);
       dessinerVisuel(ctx, visuel, cadre.x, cadre.y, { teinte, echelle: cadre.echelle });
+      if (surlignageActif(visuel, phaseDuCycle())) {
+        dessinerVisuel(ctx, obtenirVisuel(visuel.surlignage.visuel), cadre.x, cadre.y, { echelle: cadre.echelle });
+      }
     } catch (e) {
       console.warn('icone_canvas.js : icône non dessinée, le menu continue sans elle', e);
     }

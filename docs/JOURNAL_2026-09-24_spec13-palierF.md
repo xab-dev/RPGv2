@@ -3,7 +3,7 @@ projet: RPG V2
 episode/session: Spec 13, palier F — le budget de la carte, pour l'Annexe 1
 type: fichier de bord
 version: 1.0.0
-statut: livré, à valider en jeu (V-148)
+statut: livré et validé (V-148, R-24, R-25)
 catégorie: Journal
 date: 2026-09-24
 genere_par: claude
@@ -17,7 +17,7 @@ Demande de Xav : « go palier F ». Branche `carte-lisieres-perf`, pas de push.
 | Commit | Ticket | Ce qu'il faut en retenir |
 |---|---|---|
 | `928958b` | Ménage | Journal du palier E archivé, INDEX à jour |
-| (ce commit) | `D-204` — palier F | Le tri par le champ, le plafond d'entrée en scène en données, le test d'indépendance à la taille, la règle de l'Annexe |
+| `7105274` | `D-204` — palier F | Le tri par le champ, le plafond d'entrée en scène en données, le test d'indépendance à la taille, la règle de l'Annexe |
 
 ## 1. Ce que le palier A avait laissé
 
@@ -119,3 +119,14 @@ Sans bridage, tout tient sous 1,6 ms de reconstruction et 0,8 ms de `dessiner()`
 - **Le plafond d'entrée en scène** est à 40 ms (`Q-134`, ton défaut validé). Il a été frôlé une fois sous charge (38,7 ms) : si l'avertissement te gêne, c'est un nombre dans `graphismes.json`.
 - **La règle de l'Annexe** est dans `CLAUDE.md` (contraintes de méthode) : tout ticket qui agrandit la carte passe les deux scénarios et compare aux chiffres ci-dessus ; plus de 20 % de régression l'arrête.
 - Avec ce palier, **la spec 13 est livrée en entier**. La suite de la file est l'Annexe 1 (`specs/14`), dont les points bloquants B1 et B2 attendent ta décision.
+
+## 8. Validation et clôture (24/09)
+
+Xav : « V-148 good », avec les relevés de clôture. PC de Xav, Chrome, manette, 1920 × 1080, 59,9 fps, **0 frame > 20 ms** dans les deux cas :
+
+| Relevé | `dessiner()` moy | Reconstruction moy / max | `maj()` | Dessinés / présents | Entrée en scène |
+|---|---|---|---|---|---|
+| `R-24` jour | 0,46 ms (`R-22` : 1,13) | 1,00 / 5,50 ms (`R-22` : 4,71 / 6,30) | 0,10 ms | 0/6 interactifs, 0/33 objets | 18,8 ms |
+| `R-25` nuit | 0,60 ms (`R-23` : 1,35) | 0,52 / 3,60 ms (`R-23` : 4,03 / 5,50) | 0,14 ms | 2,55/12 monstres en moyenne, 0/42 objets | 15,6 ms |
+
+Les relevés ne disent pas le preset (`R-22` et `R-23` étaient en Moyen). Reste l'album de référence de la carte (six vues), qui n'est pas pris.

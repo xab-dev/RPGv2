@@ -3,7 +3,7 @@ projet: RPG V2
 episode/session: Carte Maison — lisières et performance, avant l'Annexe 1
 type: spec par paliers
 version: 1.0.0
-statut: livrée (paliers A à F), à valider en jeu (V-148)
+statut: livrée et validée (paliers A à F ; V-148, R-24, R-25 le 24/09)
 catégorie: Spec
 date: 2026-09-24
 Ids_suivi: [Q-52, E-04, D-01, D-153, D-02, Q-61, "D-189 et suivants (à créer : un par palier ; D-188 pris le 24/09 par la zone de Chaos sud)", "Q-131 à Q-135 (à créer)", "V-133 et suivantes (à créer)", "R-22 et suivants (à créer)"]
@@ -202,7 +202,7 @@ Relevés de clôture à la main : `R-24` (jour) et `R-25` (nuit), puis l'album d
 3. `tests/test_budget_carte_2026-09-24.js` : sur une scène quatre fois plus grande, les mêmes cases repeintes, les mêmes motifs lus, les mêmes entités et lumières dessinées.
 4. La règle de l'Annexe, dans les contraintes de méthode de `CLAUDE.md`.
 
-Validation : `V-148`.
+Validation : `V-148`, validée par Xav le 24/09. Relevés de clôture à la main : `R-24` (jour, `dessiner()` 0,46 ms) et `R-25` (nuit, 12 monstres, `dessiner()` 0,60 ms), 0 frame > 20 ms (§6 du suivi).
 
 **Chiffres de clôture** : la base de la règle de l'Annexe. Chrome sans fenêtre, 1920 × 1080 DPR 1, branche `carte-lisieres-perf` au palier F. Le détail et l'avant/après sont dans le journal du palier F.
 

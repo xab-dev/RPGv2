@@ -46,7 +46,7 @@ Elle **brûle une nuit** : elle ne se consume **que la nuit et à l'aube** (les 
 | Durée d'une torche | **330 000 ms** de temps actif = une nuit (240 s) + une aube (90 s) | « Brûle une nuit » ; le cycle de `daynight.js` |
 | Rayon de la lumière | **56 px** (follet : 90) | « Moins que le follet » ; un peu plus d'une tuile et demie |
 | Brûlure au coup | 1 PV toutes les 500 ms, pendant **3 s**, rafraîchie à chaque coup (pas de cumul) | La brûlure du Feu (`dot_brulure`), mais limitée dans le temps au lieu d'être liée à l'aura |
-| Pile | La torche s'empile (pile du conteneur) | Une réserve de torches pour plusieurs nuits |
+| Pile | **Une torche par emplacement** (`pile_max: 1`) | Règle de `D-118` : une arme ne s'empile jamais (tenue par `test_d118`). *Révisé en cours de palier A : le premier défaut, « elle s'empile », la contredisait.* |
 | Torche entamée | Une torche entamée **garde son temps** tant qu'elle reste dans la **poche** ; rangée au coffre, la pile y redevient neuve | Le coffre ne connaît que des nombres ; un temps par torche au coffre serait un format de sauvegarde de plus pour un cas marginal |
 | XP de la recette | 10 | Entre la corde et l'épée |
 | Tenue de jour | Éteinte, elle reste une arme de feu (dégâts et brûlure) | La flamme n'est pas ce qui brûle : c'est l'arme. Seule la **lumière** et la **combustion** attendent la nuit |

@@ -214,4 +214,5 @@ Demande de Xav : « go créer la torche » ; réponses aux questions en tête de
 
 | Commit | Palier | Ce qu'il faut en retenir |
 |---|---|---|
-| (voir log) | Spec 15 | Écrite ; défauts `[OUVERT]` au §3 |
+| `c193126` | Spec 15 | Écrite ; défauts `[OUVERT]` au §3 |
+| (voir log) | A — `D-194` | Objet, arme (= épée, feu), brûlure au coup 3 s ; recette de Xav. « Elle s'empile » révisé : une arme ne s'empile pas (`D-118`, rattrapé par `test_d118`). Dessin refait une fois (le premier ressemblait à une cuillère). Tests : 187 verts |

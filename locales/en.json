@@ -356,5 +356,9 @@
   "lore.pierre_qui_repond.ligne_2": "The second left a word where reading begins.",
   "item.etincelle_argile": "Clay spark",
   "item.etincelle_argile.description": "A small clay star, still warm. It is of no use either. It just wanted to say thank you.",
-  "dlg.lore.etincelle": "You found it. I didn’t think anyone would read that far… Thank you for playing with me."
+  "dlg.lore.etincelle": "You found it. I didn’t think anyone would read that far… Thank you for playing with me.",
+  "weapon.torche": "Torch",
+  "item.torche": "Torch",
+  "item.torche.description": "A branch, grass bound tight with rope. It strikes like a sword, and it burns.",
+  "recipe.torche": "Torch"
 }

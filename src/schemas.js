@@ -1219,6 +1219,25 @@ function validerWeapon(entry, catalogs, path) {
       }
     }
   }
+  // `specs/15` palier A : l'ÉLÉMENT d'une arme (la torche est de feu) — le
+  // type, jamais la puissance (qui reste la Force). Et ce qu'un coup POSE sur
+  // le monstre touché (`au_coup.statut`) : un statut de monstre LIMITÉ DANS
+  // LE TEMPS (une durée en ms). Un statut « aura » n'a de sens que tant que le
+  // follet le couvre, et un « permanent » ne s'éteindrait jamais sur un
+  // monstre : les deux sont refusés au boot.
+  if (entry.element !== undefined && !(catalogs.elements || []).some((e) => e.id === entry.element)) {
+    erreurs.push(`${path} > element "${entry.element}" introuvable dans elements.json`);
+  }
+  if (entry.au_coup !== undefined) {
+    const statut = entry.au_coup && (catalogs.status_effects || []).find((st) => st.id === entry.au_coup.statut);
+    if (!statut) {
+      erreurs.push(`${path} > au_coup.statut "${entry.au_coup && entry.au_coup.statut}" introuvable dans status_effects.json`);
+    } else if (statut.cible !== 'monstre' || typeof statut.duree !== 'number' || statut.duree <= 0) {
+      erreurs.push(`${path} > au_coup.statut "${statut.id}" doit viser un monstre et durer un nombre de ms (ni "aura", ni "permanente")`);
+    } else if (statut.param !== 'pv' || typeof statut.intervalle_ms !== 'number' || statut.intervalle_ms <= 0) {
+      erreurs.push(`${path} > au_coup.statut "${statut.id}" : seul un effet sur les PV à intervalle (une brûlure) sait se poser au coup aujourd'hui`);
+    }
+  }
   return erreurs;
 }
 

@@ -1,4 +1,5 @@
 [
   { "id": "weapon_mains_nues", "label_key": "weapon.mains_nues", "portee": { "min": 0, "max": 0.5 }, "icone": "visuel_icone_main" },
-  { "id": "weapon_epee_bois", "label_key": "weapon.epee_bois", "portee": { "min": 0, "max": 0.75 }, "modificateurs": { "stat_force": 1 }, "icone": "visuel_icone_epee_bois" }
+  { "id": "weapon_epee_bois", "label_key": "weapon.epee_bois", "portee": { "min": 0, "max": 0.75 }, "modificateurs": { "stat_force": 1 }, "icone": "visuel_icone_epee_bois" },
+  {"id": "weapon_torche", "label_key": "weapon.torche", "portee": {"min": 0, "max": 0.75}, "modificateurs": {"stat_force": 1}, "element": "elem_feu", "au_coup": {"statut": "dot_brulure_torche"}, "icone": "visuel_torche"}
 ]

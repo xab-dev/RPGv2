@@ -53,8 +53,7 @@ import { calculerStatsPrimaires, calculerStatsDerivees, appliquerModulateurSurvi
 import {
   modificateursHeros, statsEffectivesMonstre, tickBuffsActifs, ajouterBuffActif, modificateursBuffsActifs,
   tickSoinsBuffsActifs, iconeBuffBandeau,
-  modificateursDeriveesHeros, appliquerModificateursDerivees, dotsHeros, estDansAura,
-} from './status.js';
+  modificateursDeriveesHeros, appliquerModificateursDerivees, dotsHeros, estDansAura, poserStatutCoup, tickStatutsCoup } from './status.js';
 import { creerHeros, creerMonstre, approcherEnLigneDroite, infligerDegats, mourir, respawn, reconcilierPvMax } from './entities.js';
 import {
   resoudreArmeEquipee, resoudreAutoAttaque, tickCooldown, estMonstreActif, FLASH_ATTAQUE_MS, FLASH_TOUCHE_MS,
@@ -3151,6 +3150,15 @@ export function creerOrchestrateurGrotte({
       } else {
         suivant.dotAccumulateurMs = 0;
       }
+      // `specs/15` palier A : le statut posé au coup (la brûlure de la
+      // torche) tique hors de l'aura, jusqu'à sa fin — même flash que le DoT
+      // du Feu, pour la même raison : le joueur doit VOIR la brûlure agir.
+      const coup = tickStatutsCoup(registre, suivant, deltaMs);
+      suivant = coup.monstre;
+      if (coup.degats > 0 && !suivant.mort) {
+        suivant = infligerDegats(suivant, coup.degats);
+        suivant.flashMs = FLASH_TOUCHE_MS;
+      }
 
       if (suivant.mort && !monstre.mort) onMonstreMort(donneesEnnemi);
       return suivant;
@@ -3188,8 +3196,13 @@ export function creerOrchestrateurGrotte({
           // `D-141` : les dégâts passent par LEUR dérivée, comme la cadence
           // deux lignes plus bas — ils lisaient la Force brute, ce qui
           // laissait la Force sans formule à régler en données.
-          const suivant = infligerDegats(monstre, statsDerivees.derivee_degats_attaque);
+          let suivant = infligerDegats(monstre, statsDerivees.derivee_degats_attaque);
           suivant.flashMs = FLASH_TOUCHE_MS;
+          // `specs/15` palier A : une arme qui porte `au_coup` (la torche)
+          // pose son statut sur le monstre touché — la brûlure, 3 s.
+          if (arme.au_coup && !suivant.mort) {
+            suivant = poserStatutCoup(suivant, registre.obtenir('status_effects', arme.au_coup.statut));
+          }
           if (suivant.mort && !monstre.mort) onMonstreMort(registre.obtenir('enemies', monstre.enemyId));
           return suivant;
         });

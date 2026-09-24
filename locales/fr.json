@@ -356,5 +356,9 @@
   "lore.pierre_qui_repond.ligne_2": "La seconde a laissé un mot là où l’on commence à lire.",
   "item.etincelle_argile": "Étincelle d’argile",
   "item.etincelle_argile.description": "Une petite étoile d’argile, encore tiède. Elle ne sert à rien, elle non plus. Elle voulait juste te dire merci.",
-  "dlg.lore.etincelle": "Tu l’as trouvée. Je ne pensais pas que quelqu’un lirait jusque-là… Merci d’avoir joué avec moi."
+  "dlg.lore.etincelle": "Tu l’as trouvée. Je ne pensais pas que quelqu’un lirait jusque-là… Merci d’avoir joué avec moi.",
+  "weapon.torche": "Torche",
+  "item.torche": "Torche",
+  "item.torche.description": "Une branche, de l’herbe serrée dans la corde. Elle frappe comme une épée, et elle brûle.",
+  "recipe.torche": "Torche"
 }

@@ -98,6 +98,19 @@
     "icone": "dot_brulure"
   },
   {
+    "id": "dot_brulure_torche",
+    "label_key": "status.dot_brulure",
+    "famille": "dot",
+    "cible": "monstre",
+    "param": "pv",
+    "valeur": 1,
+    "mode": "plat",
+    "intervalle_ms": 500,
+    "duree": 3000,
+    "cumul": false,
+    "icone": "dot_brulure"
+  },
+  {
     "id": "controle_entrave_heros",
     "label_key": "status.controle_entrave",
     "famille": "controle",

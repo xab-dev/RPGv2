@@ -236,3 +236,41 @@ export function statsEffectivesMonstre(registre, monstreDonnees, follet, context
 
   return { force, vitesse, dot, dansAura };
 }
+
+// --- Statut posé au coup (`specs/15` palier A, la brûlure de la torche) ----
+// Un coup d'une arme qui porte `au_coup` pose sur le monstre touché un statut
+// LIMITÉ DANS LE TEMPS : aujourd'hui une brûlure (PV à intervalle). Le
+// monstre le porte dans `statutsCoup`, `{ id, restantMs, accumulateurMs }`.
+// Sans cumul (`cumul: false`) : un nouveau coup REMET la durée à plein, il
+// n'ajoute pas une seconde brûlure. Pur : rend un nouveau monstre.
+export function poserStatutCoup(monstre, statut) {
+  const autres = (monstre.statutsCoup || []).filter((s) => s.id !== statut.id);
+  const existant = (monstre.statutsCoup || []).find((s) => s.id === statut.id);
+  return {
+    ...monstre,
+    statutsCoup: [...autres, { id: statut.id, restantMs: statut.duree, accumulateurMs: existant ? existant.accumulateurMs : 0 }],
+  };
+}
+
+// Fait avancer les statuts posés au coup de `deltaMs` : rend le monstre (sans
+// les statuts expirés) et les DÉGÂTS de cette frame, que l'appelant inflige
+// par le chemin habituel (`entities.js#infligerDegats`). Un tick tombe tant
+// que le statut vit encore au moment du tick : une brûlure de 3 s à 500 ms
+// fait 6 ticks, ni 5 ni 7.
+export function tickStatutsCoup(registre, monstre, deltaMs) {
+  if (!monstre.statutsCoup || monstre.statutsCoup.length === 0) return { monstre, degats: 0 };
+  let degats = 0;
+  const restants = [];
+  for (const s of monstre.statutsCoup) {
+    const statut = registre.obtenir('status_effects', s.id);
+    const actif = Math.min(deltaMs, s.restantMs);
+    let acc = s.accumulateurMs + actif;
+    while (acc >= statut.intervalle_ms) {
+      acc -= statut.intervalle_ms;
+      degats += statut.valeur;
+    }
+    const restantMs = s.restantMs - deltaMs;
+    if (restantMs > 0) restants.push({ ...s, restantMs, accumulateurMs: acc });
+  }
+  return { monstre: { ...monstre, statutsCoup: restants }, degats };
+}

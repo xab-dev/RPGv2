@@ -10,6 +10,17 @@
     "pile_max": 1
   },
   {
+    "id": "item_torche",
+    "label_key": "item.torche",
+    "description_key": "item.torche.description",
+    "categorie": "arme",
+    "arme": "weapon_torche",
+    "render": {
+      "visuel": "visuel_torche"
+    },
+    "pile_max": 1
+  },
+  {
     "id": "item_plume",
     "label_key": "item.plume",
     "description_key": "item.plume.description",

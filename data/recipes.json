@@ -102,6 +102,37 @@
     }
   },
   {
+    "id": "rec_torche",
+    "label_key": "recipe.torche",
+    "station": "station_type_atelier",
+    "entrees": [
+      {
+        "item": "item_branche",
+        "qte": 1
+      },
+      {
+        "item": "item_herbe",
+        "qte": 2
+      },
+      {
+        "item": "item_corde",
+        "qte": 1
+      }
+    ],
+    "cout_eclats": 5,
+    "sortie": {
+      "item": "item_torche",
+      "qte": 1
+    },
+    "categorie": "categorie_arme",
+    "xp": 10,
+    "cooldown_ms": 60000,
+    "visible_si": {
+      "valeur": "niveau",
+      "min": 10
+    }
+  },
+  {
     "id": "rec_coffre",
     "label_key": "recipe.coffre",
     "station": "station_type_atelier",

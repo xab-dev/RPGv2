@@ -3,7 +3,7 @@ projet: RPG V2
 episode/session: Spec 13, palier C — la bande entrante
 type: fichier de bord
 version: 1.0.0
-statut: livré, validation en jeu à faire (V-144)
+statut: livré, validé en jeu (V-144)
 catégorie: Journal
 date: 2026-09-24
 genere_par: claude
@@ -129,3 +129,7 @@ code.
 - **`Q-135`** : la tolérance du défilement, écart ≤ 1, à confirmer.
 - **`Q-61`** : le point (a) n'a presque plus d'objet. C'est écrit ; les seuils d'Auto ne sont pas touchés.
 - Le palier suivant est **D** (les lisières, le mécanisme), dans une session à lui. Il devra ajouter la case d'une lisière à `defilement.js#rayonInfluence`.
+
+## 6. Validation et clôture (24/09)
+
+**`V-144` validée par Xav** : « V-144 : tout va bien visuellement ». « Tu peux clore cette étape et attendre mon go pour le palier D. » `Q-135` (tolérance du défilement, écart ≤ 1) reste à confirmer par Xav.

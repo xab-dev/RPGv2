@@ -139,3 +139,10 @@ qui ne porte que les dix chiffres (`unicodeRange`), en tête de chaque pile.
 - `rec_pomme_amour` : 1 fruit cuit + **1 papyrus** (au lieu de 3 herbes) — la
   pomme emballée, cuite dans son emballage. Mécanique inchangée. Quantité
   retenue par défaut : `Q-130`. Tests : 183 fichiers verts.
+
+## Patch hors file : l'XP d'une fabrication se voit (24/09, `D-186`)
+
+- Xav croyait que certains crafts ne donnaient pas d'XP : tous en donnent,
+  rien ne le disait. Fiche Craft : « Rapporte N XP » ; « +N xp » depuis la
+  station (monte à la fermeture du menu). Valeurs d'XP intactes (Xav).
+  Tests : 184 fichiers verts.

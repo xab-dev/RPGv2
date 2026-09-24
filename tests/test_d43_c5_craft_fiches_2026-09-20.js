@@ -100,8 +100,10 @@ const nom = (idItem) => i18n.t(registre.obtenir('items', idItem).label_key);
       }]
       : []),
     { texte: i18n.t('menu.fiche.donne', { item: nom(hache.id), n: recetteHache.sortie.qte }), icone: null },
+    // 24/09 (Xav) : l'XP de la recette se dit, lue sur la RECETTE.
+    ...(recetteHache.xp > 0 ? [{ texte: i18n.t('menu.fiche.rapporte_xp', { n: recetteHache.xp }), icone: null }] : []),
     ...lignesFicheItem(hache, registre, i18n).map((l) => ({ texte: l, icone: null })),
-  ], 'ce qu’elle demande (et ce qu’on a), ce qu’elle donne, puis la fiche de l’objet produit');
+  ], 'ce qu’elle demande (et ce qu’on a), ce qu’elle donne, ce qu’elle rapporte, puis la fiche de l’objet produit');
   assert.ok(
     liste.every((x) => x.lignes.map(normaliserLigneFiche).every((l) => !l.texte.includes('[[') && !l.texte.includes('{'))),
     'aucune clé manquante, aucun marqueur non substitué',

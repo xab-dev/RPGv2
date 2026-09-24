@@ -256,6 +256,7 @@
   "menu.fiche.fabriquer": "Craft",
   "menu.fiche.ingredient": "{item}: {possede} / {n}",
   "menu.fiche.donne": "Gives: {item} × {n}",
+  "menu.fiche.rapporte_xp": "Earns {n} XP",
   "menu.fiche.recharge": "Available in {n} s",
   "menu.fiche.ingredients_manquants": "Missing ingredients",
   "menu.fiche.aucune_recette": "No known recipe",

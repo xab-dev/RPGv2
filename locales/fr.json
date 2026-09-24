@@ -256,6 +256,7 @@
   "menu.fiche.fabriquer": "Fabriquer",
   "menu.fiche.ingredient": "{item} : {possede} / {n}",
   "menu.fiche.donne": "Donne : {item} × {n}",
+  "menu.fiche.rapporte_xp": "Rapporte {n} XP",
   "menu.fiche.recharge": "Disponible dans {n} s",
   "menu.fiche.ingredients_manquants": "Ingrédients manquants",
   "menu.fiche.aucune_recette": "Aucune recette connue",

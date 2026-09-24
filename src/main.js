@@ -2113,7 +2113,7 @@ export function creerOrchestrateurGrotte({
       return;
     }
     if (station.role === 'craft') {
-      menu.ouvrirCraft(() => entreesCraft(station), i18n.t(station.label_key), {
+      menu.ouvrirCraft(() => entreesCraft(puzzle, station), i18n.t(station.label_key), {
         texteVide: i18n.t('menu.fiche.aucune_recette'),
       });
       return;
@@ -2168,7 +2168,7 @@ export function creerOrchestrateurGrotte({
   // no-op) : le résultat fait foi, `grisee` n'est qu'un indice visuel — évite
   // toute divergence entre ce qui est affiché et ce qui se passe réellement
   // au clic/à la manette.
-  function entreesCraft(station) {
+  function entreesCraft(puzzle, station) {
     const heureMs = save.monde.heure;
     // `D-62` (T4) : LE point unique du filtre anti-spoil. Tout écran qui
     // liste un catalogue passe par `entreesVisibles` — jamais un `.filter()`
@@ -2265,6 +2265,10 @@ export function creerOrchestrateurGrotte({
             // ne dit rien : il n'entre jamais en poche. Sa fiche se résume à
             // sa description (simplification demandée par Xav, 24/09).
             ...(r.sortie.porte ? [] : [i18n.t('menu.fiche.donne', { item: i18n.t(defSortie.label_key), n: r.sortie.qte || 1 })]),
+            // L'XP d'une recette se DIT (Xav, 24/09 : « je ne le savais pas,
+            // ce n'est pas indiqué ») : la barre bouge pendant que le menu la
+            // recouvre, personne ne la regarde. Une recette sans XP ne dit rien.
+            ...(r.xp > 0 ? [i18n.t('menu.fiche.rapporte_xp', { n: r.xp })] : []),
             // La fiche d'un OBJET vient de `lignesFicheItem` ; une station
             // n'en a pas (elle ne se porte pas), elle dit ce qu'on en fera.
             ...(modeleSortie ? [i18n.t('menu.fiche.a_poser')]
@@ -2294,7 +2298,12 @@ export function creerOrchestrateurGrotte({
               // ici — au même endroit et au même moment que la poche.
               save.inventaire.eclats = resultat.eclats;
               save.cooldowns = resultat.cooldowns;
-              crediterXpHeros(resultat.xp);
+              // Le « +N xp » monte du CENTRE de la station, comme au puits :
+              // le texte dit d'où vient le gain. Gelé sous le menu avec tout le
+              // reste (`D-05`), il fusionne les fabrications enchaînées et
+              // monte à la fermeture — c'est là que le joueur revoit le monde.
+              const boite = rectangleInteractif(puzzle);
+              crediterXpHeros(resultat.xp, { x: boite.x + boite.w / 2, y: boite.y + boite.h / 2 });
               flags.set('flag_premier_craft');
               // La besace : l'objet se porte dès sa fabrication. Le flag est
               // toute sa présence — la poche grandit avec lui (`capacitePoche`),
@@ -2928,9 +2937,9 @@ export function creerOrchestrateurGrotte({
   //
   // `position` est OPTIONNELLE (`D-58`) : quand l'appelant sait d'où vient le
   // gain — la tuile récoltée, l'objet ramassé, le puits —, un « +1xp » monte
-  // de cet endroit. Le combat et le craft ne la passent pas encore ; le jour
-  // où ils le feront (position du monstre, de la station), il n'y aura rien à
-  // écrire ici.
+  // de cet endroit. Le combat ne la passe pas encore ; le jour
+  // où il le fera (position du monstre), il n'y aura rien à écrire ici. Le
+  // craft la passe depuis le 24/09 : le centre de la station.
   function crediterXpHeros(xpGagne, position = null) {
     if (!xpGagne) return;
     if (position) signalerGainXp(xpGagne, position.x, position.y);

@@ -208,10 +208,12 @@ class ElementFactice {
   assert.ok(recette.cout_eclats > 0 && ligneCout, 'la ligne de coût porte la silhouette de la monnaie');
   assert.ok(ligneCout.texte.includes(String(recette.cout_eclats)) && ligneCout.texte.includes(String(save.inventaire.eclats)),
     'ce qu’elle coûte et ce qu’on a, comme avant');
-  // Ce qui n'a PAS d'image n'en gagne pas : « Donne : … » et la fiche de
-  // l'objet produit restent des phrases (la vignette de la fiche montre déjà
-  // l'objet produit — une seconde fois serait du bruit).
-  assert.deepEqual(fiche.slice(recette.entrees.length + 1).map((l) => l.icone), [null, null],
+  // Ce qui n'a PAS d'image n'en gagne pas : « Donne : … », « Rapporte N XP »
+  // (24/09) et la fiche de l'objet produit restent des phrases (la vignette de
+  // la fiche montre déjà l'objet produit — une seconde fois serait du bruit).
+  const suite = fiche.slice(recette.entrees.length + 1);
+  assert.ok(suite.length >= 2, 'la fiche dit encore ce qu’elle donne');
+  assert.deepEqual(suite.map((l) => l.icone), suite.map(() => null),
     'seules les lignes qui parlent d’autre chose que de l’objet produit montrent une image');
   console.log('OK en jeu : les ingrédients et le coût d’une recette montrent ce dont ils parlent');
 }

@@ -2,11 +2,11 @@
 projet: RPG V2
 episode/session: Carte Maison — l'Annexe 1 (la stèle, Zéros, les leviers, le Gardien, la première compétence)
 type: spec par paliers
-version: 1.2.0
-statut: prête à coder après la spec 13 — B1, B2, B3 tranchés par Xav le 24/09 (§0)
+version: 1.3.0
+statut: courante, prête à coder (spec 13 livrée) — B1, B2, B3, Q-138 et l'équilibrage tranchés par Xav le 24/09 (§0)
 catégorie: Spec
 date: 2026-09-24
-Ids_suivi: [Q-120, Q-13, "D- (à créer : un par palier)", "Q-137 et suivantes (à créer)", "V- (à créer : un par palier)"]
+Ids_suivi: [Q-120, Q-13, "D- (à créer : un par palier)", "Q-137 à Q-148 (inscrites au suivi le 24/09)", Q-18, "V- (à créer : un par palier)"]
 genere_par: claude
 verifie_par: xav
 ---
@@ -19,6 +19,7 @@ verifie_par: xav
 
 ## 0. Décisions de Xav (24/09, relecture de la v1.0.0)
 
+**Changelog 1.3.0** : `Q-138` tranchée : la stèle déchiffrée ouvre **d'abord sa vue rapprochée**, qui gagne l'action **Descendre**. **L'équilibrage se fait au ressenti de Xav** (`Q-146`) : l'instrument `tools/mesure_boss.mjs` est retiré, et `?niveau=N` aussi (Xav importe une vraie sauvegarde Nv.30). Le §6 ne contredit plus le §4.9 : **une** migration est prévue, v8 → v9, au palier I. Les identifiants `Q-137` à `Q-148` sont inscrits au suivi.
 **Changelog 1.2.0** : l'Annexe court **du sud vers le nord**, et sa sortie débouche près de la **stèle rouge** (`Q-139` tranchée) ; B3 tranché (`Q-148`) : la fiche affiche la correspondance, A choisit l'emplacement, et équiper **remplace**.
 **Changelog 1.1.0** : B1 et B2 tranchés ; `Q-143` et `Q-147` tranchées ; le respec, le re-choix du follet et les compétences en cartes entrent dans cette spec (palier I) ; la marche dans l'ombre de la salle 2 est **confirmée comme un choix de design**.
 
@@ -31,6 +32,8 @@ verifie_par: xav
 | **Q-147** | **Dans l'Annexe 1.** À la sortie, le follet dit : « tu peux maintenant choisir tes stats, tes compétences et ton follet » (le 4ᵉ follet est hors périmètre). Les compétences s'affichent **en cartes dans la page Stats, sous Force, Agilité…** Une seule pour l'instant, mais toutes s'afficheront là, avec : **équiper 1 = X, équiper 2 = Y, équiper 3 = B** | Palier I (§4.9) |
 | **B3** (`Q-148`) | **Précision de Xav** : « équiper 1 = X, 2 = Y, 3 = B » est ce que la fiche **affiche** — les boutons de jeu de chaque emplacement. Pour équiper, on appuie sur **A**, qui propose **les trois emplacements** (le fonctionnement normal du menu, gardé tel quel). Équiper sur un emplacement occupé **remplace** la compétence qui s'y trouvait | B n'est donc jamais une action du menu, et il reste « Fermer ». Les boutons affichés sont les **glyphes du périphérique actif** (`glyphes.json`) : X / Y / B à la manette, 1 / 2 / 3 au clavier, le bouton tactile correspondant au doigt |
 | **Q-139** | **Les salles vont du sud vers le nord**, et la sortie se fait **aux alentours de la stèle rouge**, au nord du chemin | L'entrée est la stèle **bleue** (`stele_grotte`, (21, 68), au sud du chemin), la sortie est près de la stèle **rouge** (`stele_miroir`, (21, 46), au nord) : l'Annexe **passe sous le chemin**. La descente ressort du côté de la « pierre qui répond », ce qui sert le lore de Zéros (`Q-143`) |
+| **Q-138** | **La vue rapprochée d'abord** : « sinon c'est dommage, on ne la verra plus jamais en grand » | Une fois l'indice déchiffré, INTERACT sur la stèle bleue ouvre toujours sa vue rapprochée (la gravure, désormais en clair). Elle gagne une action **Descendre** (A / INTERACT) ; B ferme, comme avant. §4.1 |
+| **Q-146** | **Pas de bot pour l'équilibrage** : « à la louche », au plus cohérent. Xav teste et donne son ressenti (trop dur, trop simple, pourquoi, comment l'améliorer), parce qu'il y met sa vision de ce qui arrive après et n'est pas encore écrit. Il a une **vraie sauvegarde Nv.30** à importer | `tools/mesure_boss.mjs` est **retiré** (§4.5, palier F). `?niveau=N` est **retiré** aussi (§4.8, palier A) : la vraie sauvegarde fait mieux qu'un masque, puisqu'elle porte les points de stats réellement répartis. *[OUVERT : il revient si Xav le demande.]* La sauvegarde Nv.30 va dans `prive/sauvegardes/` : elle sert au palier A (dépasser le Nv.30), au palier F (le Gardien) et au test de la migration v8 → v9 (palier I) |
 
 ## 1. Intention
 
@@ -75,7 +78,7 @@ Ce qui **n'existe pas** : un projectile, un monstre qui tire, une entité intouc
 - **Le déchiffrement** : `indice_grotte_entree` voit son `lisible_si` passer de `niveau ≥ 15` à **`flag_indice_grotte_dechiffre`**. Le flag est posé quand le **carnet (Indices) est ouvert** alors que la condition de proximité tient et que le niveau est ≥ 15. **Changement assumé** : au Nv.15, l'indice ne se lit **plus** partout, seulement après avoir été déchiffré au pied de la pierre. C'est ce que demande le scénario.
 - **L'animation** : dans l'écran Indices, à la **première** lecture seulement, les signes se changent en lettres, **un signe à la fois, dans l'ordre de lecture**. Le brouillage est déterministe (`indices.js`), donc l'animation n'est qu'un **mélange mot à mot** entre `lignesBrouillees` et le texte clair, piloté par un temps. La part pure est testée, et la durée *provisoire* est de **2,5 s**. Pendant l'animation, B ne ferme pas l'écran : il **l'accélère** jusqu'à la fin. Sinon, fermer l'écran marquerait l'indice comme lu sans que le joueur l'ait vu.
 - **La gravure de la stèle suit** : elle est déjà l'indice brouillé « par le même point que le menu ». Une fois le flag posé, elle montre donc le texte clair.
-- **L'entrée** : une fois déchiffrée, INTERACT sur la stèle **ne rouvre plus la vue rapprochée**. Il lance un **fondu** (le même que les portails) et fait descendre dans la salle 1. *[OUVERT `Q-138` : ou bien la vue rapprochée s'ouvre avec une action « Descendre » ?]*
+- **L'entrée** (`Q-138`, tranchée) : une fois déchiffrée, INTERACT sur la stèle ouvre **toujours sa vue rapprochée**, gravure en clair, et celle-ci gagne une action **Descendre** (A / INTERACT, dite par le glyphe du périphérique actif ; au doigt, un toucher sur la gravure). Descendre ferme la vue et lance un **fondu** (le même que les portails) vers la salle 1. B ferme sans descendre, comme avant. L'action n'existe que si la stèle **déclare** une destination en données (`descente: { scene, flag_requis }` sur l'interactif, nom retenu par défaut), jamais par un `if` sur l'id de la stèle : la stèle rouge et celle d'argile gardent leur vue rapprochée actuelle, sans action.
 
 ### 4.2 La descente, et ce qui se remet à zéro
 
@@ -120,7 +123,7 @@ Une **descente** commence à chaque entrée par la stèle. L'Annexe distingue de
 
 - **Nom de travail** : le Gardien (*[OUVERT `Q-140`]*). Un ennemi du catalogue, avec `boss: true` : une grande barre de PV en haut de l'écran plutôt qu'au-dessus de lui (`ui/barre.js` sait déjà dessiner une jauge).
 - **Trois gestes, en données** : corps à corps, tir (projectiles, §4.3), et un **mode de déplacement tiré au sort** toutes les 3 à 6 s parmi `agressif` (il fonce), `kite` (il garde 4 tuiles et tire) et `errance` (il se replace). Les poids sont en données (*provisoire* : 40 / 40 / 20).
-- **Équilibrage « battable vers le Nv.30 »** : un **instrument**, pas un test, `tools/mesure_boss.mjs`. Il fait combattre un héros simulé au Nv.16 et au Nv.30, avec une répartition de points déclarée (*provisoire* : moitié Force, un quart Agilité, un quart Vitalité), et rend le **temps pour tuer** et le **temps pour mourir**. Cible *provisoire* : au Nv.16, le héros meurt avant d'avoir retiré 40 % ; au Nv.30, il gagne en **60 à 120 s** en esquivant la moitié des tirs. Le jugement final revient à Xav, **manette en main**.
+- **Équilibrage « battable vers le Nv.30 »** (`Q-146`, tranchée) : **au ressenti de Xav**, manette en main, sans instrument ni bot. Claude pose des valeurs **« à la louche », au plus cohérent** avec le catalogue existant (PV, force et vitesse des monstres de la surface, dérivées du héros au Nv.16 et au Nv.30), et écrit dans son rapport **le raisonnement** qui les a données, pour que Xav sache quel nombre bouger. Intention à viser : au Nv.16, on perd ; avec la sauvegarde Nv.30 de Xav, on gagne, difficilement. Toutes les valeurs sont *provisoires* et en données : Xav dit trop dur ou trop simple, pourquoi et comment, et on règle.
 - **Mort** : règle habituelle (§4.2).
 - **Une seule fois** : `flag_gardien_vaincu`. Aux descentes suivantes, la salle 3 est vide de boss, et le coffre reste ouvert (vide).
 
@@ -155,7 +158,7 @@ Une **descente** commence à chaque entrée par la stèle. L'Annexe distingue de
 
 ### 4.8 Les niveaux jusqu'au Nv.50
 
-`levels.json` s'étend du Nv.31 au Nv.50, en prolongeant la courbe : l'écart entre deux niveaux croît de **5 XP par niveau**, comme aujourd'hui (Nv.30 → 31 : +155, soit **2 495**… jusqu’au Nv.50 : **6 390**, *provisoire*). **+1 point de stat** par niveau. Les vingt flags `flag_niveau_31` à `flag_niveau_50` (avec leurs clés FR/EN) sont ajoutés, et un test vérifie que **chaque niveau du catalogue a son flag**, pour que cet oubli ne puisse plus arriver. Pour les tests de Xav : un paramètre de debug `?niveau=N`, sur le patron de `?alignement=N` (**masque**, jamais persisté, qui le dit en console). *[OUVERT `Q-146`]*
+`levels.json` s'étend du Nv.31 au Nv.50, en prolongeant la courbe : l'écart entre deux niveaux croît de **5 XP par niveau**, comme aujourd'hui (Nv.30 → 31 : +155, soit **2 495**… jusqu’au Nv.50 : **6 390**, *provisoire*). **+1 point de stat** par niveau. Les vingt flags `flag_niveau_31` à `flag_niveau_50` (avec leurs clés FR/EN) sont ajoutés, et un test vérifie que **chaque niveau du catalogue a son flag**, pour que cet oubli ne puisse plus arriver. Pour les tests de Xav : **sa vraie sauvegarde Nv.30**, importée (`prive/sauvegardes/`), qui continue de progresser. Pas de paramètre `?niveau=N` (`Q-146` : retiré, il revient si Xav le demande).
 
 ### 4.9 Le respec, les compétences en cartes, le re-choix du follet
 
@@ -181,19 +184,19 @@ Une **descente** commence à chaque entrée par la stèle. L'Annexe distingue de
 - **Nouveaux modules purs** : `projectiles.js` (réserve, mouvement, collision), `competences.js` (charge, recharge, cible, résolution des dégâts par la dérivée), et `levier_maintenu` dans `puzzles.js`. Le script de rencontre de Zéros vit dans `main.js#creerOrchestrateurGrotte`, qui porte déjà « le script propre aux scènes du jeu », **mais ses nombres et ses textes vivent en données**.
 - **Nouveaux catalogues ou champs** : `skills.json` (schéma), `enemies.json` (`attaque_distance`, `intouchable`, `boss`, `comportement: distance|boss`), `puzzles.json` (`visible_si`, `levier_maintenu`, `coffre_parchemin`), `scenes.json` (`nettoyage`, `descente`, `rencontre: { sans_defaite, seuil_fin, dialogue }`), `levels.json`, `flags.json`, locales FR/EN.
 - **Test d'architecture** (règle directrice) : un second tireur, une Annexe 2 avec sa salle nettoyée, une seconde compétence chargée par le follet, **chacun en ajoutant des entrées JSON**, sans toucher une ligne de système.
-- **Sauvegarde** : **aucune migration attendue**. Tout ce qui persiste est un flag déclaré avec son `initial`, et l'état « follet posé », la charge et les projectiles sont de session. Une compétence **en recharge** au moment de quitter repart pleine au chargement (**accepté**). *Si un palier découvre qu'il lui faut un champ de sauvegarde, il s'arrête et remonte à Xav.*
+- **Sauvegarde** : **une seule migration**, v8 → v9, au **palier I** (`save.hero.competences`, §4.9, validée par la relecture de Xav). Partout ailleurs, tout ce qui persiste est un flag déclaré avec son `initial`, et l'état « follet posé », la charge et les projectiles sont de session. Une compétence **en recharge** au moment de quitter repart pleine au chargement (**accepté**). *Si un autre palier découvre qu'il lui faut un champ de sauvegarde, il s'arrête et remonte à Xav.*
 - **Scènes nouvelles** : ajout pur, sans renommage ni retrait. La contrainte « un retrait de contenu n'est pas couvert par la migration de schéma » ne s'applique pas.
 
 ## 7. Paliers
 
 | Palier | Contenu | Validation (Xav, en jeu) |
 |---|---|---|
-| **A — Les niveaux** | §4.8 : Nv.31 à 50, les flags, le test « un flag par niveau », `?niveau=N` | La barre d'XP et « Nv. » au-delà de 30 ; `?niveau=40` ; une vraie sauvegarde Nv.30 qui continue de progresser |
-| **B — La stèle et la descente** | §4.1, §4.2 ; les trois salles **vides** (layouts, lumières, portes, escalier) ; flags de descente et leur remise à zéro | Nv.15 au pied de la stèle : le follet parle, le carnet se déchiffre, la stèle fait descendre ; traverser les trois salles (portes forcées par debug) ; remonter |
+| **A — Les niveaux** | §4.8 : Nv.31 à 50, les flags, le test « un flag par niveau » | La barre d'XP et « Nv. » au-delà de 30 ; la vraie sauvegarde Nv.30 de Xav, importée, qui continue de progresser |
+| **B — La stèle et la descente** | §4.1, §4.2 ; la vue rapprochée et son action **Descendre** ; les trois salles **vides** (layouts, lumières, portes, escalier) ; flags de descente et leur remise à zéro | Nv.15 au pied de la stèle : le follet parle, le carnet se déchiffre, la vue rapprochée montre la gravure en clair et propose Descendre ; traverser les trois salles (portes forcées par debug) ; remonter |
 | **C — Les tireurs** | `projectiles.js`, `attaque_distance`, comportement `distance`, les cracheurs, la salle nettoyée, le levier qui apparaît | Salle 1 : lisibilité des tirs, esquive, cadence « faible », dégâts « modérés » ; le levier qui apparaît |
 | **D — Zéros** | Entité intouchable, follet de Zéros, combat sans défaite, relève, arrêt à 25 %, dialogue (textes provisoires), passage | La mise en scène entière ; la relève ; se lit-elle comme un combat qu'on **ne peut pas** perdre, et pas comme un bug ? |
 | **E — Les deux mains** | `levier_maintenu`, follet posé (**après B2**), dialogue du follet, passage | Salle 2 à la manette, au clavier **et** au doigt ; la marche dans l'ombre |
-| **F — Le Gardien** | Comportement `boss` (trois gestes, trois modes), barre de boss, `mesure_boss.mjs`, mort → Grotte → tout refaire | Au Nv.16 : on perd ; au Nv.30 (`?niveau=30` + points répartis) : on gagne, difficilement |
+| **F — Le Gardien** | Comportement `boss` (trois gestes, trois modes), barre de boss, valeurs « à la louche » avec leur raisonnement, mort → Grotte → tout refaire | Au ressenti : au Nv.16 on perd ; avec la sauvegarde Nv.30, on gagne, difficilement. Trop dur ou trop simple, pourquoi, comment : on règle |
 | **G — Le parchemin** (**après B1**) | Coffre, cinématique, `skills.json` et son schéma, `competences.js`, `slot_skill_1`, HUD de charge et de recharge | La cinématique ; la charge qui monte pendant l'engagement ; le tir, l'AoE, la recharge ; le HUD (checklist visuelle) |
 | **I — Choisir** (§4.9) | Dialogue de déblocage, « Tout reprendre », compétences en cartes dans Stats (la fiche affiche 1 = X, 2 = Y, 3 = B ; A choisit l'emplacement ; équiper remplace), migration v8 → v9, carte Follet | Respec puis nouvelle répartition ; équiper la compétence en 1, puis en 3 (elle quitte le 1, et le bouton B la lance en jeu) ; changer de follet dehors, de jour et de nuit ; **manette, clavier et doigt** |
 | **H — La boucle** | Levier-récompense (éclat au sol), porte de sortie, descentes suivantes (sans Zéros, sans dialogue du levier, sans boss) ; album de référence | Trois descentes d'affilée : un éclat chacune, rien ne se rejoue qui ne devrait pas |
@@ -218,7 +221,7 @@ Ordre : A → B → C → D → E → F → G → **I** → H (le choix se débl
 | **B1** | Les dégâts de la compétence | **Tranché (Xav, 24/09)** : Force × coefficient d'Esprit ; Esprit raccourcit aussi la charge et la recharge |
 | **B2** | Poser le follet | **Tranché (Xav, 24/09)** : `target_next` contextuel, état `poste` du follet |
 | `Q-137` | Forme de la condition de proximité | Valeur nommée `a_portee`, fournie par `main.js` |
-| `Q-138` | La stèle déchiffrée : descente directe, ou vue rapprochée avec « Descendre » ? | Descente directe, avec fondu |
+| `Q-138` | La stèle déchiffrée : descente directe, ou vue rapprochée avec « Descendre » ? | **Tranché (Xav, 24/09)** : la vue rapprochée d'abord, avec l'action Descendre |
 | `Q-139` | Où mène la porte de la salle 3 ? | **Tranché (Xav, 24/09)** : dehors, près de la stèle rouge ; salles du sud vers le nord |
 | `Q-140` | Les noms : cracheurs, Zéros / *Zeros*, le Gardien, la compétence | Noms de travail, à écrire par Xav |
 | `Q-141` | Le follet de Zéros frappe-t-il ? | Non : Zéros frappe, son follet est la cible |
@@ -226,7 +229,7 @@ Ordre : A → B → C → D → E → F → G → **I** → H (le choix se débl
 | `Q-143` | Zéros, « la seconde main » de la pierre qui répond ? | **Tranché (Xav, 24/09)** : oui, personnage récurrent (poste avancé…) |
 | `Q-144` | La charge : cumulée sur plusieurs monstres, et gardée hors combat ? | Oui et oui |
 | `Q-145` | Un temps minimal entre deux descentes ? | Non |
-| `Q-146` | `?niveau=N` en debug, masque non persisté ? | Oui |
+| `Q-146` | `?niveau=N` en debug ; l'équilibrage du Gardien | **Équilibrage tranché (Xav, 24/09)** : au ressenti, pas de bot. `?niveau=N` retiré (la vraie sauvegarde Nv.30 le remplace), à confirmer |
 | `Q-147` | Respec et re-choix du follet | **Tranché (Xav, 24/09)** : dans l'Annexe 1, palier I |
 | `Q-148` | **B3** : équiper sur l'emplacement 3 | **Tranché (Xav, 24/09)** : la fiche affiche 1 = X, 2 = Y, 3 = B ; A choisit parmi les trois ; équiper remplace |
 

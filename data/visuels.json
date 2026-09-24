@@ -2169,6 +2169,324 @@
     ]
   },
   {
+    "id": "visuel_flaque_grande",
+    "ancre": "centre",
+    "primitives": [
+      {
+        "forme": "ellipse",
+        "dx": -3,
+        "dy": 0,
+        "w": 32,
+        "h": 14,
+        "couleur": "#000000",
+        "alpha": 0.14,
+        "rotation": -5
+      },
+      {
+        "forme": "ellipse",
+        "dx": 15,
+        "dy": 3,
+        "w": 8,
+        "h": 4.4,
+        "couleur": "#000000",
+        "alpha": 0.12
+      },
+      {
+        "forme": "ellipse",
+        "dx": -3,
+        "dy": 0.3,
+        "w": 26.5,
+        "h": 10.6,
+        "couleur": "#26323b",
+        "alpha": 0.62,
+        "rotation": -5
+      },
+      {
+        "forme": "ellipse",
+        "dx": 15,
+        "dy": 3.1,
+        "w": 6,
+        "h": 3,
+        "couleur": "#26323b",
+        "alpha": 0.55
+      },
+      {
+        "forme": "degrade_radial",
+        "dx": -1.5,
+        "dy": 1,
+        "w": 20,
+        "h": 8,
+        "degrade": {
+          "stops": [
+            {
+              "offset": 0,
+              "couleur": "#161e24",
+              "alpha": 0.55
+            },
+            {
+              "offset": 1,
+              "couleur": "#161e24",
+              "alpha": 0
+            }
+          ]
+        }
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -12,
+            -2
+          ],
+          [
+            -6,
+            -3.8
+          ]
+        ],
+        "couleur": "#a9c2d0",
+        "epaisseur": 0.8,
+        "alpha": 0.33
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -3.6,
+            -3.9
+          ],
+          [
+            0,
+            -4
+          ]
+        ],
+        "couleur": "#a9c2d0",
+        "epaisseur": 0.6,
+        "alpha": 0.24
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            13.8,
+            2.4
+          ],
+          [
+            15.6,
+            2.1
+          ]
+        ],
+        "couleur": "#a9c2d0",
+        "epaisseur": 0.5,
+        "alpha": 0.22
+      }
+    ]
+  },
+  {
+    "id": "visuel_flaque_claire",
+    "ancre": "centre",
+    "primitives": [
+      {
+        "forme": "ellipse",
+        "dx": 0,
+        "dy": 0,
+        "w": 17,
+        "h": 9,
+        "couleur": "#000000",
+        "alpha": 0.1,
+        "rotation": 8
+      },
+      {
+        "forme": "ellipse",
+        "dx": 0,
+        "dy": 0.2,
+        "w": 13.5,
+        "h": 6.6,
+        "couleur": "#3d505c",
+        "alpha": 0.55,
+        "rotation": 8
+      },
+      {
+        "forme": "degrade_radial",
+        "dx": 0.6,
+        "dy": 0.6,
+        "w": 10,
+        "h": 4.6,
+        "degrade": {
+          "stops": [
+            {
+              "offset": 0,
+              "couleur": "#2a3943",
+              "alpha": 0.35
+            },
+            {
+              "offset": 1,
+              "couleur": "#2a3943",
+              "alpha": 0
+            }
+          ]
+        }
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -4.4,
+            -1.2
+          ],
+          [
+            -0.4,
+            -2.2
+          ]
+        ],
+        "couleur": "#cfe0e8",
+        "epaisseur": 0.8,
+        "alpha": 0.5
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            1.4,
+            -2
+          ],
+          [
+            3,
+            -1.8
+          ]
+        ],
+        "couleur": "#cfe0e8",
+        "epaisseur": 0.6,
+        "alpha": 0.38
+      }
+    ]
+  },
+  {
+    "id": "visuel_flaque_sombre",
+    "ancre": "centre",
+    "primitives": [
+      {
+        "forme": "ellipse",
+        "dx": 0,
+        "dy": 0,
+        "w": 21,
+        "h": 12,
+        "couleur": "#000000",
+        "alpha": 0.2
+      },
+      {
+        "forme": "ellipse",
+        "dx": 0,
+        "dy": 0.4,
+        "w": 17,
+        "h": 9.4,
+        "couleur": "#141b21",
+        "alpha": 0.78
+      },
+      {
+        "forme": "degrade_radial",
+        "dx": 0.6,
+        "dy": 1,
+        "w": 12,
+        "h": 6.4,
+        "degrade": {
+          "stops": [
+            {
+              "offset": 0,
+              "couleur": "#07090b",
+              "alpha": 0.6
+            },
+            {
+              "offset": 1,
+              "couleur": "#07090b",
+              "alpha": 0
+            }
+          ]
+        }
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -5,
+            -2
+          ],
+          [
+            -2,
+            -2.9
+          ]
+        ],
+        "couleur": "#8aa2b0",
+        "epaisseur": 0.6,
+        "alpha": 0.22
+      }
+    ]
+  },
+  {
+    "id": "visuel_flaque_mouillee",
+    "ancre": "centre",
+    "primitives": [
+      {
+        "forme": "ellipse",
+        "dx": -2,
+        "dy": 0,
+        "w": 18,
+        "h": 8,
+        "couleur": "#26323b",
+        "alpha": 0.26,
+        "rotation": -10
+      },
+      {
+        "forme": "ellipse",
+        "dx": 6,
+        "dy": 2,
+        "w": 9,
+        "h": 4.6,
+        "couleur": "#26323b",
+        "alpha": 0.22,
+        "rotation": 12
+      },
+      {
+        "forme": "ellipse",
+        "dx": -9,
+        "dy": 2.2,
+        "w": 5,
+        "h": 2.6,
+        "couleur": "#26323b",
+        "alpha": 0.34
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -6,
+            -1.6
+          ],
+          [
+            -2.4,
+            -2.4
+          ]
+        ],
+        "couleur": "#a9c2d0",
+        "epaisseur": 0.6,
+        "alpha": 0.26
+      }
+    ]
+  },
+  {
     "id": "visuel_rocher_petit",
     "ancre": "bas",
     "ombre": {

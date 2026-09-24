@@ -192,3 +192,13 @@ qui ne porte que les dix chiffres (`unicodeRange`), en tête de chaque pile.
 - Spec 14 v1.2.0 : salles du sud vers le nord, sortie près de la stèle rouge
   (`Q-139`) ; B3/`Q-148` : la fiche affiche 1 = X, 2 = Y, 3 = B, A choisit
   l'emplacement, équiper remplace.
+
+## Polish du soir : les flaques et la plume (24/09)
+
+Demande de Xav (fin de semaine, 4 % de budget) : les flaques manquent de
+variété, et la plume n'a pas été reprise depuis longtemps. Branche
+`polish-flaques-plume-2026-09-24`.
+
+| Commit | Ticket | Ce qu'il faut en retenir |
+|---|---|---|
+| (voir log) | `D-189` — les flaques | Quatre dessins de plus, poids partagé au même rang : le décor ne bouge pas (vérifié). `V-133` ouverte. Tests : 185 fichiers verts |

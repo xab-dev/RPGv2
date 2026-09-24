@@ -6,7 +6,7 @@ version: 1.0.0
 statut: brouillon
 catégorie: Spec
 date: 2026-09-24
-Ids_suivi: [Q-52, E-04, D-01, D-153, D-02, Q-61, "D-188 et suivants (à créer : un par palier)", "Q-131 à Q-135 (à créer)", "V-133 et suivantes (à créer)", "R-22 et suivants (à créer)"]
+Ids_suivi: [Q-52, E-04, D-01, D-153, D-02, Q-61, "D-189 et suivants (à créer : un par palier ; D-188 pris le 24/09 par la zone de Chaos sud)", "Q-131 à Q-135 (à créer)", "V-133 et suivantes (à créer)", "R-22 et suivants (à créer)"]
 genere_par: claude
 verifie_par: xav
 ---
@@ -140,7 +140,7 @@ Un preset ne change jamais le jeu (`specs/09` §4.1) : une lisière est un dessi
 
 ## 7. Paliers
 
-### Palier A — Mesurer avant de toucher *(traite rien ; ouvre `D-188`)*
+### Palier A — Mesurer avant de toucher *(traite rien ; ouvre `D-189`)*
 
 Lecture : `render.js` (l. ~313-515), `tools/scenarios/cout_calque.mjs`, `commun.mjs`, les lignes `D-01`, `D-153`, `D-02`.
 1. Créer `traversee_nuit.mjs` et la mesure d'entrée en scène.

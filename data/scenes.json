@@ -306,6 +306,16 @@
           "w": 26,
           "h": 22
         }
+      },
+      {
+        "type": "zone_apparition",
+        "id": "chaos_sud",
+        "rect": {
+          "x": 140,
+          "y": 88,
+          "w": 26,
+          "h": 22
+        }
       }
     ],
     "foret_procedurale": {

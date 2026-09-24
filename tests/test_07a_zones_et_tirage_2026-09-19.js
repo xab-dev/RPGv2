@@ -224,31 +224,44 @@ function dansRect(tx, ty, r) {
 }
 
 // --- 5. Data-driven : le palier Nv. 10, sans une ligne de code ----------
+// Jusqu'au 24/09, ce bloc AJOUTAIT en mémoire une 2ᵉ table (zone sud, seuil
+// 10) pour prouver qu'elle marcherait sans code. Elle est désormais dans le
+// catalogue réel (Xav, 24/09 : « on a oublié de la mettre ») — le test éprouve
+// donc la vraie, et la preuve « sans code » tient toujours : le diff de ce
+// jour ne touche que `scenes.json` et `spawns.json`.
 {
-  const copie = JSON.parse(JSON.stringify(catalogues));
-  copie.spawns.push({
-    ...copie.spawns[0],
-    id: 'spawn_chaos_sud',
-    zone_apparition: 'champ_sud',
-    domaine: ['champ_sud'],
-    condition: { valeur: 'niveau', min: 10 },
-  });
-  assert.deepEqual(validerCatalogues(copie), [], 'la 2ᵉ table est valide au boot, sans code');
+  const sud = catalogues.spawns.find((t) => t.id === 'spawn_chaos_sud');
+  assert.ok(sud, 'la table du Champ sud existe');
+  assert.deepEqual(sud.condition, { valeur: 'niveau', min: 10 }, 'ouverte au Nv. 10');
+  assert.deepEqual(sud.phases, ['nuit'], 'la nuit seulement');
+  assert.deepEqual(sud.domaine, ['champ_sud'], 'elle erre dans le Champ sud');
 
-  const tables = tablesDeScene(copie.spawns, SCENE_ID);
-  assert.equal(tables.length, 2);
-  const flags = creerRegistreFlags(construireRegistre(copie), { mode: 'prod', valeurs: () => ({ niveau: 7 }) });
-  const actives = tables.filter((t) => tableActive(t, { phase: 'nuit', evaluerCondition: flags.evaluate }));
-  assert.deepEqual(actives.map((t) => t.id), ['spawn_chaos_nord_est'], 'au niveau 7, seule la table Nv. 5 est ouverte');
+  // Sa zone d'apparition est DANS le Champ sud, et hors de toute zone sûre.
+  const zones = catalogues.scenes.find((s) => s.id === SCENE_ID).zones;
+  const rectDe = (id) => zones.filter((z) => z.id === id).map((z) => z.rect);
+  const [apparition] = rectDe(sud.zone_apparition);
+  const contient = (r, z) => z.x <= r.x && z.y <= r.y && r.x + r.w <= z.x + z.w && r.y + r.h <= z.y + z.h;
+  const touche = (r, z) => r.x < z.x + z.w && z.x < r.x + r.w && r.y < z.y + z.h && z.y < r.y + r.h;
+  assert.ok(rectDe('champ_sud').some((z) => contient(apparition, z)), 'la zone de Chaos sud tient dans un rectangle du Champ sud');
+  for (const z of zones.filter((x) => x.type === 'zone_sure')) {
+    assert.ok(!touche(apparition, z.rect), `elle ne touche pas ${z.id}`);
+  }
+
+  const tables = tablesDeScene(catalogues.spawns, SCENE_ID);
+  const activesAu = (niveau) => {
+    const flags = creerRegistreFlags(registre, { mode: 'prod', valeurs: () => ({ niveau }) });
+    return tables.filter((t) => tableActive(t, { phase: 'nuit', evaluerCondition: flags.evaluate })).map((t) => t.id);
+  };
+  assert.deepEqual(activesAu(7), ['spawn_chaos_nord_est'], 'au niveau 7, seule la table Nv. 5 est ouverte');
+  assert.deepEqual(activesAu(10).sort(), ['spawn_chaos_nord_est', 'spawn_chaos_sud'], 'au niveau 10, les deux');
 
   // Et son tirage marche, dans une zone qu'aucun code ne connaît.
   const atteignables = calculerTuilesAtteignables(scene, 6, 58);
-  const sceneCopie = chargerScene(construireRegistre(copie), SCENE_ID);
-  const p = tirerPositionApparition(sceneCopie, {
-    zoneId: 'champ_sud', hero: { x: 0, y: 0 }, graine: 7, tuilesAtteignables: atteignables,
+  const p = tirerPositionApparition(scene, {
+    zoneId: sud.zone_apparition, hero: { x: 0, y: 0 }, graine: 7, tuilesAtteignables: atteignables,
   });
-  assert.ok(p, 'le Champ sud sait faire naître, lui aussi');
-  console.log('OK une 2ᵉ table (zone sud, seuil 10) fonctionne en données seules');
+  assert.ok(p, 'la zone de Chaos sud sait faire naître');
+  console.log('OK la 2ᵉ table (zone sud, Nv. 10) : dans le Champ sud, hors zone sûre, ouverte au bon niveau');
 }
 
 console.log('OK test_07a_zones_et_tirage');

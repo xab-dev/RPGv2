@@ -165,3 +165,9 @@ qui ne porte que les dix chiffres (`unicodeRange`), en tête de chaque pile.
   lisière (déléguée à Claude par `E-04`) : bord dentelé à fondu court.
   Questions `Q-131` à `Q-135` listées dans la spec, **pas encore ouvertes
   au suivi** : elles le seront au palier qui les pose.
+
+## Patch : la zone de Chaos sud au Nv.10 (24/09, `D-188`)
+
+- Données seules (`scenes.json`, `spawns.json`), miroir de la zone nord-est
+  dans le Champ sud. `test_07a` éprouve la vraie table au lieu de sa copie en
+  mémoire. Proposition : `Q-136` (une ligne d'ambiance). Tests : 185 verts.

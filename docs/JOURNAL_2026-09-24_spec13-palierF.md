@@ -129,4 +129,4 @@ Xav : « V-148 good », avec les relevés de clôture. PC de Xav, Chrome, manett
 | `R-24` jour | 0,46 ms (`R-22` : 1,13) | 1,00 / 5,50 ms (`R-22` : 4,71 / 6,30) | 0,10 ms | 0/6 interactifs, 0/33 objets | 18,8 ms |
 | `R-25` nuit | 0,60 ms (`R-23` : 1,35) | 0,52 / 3,60 ms (`R-23` : 4,03 / 5,50) | 0,14 ms | 2,55/12 monstres en moyenne, 0/42 objets | 15,6 ms |
 
-Les relevés ne disent pas le preset (`R-22` et `R-23` étaient en Moyen). Reste l'album de référence de la carte (six vues), qui n'est pas pris.
+Les deux relevés sont en **Moyen** (précisé par Xav), comme `R-22` et `R-23` : la comparaison vaut. Reste l'album de référence de la carte (six vues), qui n'est pas pris.

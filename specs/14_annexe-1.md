@@ -238,7 +238,7 @@ Ordre : A → B → C → D → E → F → G → **I** → H (le choix se débl
 | `Q-152` | Un retour au sud des salles 2 et 3 ? | **Tranché (Xav, 25/09)** : on garde, à revoir avec les tests tiers |
 | `Q-153` | Un fondu aux changements de scène ? | **Tranché (Xav, 25/09)** : pas entre les salles ; **oui à la sortie** vers la stèle rouge (palier H) |
 | `Q-154` | Les crachats : après le voile (lumineux) ou dessous ? | **Tranché (Xav, 25/09)** : après le voile ; le monstre reste dans le noir (`Q-27`), son tir se voit |
-| `Q-155` | Le butin des cracheurs | Aucun éclat (un éclat par descente), 30 XP |
+| `Q-155` | Le butin des cracheurs | **Tranché (Xav, 25/09)** : 1 éclat une fois sur quatre (un de plus par salle 1 en moyenne), 30 XP |
 | `Q-148` | **B3** : équiper sur l'emplacement 3 | **Tranché (Xav, 24/09)** : la fiche affiche 1 = X, 2 = Y, 3 = B ; A choisit parmi les trois ; équiper remplace |
 
 ## 11. Hors périmètre

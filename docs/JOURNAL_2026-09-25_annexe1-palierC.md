@@ -69,5 +69,5 @@ Chiffres comparés à ceux du palier B (`docs/archives/JOURNAL_2026-09-24_annexe
 - `V-151` **validée par Xav** : « très bon design, bien vu de ne pas mettre de lumière sur les mobs, les projectiles ressorte mieux ! au début je les trouvais simple, mais, je suis niveau 33, et je suis quand même mort au bout d'un moment. on garde. »
 - `Q-154` tranchée par la même phrase : les tirs restent après le voile, les monstres sans lueur.
 - Difficulté gardée telle quelle (« on garde »), testée au Nv.33.
-- `Q-155` (aucun éclat) reste ouverte.
+- `Q-155` tranchée ensuite par Xav : « Q-155 : 25% dropRate est possible (1 éclat de plus par salle en moyenne) ? » En données seules : un éclat une fois sur quatre par cracheur, soit un par salle 1 en moyenne.
 - Question posée par Xav sur le banc de la spec 13 à chaque palier : une règle allégée est proposée (banc complet, sentinelle ou rien selon ce que le palier touche), en attente de sa décision.

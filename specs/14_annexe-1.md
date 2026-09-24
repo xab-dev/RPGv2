@@ -2,11 +2,11 @@
 projet: RPG V2
 episode/session: Carte Maison — l'Annexe 1 (la stèle, Zéros, les leviers, le Gardien, la première compétence)
 type: spec par paliers
-version: 1.3.3
-statut: courante — paliers A et B livrés le 24/09 et validés (V-149, V-150) ; B1, B2, B3, Q-138 et l'équilibrage tranchés par Xav le 24/09 (§0)
+version: 1.3.4
+statut: courante — paliers A et B livrés le 24/09 et validés (V-149, V-150) ; palier C livré le 25/09, à valider (V-151) ; B1, B2, B3, Q-138 et l'équilibrage tranchés par Xav le 24/09 (§0)
 catégorie: Spec
 date: 2026-09-24
-Ids_suivi: [Q-120, Q-13, "D-205 (A), D-207 (B), D- (à créer : un par palier)", "Q-137 à Q-148 (inscrites au suivi le 24/09)", Q-152, Q-153, Q-18, "V-149 (A), V-150 (B), V- (à créer : un par palier)"]
+Ids_suivi: [Q-120, Q-13, "D-205 (A), D-207 (B), D-209 (C), D- (à créer : un par palier)", "Q-137 à Q-148 (inscrites au suivi le 24/09)", Q-152, Q-153, Q-154, Q-155, Q-18, "V-149 (A), V-150 (B), V-151 (C), V- (à créer : un par palier)"]
 genere_par: claude
 verifie_par: xav
 ---
@@ -19,6 +19,7 @@ verifie_par: xav
 
 ## 0. Décisions de Xav (24/09, relecture de la v1.0.0)
 
+**Changelog 1.3.4** (palier C livré, `D-209`) : `attaque_distance` gagne trois champs, tous *provisoires* : `recul_tuiles` (la distance sous laquelle le tireur recule, 2), `rayon_px` (le disque du crachat, 3) et `course_tuiles` (jusqu'où il vole, 7). Les **leviers** de la descente reprennent leur état de départ avec ses flags (§4.2 les comptait déjà dans l'état de la descente ; leur état vit dans `save.puzzles`, pas dans un flag). Un interactif **solide** ne peut pas déclarer `visible_si` (sa collision est posée à l'entrée en scène). **À ce palier, le levier de la salle 1 ouvre directement le passage** : c'est le comportement des descentes suivantes (`Q-142`), et le palier D intercalera Zéros la première fois. Relevés : `Q-154` (les crachats se dessinent après le voile), `Q-155` (les cracheurs ne donnent aucun éclat).
 **Changelog 1.3.3** (palier B livré, `D-207`) : `Q-137` appliquée sous la forme `{ valeur: 'a_portee', egal: '<id>' }` ; le déchiffrement se **déclare** sur l'indice (`dechiffrement: { condition, flag }`) ; `?flags=a,b` (debug) tient des flags pour vrais sans les sauvegarder, ce qui ouvre les portes de la validation. **Correction d'une contradiction du §4.3** : le passage 1 → 2 n'attend pas « `flag_zeros_rencontre` ou le levier » — `flag_zeros_rencontre` est persistant, la porte serait donc ouverte dès l'entrée des descentes suivantes (contre `Q-142` et le §4.2). Il attend le **flag de descente** `flag_annexe_passage_1`, que poseront la fin de la rencontre (palier D) et le levier des descentes suivantes. Chaque salle a un **retour au sud**, toujours ouvert (`Q-152` : sans lui, la salle 2, sans monstre, est un piège dont on ne sort pas) ; il n'existe **aucun fondu** aux portails (`Q-153`) : Descendre sort par le fondu de la vue de la stèle.
 **Changelog 1.3.2** : Zéros, précisions de Xav : le yin et le yang, il a découvert les secrets des follets, le « Follet Blanc » à glisser dans son dialogue (`E-05`).
 **Changelog 1.3.1** : **Zéros est habillé en blanc** (Xav) ; le nom « Zéros » est retenu ; les défauts de `Q-141`, `Q-142`, `Q-144` et `Q-145` sont acceptés par Xav (« le reste ok »).
@@ -98,7 +99,7 @@ Une **descente** commence à chaque entrée par la stèle. L'Annexe distingue de
 ### 4.3 Salle 1 — les tireurs, puis Zéros
 
 **La nouvelle famille** : les **rampants cracheurs** (nom de travail, *[OUVERT `Q-140`]*). Même silhouette de famille que le rampant de la Grotte, avec une autre teinte et un organe de tir visible, pour que le joueur reconnaisse tout de suite **la seule différence**.
-- `enemies.json` gagne une **attaque à distance** déclarative : `attaque_distance: { portee_tuiles, cadence_ms, vitesse_px_s, visuel }`. Les dégâts suivent la même `force` que le corps à corps. Valeurs *provisoires* : portée 5 tuiles, cadence **2 400 ms** (« faible »), 110 px/s, dégâts « modérés », soit ceux d'un rodeur.
+- `enemies.json` gagne une **attaque à distance** déclarative : `attaque_distance: { portee_tuiles, recul_tuiles, cadence_ms, vitesse_px_s, rayon_px, course_tuiles, visuel }` (v1.3.4 : les trois champs du milieu). Les dégâts suivent la même `force` que le corps à corps. Valeurs *provisoires* : portée 5 tuiles, cadence **2 400 ms** (« faible »), 110 px/s, dégâts « modérés », soit ceux d'un rodeur.
 - **Le projectile** est un système nouveau, `src/projectiles.js`, **pur**. Une réserve à capacité fixe (patron de `poussiere.js`), un mouvement en ligne droite, qui **s'arrête sur un mur** (`estSolideAuPoint`) et **touche le héros** (disque contre disque). Le héros peut donc **l'esquiver**. Ce même module sert au Gardien et à la compétence du joueur : un seul chemin de collision.
 - **Comportement** : un tireur garde une **distance préférée** (il recule si le héros approche à moins de 2 tuiles, et tire s'il est à portée). Cet état s'ajoute à la machine de `comportement_monstres.js`, **déclaré en données** (`comportement: "distance"`), sans toucher les états du corps à corps.
 - **Placement** : quatre cracheurs (*provisoire*), posés par les `spawns` de la scène, avec la condition « salle 1 pas encore nettoyée ».
@@ -196,7 +197,7 @@ Une **descente** commence à chaque entrée par la stèle. L'Annexe distingue de
 |---|---|---|
 | **A — Les niveaux** (**livré le 24/09**, `D-205`, validé : `V-149`) | §4.8 : Nv.31 à 50, les flags, le test « un flag par niveau » | La barre d'XP et « Nv. » au-delà de 30 ; la vraie sauvegarde Nv.30 de Xav, importée, qui continue de progresser |
 | **B — La stèle et la descente** (**livré le 24/09**, `D-207`, validé : `V-150`) | §4.1, §4.2 ; la vue rapprochée et son action **Descendre** ; les trois salles **vides** (layouts, lumières, portes, escalier) ; flags de descente et leur remise à zéro | Nv.15 au pied de la stèle : le follet parle, le carnet se déchiffre, la vue rapprochée montre la gravure en clair et propose Descendre ; traverser les trois salles (portes forcées par debug) ; remonter |
-| **C — Les tireurs** | `projectiles.js`, `attaque_distance`, comportement `distance`, les cracheurs, la salle nettoyée, le levier qui apparaît | Salle 1 : lisibilité des tirs, esquive, cadence « faible », dégâts « modérés » ; le levier qui apparaît |
+| **C — Les tireurs** (**livré le 25/09**, `D-209`, à valider : `V-151`) | `projectiles.js`, `attaque_distance`, comportement `distance`, les cracheurs, la salle nettoyée, le levier qui apparaît | Salle 1 : lisibilité des tirs, esquive, cadence « faible », dégâts « modérés » ; le levier qui apparaît |
 | **D — Zéros** | Entité intouchable, follet de Zéros, combat sans défaite, relève, arrêt à 25 %, dialogue (textes provisoires), passage | La mise en scène entière ; la relève ; se lit-elle comme un combat qu'on **ne peut pas** perdre, et pas comme un bug ? |
 | **E — Les deux mains** | `levier_maintenu`, follet posé (**après B2**), dialogue du follet, passage | Salle 2 à la manette, au clavier **et** au doigt ; la marche dans l'ombre |
 | **F — Le Gardien** | Comportement `boss` (trois gestes, trois modes), barre de boss, valeurs « à la louche » avec leur raisonnement, mort → Grotte → tout refaire | Au ressenti : au Nv.16 on perd ; avec la sauvegarde Nv.30, on gagne, difficilement. Trop dur ou trop simple, pourquoi, comment : on règle |
@@ -236,6 +237,8 @@ Ordre : A → B → C → D → E → F → G → **I** → H (le choix se débl
 | `Q-147` | Respec et re-choix du follet | **Tranché (Xav, 24/09)** : dans l'Annexe 1, palier I |
 | `Q-152` | Un retour au sud des salles 2 et 3 ? | **Tranché (Xav, 25/09)** : on garde, à revoir avec les tests tiers |
 | `Q-153` | Un fondu aux changements de scène ? | **Tranché (Xav, 25/09)** : pas entre les salles ; **oui à la sortie** vers la stèle rouge (palier H) |
+| `Q-154` | Les crachats : après le voile (lumineux) ou dessous ? | Après le voile : le monstre reste dans le noir (`Q-27`), son tir se voit |
+| `Q-155` | Le butin des cracheurs | Aucun éclat (un éclat par descente), 30 XP |
 | `Q-148` | **B3** : équiper sur l'emplacement 3 | **Tranché (Xav, 24/09)** : la fiche affiche 1 = X, 2 = Y, 3 = B ; A choisit parmi les trois ; équiper remplace |
 
 ## 11. Hors périmètre

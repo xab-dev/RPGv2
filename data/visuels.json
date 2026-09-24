@@ -1374,6 +1374,311 @@
     ]
   },
   {
+    "id": "visuel_monstre_cracheur",
+    "ancre": "centre",
+    "teintable": true,
+    "ombre": {
+      "dy": 6,
+      "w": 18,
+      "h": 4.5,
+      "alpha": 0.38
+    },
+    "primitives": [
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -4.5,
+            -2
+          ],
+          [
+            -8.5,
+            -4.5
+          ]
+        ],
+        "couleur": "#120e15",
+        "epaisseur": 1.2
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            4.5,
+            -2
+          ],
+          [
+            8.5,
+            -4.5
+          ]
+        ],
+        "couleur": "#120e15",
+        "epaisseur": 1.2
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -5,
+            0.5
+          ],
+          [
+            -9,
+            1.5
+          ]
+        ],
+        "couleur": "#120e15",
+        "epaisseur": 1.2
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            5,
+            0.5
+          ],
+          [
+            9,
+            1.5
+          ]
+        ],
+        "couleur": "#120e15",
+        "epaisseur": 1.2
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -4,
+            3
+          ],
+          [
+            -7.5,
+            5.5
+          ]
+        ],
+        "couleur": "#120e15",
+        "epaisseur": 1.2
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            4,
+            3
+          ],
+          [
+            7.5,
+            5.5
+          ]
+        ],
+        "couleur": "#120e15",
+        "epaisseur": 1.2
+      },
+      {
+        "forme": "ellipse",
+        "dx": 0,
+        "dy": -8.2,
+        "w": 6.5,
+        "h": 4.2,
+        "couleur": "#6f9a3a",
+        "teinte": true
+      },
+      {
+        "forme": "ellipse",
+        "dx": -0.9,
+        "dy": -9,
+        "w": 2.6,
+        "h": 1.2,
+        "rotation": -12,
+        "couleur": "#d8ff9a",
+        "alpha": 0.45
+      },
+      {
+        "forme": "ellipse",
+        "dx": 0,
+        "dy": -5.5,
+        "w": 8,
+        "h": 5.5,
+        "couleur": "#26331f",
+        "teinte": true
+      },
+      {
+        "forme": "ellipse",
+        "dx": 0,
+        "dy": -1.5,
+        "w": 11,
+        "h": 7,
+        "couleur": "#2e3d24",
+        "teinte": true
+      },
+      {
+        "forme": "ellipse",
+        "dx": 0,
+        "dy": 3,
+        "w": 10,
+        "h": 6.5,
+        "couleur": "#20291b",
+        "teinte": true
+      },
+      {
+        "forme": "ellipse",
+        "dx": -1.3,
+        "dy": -6.9,
+        "w": 3.6,
+        "h": 1.4,
+        "rotation": -12,
+        "couleur": "#a9c98a",
+        "alpha": 0.3
+      },
+      {
+        "forme": "ellipse",
+        "dx": -2,
+        "dy": -3.4,
+        "w": 4.6,
+        "h": 1.6,
+        "rotation": -12,
+        "couleur": "#a9c98a",
+        "alpha": 0.3
+      },
+      {
+        "forme": "ellipse",
+        "dx": -2,
+        "dy": 1.3,
+        "w": 4,
+        "h": 1.4,
+        "rotation": -12,
+        "couleur": "#a9c98a",
+        "alpha": 0.22
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -1.8,
+            5.8
+          ],
+          [
+            -2.8,
+            7.4
+          ]
+        ],
+        "couleur": "#0d0a10",
+        "epaisseur": 1
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            1.8,
+            5.8
+          ],
+          [
+            2.8,
+            7.4
+          ]
+        ],
+        "couleur": "#0d0a10",
+        "epaisseur": 1
+      },
+      {
+        "forme": "cercle",
+        "dx": -1.9,
+        "dy": 3.2,
+        "w": 1.3,
+        "h": 1.3,
+        "couleur": "#cdbb92",
+        "alpha": 0.75
+      },
+      {
+        "forme": "cercle",
+        "dx": 1.9,
+        "dy": 3.2,
+        "w": 1.3,
+        "h": 1.3,
+        "couleur": "#cdbb92",
+        "alpha": 0.75
+      },
+      {
+        "forme": "cercle",
+        "dx": 0,
+        "dy": 6.4,
+        "w": 2.2,
+        "h": 2.2,
+        "couleur": "#c8ff6a"
+      }
+    ]
+  },
+  {
+    "id": "visuel_projectile_crachat",
+    "ancre": "centre",
+    "primitives": [
+      {
+        "forme": "degrade_radial",
+        "dx": 0,
+        "dy": 0,
+        "w": 14,
+        "h": 14,
+        "couleur": "#b8ff5a",
+        "degrade": {
+          "direction": "radial",
+          "stops": [
+            {
+              "offset": 0,
+              "couleur": "#b8ff5a",
+              "alpha": 0.45
+            },
+            {
+              "offset": 1,
+              "couleur": "#b8ff5a",
+              "alpha": 0
+            }
+          ]
+        }
+      },
+      {
+        "forme": "cercle",
+        "dx": 0,
+        "dy": 0,
+        "w": 6,
+        "h": 6,
+        "couleur": "#7fcf3a"
+      },
+      {
+        "forme": "cercle",
+        "dx": 0,
+        "dy": 0,
+        "w": 3.6,
+        "h": 3.6,
+        "couleur": "#d8ff9a"
+      },
+      {
+        "forme": "cercle",
+        "dx": -0.8,
+        "dy": -0.9,
+        "w": 1.3,
+        "h": 1.3,
+        "couleur": "#ffffff",
+        "alpha": 0.85
+      }
+    ]
+  },
+  {
     "id": "visuel_monstre_rodeur",
     "ancre": "centre",
     "teintable": true,

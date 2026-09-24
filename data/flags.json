@@ -344,6 +344,10 @@
     "label_key": "flag.ambiance_stele_carnet"
   },
   {
+    "id": "flag_annexe_salle_1_nettoyee",
+    "label_key": "flag.annexe_salle_1_nettoyee"
+  },
+  {
     "id": "flag_annexe_passage_1",
     "label_key": "flag.annexe_passage_1"
   },

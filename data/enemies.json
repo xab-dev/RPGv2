@@ -26,5 +26,28 @@
     "loot_table": "loot_grotte_rampant",
     "render": { "visuel": "visuel_monstre_rodeur" },
     "xp": 35
+  },
+  {
+    "id": "enemy_annexe_cracheur",
+    "label_key": "enemy.annexe_cracheur",
+    "pv": 24,
+    "force": 5,
+    "vitesse": 38,
+    "portee_attaque": 18,
+    "cadence_attaque_ms": 1000,
+    "comportement": "distance",
+    "attaque_distance": {
+      "portee_tuiles": 5,
+      "recul_tuiles": 2,
+      "cadence_ms": 2400,
+      "vitesse_px_s": 110,
+      "rayon_px": 3,
+      "course_tuiles": 7,
+      "visuel": "visuel_projectile_crachat"
+    },
+    "element": null,
+    "loot_table": "loot_annexe_cracheur",
+    "render": { "visuel": "visuel_monstre_cracheur" },
+    "xp": 30
   }
 ]

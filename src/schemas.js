@@ -540,6 +540,17 @@ function validerScene(entry, catalogs, path) {
     }
   }
 
+  // `nettoyage` (spec 14, §4.3) : le flag que la scène pose quand le dernier
+  // monstre de SES spawns tombe. Une scène sans spawn ne serait jamais
+  // nettoyée : refusé plutôt que d'attendre pour rien.
+  if (entry.nettoyage !== undefined) {
+    const flag = entry.nettoyage && entry.nettoyage.flag;
+    if (!flagsDeclares.has(flag)) erreurs.push(`${path} > nettoyage.flag "${flag}" non déclaré dans flags.json`);
+    if (!Array.isArray(entry.spawns) || entry.spawns.length === 0) {
+      erreurs.push(`${path} > nettoyage : la scène n'a aucun spawn, elle ne serait jamais nettoyée`);
+    }
+  }
+
   // lumieres[] : `type` distingue un halo (perce le voile, révèle le sol) et
   // un faisceau (§3.4 03_grotte-polish, atmosphère additive, ne perce jamais
   // le voile) — chaque type a ses propres champs requis. `type` absent =
@@ -1073,6 +1084,14 @@ function erreursGeometrieInteractif(entry, catalogs, path) {
 function validerPuzzle(entry, catalogs, path) {
   const erreurs = [];
   const flagsDeclares = new Set((catalogs.flags || []).map((f) => f.id));
+  // `visible_si` (spec 14, §4.3) : un interactif qui APPARAÎT. La condition
+  // est validée par `registry.js`, comme sur tout catalogue (`D-62`). Mais les
+  // empreintes solides d'une scène sont posées une fois à l'entrée : un
+  // interactif solide qui apparaîtrait en cours de route serait un mur
+  // invisible avant d'être là. Refusé, jusqu'à ce qu'un cas en ait besoin.
+  if (entry.visible_si != null && entry.solide) {
+    erreurs.push(`${path} > visible_si : un interactif solide ne peut pas apparaître (sa collision est posée à l'entrée en scène)`);
+  }
   if (entry.flag_pose != null && !flagsDeclares.has(entry.flag_pose)) {
     erreurs.push(`${path} > flag_pose "${entry.flag_pose}" introuvable dans flags.json`);
   }
@@ -1169,6 +1188,37 @@ function validerPuzzle(entry, catalogs, path) {
     erreurs.push(...erreursGeometrieInteractif(entry, catalogs, path));
   } else {
     erreurs.push(`${path} > type "${entry.type}" inconnu (levier | sequence | station_placeholder | station | stele)`);
+  }
+  return erreurs;
+}
+
+// Les comportements qu'un ennemi peut déclarer. `melee` va droit au héros ;
+// `distance` (spec 14, palier C) garde ses distances et tire.
+const COMPORTEMENTS_ENNEMI = ['melee', 'distance'];
+const CHAMPS_ATTAQUE_DISTANCE = ['portee_tuiles', 'recul_tuiles', 'cadence_ms', 'vitesse_px_s', 'rayon_px', 'course_tuiles'];
+
+// `attaque_distance` (spec 14, §4.3) : exigée par `distance`, refusée sans
+// lui (une attaque que personne ne tire serait une donnée écrite pour rien).
+// Les dégâts ne s'y écrivent pas : ils suivent la `force` du monstre.
+function erreursAttaqueDistance(entry, catalogs, path) {
+  const erreurs = [];
+  if (!COMPORTEMENTS_ENNEMI.includes(entry.comportement)) {
+    erreurs.push(`${path} > comportement "${entry.comportement}" inconnu (${COMPORTEMENTS_ENNEMI.join(' | ')})`);
+  }
+  const a = entry.attaque_distance;
+  if (entry.comportement !== 'distance') {
+    if (a !== undefined) erreurs.push(`${path} > attaque_distance sans comportement "distance"`);
+    return erreurs;
+  }
+  if (!a || typeof a !== 'object') return [...erreurs, `${path} > comportement "distance" sans attaque_distance`];
+  for (const champ of CHAMPS_ATTAQUE_DISTANCE) {
+    if (typeof a[champ] !== 'number' || !(a[champ] > 0)) erreurs.push(`${path} > attaque_distance.${champ} doit être un nombre > 0`);
+  }
+  if (a.recul_tuiles >= a.portee_tuiles) {
+    erreurs.push(`${path} > attaque_distance : recul_tuiles doit être inférieur à portee_tuiles (sinon il recule sans jamais tirer)`);
+  }
+  if (!(catalogs.visuels || []).some((v) => v.id === a.visuel)) {
+    erreurs.push(`${path} > attaque_distance.visuel "${a.visuel}" introuvable dans visuels.json`);
   }
   return erreurs;
 }
@@ -2246,6 +2296,7 @@ export const SCHEMAS = {
         erreurs.push(`${path} > xp doit être un nombre >= 0`);
       }
       erreurs.push(...erreursRenderVisuel(entry, catalogs, path));
+      erreurs.push(...erreursAttaqueDistance(entry, catalogs, path));
       return erreurs;
     },
   },

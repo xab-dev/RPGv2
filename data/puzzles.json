@@ -7,6 +7,14 @@
     "render": { "visuel": "visuel_levier" }
   },
   {
+    "id": "puzzle_annexe_levier_salle_1",
+    "type": "levier",
+    "position": { "x": 10, "y": 6 },
+    "flag_pose": "flag_annexe_passage_1",
+    "visible_si": "flag_annexe_salle_1_nettoyee",
+    "render": { "visuel": "visuel_levier" }
+  },
+  {
     "id": "puzzle_levier_s2_milieu",
     "type": "levier",
     "position": { "x": 10, "y": 3 },

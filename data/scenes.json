@@ -536,16 +536,23 @@
     "seed": 20260924,
     "spawn": { "x": 10, "y": 11 },
     "obscurite": { "opacite": 0.72 },
-    "descente": { "flags": ["flag_annexe_passage_1"] },
+    "descente": { "flags": ["flag_annexe_salle_1_nettoyee", "flag_annexe_passage_1"] },
+    "nettoyage": { "flag": "flag_annexe_salle_1_nettoyee" },
     "lumieres": [
       {"type": "faisceau", "x": 160, "y": 32, "angle": -7, "ouverture": 12, "longueur": 170, "alpha": 0.13},
       {"type": "faisceau", "x": 448, "y": 32, "angle": 8, "ouverture": 10, "longueur": 160, "alpha": 0.12},
       {"x": 320, "y": 440, "rayon": 64, "couleur": "#fff0c8"},
-      {"x": 336, "y": 24, "rayon": 40, "couleur": "#9fb8c8", "condition": "flag_annexe_passage_1"}
+      {"x": 336, "y": 24, "rayon": 40, "couleur": "#9fb8c8", "condition": "flag_annexe_passage_1"},
+      {"x": 336, "y": 204, "rayon": 52, "couleur": "#fff0c8", "condition": "flag_annexe_salle_1_nettoyee"}
     ],
     "decor": {"densite": 0.04, "motifs": [{"visuel": "visuel_flaque", "poids": 0.2}, {"visuel": "visuel_flaque_grande", "poids": 0.2}, {"visuel": "visuel_flaque_claire", "poids": 0.2}, {"visuel": "visuel_flaque_sombre", "poids": 0.2}, {"visuel": "visuel_flaque_mouillee", "poids": 0.2}, {"visuel": "visuel_rocher_petit", "poids": 2}, {"visuel": "visuel_rocher_grand", "poids": 1}, {"visuel": "visuel_cristal", "poids": 2, "lumiere": {"rayon": 28, "dy": 6, "couleur": "#7cc4ff"}}]},
-    "interactifs": [],
-    "spawns": [],
+    "interactifs": ["puzzle_annexe_levier_salle_1"],
+    "spawns": [
+      {"enemy": "enemy_annexe_cracheur", "position": {"x": 4, "y": 3}, "condition": {"not": "flag_annexe_salle_1_nettoyee"}},
+      {"enemy": "enemy_annexe_cracheur", "position": {"x": 15, "y": 3}, "condition": {"not": "flag_annexe_salle_1_nettoyee"}},
+      {"enemy": "enemy_annexe_cracheur", "position": {"x": 3, "y": 7}, "condition": {"not": "flag_annexe_salle_1_nettoyee"}},
+      {"enemy": "enemy_annexe_cracheur", "position": {"x": 16, "y": 7}, "condition": {"not": "flag_annexe_salle_1_nettoyee"}}
+    ],
     "portails": [
       {"zone": {"x": 9, "y": 13, "w": 2, "h": 1}, "cible": "scene_maison_exterieur", "spawn": {"x": 21, "y": 66}, "condition": null},
       {"zone": {"x": 10, "y": 0, "w": 1, "h": 1}, "cible": "scene_annexe_salle_2", "spawn": {"x": 17, "y": 9}, "condition": "flag_annexe_passage_1"}

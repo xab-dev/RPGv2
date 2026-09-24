@@ -15,8 +15,8 @@
 // déclarent une `descente`. Une Annexe 2 avec quatre salles se déclare donc de
 // la même façon, sans une ligne de plus ici.
 //
-// Pur : lit les entrées brutes de `scenes.json`, ne touche ni aux flags ni à la
-// sauvegarde. `main.js#commencerDescente` applique.
+// Pur : lit les entrées brutes de `scenes.json`, ne touche ni aux flags, ni aux
+// interactifs, ni à la sauvegarde. `main.js#commencerDescente` applique.
 
 // Les scènes de la descente qui commence à `sceneEntree`, dans l'ordre où on
 // les rencontre. Le parcours s'arrête aux scènes sans `descente` : le portail
@@ -47,6 +47,19 @@ export function flagsDeLaDescente(scenes, sceneEntree) {
     for (const flag of parId.get(id).descente.flags) flags.add(flag);
   }
   return [...flags];
+}
+
+// LES interactifs des salles de la descente. Leur état (un levier actionné)
+// vit dans `save.puzzles`, pas dans un flag : l'entrée par la stèle le remet
+// à zéro avec les flags (§4.2, « leviers » fait partie de l'état de la
+// descente). Déduit des scènes, comme les flags : jamais une liste à tenir.
+export function interactifsDeLaDescente(scenes, sceneEntree) {
+  const parId = new Map(scenes.map((s) => [s.id, s]));
+  const ids = new Set();
+  for (const id of scenesDeLaDescente(scenes, sceneEntree)) {
+    for (const interactif of parId.get(id).interactifs || []) ids.add(interactif);
+  }
+  return [...ids];
 }
 
 // L'action Descendre existe-t-elle sur cette stèle, maintenant ? Seulement si

@@ -4,5 +4,11 @@
     "entrees": [
       { "item": "eclats", "min": 1, "max": 3, "poids": 1 }
     ]
+  },
+  {
+    "id": "loot_annexe_cracheur",
+    "entrees": [
+      { "item": "eclats", "min": 0, "max": 0, "poids": 1 }
+    ]
   }
 ]

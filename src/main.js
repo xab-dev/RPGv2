@@ -30,7 +30,7 @@ import {
   creerBoucle, dessinerScene, dessinerObscurite, dessinerSignalZones, dessinerPaupieres, dessinerTextesFlottants, dessinerLogo, presenter,
   RESOLUTION_LOGIQUE, calculerRectanglePresentation, versCoordonneesLogiques, AURA_TRAIT,
   definirEchelleForcee, dimensionsEcranPhysiquesActuelles, invaliderCoucheStatique,
-  dessinerSurlignages,
+  dessinerSurlignages, dessinerProjectiles,
 } from './render.js';
 import { creerStoreIndexedDB } from './storage_indexeddb.js';
 import {
@@ -80,8 +80,12 @@ import { etatLogo } from './logo.js';
 import { creerPrologue, avancerPrologue, alphaPrologue, prologueArme } from './prologue.js';
 import {
   tablesDeScene, tableActive, tirerPositionApparition, tirerPointDomaine, estEnZoneSurePx, zonesSignalees,
+  sceneNettoyee,
 } from './spawns.js';
-import { creerComportement, avancerComportement } from './comportement_monstres.js';
+import { creerComportement, avancerComportement, deciderTireur } from './comportement_monstres.js';
+import {
+  creerProjectiles, tirer as tirerProjectile, avancerProjectiles, viderProjectiles, projectilesEnVol, CAMP_MONSTRES, CAMP_HEROS,
+} from './projectiles.js';
 import { peutRecolter, trouverRessourceProche } from './resources.js';
 import {
   ajouterItem, retirerItem, resoudreCapacite, plafondPourItem, slotsOccupes, normaliserContenus,
@@ -108,7 +112,7 @@ import {
   creerVueStele, avancerVueStele, vueSteleArmee, fermerVueStele, vueSteleTerminee, alphaVueStele, demanderDescente,
 } from './stele.js';
 import { dessinerEcranStele, zoneGravureStele } from './ui/ecran_stele.js';
-import { flagsDeLaDescente, descenteDisponible } from './descente.js';
+import { flagsDeLaDescente, interactifsDeLaDescente, descenteDisponible } from './descente.js';
 import {
   decroitre as decroitreSurvie, consommer as consommerSurvie, appliquerMalusRespawn,
   calculerModulateur as calculerModulateurSurvie, configSurvie, jaugeSousLeSeuil,
@@ -145,13 +149,19 @@ import {
 // indépendants qui pouvaient diverger sans que rien ne le signale.
 const RAYON_HERO_BASE_PX = 10;
 // specs/07_chaos-nocturne.md palier C : rayon de la boîte de collision d'un
-// monstre du Chaos. Les monstres posés à la main (la Grotte, Phase 1 validée)
+// monstre qui se cogne aux murs. Les monstres posés à la main (la Grotte, Phase 1 validée)
 // continuent d'aller droit au héros sans rien heurter — on ne rouvre pas un
 // comportement validé. Mais un monstre qui **erre** dans un Champ bordé de
 // forêt doit se cogner : sans ça, la règle anti-blocage de la spec n'aurait
-// rien à débloquer, et on verrait des rôdeurs traverser les arbres.
+// rien à débloquer, et on verrait des rôdeurs traverser les arbres. Un
+// TIREUR (spec 14) aussi : il recule, et reculer à travers un mur le
+// mettrait hors de portée de tout.
 // *Provisoire*, à l'œil : la silhouette du rampant tient dans 16 px.
-const RAYON_MONSTRE_CHAOS_PX = 8;
+const RAYON_MONSTRE_PX = 8;
+// L'id du héros parmi les cibles d'un projectile (`projectiles.js`) : les
+// monstres y entreront par leur id d'instance, qui ne peut pas le valoir
+// (`entities.js#creerMonstre` : `<enemy>#<n>`).
+const CIBLE_HEROS = 'heros';
 // Obscurité la plus forte du cycle : sert de référence au signal des zones de
 // Chaos (palier D), dont l'intensité suit la nuit. Lue depuis daynight.js,
 // jamais recopiée — changer la nuit changera le signal avec elle.
@@ -1415,6 +1425,10 @@ export function creerOrchestrateurGrotte({
   let scene, decor, monstres, follet;
   let lumieresDecor = [];
   let puzzlesEtat = {};
+  // Spec 14, palier C : les tirs en vol (`projectiles.js`), une réserve
+  // allouée une fois. État de SESSION : vidé à chaque entrée en scène, jamais
+  // sauvegardé (§6).
+  const projectiles = creerProjectiles();
   // `D-158` : le geste de chaque levier (bascule.js), par id — un état
   // d'AFFICHAGE, jamais sauvegardé : la vérité reste `puzzlesEtat`. Un levier
   // sans entrée ici se pose à sa place, sans rejouer son geste.
@@ -1956,6 +1970,7 @@ export function creerOrchestrateurGrotte({
     // Les monstres nocturnes ne traversent pas un changement de scène : on
     // repart de la nuit en cours, plafond vide (palier B, « non persistés »).
     accumulateursSpawn = {};
+    viderProjectiles(projectiles);
 
     follet = save.hero.companion ? creerFollet(save.hero.companion, hero, sensOrbiteFollet()) : null;
     puzzlesEtat = { ...etatInitialPuzzles(registre), ...save.puzzles };
@@ -2032,6 +2047,16 @@ export function creerOrchestrateurGrotte({
     return empreinteAbsoluePuzzle(puzzle, visuel, scene.poseEffectiveInteractif(puzzle.id), scene.tileSize);
   }
 
+  // Spec 14, §4.3 : un interactif qui déclare `visible_si` n'EXISTE pas tant
+  // que sa condition ne tient pas — ni dessiné, ni pris par INTERACT, ni
+  // compté à portée (`a_portee`), ni proposé par l'indice de commande. Le
+  // verdict est celui de tout le jeu (`visibilite.js#estVisible`, `D-62` :
+  // absent = toujours visible). Sa collision n'est pas en cause : un
+  // interactif solide ne peut pas déclarer `visible_si` (refusé au démarrage).
+  function interactifsPresents() {
+    return scene.interactifs.filter((id) => estVisible(scene.puzzle(id), flags));
+  }
+
   // 03_maison-exterieur §3.2/§3.3 étend l'interaction à 4 cibles possibles,
   // essayées dans cet ordre (le premier trouvé à portée gagne, un seul par
   // appui) : levier/station de scene.interactifs (déjà des entités
@@ -2047,7 +2072,7 @@ export function creerOrchestrateurGrotte({
   // `cibleInteraction` (spec 14) pour que la valeur `a_portee` des conditions
   // lise LA même portée, par le même parcours.
   function interactifAPortee() {
-    for (const puzzleId of scene.interactifs) {
+    for (const puzzleId of interactifsPresents()) {
       // `D-121` : `scene.puzzle` et non `registre.obtenir` — un id venu de la
       // scène peut désigner une instance CRÉÉE (un coffre fabriqué), qui
       // n'est dans aucun catalogue.
@@ -3142,7 +3167,16 @@ export function creerOrchestrateurGrotte({
   // que déclarent les salles de la descente) est remis à zéro, en ce seul
   // endroit, puis le héros entre au point d'arrivée de la première salle.
   function commencerDescente(descente) {
-    flags.retirer(flagsDeLaDescente(registre.tous('scenes'), descente.scene));
+    const scenes = registre.tous('scenes');
+    flags.retirer(flagsDeLaDescente(scenes, descente.scene));
+    // Les leviers de la descente reprennent leur état de départ (§4.2) : leur
+    // état vit dans `save.puzzles`, que l'entrée en scène relit juste après.
+    const initial = etatInitialPuzzles(registre);
+    for (const id of interactifsDeLaDescente(scenes, descente.scene)) {
+      if (initial[id]) save.puzzles[id] = initial[id];
+      else delete save.puzzles[id];
+      basculesLeviers.delete(id);
+    }
     entrerDansScene(descente.scene);
     etatModifie = true;
   }
@@ -3406,13 +3440,71 @@ export function creerOrchestrateurGrotte({
     // Pas voulu par la machine à états, puis collision : la différence entre
     // les deux est exactement ce que l'anti-blocage observe.
     const vise = approcherEnLigneDroite(monstre, decision.but.x, decision.but.y, vitesse * decision.facteurVitesse, deltaS);
-    const rayon = RAYON_MONSTRE_CHAOS_PX;
+    const rayon = RAYON_MONSTRE_PX;
     const boite = { x: monstre.x - rayon, y: monstre.y - rayon, largeur: rayon * 2, hauteur: rayon * 2 };
     const resolu = resoudreDeplacement(scene, boite, vise.x - monstre.x, vise.y - monstre.y, flags.has);
     suivant.x = resolu.x + rayon;
     suivant.y = resolu.y + rayon;
     suivant.distanceParcouruePx = Math.hypot(suivant.x - monstre.x, suivant.y - monstre.y);
     return suivant;
+  }
+
+  // Le TIREUR (spec 14, §4.3) : `comportement_monstres.js#deciderTireur` dit
+  // où aller et s'il faut tirer ; le mouvement se fait ici avec les
+  // collisions (il recule, et ne doit pas reculer dans un mur), le tir part
+  // dans `projectiles.js`. Les dégâts du tir sont la force EFFECTIVE du
+  // monstre, celle de son corps à corps (l'aura du follet comprise) : une
+  // seule force par monstre.
+  function deplacerTireur(monstre, donneesEnnemi, force, vitesse, deltaS, deltaMs) {
+    const attaque = donneesEnnemi.attaque_distance;
+    const suivant = { ...monstre, cooldownTirMs: tickCooldown(monstre.cooldownTirMs || 0, deltaMs) };
+    const decision = deciderTireur({ monstre, hero, attaque, tileSize: scene.tileSize, cooldownTirMs: suivant.cooldownTirMs });
+    if (decision.tirer && tirerProjectile(projectiles, {
+      x: monstre.x,
+      y: monstre.y,
+      versX: hero.x,
+      versY: hero.y,
+      vitesse: attaque.vitesse_px_s,
+      rayon: attaque.rayon_px,
+      degats: force,
+      camp: CAMP_MONSTRES,
+      visuel: attaque.visuel,
+      courseMaxPx: attaque.course_tuiles * scene.tileSize,
+    })) {
+      suivant.cooldownTirMs = attaque.cadence_ms;
+    }
+    if (!decision.but) return suivant;
+    const vise = approcherEnLigneDroite(monstre, decision.but.x, decision.but.y, vitesse, deltaS);
+    const rayon = RAYON_MONSTRE_PX;
+    const boite = { x: monstre.x - rayon, y: monstre.y - rayon, largeur: rayon * 2, hauteur: rayon * 2 };
+    const resolu = resoudreDeplacement(scene, boite, vise.x - monstre.x, vise.y - monstre.y, flags.has);
+    suivant.x = resolu.x + rayon;
+    suivant.y = resolu.y + rayon;
+    return suivant;
+  }
+
+  // Les tirs en vol avancent ; ceux qui touchent le héros lui retirent ses PV,
+  // comme un coup au corps à corps (même `hero.pv`, donc même mort plus bas).
+  // Le héros est la seule cible du camp adverse à ce palier : le tir du joueur
+  // (palier G) ajoutera les monstres à la liste, sans un second chemin.
+  function avancerTirs(deltaMs) {
+    const touches = avancerProjectiles(projectiles, deltaMs, {
+      estSolide: (x, y) => scene.estSolideAuPoint(x, y, flags.has),
+      cibles: [{ id: CIBLE_HEROS, x: hero.x, y: hero.y, rayon: hero.rayon, camp: CAMP_HEROS }],
+    });
+    for (const touche of touches) {
+      if (touche.cibleId === CIBLE_HEROS) hero.pv = Math.max(0, hero.pv - touche.degats);
+    }
+  }
+
+  // La SALLE NETTOYÉE (spec 14, §4.3) : une scène qui déclare `nettoyage`
+  // pose son flag quand le dernier monstre de ses spawns tombe. Règle
+  // générique, lue sur les données de la scène : une Annexe 2 s'en sert
+  // sans une ligne ici.
+  function verifierNettoyage() {
+    const nettoyage = registre.obtenir('scenes', scene.id).nettoyage;
+    if (!nettoyage || flags.has(nettoyage.flag)) return;
+    if (sceneNettoyee(monstres)) flags.set(nettoyage.flag);
   }
 
   function mettreAJourCombat(deltaMs, etatGameplay, statsPrimaires, statsDerivees) {
@@ -3459,9 +3551,10 @@ export function creerOrchestrateurGrotte({
 
       // Palier C : les monstres du Chaos décident (errance / poursuite /
       // désintérêt) ; ceux de la Grotte vont droit au but, comme en Phase 1.
-      let suivant = monstre.spawnId
-        ? deplacerMonstreDuChaos(monstre, vitesse, deltaS, deltaMs)
-        : approcherEnLigneDroite(monstre, hero.x, hero.y, vitesse, deltaS);
+      let suivant;
+      if (donneesEnnemi.comportement === 'distance') suivant = deplacerTireur(monstre, donneesEnnemi, force, vitesse, deltaS, deltaMs);
+      else if (monstre.spawnId) suivant = deplacerMonstreDuChaos(monstre, vitesse, deltaS, deltaMs);
+      else suivant = approcherEnLigneDroite(monstre, hero.x, hero.y, vitesse, deltaS);
       suivant.cooldownAttaqueMs = tickCooldown(suivant.cooldownAttaqueMs, deltaMs);
       suivant.flashMs = tickCooldown(suivant.flashMs || 0, deltaMs);
 
@@ -3500,6 +3593,7 @@ export function creerOrchestrateurGrotte({
       if (suivant.mort && !monstre.mort) onMonstreMort(donneesEnnemi);
       return suivant;
     });
+    avancerTirs(deltaMs);
 
     // `specs/10` §4.3 point 3 : le héros peut porter un effet à dégâts sur la
     // durée (Feu négatif). Même catalogue, même boucle d'intervalle que la
@@ -3546,6 +3640,8 @@ export function creerOrchestrateurGrotte({
         cooldownAttaqueHerosMs = statsDerivees.derivee_cooldown_attaque_ms;
       }
     }
+
+    verifierNettoyage();
 
     if (hero.pv <= 0 && !hero.mort) {
       Object.assign(hero, mourir(hero, {
@@ -3597,7 +3693,7 @@ export function creerOrchestrateurGrotte({
     // (rectangleInteractif, §3 04_stations-proportions-collision) ; la Grotte
     // n'a que des leviers, donc "le premier interactif rencontré" (§3 de
     // 04_indices-commandes) est de fait le levier de la salle 1.
-    for (const puzzleId of scene.interactifs) {
+    for (const puzzleId of interactifsPresents()) {
       const puzzle = scene.puzzle(puzzleId);
       if (distanceAuRectangle(hero.x, hero.y, rectangleInteractif(puzzle)) <= DISTANCE_INTERACT_PX) {
         indices.declencherVerbeUtile('interact', flags);
@@ -4320,7 +4416,7 @@ export function creerOrchestrateurGrotte({
     // (`render.visuel` présent), jamais une liste de `type` à maintenir en
     // double : un 5ᵉ type d'interactif positionné se dessine sans toucher
     // cette fonction, ce qui rend la classe de bug irreproductible ici.
-    const puzzlesAffiches = scene.interactifs
+    const puzzlesAffiches = interactifsPresents()
       .map((id) => scene.puzzle(id))
       .filter((p) => p.render && p.render.visuel)
       .map((p) => {
@@ -4587,6 +4683,13 @@ export function creerOrchestrateurGrotte({
         effetSurlignageFilet, tempsVolFolletMs, o.x, o.y, (o.x * 0.37 + o.y * 0.61) % 1,
       ).map((p) => ({ ...p, visuel: visuelParticuleFilet }))).concat(braises),
     });
+    // Spec 14, palier C : les tirs en vol, après le voile (render.js dit
+    // pourquoi). Le visuel se résout ici : render.js n'ouvre jamais
+    // `visuels.json` par id.
+    dessinerProjectiles(ctxLogique, {
+      camera,
+      projectiles: projectilesEnVol(projectiles).map((p) => ({ x: p.x, y: p.y, visuel: registre.obtenir('visuels', p.visuel) })),
+    });
     // Signal des zones de Chaos (specs/07 palier D) : APRÈS le calque
     // d'obscurité — il se voit à travers la nuit sans percer le voile (on
     // devine une présence, on ne voit pas où l'on marche). Le calcul est pur
@@ -4818,6 +4921,7 @@ export function creerOrchestrateurGrotte({
     prologue = null;
     vueStele = null;
     dechiffrement = null;
+    viderProjectiles(projectiles);
     logoNiveauMs = null;
     basculesLeviers.clear();
     cooldownAttaqueHerosMs = 0;
@@ -4883,6 +4987,8 @@ export function creerOrchestrateurGrotte({
     obtenirFollet: () => follet,
     obtenirScene: () => scene,
     obtenirMonstres: () => monstres,
+    // Spec 14, palier C : les tirs en vol (copies des emplacements actifs).
+    obtenirProjectiles: () => projectilesEnVol(projectiles).map((p) => ({ ...p })),
     obtenirChoixFollet: () => choixFollet,
     obtenirIntro: () => intro,
     obtenirOuvertureLogo: () => ouvertureLogoMs,

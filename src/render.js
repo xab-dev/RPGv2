@@ -1423,6 +1423,25 @@ export function dessinerSurlignages(ctx, { surlignages = [], particules = [], ca
   }
 }
 
+// --- Les tirs en vol (spec 14, palier C) ------------------------------------
+// Dessinés APRÈS le voile, comme les surlignages : un crachat se voit venir
+// dans le noir de l'Annexe (0,72), où le dessiner sous le voile le rendrait
+// invisible hors des halos — et le lire à temps pour l'esquiver est tout le
+// jeu. `projectiles` arrive résolu par l'appelant ({ x, y, visuel }) : ce
+// fichier ne connaît ni `projectiles.js`, ni `visuels.json` par id. Trié par
+// le champ (`specs/13` palier F), sur ce qui se peint.
+export function dessinerProjectiles(ctx, { projectiles = [], camera }) {
+  if (projectiles.length === 0) return 0;
+  const vue = vueDeCamera(camera, RESOLUTION_LOGIQUE);
+  let dessines = 0;
+  for (const p of projectiles) {
+    if (!visuelDansLeChamp(p.visuel, p.x, p.y, vue)) continue;
+    dessines += 1;
+    dessinerVisuel(ctx, p.visuel, p.x - camera.x, p.y - camera.y, {});
+  }
+  return dessines;
+}
+
 // --- Textes flottants de gain (MT_texte-flottant_2026-09-19, `D-05`) ------
 // « +1 Bois » qui monte depuis la source du gain et s'efface. Dessiné en
 // coordonnées du MONDE (comme toute entité) mais APRÈS le calque

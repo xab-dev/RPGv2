@@ -189,3 +189,33 @@ export function avancerComportement(c, ctx) {
   }
   return { comportement: suivant, but: suivant.but, facteurVitesse: facteurErrance(table) };
 }
+
+// --- Le TIREUR (spec 14, §4.3, comportement `distance`) --------------------
+// Un monstre qui déclare `comportement: "distance"` et une `attaque_distance`
+// garde ses distances : il recule si le héros s'approche à moins de
+// `recul_tuiles`, s'approche s'il est hors de portée, et reste sur place
+// entre les deux. Il tire quand le héros est à portée et que sa cadence le
+// permet. Rien de plus : pas de mémoire, pas d'état — la décision ne dépend
+// que des positions, donc elle ne se désynchronise jamais de ce qu'on voit.
+//
+// Comme `avancerComportement`, la fonction ne déplace rien : elle dit où
+// aller et s'il faut tirer, `main.js` fait le mouvement (collisions comprises)
+// et le tir (`projectiles.js`). Les états du corps à corps ne sont pas touchés.
+//
+// Rend `{ but, tirer }` : `but` = { x, y } ou null (ne pas bouger).
+export function deciderTireur({ monstre, hero, attaque, tileSize, cooldownTirMs }) {
+  const distanceHero = distance(monstre.x, monstre.y, hero.x, hero.y);
+  const portee = attaque.portee_tuiles * tileSize;
+  const recul = attaque.recul_tuiles * tileSize;
+  const tirer = distanceHero <= portee && cooldownTirMs <= 0;
+
+  if (distanceHero > 0 && distanceHero < recul) {
+    // À l'opposé du héros, d'une tuile : assez pour que la ligne droite de
+    // l'appelant ait une direction, pas assez pour qu'il fuie à l'autre bout.
+    const ux = (monstre.x - hero.x) / distanceHero;
+    const uy = (monstre.y - hero.y) / distanceHero;
+    return { but: { x: monstre.x + ux * tileSize, y: monstre.y + uy * tileSize }, tirer };
+  }
+  if (distanceHero > portee) return { but: { x: hero.x, y: hero.y }, tirer: false };
+  return { but: null, tirer };
+}

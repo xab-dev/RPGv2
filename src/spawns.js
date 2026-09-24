@@ -166,3 +166,14 @@ export function zonesSignalees(scene, tables, { phase, evaluerCondition, opacite
   }
   return zones;
 }
+
+// La SALLE NETTOYÉE (spec 14, §4.3) : les monstres posés par les `spawns` de
+// la scène sont tous tombés. Ceux d'une table d'apparition (`spawnId`, le
+// Chaos) n'en font pas partie : ils reviennent chaque nuit, une salle ne se
+// nettoie pas d'eux. Une scène entrée sans aucun monstre à elle (déjà
+// nettoyée, ou dont la condition les a retenus) n'est pas « nettoyée » à
+// nouveau : rien n'est tombé.
+export function sceneNettoyee(monstres) {
+  const aElle = monstres.filter((m) => !m.spawnId);
+  return aElle.length > 0 && aElle.every((m) => m.mort);
+}

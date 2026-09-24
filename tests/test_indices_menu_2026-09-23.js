@@ -11,9 +11,12 @@
 // 3. Le vrai catalogue passe la validation, chaque clé qu'il cite existe dans
 //    les deux locales ; un indice mal formé tombe au boot avec son chemin, et
 //    un indice qui peut être illisible exige l'alphabet.
-// 4. Branché sur le vrai orchestrateur : l'indice de la grotte est illisible
-//    sous le seuil de sa condition, lisible dès qu'il est atteint — relu à
-//    chaque appel, sans rien réinitialiser.
+// 4. Branché sur le vrai orchestrateur : un indice est illisible sous le seuil
+//    de sa condition, lisible dès qu'il est atteint — relu à chaque appel,
+//    sans rien réinitialiser. Depuis la spec 14, celui de la grotte ne se lit
+//    plus au Nv.15 mais une fois DÉCHIFFRÉ au pied de sa pierre (contrat tenu
+//    par `test_spec14_palier_b_stele_descente`) : c'est la pierre qui répond,
+//    dont la condition porte encore un niveau, qui sert de témoin ici.
 //
 // CE QUE CE FICHIER NE PROUVE PAS : que les signes s'affichent (une police qui
 // ne les porte pas dessinerait des carrés) ni que l'écran se lit bien. Ça se
@@ -121,20 +124,22 @@ assert.deepEqual(erreurs, []);
   const save = saveNeuve();
   save.hero.scene = 'scene_maison_exterieur';
   save.hero.companion = 'comp_follet_eau';
-  save.flags = { flag_follet_choisi: true, flag_grotte_sortie: true };
+  save.flags = {
+    flag_follet_choisi: true, flag_grotte_sortie: true, flag_stele_miroir_lue: true, flag_plume_ramassee: true,
+  };
   const i18n = creerI18n(dictionnaires, 'fr');
   const orch = creerOrchestrateurGrotte({
     registre: construireRegistre(donnees), i18n, save, store: creerStoreMemoire(), dialogue: creerDialogue(),
     menu: { estOuvert: () => false, traiterInput: () => {}, ouvrir: () => {} },
     input: { maj: () => etatNeutre }, ctxLogique: null, ctxVisible: null, canvasLogique: null,
   });
-  const indice = donnees.indices.find((e) => e.id === 'indice_grotte_entree');
-  const seuil = indice.lisible_si.min;
+  const indice = donnees.indices.find((e) => e.id === 'indice_pierre_qui_repond');
+  const seuil = indice.lisible_si.all.find((c) => c.valeur === 'niveau').min;
   const cherche = () => orch.obtenirEntreesIndices().find((e) => e.id === indice.id);
 
   save.hero.niveau = seuil - 1;
   const avant = cherche();
-  assert.ok(avant, 'l\'indice de la grotte est listé dès le début');
+  assert.ok(avant, 'l\'indice de la pierre qui répond est listé une fois la pierre lue');
   assert.equal(avant.lisible, false, `sous le Nv.${seuil}, il ne se lit pas`);
   assert.notEqual(avant.titre, i18n.t(indice.cle_titre));
   assert.equal(avant.icone, indice.icone);

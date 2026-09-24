@@ -527,5 +527,140 @@
       "..........................................................................................................................................................................",
       ".........................................................................................................................................................................."
     ]
+  },
+  {
+    "id": "scene_annexe_salle_1",
+    "width": 20,
+    "height": 14,
+    "tile_size": 32,
+    "seed": 20260924,
+    "spawn": { "x": 10, "y": 11 },
+    "obscurite": { "opacite": 0.72 },
+    "descente": { "flags": ["flag_annexe_passage_1"] },
+    "lumieres": [
+      {"type": "faisceau", "x": 160, "y": 32, "angle": -7, "ouverture": 12, "longueur": 170, "alpha": 0.13},
+      {"type": "faisceau", "x": 448, "y": 32, "angle": 8, "ouverture": 10, "longueur": 160, "alpha": 0.12},
+      {"x": 320, "y": 440, "rayon": 64, "couleur": "#fff0c8"},
+      {"x": 336, "y": 24, "rayon": 40, "couleur": "#9fb8c8", "condition": "flag_annexe_passage_1"}
+    ],
+    "decor": {"densite": 0.04, "motifs": [{"visuel": "visuel_flaque", "poids": 0.2}, {"visuel": "visuel_flaque_grande", "poids": 0.2}, {"visuel": "visuel_flaque_claire", "poids": 0.2}, {"visuel": "visuel_flaque_sombre", "poids": 0.2}, {"visuel": "visuel_flaque_mouillee", "poids": 0.2}, {"visuel": "visuel_rocher_petit", "poids": 2}, {"visuel": "visuel_rocher_grand", "poids": 1}, {"visuel": "visuel_cristal", "poids": 2, "lumiere": {"rayon": 28, "dy": 6, "couleur": "#7cc4ff"}}]},
+    "interactifs": [],
+    "spawns": [],
+    "portails": [
+      {"zone": {"x": 9, "y": 13, "w": 2, "h": 1}, "cible": "scene_maison_exterieur", "spawn": {"x": 21, "y": 66}, "condition": null},
+      {"zone": {"x": 10, "y": 0, "w": 1, "h": 1}, "cible": "scene_annexe_salle_2", "spawn": {"x": 17, "y": 9}, "condition": "flag_annexe_passage_1"}
+    ],
+    "portes": [
+      {"position": {"x": 10, "y": 0}, "flag": "flag_annexe_passage_1", "tile_avant": "tile_mur", "tile_apres": "tile_passage"}
+    ],
+    "legende": {"#": "tile_mur", ".": "tile_sol", "E": "tile_escalier", "S": "tile_passage_sud"},
+    "layout": [
+      "####################",
+      "#..................#",
+      "#..................#",
+      "#..................#",
+      "#..................#",
+      "#..................#",
+      "#..................#",
+      "#..................#",
+      "#..................#",
+      "#..................#",
+      "#..................#",
+      "#..................#",
+      "#..................#",
+      "#########EE#########"
+    ]
+  },
+  {
+    "id": "scene_annexe_salle_2",
+    "width": 34,
+    "height": 12,
+    "tile_size": 32,
+    "seed": 20260925,
+    "spawn": { "x": 17, "y": 9 },
+    "obscurite": { "opacite": 0.72 },
+    "descente": { "flags": ["flag_annexe_passage_2"] },
+    "lumieres": [
+      {"type": "faisceau", "x": 160, "y": 32, "angle": 6, "ouverture": 11, "longueur": 150, "alpha": 0.12},
+      {"type": "faisceau", "x": 544, "y": 32, "angle": -5, "ouverture": 12, "longueur": 160, "alpha": 0.13},
+      {"type": "faisceau", "x": 928, "y": 32, "angle": 7, "ouverture": 10, "longueur": 150, "alpha": 0.12},
+      {"x": 560, "y": 360, "rayon": 30, "couleur": "#9fb8c8"},
+      {"x": 560, "y": 24, "rayon": 40, "couleur": "#9fb8c8", "condition": "flag_annexe_passage_2"}
+    ],
+    "decor": {"densite": 0.04, "motifs": [{"visuel": "visuel_flaque", "poids": 0.2}, {"visuel": "visuel_flaque_grande", "poids": 0.2}, {"visuel": "visuel_flaque_claire", "poids": 0.2}, {"visuel": "visuel_flaque_sombre", "poids": 0.2}, {"visuel": "visuel_flaque_mouillee", "poids": 0.2}, {"visuel": "visuel_rocher_petit", "poids": 2}, {"visuel": "visuel_rocher_grand", "poids": 1}, {"visuel": "visuel_cristal", "poids": 2, "lumiere": {"rayon": 28, "dy": 6, "couleur": "#7cc4ff"}}]},
+    "interactifs": [],
+    "spawns": [],
+    "portails": [
+      {"zone": {"x": 17, "y": 11, "w": 1, "h": 1}, "cible": "scene_annexe_salle_1", "spawn": {"x": 10, "y": 1}, "condition": null},
+      {"zone": {"x": 17, "y": 0, "w": 1, "h": 1}, "cible": "scene_annexe_salle_3", "spawn": {"x": 12, "y": 15}, "condition": "flag_annexe_passage_2"}
+    ],
+    "portes": [
+      {"position": {"x": 17, "y": 0}, "flag": "flag_annexe_passage_2", "tile_avant": "tile_mur", "tile_apres": "tile_passage"}
+    ],
+    "legende": {"#": "tile_mur", ".": "tile_sol", "E": "tile_escalier", "S": "tile_passage_sud"},
+    "layout": [
+      "##################################",
+      "#................................#",
+      "#................................#",
+      "#................................#",
+      "#................................#",
+      "#................................#",
+      "#................................#",
+      "#................................#",
+      "#................................#",
+      "#................................#",
+      "#................................#",
+      "#################S################"
+    ]
+  },
+  {
+    "id": "scene_annexe_salle_3",
+    "width": 24,
+    "height": 18,
+    "tile_size": 32,
+    "seed": 20260926,
+    "spawn": { "x": 12, "y": 15 },
+    "obscurite": { "opacite": 0.72 },
+    "descente": { "flags": ["flag_annexe_sortie"] },
+    "lumieres": [
+      {"type": "faisceau", "x": 128, "y": 32, "angle": -6, "ouverture": 11, "longueur": 190, "alpha": 0.13},
+      {"type": "faisceau", "x": 320, "y": 32, "angle": 5, "ouverture": 12, "longueur": 210, "alpha": 0.14},
+      {"type": "faisceau", "x": 480, "y": 32, "angle": -4, "ouverture": 12, "longueur": 210, "alpha": 0.14},
+      {"type": "faisceau", "x": 672, "y": 32, "angle": 7, "ouverture": 11, "longueur": 190, "alpha": 0.13},
+      {"x": 384, "y": 288, "rayon": 96, "couleur": "#9fb8c8"},
+      {"x": 400, "y": 552, "rayon": 30, "couleur": "#9fb8c8"},
+      {"x": 400, "y": 24, "rayon": 48, "couleur": "#fff0c8", "condition": "flag_annexe_sortie"}
+    ],
+    "decor": {"densite": 0.04, "motifs": [{"visuel": "visuel_flaque", "poids": 0.2}, {"visuel": "visuel_flaque_grande", "poids": 0.2}, {"visuel": "visuel_flaque_claire", "poids": 0.2}, {"visuel": "visuel_flaque_sombre", "poids": 0.2}, {"visuel": "visuel_flaque_mouillee", "poids": 0.2}, {"visuel": "visuel_rocher_petit", "poids": 2}, {"visuel": "visuel_rocher_grand", "poids": 1}, {"visuel": "visuel_cristal", "poids": 2, "lumiere": {"rayon": 28, "dy": 6, "couleur": "#7cc4ff"}}]},
+    "interactifs": [],
+    "spawns": [],
+    "portails": [
+      {"zone": {"x": 12, "y": 17, "w": 1, "h": 1}, "cible": "scene_annexe_salle_2", "spawn": {"x": 17, "y": 1}, "condition": null},
+      {"zone": {"x": 12, "y": 0, "w": 1, "h": 1}, "cible": "scene_maison_exterieur", "spawn": {"x": 18, "y": 47}, "condition": "flag_annexe_sortie"}
+    ],
+    "portes": [
+      {"position": {"x": 12, "y": 0}, "flag": "flag_annexe_sortie", "tile_avant": "tile_mur", "tile_apres": "tile_passage"}
+    ],
+    "legende": {"#": "tile_mur", ".": "tile_sol", "E": "tile_escalier", "S": "tile_passage_sud"},
+    "layout": [
+      "########################",
+      "#......................#",
+      "#......................#",
+      "#......................#",
+      "#......................#",
+      "#....##..........##....#",
+      "#....##..........##....#",
+      "#......................#",
+      "#......................#",
+      "#......................#",
+      "#......................#",
+      "#....##..........##....#",
+      "#....##..........##....#",
+      "#......................#",
+      "#......................#",
+      "#......................#",
+      "#......................#",
+      "############S###########"
+    ]
   }
 ]

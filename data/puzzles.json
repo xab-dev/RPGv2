@@ -79,7 +79,8 @@
     "solide": true,
     "indice": "indice_grotte_entree",
     "couleur": "#3fb8ff",
-    "armement_ms": 250
+    "armement_ms": 250,
+    "descente": { "scene": "scene_annexe_salle_1", "flag_requis": "flag_indice_grotte_dechiffre" }
   },
   {
     "id": "stele_miroir",

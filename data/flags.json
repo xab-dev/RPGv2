@@ -334,5 +334,25 @@
   {
     "id": "flag_ambiance_etincelle",
     "label_key": "flag.ambiance_etincelle"
+  },
+  {
+    "id": "flag_indice_grotte_dechiffre",
+    "label_key": "flag.indice_grotte_dechiffre"
+  },
+  {
+    "id": "flag_ambiance_stele_carnet",
+    "label_key": "flag.ambiance_stele_carnet"
+  },
+  {
+    "id": "flag_annexe_passage_1",
+    "label_key": "flag.annexe_passage_1"
+  },
+  {
+    "id": "flag_annexe_passage_2",
+    "label_key": "flag.annexe_passage_2"
+  },
+  {
+    "id": "flag_annexe_sortie",
+    "label_key": "flag.annexe_sortie"
   }
 ]

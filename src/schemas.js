@@ -111,6 +111,16 @@ function erreursCondition(condition, chemin, declares) {
         erreurs.push(`${chemin} > condition.valeur doit être un nom non vide`);
       }
       const bornes = ['min', 'max'].filter((b) => condition[b] !== undefined);
+      // `egal` (spec 14, `Q-137`) : une valeur qui est un NOM, pas un nombre
+      // (`a_portee`, l'interactif à portée). Soit une égalité, soit des bornes :
+      // les deux ensemble ne voudraient rien dire.
+      if (condition.egal !== undefined) {
+        if (typeof condition.egal !== 'string' || condition.egal.length === 0) {
+          erreurs.push(`${chemin} > condition.egal doit être un nom non vide`);
+        }
+        if (bornes.length > 0) erreurs.push(`${chemin} > condition sur valeur : egal OU min/max, jamais les deux`);
+        return erreurs;
+      }
       if (bornes.length === 0) erreurs.push(`${chemin} > condition sur valeur sans min ni max`);
       for (const b of bornes) {
         if (typeof condition[b] !== 'number') erreurs.push(`${chemin} > condition.${b} doit être numérique`);
@@ -512,6 +522,23 @@ function validerScene(entry, catalogs, path) {
   const puzzlesDeclares = new Set((catalogs.puzzles || []).map((p) => p.id));
   const enemiesDeclares = new Set((catalogs.enemies || []).map((e) => e.id));
   const tuilesDeclarees = tileIds;
+
+  // `descente` (spec 14, §4.2) : les flags de l'état de la DESCENTE, que
+  // l'entrée par la stèle remet à zéro (`descente.js`). Un flag cible d'un
+  // unlock reviendrait tout seul au premier `set()` venu : refusé. Liste vide
+  // admise — une salle peut appartenir à la descente sans rien retenir.
+  if (entry.descente !== undefined) {
+    const flagsDescente = entry.descente && entry.descente.flags;
+    if (!Array.isArray(flagsDescente)) {
+      erreurs.push(`${path} > descente doit être { flags: [...] }`);
+    } else {
+      const ciblesUnlock = new Set((catalogs.unlocks || []).map((u) => u.target));
+      for (const id of flagsDescente) {
+        if (!flagsDeclares.has(id)) erreurs.push(`${path} > descente.flags : "${id}" non déclaré dans flags.json`);
+        else if (ciblesUnlock.has(id)) erreurs.push(`${path} > descente.flags : "${id}" est la cible d'un unlock, il reviendrait après la remise à zéro`);
+      }
+    }
+  }
 
   // lumieres[] : `type` distingue un halo (perce le voile, révèle le sol) et
   // un faisceau (§3.4 03_grotte-polish, atmosphère additive, ne perce jamais
@@ -1123,6 +1150,20 @@ function validerPuzzle(entry, catalogs, path) {
     // joueur n'a jamais vue.
     if (entry.flag !== undefined && !(catalogs.flags || []).some((f) => f.id === entry.flag)) {
       erreurs.push(`${path} > flag "${entry.flag}" non déclaré dans flags.json`);
+    }
+    // `descente` (spec 14, `Q-138`) : la pierre est une ENTRÉE. Sa vue
+    // rapprochée gagne l'action Descendre dès que `flag_requis` est posé, et
+    // mène au point d'arrivée (`spawn`) de `scene`. Une scène d'arrivée qui ne
+    // déclare pas sa propre `descente` n'aurait aucun état à remettre à zéro :
+    // ce serait un portail, pas une descente.
+    if (entry.descente !== undefined) {
+      const d = entry.descente;
+      const cible = d && (catalogs.scenes || []).find((sc) => sc.id === d.scene);
+      if (!cible) erreurs.push(`${path} > descente.scene "${d && d.scene}" introuvable dans scenes.json`);
+      else if (!cible.descente) erreurs.push(`${path} > descente.scene "${d.scene}" ne déclare pas de descente (ses flags à remettre à zéro)`);
+      if (!d || !(catalogs.flags || []).some((f) => f.id === d.flag_requis)) {
+        erreurs.push(`${path} > descente.flag_requis "${d && d.flag_requis}" non déclaré dans flags.json`);
+      }
     }
     erreurs.push(...erreursRenderVisuel(entry, catalogs, path));
     erreurs.push(...erreursGeometrieInteractif(entry, catalogs, path));
@@ -2837,6 +2878,13 @@ export const SCHEMAS = {
         if (typeof entry.hieroglyphes !== 'string' || entry.hieroglyphes.trim().length === 0) {
           erreurs.push(`${path} > hieroglyphes doit être une chaîne de signes non vide`);
         }
+        // Le déchiffrement (spec 14) : sa durée et le facteur de B, tous deux
+        // PROVISOIRES, lus par `indices.js#avancerDechiffrement`.
+        for (const champ of ['dechiffrement_ms', 'acceleration']) {
+          if (entry[champ] !== undefined && !(typeof entry[champ] === 'number' && entry[champ] > 0)) {
+            erreurs.push(`${path} > ${champ} doit être un nombre > 0`);
+          }
+        }
         return erreurs;
       }
       if (typeof entry.cle_titre !== 'string' || entry.cle_titre.length === 0) {
@@ -2854,6 +2902,28 @@ export const SCHEMAS = {
         erreurs.push(...erreursConditionVisibilite(entry.lisible_si, `${path} > lisible_si`, catalogs));
         if (!(catalogs.indices || []).some((e) => e.id === 'indices_config')) {
           erreurs.push(`${path} > lisible_si exige l'entrée "indices_config" (l'alphabet des hiéroglyphes)`);
+        }
+      }
+      // `dechiffrement` (spec 14, palier B) : l'indice se déchiffre quand le
+      // carnet s'ouvre alors que `condition` tient (au pied d'une pierre), et
+      // `flag` le retient. Sans `lisible_si` qui lise ce flag, le déchiffrement
+      // jouerait son animation sur un texte que rien ne rendrait lisible ensuite.
+      if (entry.dechiffrement !== undefined) {
+        const d = entry.dechiffrement;
+        if (!d || typeof d !== 'object' || d.condition === undefined) {
+          erreurs.push(`${path} > dechiffrement doit être { condition, flag }`);
+        } else {
+          erreurs.push(...erreursConditionVisibilite(d.condition, `${path} > dechiffrement.condition`, catalogs));
+          if (!(catalogs.flags || []).some((f) => f.id === d.flag)) {
+            erreurs.push(`${path} > dechiffrement.flag "${d.flag}" non déclaré dans flags.json`);
+          }
+          const config = (catalogs.indices || []).find((e) => e.id === 'indices_config');
+          if (!config || config.dechiffrement_ms === undefined || config.acceleration === undefined) {
+            erreurs.push(`${path} > dechiffrement exige dechiffrement_ms et acceleration dans "indices_config"`);
+          }
+          if (entry.lisible_si !== d.flag) {
+            erreurs.push(`${path} > dechiffrement : lisible_si doit être son flag ("${d.flag}"), sinon l'indice déchiffré resterait illisible`);
+          }
         }
       }
       return erreurs;

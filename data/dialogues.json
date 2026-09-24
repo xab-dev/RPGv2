@@ -266,5 +266,16 @@
         "text_key": "dlg.lore.etincelle"
       }
     }
+  },
+  {
+    "id": "dlg_ambiance_stele_carnet",
+    "declencheur": "ambiance_stele_carnet",
+    "entree": "l1",
+    "noeuds": {
+      "l1": {
+        "locuteur": "follet",
+        "text_key": "dlg.ambiance.stele_carnet"
+      }
+    }
   }
 ]

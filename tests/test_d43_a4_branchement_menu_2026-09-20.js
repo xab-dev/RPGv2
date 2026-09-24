@@ -171,8 +171,10 @@ function construireBanc({ dansLaMaison = true, compagnon, pleinEcranDisponible =
   // interroge. Ce témoin liste ce qui EXISTE — il n'épingle aucun réglage
   // (`D-52`), il dit seulement de quoi une condition de données dispose.
   // Spec 11 palier D : `remplissage_coffre`, la porte du chapitre 3.
+  // Spec 14 palier B (`Q-137`) : `a_portee`, l'interactif à portée — un NOM,
+  // comparé par `egal`, au pied de la stèle bleue.
   assert.deepEqual(enregistres.valeurs.sort(),
-    ['consommables_en_poche', 'niveau', 'objets_au_coffre', 'plein_ecran_disponible',
+    ['a_portee', 'consommables_en_poche', 'niveau', 'objets_au_coffre', 'plein_ecran_disponible',
       'remplissage_coffre', 'slots_libres_poche', 'stations_placables', 'stations_posees']);
   // Indices (Xav, 23/09) : un quatrième écran ouvert par une carte.
   assert.deepEqual(enregistres.ecrans, ['ecran_poche', 'ecran_stats', 'ecran_construction', 'ecran_indices'],

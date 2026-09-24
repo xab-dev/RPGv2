@@ -43,6 +43,14 @@ export function fermerVueStele(vue) {
   return vue.fermetureMs === null ? { ...vue, fermetureMs: 0 } : vue;
 }
 
+// Descendre (spec 14, `Q-138`) : la vue sort par le même fondu que B, mais
+// elle RETIENT que le joueur a choisi de descendre — l'appelant lance la
+// descente quand la vue est finie, jamais avant (le jeu reste gelé pendant la
+// sortie, et la pierre ne disparaît pas d'un coup devant une salle).
+export function demanderDescente(vue) {
+  return vue.fermetureMs === null ? { ...vue, fermetureMs: 0, descendre: true } : vue;
+}
+
 export function vueSteleTerminee(vue) {
   return vue.fermetureMs !== null && vue.fermetureMs >= FONDU_MS;
 }

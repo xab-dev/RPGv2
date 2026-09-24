@@ -519,6 +519,10 @@ export function initialiserMenu({
   // Et pour les Indices (`indices.js`) : ce qui est lisible dépend du niveau
   // du héros et des flags, que seul main.js connaît.
   let fournisseurEntreesIndices = () => [];
+  // Spec 14 : prévenu quand le carnet (l'écran Indices) s'ouvre — AVANT qu'il
+  // ne lise ses entrées : un indice qui se déchiffre au pied de sa pierre doit
+  // s'afficher en train de se déchiffrer dès la première image.
+  let surOuvertureIndices = () => {};
   // Et pour les conditions des cartes (`flags.evaluate`, qui vit dans
   // l'orchestrateur). Tant qu'il n'est pas fourni, AUCUNE condition n'est
   // vraie : une carte qu'on ne sait pas évaluer ne s'affiche pas (même
@@ -567,10 +571,13 @@ export function initialiserMenu({
     [ECRAN_CONSTRUCTION]: () => navigation.empiler(niveauConstruction()),
     // Les Indices : maître-détail en lecture seule (aucune entrée n'a
     // d'action — la fiche n'a donc pas de bouton).
-    [ECRAN_INDICES]: () => navigation.empiler({
-      vue: ecranFiches, id: ECRAN_INDICES, titre: i18n.t('menu.indices_titre'),
-      obtenirEntrees: () => fournisseurEntreesIndices(), texteVide: i18n.t('menu.indices_vide'),
-    }),
+    [ECRAN_INDICES]: () => {
+      surOuvertureIndices();
+      navigation.empiler({
+        vue: ecranFiches, id: ECRAN_INDICES, titre: i18n.t('menu.indices_titre'),
+        obtenirEntrees: () => fournisseurEntreesIndices(), texteVide: i18n.t('menu.indices_vide'),
+      });
+    },
   };
 
   const menuCartes = creerMenuCartes({
@@ -686,6 +693,18 @@ export function initialiserMenu({
     // Les entrées de l'écran Indices, fournies de même par main.js.
     definirEntreesIndices(fn) {
       fournisseurEntreesIndices = fn;
+    },
+    definirOuvertureIndices(fn) {
+      surOuvertureIndices = fn;
+    },
+    // Spec 14 : le carnet est-il l'écran AFFICHÉ (le sommet de la pile, menu
+    // ouvert) ? Le déchiffrement ne retient B que là : sur la Poche, B ferme.
+    indicesAffiches() {
+      const s = navigation.sommet();
+      return !!s && s.id === ECRAN_INDICES && ecranFiches.estVisible();
+    },
+    rafraichirIndices() {
+      if (this.indicesAffiches()) ecranFiches.rafraichir();
     },
     // Fournit l'action réelle de reinitialiserPartie() après la construction
     // de l'orchestrateur (voir commentaire sur `actionReinitialiser`

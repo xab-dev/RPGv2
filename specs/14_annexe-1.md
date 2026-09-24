@@ -2,11 +2,11 @@
 projet: RPG V2
 episode/session: Carte Maison — l'Annexe 1 (la stèle, Zéros, les leviers, le Gardien, la première compétence)
 type: spec par paliers
-version: 1.3.2
-statut: courante, prête à coder (spec 13 livrée) — B1, B2, B3, Q-138 et l'équilibrage tranchés par Xav le 24/09 (§0)
+version: 1.3.3
+statut: courante — paliers A et B livrés le 24/09 (A validé : V-149 ; B à voir : V-150) ; B1, B2, B3, Q-138 et l'équilibrage tranchés par Xav le 24/09 (§0)
 catégorie: Spec
 date: 2026-09-24
-Ids_suivi: [Q-120, Q-13, "D- (à créer : un par palier)", "Q-137 à Q-148 (inscrites au suivi le 24/09)", Q-18, "V- (à créer : un par palier)"]
+Ids_suivi: [Q-120, Q-13, "D-205 (A), D-207 (B), D- (à créer : un par palier)", "Q-137 à Q-148 (inscrites au suivi le 24/09)", Q-152, Q-153, Q-18, "V-149 (A), V-150 (B), V- (à créer : un par palier)"]
 genere_par: claude
 verifie_par: xav
 ---
@@ -19,6 +19,7 @@ verifie_par: xav
 
 ## 0. Décisions de Xav (24/09, relecture de la v1.0.0)
 
+**Changelog 1.3.3** (palier B livré, `D-207`) : `Q-137` appliquée sous la forme `{ valeur: 'a_portee', egal: '<id>' }` ; le déchiffrement se **déclare** sur l'indice (`dechiffrement: { condition, flag }`) ; `?flags=a,b` (debug) tient des flags pour vrais sans les sauvegarder, ce qui ouvre les portes de la validation. **Correction d'une contradiction du §4.3** : le passage 1 → 2 n'attend pas « `flag_zeros_rencontre` ou le levier » — `flag_zeros_rencontre` est persistant, la porte serait donc ouverte dès l'entrée des descentes suivantes (contre `Q-142` et le §4.2). Il attend le **flag de descente** `flag_annexe_passage_1`, que poseront la fin de la rencontre (palier D) et le levier des descentes suivantes. Chaque salle a un **retour au sud**, toujours ouvert (`Q-152` : sans lui, la salle 2, sans monstre, est un piège dont on ne sort pas) ; il n'existe **aucun fondu** aux portails (`Q-153`) : Descendre sort par le fondu de la vue de la stèle.
 **Changelog 1.3.2** : Zéros, précisions de Xav : le yin et le yang, il a découvert les secrets des follets, le « Follet Blanc » à glisser dans son dialogue (`E-05`).
 **Changelog 1.3.1** : **Zéros est habillé en blanc** (Xav) ; le nom « Zéros » est retenu ; les défauts de `Q-141`, `Q-142`, `Q-144` et `Q-145` sont acceptés par Xav (« le reste ok »).
 **Changelog 1.3.0** : `Q-138` tranchée : la stèle déchiffrée ouvre **d'abord sa vue rapprochée**, qui gagne l'action **Descendre**. **L'équilibrage se fait au ressenti de Xav** (`Q-146`) : l'instrument `tools/mesure_boss.mjs` est retiré, et `?niveau=N` aussi (Xav importe une vraie sauvegarde Nv.30). Le §6 ne contredit plus le §4.9 : **une** migration est prévue, v8 → v9, au palier I. Les identifiants `Q-137` à `Q-148` sont inscrits au suivi.
@@ -108,7 +109,7 @@ Une **descente** commence à chaque entrée par la stèle. L'Annexe distingue de
 - **Zéros** (le nom est retenu, Xav, 24/09) : le **jumeau, le double, le miroir de Héros**, **habillé en blanc** (Xav, 24/09). C'est la silhouette du héros, **en miroir**, avec une teinte blanche fixe déclarée sur son entrée, jamais celle du follet : le héros prend la couleur de son follet (`heroTeinte`), Zéros ne la prend pas. Le « plus sombre, plus maléfique » du scénario ne passe donc pas par ses habits : il passe par son follet noir, son aura, sa force et sa façon de parler. Le blanc contre le noir de son follet est le contraste de la scène. Il est **intouchable** (`intouchable: true` sur l'entrée d'ennemi) : l'auto-attaque et le follet l'ignorent. Il frappe **fort**, au corps à corps.
 - **Le follet de Zéros** : une entité **à part**, `enemy_follet_zeros`. C'est la **seule cible** du combat. Il est noir, brillant et translucide (un visuel nouveau, avec un halo sombre), et il **orbite autour de Zéros** avec un grand rayon et une grande aura (une orbite de follet réutilisée, `companion.js`, avec des paramètres en données). Il ne frappe pas lui-même. *[OUVERT `Q-141`]*
 - **Pas de défaite** : pendant ce combat, `hero.pv ≤ 0` **n'appelle pas** la mort. Le follet du héros le relève : dialogue court « Continue de te battre ! » (il **gèle** le combat, comme tout dialogue), et PV à 100 %. Aucun malus de survie, aucun retour à la Grotte. La règle vit sur la **rencontre** (`sans_defaite: true` dans les données du combat), jamais dans un `if` sur un id.
-- **Fin** : à **25 %** des PV du follet de Zéros (seuil en données), tout se fige, et **Zéros parle** (un dialogue de `dialogues.json`, avec options s'il le faut, par le moteur de la spec 11). Puis **Zéros et son follet s'effacent** (un fondu), `flag_zeros_rencontre` est posé, et **le passage vers la salle 2 s'ouvre**. Ce passage est une porte conditionnelle sur ce flag **ou** sur « levier de la salle 1 actionné », pour les descentes suivantes.
+- **Fin** : à **25 %** des PV du follet de Zéros (seuil en données), tout se fige, et **Zéros parle** (un dialogue de `dialogues.json`, avec options s'il le faut, par le moteur de la spec 11). Puis **Zéros et son follet s'effacent** (un fondu), `flag_zeros_rencontre` est posé, et **le passage vers la salle 2 s'ouvre**. Ce passage est une porte conditionnelle sur le **flag de descente** `flag_annexe_passage_1` (palier B), que la fin de la rencontre pose, et le levier aux descentes suivantes (v1.3.3 : attendre `flag_zeros_rencontre`, persistant, l'aurait ouverte dès l'entrée des descentes suivantes).
 - **Les descentes suivantes** : la salle 1 est nettoyée, le levier apparaît, et l'actionner **ouvre directement le passage**. *[OUVERT `Q-142`]*
 - **Ce que dit Zéros** : les secrets sur les follets, **écrits par Xav** (`E-05`). Précisions de Xav (24/09) : Zéros et Héros sont **le yin et le yang** ; Zéros **a découvert les secrets des follets** ; le dialogue doit **glisser le « Follet Blanc »**, sans que Xav sache encore comment. Tant que le texte n'est pas écrit, le palier D pose un texte provisoire qui ne nomme pas le Follet Blanc (on ne fige pas un lore que Xav n'a pas trouvé). Piste de Claude, à prendre ou à laisser : la stèle d'argile dit déjà « Ce monde a eu deux mains. La seconde a laissé un mot là où l'on commence à lire. » **Zéros serait-il la seconde main ?** *[`Q-143`]*
 
@@ -193,8 +194,8 @@ Une **descente** commence à chaque entrée par la stèle. L'Annexe distingue de
 
 | Palier | Contenu | Validation (Xav, en jeu) |
 |---|---|---|
-| **A — Les niveaux** | §4.8 : Nv.31 à 50, les flags, le test « un flag par niveau » | La barre d'XP et « Nv. » au-delà de 30 ; la vraie sauvegarde Nv.30 de Xav, importée, qui continue de progresser |
-| **B — La stèle et la descente** | §4.1, §4.2 ; la vue rapprochée et son action **Descendre** ; les trois salles **vides** (layouts, lumières, portes, escalier) ; flags de descente et leur remise à zéro | Nv.15 au pied de la stèle : le follet parle, le carnet se déchiffre, la vue rapprochée montre la gravure en clair et propose Descendre ; traverser les trois salles (portes forcées par debug) ; remonter |
+| **A — Les niveaux** (**livré le 24/09**, `D-205`, validé : `V-149`) | §4.8 : Nv.31 à 50, les flags, le test « un flag par niveau » | La barre d'XP et « Nv. » au-delà de 30 ; la vraie sauvegarde Nv.30 de Xav, importée, qui continue de progresser |
+| **B — La stèle et la descente** (**livré le 24/09**, `D-207`) | §4.1, §4.2 ; la vue rapprochée et son action **Descendre** ; les trois salles **vides** (layouts, lumières, portes, escalier) ; flags de descente et leur remise à zéro | Nv.15 au pied de la stèle : le follet parle, le carnet se déchiffre, la vue rapprochée montre la gravure en clair et propose Descendre ; traverser les trois salles (portes forcées par debug) ; remonter |
 | **C — Les tireurs** | `projectiles.js`, `attaque_distance`, comportement `distance`, les cracheurs, la salle nettoyée, le levier qui apparaît | Salle 1 : lisibilité des tirs, esquive, cadence « faible », dégâts « modérés » ; le levier qui apparaît |
 | **D — Zéros** | Entité intouchable, follet de Zéros, combat sans défaite, relève, arrêt à 25 %, dialogue (textes provisoires), passage | La mise en scène entière ; la relève ; se lit-elle comme un combat qu'on **ne peut pas** perdre, et pas comme un bug ? |
 | **E — Les deux mains** | `levier_maintenu`, follet posé (**après B2**), dialogue du follet, passage | Salle 2 à la manette, au clavier **et** au doigt ; la marche dans l'ombre |
@@ -222,7 +223,7 @@ Ordre : A → B → C → D → E → F → G → **I** → H (le choix se débl
 |---|---|---|
 | **B1** | Les dégâts de la compétence | **Tranché (Xav, 24/09)** : Force × coefficient d'Esprit ; Esprit raccourcit aussi la charge et la recharge |
 | **B2** | Poser le follet | **Tranché (Xav, 24/09)** : `target_next` contextuel, état `poste` du follet |
-| `Q-137` | Forme de la condition de proximité | Valeur nommée `a_portee`, fournie par `main.js` |
+| `Q-137` | Forme de la condition de proximité | Valeur nommée `a_portee`, fournie par `main.js`, comparée par `egal` (appliquée au palier B) |
 | `Q-138` | La stèle déchiffrée : descente directe, ou vue rapprochée avec « Descendre » ? | **Tranché (Xav, 24/09)** : la vue rapprochée d'abord, avec l'action Descendre |
 | `Q-139` | Où mène la porte de la salle 3 ? | **Tranché (Xav, 24/09)** : dehors, près de la stèle rouge ; salles du sud vers le nord |
 | `Q-140` | Les noms : cracheurs, Zéros / *Zeros*, le Gardien, la compétence | Noms de travail, à écrire par Xav |
@@ -233,6 +234,8 @@ Ordre : A → B → C → D → E → F → G → **I** → H (le choix se débl
 | `Q-145` | Un temps minimal entre deux descentes ? | Non |
 | `Q-146` | `?niveau=N` en debug ; l'équilibrage du Gardien | **Équilibrage tranché (Xav, 24/09)** : au ressenti, pas de bot. `?niveau=N` retiré (la vraie sauvegarde Nv.30 le remplace), à confirmer |
 | `Q-147` | Respec et re-choix du follet | **Tranché (Xav, 24/09)** : dans l'Annexe 1, palier I |
+| `Q-152` | Un retour au sud des salles 2 et 3 ? | Oui, toujours ouvert (sinon la salle 2 est un piège) — palier B |
+| `Q-153` | Un fondu aux changements de scène ? | Non pour l'instant : Descendre sort par le fondu de la vue de la stèle |
 | `Q-148` | **B3** : équiper sur l'emplacement 3 | **Tranché (Xav, 24/09)** : la fiche affiche 1 = X, 2 = Y, 3 = B ; A choisit parmi les trois ; équiper remplace |
 
 ## 11. Hors périmètre

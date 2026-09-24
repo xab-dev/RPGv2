@@ -50,7 +50,7 @@ import {
   resoudrePreset, valeurLevier, appliquerParticules, appliquerGrainSol, lirePresetForce,
   cleEtatCarte, presetSuivant, creerDescenteAuto,
 } from './qualite.js';
-import { creerRegistreFlags } from './flags.js';
+import { creerRegistreFlags, lireFlagsForces } from './flags.js';
 import { calculerStatsPrimaires, calculerStatsDerivees, appliquerModulateurSurvie } from './stats.js';
 import {
   modificateursHeros, statsEffectivesMonstre, tickBuffsActifs, ajouterBuffActif, modificateursBuffsActifs,
@@ -100,9 +100,15 @@ import { creerEtatIndices } from './hints.js';
 import { estExpire, poserCooldown, tempsRestantMs } from './cooldowns.js';
 import { peutFabriquer, fabriquer, recettesDeStation, trierRecettes } from './recipes.js';
 import { entreesVisibles, estVisible } from './visibilite.js';
-import { entreesIndices, lignesBrouillees } from './indices.js';
-import { creerVueStele, avancerVueStele, vueSteleArmee, fermerVueStele, vueSteleTerminee, alphaVueStele } from './stele.js';
-import { dessinerEcranStele } from './ui/ecran_stele.js';
+import {
+  entreesIndices, lignesBrouillees, creerDechiffrement, accelererDechiffrement, avancerDechiffrement,
+  progressionDechiffrement,
+} from './indices.js';
+import {
+  creerVueStele, avancerVueStele, vueSteleArmee, fermerVueStele, vueSteleTerminee, alphaVueStele, demanderDescente,
+} from './stele.js';
+import { dessinerEcranStele, zoneGravureStele } from './ui/ecran_stele.js';
+import { flagsDeLaDescente, descenteDisponible } from './descente.js';
 import {
   decroitre as decroitreSurvie, consommer as consommerSurvie, appliquerMalusRespawn,
   calculerModulateur as calculerModulateurSurvie, configSurvie, jaugeSousLeSeuil,
@@ -635,6 +641,18 @@ function afficherErreurBoot(erreurs) {
 // `input.tactileActif()` (diagnostic SD_ui-lisibilite §3), qui seul sait
 // l'éteindre quand clavier/manette reprennent la main — sourceTactile.estActif()
 // seul ne le faisait jamais.
+// Un objet de valeurs nommées dont chaque valeur n'est calculée qu'à la
+// lecture (`calculs` : { nom: () => valeur }), plus des valeurs déjà connues
+// (`fixes`). Déclaré au niveau module : pur, testable, et hors des deux
+// grandes fonctions (`D-72`).
+export function valeursParesseuses(calculs, fixes = {}) {
+  const valeurs = { ...fixes };
+  for (const [nom, calcul] of Object.entries(calculs)) {
+    Object.defineProperty(valeurs, nom, { get: calcul, enumerable: true });
+  }
+  return valeurs;
+}
+
 export function creerOrchestrateurGrotte({
   registre, i18n, save, store, dialogue, menu, input, ctxLogique, ctxVisible, canvasLogique,
   // §3.6 03_maison-exterieur : callback déclenché UNE fois, au premier verbe
@@ -686,6 +704,10 @@ export function creerOrchestrateurGrotte({
   // (l'orchestrateur ne lit pas l'URL). `null` = ne force rien — c'est le
   // défaut, un test headless n'a rien à fournir.
   alignementForce = null,
+  // Spec 14, palier B : `?flags=a,b`, DÉJÀ lus et triés par `demarrerJeu`
+  // (`flags.js#lireFlagsForces`). Tenus pour vrais toute la session, jamais
+  // sauvegardés. Vide par défaut : un test headless n'a rien à fournir.
+  flagsForces = [],
   // Spec 11 §4.2 : les doigts posés depuis la frame précédente, en
   // coordonnées logiques (`touch.js#lireContactsNouveaux`). Lus UNE fois par
   // frame, au début de `maj()` ; seule la bulle de dialogue s'en sert. Vide
@@ -901,6 +923,13 @@ export function creerOrchestrateurGrotte({
         save.flags[id] = true;
         etatModifie = true;
       },
+      // Spec 14 : l'entrée par une stèle remet à zéro les flags de la
+      // descente (`commencerDescente`) — le miroir suit, dans l'autre sens.
+      onRetrait: (id) => {
+        delete save.flags[id];
+        etatModifie = true;
+      },
+      forces: flagsForces,
       // specs/07_chaos-nocturne.md §3 : valeurs nommées que les conditions de
       // données peuvent comparer (« niveau ≥ 5 » pour le palier 1 du Chaos).
       // Lue à chaque évaluation, jamais capturée : le seuil s'ouvre à l'instant
@@ -916,14 +945,21 @@ export function creerOrchestrateurGrotte({
   // LES valeurs nommées qu'une condition de données peut interroger. Une
   // seule déclaration : `nomsValeursConditions` en dérive ses clés, au lieu de
   // recopier la liste — deux listes finissent toujours par diverger (`D-71`).
+  // PARESSEUSES (spec 14, palier B) : chaque valeur est un accesseur, calculée
+  // seulement si une condition la lit. Une condition n'en lit qu'une, mais
+  // l'objet les calculait TOUTES (poche, coffre, stations, portée) à chaque
+  // évaluation — et une ligne d'ambiance pas encore vue s'évalue à chaque
+  // frame. Mesuré au banc de la spec 13 : `maj()` +17 à +40 % la nuit, rien
+  // qu'avec la ligne de la stèle. `Object.keys` et `in` voient toujours les
+  // mêmes noms : le contrôle de câblage au démarrage n'y voit pas de différence.
   function valeursConditions() {
-    return {
-      niveau: save.hero.niveau,
-      stations_placables: nombreStationsPlacables(),
+    return valeursParesseuses({
+      niveau: () => save.hero.niveau,
+      stations_placables: () => nombreStationsPlacables(),
       // `D-93` : combien de SORTES de consommables la poche porte. Un nombre,
       // donc une condition de données ordinaire — la barre du bas n'a aucun
       // code de déblocage à elle.
-      consommables_en_poche: consommablesEnPoche(),
+      consommables_en_poche: () => consommablesEnPoche(),
       // `D-125` (T9) : trois états du monde de plus, et pas un mot de lore
       // dedans. Une ligne du follet est une entrée de `ambiances.json` qui
       // les interroge ; la prochaine s'écrira de même, sans code.
@@ -933,19 +969,23 @@ export function creerOrchestrateurGrotte({
       // `max: 0` qui ne dépend pas du nombre de slots du conteneur — le jour
       // où la poche en gagne un (une besace, `Q-65`), la condition tient
       // toujours, là où un `min: 4` serait devenu faux en silence.
-      slots_libres_poche: capacitePoche().slots
+      slots_libres_poche: () => capacitePoche().slots
         - slotsOccupes(save.inventaire.items, capacitePoche(), obtenirItemDef),
-      objets_au_coffre: objetsRangesAuCoffre(),
+      objets_au_coffre: () => objetsRangesAuCoffre(),
       // Spec 11 §7.3 : la part REMPLIE du coffre le plus plein de la scène, de
       // 0 à 1 — posée sur ce qui est rempli et non sur un nombre de slots, pour
       // qu'une condition « 70 % » survive à l'agrandissement du coffre.
-      remplissage_coffre: remplissageCoffre(),
+      remplissage_coffre: () => remplissageCoffre(),
       // `D-121` : une instance CRÉÉE en jeu, donc posée par le joueur — les
       // stations du catalogue n'en sont pas. Compté par la même fonction que
       // la résolution des interactifs, jamais par un second parcours.
-      stations_posees: instancesCreees(registre, scene.id, save.maison.stations).length,
-      ...valeursExternes(),
-    };
+      stations_posees: () => instancesCreees(registre, scene.id, save.maison.stations).length,
+      // Spec 14, `Q-137` : l'interactif à portée d'INTERACT (son id), ou
+      // `null`. Pas un nombre : une condition le compare par `egal`. Le même
+      // calcul que la cible d'INTERACT (`interactifAPortee`), jamais un second
+      // seuil de distance — « au pied de la pierre » est l'endroit d'où on la lit.
+      a_portee: () => interactifAPortee()?.puzzleId ?? null,
+    }, valeursExternes());
   }
   let flags = construireFlags();
 
@@ -1469,6 +1509,12 @@ export function creerOrchestrateurGrotte({
   // Une UI ouverte comme les autres — le jeu gèle, MENU se tait — ouverte par
   // INTERACT, fermée par B ou un toucher, et c'est tout.
   let vueStele = null;
+  // Spec 14 : l'indice qui se déchiffre dans le carnet, l'état de
+  // `indices.js#creerDechiffrement`, ou `null`. Il n'avance que carnet
+  // ouvert ; fermé avant la fin (le « Fermer » tactile), il reprend à la
+  // prochaine ouverture — l'indice n'est VU qu'une fois le dernier signe tombé.
+  let dechiffrement = null;
+  const configIndices = registre.obtenir('indices', 'indices_config');
 
   function choixFolletActif() {
     return choixFollet !== null;
@@ -1997,7 +2043,10 @@ export function creerOrchestrateurGrotte({
   // qu'on appuie ; il lit cette fonction-ci, et `essayerInteraction` aussi —
   // jamais deux calculs de « la cible », qui finiraient par montrer un coffre
   // et ouvrir un levier. Ne modifie rien : elle peut être lue à chaque frame.
-  function cibleInteraction() {
+  // L'interactif qu'INTERACT prendrait à la main, ou `null` : extrait de
+  // `cibleInteraction` (spec 14) pour que la valeur `a_portee` des conditions
+  // lise LA même portée, par le même parcours.
+  function interactifAPortee() {
     for (const puzzleId of scene.interactifs) {
       // `D-121` : `scene.puzzle` et non `registre.obtenir` — un id venu de la
       // scène peut désigner une instance CRÉÉE (un coffre fabriqué), qui
@@ -2010,8 +2059,14 @@ export function creerOrchestrateurGrotte({
       if (distanceAuRectangle(hero.x, hero.y, rectangleInteractif(puzzle)) > DISTANCE_INTERACT_PX) continue;
       // Un interactif d'un autre type ne se prend pas à la main : le suivant
       // a sa chance, comme avant ce découpage.
-      if (TYPES_INTERACTIFS_A_LA_MAIN.includes(puzzle.type)) return { genre: 'interactif', puzzle, puzzleId };
+      if (TYPES_INTERACTIFS_A_LA_MAIN.includes(puzzle.type)) return { puzzle, puzzleId };
     }
+    return null;
+  }
+
+  function cibleInteraction() {
+    const interactif = interactifAPortee();
+    if (interactif) return { genre: 'interactif', ...interactif };
     // `specs/15` palier C : un objet planté se reprend d'INTERACT. Il passe
     // avant les objets au sol : c'est une chose dressée, qu'on vise.
     const planteProche = trouverObjetJeteProche(objetsPlantesDeLaScene(), hero, DISTANCE_INTERACT_PX);
@@ -3004,24 +3059,92 @@ export function creerOrchestrateurGrotte({
       estLisible: (condition) => flags.evaluate(condition),
       traduire: (cle) => i18n.t(cle),
       hieroglyphes: config ? config.hieroglyphes : '',
+      dechiffrement: dechiffrement
+        ? { indiceId: dechiffrement.indiceId, progression: progressionDechiffrement(dechiffrement, configIndices) }
+        : null,
     });
   }
 
-  // Ce que la vue de la stèle dessine : les lignes de SON indice, brouillées
-  // par le même point que l'écran Indices (`indices.js#lignesBrouillees`) —
-  // toujours en hiéroglyphes : c'est une gravure, elle ne se traduit pas
-  // quand le héros monte de niveau.
+  // Spec 14, §4.1 : le carnet (l'écran Indices) s'OUVRE. Un indice qui
+  // déclare un `dechiffrement` dont la condition tient (au pied de sa pierre,
+  // au bon niveau) se déchiffre : son flag est posé tout de suite — c'est lui
+  // que lit `lisible_si`, et la stèle avec —, et l'animation commence.
+  // Appelé par le menu à l'ouverture de l'écran, avant qu'il ne lise ses
+  // entrées, jamais par la lecture des entrées elle-même (qui se refait à
+  // chaque rafraîchissement).
+  function ouvrirCarnet() {
+    if (dechiffrement) return;
+    for (const indice of registre.tous('indices')) {
+      const d = indice.dechiffrement;
+      if (!d || flags.has(d.flag) || !flags.evaluate(d.condition)) continue;
+      flags.set(d.flag);
+      dechiffrement = creerDechiffrement(indice.id);
+      return;
+    }
+  }
+
+  // Le déchiffrement avance, carnet ouvert. Rend VRAI si le texte affiché a
+  // changé (l'écran est à relire), faux sinon — un écran DOM ne se refait
+  // pas à chaque frame pour rien.
+  function avancerDechiffrementCarnet(deltaMs, accelerer) {
+    const avant = progressionDechiffrement(dechiffrement, configIndices);
+    if (accelerer) dechiffrement = accelererDechiffrement(dechiffrement);
+    dechiffrement = avancerDechiffrement(dechiffrement, deltaMs, configIndices);
+    const apres = progressionDechiffrement(dechiffrement, configIndices);
+    if (apres >= 1) dechiffrement = null;
+    return apres !== avant;
+  }
+
+  // Ce que la vue de la stèle dessine : les lignes de SON indice. Tant que
+  // l'indice ne se lit pas, brouillées par le même point que l'écran Indices
+  // (`indices.js#lignesBrouillees`) : les mêmes signes. Déchiffré (spec 14),
+  // la gravure se lit en clair, comme le carnet.
+  // `actions` : ce que la vue propose, au glyphe du périphérique actif —
+  // Descendre n'existe que sur une stèle qui déclare sa descente, une fois
+  // son flag posé (`descente.js#descenteDisponible`).
   function contenuVueStele() {
     const puzzle = scene.puzzle(vueStele.puzzleId);
-    const config = registre.obtenir('indices', 'indices_config');
     const indice = registre.obtenir('indices', puzzle.indice);
+    const lisible = indice.lisible_si === undefined || flags.evaluate(indice.lisible_si);
     return {
       id: puzzle.id,
       couleur: puzzle.couleur,
-      lignes: lignesBrouillees(indice, (cle) => i18n.t(cle), config.hieroglyphes),
+      lignes: lisible
+        ? indice.lignes.map((cle) => i18n.t(cle))
+        : lignesBrouillees(indice, (cle) => i18n.t(cle), configIndices.hieroglyphes),
+      actions: descenteDisponible(puzzle, flags.has) ? actionsVueStele() : [],
       vue: vueStele,
       alpha: alphaVueStele(vueStele),
     };
+  }
+
+  // Les verbes de la vue d'une stèle qui descend : A (ou INTERACT, qui l'a
+  // ouverte) descend, B ferme. À l'écran, UN glyphe par action : A à la
+  // manette (la confirmation de toujours), E au clavier (la touche qui a
+  // ouvert la pierre). Au doigt, les boutons du jeu sont sous la vue : la
+  // gravure se touche pour descendre, le reste de l'écran pour fermer.
+  function actionsVueStele() {
+    const peripherique = input.peripheriqueActif ? input.peripheriqueActif() : 'manette';
+    if (peripherique === 'tactile') {
+      return [
+        { glyphe: null, texte: i18n.t('stele.action.tactile_descendre') },
+        { glyphe: null, texte: i18n.t('stele.action.tactile_fermer') },
+      ];
+    }
+    const verbeDescendre = peripherique === 'clavier' ? 'interact' : 'attack';
+    return [
+      { glyphe: i18n.t(`glyphe.${peripherique}.${verbeDescendre}`), texte: i18n.t('stele.action.descendre') },
+      { glyphe: i18n.t(`glyphe.${peripherique}.skill_3`), texte: i18n.t('stele.action.fermer') },
+    ];
+  }
+
+  // Spec 14, §4.2 : une descente commence. L'état de la précédente (les flags
+  // que déclarent les salles de la descente) est remis à zéro, en ce seul
+  // endroit, puis le héros entre au point d'arrivée de la première salle.
+  function commencerDescente(descente) {
+    flags.retirer(flagsDeLaDescente(registre.tous('scenes'), descente.scene));
+    entrerDansScene(descente.scene);
+    etatModifie = true;
   }
 
   // MT_hud-ligne-haute_2026-09-19 : la barre d'XP ayant quitté le HUD, la
@@ -3581,11 +3704,26 @@ export function creerOrchestrateurGrotte({
     if (steleEtaitActive) {
       vueStele = avancerVueStele(vueStele, deltaMs, Math.random);
       const puzzleStele = scene.puzzle(vueStele.puzzleId);
-      const retour = etatBrut.skill_3.pressed || contactsTactiles.length > 0;
+      // Spec 14, `Q-138` : une stèle qui descend. A ou INTERACT descendent ;
+      // au doigt, un toucher SUR la gravure descend, ailleurs il ferme. Sans
+      // descente, tout toucher ferme, comme avant.
+      const peutDescendre = descenteDisponible(puzzleStele, flags.has);
+      const zone = peutDescendre ? zoneGravureStele() : null;
+      const surGravure = (p) => zone && p.x >= zone.x && p.x <= zone.x + zone.w && p.y >= zone.y && p.y <= zone.y + zone.h;
+      const descendre = peutDescendre
+        && (etatBrut.attack.pressed || etatBrut.interact.pressed || contactsTactiles.some(surGravure));
+      const retour = etatBrut.skill_3.pressed || contactsTactiles.some((p) => !surGravure(p));
       // PS1 : fermer, c'est lancer la sortie en fondu ; la vue disparaît quand
       // elle est finie, et le jeu reste gelé jusque-là.
-      if (retour && vueSteleArmee(vueStele, puzzleStele.armement_ms)) vueStele = fermerVueStele(vueStele);
-      if (vueSteleTerminee(vueStele)) vueStele = null;
+      if (vueSteleArmee(vueStele, puzzleStele.armement_ms)) {
+        if (descendre) vueStele = demanderDescente(vueStele);
+        else if (retour) vueStele = fermerVueStele(vueStele);
+      }
+      if (vueSteleTerminee(vueStele)) {
+        const { descendre: descente } = vueStele;
+        vueStele = null;
+        if (descente) commencerDescente(puzzleStele.descente);
+      }
     }
     const logoEtaitActif = ouvertureLogoMs !== null;
     if (logoEtaitActif) {
@@ -3633,7 +3771,17 @@ export function creerOrchestrateurGrotte({
     // d'OUVRIR le menu dans cette même frame — le traiter là-bas le refermerait
     // aussitôt.
     let menuFermeParVerbe = false;
-    if (etatBrut.menu.pressed && !dialogueOuvertMaintenant && !choixFolletActif() && !introEtaitActive && !departEtaitActif && !steleEtaitActive) {
+    // Spec 14, §4.1 : pendant le déchiffrement, ni B ni MENU ne ferment le
+    // carnet — ils l'ACCÉLÈRENT. Fermer marquerait l'indice comme lu sans
+    // que le joueur l'ait vu se déchiffrer. Les deux verbes sont retirés de
+    // la frame avant que le menu ne les voie.
+    const dechiffrementRetient = dechiffrement !== null && menu.estOuvert() && !!(menu.indicesAffiches && menu.indicesAffiches());
+    const accelererCarnet = dechiffrementRetient && (etatBrut.skill_3.pressed || etatBrut.menu.pressed);
+    if (dechiffrementRetient) {
+      const relire = avancerDechiffrementCarnet(deltaMs, accelererCarnet);
+      if (relire) menu.rafraichirIndices();
+    }
+    if (etatBrut.menu.pressed && !dechiffrementRetient && !dialogueOuvertMaintenant && !choixFolletActif() && !introEtaitActive && !departEtaitActif && !steleEtaitActive) {
       if (constructionActif()) {
         quitterConstructionVersMenuPause();
       } else if (!menu.estOuvert()) {
@@ -3670,8 +3818,10 @@ export function creerOrchestrateurGrotte({
     // reste — jamais un second calcul de « le jeu a-t-il la main ».
     majDescenteAuto(deltaMs, uiOuverte);
     majBasculesLeviers(deltaMs);
-    if (menu.estOuvert()) menu.traiterInput(etatBrut);
-    else if (dialogueOuvertMaintenant) {
+    if (menu.estOuvert()) {
+      const neutre = etatNeutre(etatBrut);
+      menu.traiterInput(dechiffrementRetient ? { ...etatBrut, skill_3: neutre.skill_3, menu: neutre.menu } : etatBrut);
+    } else if (dialogueOuvertMaintenant) {
       // La frame d'ouverture reste neutre pour le doigt aussi (même défense
       // que pour les verbes : le geste qui a ouvert ne choisit pas).
       if (dialogueVientDeSOuvrir) dialogue.traiterInput(etatNeutre(etatBrut), null);
@@ -4667,6 +4817,7 @@ export function creerOrchestrateurGrotte({
     ouvertureLogoMs = null;
     prologue = null;
     vueStele = null;
+    dechiffrement = null;
     logoNiveauMs = null;
     basculesLeviers.clear();
     cooldownAttaqueHerosMs = 0;
@@ -4778,6 +4929,9 @@ export function creerOrchestrateurGrotte({
     obtenirEntreesStats: () => obtenirEntreesStats(),
     sousTitreStats: () => sousTitreStats(),
     obtenirEntreesIndices: () => obtenirEntreesIndices(),
+    // Spec 14 : le menu prévient qu'il ouvre le carnet (`menu.definirOuvertureIndices`).
+    ouvrirCarnet: () => ouvrirCarnet(),
+    obtenirDechiffrement: () => dechiffrement,
     // specs/05_construction-stations.md §3 : fournis à ui/menu.js via
     // menu.definirDisponibiliteConstruction()/definirEntreesConstruction()
     // (même patron que obtenirEntreesStats ci-dessus) — et exposés ici pour
@@ -4956,6 +5110,11 @@ export async function demarrerJeu() {
   // JAMAIS persisté (l'orchestrateur ne l'écrit nulle part), comme `?qualite`.
   const alignementDebug = lireAlignementForce(window.location.search, reglageAlignement.bornes);
   if (alignementDebug.avertissement) console.warn(alignementDebug.avertissement);
+  // Spec 14, palier B : `?flags=a,b` (debug) — des flags tenus pour vrais
+  // toute la session, jamais sauvegardés (portes de l'Annexe ouvertes).
+  const flagsDebug = lireFlagsForces(window.location.search, registre);
+  if (flagsDebug.avertissement) console.warn(flagsDebug.avertissement);
+  if (flagsDebug.ids.length > 0) console.info(`?flags : tenus pour vrais cette session : ${flagsDebug.ids.join(', ')}.`);
 
   // `specs/09_reglages-graphiques.md` palier B : le réglage graphique est
   // RÉSOLU au démarrage, et rien n'en dépend encore — les leviers se branchent
@@ -5289,6 +5448,7 @@ export async function demarrerJeu() {
     graphismes,
     registre, i18n, save, store, dialogue, menu, input, ctxLogique, ctxVisible, canvasLogique,
     alignementForce: alignementDebug.valeur,
+    flagsForces: flagsDebug.ids,
     onPremierGeste: armerAudioUneFois,
     moniteurPerf,
     // La PRÉSENCE de la carte « Plein écran » est une condition de
@@ -5319,6 +5479,7 @@ export async function demarrerJeu() {
   menu.definirEvaluateurCondition(orchestrateur.evaluerCondition);
   menu.definirEntreesConstruction(orchestrateur.entreesConstruction);
   menu.definirEntreesIndices(orchestrateur.obtenirEntreesIndices);
+  menu.definirOuvertureIndices(orchestrateur.ouvrirCarnet);
 
   // specs/08_menus-cartes.md §5 — le câblage, dans les DEUX sens : toute carte
   // de `menus.json` trouve sa fonction, toute fonction enregistrée a sa carte,

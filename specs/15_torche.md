@@ -3,7 +3,7 @@ projet: RPG V2
 episode/session: La torche — arme de feu, lumière de nuit, balise plantée
 type: spec par paliers
 version: 1.0.0
-statut: livrée palier par palier (file de micro-tickets, 24/09)
+statut: livrée (paliers A à E, 24/09), à valider en jeu (V-138 à V-142)
 catégorie: Spec
 date: 2026-09-24
 Ids_suivi: [D-194 à D-198 (un par palier), V-138 à V-142, Q-149 et suivantes]

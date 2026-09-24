@@ -171,6 +171,28 @@
     "alpha": 0.8
   },
   {
+    "id": "effet_flamme_vacille",
+    "type": "respiration",
+    "role": "cosmetique",
+    "ornement_min": 1,
+    "periode_ms": 700,
+    "amplitude": 0.08
+  },
+  {
+    "id": "effet_flamme_braises",
+    "type": "filet",
+    "role": "cosmetique",
+    "ornement_min": 2,
+    "visuel": "visuel_braise",
+    "nb_particules": 3,
+    "periode_ms": 1500,
+    "hauteur_px": 14,
+    "courbure_px": 2,
+    "derive_px": 1,
+    "echelle": 1,
+    "alpha": 0.9
+  },
+  {
     "id": "effet_anneau_choix",
     "type": "respiration",
     "role": "cosmetique",

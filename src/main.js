@@ -1003,6 +1003,8 @@ export function creerOrchestrateurGrotte({
     effetEtincellesDialogue = ornementActif(effetEtincellesDialogueCatalogue, levier('ornements'));
     effetSurlignageRespire = ornementActif(effetSurlignageRespireCatalogue, levier('ornements'));
     effetSurlignageFilet = ornementActif(effetSurlignageFiletCatalogue, levier('ornements'));
+    effetFlammeVacille = ornementActif(effetFlammeVacilleCatalogue, levier('ornements'));
+    effetFlammeBraises = ornementActif(effetFlammeBraisesCatalogue, levier('ornements'));
     effetAnneauChoix = ornementActif(effetAnneauChoixCatalogue, levier('ornements'));
     sillagesCinematique = ORDRE_CHOIX_FOLLET.map(() => creerPoussiere(effetSillage));
     if (scene) regenererDecor();
@@ -1130,6 +1132,16 @@ export function creerOrchestrateurGrotte({
   const visuelParticuleFilet = registre.obtenir('visuels', effetSurlignageFiletCatalogue.visuel);
   let effetSurlignageRespire = ornementActif(effetSurlignageRespireCatalogue, levier('ornements'));
   let effetSurlignageFilet = ornementActif(effetSurlignageFiletCatalogue, levier('ornements'));
+  // `specs/15` palier E : la flamme vivante (torche tenue ou plantée). Bas :
+  // fixe. Moyen : sa lumière vacille. Haut : en plus, des braises montent.
+  const effetFlammeVacilleCatalogue = registre.obtenir('effets', 'effet_flamme_vacille');
+  const effetFlammeBraisesCatalogue = registre.obtenir('effets', 'effet_flamme_braises');
+  const visuelBraise = registre.obtenir('visuels', effetFlammeBraisesCatalogue.visuel);
+  let effetFlammeVacille = ornementActif(effetFlammeVacilleCatalogue, levier('ornements'));
+  let effetFlammeBraises = ornementActif(effetFlammeBraisesCatalogue, levier('ornements'));
+  // La hauteur de la flamme au-dessus du point d'un objet : c'est d'elle que
+  // montent les braises. Un seul nombre, lu pour la torche tenue et plantée.
+  const HAUTEUR_FLAMME_PX = 12;
   // La phase du cycle telle que le liseré la lit : `null` dans une scène sans
   // cycle (la Grotte est sombre, elle n'a pas de nuit). Une seule lecture,
   // partagée par le sol et les icônes des menus (exposée plus bas).
@@ -4207,6 +4219,17 @@ export function creerOrchestrateurGrotte({
     // `D-158` : un levier allumé perce le voile d'un halo qui monte en fondu
     // (`lumiere_active` de son visuel) — même voie que les cristaux, une
     // lumière de scène de plus, jamais un second voile.
+    // `specs/15` palier E : le rayon d'une flamme qui vacille (Moyen+). Deux
+    // souffles de périodes premières entre elles, décalés par la position :
+    // une flamme seule ne bat pas comme un métronome, et deux torches voisines
+    // ne vacillent pas ensemble. Sans l'effet, 1 exactement : Bas est fixe.
+    const vacillement = (x, y) => {
+      if (!effetFlammeVacille) return 1;
+      const decalage = (x * 0.37 + y * 0.61) * 97;
+      const a = facteurRespiration(effetFlammeVacille, tempsVolFolletMs + decalage);
+      const b = facteurRespiration(effetFlammeVacille, (tempsVolFolletMs + decalage) * 1.618);
+      return (a + b) / 2;
+    };
     const lumieresScene = () => {
       const leviers = puzzlesAffiches
         .filter((p) => p.halo > 0 && p.visuel.lumiere_active)
@@ -4220,11 +4243,11 @@ export function creerOrchestrateurGrotte({
       // celle du follet (qui reste la lumière du héros, `D-35`).
       const tenu = objetTenuQuiBrule();
       const torche = tenu
-        ? [{ x: hero.x, y: hero.y, rayon: tenu.combustion.lumiere.rayon, ...(tenu.combustion.lumiere.couleur ? { couleur: tenu.combustion.lumiere.couleur } : {}) }]
+        ? [{ x: hero.x, y: hero.y, rayon: tenu.combustion.lumiere.rayon * vacillement(hero.x, hero.y), ...(tenu.combustion.lumiere.couleur ? { couleur: tenu.combustion.lumiere.couleur } : {}) }]
         : [];
       // Et chaque objet planté qui brûle (palier C).
       const plantees = plantesAffiches.filter((p) => p.lumiere)
-        .map((p) => ({ x: p.x, y: p.y, rayon: p.lumiere.rayon, ...(p.lumiere.couleur ? { couleur: p.lumiere.couleur } : {}) }));
+        .map((p) => ({ x: p.x, y: p.y, rayon: p.lumiere.rayon * vacillement(p.x, p.y), ...(p.lumiere.couleur ? { couleur: p.lumiere.couleur } : {}) }));
       const dynamiques = [...torche, ...plantees];
       return lumieresDecor.length || leviers.length || dynamiques.length ? [...actives, ...lumieresDecor, ...leviers, ...dynamiques] : actives;
     };
@@ -4322,6 +4345,15 @@ export function creerOrchestrateurGrotte({
     const surlignagesAffiches = objetsSolAffiches
       .filter((o) => surlignageActif(o.visuel, phaseCycle))
       .map((o) => ({ x: o.x, y: o.y, visuel: registre.obtenir('visuels', o.visuel.surlignage.visuel), alpha: alphaSurlignage }));
+    // `specs/15` palier E : les braises de chaque flamme (Haut), par le même
+    // calque — après le voile, elles sont de la lumière.
+    const flammes = [
+      ...(objetTenuQuiBrule() ? [{ x: hero.x, y: hero.y }] : []),
+      ...plantesAffiches.filter((p) => p.lumiere).map((p) => ({ x: p.x, y: p.y })),
+    ];
+    const braises = effetFlammeBraises ? flammes.flatMap((f) => particulesFilet(
+      effetFlammeBraises, tempsVolFolletMs, f.x, f.y - HAUTEUR_FLAMME_PX, (f.x * 0.53 + f.y * 0.29) % 1,
+    ).map((p) => ({ ...p, visuel: visuelBraise }))) : [];
     dessinerSurlignages(ctxLogique, {
       camera,
       surlignages: surlignagesAffiches,
@@ -4330,7 +4362,7 @@ export function creerOrchestrateurGrotte({
       // à l'autre.
       particules: surlignagesAffiches.flatMap((o) => particulesFilet(
         effetSurlignageFilet, tempsVolFolletMs, o.x, o.y, (o.x * 0.37 + o.y * 0.61) % 1,
-      ).map((p) => ({ ...p, visuel: visuelParticuleFilet }))),
+      ).map((p) => ({ ...p, visuel: visuelParticuleFilet }))).concat(braises),
     });
     // Signal des zones de Chaos (specs/07 palier D) : APRÈS le calque
     // d'obscurité — il se voit à travers la nuit sans percer le voile (on

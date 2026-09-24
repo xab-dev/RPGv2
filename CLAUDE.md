@@ -208,6 +208,10 @@ rpg_v2/
 │   │                       en données, émission interpolée le long du segment parcouru
 │   ├── ornements.js        `D-134` : étincelles et halo qui respire (réglage Haut) — reçoit un
 │   │                       NOMBRE (le levier `ornements`), jamais un preset
+│   ├── combustion.js       `specs/15` : ce qui BRÛLE (la torche) — quand (phases du cycle), la file
+│   │                       des objets entamés de la poche, s'éteindre, prendre, rendre — pur ;
+│   │                       `save.inventaire.combustion` et `save.monde.objets_plantes` sont
+│   │                       facultatifs (absents = rien), aucune migration
 │   ├── qualite.js          `specs/09` : LE point de résolution des réglages graphiques ; les
 │   │                       systèmes reçoivent une valeur de levier, aucun ne lit graphismes.json
 │   ├── plein_ecran.js      `D-30` : plein écran au premier relâchement tactile + bascule du menu,

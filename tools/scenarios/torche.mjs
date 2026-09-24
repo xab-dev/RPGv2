@@ -35,7 +35,7 @@ export default async function (chrome) {
       { item: 'item_torche', x: (89 + 0.5) * TILE, y: (47 + 0.5) * TILE, restant_ms: 200000 },
       { item: 'item_torche', x: (81 + 0.5) * TILE, y: (48 + 0.5) * TILE, restant_ms: 330000 },
     ];
-    await ouvrirLeJeu(chrome, { largeur: 1920, hauteur: 1080, save: saveTorche({ plantees }) });
+    await ouvrirLeJeu(chrome, { largeur: 1920, hauteur: 1080, save: saveTorche({ plantees }), requete: process.env.QUALITE ? `?qualite=${process.env.QUALITE}` : '' });
     await chrome.attendre(700);
     await chrome.capture(`${DOSSIER}/nuit_plantees.png`);
     console.log('plantee', chrome.erreurs().length ? JSON.stringify(chrome.erreurs()) : 'ok');

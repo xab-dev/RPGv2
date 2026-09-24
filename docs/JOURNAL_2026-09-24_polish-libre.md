@@ -217,4 +217,5 @@ Demande de Xav : « go créer la torche » ; réponses aux questions en tête de
 | `c193126` | Spec 15 | Écrite ; défauts `[OUVERT]` au §3 |
 | `fbcb3b0` | A — `D-194` | Objet, arme (= épée, feu), brûlure au coup 3 s ; recette de Xav. « Elle s'empile » révisé : une arme ne s'empile pas (`D-118`, rattrapé par `test_d118`). Dessin refait une fois (le premier ressemblait à une cuillère). Tests : 187 verts |
 | `2790a11` | B — `D-195` | Combustion tenue, lumière, icône allumée. Pas de migration (précédent `D-145`) : la v9 prévue par la spec est abandonnée, la spec 14 la garde. `test_15b` a trouvé une torche finie à 50 ms de sa fin (phase lue après l'avance de l'horloge). Tests : 188 verts |
-| (voir log) | C — `D-196` | Planter (remplace Jeter), brûler, disparaître, reprendre avec son temps. `Q-150` ouverte (scènes quittées figées). Tests : 189 verts |
+| `66fc18c` | C — `D-196` | Planter (remplace Jeter), brûler, disparaître, reprendre avec son temps. `Q-150` ouverte (scènes quittées figées). Tests : 189 verts |
+| (voir log) | D — `D-197` | La lumière d'une torche plantée = une zone sûre de plus (demi-tour + tirage). Mesuré : 0 px sans torche, 57 px avec (rayon 56). Tests : 190 verts |

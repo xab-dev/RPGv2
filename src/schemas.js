@@ -2317,6 +2317,11 @@ export const SCHEMAS = {
         if (pl && pl.visuel_allume !== undefined && (!existe(pl.visuel_allume) || !entry.combustion)) {
           erreurs.push(`${path} > plantable.visuel_allume doit exister dans visuels.json, et l'objet doit porter une combustion`);
         }
+        // Palier D : `protege` — les monstres n'entrent pas dans sa LUMIÈRE,
+        // donc il faut une combustion (c'est elle qui porte le rayon).
+        if (pl && pl.protege !== undefined && (typeof pl.protege !== 'boolean' || (pl.protege && !entry.combustion))) {
+          erreurs.push(`${path} > plantable.protege doit être un booléen, et un objet qui protège doit porter une combustion (sa lumière)`);
+        }
       }
       // `pile_max` (`D-118`) : OPTIONNEL, et c'est le point du ticket. La
       // hauteur d'une pile appartient désormais au CONTENEUR

@@ -25,7 +25,7 @@
       "lumiere": { "rayon": 56, "couleur": "#ffb46a" },
       "visuel_allume": "visuel_torche_allumee"
     },
-    "plantable": { "visuel": "visuel_torche_plantee", "visuel_allume": "visuel_torche_plantee_allumee" }
+    "plantable": { "visuel": "visuel_torche_plantee", "visuel_allume": "visuel_torche_plantee_allumee", "protege": true }
   },
   {
     "id": "item_plume",

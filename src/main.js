@@ -2985,6 +2985,20 @@ export function creerOrchestrateurGrotte({
   // qu'on tenait, si elle était entamée) et se pose au centre de la tuile du
   // héros. Pas de refus « plus de place ici » : un objet planté ne s'empile
   // pas sur le sol, il s'y dresse.
+  // `specs/15` palier D : la position est-elle dans la lumière d'un objet
+  // planté qui PROTÈGE (`plantable.protege`) et qui brûle en ce moment ? Les
+  // monstres n'y entrent pas et n'y naissent pas — c'est une zone sûre de
+  // plus, mesurée en pixels, jamais un second mécanisme.
+  function dansLumiereProtectrice(x, y) {
+    const phase = phaseDuCycle();
+    if (!phase) return false;
+    return objetsPlantesDeLaScene().some((p) => {
+      const item = registre.obtenir('items', p.item);
+      return item.plantable.protege && brule(item, phase)
+        && Math.hypot(x - p.x, y - p.y) < item.combustion.lumiere.rayon;
+    });
+  }
+
   function essayerPlanter(itemId) {
     if (!scene || !itemId || (save.inventaire.items[itemId] || 0) <= 0) return false;
     const itemDef = registre.obtenir('items', itemId);
@@ -3171,7 +3185,7 @@ export function creerOrchestrateurGrotte({
       table,
       tileSize: scene.tileSize,
       distanceParcouruePx: monstre.distanceParcouruePx || 0,
-      estEnZoneSure: (x, y) => estEnZoneSurePx(scene, x, y),
+      estEnZoneSure: (x, y) => estEnZoneSurePx(scene, x, y) || dansLumiereProtectrice(x, y),
       tirerPointDomaine: () => tirerPointDomaine(scene, { domaine: table.domaine, graine, tuilesAtteignables }),
       alea: () => ((graine * 9301 + 49297) % 233280) / 233280,
     });
@@ -3977,6 +3991,7 @@ export function creerOrchestrateurGrotte({
         dejaOccupees: monstres.filter((m) => !m.mort),
         graine: compteurMonstresNes,
         tuilesAtteignables,
+        exclue: dansLumiereProtectrice,
       });
       // Aucune position tenable (joueur planté au milieu de la zone, tuiles
       // saturées) : on ne force rien, la prochaine fenêtre retentera.

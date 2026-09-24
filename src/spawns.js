@@ -65,6 +65,10 @@ export function tirerPositionApparition(scene, {
   dejaOccupees = [],
   graine = 1,
   tuilesAtteignables = null,
+  // `specs/15` palier D : une exclusion de plus, en PIXELS (la lumière d'une
+  // torche plantée n'est pas une zone de la carte). Testée APRÈS le tirage,
+  // sans consommer de nombre : sans elle, les tirages restent identiques.
+  exclue = null,
 }) {
   // `zoneId` accepte un tableau : c'est ainsi qu'un **domaine** (une liste de
   // zones, palier C) se tire avec la même fonction qu'une zone d'apparition.
@@ -88,6 +92,7 @@ export function tirerPositionApparition(scene, {
     const y = (ty + 0.5) * scene.tileSize;
 
     if (hero && distanceMinPx > 0 && Math.hypot(hero.x - x, hero.y - y) < distanceMinPx) continue;
+    if (exclue && exclue(x, y)) continue;
     const occupee = dejaOccupees.some(
       (p) => Math.floor(p.x / scene.tileSize) === tx && Math.floor(p.y / scene.tileSize) === ty,
     );

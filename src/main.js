@@ -107,7 +107,7 @@ import {
   decroitre as decroitreSurvie, consommer as consommerSurvie, appliquerMalusRespawn,
   calculerModulateur as calculerModulateurSurvie, configSurvie, jaugeSousLeSeuil,
 } from './survival.js';
-import { crediter as crediterXp, xpDeCatalogue } from './xp.js';
+import { crediter as crediterXp, xpDeCatalogue, flagDeNiveau } from './xp.js';
 import { initialiserMenu, clesTexteEtats } from './ui/menu.js';
 import { creerDessinateurIcones } from './ui/icone_canvas.js';
 import { erreursCouleursUi } from './ui/couleurs_ui.js';
@@ -972,6 +972,19 @@ export function creerOrchestrateurGrotte({
       for (const p of bilan.perdus) {
         console.warn(`[D-118] poche ET coffre pleins au chargement : ${p.quantite} × ${p.item} n'a pas pu être rangé.`);
       }
+    }
+  }
+
+  // Spec 14, palier A : la table des niveaux s'allonge (Nv.30 → Nv.50). Une
+  // sauvegarde qui a déjà l'XP d'un niveau nouveau le reçoit ici, flag et
+  // points compris, dès le chargement : sans ce rattrapage, il ne serait
+  // crédité qu'au prochain gain d'XP, et le HUD afficherait d'ici là un
+  // niveau en retard. Après les flags, qu'il pose. Dit en console, comme
+  // la normalisation ci-dessus.
+  {
+    const rattrapes = appliquerXpHeros(0);
+    if (rattrapes.length) {
+      console.info(`[spec 14] niveau(x) rattrapé(s) au chargement : ${rattrapes.join(', ')}.`);
     }
   }
 
@@ -3157,6 +3170,13 @@ export function creerOrchestrateurGrotte({
   function crediterXpHeros(xpGagne, position = null) {
     if (!xpGagne) return;
     if (position) signalerGainXp(xpGagne, position.x, position.y);
+    appliquerXpHeros(xpGagne);
+  }
+
+  // L'écriture elle-même, partagée par un gain (ci-dessus) et par le
+  // rattrapage du chargement (0 XP : seuls les niveaux dus sont crédités,
+  // `xp.js#crediter`). Rend la liste des niveaux franchis.
+  function appliquerXpHeros(xpGagne) {
     const resultat = crediterXp(
       { xp: save.hero.xp, niveau: save.hero.niveau, pointsStatsLibres: save.hero.points_stats_libres },
       xpGagne,
@@ -3165,8 +3185,9 @@ export function creerOrchestrateurGrotte({
     save.hero.xp = resultat.xp;
     save.hero.niveau = resultat.niveau;
     save.hero.points_stats_libres = resultat.pointsStatsLibres;
-    for (const n of resultat.niveauxFranchis) flags.set(`flag_niveau_${n}`);
-    etatModifie = true;
+    for (const n of resultat.niveauxFranchis) flags.set(flagDeNiveau(n));
+    if (xpGagne > 0 || resultat.niveauxFranchis.length) etatModifie = true;
+    return resultat.niveauxFranchis;
   }
 
   function onMonstreMort(donneesEnnemi) {

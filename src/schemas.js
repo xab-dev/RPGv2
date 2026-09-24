@@ -5,6 +5,7 @@ import { resoudreEchelleJeu } from './companion.js';
 import { TYPES_CARTE, CASES_MAX } from './menu_cartes.js';
 import { OPTIONS_MIN, OPTIONS_MAX, erreursGrapheConversation } from './dialogue.js';
 import { NOMS_COTES } from './lisieres.js';
+import { flagDeNiveau } from './xp.js';
 
 // `D-39` — « le corps ne sort jamais de son aura », vérifié AU CHARGEMENT.
 //
@@ -2878,6 +2879,13 @@ export const SCHEMAS = {
       }
       if (typeof entry.points_stats !== 'number' || entry.points_stats < 0) {
         erreurs.push(`${path} > points_stats doit être un nombre >= 0`);
+      }
+      // Le flag que ce niveau posera au franchissement (`xp.js#flagDeNiveau`)
+      // doit exister : sinon l'oubli ne se verrait qu'en jeu, au moment
+      // précis où le joueur franchit ce niveau (spec 14, palier A).
+      const flag = flagDeNiveau(entry.niveau);
+      if (typeof entry.niveau === 'number' && !(catalogs.flags || []).some((f) => f.id === flag)) {
+        erreurs.push(`${path} > le flag "${flag}" que ce niveau pose est absent de flags.json`);
       }
       return erreurs;
     },

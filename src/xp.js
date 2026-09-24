@@ -5,6 +5,15 @@
 // ne doit jamais "perdre" l'XP en trop) : chaque niveau franchi entre
 // `avant` (exclu) et `apres` (inclus) pose son flag et crédite ses points.
 
+// LE nom du flag qu'un niveau franchi pose. Il est fabriqué, jamais lu dans
+// le catalogue : c'est pourquoi `schemas.js` exige au démarrage que chaque
+// niveau de `levels.json` ait son flag déclaré. Avant ce garde-fou (spec 14,
+// palier A), rien n'empêchait d'ajouter des niveaux en oubliant leurs flags,
+// et l'oubli ne se serait vu qu'en jeu, au franchissement.
+export function flagDeNiveau(niveau) {
+  return `flag_niveau_${niveau}`;
+}
+
 function trierParNiveau(niveaux) {
   return [...niveaux].sort((a, b) => a.niveau - b.niveau);
 }
@@ -20,16 +29,27 @@ export function niveauPourXp(niveaux, xpTotal) {
   return atteint;
 }
 
+// Le départ est le niveau CRÉDITÉ (`etat.niveau`, celui de la sauvegarde),
+// jamais celui que l'XP donnerait aujourd'hui. La table peut s'allonger après
+// coup (le Nv.30 était le dernier jusqu'à la spec 14) : un héros resté au
+// Nv.30 avec 2 500 XP a déjà « atteint » le Nv.31 sur le papier, mais n'en a
+// reçu ni le flag ni le point. Partir de son XP ferait sauter ce niveau en
+// silence ; partir de son niveau le lui rend. Appelé avec 0 XP, `crediter`
+// rattrape donc tout seul les niveaux dus (le chargement le fait).
+// L'inverse ne se fait jamais : un niveau crédité ne se reprend pas, même si
+// l'XP ne le justifie plus (une table raccourcie, un niveau posé à la main
+// par un test ou un outil). Le rattrapage du chargement ne doit jamais
+// rétrograder un héros.
 export function crediter(etat, xpGagne, niveaux) {
   const xpTotal = etat.xp + Math.max(0, xpGagne);
   const tries = trierParNiveau(niveaux);
-  const avant = niveauPourXp(tries, etat.xp);
+  const niveauDepart = typeof etat.niveau === 'number' ? etat.niveau : niveauPourXp(tries, etat.xp).niveau;
   const apres = niveauPourXp(tries, xpTotal);
-  const niveauxFranchis = tries.filter((n) => n.niveau > avant.niveau && n.niveau <= apres.niveau);
+  const niveauxFranchis = tries.filter((n) => n.niveau > niveauDepart && n.niveau <= apres.niveau);
   const pointsGagnes = niveauxFranchis.reduce((somme, n) => somme + n.points_stats, 0);
   return {
     xp: xpTotal,
-    niveau: apres.niveau,
+    niveau: Math.max(niveauDepart, apres.niveau),
     pointsStatsLibres: etat.pointsStatsLibres + pointsGagnes,
     niveauxFranchis: niveauxFranchis.map((n) => n.niveau),
   };

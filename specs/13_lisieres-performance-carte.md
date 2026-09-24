@@ -108,6 +108,13 @@ Dans chaque case : **aplat → grain de la surface (`render.sol` le cas échéan
 - Un saut de caméra (portail, entrée en scène, chargement) ou un changement de portes ou d'échelle fait toujours une **reconstruction complète**. Le défilement incrémental ne sert qu'à la marche.
 - **Index du décor** : à l'entrée en scène, le décor est rangé **par ligne de tuiles** (une liste par `y`). Une reconstruction lit les lignes de sa fenêtre, sans parcourir toute la liste.
 
+**Ce que le palier C a livré (24/09), là où il s'écarte du texte ci-dessus** — détails techniques, laissés à Claude :
+- **Pas de `clip`** : les cases retenues sont peintes d'abord, sans découpage, puis la zone sûre est effacée et reçoit l'ancien calque recopié. Même résultat par construction, sans chemin de découpe.
+- **Le décor est rangé par case**, pas par ligne : une ligne entière suit la largeur de la carte, une case non (§4.6). Chaque motif garde son rang, et l'ordre de la liste est rétabli au dessin.
+- **`rayonInfluence` vit dans `src/defilement.js`**, avec `planDefilement`, `cellulesARepeindre` et l'index du décor. Le palier D y ajoutera le terme des lisières, au lieu de le créer dans `lisieres.js`.
+- **La recopie n'est juste que loin des bords qui ont bougé** : la zone recopiée est l'intersection des deux fenêtres rognée du rayon de chaque côté qui a bougé, parce qu'une case de l'ancienne bande (qui sort) a pu peindre dedans.
+- **Deux canvas à la taille de la plus grande fenêtre possible** (`render.js#tailleMaxCalque`), pour ne jamais les redimensionner en marchant.
+
 ### 4.6 Le budget de la carte (palier F)
 
 Le contrat, écrit une fois pour toutes, que l'Annexe 1 et tout agrandissement de la carte Maison doivent tenir :

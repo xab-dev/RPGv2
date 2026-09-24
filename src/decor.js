@@ -28,7 +28,7 @@ export function mulberry32(graine) {
 // l'appelant (main.js, qui a le registre) qui le résout en entrée de
 // visuels.json, jamais decor.js — même séparation que pour les monstres/
 // leviers.
-const ROTATION_MAX_DEG = 10; // provisoire : "légère" variation (§3.4), pas une rotation aléatoire visible
+export const ROTATION_MAX_DEG = 10; // provisoire : "légère" variation (§3.4), pas une rotation aléatoire visible
 
 // `multiplicateurDensite` (palier C de `specs/09_reglages-graphiques.md`) :
 // un NOMBRE, rien d'autre. Ce module ne lit aucun catalogue de presets et ne

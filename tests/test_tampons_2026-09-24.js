@@ -165,13 +165,16 @@ for (const { tuile, visuel } of dessins) {
   const corps = (nom) => source.slice(source.indexOf(`function ${nom}(`), source.indexOf('\n}\n', source.indexOf(`function ${nom}(`)));
   assert.match(corps('invaliderCoucheStatique'), /cacheTampons\.vider\(\)/, 'changer de preset vide les tampons');
   assert.match(corps('dessinerCoucheStatique'), /echelle !== echelleTampons[\s\S]*cacheTampons\.vider\(\)/, "changer d'échelle vide les tampons");
-  // Un seul `createElement`, et seulement quand le canvas n'existe pas encore.
-  const creations = corps('construireCoucheStatique').match(/createElement/g) || [];
-  assert.equal(creations.length, 1);
-  assert.match(corps('construireCoucheStatique'), /if \(!canvasCalque\) canvasCalque = document\.createElement/,
-    'le calque ne crée plus un canvas par reconstruction : il réutilise le sien');
+  // `specs/13` palier C : les canvas du calque (deux, en ping-pong) ne sont
+  // créés qu'à un seul endroit, et seulement quand ils n'existent pas encore ;
+  // aucune reconstruction ni aucun défilement n'en crée un.
+  assert.match(corps('canvasDuCalque'), /if \(!canvasCalques\[i\]\) canvasCalques\[i\] = document\.createElement/,
+    'le calque ne crée plus un canvas par reconstruction : il réutilise les siens');
+  for (const nom of ['construireCoucheStatique', 'defilerCoucheStatique', 'peindreCellules']) {
+    assert.doesNotMatch(corps(nom), /createElement/, `${nom} ne crée aucun canvas`);
+  }
   // Le décor garde son dessin vectoriel (rotation continue, §4.4).
-  const boucleDecor = corps('construireCoucheStatique').split('for (const motif of decor)')[1];
+  const boucleDecor = corps('peindreCellules').split('for (const motif of motifsDesCellules(')[1];
   assert.match(boucleDecor, /dessinerVisuel\(/);
   assert.doesNotMatch(boucleDecor, /poserTampon/);
 }

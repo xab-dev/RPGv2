@@ -5,7 +5,8 @@
 
 import { dessinerVisuel, echelleVisuel } from './visuels.js';
 import { boiteTampon, cleTampon, creerCacheTampons } from './tampons.js';
-import { couleurTuile, tuileDeSol, varianteTuile } from './decor.js';
+import { couleurTuile, tuileDeSol, varianteTuile, ROTATION_MAX_DEG } from './decor.js';
+import { cellulesAPeindre, indexerDecor, motifsDesCellules, planDefilement, rayonInfluence } from './defilement.js';
 import { dessinerBarre, PALETTE_JAUGES } from './ui/barre.js';
 import { POLICE_CALLIGRAPHIE, POLICE_CHIFFRES } from './polices.js';
 
@@ -331,13 +332,16 @@ const ALPHA_FANTOME = 0.6;
 // cette fenêtre change de tuile de départ (à chaque franchissement de tuile
 // pendant un déplacement, pas à chaque frame) — un "cache de secteur" au
 // sens de la fiche, pas un tableau pré-calculé de toute la carte.
-let coucheStatique = null; // { sceneId, echelle, signaturePortes, xDebut, yDebut, canvas }
-// `specs/13` palier B : UN canvas de calque, réutilisé d'une reconstruction à
-// l'autre (effacé, ou redimensionné si la fenêtre a changé de taille). En créer
-// un neuf à chaque fois coûtait une allocation de plusieurs mégaoctets et une
-// part du ramasse-miettes, sans rien apporter. Il survit à
-// `invaliderCoucheStatique` : jeter le calque, c'est jeter ce qu'il MONTRE.
-let canvasCalque = null;
+let coucheStatique = null; // { sceneId, echelle, signaturePortes, xDebut, yDebut, xFin, yFin, canvas, numero, decor, visuelsTuiles }
+// `specs/13` paliers B puis C : DEUX canvas de calque, alloués une fois à la
+// taille de la plus grande fenêtre possible (`tailleMaxCalque`), qui se passent
+// le relais (ping-pong) : un défilement recopie l'un dans l'autre, décalé. En
+// créer un neuf à chaque reconstruction coûtait une allocation de plusieurs
+// mégaoctets et une part du ramasse-miettes, sans rien apporter ; les
+// redimensionner chaque fois que la fenêtre passe de 17 à 18 cases aussi. Ils
+// survivent à `invaliderCoucheStatique` : jeter le calque, c'est jeter ce
+// qu'il MONTRE.
+const canvasCalques = [null, null];
 
 // `specs/13` palier B (`D-153`) : les dessins de tuile, tramés une fois et
 // posés ensuite (`tampons.js`). `echelleTampons` est l'échelle à laquelle le
@@ -352,6 +356,53 @@ let tamponsActifs = true;
 export function definirTamponsActifs(actifs) {
   tamponsActifs = actifs;
   invaliderCoucheStatique();
+}
+// Même rôle pour le palier C : faux, chaque sortie de la zone pré-rendue
+// reconstruit en entier — c'est la référence à laquelle `calque_identique.mjs`
+// compare le calque défilé. Le jeu ne le touche jamais.
+let defilementActif = true;
+export function definirDefilementActif(actif) {
+  defilementActif = actif;
+  invaliderCoucheStatique();
+}
+// Refait le calque courant EN ENTIER, sur la MÊME fenêtre : la référence
+// exacte d'un calque défilé (une reconstruction à la caméra du moment
+// choisirait une autre fenêtre, et ses bords différeraient légitimement).
+// `dx`, `dy` (en cases) la déplacent : c'est la contre-épreuve du scénario, deux
+// reconstructions complètes d'origines différentes. Instrument seulement
+// (`calque_identique.mjs`).
+let fenetreImposee = null;
+export function refaireCoucheStatiqueEnEntier({ dx = 0, dy = 0 } = {}) {
+  if (!coucheStatique) return;
+  const f = fenetreDe(coucheStatique);
+  fenetreImposee = { xDebut: f.xDebut + dx, yDebut: f.yDebut + dy, xFin: f.xFin + dx, yFin: f.yFin + dy };
+  coucheStatique = null;
+}
+function fenetreDe({ xDebut, yDebut, xFin, yFin }) {
+  return { xDebut, yDebut, xFin, yFin };
+}
+
+// Ce que le défilement doit savoir d'un décor et d'une table des grains : le
+// décor rangé par case, et le RAYON D'INFLUENCE (`defilement.js#rayonInfluence`,
+// jusqu'où une case peint chez ses voisines). Calculés une fois par liste de
+// décor et par table : `main.js` refait ces deux objets à l'entrée en scène et
+// au changement de preset, et ne les modifie jamais en place.
+let influence = null;
+function influenceDu(decor, visuelsTuiles, tileSize) {
+  if (influence && influence.decor === decor && influence.visuelsTuiles === visuelsTuiles && influence.tileSize === tileSize) {
+    return influence;
+  }
+  const memeDecor = influence && influence.decor === decor && influence.tileSize === tileSize;
+  influence = {
+    decor,
+    visuelsTuiles,
+    tileSize,
+    index: memeDecor ? influence.index : indexerDecor(decor, tileSize),
+    rayon: rayonInfluence({
+      visuelsTuiles, visuelsDecor: new Set(decor.map((m) => m.visuel)), tileSize, rotationDecorMaxDeg: ROTATION_MAX_DEG,
+    }),
+  };
+  return influence;
 }
 
 // Accesseur de lecture seule (MT_mesure-saccades_2026-09-19, piste 5 : "coût
@@ -388,12 +439,25 @@ export function lireCoucheStatique() {
 // (03_maison-exterieur §2.2 : bornée par le viewport, jamais par la taille de
 // la scène) — indépendante de toute donnée de scène, seule la caméra et la
 // résolution comptent.
-export function selectionnerTuilesVisibles(camera, resolution, tileSize, margeTuiles = 1) {
+const MARGE_FENETRE_TUILES = 1;
+export function selectionnerTuilesVisibles(camera, resolution, tileSize, margeTuiles = MARGE_FENETRE_TUILES) {
   return {
     xDebut: Math.floor(camera.x / tileSize) - margeTuiles,
     yDebut: Math.floor(camera.y / tileSize) - margeTuiles,
     xFin: Math.ceil((camera.x + resolution.largeur) / tileSize) + margeTuiles,
     yFin: Math.ceil((camera.y + resolution.hauteur) / tileSize) + margeTuiles,
+  };
+}
+
+// La taille, en cases, de la plus grande fenêtre que `selectionnerTuilesVisibles`
+// peut rendre : `ceil((c + L) / t) − floor(c / t)` vaut au plus `ceil(L / t) + 1`
+// (la vue à cheval sur une case de plus), plus la marge des deux côtés. Les
+// deux canvas du calque ont cette taille : la fenêtre n'en occupe qu'une
+// partie, le reste reste transparent et n'est jamais lu.
+export function tailleMaxCalque(resolution, tileSize, margeTuiles = MARGE_FENETRE_TUILES) {
+  return {
+    cases: Math.ceil(resolution.largeur / tileSize) + 1 + 2 * margeTuiles,
+    rangees: Math.ceil(resolution.hauteur / tileSize) + 1 + 2 * margeTuiles,
   };
 }
 
@@ -489,67 +553,144 @@ function poserTampon(ctx, tampon, ancrePhysX, ancrePhysY, echelle) {
   ctx.setTransform(echelle, 0, 0, echelle, 0, 0);
 }
 
-function construireCoucheStatique(scene, decor, echelle, signaturePortes, estFlagActif, fenetre, visuelsTuiles) {
-  const { xDebut, yDebut, xFin, yFin } = fenetre;
-  const largeurCanvas = (xFin - xDebut) * scene.tileSize;
-  const hauteurCanvas = (yFin - yDebut) * scene.tileSize;
-
-  if (!canvasCalque) canvasCalque = document.createElement('canvas');
-  const canvas = canvasCalque;
-  const largeur = Math.max(1, Math.round(largeurCanvas * echelle));
-  const hauteur = Math.max(1, Math.round(hauteurCanvas * echelle));
-  const ctxCouche = canvas.getContext('2d');
+// Le canvas n° `i` du calque, à la taille maximale de la fenêtre à cette
+// échelle. Créé une fois ; redimensionné seulement quand l'échelle change.
+function canvasDuCalque(i, tileSize, echelle) {
+  const { cases, rangees } = tailleMaxCalque(RESOLUTION_LOGIQUE, tileSize);
+  const largeur = Math.max(1, Math.round(cases * tileSize * echelle));
+  const hauteur = Math.max(1, Math.round(rangees * tileSize * echelle));
+  if (!canvasCalques[i]) canvasCalques[i] = document.createElement('canvas');
+  const canvas = canvasCalques[i];
   if (canvas.width !== largeur || canvas.height !== hauteur) {
     // Redimensionner efface déjà le canvas (et remet son contexte à zéro).
     canvas.width = largeur;
     canvas.height = hauteur;
-  } else {
-    // Une case sans couleur (hors de la scène) reste transparente : l'ancien
-    // calque ne doit pas s'y voir.
-    ctxCouche.setTransform(1, 0, 0, 1, 0, 0);
-    ctxCouche.clearRect(0, 0, largeur, hauteur);
   }
-  // Repère logique -> physique de CE calque (MT_rendu-net_2026-09-15) : un
-  // dessin ici sort net à la résolution physique, jamais ré-échantillonné.
-  ctxCouche.setTransform(echelle, 0, 0, echelle, 0, 0);
+  return canvas;
+}
 
-  for (let y = yDebut; y < yFin; y++) {
-    for (let x = xDebut; x < xFin; x++) {
-      const couleur = couleurTuile(scene, x, y, estFlagActif);
-      if (!couleur) continue;
-      const localX = (x - xDebut) * scene.tileSize;
-      const localY = (y - yDebut) * scene.tileSize;
-      ctxCouche.fillStyle = couleur;
-      ctxCouche.fillRect(localX, localY, scene.tileSize, scene.tileSize);
+// Peint les `cellules` de `fenetre`, puis le décor qui y est ancré, dans
+// l'ordre qui DÉFINIT le calque (`specs/13` §4.3) : case par case, ligne par
+// ligne, l'aplat, le grain de sa surface, l'objet de la tuile ; puis le décor,
+// dans l'ordre de sa liste. La reconstruction complète et la bande d'un
+// défilement passent toutes deux par ici : c'est ce qui garantit qu'elles
+// peignent la même chose. Le contexte est sous la transform du calque
+// (`echelle`) et y reste.
+function peindreCellules(ctxCouche, scene, index, echelle, estFlagActif, fenetre, cellules, visuelsTuiles) {
+  const { xDebut, yDebut } = fenetre;
+  for (const { x, y } of cellules) {
+    const couleur = couleurTuile(scene, x, y, estFlagActif);
+    if (!couleur) continue;
+    const localX = (x - xDebut) * scene.tileSize;
+    const localY = (y - yDebut) * scene.tileSize;
+    ctxCouche.fillStyle = couleur;
+    ctxCouche.fillRect(localX, localY, scene.tileSize, scene.tileSize);
 
-      const tuile = scene.tuileA(x, y, estFlagActif);
-      // `Q-70` : le grain du sol d'abord (celui de la table, donc allégé par
-      // le preset exactement comme la surface voisine), l'objet par-dessus.
-      const sol = tuile && tuileDeSol(scene, tuile);
-      const grainSol = sol && sol !== tuile && visuelsTuiles.get(sol.id);
-      if (grainSol) dessinerVisuelDeTuile(ctxCouche, scene, sol, grainSol, x, y, localX, localY, echelle);
-      const visuelsTuile = tuile && visuelsTuiles.get(tuile.id);
-      if (visuelsTuile) dessinerVisuelDeTuile(ctxCouche, scene, tuile, visuelsTuile, x, y, localX, localY, echelle);
-    }
+    const tuile = scene.tuileA(x, y, estFlagActif);
+    // `Q-70` : le grain du sol d'abord (celui de la table, donc allégé par
+    // le preset exactement comme la surface voisine), l'objet par-dessus.
+    const sol = tuile && tuileDeSol(scene, tuile);
+    const grainSol = sol && sol !== tuile && visuelsTuiles.get(sol.id);
+    if (grainSol) dessinerVisuelDeTuile(ctxCouche, scene, sol, grainSol, x, y, localX, localY, echelle);
+    const visuelsTuile = tuile && visuelsTuiles.get(tuile.id);
+    if (visuelsTuile) dessinerVisuelDeTuile(ctxCouche, scene, tuile, visuelsTuile, x, y, localX, localY, echelle);
   }
 
-  // Décor : seuls les motifs dont la tuile tombe dans la fenêtre — filtrer
-  // avant de dessiner plutôt que de parcourir tout `decor` à chaque secteur
-  // (§2.2 : le décor lui-même reste une liste en mémoire, générée une fois à
-  // l'entrée en scène, cf. decor.js ; seul le DESSIN est borné ici).
-  for (const motif of decor) {
-    const tx = Math.floor(motif.x / scene.tileSize);
-    const ty = Math.floor(motif.y / scene.tileSize);
-    if (tx < xDebut || tx >= xFin || ty < yDebut || ty >= yFin) continue;
+  // Décor : les seuls motifs ancrés dans ces cases, lus dans l'index par case
+  // (`defilement.js#indexerDecor`) et remis dans l'ordre de la liste — jamais
+  // un parcours de tout `decor`, dont la longueur suit la taille de la carte
+  // (§4.5). Le décor garde son dessin vectoriel (rotation continue, §4.4).
+  for (const motif of motifsDesCellules(index, cellules)) {
     dessinerVisuel(ctxCouche, motif.visuel, motif.x - xDebut * scene.tileSize, motif.y - yDebut * scene.tileSize, {
       rotation: motif.rotation,
     });
   }
+}
 
-  // `xFin`/`yFin` sont gardés depuis `D-01` : sans eux, personne ne peut dire
-  // jusqu'où le calque couvre, donc personne ne peut décider de NE PAS le
-  // reconstruire (cf. `calqueDoitEtreReconstruit`).
-  return { sceneId: scene.id, echelle, signaturePortes, xDebut, yDebut, xFin, yFin, canvas };
+// `xFin`/`yFin` sont gardés depuis `D-01` : sans eux, personne ne peut dire
+// jusqu'où le calque couvre, donc personne ne peut décider de NE PAS le
+// reconstruire (cf. `calqueDoitEtreReconstruit`). `decor` et `visuelsTuiles`
+// disent ce que le calque montre : un défilement n'a le droit de recopier que
+// ce qu'il redessinerait à l'identique.
+function calqueDe(scene, echelle, signaturePortes, { xDebut, yDebut, xFin, yFin }, canvas, numero, decor, visuelsTuiles) {
+  return { sceneId: scene.id, echelle, signaturePortes, xDebut, yDebut, xFin, yFin, canvas, numero, decor, visuelsTuiles };
+}
+
+// La reconstruction COMPLÈTE : toute la fenêtre, sur un canvas effacé.
+function construireCoucheStatique(scene, decor, echelle, signaturePortes, estFlagActif, fenetre, visuelsTuiles) {
+  const { index } = influenceDu(decor, visuelsTuiles, scene.tileSize);
+  const numero = coucheStatique ? coucheStatique.numero : 0;
+  const canvas = canvasDuCalque(numero, scene.tileSize, echelle);
+  const ctxCouche = canvas.getContext('2d');
+  // Une case sans couleur (hors de la scène) reste transparente : l'ancien
+  // calque ne doit pas s'y voir.
+  ctxCouche.setTransform(1, 0, 0, 1, 0, 0);
+  ctxCouche.clearRect(0, 0, canvas.width, canvas.height);
+  // Repère logique -> physique de CE calque (MT_rendu-net_2026-09-15) : un
+  // dessin ici sort net à la résolution physique, jamais ré-échantillonné.
+  ctxCouche.setTransform(echelle, 0, 0, echelle, 0, 0);
+  peindreCellules(ctxCouche, scene, index, echelle, estFlagActif, fenetre, cellulesAPeindre(fenetre), visuelsTuiles);
+  return calqueDe(scene, echelle, signaturePortes, fenetre, canvas, numero, decor, visuelsTuiles);
+}
+
+// `specs/13` palier C (`D-01`) : le DÉFILEMENT. Seules les cases qui peuvent
+// toucher la zone nouvelle sont peintes (`defilement.js#planDefilement` : la
+// bande entrante, élargie du rayon d'influence), par `peindreCellules` — les
+// mêmes cases, dans le même ordre, qu'une reconstruction complète. Puis la
+// zone `copie` est effacée et reçoit l'ancien calque, décalé. Rend `null`
+// quand rien ne se recopie (saut de caméra) : l'appelant reconstruit en
+// entier.
+//
+// Pourquoi peindre D'ABORD et recopier ENSUITE par-dessus, plutôt que
+// recopier puis repeindre sous un découpage (`clip`) comme le disait la
+// spec : le résultat est le même par construction (la recopie remplace tout
+// ce que la peinture a mis dans `copie`), sans chemin de découpe à poser.
+// Dans la zone repeinte, chaque dessin est tramé comme dans la reconstruction
+// complète ; la recopie (un `drawImage` sur des pixels effacés) pose l'ancien
+// calque tel quel. Seul écart mesuré (`calque_identique.mjs`, contre-épreuve
+// comprise) : le décor vectoriel, à des positions fractionnaires, peut
+// différer d'UN niveau d'antialias selon l'origine du calque où il a été
+// tramé — ce que deux reconstructions complètes décalées font déjà.
+//
+// Tout se compte en pixels PHYSIQUES entiers : une case y mesure
+// `tileSize × echelle`, entier à toute échelle du jeu réel. Sous `?echelle=N`
+// décimale (debug), une case tomberait entre deux pixels et la recopie
+// ré-échantillonnerait : on reconstruit alors en entier, toujours.
+function defilerCoucheStatique(ancien, scene, decor, echelle, estFlagActif, fenetre, visuelsTuiles) {
+  const pas = scene.tileSize * echelle;
+  if (!Number.isInteger(pas)) return null;
+  const { index, rayon } = influenceDu(decor, visuelsTuiles, scene.tileSize);
+  const plan = planDefilement(ancien, fenetre, rayon);
+  if (!plan) return null;
+
+  const numero = 1 - ancien.numero;
+  const canvas = canvasDuCalque(numero, scene.tileSize, echelle);
+  const ctxCouche = canvas.getContext('2d');
+  ctxCouche.setTransform(1, 0, 0, 1, 0, 0);
+  ctxCouche.clearRect(0, 0, canvas.width, canvas.height);
+  ctxCouche.setTransform(echelle, 0, 0, echelle, 0, 0);
+  peindreCellules(ctxCouche, scene, index, echelle, estFlagActif, fenetre, cellulesAPeindre(fenetre, plan.sansDessin), visuelsTuiles);
+
+  // La recopie, sous le repère identité : effacer, puis poser. Sur des pixels
+  // effacés, `source-over` pose les pixels tels quels (prémultipliés, rien à
+  // arrondir) — la zone recopiée EST l'ancien calque, au pixel.
+  const { copie } = plan;
+  const largeur = (copie.xFin - copie.xDebut) * pas;
+  const hauteur = (copie.yFin - copie.yDebut) * pas;
+  const cibleX = (copie.xDebut - fenetre.xDebut) * pas;
+  const cibleY = (copie.yDebut - fenetre.yDebut) * pas;
+  ctxCouche.setTransform(1, 0, 0, 1, 0, 0);
+  ctxCouche.clearRect(cibleX, cibleY, largeur, hauteur);
+  ctxCouche.drawImage(
+    ancien.canvas,
+    (copie.xDebut - ancien.xDebut) * pas, (copie.yDebut - ancien.yDebut) * pas, largeur, hauteur,
+    cibleX, cibleY, largeur, hauteur,
+  );
+  // Le calque rendu est sous la transform du calque, comme après une
+  // reconstruction complète.
+  ctxCouche.setTransform(echelle, 0, 0, echelle, 0, 0);
+
+  return calqueDe(scene, echelle, ancien.signaturePortes, fenetre, canvas, numero, decor, visuelsTuiles);
 }
 
 // Composite le calque statique (reconstruit si scène/échelle/portes/fenêtre
@@ -575,10 +716,18 @@ function dessinerCoucheStatique(ctx, scene, decor, camera, estFlagActif, visuels
   })) {
     // La fenêtre n'est calculée QUE lorsqu'on reconstruit : tant que la vue
     // tient dans le calque, il n'y a rien à sélectionner.
-    const fenetre = selectionnerTuilesVisibles(camera, RESOLUTION_LOGIQUE, scene.tileSize);
+    const fenetre = fenetreImposee || selectionnerTuilesVisibles(camera, RESOLUTION_LOGIQUE, scene.tileSize);
+    fenetreImposee = null;
     const debut = surRecalcul ? performance.now() : 0;
-    coucheStatique = construireCoucheStatique(scene, decor, echelle, signature, estFlagActif, fenetre, visuelsTuiles);
-    if (surRecalcul) surRecalcul({ dureeMs: performance.now() - debut });
+    // `specs/13` palier C : la MARCHE défile (même scène, même échelle, mêmes
+    // portes, même décor, même table des grains : seule la caméra a bougé) ;
+    // tout le reste, et tout saut de caméra, reconstruit en entier.
+    const ancien = coucheStatique;
+    const marche = defilementActif && ancien && ancien.sceneId === scene.id && ancien.echelle === echelle
+      && ancien.signaturePortes === signature && ancien.decor === decor && ancien.visuelsTuiles === visuelsTuiles;
+    const defile = marche ? defilerCoucheStatique(ancien, scene, decor, echelle, estFlagActif, fenetre, visuelsTuiles) : null;
+    coucheStatique = defile || construireCoucheStatique(scene, decor, echelle, signature, estFlagActif, fenetre, visuelsTuiles);
+    if (surRecalcul) surRecalcul({ dureeMs: performance.now() - debut, defilement: defile !== null });
   }
 
   const { canvas, xDebut, yDebut } = coucheStatique;

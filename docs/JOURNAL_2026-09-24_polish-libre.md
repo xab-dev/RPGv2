@@ -215,4 +215,5 @@ Demande de Xav : « go créer la torche » ; réponses aux questions en tête de
 | Commit | Palier | Ce qu'il faut en retenir |
 |---|---|---|
 | `c193126` | Spec 15 | Écrite ; défauts `[OUVERT]` au §3 |
-| (voir log) | A — `D-194` | Objet, arme (= épée, feu), brûlure au coup 3 s ; recette de Xav. « Elle s'empile » révisé : une arme ne s'empile pas (`D-118`, rattrapé par `test_d118`). Dessin refait une fois (le premier ressemblait à une cuillère). Tests : 187 verts |
+| `fbcb3b0` | A — `D-194` | Objet, arme (= épée, feu), brûlure au coup 3 s ; recette de Xav. « Elle s'empile » révisé : une arme ne s'empile pas (`D-118`, rattrapé par `test_d118`). Dessin refait une fois (le premier ressemblait à une cuillère). Tests : 187 verts |
+| (voir log) | B — `D-195` | Combustion tenue, lumière, icône allumée. Pas de migration (précédent `D-145`) : la v9 prévue par la spec est abandonnée, la spec 14 la garde. `test_15b` a trouvé une torche finie à 50 ms de sa fin (phase lue après l'avance de l'horloge). Tests : 188 verts |

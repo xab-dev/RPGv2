@@ -58,7 +58,8 @@ Elle **brûle une nuit** : elle ne se consume **que la nuit et à l'aube** (les 
   - sur une **arme** : `element` (référence à `elements.json`) et `au_coup: { statut }`, un statut **limité dans le temps** posé sur le monstre touché ;
   - sur un **objet** : `combustion: { duree_ms, phases, lumiere: { rayon, couleur } }` (ce qui brûle, quand, et ce que ça éclaire) et `plantable: { visuel }` (l'action « Planter » remplace « Jeter »).
 - **Modules purs** : `combustion.js` (la file des torches entamées, ce qui brûle cette frame, ce qui s'éteint), `status.js` (statut au coup sur un monstre : poser, rafraîchir, faire tiquer).
-- **Sauvegarde v9** (palier B, une seule migration pour la spec) : `inventaire.combustion` (`{ [item]: [restant_ms, …] }`, les torches **entamées** de la poche) et `monde.objets_plantes` (`{ [scene]: [{ item, x, y, restant_ms }] }`). Absent → vide. *La spec 14 prévoyait aussi une v9 : elle prendra la v10.*
+- **Sauvegarde : aucune migration** (*révisé au palier B* : la v9 prévue ici est abandonnée). Deux champs **facultatifs**, dont l'absence vaut « rien », sur le précédent de `monde.objets_jetes` (`D-145`) : `inventaire.combustion` (`{ [item]: [restant_ms, …] }`, les torches **entamées** de la poche, la tête de file brûle) et `monde.objets_plantes` (`{ [scene]: [{ item, x, y, restant_ms }] }`). Une vieille partie n'a rien d'entamé ni de planté : l'absence est sa vraie valeur. La v9 reste libre pour la spec 14.
+- **Un pas brûle s'il commence dans une phase qui brûle** (l'heure au début du pas) : lue après l'avance de l'horloge, la phase perdait le dernier pas de l'aube.
 - **Protection** : le comportement des monstres reçoit déjà `estEnZoneSure(x, y)` (`specs/07`, palier C) ; une torche plantée allumée **s'y ajoute**, et le tirage d'apparition l'évite. Aucun second mécanisme.
 
 ## 5. Paliers
@@ -66,7 +67,7 @@ Elle **brûle une nuit** : elle ne se consume **que la nuit et à l'aube** (les 
 | Palier | Ticket | Contenu | Validation (Xav) |
 |---|---|---|---|
 | **A** | `D-194` | L'objet et l'arme : recette, visuels (objet, icône), `weapon_torche` (épée + feu), brûlure au coup (statut limité dans le temps, tick et flash) | `V-138` : fabriquer au Nv.10, équiper, frapper : le monstre brûle 3 s |
-| **B** | `D-195` | La combustion tenue : sauvegarde v9 et migration, la torche équipée brûle la nuit et à l'aube, éclaire autour du héros (rayon 56), s'éteint au bout d'une nuit et passe à la suivante ; icône allumée au HUD | `V-139` : une nuit entière, la torche en main |
+| **B** | `D-195` | La combustion tenue : la torche équipée brûle la nuit et à l'aube, éclaire autour du héros (rayon 56), s'éteint au bout d'une nuit et passe à la suivante ; icône allumée au HUD | `V-139` : une nuit entière, la torche en main |
 | **C** | `D-196` | Planter et reprendre : « Planter » à la place de « Jeter », la torche plantée éclaire et brûle, s'éteint et disparaît au bout du temps, INTERACT la reprend avec son temps | `V-140` : planter, attendre, reprendre |
 | **D** | `D-197` | La protection : les monstres n'entrent pas dans la lumière d'une torche plantée allumée, et n'y naissent pas | `V-141` : un camp balisé, la nuit, dans une zone de Chaos |
 | **E** | `D-198` | L'habillage : la flamme vivante (Bas fixe, Moyen vacille, Haut + braises, même levier `ornements` que `D-191`/`D-193`) | `V-142` |

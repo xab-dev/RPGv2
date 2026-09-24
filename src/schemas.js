@@ -2283,6 +2283,27 @@ export const SCHEMAS = {
       if (!CATEGORIES_ITEM.includes(entry.categorie)) {
         erreurs.push(`${path} > categorie doit être l'une de ${CATEGORIES_ITEM.join('/')}`);
       }
+      // `specs/15` palier B : ce qui BRÛLE (la torche). Une durée en temps
+      // actif, les phases du cycle où il se consume (une phase inconnue ne
+      // viendrait jamais : il ne brûlerait jamais), la lumière qu'il donne
+      // allumé, et, facultatif, sa silhouette allumée (l'icône du HUD).
+      if (entry.combustion !== undefined) {
+        const c = entry.combustion;
+        const nomsPhases = PHASES_CYCLE.map((p) => p.nom);
+        if (!c || typeof c.duree_ms !== 'number' || c.duree_ms <= 0) {
+          erreurs.push(`${path} > combustion.duree_ms doit être un nombre de ms strictement positif`);
+        }
+        if (!c || !Array.isArray(c.phases) || c.phases.length === 0 || !c.phases.every((p) => nomsPhases.includes(p))) {
+          erreurs.push(`${path} > combustion.phases doit être une liste non vide de phases du cycle (${nomsPhases.join(', ')})`);
+        }
+        const l = c && c.lumiere;
+        if (!l || typeof l.rayon !== 'number' || l.rayon <= 0 || (l.couleur !== undefined && !/^#[0-9a-fA-F]{6}$/.test(l.couleur))) {
+          erreurs.push(`${path} > combustion.lumiere doit être { rayon > 0, couleur? #rrggbb }`);
+        }
+        if (c && c.visuel_allume !== undefined && !(catalogs.visuels || []).some((v) => v.id === c.visuel_allume)) {
+          erreurs.push(`${path} > combustion.visuel_allume "${c.visuel_allume}" introuvable dans visuels.json`);
+        }
+      }
       // `pile_max` (`D-118`) : OPTIONNEL, et c'est le point du ticket. La
       // hauteur d'une pile appartient désormais au CONTENEUR
       // (`conteneurs.json`) ; un objet ne fait que l'abaisser quand c'est

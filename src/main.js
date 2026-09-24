@@ -19,6 +19,7 @@ import { creerPleinEcranTactile } from './plein_ecran.js';
 import { verrouillerMenuContextuel } from './souris.js';
 import { creerCurseur } from './curseur.js';
 import { ornementActif, etincellesOrbite, facteurRespiration, particulesFilet } from './ornements.js';
+import { brule, entamees, normaliser, consumer } from './combustion.js';
 import { creerCoucheInput, etatNeutre } from './input/input.js';
 import { chargerScene, resoudreDeplacement, portailFranchi, trouverPositionLibrePlusProche, lumieresActives } from './scene.js';
 import { calculerCamera } from './camera.js';
@@ -1131,6 +1132,44 @@ export function creerOrchestrateurGrotte({
   // cycle (la Grotte est sombre, elle n'a pas de nuit). Une seule lecture,
   // partagée par le sol et les icônes des menus (exposée plus bas).
   const phaseDuCycle = () => (scene.cycleJourNuit ? phaseAHeure(save.monde.heure) : null);
+
+  // `specs/15` palier B : l'objet de poche qui DÉSIGNE l'arme tenue (la
+  // torche), ou `null` — même recherche que `revaliderEquipement`.
+  function objetDeLArmeTenue() {
+    const arme = save.hero.equipement.arme;
+    return arme ? registre.tous('items').find((it) => it.arme === arme) || null : null;
+  }
+  // L'objet tenu brûle-t-il en ce moment (une torche, la nuit ou à l'aube) ?
+  // Le seul verdict, lu par la combustion, la lumière et l'icône du HUD.
+  function objetTenuQuiBrule(phase = phaseDuCycle()) {
+    const item = objetDeLArmeTenue();
+    return brule(item, phase) ? item : null;
+  }
+  // Consume l'objet tenu qui brûle, en temps ACTIF (appelé dans le bloc gelé
+  // sous UI). Éteint, il quitte la poche ; s'il en reste, le suivant prend
+  // le relais, sinon la revalidation de chaque frame (`D-92`) rend les mains
+  // nues. Les files d'objets entamés sont d'abord ramenées à ce que la poche
+  // contient vraiment (un objet rangé au coffre ou planté l'a quittée).
+  //
+  // `heureAvant` : l'heure au DÉBUT du pas. Un pas brûle s'il commence dans
+  // une phase qui brûle — lire la phase après avoir avancé l'horloge perdait
+  // le dernier pas de l'aube (et une torche finissait la nuit à 50 ms de sa
+  // fin, rattrapé par `test_15b`).
+  function avancerCombustion(deltaMs, heureAvant) {
+    const combustion = save.inventaire.combustion;
+    if (combustion) {
+      for (const id of Object.keys(combustion)) {
+        combustion[id] = normaliser(combustion[id], save.inventaire.items[id] || 0);
+        if (combustion[id].length === 0) delete combustion[id];
+      }
+    }
+    const item = objetTenuQuiBrule(scene.cycleJourNuit ? phaseAHeure(heureAvant) : null);
+    if (!item) return;
+    const r = consumer(entamees(save.inventaire.combustion, item.id), item.combustion.duree_ms, deltaMs);
+    save.inventaire.combustion = { ...(save.inventaire.combustion || {}), [item.id]: r.liste };
+    if (r.liste.length === 0) delete save.inventaire.combustion[item.id];
+    if (r.eteints > 0) save.inventaire.items = retirerItem(save.inventaire.items, item.id, r.eteints);
+  }
   // `D-169` (polish des dialogues, 23/09) : la bulle suit le même levier.
   // Bas : rien qui bouge. Moyen (ornements 1) : une lueur qui respire sous
   // les flèches ▸ et ▼. Haut (2) : en plus, les étincelles du follet autour
@@ -3575,6 +3614,7 @@ export function creerOrchestrateurGrotte({
         save.monde.jour += 1;
         reposerItemsSolSiJourNouveau();
       }
+      avancerCombustion(deltaMs, heureAvant);
       etatModifie = true;
 
       // Vol et sillage du follet (`D-36`) : dans ce bloc, donc gelés sous UI
@@ -4072,7 +4112,14 @@ export function creerOrchestrateurGrotte({
           return { x: p.x, y: p.y - (l.dy || 0), rayon: l.rayon * p.halo, ...(l.couleur ? { couleur: l.couleur } : {}) };
         });
       const actives = lumieresActives(scene, flags);
-      return lumieresDecor.length || leviers.length ? [...actives, ...lumieresDecor, ...leviers] : actives;
+      // `specs/15` palier B : la torche tenue éclaire autour du héros — une
+      // lumière de scène de plus, jamais un second voile, et plus petite que
+      // celle du follet (qui reste la lumière du héros, `D-35`).
+      const tenu = objetTenuQuiBrule();
+      const torche = tenu
+        ? [{ x: hero.x, y: hero.y, rayon: tenu.combustion.lumiere.rayon, ...(tenu.combustion.lumiere.couleur ? { couleur: tenu.combustion.lumiere.couleur } : {}) }]
+        : [];
+      return lumieresDecor.length || leviers.length || torche.length ? [...actives, ...lumieresDecor, ...leviers, ...torche] : actives;
     };
     const sceneAffichage = scene.cycleJourNuit || scene.obscurite || opaciteAmbiance > 0
       ? {
@@ -4263,6 +4310,9 @@ export function creerOrchestrateurGrotte({
       // Un `skill_N` s'ajoutera ici, et nulle part ailleurs.
       iconesSlots: {
         attack: (() => {
+          // `specs/15` palier B : une torche qui brûle montre sa flamme.
+          const tenu = objetTenuQuiBrule();
+          if (tenu && tenu.combustion.visuel_allume) return registre.obtenir('visuels', tenu.combustion.visuel_allume);
           const arme = resoudreArmeEquipee(registre, save.hero.equipement.arme);
           return arme && arme.icone ? registre.obtenir('visuels', arme.icone) : null;
         })(),

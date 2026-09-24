@@ -18,7 +18,13 @@
     "render": {
       "visuel": "visuel_torche"
     },
-    "pile_max": 1
+    "pile_max": 1,
+    "combustion": {
+      "duree_ms": 330000,
+      "phases": ["nuit", "aube"],
+      "lumiere": { "rayon": 56, "couleur": "#ffb46a" },
+      "visuel_allume": "visuel_torche_allumee"
+    }
   },
   {
     "id": "item_plume",

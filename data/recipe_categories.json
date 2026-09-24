@@ -1,0 +1,7 @@
+[
+  { "id": "categorie_ressource" },
+  { "id": "categorie_nourriture" },
+  { "id": "categorie_outil" },
+  { "id": "categorie_arme" },
+  { "id": "categorie_station" }
+]

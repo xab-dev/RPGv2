@@ -148,6 +148,8 @@ rpg_v2/
 │   ├── cooldowns.js        Phase 3 : cooldowns en temps actif, réutilise l'horloge de daynight.js
 │   │                       (`save.monde.heure`, désormais avancée dans toutes les scènes)
 │   ├── recipes.js          Phase 3, Palier A : `peutFabriquer`/`fabriquer`, catalogue `recipes.json`
+│   │                       ; `trierRecettes` (24/09) : LE tri de l'écran Craft — type (ordre de
+│   │                       `recipe_categories.json`), puis coût total, puis nom
 │   ├── survival.js         Phase 3, Palier C : jauges faim/soif, modulateur, malus de respawn
 │   ├── xp.js               Phase 3, Palier D : XP → niveaux (`levels.json`) → points de stats
 │   ├── ground_items.js     objets au sol par scène (spawn, ramassage, respawn différé Phase 3) ;
@@ -327,6 +329,7 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 | **Un objet PORTÉ** (la besace) : fabriqué, il ne va ni en poche ni au coffre, il se porte pour toujours ; sa présence est un **flag** (`sortie: { porte, flag }` d'une recette), jamais un objet d'inventaire, et il est unique par nature. Ce qu'il donne se déclare sur ce qu'il change : la poche porte `bonus: [{ condition, slots }]`, résolu par `inventory.js#resoudreCapacite` seul. La capacité de la poche se relit donc à chaque question, et la normalisation du chargement passe après les flags | 2026-09-23 | choix de Xav (« portée d'office »), `Q-127`, `tests/test_besace` |
 | **L'icône d'une carte de menu peut suivre l'état du jeu** : `icones_si`, liste ordonnée de `{ condition, icone }`, la première qui tient gagne, sinon `icone` (la base). Première : la carte Poche prend la silhouette de la besace une fois celle-ci portée ; le sac, plus tard, se mettra **en tête** de la liste. Une icône de menu est une silhouette plate teintable de la famille `visuel_icone_menu_*`, jamais le dessin en couleur de l'objet | 2026-09-23 | demande de Xav (`Q-127`), `menu_cartes.js#iconeCarte` |
 | **Licence : source visible, tous droits réservés** (`LICENSE`, FR/EN) : on lit le dépôt, on joue à l’adresse officielle, on le lance chez soi pour un usage personnel ; ni reprise, ni hébergement ailleurs, ni usage commercial sans accord écrit. *Précise* P1 « open source assumé » : le code est ouvert à la lecture, pas à la réutilisation — ce qui garde ouverts la version payante et le portage | 2026-09-23 | choix de Xav, présentation du dépôt GitHub |
+| **L'écran Craft se trie** : par type, dans l'ordre du catalogue `recipe_categories.json` (ressources → nourriture → outils → armes → stations ; l'ordre est celui du fichier), puis par **coût total** croissant (ingrédients à l'unité + éclats, déduit de la recette, jamais un rang écrit à la main), le nom départageant. Le `categorie` d'une recette est une référence validée au boot. Pas d'intertitres pour l'instant : Xav y réfléchit (l'Atelier va se remplir) | 2026-09-24 | choix de Xav, `D-187`, `recipes.js#trierRecettes` |
 
 ## Ce qui est dû : dettes, questions, validations
 

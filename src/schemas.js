@@ -2322,10 +2322,24 @@ export const SCHEMAS = {
   // plus, zéro code. `station` référence un TYPE de stations.json (pas une
   // instance positionnée) : plusieurs stations du même type partagent les
   // mêmes recettes, sans duplication.
+  // Les types de recettes, dans l'ordre où l'écran Craft les montre (24/09,
+  // choix de Xav : « recette de base, consommable, etc. »). L'ordre est celui
+  // du FICHIER : ajouter un type, c'est ajouter une ligne là où il doit
+  // apparaître, sans toucher au tri. Pas encore de `label_key` : il viendra
+  // avec les intertitres, le jour où l'Atelier en aura besoin.
+  recipe_categories: {
+    requiredFields: ['id'],
+    idField: 'id',
+    refs: [],
+    custom: null,
+  },
   recipes: {
     requiredFields: ['id', 'label_key', 'station', 'entrees', 'sortie', 'categorie'],
     idField: 'id',
-    refs: [{ field: 'station', catalog: 'stations' }],
+    // `categorie` (24/09, tri de l'écran Craft) : une référence au catalogue
+    // `recipe_categories`, qui porte l'ORDRE des types — une catégorie
+    // inconnue tomberait au boot plutôt qu'en bout de liste, sans bruit.
+    refs: [{ field: 'station', catalog: 'stations' }, { field: 'categorie', catalog: 'recipe_categories' }],
     custom(entry, catalogs, path) {
       const erreurs = [];
       const itemsDeclares = new Set((catalogs.items || []).map((i) => i.id));

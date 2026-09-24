@@ -108,10 +108,12 @@ const flagsQuiDebloquentTout = { evaluate: () => true };
   ];
   donnees.items[1].categorie = 'valeur'; // catégorie libre existante, la corde n'a pas besoin d'une nouvelle catégorie
   donnees.stations = [{ id: 'station_type_atelier', label_key: 'x', role: 'craft', placable: true }];
+  // Le type d'une recette est une référence (24/09, tri de l'écran Craft).
+  donnees.recipe_categories = [{ id: 'categorie_ressource' }];
   donnees.recipes = [{
     id: 'rec_corde', label_key: 'x', station: 'station_type_atelier',
     entrees: [{ item: 'item_branche', qte: 2 }], sortie: { item: 'item_corde', qte: 1 },
-    categorie: 'materiau', xp: 5, cooldown_ms: 30000,
+    categorie: 'categorie_ressource', xp: 5, cooldown_ms: 30000,
     visible_si: { all: ['flag_niveau_3'] },
   }];
   const erreurs = validerCatalogues(donnees);

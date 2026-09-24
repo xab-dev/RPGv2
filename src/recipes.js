@@ -12,6 +12,27 @@ export function recettesDeStation(registre, stationTypeId) {
   return registre.tous('recipes').filter((r) => r.station === stationTypeId);
 }
 
+// Tri de l'écran Craft (24/09, demande de Xav) : par TYPE d'abord, dans
+// l'ordre du catalogue `recipe_categories`, puis par COÛT TOTAL croissant —
+// ingrédients comptés à l'unité, plus les éclats (« le plus simple et le plus
+// précis », Xav). Le coût se DÉDUIT de la recette, jamais un rang écrit à la
+// main : une recette dont le coût change se replace seule. À coût égal, le
+// nom lu par le joueur départage (hache avant pioche), ce qui rend l'ordre
+// total et stable d'un affichage à l'autre.
+//
+// `titre` est une fonction plutôt qu'un texte : ce module ignore i18n, c'est
+// l'appelant qui sait nommer une recette.
+export function coutTotalRecette(recette) {
+  return recette.entrees.reduce((somme, e) => somme + e.qte, 0) + (recette.cout_eclats || 0);
+}
+
+export function trierRecettes(recettes, ordreCategories, titre) {
+  const rang = new Map(ordreCategories.map((id, i) => [id, i]));
+  return [...recettes].sort((a, b) => (rang.get(a.categorie) - rang.get(b.categorie))
+    || (coutTotalRecette(a) - coutTotalRecette(b))
+    || titre(a).localeCompare(titre(b)));
+}
+
 // Découverte (§3.1, D9③) : une recette non découverte n'est même pas listée
 // — narration diffuse, jamais montrer ce qu'il faut atteindre.
 //

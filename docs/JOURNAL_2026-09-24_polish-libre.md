@@ -146,3 +146,11 @@ qui ne porte que les dix chiffres (`unicodeRange`), en tête de chaque pile.
   rien ne le disait. Fiche Craft : « Rapporte N XP » ; « +N xp » depuis la
   station (monte à la fermeture du menu). Valeurs d'XP intactes (Xav).
   Tests : 184 fichiers verts.
+
+## Ticket : l'écran Craft trié (24/09, `D-187`)
+
+- Tri par type (`data/recipe_categories.json`, ordre du fichier), puis coût
+  total (ingrédients + éclats), puis nom — choix de Xav. Pas d'intertitres
+  (Xav y réfléchit). Atelier : corde → papyrus → bois → hache → pioche →
+  besace → épée → coffre. Cuisine : pomme d'amour → fruit cuit → pomme cuite.
+  Tests : 185 fichiers verts.

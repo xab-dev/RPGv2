@@ -127,7 +127,7 @@ const RECETTE_SECRETE = {
   station: 'station_type_atelier',
   entrees: [{ item: 'item_branche', qte: 1 }],
   sortie: { item: 'item_hache', qte: 1 },
-  categorie: 'outil',
+  categorie: 'categorie_outil',
   xp: 1,
   visible_si: { valeur: 'niveau', min: 10 },
 };

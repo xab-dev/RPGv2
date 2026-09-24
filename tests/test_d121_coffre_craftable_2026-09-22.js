@@ -45,7 +45,7 @@ const COFFRE_DE_BASE = instanceDeStockageDeBase(registre);
 // --- 1. La recette produit une STATION, et elle a un modèle à cloner ------
 {
   assert.equal(RECETTE.sortie.item, undefined, 'une recette de station ne produit pas d’objet de poche');
-  assert.equal(RECETTE.categorie, 'station');
+  assert.equal(RECETTE.categorie, 'categorie_station');
   assert.ok(RECETTE.cout_eclats > 0, 'elle coûte des éclats');
   assert.ok(RECETTE.visible_si, 'elle est gâtée par niveau, comme les outils');
   // Le contrôle de démarrage : une station fabricable doit avoir une

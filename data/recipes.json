@@ -17,7 +17,7 @@
       "item": "item_hache",
       "qte": 1
     },
-    "categorie": "outil",
+    "categorie": "categorie_outil",
     "unique": true,
     "xp": 15,
     "cooldown_ms": 60000,
@@ -45,7 +45,7 @@
       "item": "item_pioche",
       "qte": 1
     },
-    "categorie": "outil",
+    "categorie": "categorie_outil",
     "unique": true,
     "xp": 15,
     "cooldown_ms": 60000,
@@ -69,7 +69,7 @@
       "item": "item_fruit_cuit",
       "qte": 1
     },
-    "categorie": "nourriture",
+    "categorie": "categorie_nourriture",
     "xp": 10,
     "cooldown_ms": 60000
   },
@@ -92,7 +92,7 @@
       "item": "item_epee_bois",
       "qte": 1
     },
-    "categorie": "arme",
+    "categorie": "categorie_arme",
     "unique": true,
     "xp": 40,
     "cooldown_ms": 60000,
@@ -123,7 +123,7 @@
     "sortie": {
       "station": "station_type_coffre"
     },
-    "categorie": "station",
+    "categorie": "categorie_station",
     "xp": 60,
     "cooldown_ms": 60000,
     "visible_si": {
@@ -150,7 +150,7 @@
       "item": "item_bois",
       "qte": 1
     },
-    "categorie": "ressource",
+    "categorie": "categorie_ressource",
     "xp": 5,
     "cooldown_ms": 60000,
     "visible_si": {
@@ -176,7 +176,7 @@
       "item": "item_pomme_amour",
       "qte": 1
     },
-    "categorie": "ressource",
+    "categorie": "categorie_ressource",
     "xp": 5,
     "cooldown_ms": 60000,
     "visible_si": {
@@ -198,7 +198,7 @@
       "item": "item_pomme_cuite",
       "qte": 1
     },
-    "categorie": "nourriture",
+    "categorie": "categorie_nourriture",
     "xp": 10,
     "cooldown_ms": 60000,
     "visible_si": {
@@ -220,7 +220,7 @@
       "item": "item_corde",
       "qte": 1
     },
-    "categorie": "ressource",
+    "categorie": "categorie_ressource",
     "xp": 3,
     "cooldown_ms": 60000,
     "visible_si": {
@@ -242,7 +242,7 @@
       "item": "item_papyrus",
       "qte": 1
     },
-    "categorie": "ressource",
+    "categorie": "categorie_ressource",
     "xp": 3,
     "cooldown_ms": 60000,
     "visible_si": {
@@ -277,7 +277,7 @@
       "porte": "item_besace",
       "flag": "flag_besace"
     },
-    "categorie": "outil",
+    "categorie": "categorie_outil",
     "xp": 10,
     "cooldown_ms": 60000,
     "visible_si": {

@@ -96,7 +96,7 @@ import { ambianceADeclencher } from './ambiances.js';
 import { armerAudio, definirMusiqueActive, definirVolumeMaitre, palierSuivant } from './audio.js';
 import { creerEtatIndices } from './hints.js';
 import { estExpire, poserCooldown, tempsRestantMs } from './cooldowns.js';
-import { peutFabriquer, fabriquer, recettesDeStation } from './recipes.js';
+import { peutFabriquer, fabriquer, recettesDeStation, trierRecettes } from './recipes.js';
 import { entreesVisibles, estVisible } from './visibilite.js';
 import { entreesIndices, lignesBrouillees } from './indices.js';
 import { creerVueStele, avancerVueStele, vueSteleArmee, fermerVueStele, vueSteleTerminee, alphaVueStele } from './stele.js';
@@ -2175,7 +2175,14 @@ export function creerOrchestrateurGrotte({
     // écrit sur place, qui finirait par diverger de celui d'à côté. Une
     // entrée verrouillée n'est pas grisée ni remplacée par « ??? » : elle
     // n'est pas dans la liste, donc elle ne peut pas être comptée.
-    return entreesVisibles(recettesDeStation(registre, station.id), flags)
+    //
+    // Le tri (24/09) passe APRÈS le filtre : il range ce que le joueur voit,
+    // et une recette cachée ne réserve aucune place.
+    return trierRecettes(
+      entreesVisibles(recettesDeStation(registre, station.id), flags),
+      registre.tous('recipe_categories').map((c) => c.id),
+      (r) => i18n.t(r.label_key),
+    )
       .map((r) => {
         // `D-122` (T6) : le plafond est passé au VERDICT, pas seulement à
         // l'action — c'est ce qui permet de dire « ta poche est pleine »

@@ -3,7 +3,7 @@ projet: RPG V2
 episode/session: Spec 14 (l'Annexe 1), palier B — la stèle s'éveille, et la descente
 type: fichier de bord
 version: 1.0.0
-statut: livré, à voir en jeu (V-150)
+statut: livré et validé (V-150)
 catégorie: Journal
 date: 2026-09-24
 genere_par: claude
@@ -76,3 +76,10 @@ Chiffres comparés à ceux du palier A (`docs/archives/JOURNAL_2026-09-24_annexe
 - `Q-152` (les retours au sud) et `Q-153` (un fondu aux changements de scène) : à trancher.
 - `E-05` : la ligne du follet dit « carnet », la carte du menu « Indices ».
 - Suivant : **palier C**, les tireurs (projectiles, `attaque_distance`, la salle nettoyée, le levier qui apparaît).
+
+## 5. Validation et clôture (25/09)
+
+- `V-150` **validée par Xav** : « V-150 validé ».
+- `Q-152` tranchée : « on garde, à voir avec les tests tiers ».
+- `Q-153` tranchée : « entre les salles non, à la sortie vers stèle rouge oui ». Le fondu de sortie est reporté au palier H (la porte de sortie), déclaré sur le portail.
+- `D-208` ouvert : un défaut de la torche vu en jeu pendant ces tests, à décrire par Xav, traité **après la spec 14** (sa décision).

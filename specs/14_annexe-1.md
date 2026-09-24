@@ -3,7 +3,7 @@ projet: RPG V2
 episode/session: Carte Maison — l'Annexe 1 (la stèle, Zéros, les leviers, le Gardien, la première compétence)
 type: spec par paliers
 version: 1.3.3
-statut: courante — paliers A et B livrés le 24/09 (A validé : V-149 ; B à voir : V-150) ; B1, B2, B3, Q-138 et l'équilibrage tranchés par Xav le 24/09 (§0)
+statut: courante — paliers A et B livrés le 24/09 et validés (V-149, V-150) ; B1, B2, B3, Q-138 et l'équilibrage tranchés par Xav le 24/09 (§0)
 catégorie: Spec
 date: 2026-09-24
 Ids_suivi: [Q-120, Q-13, "D-205 (A), D-207 (B), D- (à créer : un par palier)", "Q-137 à Q-148 (inscrites au suivi le 24/09)", Q-152, Q-153, Q-18, "V-149 (A), V-150 (B), V- (à créer : un par palier)"]
@@ -195,14 +195,14 @@ Une **descente** commence à chaque entrée par la stèle. L'Annexe distingue de
 | Palier | Contenu | Validation (Xav, en jeu) |
 |---|---|---|
 | **A — Les niveaux** (**livré le 24/09**, `D-205`, validé : `V-149`) | §4.8 : Nv.31 à 50, les flags, le test « un flag par niveau » | La barre d'XP et « Nv. » au-delà de 30 ; la vraie sauvegarde Nv.30 de Xav, importée, qui continue de progresser |
-| **B — La stèle et la descente** (**livré le 24/09**, `D-207`) | §4.1, §4.2 ; la vue rapprochée et son action **Descendre** ; les trois salles **vides** (layouts, lumières, portes, escalier) ; flags de descente et leur remise à zéro | Nv.15 au pied de la stèle : le follet parle, le carnet se déchiffre, la vue rapprochée montre la gravure en clair et propose Descendre ; traverser les trois salles (portes forcées par debug) ; remonter |
+| **B — La stèle et la descente** (**livré le 24/09**, `D-207`, validé : `V-150`) | §4.1, §4.2 ; la vue rapprochée et son action **Descendre** ; les trois salles **vides** (layouts, lumières, portes, escalier) ; flags de descente et leur remise à zéro | Nv.15 au pied de la stèle : le follet parle, le carnet se déchiffre, la vue rapprochée montre la gravure en clair et propose Descendre ; traverser les trois salles (portes forcées par debug) ; remonter |
 | **C — Les tireurs** | `projectiles.js`, `attaque_distance`, comportement `distance`, les cracheurs, la salle nettoyée, le levier qui apparaît | Salle 1 : lisibilité des tirs, esquive, cadence « faible », dégâts « modérés » ; le levier qui apparaît |
 | **D — Zéros** | Entité intouchable, follet de Zéros, combat sans défaite, relève, arrêt à 25 %, dialogue (textes provisoires), passage | La mise en scène entière ; la relève ; se lit-elle comme un combat qu'on **ne peut pas** perdre, et pas comme un bug ? |
 | **E — Les deux mains** | `levier_maintenu`, follet posé (**après B2**), dialogue du follet, passage | Salle 2 à la manette, au clavier **et** au doigt ; la marche dans l'ombre |
 | **F — Le Gardien** | Comportement `boss` (trois gestes, trois modes), barre de boss, valeurs « à la louche » avec leur raisonnement, mort → Grotte → tout refaire | Au ressenti : au Nv.16 on perd ; avec la sauvegarde Nv.30, on gagne, difficilement. Trop dur ou trop simple, pourquoi, comment : on règle |
 | **G — Le parchemin** (**après B1**) | Coffre, cinématique, `skills.json` et son schéma, `competences.js`, `slot_skill_1`, HUD de charge et de recharge | La cinématique ; la charge qui monte pendant l'engagement ; le tir, l'AoE, la recharge ; le HUD (checklist visuelle) |
 | **I — Choisir** (§4.9) | Dialogue de déblocage, « Tout reprendre », compétences en cartes dans Stats (la fiche affiche 1 = X, 2 = Y, 3 = B ; A choisit l'emplacement ; équiper remplace), migration v8 → v9, carte Follet | Respec puis nouvelle répartition ; équiper la compétence en 1, puis en 3 (elle quitte le 1, et le bouton B la lance en jeu) ; changer de follet dehors, de jour et de nuit ; **manette, clavier et doigt** |
-| **H — La boucle** | Levier-récompense (éclat au sol), porte de sortie, descentes suivantes (sans Zéros, sans dialogue du levier, sans boss) ; album de référence | Trois descentes d'affilée : un éclat chacune, rien ne se rejoue qui ne devrait pas |
+| **H — La boucle** | Levier-récompense (éclat au sol), porte de sortie (avec un **fondu** vers la stèle rouge, `Q-153`, déclaré sur le portail), descentes suivantes (sans Zéros, sans dialogue du levier, sans boss) ; album de référence | Trois descentes d'affilée : un éclat chacune, rien ne se rejoue qui ne devrait pas |
 
 Ordre : A → B → C → D → E → F → G → **I** → H (le choix se débloque à la première sortie ; la boucle se vérifie en dernier, sur tout le reste). Chaque palier : tests headless de ses parts pures, `node tools/run_tests.js` vert, banc de la spec 13, une ligne `D-` close et une ligne `V-` ouverte.
 
@@ -234,8 +234,8 @@ Ordre : A → B → C → D → E → F → G → **I** → H (le choix se débl
 | `Q-145` | Un temps minimal entre deux descentes ? | Non |
 | `Q-146` | `?niveau=N` en debug ; l'équilibrage du Gardien | **Équilibrage tranché (Xav, 24/09)** : au ressenti, pas de bot. `?niveau=N` retiré (la vraie sauvegarde Nv.30 le remplace), à confirmer |
 | `Q-147` | Respec et re-choix du follet | **Tranché (Xav, 24/09)** : dans l'Annexe 1, palier I |
-| `Q-152` | Un retour au sud des salles 2 et 3 ? | Oui, toujours ouvert (sinon la salle 2 est un piège) — palier B |
-| `Q-153` | Un fondu aux changements de scène ? | Non pour l'instant : Descendre sort par le fondu de la vue de la stèle |
+| `Q-152` | Un retour au sud des salles 2 et 3 ? | **Tranché (Xav, 25/09)** : on garde, à revoir avec les tests tiers |
+| `Q-153` | Un fondu aux changements de scène ? | **Tranché (Xav, 25/09)** : pas entre les salles ; **oui à la sortie** vers la stèle rouge (palier H) |
 | `Q-148` | **B3** : équiper sur l'emplacement 3 | **Tranché (Xav, 24/09)** : la fiche affiche 1 = X, 2 = Y, 3 = B ; A choisit parmi les trois ; équiper remplace |
 
 ## 11. Hors périmètre

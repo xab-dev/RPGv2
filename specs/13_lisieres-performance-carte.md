@@ -186,6 +186,8 @@ Validation : `V-135`. Le long du chemin de la Maison, **l'escalier se lit-il enc
 Les autres paires de la Maison : l'**herbe sur la terre** du Jardin, et la **terre sur le chemin**, si Xav la veut (`Q-132`). Le levier `lisiere` dans `graphismes.json` (Bas 0,3). Le test de l'invariant « un preset ne change jamais le jeu » étendu aux lisières. Mesure du coût dans les trois presets.
 Validation : `V-136`. Les trois presets, et surtout **Bas** : le contour seul suffit-il ?
 
+**Ce que le palier E a livré (24/09)** : le levier `lisiere` (Bas 0,3), appliqué par `main.js` à chaque dessin de lisière, ombre comprise ; les rangs ne bougent dans aucun preset (tenu par test). **Aucune autre paire** : `tile_terre` n'est posée dans aucune scène, le Jardin est une pelouse (`Q-151`). La validation devient `V-147` (`V-136` était prise). Mesure : en Bas, le levier change l'image, pas le coût d'une reconstruction (un tampon coûte sa pose, pas ses primitives).
+
 ### Palier F — Le budget de la carte, pour l'Annexe 1
 
 1. Si le palier A l'a montré nécessaire : tri des entités par la fenêtre (dessin), et mise en veille des monstres lointains (`maj()`). Sinon, rien.

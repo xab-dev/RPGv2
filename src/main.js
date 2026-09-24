@@ -826,8 +826,20 @@ export function creerOrchestrateurGrotte({
   // moments — `render.js` la reçoit sans jamais lire un rang. Une table neuve
   // n'est fabriquée qu'au démarrage et au changement de preset : le calque ne
   // défile qu'entre deux frames qui lui passent la MÊME table.
+  // Palier E, levier `lisiere` : la même coupe que le grain (les PREMIÈRES
+  // primitives d'un dessin sont les plus importantes — le contour de l'herbe
+  // d'abord, les brins ensuite), appliquée à chaque dessin de lisière, ombre
+  // comprise. Les RANGS ne bougent jamais : un preset allège un dessin, il ne
+  // change pas qui déborde sur qui. En Bas (0,3), le contour reste — sans
+  // grain, l'escalier d'aplats serait encore plus dur à l'œil (`specs/13` §5).
+  // Un dessin réduit à rien vaut `null` et ne se pose pas (« 0 = ne dessine
+  // pas »).
   function construireTableLisieres() {
-    return tableLisieres(registre.tous('tiles'), (id) => registre.obtenir('visuels', id));
+    const fraction = levier('lisiere');
+    return tableLisieres(
+      registre.tous('tiles'),
+      (id) => appliquerGrainSol(registre.obtenir('visuels', id), fraction),
+    );
   }
   let lisieres = construireTableLisieres();
 

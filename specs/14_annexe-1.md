@@ -205,7 +205,7 @@ Une **descente** commence à chaque entrée par la stèle. L'Annexe distingue de
 | **I — Choisir** (§4.9) | Dialogue de déblocage, « Tout reprendre », compétences en cartes dans Stats (la fiche affiche 1 = X, 2 = Y, 3 = B ; A choisit l'emplacement ; équiper remplace), migration v8 → v9, carte Follet | Respec puis nouvelle répartition ; équiper la compétence en 1, puis en 3 (elle quitte le 1, et le bouton B la lance en jeu) ; changer de follet dehors, de jour et de nuit ; **manette, clavier et doigt** |
 | **H — La boucle** | Levier-récompense (éclat au sol), porte de sortie (avec un **fondu** vers la stèle rouge, `Q-153`, déclaré sur le portail), descentes suivantes (sans Zéros, sans dialogue du levier, sans boss) ; album de référence | Trois descentes d'affilée : un éclat chacune, rien ne se rejoue qui ne devrait pas |
 
-Ordre : A → B → C → D → E → F → G → **I** → H (le choix se débloque à la première sortie ; la boucle se vérifie en dernier, sur tout le reste). Chaque palier : tests headless de ses parts pures, `node tools/run_tests.js` vert, banc de la spec 13, une ligne `D-` close et une ligne `V-` ouverte.
+Ordre : A → B → C → D → E → F → G → **I** → H (le choix se débloque à la première sortie ; la boucle se vérifie en dernier, sur tout le reste). Chaque palier : tests headless de ses parts pures, `node tools/run_tests.js` vert, la mesure que demande la règle du budget de la carte (`CLAUDE.md`, révisée le 25/09, `Q-156` : banc complet, sentinelle ou rien selon ce que le palier touche), une ligne `D-` close et une ligne `V-` ouverte.
 
 ## 8. Critères de réussite
 

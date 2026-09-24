@@ -358,7 +358,9 @@ export function initialiserMenu({
       actionSecondaire: e.consommable ? () => consommer(e.id) : null,
       // `D-145` : tout objet de la Poche se jette — Y, ⌫, ou le bouton.
       // Seulement ici : l'écran Coffre a ses propres entrées, et n'en a pas.
-      libelleActionTertiaire: i18n.t('menu.poche_jeter'),
+      // `specs/15` palier C : un objet plantable (la torche) se PLANTE à la
+      // place — même bouton, même geste, dit par `main.js` (`e.plantable`).
+      libelleActionTertiaire: i18n.t(e.plantable ? 'menu.poche_planter' : 'menu.poche_jeter'),
       actionTertiaire: () => jeter(e.id),
     };
   }
@@ -376,7 +378,7 @@ export function initialiserMenu({
         lignes: [...(e.lignes || []), ...(equipe ? [
           i18n.t('menu.fiche.equipe'),
           ...((eq && eq.lignes) || []),
-        ] : []), ...(pleinIci ? [i18n.t('monde.plus_de_place_ici')] : [])],
+        ] : []), ...(pleinIci && !e.plantable ? [i18n.t('monde.plus_de_place_ici')] : [])],
         ...actionsPoche(e, eq, equipe),
       };
     });

@@ -2304,6 +2304,20 @@ export const SCHEMAS = {
           erreurs.push(`${path} > combustion.visuel_allume "${c.visuel_allume}" introuvable dans visuels.json`);
         }
       }
+      // `specs/15` palier C : un objet qui se PLANTE (la torche) — « Planter »
+      // remplace « Jeter » dans la Poche. Sa silhouette dressée, et allumée
+      // s'il brûle (un `visuel_allume` sans `combustion` ne s'allumerait
+      // jamais : refusé).
+      if (entry.plantable !== undefined) {
+        const pl = entry.plantable;
+        const existe = (id) => (catalogs.visuels || []).some((v) => v.id === id);
+        if (!pl || typeof pl.visuel !== 'string' || !existe(pl.visuel)) {
+          erreurs.push(`${path} > plantable.visuel "${pl && pl.visuel}" introuvable dans visuels.json`);
+        }
+        if (pl && pl.visuel_allume !== undefined && (!existe(pl.visuel_allume) || !entry.combustion)) {
+          erreurs.push(`${path} > plantable.visuel_allume doit exister dans visuels.json, et l'objet doit porter une combustion`);
+        }
+      }
       // `pile_max` (`D-118`) : OPTIONNEL, et c'est le point du ticket. La
       // hauteur d'une pile appartient désormais au CONTENEUR
       // (`conteneurs.json`) ; un objet ne fait que l'abaisser quand c'est

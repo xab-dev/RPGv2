@@ -33,7 +33,7 @@ export default async function (chrome) {
   if (cas.includes('plantee')) {
     const plantees = [
       { item: 'item_torche', x: (89 + 0.5) * TILE, y: (47 + 0.5) * TILE, restant_ms: 200000 },
-      { item: 'item_torche', x: (81 + 0.5) * TILE, y: (50 + 0.5) * TILE, restant_ms: 330000 },
+      { item: 'item_torche', x: (81 + 0.5) * TILE, y: (48 + 0.5) * TILE, restant_ms: 330000 },
     ];
     await ouvrirLeJeu(chrome, { largeur: 1920, hauteur: 1080, save: saveTorche({ plantees }) });
     await chrome.attendre(700);

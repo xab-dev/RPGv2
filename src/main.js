@@ -19,7 +19,7 @@ import { creerPleinEcranTactile } from './plein_ecran.js';
 import { verrouillerMenuContextuel } from './souris.js';
 import { creerCurseur } from './curseur.js';
 import { ornementActif, etincellesOrbite, facteurRespiration, particulesFilet } from './ornements.js';
-import { brule, entamees, normaliser, consumer } from './combustion.js';
+import { brule, entamees, normaliser, consumer, prendre, rendre } from './combustion.js';
 import { creerCoucheInput, etatNeutre } from './input/input.js';
 import { chargerScene, resoudreDeplacement, portailFranchi, trouverPositionLibrePlusProche, lumieresActives } from './scene.js';
 import { calculerCamera } from './camera.js';
@@ -465,6 +465,8 @@ export function entreePoche(itemDef, quantite, { equipementHero, registre, i18n,
     // `D-08` : se mange-t-il ? Dit par la DONNÉE (`consommation`), jamais par
     // une catégorie : c'est ce que `essayerConsommer` exige aussi.
     consommable: Boolean(itemDef.consommation),
+    // `specs/15` palier C : « Planter » remplace « Jeter » pour cet objet.
+    plantable: Boolean(itemDef.plantable),
     equipement: equipementDeLItem(itemDef, { equipementHero, registre, traduire: i18n.t, peripherique }),
   };
 }
@@ -1163,7 +1165,19 @@ export function creerOrchestrateurGrotte({
         if (combustion[id].length === 0) delete combustion[id];
       }
     }
-    const item = objetTenuQuiBrule(scene.cycleJourNuit ? phaseAHeure(heureAvant) : null);
+    const phase = scene.cycleJourNuit ? phaseAHeure(heureAvant) : null;
+    // `specs/15` palier C : les objets PLANTÉS de la scène brûlent aussi, au
+    // même rythme ; au bout de leur temps, ils disparaissent. Seule la scène
+    // courante avance : une scène qu'on ne voit pas est figée, comme ses
+    // monstres et ses objets au sol (`Q-150`).
+    const plantes = objetsPlantesDeLaScene();
+    if (plantes.length > 0 && phase) {
+      const suivants = plantes
+        .map((p) => (brule(registre.obtenir('items', p.item), phase) ? { ...p, restant_ms: p.restant_ms - deltaMs } : p))
+        .filter((p) => !(p.restant_ms <= 0));
+      if (suivants.length !== plantes.length || suivants.some((p, i) => p !== plantes[i])) ecrireObjetsPlantesDeLaScene(suivants);
+    }
+    const item = objetTenuQuiBrule(phase);
     if (!item) return;
     const r = consumer(entamees(save.inventaire.combustion, item.id), item.combustion.duree_ms, deltaMs);
     save.inventaire.combustion = { ...(save.inventaire.combustion || {}), [item.id]: r.liste };
@@ -1922,6 +1936,10 @@ export function creerOrchestrateurGrotte({
       // a sa chance, comme avant ce découpage.
       if (TYPES_INTERACTIFS_A_LA_MAIN.includes(puzzle.type)) return { genre: 'interactif', puzzle, puzzleId };
     }
+    // `specs/15` palier C : un objet planté se reprend d'INTERACT. Il passe
+    // avant les objets au sol : c'est une chose dressée, qu'on vise.
+    const planteProche = trouverObjetJeteProche(objetsPlantesDeLaScene(), hero, DISTANCE_INTERACT_PX);
+    if (planteProche) return { genre: 'plante', plante: planteProche };
     const jeteProche = trouverObjetJeteProche(objetsJetesDeLaScene(), hero, DISTANCE_INTERACT_PX);
     const semeProche = trouverItemProche(itemsSol, hero, DISTANCE_INTERACT_PX);
     const distanceSeme = semeProche
@@ -1968,7 +1986,10 @@ export function creerOrchestrateurGrotte({
       return { visuel, pieceMobile: pieceMobileDuLevier(cible.puzzle, visuel) };
     }
     let id = null;
-    if (cible.genre === 'jete' || cible.genre === 'seme') {
+    if (cible.genre === 'plante') {
+      const item = registre.obtenir('items', cible.plante.itemId);
+      id = (item.plantable && item.plantable.visuel) || (item.render && item.render.visuel);
+    } else if (cible.genre === 'jete' || cible.genre === 'seme') {
       const item = registre.obtenir('items', (cible.jete || cible.seme).itemId);
       id = item.render && item.render.visuel;
     } else if (cible.genre === 'ressource') {
@@ -2010,6 +2031,27 @@ export function creerOrchestrateurGrotte({
     // **aucune XP** (sinon jeter puis reprendre en boucle ferait monter de
     // niveau), aucune repousse, aucun flag de premier ramassage (l'objet a
     // déjà été ramassé une fois pour arriver en poche).
+    // `specs/15` palier C : reprendre un objet planté, avec son temps. Comme
+    // un objet jeté : aucune XP, aucun flag de premier ramassage.
+    if (cible.genre === 'plante') {
+      const p = cible.plante;
+      const resultat = ajouterItem(save.inventaire.items, p.itemId, 1, plafondPoche(p.itemId));
+      if (resultat.ajoute <= 0) {
+        signalerRefusConteneur(CLE_TEXTE_POCHE_PLEINE, p.position.x, p.position.y);
+        return;
+      }
+      save.inventaire.items = resultat.inventaire;
+      const itemDef = registre.obtenir('items', p.itemId);
+      if (itemDef.combustion && p.position.restant_ms !== undefined) {
+        const liste = rendre(entamees(save.inventaire.combustion, p.itemId), p.position.restant_ms, itemDef.combustion.duree_ms);
+        if (liste.length > 0) save.inventaire.combustion = { ...(save.inventaire.combustion || {}), [p.itemId]: liste };
+      }
+      signalerGainItem(p.itemId, resultat.ajoute, p.position.x, p.position.y);
+      ecrireObjetsPlantesDeLaScene(retirerObjetJete(objetsPlantesDeLaScene(), p.index));
+      etatModifie = true;
+      return;
+    }
+
     if (cible.genre === 'jete') {
       const jeteProche = cible.jete;
       const resultat = ajouterItem(save.inventaire.items, jeteProche.itemId, 1, plafondPoche(jeteProche.itemId));
@@ -2929,6 +2971,41 @@ export function creerOrchestrateurGrotte({
   // une valeur (aucun objet jeté) : une sauvegarde d'avant ce ticket est donc
   // valide telle quelle, sans migration ni changement de `schema_version` —
   // même patron que `settings.graphismes` (`D-111`).
+  // `specs/15` palier C : les objets PLANTÉS (la torche), à part des jetés —
+  // ils ont un temps qui brûle, une lumière, et ne comptent pas dans la pile
+  // d'une tuile. Champ absent = rien de planté (précédent `D-145`).
+  function objetsPlantesDeLaScene() {
+    return (save.monde.objets_plantes && save.monde.objets_plantes[scene.id]) || [];
+  }
+  function ecrireObjetsPlantesDeLaScene(liste) {
+    if (!save.monde.objets_plantes) save.monde.objets_plantes = {};
+    save.monde.objets_plantes[scene.id] = liste;
+  }
+  // Planter : l'objet quitte la poche avec son temps (on plante la torche
+  // qu'on tenait, si elle était entamée) et se pose au centre de la tuile du
+  // héros. Pas de refus « plus de place ici » : un objet planté ne s'empile
+  // pas sur le sol, il s'y dresse.
+  function essayerPlanter(itemId) {
+    if (!scene || !itemId || (save.inventaire.items[itemId] || 0) <= 0) return false;
+    const itemDef = registre.obtenir('items', itemId);
+    if (!itemDef.plantable) return false;
+    let restantMs = null;
+    if (itemDef.combustion) {
+      const pris = prendre(entamees(save.inventaire.combustion, itemId), itemDef.combustion.duree_ms);
+      restantMs = pris.restantMs;
+      save.inventaire.combustion = { ...(save.inventaire.combustion || {}), [itemId]: pris.liste };
+      if (pris.liste.length === 0) delete save.inventaire.combustion[itemId];
+    }
+    const { tx, ty } = tuileDuHeros();
+    save.inventaire.items = retirerItem(save.inventaire.items, itemId, 1);
+    ecrireObjetsPlantesDeLaScene([...objetsPlantesDeLaScene(), {
+      item: itemId, x: (tx + 0.5) * scene.tileSize, y: (ty + 0.5) * scene.tileSize,
+      ...(restantMs !== null ? { restant_ms: restantMs } : {}),
+    }]);
+    etatModifie = true;
+    return true;
+  }
+
   function objetsJetesDeLaScene() {
     return (save.monde.objets_jetes && save.monde.objets_jetes[scene.id]) || [];
   }
@@ -4057,6 +4134,17 @@ export function creerOrchestrateurGrotte({
       objetsSolAffiches.push({ x: j.x + dx, y: j.y + dy, visuel });
     }
 
+    // `specs/15` palier C : les objets plantés, dressés, allumés s'ils
+    // brûlent (même verdict que la combustion : la phase du cycle).
+    const phasePlantes = phaseDuCycle();
+    const plantesAffiches = objetsPlantesDeLaScene().map((p) => {
+      const item = registre.obtenir('items', p.item);
+      const allume = brule(item, phasePlantes);
+      const id = allume && item.plantable.visuel_allume ? item.plantable.visuel_allume : item.plantable.visuel;
+      return { x: p.x, y: p.y, visuel: registre.obtenir('visuels', id), lumiere: allume ? item.combustion.lumiere : null };
+    });
+    for (const p of plantesAffiches) objetsSolAffiches.push({ x: p.x, y: p.y, visuel: p.visuel });
+
     // MT_mesure-saccades_2026-09-19, piste 4 ("entités dessinées") : no-op
     // hors `?debug=fps`.
     moniteurPerf.enregistrerEntites({
@@ -4119,7 +4207,11 @@ export function creerOrchestrateurGrotte({
       const torche = tenu
         ? [{ x: hero.x, y: hero.y, rayon: tenu.combustion.lumiere.rayon, ...(tenu.combustion.lumiere.couleur ? { couleur: tenu.combustion.lumiere.couleur } : {}) }]
         : [];
-      return lumieresDecor.length || leviers.length || torche.length ? [...actives, ...lumieresDecor, ...leviers, ...torche] : actives;
+      // Et chaque objet planté qui brûle (palier C).
+      const plantees = plantesAffiches.filter((p) => p.lumiere)
+        .map((p) => ({ x: p.x, y: p.y, rayon: p.lumiere.rayon, ...(p.lumiere.couleur ? { couleur: p.lumiere.couleur } : {}) }));
+      const dynamiques = [...torche, ...plantees];
+      return lumieresDecor.length || leviers.length || dynamiques.length ? [...actives, ...lumieresDecor, ...leviers, ...dynamiques] : actives;
     };
     const sceneAffichage = scene.cycleJourNuit || scene.obscurite || opaciteAmbiance > 0
       ? {
@@ -4486,7 +4578,10 @@ export function creerOrchestrateurGrotte({
     // `D-08` : « Manger » depuis la Poche — le même chemin que CONSUME.
     consommerItem: (itemId) => essayerConsommer(itemId),
     // `D-145` : jeter depuis la Poche, et ce que la fiche doit annoncer.
-    jeterItem: (itemId) => essayerJeter(itemId),
+    // `specs/15` palier C : pour un objet plantable, « Jeter » EST « Planter ».
+    jeterItem: (itemId) => (registre.existe('items', itemId) && registre.obtenir('items', itemId).plantable
+      ? essayerPlanter(itemId) : essayerJeter(itemId)),
+    obtenirObjetsPlantes: () => objetsPlantesDeLaScene(),
     solPleinSousHeros,
     obtenirObjetsJetes: () => objetsJetesDeLaScene(),
     // `D-191` : les icônes des menus allument le même liseré que le sol.

@@ -284,7 +284,7 @@ rpg_v2/
 Détail complet dans `docs/carte_mentale_RPG_V2_v1_7_0.md` §0 et §8. Points structurants pour le code :
 
 - 3 éléments (Feu/Eau/Terre), extensibles en données uniquement.
-- 4 stats primaires : Force, Agilité, Vitalité, Esprit. Esprit = réserve de skills uniquement ; tout le scaling de dégâts converge sur Force, l'élément porte le type/les interactions, jamais la puissance brute.
+- 4 stats primaires : Force, Agilité, Vitalité, Esprit. Tout le scaling de dégâts part de la Force ; l'élément porte le type/les interactions, jamais la puissance brute. **Esprit amplifie les compétences** (révisé le 24/09) : un coefficient sur la Force des compétences, et une hâte qui raccourcit charge et recharge — jamais de dégâts sans Force.
 - 5 slots d'action (1 attaque + 3 skills + 1 consommable), 3 slots d'équipement (arme/armure/accessoire) — nombres déclarés en données.
 - Progression sur deux axes indépendants : XP → stats (combat et craft), jalons narratifs → capacités.
 - Système de recettes unique ; stations et catégories de sortie en données.
@@ -330,6 +330,7 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 | **L'icône d'une carte de menu peut suivre l'état du jeu** : `icones_si`, liste ordonnée de `{ condition, icone }`, la première qui tient gagne, sinon `icone` (la base). Première : la carte Poche prend la silhouette de la besace une fois celle-ci portée ; le sac, plus tard, se mettra **en tête** de la liste. Une icône de menu est une silhouette plate teintable de la famille `visuel_icone_menu_*`, jamais le dessin en couleur de l'objet | 2026-09-23 | demande de Xav (`Q-127`), `menu_cartes.js#iconeCarte` |
 | **Licence : source visible, tous droits réservés** (`LICENSE`, FR/EN) : on lit le dépôt, on joue à l’adresse officielle, on le lance chez soi pour un usage personnel ; ni reprise, ni hébergement ailleurs, ni usage commercial sans accord écrit. *Précise* P1 « open source assumé » : le code est ouvert à la lecture, pas à la réutilisation — ce qui garde ouverts la version payante et le portage | 2026-09-23 | choix de Xav, présentation du dépôt GitHub |
 | **L'écran Craft se trie** : par type, dans l'ordre du catalogue `recipe_categories.json` (ressources → nourriture → outils → armes → stations ; l'ordre est celui du fichier), puis par **coût total** croissant (ingrédients à l'unité + éclats, déduit de la recette, jamais un rang écrit à la main), le nom départageant. Le `categorie` d'une recette est une référence validée au boot. Pas d'intertitres pour l'instant : Xav y réfléchit (l'Atelier va se remplir) | 2026-09-24 | choix de Xav, `D-187`, `recipes.js#trierRecettes` |
+| **Esprit amplifie les compétences** (*révise* D1⑧ « Esprit = réserve, rien d'autre », reconfirmée le 23/09) : dégâts d'une compétence = `derivee_degats_attaque` (Force) × `derivee_puissance_competence` (Esprit) × le multiplicateur de la compétence, composés en **un seul point** ; et `derivee_hate_competence` (Esprit) raccourcit charge et recharge, avec un plancher. Deux dérivées d'une seule stat chacune : le schéma des dérivées ne change pas. Sans Force, une compétence ne fait rien | 2026-09-24 | choix de Xav (« un mix entre (a) et (b) »), `specs/14_annexe-1.md` §0 B1 |
 
 ## Ce qui est dû : dettes, questions, validations
 

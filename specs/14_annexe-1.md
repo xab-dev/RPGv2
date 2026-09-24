@@ -2,8 +2,8 @@
 projet: RPG V2
 episode/session: Carte Maison — l'Annexe 1 (la stèle, Zéros, les leviers, le Gardien, la première compétence)
 type: spec par paliers
-version: 1.0.0
-statut: brouillon — deux points bloquants à trancher par Xav (§0)
+version: 1.1.0
+statut: prête à coder après la spec 13 — B1 et B2 tranchés par Xav le 24/09 (§0) ; un conflit mineur, B3 (palier I)
 catégorie: Spec
 date: 2026-09-24
 Ids_suivi: [Q-120, Q-13, "D- (à créer : un par palier)", "Q-137 et suivantes (à créer)", "V- (à créer : un par palier)"]
@@ -17,12 +17,17 @@ verifie_par: xav
 **Préalables** : `specs/13_lisieres-performance-carte.md` est **livrée**, et sa règle du budget (palier F) s'applique : **chaque palier de cette spec passe `cout_calque` et `traversee_nuit`** et compare ses chiffres à ceux de clôture de la spec 13. Une régression de plus de 20 % arrête le palier.
 **Source** : le scénario dicté par Xav le 24/09, repris fidèlement au §3. Ce que Claude a ajouté pour que ce scénario se code est marqué **[OUVERT]**, avec une valeur retenue par défaut ; ces points sont listés au §10.
 
-## 0. Deux points bloquants — à trancher par Xav avant le palier concerné
+## 0. Décisions de Xav (24/09, relecture de la v1.0.0)
 
-| # | Conflit | Pourquoi Claude ne tranche pas | Options |
-|---|---|---|---|
-| **B1** | La compétence du parchemin fait des dégâts « **qui dépendent d'Esprit** ». Or **D1⑧ est verrouillée** : « Esprit = réserve de lancement des compétences, rien d'autre. Esprit ne fait pas scaler les dégâts » (carte mentale, **reconfirmée le 23/09**), et « tout le scaling de dégâts converge sur Force » (`CLAUDE.md`) | Une décision verrouillée ne se rouvre pas en silence. Bloque le **palier G** seulement | **(a)** *Réviser* D1⑧ : une dérivée `derivee_puissance_competence` sur Esprit, et les compétences scalent sur Esprit. **(b)** *Garder* D1⑧ : les dégâts viennent de la Force (`derivee_degats_attaque` × un multiplicateur de compétence, en données), et Esprit paie le **lancement** (la réserve), par exemple en raccourcissant la charge ou le temps de recharge |
-| **B2** | « Actionner le levier **et appuyer sur RB** (Tab ou toucher) » pour poser le follet. RB, Tab et le toucher du follet sont **déjà** le verbe `target_next` (« cible suivante », `D-54`, `D-142`) | Un même geste qui fait deux choses selon le contexte, c'est un contrat d'input. Bloque le **palier E** seulement | **(a)** *Contextuel* (retenu par défaut) : **à portée d'un levier à maintenir**, `target_next` pose le follet, puis le rappelle au second appui ; **partout ailleurs**, il change de cible comme aujourd'hui. **(b)** Un verbe nouveau (il faut alors un bouton libre sur la manette, au clavier et au doigt) |
+**Changelog 1.1.0** : B1 et B2 tranchés ; `Q-143` et `Q-147` tranchées ; le respec, le re-choix du follet et les compétences en cartes entrent dans cette spec (palier I) ; la marche dans l'ombre de la salle 2 est **confirmée comme un choix de design**.
+
+| # | Décision de Xav | Ce que Claude en fait (cohérence technique) |
+|---|---|---|
+| **B1** | **Un mélange de (a) et (b)** : « quand on met des points dans Esprit, ça donne un **coefficient à la Force** liée aux compétences, en plus de garder les points d'Esprit qui **raccourcissent le temps de charge et de recharge** » (« une dérivée d'une dérivée », dans la tête de Xav ; la cohérence est laissée à Claude). **Révise D1⑧** : Esprit n'est plus « la réserve, rien d'autre » ; il **amplifie** les compétences, mais **ne fait jamais de dégâts seul** : sans Force, une compétence ne fait rien | Deux **dérivées nouvelles** sur Esprit, chacune d'une seule stat comme toutes les autres (le schéma des dérivées ne change pas) : `derivee_puissance_competence` (un **coefficient**, formule `base 1 + coefficient × Esprit`) et `derivee_hate_competence` (un **facteur de durée**, formule `base 1 − coefficient × Esprit`, **plancher** en données). La « dérivée d'une dérivée » est une **composition**, faite à **un seul endroit** (`competences.js#resoudreDegats`) : **dégâts = `derivee_degats_attaque` (Force) × `derivee_puissance_competence` (Esprit) × `multiplicateur` de la compétence** ; **charge et recharge = durée de la compétence × `derivee_hate_competence`**. Toutes les valeurs sont *provisoires* et en données (§4.6). La règle de `D-141` tient : aucun système ne lit une stat brute |
+| **B2** | **Oui** : `target_next` contextuel. « Très utile par la suite avec les mécanismes automatisés (**follet agentique**) » | Le « follet posé » est écrit comme **un état du follet** (`poste`, à côté de `suivre` et `engager`), avec **sa cible** dans l'état, et non comme une exception de la salle 2 : un futur mécanisme qui confie une tâche au follet réutilisera cet état |
+| **E** | **Confirmé, et voulu** : « faire confiance au follet, se diriger dans le noir (en connaissant le chemin, déjà fait deux fois), sortir de la zone de confort fournie par la lumière » | §4.4 inchangé : la lumière reste avec le follet posé, son rayon ne change pas (`D-35`) |
+| **Q-143** | **Oui** : Zéros est **la seconde main** de la pierre qui répond. « On le retrouvera plus tard (poste avancé, etc.) » | Zéros est un **personnage récurrent** : son id, son visuel et son follet sont des entrées de catalogue réutilisables, jamais propres à la salle 1 |
+| **Q-147** | **Dans l'Annexe 1.** À la sortie, le follet dit : « tu peux maintenant choisir tes stats, tes compétences et ton follet » (le 4ᵉ follet est hors périmètre). Les compétences s'affichent **en cartes dans la page Stats, sous Force, Agilité…** Une seule pour l'instant, mais toutes s'afficheront là, avec : **équiper 1 = X, équiper 2 = Y, équiper 3 = B** | Palier I (§4.9). **B3** : B est déjà « Fermer » dans tous les écrans de menu : voir §4.9 |
 
 ## 1. Intention
 
@@ -103,7 +108,7 @@ Une **descente** commence à chaque entrée par la stèle. L'Annexe distingue de
 
 - **Levier à maintenir** : un type d'interactif nouveau, `levier_maintenu`. Il est **allumé tant qu'un mainteneur est à portée** (le héros, ou le follet posé) ; sinon il s'éteint après **0,6 s** (*provisoire* : le temps de voir qu'il s'éteint). Les deux leviers sont à **~22 tuiles** l'un de l'autre (*provisoire*) : le héros ne peut pas tenir les deux.
 - **Quand les deux sont allumés en même temps**, un flag de descente est posé (`sequence`-like en données : `tous_allumes: [ids], flag_pose`). Le passage vers la salle 3 s'ouvre et **reste ouvert**, même si les leviers s'éteignent ensuite.
-- **Le follet posé** (sous réserve de **B2**) : à portée d'un `levier_maintenu` **allumé**, `target_next` pose le follet dessus. Il y reste, n'engage aucun monstre et ne suit plus le héros. Un second `target_next`, n'importe où, le **rappelle**. Changer de salle le rappelle aussi. L'état « posé » est **de session**, jamais sauvegardé.
+- **Le follet posé** (**B2**, tranché : un état `poste` du follet dans `companion.js`, qui porte sa cible) : à portée d'un `levier_maintenu` **allumé**, `target_next` pose le follet dessus. Il y reste, n'engage aucun monstre et ne suit plus le héros. Un second `target_next`, n'importe où, le **rappelle**. Changer de salle le rappelle aussi. L'état « posé » est **de session**, jamais sauvegardé.
 - **Conséquence à voir** : la lumière du follet reste **avec le follet** (elle lui est collée). Laisser son follet sur un levier, c'est donc **marcher dans l'ombre** vers l'autre. Rien ne change au rayon de la lumière : **`D-35` ne se reprend pas**. C'est la conséquence naturelle du geste, et elle sert la scène.
 - **Le follet explique** : après **deux** extinctions (*provisoire*), c'est-à-dire quand le joueur a vu le problème, un dialogue du follet présente le geste. Le texte (Xav écrit) nomme le bon bouton selon le **périphérique actif**, avec les glyphes existants (`glyphes.json`) : RB, Tab, ou « touche-moi ».
 - **Les descentes suivantes** : même mécanisme, sans le dialogue (flag persistant `flag_follet_pose_appris`).
@@ -130,14 +135,14 @@ Une **descente** commence à chaque entrée par la stèle. L'Annexe distingue de
   "emplacement": "slot_skill_1",
   "charge": { "source": "engagement_follet", "duree_ms": 4000 },
   "cooldown_ms": 8000,
-  "effet": { "type": "zone", "rayon_px": 40, "degats": "…voir B1…" },
+  "effet": { "type": "zone", "rayon_px": 40, "multiplicateur": 2.5 },
   "projectile": { "vitesse_px_s": 220, "visuel": "visuel_onde" }
 }
 ```
 
-- **La charge** : elle monte tant que le follet est en état `engager` (sur n'importe quel monstre), jusqu'à 4 s. Elle **ne se perd pas** hors combat. *[OUVERT `Q-144`]*. Pleine, la compétence est **prête**. La lancer vide la charge et démarre le temps de recharge, et **les deux** doivent être remplis pour relancer.
+- **La charge** : elle monte tant que le follet est en état `engager` (sur n'importe quel monstre), jusqu'à **4 s × hâte**. Elle **ne se perd pas** hors combat. *[OUVERT `Q-144`]*. Pleine, la compétence est **prête**. La lancer vide la charge et démarre le temps de recharge, et **les deux** doivent être remplis pour relancer.
 - **La cible** : le monstre que le follet engage. Sans cible, c'est le plus proche à portée. Sans aucun monstre, l'appui est **refusé** (il se dit : un petit son et le texte flottant existant), et la charge est gardée.
-- **Les dégâts** : **selon la décision B1**. Dans les deux cas, ils passent par **une dérivée** (règle de `D-141` : un système lit une dérivée, jamais une stat brute), et touchent **tous les monstres** dans le rayon. Neutre, **aucune synergie** : la table des régimes de synergie ne la voit pas.
+- **Les dégâts** (**B1**, tranché) : **`derivee_degats_attaque` × `derivee_puissance_competence` × `multiplicateur`** (la compétence déclare son `multiplicateur`, *provisoire* **2,5** : « relativement puissante »), résolus dans `competences.js#resoudreDegats` et nulle part ailleurs. Formules *provisoires* : puissance = `1 + 0,05 × Esprit` (Esprit de base 5 : ×1,25 ; Esprit 25 : ×2,25) ; hâte = `1 − 0,015 × Esprit`, **plancher 0,5** (Esprit 25 : charge 2,5 s, recharge 5 s). Ils touchent **tous les monstres** dans le rayon. Neutre, **aucune synergie** : la table des régimes de synergie ne la voit pas.
 - **HUD** : l'emplacement montre l'**anneau de charge** qui se remplit, puis l'**anneau de recharge** qui se vide. Même vocabulaire que les buffs au bandeau, en forme et pas seulement en couleur (P4②). Ticket qui touche `ui/hud.js` : il se clôt par la `CHECKLIST_visuelle`.
 
 ### 4.7 La récompense qui revient
@@ -148,6 +153,15 @@ Une **descente** commence à chaque entrée par la stèle. L'Annexe distingue de
 ### 4.8 Les niveaux jusqu'au Nv.50
 
 `levels.json` s'étend du Nv.31 au Nv.50, en prolongeant la courbe : l'écart entre deux niveaux croît de **5 XP par niveau**, comme aujourd'hui (Nv.30 → 31 : +155, soit **2 495**… jusqu’au Nv.50 : **6 390**, *provisoire*). **+1 point de stat** par niveau. Les vingt flags `flag_niveau_31` à `flag_niveau_50` (avec leurs clés FR/EN) sont ajoutés, et un test vérifie que **chaque niveau du catalogue a son flag**, pour que cet oubli ne puisse plus arriver. Pour les tests de Xav : un paramètre de debug `?niveau=N`, sur le patron de `?alignement=N` (**masque**, jamais persisté, qui le dit en console). *[OUVERT `Q-146`]*
+
+### 4.9 Le respec, les compétences en cartes, le re-choix du follet
+
+- **Le déblocage** : à la **première sortie** de l'Annexe après le Gardien (`flag_parchemin_lu` posé), le follet dit (Xav écrit ; proposition) : « Maintenant, tu peux choisir. Tes forces, tes gestes… et même moi. » Le flag persistant `flag_choix_debloque` est posé. Illimité et gratuit, depuis le menu (décision du 23/09, NS §1.9).
+- **Les stats** : dans la page Stats, une action **« Tout reprendre »** (avec la confirmation d'un danger, patron de `menu_cartes.js`) remet les quatre stats à leur base et rend **tous** les points gagnés (`niveau − 1`). Les PV sont réconciliés par `entities.js#reconcilierPvMax`, déjà écrit pour ça.
+- **Les compétences, en cartes dans la page Stats**, **sous les quatre stats** : une tuile par compétence **apprise** (une entrée de `skills.json` dont le flag tient). Les compétences non apprises sont **invisibles** (`D-62`). La fiche dit ce que fait la compétence, sa charge et sa recharge **calculées avec l'Esprit actuel** (c'est là que le joueur **voit** ce que ses points d'Esprit lui rapportent), et l'emplacement où elle est équipée.
+- **Équiper** : **X = emplacement 1, Y = emplacement 2** (les verbes `skill_1` et `skill_2`, que les fiches portent déjà : `actionSecondaire` et `actionTertiaire`). Équiper une compétence sur un emplacement occupé **échange** les deux. **B3 — l'emplacement 3** : B est « Fermer » dans tout le menu, et au doigt, c'est la seule sortie (contrainte non négociable de `CLAUDE.md`). **Retenu par défaut** : l'emplacement 3 s'équipe par **A**, l'action principale de la fiche (« Équiper en 3 »). Un seul emplacement sert aujourd'hui, donc rien ne bloque ; *[OUVERT `Q-148`]*, à trancher avant la deuxième compétence.
+- **Le contrat de sauvegarde** : ce que le joueur équipe devient un champ `save.hero.competences` (`{ id d'emplacement: id de compétence }`). C'est un **champ de sauvegarde nouveau** : migration **v8 → v9**, qui écrit la compétence du parchemin sur `slot_skill_1` si `flag_competence_1` est posé, `{}` sinon, avec son test sur les **sauvegardes réelles** de `prive/sauvegardes/` (patron de la migration 7 → 8). *Validé par la relecture de cette spec par Xav ; si le palier découvre autre chose, il s'arrête.*
+- **Le follet** : une carte **Follet** dans le menu Héros, à côté de Poche et Stats (`menus.json`), visible sous `flag_choix_debloque`. Elle montre les **trois** follets (le 4ᵉ est hors périmètre). Choisir en change **tout de suite** : le follet actuel s'éteint et le nouveau arrive (un fondu court, **pas** la cinématique de la Grotte). **L'alignement ne bouge pas** : c'est une stat du héros, pas du follet. La synergie suit le nouvel élément, par la table existante.
 
 ## 5. Les salles
 
@@ -178,9 +192,10 @@ Les layouts s'écrivent **à la main** (décision verrouillée : jamais de layou
 | **E — Les deux mains** | `levier_maintenu`, follet posé (**après B2**), dialogue du follet, passage | Salle 2 à la manette, au clavier **et** au doigt ; la marche dans l'ombre |
 | **F — Le Gardien** | Comportement `boss` (trois gestes, trois modes), barre de boss, `mesure_boss.mjs`, mort → Grotte → tout refaire | Au Nv.16 : on perd ; au Nv.30 (`?niveau=30` + points répartis) : on gagne, difficilement |
 | **G — Le parchemin** (**après B1**) | Coffre, cinématique, `skills.json` et son schéma, `competences.js`, `slot_skill_1`, HUD de charge et de recharge | La cinématique ; la charge qui monte pendant l'engagement ; le tir, l'AoE, la recharge ; le HUD (checklist visuelle) |
+| **I — Choisir** (§4.9) | Dialogue de déblocage, « Tout reprendre », compétences en cartes dans Stats (X / Y / A), migration v8 → v9, carte Follet | Respec puis nouvelle répartition ; équiper la compétence en 1, puis en 2 ; changer de follet dehors, de jour et de nuit ; **manette, clavier et doigt** |
 | **H — La boucle** | Levier-récompense (éclat au sol), porte de sortie, descentes suivantes (sans Zéros, sans dialogue du levier, sans boss) ; album de référence | Trois descentes d'affilée : un éclat chacune, rien ne se rejoue qui ne devrait pas |
 
-Chaque palier : tests headless de ses parts pures, `node tools/run_tests.js` vert, banc de la spec 13, une ligne `D-` close et une ligne `V-` ouverte.
+Ordre : A → B → C → D → E → F → G → **I** → H (le choix se débloque à la première sortie ; la boucle se vérifie en dernier, sur tout le reste). Chaque palier : tests headless de ses parts pures, `node tools/run_tests.js` vert, banc de la spec 13, une ligne `D-` close et une ligne `V-` ouverte.
 
 ## 8. Critères de réussite
 
@@ -189,28 +204,29 @@ Chaque palier : tests headless de ses parts pures, `node tools/run_tests.js` ver
 - **Performance** : la salle 3 au plus fort du combat (Gardien, projectiles des deux côtés, compétence) passe **0 frame sautée** sur le PC de Xav sous Chrome, et reste dans le budget de la spec 13 sous bridage ×6.
 - **Mobile** : tout se joue au doigt, y compris poser le follet et lancer la compétence.
 
-## 9. Ce qui reste des décisions du 23/09 pour l'Annexe 1
+## 9. Palier I — Choisir ses stats, ses compétences et son follet
 
-La NS du 23/09 range aussi dans l'Annexe 1 **le respec des stats et le re-choix du follet** (illimités et gratuits, depuis le menu). **Le scénario de Xav ne les mentionne pas.** *[OUVERT `Q-147` : dans cette spec (un palier I), ou dans une spec à part après l'Annexe ?]* Retenu : **à part**, parce que ce sont des systèmes de menu sans rapport avec la descente.
+`Q-147` tranchée par Xav : voir §4.9 et le palier I du §7.
 
 ## 10. Questions à ouvrir au suivi
 
 | Id | Question | Retenu par défaut |
 |---|---|---|
-| **B1** | Les dégâts de la compétence : Esprit (réviser D1⑧) ou Force (garder D1⑧) ? | **Aucun — bloquant pour G** |
-| **B2** | Poser le follet : `target_next` contextuel, ou un verbe nouveau ? | `target_next` contextuel — **bloquant pour E** |
+| **B1** | Les dégâts de la compétence | **Tranché (Xav, 24/09)** : Force × coefficient d'Esprit ; Esprit raccourcit aussi la charge et la recharge |
+| **B2** | Poser le follet | **Tranché (Xav, 24/09)** : `target_next` contextuel, état `poste` du follet |
 | `Q-137` | Forme de la condition de proximité | Valeur nommée `a_portee`, fournie par `main.js` |
 | `Q-138` | La stèle déchiffrée : descente directe, ou vue rapprochée avec « Descendre » ? | Descente directe, avec fondu |
 | `Q-139` | Où mène la porte de la salle 3 ? | Dehors, au pied de la stèle |
 | `Q-140` | Les noms : cracheurs, Zéros / *Zeros*, le Gardien, la compétence | Noms de travail, à écrire par Xav |
 | `Q-141` | Le follet de Zéros frappe-t-il ? | Non : Zéros frappe, son follet est la cible |
 | `Q-142` | Descentes suivantes : le levier de la salle 1 ouvre directement le passage ? | Oui |
-| `Q-143` | Zéros, « la seconde main » de la pierre qui répond ? | Proposition de Claude, textes à Xav |
+| `Q-143` | Zéros, « la seconde main » de la pierre qui répond ? | **Tranché (Xav, 24/09)** : oui, personnage récurrent (poste avancé…) |
 | `Q-144` | La charge : cumulée sur plusieurs monstres, et gardée hors combat ? | Oui et oui |
 | `Q-145` | Un temps minimal entre deux descentes ? | Non |
 | `Q-146` | `?niveau=N` en debug, masque non persisté ? | Oui |
-| `Q-147` | Respec et re-choix du follet : dans l'Annexe 1 ou à part ? | À part |
+| `Q-147` | Respec et re-choix du follet | **Tranché (Xav, 24/09)** : dans l'Annexe 1, palier I |
+| `Q-148` | **B3** : l'emplacement 3 s'équipe par quel bouton, puisque B ferme le menu ? | A (« Équiper en 3 ») ; à trancher avant la 2ᵉ compétence |
 
 ## 11. Hors périmètre
 
-L'Annexe 2 et son tunnel · les synergies de la compétence (Xav : « pas de synergie pour l'instant ») · les compétences 2 et 3 · l'équipement du follet (`Q-29`) · le respec et le re-choix du follet (`Q-147`) · la musique propre à l'Annexe · le jardinage et la zone sud (`Q-13`, `Q-136`) · tout rééquilibrage des monstres de la surface.
+L'Annexe 2 et son tunnel · les synergies de la compétence (Xav : « pas de synergie pour l'instant ») · les compétences 2 et 3 · le 4ᵉ follet · l'équipement du follet (`Q-29`) · le « follet agentique » (les mécanismes automatisés : l'état `poste` en est la première pierre, rien de plus) · la musique propre à l'Annexe · le jardinage et la zone sud (`Q-13`, `Q-136`) · tout rééquilibrage des monstres de la surface.

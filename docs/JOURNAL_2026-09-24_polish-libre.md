@@ -179,3 +179,13 @@ qui ne porte que les dix chiffres (`unicodeRange`), en tête de chaque pile.
   **B1** (dégâts de la compétence sur Esprit, contre D1⑧ verrouillée) et
   **B2** (RB/Tab/toucher = déjà `target_next`). Questions `Q-137` à `Q-147`
   listées dans la spec, pas encore ouvertes au suivi.
+
+## Spec 14 v1.1.0 : réponses de Xav (24/09)
+
+- B1 : Esprit = coefficient sur la Force des compétences + hâte (charge et
+  recharge) — **révise D1⑧** (consigné dans `CLAUDE.md` et la carte mentale).
+  B2 : `target_next` contextuel, état `poste` du follet (base du futur
+  « follet agentique »). Marche dans l'ombre confirmée. `Q-143` oui (Zéros =
+  la seconde main, récurrent). `Q-147` : respec, compétences en cartes dans
+  Stats (X / Y ; B3 → `Q-148`) et re-choix du follet entrent en palier I, avec
+  une migration de sauvegarde v8 → v9.

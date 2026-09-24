@@ -3,7 +3,8 @@
 // testables ; le dessin canvas lui-même n'est jamais exercé en headless
 // (contrainte de méthode : le rendu revient à Xav dans un vrai navigateur).
 
-import { dessinerVisuel } from './visuels.js';
+import { dessinerVisuel, echelleVisuel } from './visuels.js';
+import { boiteTampon, cleTampon, creerCacheTampons } from './tampons.js';
 import { couleurTuile, tuileDeSol, varianteTuile } from './decor.js';
 import { dessinerBarre, PALETTE_JAUGES } from './ui/barre.js';
 import { POLICE_CALLIGRAPHIE, POLICE_CHIFFRES } from './polices.js';
@@ -331,6 +332,27 @@ const ALPHA_FANTOME = 0.6;
 // pendant un déplacement, pas à chaque frame) — un "cache de secteur" au
 // sens de la fiche, pas un tableau pré-calculé de toute la carte.
 let coucheStatique = null; // { sceneId, echelle, signaturePortes, xDebut, yDebut, canvas }
+// `specs/13` palier B : UN canvas de calque, réutilisé d'une reconstruction à
+// l'autre (effacé, ou redimensionné si la fenêtre a changé de taille). En créer
+// un neuf à chaque fois coûtait une allocation de plusieurs mégaoctets et une
+// part du ramasse-miettes, sans rien apporter. Il survit à
+// `invaliderCoucheStatique` : jeter le calque, c'est jeter ce qu'il MONTRE.
+let canvasCalque = null;
+
+// `specs/13` palier B (`D-153`) : les dessins de tuile, tramés une fois et
+// posés ensuite (`tampons.js`). `echelleTampons` est l'échelle à laquelle le
+// cache a été rempli : une autre échelle le vide.
+const cacheTampons = creerCacheTampons(fabriquerTampon);
+let echelleTampons = null;
+// Faux seulement pour l'instrument `tools/scenarios/calque_identique.mjs`, qui
+// importe ce module dans la page (le MÊME module que le jeu, une URL = une
+// instance) et compare le calque tamponné au calque vectoriel. Le jeu ne le
+// touche jamais.
+let tamponsActifs = true;
+export function definirTamponsActifs(actifs) {
+  tamponsActifs = actifs;
+  invaliderCoucheStatique();
+}
 
 // Accesseur de lecture seule (MT_mesure-saccades_2026-09-19, piste 5 : "coût
 // par pixel" du calque statique) — jamais appelé par le rendu lui-même,
@@ -349,6 +371,16 @@ export function statsCoucheStatique() {
 // pourrait rester allumé et reconstruire à chaque frame.
 export function invaliderCoucheStatique() {
   coucheStatique = null;
+  // Un changement de preset change les visuels de la table des grains (moins
+  // de primitives) : les tampons d'avant montreraient l'ancien grain.
+  cacheTampons.vider();
+}
+
+// Accesseur de lecture seule pour les instruments (`calque_identique.mjs`,
+// `?debug=fps`) : le canvas du calque, et le nombre de tampons en cache.
+// Jamais appelé par le rendu lui-même.
+export function lireCoucheStatique() {
+  return coucheStatique ? { ...coucheStatique, tampons: cacheTampons.taille } : null;
 }
 
 // Fenêtre de tuiles à dessiner pour couvrir le viewport logique courant, avec
@@ -413,9 +445,48 @@ function signaturePortesScene(scene, estFlagActif) {
 // son aplat de couleur, ancrée au bas de sa cellule (§3.3 : formes
 // distinctes, jamais un simple carré plein). La case choisit SON dessin et son
 // miroir par `decor.js#varianteTuile` (polish ambiance, 23/09).
-function dessinerVisuelDeTuile(ctx, scene, tuile, visuels, x, y, localX, localY) {
+// `specs/13` palier B : le même dessin, POSÉ depuis son tampon au lieu d'être
+// rejoué primitive par primitive. L'ancre est ramenée à un pixel physique
+// entier (elle l'est déjà à toute échelle entière : le jeu réel), et le
+// tampon la porte sur un pixel entier : le trait tombe au même endroit de la
+// grille des pixels que s'il était dessiné ici.
+function dessinerVisuelDeTuile(ctx, scene, tuile, visuels, x, y, localX, localY, echelle) {
   const { index, miroir } = varianteTuile(scene, x, y, visuels.length, tuile.render.miroir);
-  dessinerVisuel(ctx, visuels[index], localX + scene.tileSize / 2, localY + scene.tileSize, { miroir });
+  const visuel = visuels[index];
+  const ancreX = localX + scene.tileSize / 2;
+  const ancreY = localY + scene.tileSize;
+  if (!tamponsActifs) {
+    dessinerVisuel(ctx, visuel, ancreX, ancreY, { miroir });
+    return;
+  }
+  const cle = cleTampon({ id: visuel.id, nbPrimitives: visuel.primitives.length, miroir, echelle });
+  const tampon = cacheTampons.obtenir(cle, visuel, echelle, miroir);
+  poserTampon(ctx, tampon, Math.round(ancreX * echelle), Math.round(ancreY * echelle), echelle);
+}
+
+// Trame UN dessin dans un canvas à sa taille (`tampons.js#boiteTampon`), son
+// ancre sur un pixel entier. Contexte à lui, transform posée à neuf : rien ne
+// fuit vers le calque.
+function fabriquerTampon(visuel, echelle, miroir) {
+  const boite = boiteTampon(visuel, echelle, { echelleVisuel: echelleVisuel(visuel), miroir });
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, boite.largeur);
+  canvas.height = Math.max(1, boite.hauteur);
+  const ctxTampon = canvas.getContext('2d');
+  ctxTampon.setTransform(echelle, 0, 0, echelle, boite.ancreX, boite.ancreY);
+  dessinerVisuel(ctxTampon, visuel, 0, 0, { miroir });
+  return { canvas, ancreX: boite.ancreX, ancreY: boite.ancreY };
+}
+
+// Pose un tampon à une position PHYSIQUE entière : sous le repère identité le
+// temps du `drawImage`, pour qu'aucune division par l'échelle ne laisse une
+// fraction de pixel qui ferait ré-échantillonner l'image. La transform du
+// calque (`echelle`) est remise en fin de fonction : l'appelant continue en
+// unités logiques (règle des calques qui touchent la transform).
+function poserTampon(ctx, tampon, ancrePhysX, ancrePhysY, echelle) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.drawImage(tampon.canvas, ancrePhysX - tampon.ancreX, ancrePhysY - tampon.ancreY);
+  ctx.setTransform(echelle, 0, 0, echelle, 0, 0);
 }
 
 function construireCoucheStatique(scene, decor, echelle, signaturePortes, estFlagActif, fenetre, visuelsTuiles) {
@@ -423,10 +494,21 @@ function construireCoucheStatique(scene, decor, echelle, signaturePortes, estFla
   const largeurCanvas = (xFin - xDebut) * scene.tileSize;
   const hauteurCanvas = (yFin - yDebut) * scene.tileSize;
 
-  const canvas = document.createElement('canvas');
-  canvas.width = Math.max(1, Math.round(largeurCanvas * echelle));
-  canvas.height = Math.max(1, Math.round(hauteurCanvas * echelle));
+  if (!canvasCalque) canvasCalque = document.createElement('canvas');
+  const canvas = canvasCalque;
+  const largeur = Math.max(1, Math.round(largeurCanvas * echelle));
+  const hauteur = Math.max(1, Math.round(hauteurCanvas * echelle));
   const ctxCouche = canvas.getContext('2d');
+  if (canvas.width !== largeur || canvas.height !== hauteur) {
+    // Redimensionner efface déjà le canvas (et remet son contexte à zéro).
+    canvas.width = largeur;
+    canvas.height = hauteur;
+  } else {
+    // Une case sans couleur (hors de la scène) reste transparente : l'ancien
+    // calque ne doit pas s'y voir.
+    ctxCouche.setTransform(1, 0, 0, 1, 0, 0);
+    ctxCouche.clearRect(0, 0, largeur, hauteur);
+  }
   // Repère logique -> physique de CE calque (MT_rendu-net_2026-09-15) : un
   // dessin ici sort net à la résolution physique, jamais ré-échantillonné.
   ctxCouche.setTransform(echelle, 0, 0, echelle, 0, 0);
@@ -445,9 +527,9 @@ function construireCoucheStatique(scene, decor, echelle, signaturePortes, estFla
       // le preset exactement comme la surface voisine), l'objet par-dessus.
       const sol = tuile && tuileDeSol(scene, tuile);
       const grainSol = sol && sol !== tuile && visuelsTuiles.get(sol.id);
-      if (grainSol) dessinerVisuelDeTuile(ctxCouche, scene, sol, grainSol, x, y, localX, localY);
+      if (grainSol) dessinerVisuelDeTuile(ctxCouche, scene, sol, grainSol, x, y, localX, localY, echelle);
       const visuelsTuile = tuile && visuelsTuiles.get(tuile.id);
-      if (visuelsTuile) dessinerVisuelDeTuile(ctxCouche, scene, tuile, visuelsTuile, x, y, localX, localY);
+      if (visuelsTuile) dessinerVisuelDeTuile(ctxCouche, scene, tuile, visuelsTuile, x, y, localX, localY, echelle);
     }
   }
 
@@ -483,6 +565,10 @@ function construireCoucheStatique(scene, decor, echelle, signaturePortes, estFla
 function dessinerCoucheStatique(ctx, scene, decor, camera, estFlagActif, visuelsTuiles, surRecalcul) {
   const echelle = echelleDepuisCanvas(ctx.canvas.width);
   const signature = signaturePortesScene(scene, estFlagActif);
+  if (echelle !== echelleTampons) {
+    cacheTampons.vider();
+    echelleTampons = echelle;
+  }
 
   if (calqueDoitEtreReconstruit(coucheStatique, {
     sceneId: scene.id, echelle, signaturePortes: signature, camera, tileSize: scene.tileSize, resolution: RESOLUTION_LOGIQUE,

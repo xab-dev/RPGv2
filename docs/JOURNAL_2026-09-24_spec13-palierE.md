@@ -3,7 +3,7 @@ projet: RPG V2
 episode/session: Spec 13, palier E — les lisières, le catalogue et les presets
 type: fichier de bord
 version: 1.0.0
-statut: livré, à valider en jeu (V-146, V-147)
+statut: livré, validé en jeu (V-146, V-147)
 catégorie: Journal
 date: 2026-09-24
 genere_par: claude
@@ -76,3 +76,9 @@ Chrome sans fenêtre, 1920 × 1080, `cout_calque`. Le palier D (`2a13284`) est s
 - **`V-147`** (le palier E) : le chemin en **Bas**, le contour seul suffit-il ?
 - **`Q-151`** : de la terre quelque part dans la Maison, ou on attend le jardinage ?
 - Le palier suivant est **F** (le budget de la carte, pour l'Annexe 1), dans une session à lui.
+
+## 5. Validation et clôture (24/09)
+
+**`V-146` et `V-147` validées par Xav** : « V-146 V-147 good ». L'ombre sur les côtés E, S, O et le levier `lisiere` (Bas 0,3) sont gardés. `Q-151` (la terre) reste ouverte.
+
+Session close avant le palier F, à la demande de Xav.

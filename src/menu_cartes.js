@@ -480,7 +480,7 @@ export const CLES_TEXTE_COMPOSANT = [
 
 // L'écran de confirmation d'une carte `danger` (§3, §4.1) : deux cartes,
 // « Non, revenir » en case 0 — donc focus par défaut, puisque le focus va à la
-// première carte présente — et « Oui, … » en case 1, en magenta.
+// première carte présente — et « Oui, … » en case 1, en écarlate.
 //
 // Construit ici et pas décrit dans `menus.json` : « Non d'abord » est une
 // règle de SÉCURITÉ. Elle ne doit pas dépendre de l'attention de celui qui

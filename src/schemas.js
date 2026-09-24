@@ -1417,7 +1417,7 @@ function validerCarteMenu(carte, catalogs, chemin, flagsDeclares) {
     erreurs.push(`${chemin} > champ "cle_phrase" manquant`);
   }
   if (carte.danger !== undefined && typeof carte.danger !== 'boolean') erreurs.push(`${chemin} > danger doit être un booléen`);
-  // `danger: true` → magenta ET écran de confirmation (§4.1). La confirmation
+  // `danger: true` → écarlate ET écran de confirmation (§4.1). La confirmation
   // est construite par le composant, toujours la même (« Non » d'abord, focus
   // par défaut) ; la carte n'apporte que ses deux textes. Exigés ici : une
   // action destructive sans question lisible est refusée au démarrage.

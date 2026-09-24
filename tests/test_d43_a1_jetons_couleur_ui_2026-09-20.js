@@ -79,12 +79,12 @@ const { donnees } = await chargerCataloguesDepuisDisque(path.join(RACINE, 'data'
   assert.match(sombre[0], /companions\.json > comp_test > couleur_ui/);
   assert.match(sombre[0], new RegExp(`minimum ${CONTRASTE_MIN_ACCENT}:1`));
 
-  const magenta = erreursCouleursUi(follet(JETONS.danger), JETONS);
-  assert.ok(magenta.some((e) => /se confond avec le magenta du danger/.test(e)), 'le magenta exact est refusé');
+  const exacte = erreursCouleursUi(follet(JETONS.danger), JETONS);
+  assert.ok(exacte.some((e) => /se confond avec la couleur du danger/.test(e)), 'la couleur exacte du danger est refusée');
 
   // Le cas qu'une égalité stricte aurait laissé passer.
-  const presque = erreursCouleursUi(follet('#d6409e'), JETONS);
-  assert.ok(presque.some((e) => /se confond avec le magenta du danger/.test(e)), 'un quasi-jumeau du magenta est refusé lui aussi');
+  const presque = erreursCouleursUi(follet('#c8201f'), JETONS);
+  assert.ok(presque.some((e) => /se confond avec la couleur du danger/.test(e)), 'un quasi-jumeau du danger est refusé lui aussi');
   assert.ok(DISTANCE_MIN_DANGER > 1, 'le seuil de proximité existe bel et bien');
 
   const malFormee = erreursCouleursUi(follet('orange'), JETONS);
@@ -92,7 +92,7 @@ const { donnees } = await chargerCataloguesDepuisDisque(path.join(RACINE, 'data'
 
   // Le 4ᵉ follet de la spec : une entrée, aucun code — il passe s'il se lit.
   assert.deepEqual(erreursCouleursUi([...donnees.companions, { id: 'comp_follet_vent', couleur_ui: '#9fe8d2' }], JETONS), []);
-  console.log('OK couleur fautive : trop sombre / magenta / quasi-magenta / mal formée, chacune avec son chemin');
+  console.log('OK couleur fautive : trop sombre / danger / quasi-danger / mal formée, chacune avec son chemin');
 }
 
 // --- 5. Un jeton illisible est une erreur de démarrage, pas un faux « vert » -

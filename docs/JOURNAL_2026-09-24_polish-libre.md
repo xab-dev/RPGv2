@@ -203,4 +203,5 @@ variété, et la plume n'a pas été reprise depuis longtemps. Branche
 |---|---|---|
 | `78e9e03` | `D-189` — les flaques | Quatre dessins de plus, poids partagé au même rang : le décor ne bouge pas (vérifié). `V-133` ouverte. Tests : 185 fichiers verts |
 | `94cffdd` | `D-190` — la plume | Rachis courbe, dégradés au lieu d'une tranche blanc/noir, bandes et barbes couchées vers la pointe (d'après la photo de Xav). Rotation cuite dans les points : l'icône de la Poche ignore la rotation d'une primitive. `V-134` ouverte. Tests : 185 fichiers verts |
-| (voir log) | `D-191` — la plume brille la nuit | Nuit et aube, jamais dans la Grotte. Liseré blanc par-dessus le voile ; Bas fixe, Moyen respire, Haut + filet de particules (nouveau type d'effet `filet`, pur). Même verdict pour les icônes des menus, où il reste fixe. `V-135` ouverte. Tests : 186 fichiers verts |
+| `101f53d` | `D-191` — la plume brille la nuit | Nuit et aube, jamais dans la Grotte. Liseré blanc par-dessus le voile ; Bas fixe, Moyen respire, Haut + filet de particules (nouveau type d'effet `filet`, pur). Même verdict pour les icônes des menus, où il reste fixe. `V-135` ouverte. Tests : 186 fichiers verts |
+| (voir log) | `D-192` — le danger en écarlate | `#d6409f` → `#c8201e`, le feu reste à ~97 (garde ≥ 60). `V-136` ouverte. Tests : 186 fichiers verts |

@@ -19,11 +19,12 @@
 // spec, pas provisoire.
 export const CONTRASTE_MIN_ACCENT = 3;
 
-// *Provisoire.* La spec dit « n'est jamais le magenta du danger » ; une
-// égalité stricte laisserait passer `#d6409e`, qu'aucun œil ne distingue du
-// magenta. On refuse donc ce qui en est PROCHE : distance euclidienne dans le
-// cube RGB (0 à ~441). 60 écarte les quasi-jumeaux sans interdire un rose ou
-// un violet francs ; le feu, l'accent le plus proche aujourd'hui, est à ~114.
+// *Provisoire.* La spec dit « n'est jamais la couleur du danger » ; une
+// égalité stricte laisserait passer `#c8201f`, qu'aucun œil ne distingue de
+// l'écarlate. On refuse donc ce qui en est PROCHE : distance euclidienne dans
+// le cube RGB (0 à ~441). 60 écarte les quasi-jumeaux sans interdire un rouge
+// ou un orangé francs ; le feu, l'accent le plus proche aujourd'hui, est à
+// ~97 de l'écarlate (il était à ~114 du magenta d'avant le 24/09).
 export const DISTANCE_MIN_DANGER = 60;
 
 const MOTIF_HEX = /^#([0-9a-f]{6})$/i;
@@ -94,7 +95,7 @@ export function erreursCouleursUi(compagnons, jetons) {
     const distance = distanceRgb(couleur, lus.danger);
     if (distance < DISTANCE_MIN_DANGER) {
       erreurs.push(
-        `${chemin} > ${hex} se confond avec le magenta du danger (${jetons.danger}) : `
+        `${chemin} > ${hex} se confond avec la couleur du danger (${jetons.danger}) : `
         + `distance ${distance.toFixed(0)}, minimum ${DISTANCE_MIN_DANGER} — le danger doit rester reconnaissable quel que soit le follet`,
       );
     }

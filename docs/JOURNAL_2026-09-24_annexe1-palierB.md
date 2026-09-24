@@ -17,7 +17,7 @@ Demande de Xav : « go palier B ». Branche `annexe-1`. Pas de push.
 | Commit | Ticket | Ce qu'il faut en retenir |
 |---|---|---|
 | `fd25f16` | Ménage | Journal du palier A archivé, INDEX à jour |
-| (ce commit) | `D-207` — palier B | La stèle s'éveille (`a_portee`, le carnet qui déchiffre, Descendre), trois salles vides, la remise à zéro de la descente, `?flags=` |
+| `1473e48` | `D-207` — palier B | La stèle s'éveille (`a_portee`, le carnet qui déchiffre, Descendre), trois salles vides, la remise à zéro de la descente, `?flags=` |
 
 ## 1. Le palier B
 

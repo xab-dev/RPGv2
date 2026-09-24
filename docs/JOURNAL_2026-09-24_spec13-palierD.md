@@ -3,7 +3,7 @@ projet: RPG V2
 episode/session: Spec 13, palier D — les lisières, le mécanisme
 type: fichier de bord
 version: 1.0.0
-statut: livré, à valider en jeu (V-145)
+statut: livré, validé en jeu (V-145)
 catégorie: Journal
 date: 2026-09-24
 genere_par: claude
@@ -110,3 +110,11 @@ Une première série (3 exécutions) a montré **+25 à +50 %** par reconstructi
 - **`Q-131`** : la forme, retenue et livrée, reste `[OUVERT]` jusqu'à ton verdict.
 - **`Q-132`** : appliquée en partie (herbe 3, chemin 1) ; la terre au palier E.
 - Le palier suivant est **E** (les autres paires, le levier des presets), dans une session à lui.
+
+## 6. Validation et clôture (24/09)
+
+**`V-145` et `Q-131` validées par Xav** : « V-145 Q-131 all good ». La forme est gardée.
+
+**Une réserve, l'ombre** : « we just need to figure how to fix shadow between grass and the path. it looks like south herbs is on top of the walk path, and the path is on top of the north herbs (need to be under). nothing big for now ». Ouverte en **`D-202`**. Cause : l'ombre fait partie du dessin du bord, qui tourne avec lui, alors qu'une ombre se lit dans une direction fixe à l'écran (la lumière vient d'en haut). Le nord et le sud disent donc deux profondeurs opposées. Le remède n'est pas choisi : ombre sortie du bord et posée sans rotation, ou ombre seulement là où elle tombe vers le bas.
+
+Session close avant le palier E, à la demande de Xav.

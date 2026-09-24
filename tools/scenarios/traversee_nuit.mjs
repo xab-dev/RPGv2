@@ -65,12 +65,15 @@ function lireFenetre(texte) {
   const lentes = n(/frames > 20ms sur le tampon : (\d+)\/(\d+)/);
   const majDessiner = n(/maj\(\) moyen ([\d.]+) ms \(p95 ([\d.]+) ms\) \| dessiner\(\) moyen ([\d.]+) ms \(p95 ([\d.]+) ms\)/);
   const recalc = n(/recalculs calque statique : (\d+) \(moyenne ([\d.]+) ms, max ([\d.]+) ms/);
-  const monstres = n(/monstres (\d+),/);
+  const monstres = n(/monstres (\d+)\/(\d+),/);
+  // `specs/13` palier F : la part des monstres hors champ, en moyenne sur la fenêtre.
+  const moyens = n(/moyenne sur le tampon : ([\d.]+)\/([\d.]+)/);
   return {
     lentes: lentes[0], frames: lentes[1],
     majMoy: majDessiner[0], majP95: majDessiner[1], dessMoy: majDessiner[2], dessP95: majDessiner[3],
     recalcN: recalc ? recalc[0] : 0, recalcMoy: recalc ? recalc[1] : 0, recalcMax: recalc ? recalc[2] : 0,
-    monstres: monstres ? monstres[0] : 0,
+    monstres: monstres ? monstres[1] : 0,
+    dessinesMoy: moyens ? moyens[0] : 0, presentsMoy: moyens ? moyens[1] : 0,
   };
 }
 
@@ -151,6 +154,7 @@ export default async function (chrome) {
   console.log(entree);
   console.log(`fenetres lues : ${fenetres.length}, frames comptees : ${Math.round(frames)}`);
   console.log(`monstres presents (par fenetre) : ${fenetres.map((f) => f.monstres).join(' ')}`);
+  console.log(`monstres dessines / presents, moyenne par fenetre : ${fenetres.map((f) => `${f.dessinesMoy.toFixed(1)}/${f.presentsMoy.toFixed(1)}`).join(' ')}`);
   console.log(`frames > 20 ms (instrument, maj+dessiner) : ${Math.round(somme('lentes'))}/${Math.round(frames)}`);
   console.log(`intervalles > 20 ms (page) : ${page.sautees}/${page.frames}, pire ${page.maxDelta.toFixed(1)} ms`);
   console.log(`maj() moy ${pondere('majMoy').toFixed(2)} ms, p95 max ${max('majP95').toFixed(2)} ms`);

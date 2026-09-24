@@ -9,6 +9,7 @@ import { couleurTuile, tuileDeSol, varianteTuile, ROTATION_MAX_DEG } from './dec
 import { cellulesAPeindre, indexerDecor, motifsDesCellules, planDefilement, rayonInfluence } from './defilement.js';
 import { lisieresCase, visuelsDesLisieres } from './lisieres.js';
 import { dessinerBarre, PALETTE_JAUGES } from './ui/barre.js';
+import { boiteDansLeChamp, disqueDansLeChamp, vueDeCamera, visuelDansLeChamp } from './champ.js';
 import { POLICE_CALLIGRAPHIE, POLICE_CHIFFRES } from './polices.js';
 
 const DELTA_MAX_MS = 100; // provisoire : une frame ne rattrape jamais plus de 100 ms
@@ -826,10 +827,25 @@ export function dessinerScene(ctx, {
   // boucles inline (fillRect par tuile + petit carré par motif de décor).
   dessinerCoucheStatique(ctx, scene, decor, camera, estFlagActif, visuelsTuiles, lisieres, surRecalculCoucheStatique);
 
+  // `specs/13` palier F (§4.6) : une entité hors du champ ne se dessine pas.
+  // Le calque statique est déjà fenêtré ; ce qui suit parcourait TOUTE la
+  // scène — chaque monstre, interactif et objet au sol de la carte, à chaque
+  // frame. `champ.js` juge sur ce qui se PEINT (boîte du dessin), jamais sur
+  // la position seule : une station à moitié hors écran reste dessinée. Les
+  // comptes remontent à l'instrument `?debug=fps` (dessinés / présents) ; le
+  // héros, le follet et ce qui les suit sont toujours à l'écran, ils ne se
+  // trient pas.
+  const vue = vueDeCamera(camera, RESOLUTION_LOGIQUE);
+  const dessines = { monstres: 0, puzzles: 0, objetsSol: 0 };
+
   // Leviers (§2.1/§3.3 : première fois qu'un puzzle "levier" a un rendu du
   // tout — Phase 1 posait le flag sans jamais rien afficher). Ancre "bas" :
   // (x,y) est le point de contact au sol, cf. visuel_levier.
   for (const levier of puzzles) {
+    // La pièce mobile tourne autour d'un pivot pris DANS le dessin de
+    // l'interactif : si le corps est hors champ, elle l'est aussi.
+    if (!visuelDansLeChamp(levier.visuel, levier.x, levier.y, vue, { echelle: levier.echelle, rotation: levier.rotation })) continue;
+    dessines.puzzles += 1;
     dessinerVisuel(ctx, levier.visuel, levier.x - camera.x, levier.y - camera.y, {
       teinte: levier.actif ? COULEUR_LEVIER_ACTIF : null,
       // specs/04_stations-proportions-collision.md : échelle par entrée
@@ -893,11 +909,22 @@ export function dessinerScene(ctx, {
   // Objets au sol (03_maison-exterieur §3.3) : branche/caillou/fruit — même
   // patron que les leviers ci-dessus, ancre "centre" (cf. visuel_branche &co).
   for (const objet of objetsSol) {
+    if (!visuelDansLeChamp(objet.visuel, objet.x, objet.y, vue)) continue;
+    dessines.objetsSol += 1;
     dessinerVisuel(ctx, objet.visuel, objet.x - camera.x, objet.y - camera.y, {});
   }
 
   for (const monstre of monstres) {
     if (monstre.mort) continue;
+    // Le corps OU sa barre de PV (qui dépasse au-dessus de la tête) : un
+    // monstre sous le bord haut de l'écran peut n'y montrer que sa barre.
+    const { largeur: barreL, hauteur: barreH, decalage_y: barreDy } = BARRE_PV_MONSTRE;
+    const barreVisible = monstre.actif && boiteDansLeChamp({
+      minX: monstre.x - barreL / 2, maxX: monstre.x + barreL / 2,
+      minY: monstre.y + barreDy, maxY: monstre.y + barreDy + barreH,
+    }, vue);
+    if (!barreVisible && !visuelDansLeChamp(monstre.visuel, monstre.x, monstre.y, vue)) continue;
+    dessines.monstres += 1;
     const mx = monstre.x - camera.x;
     const my = monstre.y - camera.y;
 
@@ -1038,6 +1065,14 @@ export function dessinerScene(ctx, {
     if (structure.opacite <= 0) continue;
     dessinerToit(ctx, structure, scene, camera);
   }
+
+  // Ce qui a été dessiné, sur ce qui était présent : lu par `?debug=fps`
+  // seul (`main.js` le passe au moniteur), jamais par le jeu.
+  return {
+    monstres: { dessines: dessines.monstres, presents: monstres.filter((m) => !m.mort).length },
+    puzzles: { dessines: dessines.puzzles, presents: puzzles.length },
+    objetsSol: { dessines: dessines.objetsSol, presents: objetsSol.length },
+  };
 }
 
 // `D-132` : un toit qui porte un `visuel` (celui de sa tuile, résolu par
@@ -1140,10 +1175,21 @@ function hexVersRgb(hex) {
 // dictée par `ouverture`) rempli d'un dégradé qui décroît vers la base —
 // composé en 'lighter' par l'appelant (dessinerObscurite), jamais ici : cette
 // fonction ne fait que tracer la forme, pas la composition du calque.
+function demiLargeurFaisceau({ ouverture, longueur }) {
+  return Math.tan((ouverture / 2) * (Math.PI / 180)) * longueur;
+}
+
+// Jusqu'où une lumière de scène peint depuis son centre : le rayon d'un halo,
+// et pour un faisceau la distance à ses coins lointains — le triangle tourne
+// avec `angle`, un disque le couvre dans tous les sens.
+function rayonDeLumiere(l) {
+  return l.type === 'faisceau' ? Math.hypot(l.longueur, demiLargeurFaisceau(l)) : l.rayon;
+}
+
 function dessinerFaisceau(ctx, { x, y, angle, ouverture, longueur, alpha }, camera) {
   const cx = x - camera.x;
   const cy = y - camera.y;
-  const demiLargeurBase = Math.tan((ouverture / 2) * (Math.PI / 180)) * longueur;
+  const demiLargeurBase = demiLargeurFaisceau({ ouverture, longueur });
 
   ctx.save();
   ctx.translate(cx, cy);
@@ -1221,9 +1267,17 @@ export function dessinerObscurite(ctx, {
   voile.fillRect(0, 0, RESOLUTION_LOGIQUE.largeur, RESOLUTION_LOGIQUE.hauteur);
 
   voile.globalCompositeOperation = 'destination-out';
+  // `specs/13` palier F : une lumière hors du champ n'éclaire rien de
+  // visible. Sans ce tri, le voile perçait un dégradé pour chaque motif
+  // lumineux du décor de TOUTE la carte (`decor.js#lumieresDuDecor`), à
+  // chaque frame de nuit — un coût qui suivait la taille de la scène. Un halo
+  // dont seul le bord flou entre dans l'écran reste percé.
+  const vue = vueDeCamera(camera, RESOLUTION_LOGIQUE);
+  const toutesLesLumieres = scene.lumieres || [];
+  const lumieres = toutesLesLumieres.filter((l) => disqueDansLeChamp(l.x, l.y, rayonDeLumiere(l), vue));
   // Seuls les "halo" percent le voile (révèlent le sol) — un "faisceau" est
   // une atmosphère additive dessinée plus bas, jamais un trou (§3.4).
-  const halos = (scene.lumieres || []).filter((l) => (l.type || 'halo') === 'halo');
+  const halos = lumieres.filter((l) => (l.type || 'halo') === 'halo');
   const sources = [...halos.map((l) => ({ x: l.x, y: l.y, rayon: l.rayon }))];
   if (follet) sources.push({ x: follet.x, y: follet.y, rayon: rayonLumiereFollet || 0 });
 
@@ -1274,7 +1328,7 @@ export function dessinerObscurite(ctx, {
     ctx.restore();
   }
 
-  const faisceaux = (scene.lumieres || []).filter((l) => l.type === 'faisceau');
+  const faisceaux = lumieres.filter((l) => l.type === 'faisceau');
   if (faisceaux.length > 0) {
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
@@ -1302,6 +1356,9 @@ export function dessinerObscurite(ctx, {
     ctx.fill();
     ctx.restore();
   }
+
+  // Même rôle que le retour de `dessinerScene` : lu par `?debug=fps` seul.
+  return { lumieres: { dessines: lumieres.length, presents: toutesLesLumieres.length } };
 }
 
 // Signal des zones de Chaos (specs/07_chaos-nocturne.md, palier D) : « la
@@ -1354,10 +1411,14 @@ export function dessinerSignalZones(ctx, { zones = [], camera }) {
 // `dessinerVisuel` encadre chaque dessin d'un save/restore : la transform et
 // l'alpha du contexte ressortent tels qu'ils sont entrés.
 export function dessinerSurlignages(ctx, { surlignages = [], particules = [], camera }) {
+  // `specs/13` palier F : même tri que les objets au sol qu'ils soulignent.
+  const vue = vueDeCamera(camera, RESOLUTION_LOGIQUE);
   for (const s of surlignages) {
+    if (!visuelDansLeChamp(s.visuel, s.x, s.y, vue)) continue;
     dessinerVisuel(ctx, s.visuel, s.x - camera.x, s.y - camera.y, { alpha: s.alpha });
   }
   for (const p of particules) {
+    if (!visuelDansLeChamp(p.visuel, p.x, p.y, vue, { echelle: p.echelle })) continue;
     dessinerVisuel(ctx, p.visuel, p.x - camera.x, p.y - camera.y, { alpha: p.alpha, echelle: p.echelle });
   }
 }

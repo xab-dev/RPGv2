@@ -150,6 +150,16 @@ export function creerCompteurBascules() {
   };
 }
 
+// `specs/13` palier F (`Q-134`) : une entrée en scène dépasse-t-elle son
+// plafond (`graphismes.json > budget_carte`) ? Rend le message d'avertissement,
+// ou `null`. Pur : `main.js` le lit à chaque entrée mesurée et l'écrit en
+// console — jamais un échec, c'est une mesure (§4.6).
+export function avertissementEntreeScene(entree, plafondMs) {
+  if (!entree || !(entree.dureeMs > plafondMs)) return null;
+  return `budget de la carte : entrée dans ${entree.sceneId} en ${entree.dureeMs.toFixed(2)} ms, `
+    + `plafond ${plafondMs} ms (scène ${entree.sceneMs.toFixed(2)}, décor ${entree.decorMs.toFixed(2)}, reste ${entree.resteMs.toFixed(2)})`;
+}
+
 // Mise en forme du relevé copié par le bouton "copier" (protocole du ticket :
 // "Xav colle les chiffres à Claude"). Pure, prend un objet déjà agrégé —
 // aucune connaissance de render.js/main.js ici, ui/hud_debug.js construit cet
@@ -164,7 +174,11 @@ export function formaterReleve(etat) {
       ? `recalculs calque statique : ${etat.recalculsCoucheStatique.nombre} (moyenne ${etat.recalculsCoucheStatique.dureeMoyenneMs.toFixed(2)} ms, max ${etat.recalculsCoucheStatique.dureeMaxMs.toFixed(2)} ms, dernier il y a ${etat.recalculsCoucheStatique.depuisDernierMs === null ? 'n/a' : etat.recalculsCoucheStatique.depuisDernierMs.toFixed(0) + ' ms'})`
       : 'recalculs calque statique : aucun sur ce tampon',
     `écart position héros (px logiques) X : moy ${etat.ecartHeroX.moyenne.toFixed(3)} min ${etat.ecartHeroX.min.toFixed(3)} max ${etat.ecartHeroX.max.toFixed(3)} | Y : moy ${etat.ecartHeroY.moyenne.toFixed(3)} min ${etat.ecartHeroY.min.toFixed(3)} max ${etat.ecartHeroY.max.toFixed(3)}`,
-    `entités dessinées (dernière frame) : monstres ${etat.entites.monstres}, interactifs ${etat.entites.puzzles}, objets au sol ${etat.entites.objetsSol}`,
+    // `specs/13` palier F : dessinées / présentes dans la scène. Le tri par
+    // le champ (`champ.js`) se lit dans l'écart entre les deux ; la moyenne
+    // des monstres est la part hors champ d'une traversée entière.
+    `entités dessinées / présentes (dernière frame) : monstres ${etat.entites.monstres.dessines}/${etat.entites.monstres.presents}, interactifs ${etat.entites.puzzles.dessines}/${etat.entites.puzzles.presents}, objets au sol ${etat.entites.objetsSol.dessines}/${etat.entites.objetsSol.presents}, lumières ${etat.entites.lumieres.dessines}/${etat.entites.lumieres.presents}`,
+    `monstres dessinés / présents, moyenne sur le tampon : ${etat.monstresMoyens.dessines.toFixed(2)}/${etat.monstresMoyens.presents.toFixed(2)}`,
     `canvas visible : ${etat.ecranPhysique.largeurPhysique}x${etat.ecranPhysique.hauteurPhysique}px physiques (dpr ${etat.ecranPhysique.dpr})`,
     // `D-23` : sans cette ligne, un relevé `?echelle=N` serait indiscernable
     // d'un relevé normal une fois collé dans le suivi — et c'est justement la
@@ -181,6 +195,10 @@ export function formaterReleve(etat) {
     // entrée, pas la première : un portail la remplace.
     etat.entreeScene
       ? `entrée en scène : ${etat.entreeScene.sceneId} ${etat.entreeScene.dureeMs.toFixed(2)} ms (scène ${etat.entreeScene.sceneMs.toFixed(2)}, décor ${etat.entreeScene.decorMs.toFixed(2)}, reste ${etat.entreeScene.resteMs.toFixed(2)})`
+        // `specs/13` palier F : le plafond, cité avec la mesure — un relevé
+        // collé dans le suivi dit lui-même s'il tient le budget.
+        + (etat.entreeScene.plafondMs === undefined ? ''
+          : ` — plafond ${etat.entreeScene.plafondMs} ms${etat.entreeScene.dureeMs > etat.entreeScene.plafondMs ? ', DÉPASSÉ' : ''}`)
       : 'entrée en scène : non relevée',
     // `specs/10` §6 : sans cette ligne, un relevé pris sous `?alignement=N`
     // serait indiscernable d'un autre — même raison que la ligne d'échelle.

@@ -91,7 +91,8 @@ assert.deepEqual(ecartsSuccessifs([0, 2, 4, 4, 7]), [2, 2, 0, 3]);
     recalculsCoucheStatique: { nombre: 0, dureeMoyenneMs: 0, dureeMaxMs: 0, depuisDernierMs: null },
     ecartHeroX: { moyenne: 1.5, min: 1.5, max: 1.5 },
     ecartHeroY: { moyenne: 0, min: 0, max: 0 },
-    entites: { monstres: 2, puzzles: 4, objetsSol: 6 },
+    entites: { monstres: { dessines: 2, presents: 2 }, puzzles: { dessines: 4, presents: 4 }, objetsSol: { dessines: 6, presents: 6 }, lumieres: { dessines: 0, presents: 0 } },
+    monstresMoyens: { dessines: 2, presents: 2 },
     ecranPhysique: { largeurPhysique: 1920, hauteurPhysique: 1080, dpr: 2 },
     // `D-23` (MT_echelle-debug_2026-09-19) : le relevé gagne une ligne
     // d'échelle. Mise à jour VOLONTAIRE de ce contrat — un champ optionnel

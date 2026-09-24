@@ -177,7 +177,9 @@ assert.ok(config, 'graphismes.json doit déclarer graphismes_presets');
 
 // 8. Le schéma du catalogue : un palier qui oublie un levier ne démarre pas.
 {
-  const amputer = (idPalier, levier) => donnees.graphismes.map((e) => ({
+  // Seule l'entrée des presets est touchée : depuis `specs/13` palier F, le
+  // catalogue porte aussi `budget_carte`, qui n'a ni paliers ni leviers.
+  const amputer = (idPalier, levier) => donnees.graphismes.map((e) => (e.id !== 'graphismes_presets' ? e : {
     ...e,
     paliers: e.paliers.map((p) => (p.id === idPalier ? { ...p, leviers: { ...p.leviers, [levier]: undefined } } : p)),
   }));
@@ -189,7 +191,7 @@ assert.ok(config, 'graphismes.json doit déclarer graphismes_presets');
   );
 
   // Un levier ajouté à la liste sans être donné aux paliers : même chose.
-  const leviersEnPlus = donnees.graphismes.map((e) => ({ ...e, leviers: [...e.leviers, 'flou_de_mouvement'] }));
+  const leviersEnPlus = donnees.graphismes.map((e) => (e.id !== 'graphismes_presets' ? e : { ...e, leviers: [...e.leviers, 'flou_de_mouvement'] }));
   assert.ok(validerCatalogues({ ...donnees, graphismes: leviersEnPlus }).length > 0, 'un levier déclaré et non donné doit tomber au boot');
 }
 

@@ -93,7 +93,13 @@ export function creerMoniteurPerf({ document, search, peripheriqueActifInitial =
   // qu'une fois par dessiner()).
   let recalculEnAttenteMs = null;
   let dernierRecalculHorodatageMs = null;
-  let dernierEntites = { monstres: 0, puzzles: 0, objetsSol: 0 };
+  const AUCUNE = { dessines: 0, presents: 0 };
+  let dernierEntites = { monstres: AUCUNE, puzzles: AUCUNE, objetsSol: AUCUNE, lumieres: AUCUNE };
+  // `specs/13` palier F : les monstres dessinés et présents, frame par frame,
+  // fenêtrés comme le reste — la part hors champ se lit en MOYENNE, une seule
+  // frame dirait seulement où était la caméra à cet instant.
+  const monstresDessines = creerTamponCirculaire(CAPACITE_TAMPON_10S);
+  const monstresPresents = creerTamponCirculaire(CAPACITE_TAMPON_10S);
   // `specs/13` palier A : la dernière entrée en scène, gardée telle quelle
   // (une entrée est un événement rare, pas une série à fenêtrer).
   let derniereEntreeScene = null;
@@ -176,6 +182,10 @@ export function creerMoniteurPerf({ document, search, peripheriqueActifInitial =
       ecartHeroX: { moyenne: moyenne(ecartsX), min: ecartsX.length ? Math.min(...ecartsX) : 0, max: maximum(ecartsX) },
       ecartHeroY: { moyenne: moyenne(ecartsY), min: ecartsY.length ? Math.min(...ecartsY) : 0, max: maximum(ecartsY) },
       entites: dernierEntites,
+      monstresMoyens: {
+        dessines: moyenne(valeursTampon(monstresDessines)),
+        presents: moyenne(valeursTampon(monstresPresents)),
+      },
       entreeScene: derniereEntreeScene,
       ecranPhysique: dimensionsEcranPhysiquesActuelles(),
       echelleRendu: etatEchelleRendu(),
@@ -227,6 +237,8 @@ export function creerMoniteurPerf({ document, search, peripheriqueActifInitial =
     },
     enregistrerEntites(entites) {
       dernierEntites = entites;
+      ajouterAuTampon(monstresDessines, entites.monstres.dessines);
+      ajouterAuTampon(monstresPresents, entites.monstres.presents);
     },
     surEntreeScene(info) {
       derniereEntreeScene = info;

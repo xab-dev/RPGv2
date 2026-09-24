@@ -2900,7 +2900,13 @@ SCHEMAS.graphismes = {
   refs: [],
   custom(entry, catalogs, path) {
     const erreurs = [];
+    if (entry.id === 'budget_carte') return erreursBudgetCarte(entry, path);
     if (entry.id !== 'graphismes_presets') return erreurs;
+    // `specs/13` palier F : le budget est lu à chaque entrée en scène sous
+    // `?debug=fps` ; son absence ne se découvrirait qu'au premier relevé.
+    if (!(catalogs.graphismes || []).some((e) => e.id === 'budget_carte')) {
+      erreurs.push(`${path} > l'entrée "budget_carte" manque au catalogue (le plafond d'entrée en scène, specs/13 §4.6)`);
+    }
 
     if (!Array.isArray(entry.leviers) || entry.leviers.length === 0) {
       erreurs.push(`${path} > leviers doit être un tableau non vide de noms de leviers`);
@@ -2988,6 +2994,22 @@ SCHEMAS.graphismes = {
     return erreurs;
   },
 };
+
+// `specs/13` palier F (§4.6, `Q-134`) : le BUDGET DE LA CARTE, à côté des
+// presets parce que c'est la même question — ce que le jeu coûte. Un seul
+// nombre aujourd'hui : le plafond de l'entrée dans une scène, le seul poste
+// qui a le droit de suivre la taille de la carte (décor tiré, forêt
+// procédurale). **40 ms, provisoire** : deux fois l'entrée dans la Maison
+// mesurée au palier A sur le PC de Xav, en Moyen (16 à 24 ms sans fenêtre,
+// 14 ms à la main) — le défaut validé par Xav avec la spec. Dépassé, c'est un
+// avertissement en console, jamais un échec : c'est une mesure.
+function erreursBudgetCarte(entry, path) {
+  const v = entry.entree_scene_max_ms;
+  if (typeof v !== 'number' || !Number.isFinite(v) || v <= 0) {
+    return [`${path} > entree_scene_max_ms doit être un nombre strictement positif (le plafond d'entrée en scène, en ms)`];
+  }
+  return [];
+}
 
 // Catalogues déclarés mais non figés (contenu réel figé phase après phase).
 // `specs/10_alignement-follet.md` §5 : l'alignement caché. Son propre

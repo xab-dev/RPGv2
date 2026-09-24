@@ -120,7 +120,7 @@ import { dessinerDialogue, creerPaginateurDialogue } from './ui/dialogue_box.js'
 import { dessinerEcranPrologue } from './ui/ecran_prologue.js';
 import { chargerPolices } from './polices.js';
 import { creerMoniteurPerf, creerMoniteurInactif } from './ui/hud_debug.js';
-import { lireEchelleForcee } from './debug_perf.js';
+import { avertissementEntreeScene, lireEchelleForcee } from './debug_perf.js';
 import {
   configAlignement, regime as regimeAlignement, appliquerDelta, lireAlignement, lireAlignementForce,
 } from './alignement.js';
@@ -703,6 +703,10 @@ export function creerOrchestrateurGrotte({
   // restent tels qu'ils étaient (même patron que les calques du symbole).
   jouerPrologue = false,
 }) {
+  // `specs/13` palier F (`Q-134`) : le plafond de l'entrée en scène, lu une
+  // fois. Son pourquoi est au schéma (`schemas.js#erreursBudgetCarte`), qui
+  // garantit aussi sa présence au démarrage.
+  const PLAFOND_ENTREE_SCENE_MS = registre.obtenir('graphismes', 'budget_carte').entree_scene_max_ms;
   // Les leviers sont lus UNE fois, ici : au-delà de cette ligne, plus personne
   // ne connaît le mot « bas ». Chaque système reçoit un nombre.
   const multiplicateurParticules = valeurLevier(graphismes.config, graphismes.preset, 'particules');
@@ -1931,13 +1935,21 @@ export function creerOrchestrateurGrotte({
     declencherEvenementsEntree(sceneId);
     if (mesureEntree) {
       const tFin = performance.now();
-      moniteurPerf.surEntreeScene({
+      const entree = {
         sceneId,
         dureeMs: tFin - tDebutEntree,
         sceneMs: tSceneEntree - tDebutEntree,
         decorMs: tDecorEntree - tSceneEntree,
         resteMs: tFin - tDecorEntree,
-      });
+        plafondMs: PLAFOND_ENTREE_SCENE_MS,
+      };
+      moniteurPerf.surEntreeScene(entree);
+      // `specs/13` palier F (`Q-134`) : le plafond ne se lit que là où la
+      // mesure existe — hors `?debug=fps`, aucune horloge n'est lue (palier
+      // A). Les scénarios de la règle de l'Annexe tournent sous `?debug=fps` :
+      // c'est là que l'avertissement doit tomber.
+      const avertissement = avertissementEntreeScene(entree, PLAFOND_ENTREE_SCENE_MS);
+      if (avertissement) console.warn(avertissement);
     }
   }
 
@@ -4211,14 +4223,6 @@ export function creerOrchestrateurGrotte({
     });
     for (const p of plantesAffiches) objetsSolAffiches.push({ x: p.x, y: p.y, visuel: p.visuel });
 
-    // MT_mesure-saccades_2026-09-19, piste 4 ("entités dessinées") : no-op
-    // hors `?debug=fps`.
-    moniteurPerf.enregistrerEntites({
-      monstres: monstresAffiches.length,
-      puzzles: puzzlesAffiches.length,
-      objetsSol: objetsSolAffiches.length,
-    });
-
     // Toit des structures (§3.4) : opacité calculée ici (structures.js, pure,
     // testée) à partir du follet actif — RAYON_EFFACEMENT_TOIT = son
     // rayon_lumiere x FACTEUR_EFFACEMENT_TOIT, "un peu plus grand que le
@@ -4316,7 +4320,7 @@ export function creerOrchestrateurGrotte({
       valide: !!(construction.verdict && construction.verdict.ok),
     } : null;
 
-    dessinerScene(ctxLogique, {
+    const entitesDessinees = dessinerScene(ctxLogique, {
       scene: sceneAffichage,
       decor,
       camera,
@@ -4367,7 +4371,7 @@ export function creerOrchestrateurGrotte({
       // ce callback est fourni.
       surRecalculCoucheStatique: moniteurPerf.actif ? moniteurPerf.surRecalculCoucheStatique : undefined,
     });
-    dessinerObscurite(ctxLogique, {
+    const lumieresDessinees = dessinerObscurite(ctxLogique, {
       scene: sceneAffichage,
       camera,
       follet: follet ? { x: follet.x, y: follet.y } : null,
@@ -4375,6 +4379,14 @@ export function creerOrchestrateurGrotte({
       couleurLumiereFollet: companionActif ? companionActif.render.couleur : null,
       // `D-134` : 1 exactement sans l'effet, donc Moyen inchangé.
       respirationLumiereFollet: facteurRespiration(effetHalo, tempsVolFolletMs),
+    });
+    // MT_mesure-saccades_2026-09-19, piste 4 ("entités dessinées") : no-op
+    // hors `?debug=fps`. `specs/13` palier F : ce que render.js a DESSINÉ, sur
+    // ce que la scène portait — la part hors champ, que le palier A ne
+    // savait pas mesurer. Sans obscurité, aucune lumière n'est lue.
+    moniteurPerf.enregistrerEntites({
+      ...entitesDessinees,
+      lumieres: lumieresDessinees ? lumieresDessinees.lumieres : { dessines: 0, presents: 0 },
     });
     // `D-191` : le liseré nocturne, APRÈS le voile (sinon la nuit l'éteint).
     // Moyen : l'alpha suit la respiration, ramenée dans ]0, 1] (le facteur

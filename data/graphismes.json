@@ -32,5 +32,9 @@
       "cle_annonce": "hud.graphismes_alleges",
       "annonce_duree_ms": 3500
     }
+  },
+  {
+    "id": "budget_carte",
+    "entree_scene_max_ms": 40
   }
 ]

@@ -3,7 +3,7 @@ projet: RPG V2
 episode/session: Carte Maison — lisières et performance, avant l'Annexe 1
 type: spec par paliers
 version: 1.0.0
-statut: brouillon
+statut: livrée (paliers A à F), à valider en jeu (V-148)
 catégorie: Spec
 date: 2026-09-24
 Ids_suivi: [Q-52, E-04, D-01, D-153, D-02, Q-61, "D-189 et suivants (à créer : un par palier ; D-188 pris le 24/09 par la zone de Chaos sud)", "Q-131 à Q-135 (à créer)", "V-133 et suivantes (à créer)", "R-22 et suivants (à créer)"]
@@ -195,6 +195,26 @@ Validation : `V-136`. Les trois presets, et surtout **Bas** : le contour seul su
 3. Un test headless **d'indépendance à la taille** : sur une scène synthétique quatre fois plus grande que la Maison, le travail d'une reconstruction (nombre de cases repeintes, nombre de motifs de décor lus) **ne change pas**.
 4. **La règle de l'Annexe**, ajoutée à `CLAUDE.md` : tout ticket qui agrandit la carte ou y ajoute des entités passe `cout_calque` et `traversee_nuit`, puis compare ses chiffres à ceux de clôture de cette spec. Une régression de plus de 20 % *(provisoire)* arrête le ticket et remonte à Xav.
 Relevés de clôture à la main : `R-24` (jour) et `R-25` (nuit), puis l'album de référence de la carte (six vues, `docs/captures/AAAA-MM-JJ_jalon/`).
+
+**Ce que le palier F a livré (24/09, `D-204`)** :
+1. Le **tri par le champ** (`src/champ.js`) : monstres, interactifs, objets au sol, lumières et surlignages hors de la vue ne se dessinent plus. Le tri juge sur ce qui se peint (la boîte des tampons, le disque d'un halo). Aucune mise en veille de `maj()` : le palier A ne la justifiait pas, et ce palier non plus.
+2. Le plafond d'entrée en scène dans `graphismes.json > budget_carte` (**40 ms**, provisoire, `Q-134`). Le relevé `?debug=fps` le cite, et un dépassement s'écrit en console.
+3. `tests/test_budget_carte_2026-09-24.js` : sur une scène quatre fois plus grande, les mêmes cases repeintes, les mêmes motifs lus, les mêmes entités et lumières dessinées.
+4. La règle de l'Annexe, dans les contraintes de méthode de `CLAUDE.md`.
+
+Validation : `V-148`.
+
+**Chiffres de clôture** : la base de la règle de l'Annexe. Chrome sans fenêtre, 1920 × 1080 DPR 1, branche `carte-lisieres-perf` au palier F. Le détail et l'avant/après sont dans le journal du palier F.
+
+| Scénario | Preset | ×1 | ×6 |
+|---|---|---|---|
+| `cout_calque` (jour) : reconstruction moy / max · frames > 20 ms | Bas | 0,92 / 5,6 ms · 0/600 | 4,05 / 6,4 ms · 0/600 |
+| | Moyen | 1,52 / 10,4 ms · 0/600 | 6,41 / 13,1 ms · 1/600 |
+| | Haut | 1,56 / 8,6 ms · 0/600 | 7,75 / 12,7 ms · 0/600 |
+| `traversee_nuit` (Nv.10, 12 rôdeurs) : `dessiner()` · `maj()` · reconstruction · frames > 20 ms | Bas | 0,58 · 0,17 · 0,40 ms · 0/4 443 | 4,13 · 1,13 · 2,10 ms · 1/4 440 |
+| | Moyen | 0,66 · 0,19 · 0,89 ms · 0/4 442 | 4,17-6,02 · 1,04-1,51 · 4,5-5,6 ms · 1-11/4 441 |
+| | Haut | 0,79 · 0,18 · 1,18 ms · 0/4 443 | 4,65-4,73 · 1,03-1,04 · 5,8-6,0 ms · 1-6/4 441 |
+| Entrée en scène (Maison, à chaque chargement) | tous | 17 à 30 ms, plafond 40 ms | — |
 
 ## 8. Critères de réussite
 

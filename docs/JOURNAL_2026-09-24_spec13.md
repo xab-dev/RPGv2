@@ -3,7 +3,7 @@ projet: RPG V2
 episode/session: Spec 13, palier A — mesurer avant de toucher
 type: fichier de bord
 version: 1.0.0
-statut: livré, à relire par Xav
+statut: livré, session close par Xav
 catégorie: Journal
 date: 2026-09-24
 genere_par: claude
@@ -141,3 +141,16 @@ combat, signal des zones. Cela fait ~0,25 ms de `dessiner()` par monstre sous
   en traversant le Champ nord puis le Champ sud). Ils servent de base à toute
   l'Annexe 1.
 - Le palier suivant est **B** (les tampons, `D-153`), dans une session à lui.
+
+## 6. Relevés de Xav et clôture (24/09)
+
+`R-22` (jour) et `R-23` (nuit, 12 monstres), consignés au §6 du suivi. PC de
+Xav, Chrome, manette : **59,9 fps, 0 frame > 20 ms dans les deux cas**.
+`dessiner()` 1,13 → 1,35 ms, `maj()` 0,10 → 0,14 ms : les 12 rôdeurs ne coûtent
+rien sur PC, ce que disait le banc sans bridage. Reconstruction du calque
+4,0-4,7 ms (max 6,3). Entrée en scène à la main : **14,1-14,3 ms**, dont
+10,3-10,5 ms hors scène et décor. Ce sont les chiffres de base de toute
+l'Annexe 1.
+
+**Clôture (24/09, Xav)** : « je vais clore la session avant de passer au
+palier B ». Branche `carte-lisieres-perf` non poussée.

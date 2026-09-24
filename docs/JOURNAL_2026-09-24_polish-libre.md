@@ -154,3 +154,14 @@ qui ne porte que les dix chiffres (`unicodeRange`), en tête de chaque pile.
   (Xav y réfléchit). Atelier : corde → papyrus → bois → hache → pioche →
   besace → épée → coffre. Cuisine : pomme d'amour → fruit cuit → pomme cuite.
   Tests : 185 fichiers verts.
+
+## Spec 13 écrite : lisières de la carte + performance (24/09)
+
+- `specs/13_lisieres-performance-carte.md` v1.0.0, brouillon, aucun code.
+  Demande de Xav : `Q-52` (les lisières) + la performance générale, à
+  régler avant l'Annexe 1. Six paliers : A mesurer, B tampons (`D-153`),
+  C bande entrante (`D-01`), D lisières mécanisme (herbe/chemin), E
+  catalogue + presets, F budget de la carte pour l'Annexe. Forme de la
+  lisière (déléguée à Claude par `E-04`) : bord dentelé à fondu court.
+  Questions `Q-131` à `Q-135` listées dans la spec, **pas encore ouvertes
+  au suivi** : elles le seront au palier qui les pose.

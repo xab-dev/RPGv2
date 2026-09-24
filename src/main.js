@@ -25,6 +25,7 @@ import { chargerScene, resoudreDeplacement, portailFranchi, trouverPositionLibre
 import { calculerCamera } from './camera.js';
 import { RAYON_TOUCHE_FOLLET, geometrieBoiteDialogue, toucherBoiteDialogue } from './ui/hud_layout.js';
 import { genererDecor, lumieresDuDecor } from './decor.js';
+import { tableLisieres } from './lisieres.js';
 import {
   creerBoucle, dessinerScene, dessinerObscurite, dessinerSignalZones, dessinerPaupieres, dessinerTextesFlottants, dessinerLogo, presenter,
   RESOLUTION_LOGIQUE, calculerRectanglePresentation, versCoordonneesLogiques, AURA_TRAIT,
@@ -820,6 +821,15 @@ export function creerOrchestrateurGrotte({
     );
   }
   let visuelsTuiles = construireTableGrains();
+  // `specs/13` palier D : les lisières (qui déborde sur qui, et avec quels
+  // dessins), résolues ici comme la table des grains et refaites aux mêmes
+  // moments — `render.js` la reçoit sans jamais lire un rang. Une table neuve
+  // n'est fabriquée qu'au démarrage et au changement de preset : le calque ne
+  // défile qu'entre deux frames qui lui passent la MÊME table.
+  function construireTableLisieres() {
+    return tableLisieres(registre.tous('tiles'), (id) => registre.obtenir('visuels', id));
+  }
+  let lisieres = construireTableLisieres();
 
   // --- Capacité des conteneurs (`D-118`) ----------------------------------
   //
@@ -989,6 +999,7 @@ export function creerOrchestrateurGrotte({
   function appliquerGraphismes(resolu) {
     graphismesActuels = resolu;
     visuelsTuiles = construireTableGrains();
+    lisieres = construireTableLisieres();
     effetPoussiere = appliquerParticules(
       effetPoussiereCatalogue, levier('particules'), { capacite: CAPACITE_RESERVE },
     );
@@ -4317,6 +4328,7 @@ export function creerOrchestrateurGrotte({
       estFlagActif: flags.has,
       anneauAttaque,
       visuelsTuiles,
+      lisieres,
       objetsSol: objetsSolAffiches,
       structures: structuresAffichees,
       fantome: fantomeAffiche,
@@ -4658,6 +4670,9 @@ export function creerOrchestrateurGrotte({
     // allège le sol sans toucher une silhouette solide. On rend la VRAIE
     // table, jamais une recopie qui pourrait diverger (`D-72`).
     obtenirVisuelsTuiles: () => visuelsTuiles,
+    // `specs/13` palier D : la table des lisières, telle que `render.js` la
+    // reçoit (même raison que la table des grains).
+    obtenirLisieres: () => lisieres,
     // Palier D (§4.5) : changer de preset en jeu. Le preset arrive déjà
     // résolu — `demarrerJeu` a la fenêtre et l'URL, pas l'orchestrateur.
     appliquerGraphismes,

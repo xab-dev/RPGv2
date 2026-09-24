@@ -140,10 +140,11 @@ export function lumieresDuDecor(scene, decor) {
 // la période. Même hash spatial que `couleurTuile` (jamais une avance
 // séquentielle : le calque peut reconstruire dans un autre ordre), avec un
 // SEL propre pour que la variante ne suive pas la couleur — sinon toutes les
-// cases claires porteraient le même dessin.
+// cases claires porteraient le même dessin. `sel` : un autre tirage de la
+// même case, qui ne suit pas celui du grain (`lisieres.js`, le miroir d'un bord).
 const SEL_VARIANTE = 0x5bd1e995;
-export function varianteTuile(scene, x, y, nbVisuels, miroir) {
-  const alea = mulberry32((scene.seed ^ SEL_VARIANTE ^ (x * 83492791) ^ (y * 50331653)) >>> 0);
+export function varianteTuile(scene, x, y, nbVisuels, miroir, sel = SEL_VARIANTE) {
+  const alea = mulberry32((scene.seed ^ sel ^ (x * 83492791) ^ (y * 50331653)) >>> 0);
   const index = Math.min(nbVisuels - 1, Math.floor(alea() * nbVisuels));
   const tirageMiroir = alea();
   return { index: Math.max(0, index), miroir: !!miroir && tirageMiroir < 0.5 };

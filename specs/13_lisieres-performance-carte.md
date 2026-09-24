@@ -86,6 +86,13 @@ Le bord dentelé est aussi ce que fait la nature : **l'herbe mange le bord du ch
 - Le miroir d'un bord se tire par `decor.js#varianteTuile`, avec un **sel propre** (même règle qu'au 23/09 : la variante ne suit pas la couleur). Deux cases voisines de même configuration ne portent donc pas le même bord.
 - `render.js` ne voit jamais un `rang` : il reçoit des poses, comme il reçoit déjà des visuels résolus.
 
+**Ce que le palier D a livré (24/09), là où il s'écarte du texte ci-dessus** (technique, laissé à Claude) :
+- **Une lisière se dessine DANS la case qui la reçoit**, ancrée à son centre (`ancre: "centre"`, vérifié au démarrage), jamais chez la surface qui déborde. Elle lit ses voisines, mais ne peint pas chez elles : le défilement n'a donc pas à grandir son rayon. Le terme « plus 1 si une lisière existe » devient le débordement des **boîtes** des dessins de lisière (`defilement.js#rayonInfluence`, `visuelsLisieres`). Il vaut 0 sur le catalogue actuel, et un bord qui sortirait de sa case l'agrandirait tout seul.
+- **`lisieresCase(scene, x, y, estFlagActif, table)`** reçoit la table des lisières (`lisieres.js#tableLisieres`, construite par `main.js` aux mêmes moments que la table des grains, dessins résolus). `render.js` la transmet sans la lire.
+- **Un coin intérieur** se pose quand la diagonale domine **et qu'aucun des deux côtés qui touchent ce coin n'est dominé** (sinon un bord couvre déjà l'angle). Le coin ne se retourne jamais : son miroir serait le coin d'à côté.
+- `bord` et `coin_interieur` **vont ensemble**. Une surface sans dessin peut être dominée, jamais dominer : le chemin déclare `{ "rang": 1 }` seul. Une tuile posée sur un sol (`render.sol`) ne déclare pas de lisière : c'est son sol qui déborde.
+- Le miroir d'un bord passe par `decor.js#varianteTuile`, qui reçoit maintenant un **sel** optionnel (le défaut ne change pas), un sel par côté.
+
 ### 4.3 Ordre de dessin d'une case (invariant)
 
 Dans chaque case : **aplat → grain de la surface (`render.sol` le cas échéant) → lisières reçues → objet de la tuile**. Puis, une fois toute la fenêtre peinte, le **décor**, par-dessus. La lisière passe donc **sous** l'arbre et **sur** le grain. Cet ordre est la définition du calque : le palier C ne doit pas pouvoir le changer, et un test le fige.

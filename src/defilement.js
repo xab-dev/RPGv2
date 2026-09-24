@@ -140,9 +140,13 @@ function debordements(visuel, rotationMaxDeg = 0) {
 //   → ses visuels), ancrés au MILIEU DU BAS de leur case ;
 // - `visuelsDecor` : les visuels des motifs de décor, ancrés n'importe où DANS
 //   leur case (leur case est celle de leur ancre), avec une rotation continue
-//   bornée par `rotationDecorMaxDeg`.
-// Le palier D (lisières) y ajoutera la case voisine que touche une lisière.
-export function rayonInfluence({ visuelsTuiles, visuelsDecor = [], tileSize, rotationDecorMaxDeg = 0 }) {
+//   bornée par `rotationDecorMaxDeg` ;
+// - `visuelsLisieres` (palier D, `lisieres.js#visuelsDesLisieres`) : les bords
+//   et les coins, ancrés au CENTRE de la case qui les reçoit, tournés par quart
+//   de tour. Une lisière lit ses voisines mais se dessine chez elle : tant que
+//   son dessin tient dans sa case, elle n'ajoute rien au rayon. Un bord qui
+//   déborderait l'agrandirait ici, tout seul.
+export function rayonInfluence({ visuelsTuiles, visuelsDecor = [], visuelsLisieres = [], tileSize, rotationDecorMaxDeg = 0 }) {
   let depassement = 0;
   for (const visuels of visuelsTuiles.values()) {
     for (const visuel of visuels) {
@@ -157,6 +161,12 @@ export function rayonInfluence({ visuelsTuiles, visuelsDecor = [], tileSize, rot
     const d = debordements(visuel, rotationDecorMaxDeg);
     // L'ancre peut être au bord même de sa case : tout le débordement compte.
     depassement = Math.max(depassement, d.gauche, d.droite, d.haut, d.bas);
+  }
+  for (const visuel of visuelsLisieres) {
+    // Un quart de tour échange les côtés : le plus grand débordement vaut
+    // pour les quatre.
+    const d = debordements(visuel);
+    depassement = Math.max(depassement, Math.max(d.gauche, d.droite, d.haut, d.bas) - tileSize / 2);
   }
   if (depassement <= 0) return 0;
   return Math.ceil((depassement + MARGE_ANTIALIAS_LOGIQUE) / tileSize);

@@ -232,6 +232,49 @@ function validerTile(entry, catalogs, path) {
     else if (sol.solid) erreurs.push(`${path} > render.sol "${entry.render.sol}" est solide : un sol est une surface`);
     else if (sol.render && sol.render.sol !== undefined) erreurs.push(`${path} > render.sol "${entry.render.sol}" déclare lui-même un sol`);
   }
+  if (entry.render && entry.render.lisiere !== undefined) {
+    erreurs.push(...erreursLisiere(entry, catalogs, `${path} > render.lisiere`));
+  }
+  return erreurs;
+}
+
+// render.lisiere (`specs/13` §4.1, palier D) : une SURFACE qui déborde sur ses
+// voisines de rang plus bas (`src/lisieres.js`). Tout ce qui ne se dessinerait
+// pas, ou se dessinerait faux, est refusé ici plutôt que de laisser un bord
+// net en silence :
+// - `rang` : un entier >= 1 ;
+// - `bord` et `coin_interieur` vont ensemble (un bord sans coin laisserait la
+//   marche de 32 px au coin rentrant), référencent visuels.json, et sont
+//   ancrés au `centre` (ils sont posés au centre de la case qui les reçoit, et
+//   tournés autour de lui) ;
+// - une tuile SOLIDE n'en déclare pas (sa silhouette est le monde), ni une
+//   tuile posée sur un sol (`render.sol` : sa surface est ce sol, c'est lui
+//   qui déborde ou non) ;
+// - une surface qui en domine une autre (rang plus grand) a un bord : sinon
+//   elle dominerait sans rien dessiner.
+function erreursLisiere(entry, catalogs, chemin) {
+  const erreurs = [];
+  const lisiere = entry.render.lisiere;
+  if (!lisiere || typeof lisiere !== 'object' || Array.isArray(lisiere)) {
+    return [`${chemin} doit être un objet { rang, bord?, coin_interieur? }`];
+  }
+  if (!Number.isInteger(lisiere.rang) || lisiere.rang < 1) erreurs.push(`${chemin} > rang doit être un entier >= 1`);
+  if (entry.solid) erreurs.push(`${chemin} : une tuile solide ne déborde pas (sa silhouette est le monde)`);
+  if (entry.render.sol !== undefined) erreurs.push(`${chemin} : une tuile posée sur un sol n'en déclare pas, c'est son sol qui déborde`);
+  if ((lisiere.bord === undefined) !== (lisiere.coin_interieur === undefined)) {
+    erreurs.push(`${chemin} : bord et coin_interieur vont ensemble`);
+  }
+  for (const champ of ['bord', 'coin_interieur']) {
+    if (lisiere[champ] === undefined) continue;
+    const visuel = (catalogs.visuels || []).find((v) => v.id === lisiere[champ]);
+    if (!visuel) erreurs.push(`${chemin} > ${champ} "${lisiere[champ]}" introuvable dans visuels.json`);
+    else if (visuel.ancre !== 'centre') erreurs.push(`${chemin} > ${champ} "${lisiere[champ]}" doit être ancré au centre`);
+  }
+  if (lisiere.bord === undefined && Number.isInteger(lisiere.rang)) {
+    const dominee = (catalogs.tiles || []).find((t) => t !== entry && t.render && t.render.lisiere
+      && Number.isInteger(t.render.lisiere.rang) && t.render.lisiere.rang < lisiere.rang);
+    if (dominee) erreurs.push(`${chemin} : domine "${dominee.id}" (rang plus bas) sans bord à dessiner`);
+  }
   return erreurs;
 }
 

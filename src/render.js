@@ -7,6 +7,7 @@ import { dessinerVisuel, echelleVisuel } from './visuels.js';
 import { boiteTampon, cleTampon, creerCacheTampons } from './tampons.js';
 import { couleurTuile, tuileDeSol, varianteTuile, ROTATION_MAX_DEG } from './decor.js';
 import { cellulesAPeindre, indexerDecor, motifsDesCellules, planDefilement, rayonInfluence } from './defilement.js';
+import { lisieresCase, visuelsDesLisieres } from './lisieres.js';
 import { dessinerBarre, PALETTE_JAUGES } from './ui/barre.js';
 import { POLICE_CALLIGRAPHIE, POLICE_CHIFFRES } from './polices.js';
 
@@ -332,7 +333,7 @@ const ALPHA_FANTOME = 0.6;
 // cette fenêtre change de tuile de départ (à chaque franchissement de tuile
 // pendant un déplacement, pas à chaque frame) — un "cache de secteur" au
 // sens de la fiche, pas un tableau pré-calculé de toute la carte.
-let coucheStatique = null; // { sceneId, echelle, signaturePortes, xDebut, yDebut, xFin, yFin, canvas, numero, decor, visuelsTuiles }
+let coucheStatique = null; // { sceneId, echelle, signaturePortes, xDebut, yDebut, xFin, yFin, canvas, numero, decor, visuelsTuiles, lisieres }
 // `specs/13` paliers B puis C : DEUX canvas de calque, alloués une fois à la
 // taille de la plus grande fenêtre possible (`tailleMaxCalque`), qui se passent
 // le relais (ping-pong) : un défilement recopie l'un dans l'autre, décalé. En
@@ -342,6 +343,7 @@ let coucheStatique = null; // { sceneId, echelle, signaturePortes, xDebut, yDebu
 // survivent à `invaliderCoucheStatique` : jeter le calque, c'est jeter ce
 // qu'il MONTRE.
 const canvasCalques = [null, null];
+const AUCUNE_LISIERE = new Map();
 
 // `specs/13` palier B (`D-153`) : les dessins de tuile, tramés une fois et
 // posés ensuite (`tampons.js`). `echelleTampons` est l'échelle à laquelle le
@@ -382,24 +384,31 @@ function fenetreDe({ xDebut, yDebut, xFin, yFin }) {
   return { xDebut, yDebut, xFin, yFin };
 }
 
-// Ce que le défilement doit savoir d'un décor et d'une table des grains : le
-// décor rangé par case, et le RAYON D'INFLUENCE (`defilement.js#rayonInfluence`,
-// jusqu'où une case peint chez ses voisines). Calculés une fois par liste de
-// décor et par table : `main.js` refait ces deux objets à l'entrée en scène et
-// au changement de preset, et ne les modifie jamais en place.
+// Ce que le défilement doit savoir d'un décor, d'une table des grains et d'une
+// table des lisières : le décor rangé par case, et le RAYON D'INFLUENCE
+// (`defilement.js#rayonInfluence`, jusqu'où une case peint chez ses voisines).
+// Calculés une fois par liste de décor et par table : `main.js` refait ces
+// objets à l'entrée en scène et au changement de preset, et ne les modifie
+// jamais en place.
 let influence = null;
-function influenceDu(decor, visuelsTuiles, tileSize) {
-  if (influence && influence.decor === decor && influence.visuelsTuiles === visuelsTuiles && influence.tileSize === tileSize) {
+function influenceDu(decor, visuelsTuiles, lisieres, tileSize) {
+  if (influence && influence.decor === decor && influence.visuelsTuiles === visuelsTuiles
+    && influence.lisieres === lisieres && influence.tileSize === tileSize) {
     return influence;
   }
   const memeDecor = influence && influence.decor === decor && influence.tileSize === tileSize;
   influence = {
     decor,
     visuelsTuiles,
+    lisieres,
     tileSize,
     index: memeDecor ? influence.index : indexerDecor(decor, tileSize),
     rayon: rayonInfluence({
-      visuelsTuiles, visuelsDecor: new Set(decor.map((m) => m.visuel)), tileSize, rotationDecorMaxDeg: ROTATION_MAX_DEG,
+      visuelsTuiles,
+      visuelsDecor: new Set(decor.map((m) => m.visuel)),
+      visuelsLisieres: visuelsDesLisieres(lisieres),
+      tileSize,
+      rotationDecorMaxDeg: ROTATION_MAX_DEG,
     }),
   };
   return influence;
@@ -519,26 +528,42 @@ function dessinerVisuelDeTuile(ctx, scene, tuile, visuels, x, y, localX, localY,
   const visuel = visuels[index];
   const ancreX = localX + scene.tileSize / 2;
   const ancreY = localY + scene.tileSize;
+  poserDessin(ctx, visuel, ancreX, ancreY, echelle, miroir, 0);
+}
+
+// `specs/13` palier D : une LISIÈRE reçue (`lisieres.js#lisieresCase`), ancrée
+// au CENTRE de sa case — un quart de tour autour du centre garde le dessin dans
+// la case. Tamponnée comme un grain : la rotation entre dans la clé.
+function dessinerLisiere(ctx, pose, localX, localY, tileSize, echelle) {
+  poserDessin(ctx, pose.visuel, localX + tileSize / 2, localY + tileSize / 2, echelle, pose.miroir, pose.rotation);
+}
+
+// Un dessin de tuile, posé depuis son tampon (ou rejoué en vectoriel sous
+// l'instrument `definirTamponsActifs(false)`). L'ancre est ramenée à un pixel
+// physique entier (elle l'est déjà à toute échelle entière : le jeu réel), et le
+// tampon la porte sur un pixel entier : le trait tombe au même endroit de la
+// grille des pixels que s'il était dessiné ici.
+function poserDessin(ctx, visuel, ancreX, ancreY, echelle, miroir, rotation) {
   if (!tamponsActifs) {
-    dessinerVisuel(ctx, visuel, ancreX, ancreY, { miroir });
+    dessinerVisuel(ctx, visuel, ancreX, ancreY, { miroir, rotation });
     return;
   }
-  const cle = cleTampon({ id: visuel.id, nbPrimitives: visuel.primitives.length, miroir, echelle });
-  const tampon = cacheTampons.obtenir(cle, visuel, echelle, miroir);
+  const cle = cleTampon({ id: visuel.id, nbPrimitives: visuel.primitives.length, miroir, rotation, echelle });
+  const tampon = cacheTampons.obtenir(cle, visuel, echelle, miroir, rotation);
   poserTampon(ctx, tampon, Math.round(ancreX * echelle), Math.round(ancreY * echelle), echelle);
 }
 
 // Trame UN dessin dans un canvas à sa taille (`tampons.js#boiteTampon`), son
 // ancre sur un pixel entier. Contexte à lui, transform posée à neuf : rien ne
 // fuit vers le calque.
-function fabriquerTampon(visuel, echelle, miroir) {
-  const boite = boiteTampon(visuel, echelle, { echelleVisuel: echelleVisuel(visuel), miroir });
+function fabriquerTampon(visuel, echelle, miroir, rotation) {
+  const boite = boiteTampon(visuel, echelle, { echelleVisuel: echelleVisuel(visuel), miroir, rotation });
   const canvas = document.createElement('canvas');
   canvas.width = Math.max(1, boite.largeur);
   canvas.height = Math.max(1, boite.hauteur);
   const ctxTampon = canvas.getContext('2d');
   ctxTampon.setTransform(echelle, 0, 0, echelle, boite.ancreX, boite.ancreY);
-  dessinerVisuel(ctxTampon, visuel, 0, 0, { miroir });
+  dessinerVisuel(ctxTampon, visuel, 0, 0, { miroir, rotation });
   return { canvas, ancreX: boite.ancreX, ancreY: boite.ancreY };
 }
 
@@ -571,12 +596,13 @@ function canvasDuCalque(i, tileSize, echelle) {
 
 // Peint les `cellules` de `fenetre`, puis le décor qui y est ancré, dans
 // l'ordre qui DÉFINIT le calque (`specs/13` §4.3) : case par case, ligne par
-// ligne, l'aplat, le grain de sa surface, l'objet de la tuile ; puis le décor,
-// dans l'ordre de sa liste. La reconstruction complète et la bande d'un
+// ligne, l'aplat, le grain de sa surface, les lisières qu'elle reçoit, l'objet
+// de la tuile ; puis le décor, dans l'ordre de sa liste. La lisière passe donc
+// SOUS l'arbre et SUR le grain. La reconstruction complète et la bande d'un
 // défilement passent toutes deux par ici : c'est ce qui garantit qu'elles
 // peignent la même chose. Le contexte est sous la transform du calque
 // (`echelle`) et y reste.
-function peindreCellules(ctxCouche, scene, index, echelle, estFlagActif, fenetre, cellules, visuelsTuiles) {
+function peindreCellules(ctxCouche, scene, index, echelle, estFlagActif, fenetre, cellules, visuelsTuiles, lisieres) {
   const { xDebut, yDebut } = fenetre;
   for (const { x, y } of cellules) {
     const couleur = couleurTuile(scene, x, y, estFlagActif);
@@ -589,10 +615,15 @@ function peindreCellules(ctxCouche, scene, index, echelle, estFlagActif, fenetre
     const tuile = scene.tuileA(x, y, estFlagActif);
     // `Q-70` : le grain du sol d'abord (celui de la table, donc allégé par
     // le preset exactement comme la surface voisine), l'objet par-dessus.
+    // Une tuile sans `render.sol` EST sa surface : son dessin est son grain,
+    // et il passe avant les lisières.
     const sol = tuile && tuileDeSol(scene, tuile);
-    const grainSol = sol && sol !== tuile && visuelsTuiles.get(sol.id);
+    const grainSol = sol && visuelsTuiles.get(sol.id);
     if (grainSol) dessinerVisuelDeTuile(ctxCouche, scene, sol, grainSol, x, y, localX, localY, echelle);
-    const visuelsTuile = tuile && visuelsTuiles.get(tuile.id);
+    for (const pose of lisieresCase(scene, x, y, estFlagActif, lisieres)) {
+      dessinerLisiere(ctxCouche, pose, localX, localY, scene.tileSize, echelle);
+    }
+    const visuelsTuile = tuile && tuile !== sol && visuelsTuiles.get(tuile.id);
     if (visuelsTuile) dessinerVisuelDeTuile(ctxCouche, scene, tuile, visuelsTuile, x, y, localX, localY, echelle);
   }
 
@@ -609,16 +640,16 @@ function peindreCellules(ctxCouche, scene, index, echelle, estFlagActif, fenetre
 
 // `xFin`/`yFin` sont gardés depuis `D-01` : sans eux, personne ne peut dire
 // jusqu'où le calque couvre, donc personne ne peut décider de NE PAS le
-// reconstruire (cf. `calqueDoitEtreReconstruit`). `decor` et `visuelsTuiles`
-// disent ce que le calque montre : un défilement n'a le droit de recopier que
-// ce qu'il redessinerait à l'identique.
-function calqueDe(scene, echelle, signaturePortes, { xDebut, yDebut, xFin, yFin }, canvas, numero, decor, visuelsTuiles) {
-  return { sceneId: scene.id, echelle, signaturePortes, xDebut, yDebut, xFin, yFin, canvas, numero, decor, visuelsTuiles };
+// reconstruire (cf. `calqueDoitEtreReconstruit`). `decor`, `visuelsTuiles` et
+// `lisieres` disent ce que le calque montre : un défilement n'a le droit de
+// recopier que ce qu'il redessinerait à l'identique.
+function calqueDe(scene, echelle, signaturePortes, { xDebut, yDebut, xFin, yFin }, canvas, numero, decor, visuelsTuiles, lisieres) {
+  return { sceneId: scene.id, echelle, signaturePortes, xDebut, yDebut, xFin, yFin, canvas, numero, decor, visuelsTuiles, lisieres };
 }
 
 // La reconstruction COMPLÈTE : toute la fenêtre, sur un canvas effacé.
-function construireCoucheStatique(scene, decor, echelle, signaturePortes, estFlagActif, fenetre, visuelsTuiles) {
-  const { index } = influenceDu(decor, visuelsTuiles, scene.tileSize);
+function construireCoucheStatique(scene, decor, echelle, signaturePortes, estFlagActif, fenetre, visuelsTuiles, lisieres) {
+  const { index } = influenceDu(decor, visuelsTuiles, lisieres, scene.tileSize);
   const numero = coucheStatique ? coucheStatique.numero : 0;
   const canvas = canvasDuCalque(numero, scene.tileSize, echelle);
   const ctxCouche = canvas.getContext('2d');
@@ -629,8 +660,8 @@ function construireCoucheStatique(scene, decor, echelle, signaturePortes, estFla
   // Repère logique -> physique de CE calque (MT_rendu-net_2026-09-15) : un
   // dessin ici sort net à la résolution physique, jamais ré-échantillonné.
   ctxCouche.setTransform(echelle, 0, 0, echelle, 0, 0);
-  peindreCellules(ctxCouche, scene, index, echelle, estFlagActif, fenetre, cellulesAPeindre(fenetre), visuelsTuiles);
-  return calqueDe(scene, echelle, signaturePortes, fenetre, canvas, numero, decor, visuelsTuiles);
+  peindreCellules(ctxCouche, scene, index, echelle, estFlagActif, fenetre, cellulesAPeindre(fenetre), visuelsTuiles, lisieres);
+  return calqueDe(scene, echelle, signaturePortes, fenetre, canvas, numero, decor, visuelsTuiles, lisieres);
 }
 
 // `specs/13` palier C (`D-01`) : le DÉFILEMENT. Seules les cases qui peuvent
@@ -656,10 +687,10 @@ function construireCoucheStatique(scene, decor, echelle, signaturePortes, estFla
 // `tileSize × echelle`, entier à toute échelle du jeu réel. Sous `?echelle=N`
 // décimale (debug), une case tomberait entre deux pixels et la recopie
 // ré-échantillonnerait : on reconstruit alors en entier, toujours.
-function defilerCoucheStatique(ancien, scene, decor, echelle, estFlagActif, fenetre, visuelsTuiles) {
+function defilerCoucheStatique(ancien, scene, decor, echelle, estFlagActif, fenetre, visuelsTuiles, lisieres) {
   const pas = scene.tileSize * echelle;
   if (!Number.isInteger(pas)) return null;
-  const { index, rayon } = influenceDu(decor, visuelsTuiles, scene.tileSize);
+  const { index, rayon } = influenceDu(decor, visuelsTuiles, lisieres, scene.tileSize);
   const plan = planDefilement(ancien, fenetre, rayon);
   if (!plan) return null;
 
@@ -669,7 +700,9 @@ function defilerCoucheStatique(ancien, scene, decor, echelle, estFlagActif, fene
   ctxCouche.setTransform(1, 0, 0, 1, 0, 0);
   ctxCouche.clearRect(0, 0, canvas.width, canvas.height);
   ctxCouche.setTransform(echelle, 0, 0, echelle, 0, 0);
-  peindreCellules(ctxCouche, scene, index, echelle, estFlagActif, fenetre, cellulesAPeindre(fenetre, plan.sansDessin), visuelsTuiles);
+  peindreCellules(
+    ctxCouche, scene, index, echelle, estFlagActif, fenetre, cellulesAPeindre(fenetre, plan.sansDessin), visuelsTuiles, lisieres,
+  );
 
   // La recopie, sous le repère identité : effacer, puis poser. Sur des pixels
   // effacés, `source-over` pose les pixels tels quels (prémultipliés, rien à
@@ -690,7 +723,7 @@ function defilerCoucheStatique(ancien, scene, decor, echelle, estFlagActif, fene
   // reconstruction complète.
   ctxCouche.setTransform(echelle, 0, 0, echelle, 0, 0);
 
-  return calqueDe(scene, echelle, ancien.signaturePortes, fenetre, canvas, numero, decor, visuelsTuiles);
+  return calqueDe(scene, echelle, ancien.signaturePortes, fenetre, canvas, numero, decor, visuelsTuiles, lisieres);
 }
 
 // Composite le calque statique (reconstruit si scène/échelle/portes/fenêtre
@@ -703,7 +736,7 @@ function defilerCoucheStatique(ancien, scene, decor, echelle, estFlagActif, fene
 // (donc jamais de `performance.now()`) hors `?debug=fps`, cf. creerBoucle
 // ci-dessus pour le même patron. Reçoit { dureeMs } exactement quand le
 // calque est effectivement reconstruit, jamais sur un simple recadrage.
-function dessinerCoucheStatique(ctx, scene, decor, camera, estFlagActif, visuelsTuiles, surRecalcul) {
+function dessinerCoucheStatique(ctx, scene, decor, camera, estFlagActif, visuelsTuiles, lisieres, surRecalcul) {
   const echelle = echelleDepuisCanvas(ctx.canvas.width);
   const signature = signaturePortesScene(scene, estFlagActif);
   if (echelle !== echelleTampons) {
@@ -720,13 +753,18 @@ function dessinerCoucheStatique(ctx, scene, decor, camera, estFlagActif, visuels
     fenetreImposee = null;
     const debut = surRecalcul ? performance.now() : 0;
     // `specs/13` palier C : la MARCHE défile (même scène, même échelle, mêmes
-    // portes, même décor, même table des grains : seule la caméra a bougé) ;
-    // tout le reste, et tout saut de caméra, reconstruit en entier.
+    // portes, même décor, même table des grains, même table des lisières :
+    // seule la caméra a bougé) ; tout le reste, et tout saut de caméra,
+    // reconstruit en entier.
     const ancien = coucheStatique;
     const marche = defilementActif && ancien && ancien.sceneId === scene.id && ancien.echelle === echelle
-      && ancien.signaturePortes === signature && ancien.decor === decor && ancien.visuelsTuiles === visuelsTuiles;
-    const defile = marche ? defilerCoucheStatique(ancien, scene, decor, echelle, estFlagActif, fenetre, visuelsTuiles) : null;
-    coucheStatique = defile || construireCoucheStatique(scene, decor, echelle, signature, estFlagActif, fenetre, visuelsTuiles);
+      && ancien.signaturePortes === signature && ancien.decor === decor && ancien.visuelsTuiles === visuelsTuiles
+      && ancien.lisieres === lisieres;
+    const defile = marche
+      ? defilerCoucheStatique(ancien, scene, decor, echelle, estFlagActif, fenetre, visuelsTuiles, lisieres)
+      : null;
+    coucheStatique = defile
+      || construireCoucheStatique(scene, decor, echelle, signature, estFlagActif, fenetre, visuelsTuiles, lisieres);
     if (surRecalcul) surRecalcul({ dureeMs: performance.now() - debut, defilement: defile !== null });
   }
 
@@ -760,6 +798,12 @@ function dessinerCoucheStatique(ctx, scene, decor, camera, estFlagActif, visuels
 export function dessinerScene(ctx, {
   scene, decor, camera, hero, heroVisuel, heroTeinte = null, monstres = [], follet, puzzles = [], estFlagActif, anneauAttaque,
   visuelsTuiles = new Map(), objetsSol = [], structures = [], fantome = null,
+  // `specs/13` palier D : la table des lisières (`lisieres.js#tableLisieres`),
+  // construite par `main.js` et rendue telle quelle à `lisieresCase` — ce
+  // fichier ne lit jamais un rang. Absente = aucune lisière. Le défaut est UNE
+  // table, toujours la même : une table neuve à chaque frame empêcherait le
+  // calque de défiler.
+  lisieres = AUCUNE_LISIERE,
   // MT_trainee-poussiere_2026-09-19 : bouffées déjà calculées par
   // src/poussiere.js (pur) et déjà résolues en visuel par l'appelant — ce
   // fichier ne connaît ni le module, ni visuels.json par id. Défaut vide :
@@ -780,7 +824,7 @@ export function dessinerScene(ctx, {
   // Tuiles + décor (§3.4 grotte-polish, fenêtré §2.2 03_maison-exterieur) :
   // calque statique pré-rendu, recadré par caméra — remplace les anciennes
   // boucles inline (fillRect par tuile + petit carré par motif de décor).
-  dessinerCoucheStatique(ctx, scene, decor, camera, estFlagActif, visuelsTuiles, surRecalculCoucheStatique);
+  dessinerCoucheStatique(ctx, scene, decor, camera, estFlagActif, visuelsTuiles, lisieres, surRecalculCoucheStatique);
 
   // Leviers (§2.1/§3.3 : première fois qu'un puzzle "levier" a un rendu du
   // tout — Phase 1 posait le flag sans jamais rien afficher). Ancre "bas" :

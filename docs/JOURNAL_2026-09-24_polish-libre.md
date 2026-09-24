@@ -171,3 +171,11 @@ qui ne porte que les dix chiffres (`unicodeRange`), en tête de chaque pile.
 - Données seules (`scenes.json`, `spawns.json`), miroir de la zone nord-est
   dans le Champ sud. `test_07a` éprouve la vraie table au lieu de sa copie en
   mémoire. Proposition : `Q-136` (une ligne d'ambiance). Tests : 185 verts.
+
+## Spec 14 écrite : l'Annexe 1 (24/09)
+
+- `specs/14_annexe-1.md` v1.0.0, brouillon, aucun code. Scénario dicté par
+  Xav repris au §3 ; huit paliers (A niveaux → H boucle). Deux bloquants :
+  **B1** (dégâts de la compétence sur Esprit, contre D1⑧ verrouillée) et
+  **B2** (RB/Tab/toucher = déjà `target_next`). Questions `Q-137` à `Q-147`
+  listées dans la spec, pas encore ouvertes au suivi.

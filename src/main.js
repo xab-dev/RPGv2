@@ -4441,6 +4441,9 @@ export function creerOrchestrateurGrotte({
     // résolu — `demarrerJeu` a la fenêtre et l'URL, pas l'orchestrateur.
     appliquerGraphismes,
     obtenirGraphismes: () => graphismesActuels,
+    // `D-193` : le niveau d'ornements, pour la feuille de style des menus
+    // (halo qui respire, braises) — un NOMBRE, jamais le preset.
+    niveauOrnements: () => levier('ornements'),
     // Palier C (`D-114`) : le décor réellement généré pour la scène courante.
     // Même raison que la table ci-dessus — prouver l'inclusion Bas ⊂ Moyen ⊂
     // Haut demande le vrai décor, pas une régénération refaite côté test.
@@ -5098,7 +5101,16 @@ export async function demarrerJeu() {
     // qui est l'endroit où la couche d'input est rafraîchie — on lit donc la
     // valeur de cette frame-ci, jamais celle d'avant. Et c'est un accesseur
     // à part, pas un verbe : aucun système de jeu ne voit ce stick.
-    maj: (delta) => { orchestrateur.maj(delta); curseur.avancer(delta, input.pointeurManette()); },
+    maj: (delta) => {
+      orchestrateur.maj(delta);
+      curseur.avancer(delta, input.pointeurManette());
+      // `D-193` : les ornements des menus sont du CSS, lu sur
+      // `<html data-ornements>`. Relu à chaque frame parce que le preset
+      // « auto » peut descendre de lui-même, côté orchestrateur, qui ne
+      // touche pas au DOM ; l'attribut n'est réécrit que s'il change.
+      const ornements = String(orchestrateur.niveauOrnements());
+      if (document.documentElement.dataset.ornements !== ornements) document.documentElement.dataset.ornements = ornements;
+    },
     dessiner: () => { orchestrateur.dessiner(); curseur.dessiner(); },
     surFrame: moniteurPerf.actif ? moniteurPerf.surFrame : undefined,
   }).demarrer();

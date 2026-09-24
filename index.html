@@ -270,6 +270,65 @@
         0 0 0 calc(var(--menu-focus-bordure-px) - var(--menu-carte-bordure-px)) var(--carte-trait),
         0 0 0 calc(var(--menu-focus-halo-u) * var(--u)) color-mix(in srgb, var(--carte-trait) var(--menu-focus-halo-opacite), transparent);
     }
+    /* `D-193` — les ornements du menu, lus sur `<html data-ornements>` (le
+       levier `ornements` du réglage graphique : Bas 0, Moyen 1, Haut 2).
+       Bas : le focus ci-dessus, rien qui bouge. Moyen : le halo de la case
+       sélectionnée s'élargit en une lueur qui RESPIRE, à la couleur du trait
+       (l'accent du follet, ou l'écarlate d'une carte dangereuse). Haut : en
+       plus, des braises montent dans la case. Les deux ombres du focus sont
+       redites dans chaque image-clé : `box-shadow` s'anime en entier.
+       La lueur extérieure ne dépasse jamais 5 u : la liste qui défile ne
+       laisse que 4 u de marge autour des tuiles (la place du halo), et au-delà
+       elle serait coupée net. C'est la lueur INTÉRIEURE (`inset`), qu'aucun
+       bord ne rogne, qui porte le souffle. */
+    @keyframes menu-lueur-respire {
+      0%, 100% {
+        box-shadow:
+          0 0 0 calc(var(--menu-focus-bordure-px) - var(--menu-carte-bordure-px)) var(--carte-trait),
+          0 0 0 calc(var(--menu-focus-halo-u) * var(--u)) color-mix(in srgb, var(--carte-trait) var(--menu-focus-halo-opacite), transparent),
+          0 0 calc(2 * var(--u)) 0 color-mix(in srgb, var(--carte-trait) 20%, transparent),
+          inset 0 0 calc(6 * var(--u)) 0 color-mix(in srgb, var(--carte-trait) 10%, transparent);
+      }
+      50% {
+        box-shadow:
+          0 0 0 calc(var(--menu-focus-bordure-px) - var(--menu-carte-bordure-px)) var(--carte-trait),
+          0 0 0 calc(var(--menu-focus-halo-u) * var(--u)) color-mix(in srgb, var(--carte-trait) var(--menu-focus-halo-opacite), transparent),
+          0 0 calc(4 * var(--u)) calc(1 * var(--u)) color-mix(in srgb, var(--carte-trait) 45%, transparent),
+          inset 0 0 calc(16 * var(--u)) calc(1 * var(--u)) color-mix(in srgb, var(--carte-trait) 28%, transparent);
+      }
+    }
+    html[data-ornements="1"] .carte-focus, html[data-ornements="2"] .carte-focus {
+      animation: menu-lueur-respire 2.4s ease-in-out infinite;
+    }
+    /* Les braises (Haut) : des couches de FOND de la case focalisée, posées
+       sur le relief (`D-100`, redit en dernière couche) — un fond passe
+       toujours sous le contenu, donc ni pseudo-élément ni positionnement qui
+       dérangerait le badge ou la marque d'une tuile. Chaque couche est une
+       braise qui remonte d'un multiple exact de sa propre hauteur de motif :
+       la boucle est sans couture, et chacune va à sa vitesse. Des motifs
+       grands, de tailles sans diviseur commun, et une braise décentrée dans
+       chacun : sur une grande carte, un motif serré se lisait comme une grille
+       de points (papier millimétré) et non comme des braises. La spécificité
+       (`html[…] .carte-focus`) l'emporte sur le relief et sur
+       `.tuile.carte-focus`, qui remettent tous deux le fond à zéro. */
+    html[data-ornements="2"] .carte-focus {
+      background-image:
+        radial-gradient(circle at 23% 71%, color-mix(in srgb, var(--carte-trait) 80%, transparent) 0 calc(0.9 * var(--u)), transparent calc(2 * var(--u))),
+        radial-gradient(circle at 68% 34%, color-mix(in srgb, var(--carte-trait) 60%, transparent) 0 calc(1.3 * var(--u)), transparent calc(2.8 * var(--u))),
+        radial-gradient(circle at 41% 12%, color-mix(in srgb, var(--carte-trait) 75%, transparent) 0 calc(0.8 * var(--u)), transparent calc(1.8 * var(--u))),
+        linear-gradient(180deg, var(--menu-carte-lisere) 0, var(--menu-carte-lisere) 1px, var(--menu-carte-relief) 1px, transparent 55%);
+      background-size: calc(67 * var(--u)) calc(83 * var(--u)), calc(97 * var(--u)) calc(113 * var(--u)), calc(53 * var(--u)) calc(131 * var(--u)), 100% 100%;
+      background-repeat: repeat, repeat, repeat, no-repeat;
+      animation: menu-lueur-respire 2.4s ease-in-out infinite, menu-braises 9s linear infinite;
+    }
+    @keyframes menu-braises {
+      from { background-position: calc(5 * var(--u)) 0, calc(14 * var(--u)) 0, 0 0, 0 0; }
+      to { background-position: calc(5 * var(--u)) calc(-83 * var(--u)), calc(14 * var(--u)) calc(-113 * var(--u)), 0 calc(-131 * var(--u)), 0 0; }
+    }
+    /* Qui a demandé moins de mouvement au système n'en reçoit pas du menu. */
+    @media (prefers-reduced-motion: reduce) {
+      html[data-ornements] .carte-focus { animation: none; }
+    }
     /* Appuyé : l'inverse du focus, sans animation. */
     .carte:active, .cartes-bouton-entete:active {
       background: color-mix(in srgb, var(--menu-carte), black var(--menu-appuye-assombrie));

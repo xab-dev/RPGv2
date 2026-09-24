@@ -193,6 +193,8 @@ Le visuel se juge au palier D, sur un seul point : **l'escalier ne se lit plus l
 
 ## 9. Questions à ouvrir au suivi
 
+**Xav, 24/09 : « je valide Q-132, Q-133, Q-134 et Q-135 » ; la partie technique est laissée à Claude.** Ces quatre défauts sont donc des décisions ; `Q-131` (la forme) se juge au palier D.
+
 | Id | Question | Retenu par défaut |
 |---|---|---|
 | `Q-131` | La **forme** : bord dentelé à fondu court (décision déléguée à Claude, §3) — Xav la voit au palier D | Bord dentelé + trois pas d'ombre |

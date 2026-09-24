@@ -201,4 +201,5 @@ variété, et la plume n'a pas été reprise depuis longtemps. Branche
 
 | Commit | Ticket | Ce qu'il faut en retenir |
 |---|---|---|
-| (voir log) | `D-189` — les flaques | Quatre dessins de plus, poids partagé au même rang : le décor ne bouge pas (vérifié). `V-133` ouverte. Tests : 185 fichiers verts |
+| `78e9e03` | `D-189` — les flaques | Quatre dessins de plus, poids partagé au même rang : le décor ne bouge pas (vérifié). `V-133` ouverte. Tests : 185 fichiers verts |
+| (voir log) | `D-190` — la plume | Rachis courbe, dégradés au lieu d'une tranche blanc/noir, bandes et barbes couchées vers la pointe (d'après la photo de Xav). Rotation cuite dans les points : l'icône de la Poche ignore la rotation d'une primitive. `V-134` ouverte. Tests : 185 fichiers verts |

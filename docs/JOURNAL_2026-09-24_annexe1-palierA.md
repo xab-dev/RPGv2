@@ -3,7 +3,7 @@ projet: RPG V2
 episode/session: Spec 14 (l'Annexe 1), le topo, puis le palier A — les niveaux jusqu'au Nv.50
 type: fichier de bord
 version: 1.0.0
-statut: livré, à valider par Xav (V-149)
+statut: livré et validé (V-149)
 catégorie: Journal
 date: 2026-09-24
 genere_par: claude
@@ -21,7 +21,7 @@ Demande de Xav : le topo de la spec 14 avant tout code, ses précisions, puis «
 | `0b00217` | DOC, spec 14 v1.3.1 | Zéros : jumeau, double, miroir de Héros, **habillé en blanc** ; `Q-141`, `Q-142`, `Q-144`, `Q-145` : défauts acceptés par Xav |
 | `8814150` | DOC, spec 14 v1.3.2 | Zéros : le yin et le yang, il a découvert les secrets des follets, le « Follet Blanc » à glisser dans son dialogue ; `E-05` (les textes de l'Annexe) |
 | `f5519b3` | Tests, spec 10 | La première sauvegarde réelle en v8 (la Nv.30) faisait tomber `test_spec10_alignement_palier_a` : il supposait toutes les sauvegardes antérieures à la v8. Une sauvegarde migrée naît neutre, une sauvegarde déjà en v8 garde son alignement |
-| *(ce commit)* | `D-205` — palier A | Nv.31 à 50, un flag par niveau exigé au démarrage, `crediter` part du niveau crédité |
+| `81645dd` | `D-205` — palier A | Nv.31 à 50, un flag par niveau exigé au démarrage, `crediter` part du niveau crédité |
 
 ## 1. Le palier A
 
@@ -57,3 +57,8 @@ Entrée en scène : **18 à 22 ms** (plafond 40 ms).
 - `V-149` : importer `rpg_v2_save_Nv30.json` ; le HUD dit toujours Nv.30, mais la barre d'XP n'est plus pleine (environ 50 % vers le Nv.31). Jouer jusqu'au Nv.31 : l'éclat, le symbole, un point de stat à répartir.
 - `D-206` : réparer ou non les points perdus au 21/09.
 - Suivant : **palier B**, la stèle et la descente (vue rapprochée + Descendre, les trois salles vides, les flags de descente).
+
+## 5. Validation et clôture (24/09)
+
+- `V-149` **validée par Xav** : « 1, 2 et 3 all good as planned » (la Nv.30 importée reste Nv.30, barre d'XP à ~50 %, le passage au Nv.31 avec l'éclat, le symbole et le point).
+- `D-206` **sans objet**, décision de Xav : deux joueurs seulement, un reset de sauvegarde n'est pas pénalisant aujourd'hui, on ne répare pas le passé.

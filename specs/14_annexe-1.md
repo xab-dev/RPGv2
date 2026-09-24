@@ -2,7 +2,7 @@
 projet: RPG V2
 episode/session: Carte Maison — l'Annexe 1 (la stèle, Zéros, les leviers, le Gardien, la première compétence)
 type: spec par paliers
-version: 1.3.1
+version: 1.3.2
 statut: courante, prête à coder (spec 13 livrée) — B1, B2, B3, Q-138 et l'équilibrage tranchés par Xav le 24/09 (§0)
 catégorie: Spec
 date: 2026-09-24
@@ -19,6 +19,7 @@ verifie_par: xav
 
 ## 0. Décisions de Xav (24/09, relecture de la v1.0.0)
 
+**Changelog 1.3.2** : Zéros, précisions de Xav : le yin et le yang, il a découvert les secrets des follets, le « Follet Blanc » à glisser dans son dialogue (`E-05`).
 **Changelog 1.3.1** : **Zéros est habillé en blanc** (Xav) ; le nom « Zéros » est retenu ; les défauts de `Q-141`, `Q-142`, `Q-144` et `Q-145` sont acceptés par Xav (« le reste ok »).
 **Changelog 1.3.0** : `Q-138` tranchée : la stèle déchiffrée ouvre **d'abord sa vue rapprochée**, qui gagne l'action **Descendre**. **L'équilibrage se fait au ressenti de Xav** (`Q-146`) : l'instrument `tools/mesure_boss.mjs` est retiré, et `?niveau=N` aussi (Xav importe une vraie sauvegarde Nv.30). Le §6 ne contredit plus le §4.9 : **une** migration est prévue, v8 → v9, au palier I. Les identifiants `Q-137` à `Q-148` sont inscrits au suivi.
 **Changelog 1.2.0** : l'Annexe court **du sud vers le nord**, et sa sortie débouche près de la **stèle rouge** (`Q-139` tranchée) ; B3 tranché (`Q-148`) : la fiche affiche la correspondance, A choisit l'emplacement, et équiper **remplace**.
@@ -109,7 +110,7 @@ Une **descente** commence à chaque entrée par la stèle. L'Annexe distingue de
 - **Pas de défaite** : pendant ce combat, `hero.pv ≤ 0` **n'appelle pas** la mort. Le follet du héros le relève : dialogue court « Continue de te battre ! » (il **gèle** le combat, comme tout dialogue), et PV à 100 %. Aucun malus de survie, aucun retour à la Grotte. La règle vit sur la **rencontre** (`sans_defaite: true` dans les données du combat), jamais dans un `if` sur un id.
 - **Fin** : à **25 %** des PV du follet de Zéros (seuil en données), tout se fige, et **Zéros parle** (un dialogue de `dialogues.json`, avec options s'il le faut, par le moteur de la spec 11). Puis **Zéros et son follet s'effacent** (un fondu), `flag_zeros_rencontre` est posé, et **le passage vers la salle 2 s'ouvre**. Ce passage est une porte conditionnelle sur ce flag **ou** sur « levier de la salle 1 actionné », pour les descentes suivantes.
 - **Les descentes suivantes** : la salle 1 est nettoyée, le levier apparaît, et l'actionner **ouvre directement le passage**. *[OUVERT `Q-142`]*
-- **Ce que dit Zéros** : les secrets sur les follets, **écrits par Xav**. Piste de Claude, à prendre ou à laisser : la stèle d'argile dit déjà « Ce monde a eu deux mains. La seconde a laissé un mot là où l'on commence à lire. » **Zéros serait-il la seconde main ?** *[`Q-143`]*
+- **Ce que dit Zéros** : les secrets sur les follets, **écrits par Xav** (`E-05`). Précisions de Xav (24/09) : Zéros et Héros sont **le yin et le yang** ; Zéros **a découvert les secrets des follets** ; le dialogue doit **glisser le « Follet Blanc »**, sans que Xav sache encore comment. Tant que le texte n'est pas écrit, le palier D pose un texte provisoire qui ne nomme pas le Follet Blanc (on ne fige pas un lore que Xav n'a pas trouvé). Piste de Claude, à prendre ou à laisser : la stèle d'argile dit déjà « Ce monde a eu deux mains. La seconde a laissé un mot là où l'on commence à lire. » **Zéros serait-il la seconde main ?** *[`Q-143`]*
 
 ### 4.4 Salle 2 — les deux leviers et le follet posé
 

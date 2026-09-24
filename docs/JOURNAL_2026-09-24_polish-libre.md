@@ -133,3 +133,9 @@ qui ne porte que les dix chiffres (`unicodeRange`), en tête de chaque pile.
   puis d'autres ; si aucune ne répond, les chiffres d'Almendra reviennent
   (l'état de P2, rien ne casse). C'est à regarder en premier dans `V-132`.
 - Tests : **183 fichiers verts** à chaque commit.
+
+## Patch hors file : la pomme d'amour au papyrus (24/09, demande de Xav)
+
+- `rec_pomme_amour` : 1 fruit cuit + **1 papyrus** (au lieu de 3 herbes) — la
+  pomme emballée, cuite dans son emballage. Mécanique inchangée. Quantité
+  retenue par défaut : `Q-130`. Tests : 183 fichiers verts.

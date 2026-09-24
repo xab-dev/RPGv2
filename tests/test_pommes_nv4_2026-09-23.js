@@ -1,6 +1,7 @@
 // La pomme d'amour et la pomme cuite (demande de Xav, 23/09 ; passée de l'Atelier à la Cuisine le 24/09, choix de Xav).
 //
-// DEMANDE : au Nv.4, à la Cuisine, 1 fruit cuit + 3 herbes → une pomme
+// DEMANDE : au Nv.4, à la Cuisine, 1 fruit cuit + 1 papyrus (la pomme emballée,
+// puis cuite dans son emballage : 24/09, demande de Xav ; avant, 3 herbes) → une pomme
 // d'amour, sans éclats. Elle ne se mange pas et ne s'équipe pas : elle doit
 // passer une seconde fois à la Cuisine, qui en fait une pomme cuite. C'est la pomme cuite qui
 // se mange, et elle donne la régénération de vie (R2).

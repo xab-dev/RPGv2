@@ -175,6 +175,13 @@ export function formaterReleve(etat) {
     `calque statique : ${etat.coucheStatique ? `${etat.coucheStatique.largeur}x${etat.coucheStatique.hauteur}px` : 'pas encore construit'}`,
     `calque d'obscurité : ${etat.canvasVoile ? `${etat.canvasVoile.largeur}x${etat.canvasVoile.hauteur}px` : 'absent (scène sans obscurité)'}`,
     `périphérique actif : ${etat.peripheriqueActif} (${etat.basculesParSeconde.toFixed(2)} bascule(s)/s)`,
+    // `specs/13` §4.6 : le seul poste qui a le DROIT de dépendre de la taille
+    // de la scène (forêt procédurale, décor tiré) — il doit donc être chiffré,
+    // pour que son plafond (`Q-134`) se pose sur une mesure. La DERNIÈRE
+    // entrée, pas la première : un portail la remplace.
+    etat.entreeScene
+      ? `entrée en scène : ${etat.entreeScene.sceneId} ${etat.entreeScene.dureeMs.toFixed(2)} ms (scène ${etat.entreeScene.sceneMs.toFixed(2)}, décor ${etat.entreeScene.decorMs.toFixed(2)}, reste ${etat.entreeScene.resteMs.toFixed(2)})`
+      : 'entrée en scène : non relevée',
     // `specs/10` §6 : sans cette ligne, un relevé pris sous `?alignement=N`
     // serait indiscernable d'un autre — même raison que la ligne d'échelle.
     // « non relevé » n'est pas un repli : c'est ce qu'on dit quand aucune

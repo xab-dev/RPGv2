@@ -125,6 +125,15 @@ assert.deepEqual(ecartsSuccessifs([0, 2, 4, 4, 7]), [2, 2, 0, 3]);
   const texteAvecRecalcul = formaterReleve(etatAvecRecalcul);
   assert.ok(texteAvecRecalcul.includes('recalculs calque statique : 3'), 'nombre de recalculs affiché');
   assert.ok(!texteAvecRecalcul.includes('n/a'), 'un horodatage connu ne doit jamais afficher n/a');
+
+  // `specs/13` palier A : l'entrée en scène, le seul poste qui a le droit de
+  // suivre la taille de la carte — chiffrée en trois temps. Absente = dit tel
+  // quel, jamais un 0 qu'on n'a pas mesuré.
+  assert.ok(texte.includes('entrée en scène : non relevée'), 'aucune entrée mesurée -> dit tel quel');
+  const texteEntree = formaterReleve({
+    ...etat, entreeScene: { sceneId: 'scene_x', dureeMs: 20.5, sceneMs: 2.7, decorMs: 2.4, resteMs: 15.4 },
+  });
+  assert.ok(texteEntree.includes('entrée en scène : scene_x 20.50 ms (scène 2.70, décor 2.40, reste 15.40)'));
 }
 
 console.log('OK test_mesure_saccades');

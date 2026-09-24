@@ -61,6 +61,7 @@ export function creerMoniteurInactif() {
     enregistrerPositionHero: rien,
     enregistrerPeripherique: rien,
     enregistrerEntites: rien,
+    surEntreeScene: rien,
     definirSourceAlignement: rien,
   };
 }
@@ -93,6 +94,9 @@ export function creerMoniteurPerf({ document, search, peripheriqueActifInitial =
   let recalculEnAttenteMs = null;
   let dernierRecalculHorodatageMs = null;
   let dernierEntites = { monstres: 0, puzzles: 0, objetsSol: 0 };
+  // `specs/13` palier A : la dernière entrée en scène, gardée telle quelle
+  // (une entrée est un événement rare, pas une série à fenêtrer).
+  let derniereEntreeScene = null;
   let peripheriqueCourant = peripheriqueActifInitial;
   // `specs/10` §6 : une SOURCE, interrogée au rythme de l'affichage (≤ 4 fois
   // par seconde), plutôt qu'une valeur poussée à chaque frame — l'alignement
@@ -172,6 +176,7 @@ export function creerMoniteurPerf({ document, search, peripheriqueActifInitial =
       ecartHeroX: { moyenne: moyenne(ecartsX), min: ecartsX.length ? Math.min(...ecartsX) : 0, max: maximum(ecartsX) },
       ecartHeroY: { moyenne: moyenne(ecartsY), min: ecartsY.length ? Math.min(...ecartsY) : 0, max: maximum(ecartsY) },
       entites: dernierEntites,
+      entreeScene: derniereEntreeScene,
       ecranPhysique: dimensionsEcranPhysiquesActuelles(),
       echelleRendu: etatEchelleRendu(),
       coucheStatique: statsCoucheStatique(),
@@ -222,6 +227,9 @@ export function creerMoniteurPerf({ document, search, peripheriqueActifInitial =
     },
     enregistrerEntites(entites) {
       dernierEntites = entites;
+    },
+    surEntreeScene(info) {
+      derniereEntreeScene = info;
     },
     definirSourceAlignement(source) {
       sourceAlignement = source;

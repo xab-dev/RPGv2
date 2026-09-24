@@ -1810,10 +1810,15 @@ export function creerOrchestrateurGrotte({
     // `D-05`, même raison exactement : un « +1 Bois » gagné dans la scène
     // qu'on quitte n'a rien à faire flottant dans la suivante.
     viderTextesFlottants(textesFlottants);
+    // `specs/13` palier A : l'entrée en scène chiffrée, en trois temps. Aucune
+    // horloge lue hors `?debug=fps` (même patron que `creerBoucle#surFrame`).
+    const mesureEntree = moniteurPerf.actif;
+    const tDebutEntree = mesureEntree ? performance.now() : 0;
     scene = chargerScene(
       registre, sceneId, resoudreOverridesStations(sceneId),
       instancesCreees(registre, sceneId, save.maison.stations),
     );
+    const tSceneEntree = mesureEntree ? performance.now() : 0;
     // Palier E : le calque statique de la scène neuve est à construire, et
     // cette construction n'est pas une saccade de jeu — Auto ne la juge pas.
     msDepuisEntreeScene = 0;
@@ -1822,6 +1827,7 @@ export function creerOrchestrateurGrotte({
     // scène (le décor est statique, jamais recalculé par frame), même
     // patron que monstresAffiches/puzzlesAffiches dans dessiner().
     regenererDecor();
+    const tDecorEntree = mesureEntree ? performance.now() : 0;
 
     const pos = positionInitialePx || {
       x: (scene.spawn.x + 0.5) * scene.tileSize,
@@ -1900,6 +1906,16 @@ export function creerOrchestrateurGrotte({
 
     etatModifie = true;
     declencherEvenementsEntree(sceneId);
+    if (mesureEntree) {
+      const tFin = performance.now();
+      moniteurPerf.surEntreeScene({
+        sceneId,
+        dureeMs: tFin - tDebutEntree,
+        sceneMs: tSceneEntree - tDebutEntree,
+        decorMs: tDecorEntree - tSceneEntree,
+        resteMs: tFin - tDecorEntree,
+      });
+    }
   }
 
   function hitboxHeros() {

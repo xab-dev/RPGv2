@@ -26,6 +26,7 @@
 //   chrome.taille(l, h, dpr = 1)   viewport exact, en px CSS, au DPR demandé
 //   chrome.ouvrir(url)             navigue et attend le chargement
 //   chrome.touche(code, ms = 80)   appui réel (keydown, attente, keyup) — `KeyboardEvent.code`
+//   chrome.enfoncer(code) / chrome.relacher(code)   les deux moitiés d'un appui, pour une marche continue
 //   chrome.clic(x, y)              clic souris réel, en px CSS
 //   chrome.attendre(ms)
 //   chrome.evaluer(expression)     rend la valeur (JSON) de l'expression, `await` permis
@@ -128,6 +129,19 @@ async function main() {
         await attendre(ms);
         await envoyer('Input.dispatchKeyEvent', { type: 'keyUp', ...commun });
         await attendre(ms);
+      },
+      // Enfoncer et relâcher séparément (`specs/13` palier A) : `touche`
+      // attend encore `ms` après le relâchement, donc une marche faite de
+      // `touche` successives s'arrête la moitié du temps.
+      async enfoncer(code) {
+        const t = TOUCHES[code];
+        if (!t) throw new Error(`touche inconnue : ${code}`);
+        await envoyer('Input.dispatchKeyEvent', { type: 'rawKeyDown', code, key: t.key, windowsVirtualKeyCode: t.vk, nativeVirtualKeyCode: t.vk });
+      },
+      async relacher(code) {
+        const t = TOUCHES[code];
+        if (!t) throw new Error(`touche inconnue : ${code}`);
+        await envoyer('Input.dispatchKeyEvent', { type: 'keyUp', code, key: t.key, windowsVirtualKeyCode: t.vk, nativeVirtualKeyCode: t.vk });
       },
       async clic(x, y) {
         await envoyer('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y });

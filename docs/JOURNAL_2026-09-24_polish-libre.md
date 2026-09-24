@@ -205,4 +205,13 @@ variété, et la plume n'a pas été reprise depuis longtemps. Branche
 | `94cffdd` | `D-190` — la plume | Rachis courbe, dégradés au lieu d'une tranche blanc/noir, bandes et barbes couchées vers la pointe (d'après la photo de Xav). Rotation cuite dans les points : l'icône de la Poche ignore la rotation d'une primitive. `V-134` ouverte. Tests : 185 fichiers verts |
 | `101f53d` | `D-191` — la plume brille la nuit | Nuit et aube, jamais dans la Grotte. Liseré blanc par-dessus le voile ; Bas fixe, Moyen respire, Haut + filet de particules (nouveau type d'effet `filet`, pur). Même verdict pour les icônes des menus, où il reste fixe. `V-135` ouverte. Tests : 186 fichiers verts |
 | `bb2c98c` | `D-192` — le danger en écarlate | `#d6409f` → `#c8201e`, le feu reste à ~97 (garde ≥ 60). `V-136` ouverte. Tests : 186 fichiers verts |
-| (voir log) | `D-193` — les ornements des menus | CSS lu sur `<html data-ornements>`. Moyen : la case sélectionnée respire (lueur intérieure ; l'extérieure tient dans les 4 u de marge). Haut : + braises en couches de fond. Trois essais à la capture : lueur coupée, puis grille de points, puis braises d'un pixel. `V-137` ouverte. Tests : 186 fichiers verts |
+| `a459123` | `D-193` — les ornements des menus | CSS lu sur `<html data-ornements>`. Moyen : la case sélectionnée respire (lueur intérieure ; l'extérieure tient dans les 4 u de marge). Haut : + braises en couches de fond. Trois essais à la capture : lueur coupée, puis grille de points, puis braises d'un pixel. `V-137` ouverte. Tests : 186 fichiers verts |
+
+## File : la torche (spec 15, 24/09)
+
+Demande de Xav : « go créer la torche » ; réponses aux questions en tête de
+`specs/15_torche.md` §2. Branche `torche-2026-09-24`, un commit par palier.
+
+| Commit | Palier | Ce qu'il faut en retenir |
+|---|---|---|
+| (voir log) | Spec 15 | Écrite ; défauts `[OUVERT]` au §3 |

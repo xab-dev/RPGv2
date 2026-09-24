@@ -189,3 +189,6 @@ qui ne porte que les dix chiffres (`unicodeRange`), en tête de chaque pile.
   la seconde main, récurrent). `Q-147` : respec, compétences en cartes dans
   Stats (X / Y ; B3 → `Q-148`) et re-choix du follet entrent en palier I, avec
   une migration de sauvegarde v8 → v9.
+- Spec 14 v1.2.0 : salles du sud vers le nord, sortie près de la stèle rouge
+  (`Q-139`) ; B3/`Q-148` : la fiche affiche 1 = X, 2 = Y, 3 = B, A choisit
+  l'emplacement, équiper remplace.

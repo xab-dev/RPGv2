@@ -2,8 +2,8 @@
 projet: RPG V2
 episode/session: Carte Maison — l'Annexe 1 (la stèle, Zéros, les leviers, le Gardien, la première compétence)
 type: spec par paliers
-version: 1.1.0
-statut: prête à coder après la spec 13 — B1 et B2 tranchés par Xav le 24/09 (§0) ; un conflit mineur, B3 (palier I)
+version: 1.2.0
+statut: prête à coder après la spec 13 — B1, B2, B3 tranchés par Xav le 24/09 (§0)
 catégorie: Spec
 date: 2026-09-24
 Ids_suivi: [Q-120, Q-13, "D- (à créer : un par palier)", "Q-137 et suivantes (à créer)", "V- (à créer : un par palier)"]
@@ -19,6 +19,7 @@ verifie_par: xav
 
 ## 0. Décisions de Xav (24/09, relecture de la v1.0.0)
 
+**Changelog 1.2.0** : l'Annexe court **du sud vers le nord**, et sa sortie débouche près de la **stèle rouge** (`Q-139` tranchée) ; B3 tranché (`Q-148`) : la fiche affiche la correspondance, A choisit l'emplacement, et équiper **remplace**.
 **Changelog 1.1.0** : B1 et B2 tranchés ; `Q-143` et `Q-147` tranchées ; le respec, le re-choix du follet et les compétences en cartes entrent dans cette spec (palier I) ; la marche dans l'ombre de la salle 2 est **confirmée comme un choix de design**.
 
 | # | Décision de Xav | Ce que Claude en fait (cohérence technique) |
@@ -27,7 +28,9 @@ verifie_par: xav
 | **B2** | **Oui** : `target_next` contextuel. « Très utile par la suite avec les mécanismes automatisés (**follet agentique**) » | Le « follet posé » est écrit comme **un état du follet** (`poste`, à côté de `suivre` et `engager`), avec **sa cible** dans l'état, et non comme une exception de la salle 2 : un futur mécanisme qui confie une tâche au follet réutilisera cet état |
 | **E** | **Confirmé, et voulu** : « faire confiance au follet, se diriger dans le noir (en connaissant le chemin, déjà fait deux fois), sortir de la zone de confort fournie par la lumière » | §4.4 inchangé : la lumière reste avec le follet posé, son rayon ne change pas (`D-35`) |
 | **Q-143** | **Oui** : Zéros est **la seconde main** de la pierre qui répond. « On le retrouvera plus tard (poste avancé, etc.) » | Zéros est un **personnage récurrent** : son id, son visuel et son follet sont des entrées de catalogue réutilisables, jamais propres à la salle 1 |
-| **Q-147** | **Dans l'Annexe 1.** À la sortie, le follet dit : « tu peux maintenant choisir tes stats, tes compétences et ton follet » (le 4ᵉ follet est hors périmètre). Les compétences s'affichent **en cartes dans la page Stats, sous Force, Agilité…** Une seule pour l'instant, mais toutes s'afficheront là, avec : **équiper 1 = X, équiper 2 = Y, équiper 3 = B** | Palier I (§4.9). **B3** : B est déjà « Fermer » dans tous les écrans de menu : voir §4.9 |
+| **Q-147** | **Dans l'Annexe 1.** À la sortie, le follet dit : « tu peux maintenant choisir tes stats, tes compétences et ton follet » (le 4ᵉ follet est hors périmètre). Les compétences s'affichent **en cartes dans la page Stats, sous Force, Agilité…** Une seule pour l'instant, mais toutes s'afficheront là, avec : **équiper 1 = X, équiper 2 = Y, équiper 3 = B** | Palier I (§4.9) |
+| **B3** (`Q-148`) | **Précision de Xav** : « équiper 1 = X, 2 = Y, 3 = B » est ce que la fiche **affiche** — les boutons de jeu de chaque emplacement. Pour équiper, on appuie sur **A**, qui propose **les trois emplacements** (le fonctionnement normal du menu, gardé tel quel). Équiper sur un emplacement occupé **remplace** la compétence qui s'y trouvait | B n'est donc jamais une action du menu, et il reste « Fermer ». Les boutons affichés sont les **glyphes du périphérique actif** (`glyphes.json`) : X / Y / B à la manette, 1 / 2 / 3 au clavier, le bouton tactile correspondant au doigt |
+| **Q-139** | **Les salles vont du sud vers le nord**, et la sortie se fait **aux alentours de la stèle rouge**, au nord du chemin | L'entrée est la stèle **bleue** (`stele_grotte`, (21, 68), au sud du chemin), la sortie est près de la stèle **rouge** (`stele_miroir`, (21, 46), au nord) : l'Annexe **passe sous le chemin**. La descente ressort du côté de la « pierre qui répond », ce qui sert le lore de Zéros (`Q-143`) |
 
 ## 1. Intention
 
@@ -84,7 +87,7 @@ Une **descente** commence à chaque entrée par la stèle. L'Annexe distingue de
 
 - L'état de la descente est fait de **flags ordinaires**, sauvegardés : quitter le jeu dans la salle 2 et revenir laisse la salle 2 dans l'état où on l'a laissée. La scène déclare la liste de ses flags de descente (`descente: { flags: [...] }`), et **l'entrée par la stèle les remet à zéro**, en un seul endroit. Aucun id de flag n'est écrit dans le code.
 - **Mourir** dans l'Annexe renvoie à la Grotte, comme partout. La descente suivante repart de zéro, et c'est exactement le « il faut tout refaire » du scénario.
-- **Sortir** : la salle 1 garde un **escalier de retour** vers la stèle, toujours ouvert. La porte de la salle 3 (§4.7) est l'autre sortie. *[OUVERT `Q-139` : où mène la porte de la salle 3 ? Retenu : dehors, au pied de la stèle.]*
+- **Sortir** : la salle 1 garde un **escalier de retour** vers la stèle bleue, toujours ouvert. La porte de la salle 3 (§4.7) est l'autre sortie : elle débouche **dehors, près de la stèle rouge** (`stele_miroir`), au nord du chemin (**`Q-139`, tranchée**). Le point d'arrivée est une case libre **à côté** de la stèle, jamais dessus (elle est solide), et **hors de la clairière** qui la cache (elle doit rester invisible depuis le chemin, `V-123`) : choisi au palier B, tenu par test.
 
 ### 4.3 Salle 1 — les tireurs, puis Zéros
 
@@ -159,7 +162,7 @@ Une **descente** commence à chaque entrée par la stèle. L'Annexe distingue de
 - **Le déblocage** : à la **première sortie** de l'Annexe après le Gardien (`flag_parchemin_lu` posé), le follet dit (Xav écrit ; proposition) : « Maintenant, tu peux choisir. Tes forces, tes gestes… et même moi. » Le flag persistant `flag_choix_debloque` est posé. Illimité et gratuit, depuis le menu (décision du 23/09, NS §1.9).
 - **Les stats** : dans la page Stats, une action **« Tout reprendre »** (avec la confirmation d'un danger, patron de `menu_cartes.js`) remet les quatre stats à leur base et rend **tous** les points gagnés (`niveau − 1`). Les PV sont réconciliés par `entities.js#reconcilierPvMax`, déjà écrit pour ça.
 - **Les compétences, en cartes dans la page Stats**, **sous les quatre stats** : une tuile par compétence **apprise** (une entrée de `skills.json` dont le flag tient). Les compétences non apprises sont **invisibles** (`D-62`). La fiche dit ce que fait la compétence, sa charge et sa recharge **calculées avec l'Esprit actuel** (c'est là que le joueur **voit** ce que ses points d'Esprit lui rapportent), et l'emplacement où elle est équipée.
-- **Équiper** : **X = emplacement 1, Y = emplacement 2** (les verbes `skill_1` et `skill_2`, que les fiches portent déjà : `actionSecondaire` et `actionTertiaire`). Équiper une compétence sur un emplacement occupé **échange** les deux. **B3 — l'emplacement 3** : B est « Fermer » dans tout le menu, et au doigt, c'est la seule sortie (contrainte non négociable de `CLAUDE.md`). **Retenu par défaut** : l'emplacement 3 s'équipe par **A**, l'action principale de la fiche (« Équiper en 3 »). Un seul emplacement sert aujourd'hui, donc rien ne bloque ; *[OUVERT `Q-148`]*, à trancher avant la deuxième compétence.
+- **Équiper** (**B3**, tranché) : la fiche **affiche** la correspondance des emplacements avec leurs boutons de jeu (« Emplacement 1 = X, 2 = Y, 3 = B », en glyphes du périphérique actif), et celui où la compétence est équipée. **A** (l'action principale de la fiche) ouvre le **choix parmi les trois emplacements**, par le fonctionnement normal du menu, sans rien d'inventé. Choisir un emplacement occupé **remplace** la compétence qui s'y trouvait (elle devient non équipée, jamais échangée). B reste « Fermer », partout.
 - **Le contrat de sauvegarde** : ce que le joueur équipe devient un champ `save.hero.competences` (`{ id d'emplacement: id de compétence }`). C'est un **champ de sauvegarde nouveau** : migration **v8 → v9**, qui écrit la compétence du parchemin sur `slot_skill_1` si `flag_competence_1` est posé, `{}` sinon, avec son test sur les **sauvegardes réelles** de `prive/sauvegardes/` (patron de la migration 7 → 8). *Validé par la relecture de cette spec par Xav ; si le palier découvre autre chose, il s'arrête.*
 - **Le follet** : une carte **Follet** dans le menu Héros, à côté de Poche et Stats (`menus.json`), visible sous `flag_choix_debloque`. Elle montre les **trois** follets (le 4ᵉ est hors périmètre). Choisir en change **tout de suite** : le follet actuel s'éteint et le nouveau arrive (un fondu court, **pas** la cinématique de la Grotte). **L'alignement ne bouge pas** : c'est une stat du héros, pas du follet. La synergie suit le nouvel élément, par la table existante.
 
@@ -167,11 +170,11 @@ Une **descente** commence à chaque entrée par la stèle. L'Annexe distingue de
 
 | Salle | Taille *(provisoire)* | Contenu | Sorties |
 |---|---|---|---|
-| **1 — L'antichambre** | 20 × 14, tuiles de la Grotte, obscurité 0,72 | 4 cracheurs ; levier central (apparaît) ; Zéros (une fois) | escalier → stèle (toujours) ; passage → salle 2 (porte conditionnelle) |
-| **2 — Les deux mains** | 34 × 12, en longueur | deux `levier_maintenu`, à 22 tuiles l'un de l'autre | passage → salle 3 (porte conditionnelle) |
-| **3 — Le Gardien** | 24 × 18, une arène avec quelques piliers (pour se cacher des tirs) | le Gardien ; le coffre ; le levier-récompense | porte de sortie → dehors, au pied de la stèle |
+| **1 — L'antichambre** (au sud) | 20 × 14, tuiles de la Grotte, obscurité 0,72 | 4 cracheurs ; levier central (apparaît) ; Zéros (une fois) | escalier → stèle bleue (toujours) ; passage **nord** → salle 2 (porte conditionnelle) |
+| **2 — Les deux mains** | 34 × 12, en longueur d'est en ouest | deux `levier_maintenu`, à 22 tuiles l'un de l'autre (gauche et droite) ; on entre par le sud | passage **nord** → salle 3 (porte conditionnelle) |
+| **3 — Le Gardien** (au nord) | 24 × 18, une arène avec quelques piliers (pour se cacher des tirs) | le Gardien ; le coffre ; le levier-récompense | porte de sortie **nord** → dehors, près de la stèle rouge |
 
-Les layouts s'écrivent **à la main** (décision verrouillée : jamais de layout jouable procédural). Le décor procédural de la Grotte (graine fixe, cristaux lumineux) est réutilisé. Chaque salle **déclare** ses lumières, et la salle 3 un peu plus que les autres, pour qu'on voie venir les tirs.
+**Orientation** : on entre dans chaque salle par le **sud** et on en sort par le **nord**, pour que la descente se lise comme une avancée continue sous le chemin, de la stèle bleue à la stèle rouge. Les layouts s'écrivent **à la main** (décision verrouillée : jamais de layout jouable procédural). Le décor procédural de la Grotte (graine fixe, cristaux lumineux) est réutilisé. Chaque salle **déclare** ses lumières, et la salle 3 un peu plus que les autres, pour qu'on voie venir les tirs.
 
 ## 6. Données et architecture
 
@@ -192,7 +195,7 @@ Les layouts s'écrivent **à la main** (décision verrouillée : jamais de layou
 | **E — Les deux mains** | `levier_maintenu`, follet posé (**après B2**), dialogue du follet, passage | Salle 2 à la manette, au clavier **et** au doigt ; la marche dans l'ombre |
 | **F — Le Gardien** | Comportement `boss` (trois gestes, trois modes), barre de boss, `mesure_boss.mjs`, mort → Grotte → tout refaire | Au Nv.16 : on perd ; au Nv.30 (`?niveau=30` + points répartis) : on gagne, difficilement |
 | **G — Le parchemin** (**après B1**) | Coffre, cinématique, `skills.json` et son schéma, `competences.js`, `slot_skill_1`, HUD de charge et de recharge | La cinématique ; la charge qui monte pendant l'engagement ; le tir, l'AoE, la recharge ; le HUD (checklist visuelle) |
-| **I — Choisir** (§4.9) | Dialogue de déblocage, « Tout reprendre », compétences en cartes dans Stats (X / Y / A), migration v8 → v9, carte Follet | Respec puis nouvelle répartition ; équiper la compétence en 1, puis en 2 ; changer de follet dehors, de jour et de nuit ; **manette, clavier et doigt** |
+| **I — Choisir** (§4.9) | Dialogue de déblocage, « Tout reprendre », compétences en cartes dans Stats (la fiche affiche 1 = X, 2 = Y, 3 = B ; A choisit l'emplacement ; équiper remplace), migration v8 → v9, carte Follet | Respec puis nouvelle répartition ; équiper la compétence en 1, puis en 3 (elle quitte le 1, et le bouton B la lance en jeu) ; changer de follet dehors, de jour et de nuit ; **manette, clavier et doigt** |
 | **H — La boucle** | Levier-récompense (éclat au sol), porte de sortie, descentes suivantes (sans Zéros, sans dialogue du levier, sans boss) ; album de référence | Trois descentes d'affilée : un éclat chacune, rien ne se rejoue qui ne devrait pas |
 
 Ordre : A → B → C → D → E → F → G → **I** → H (le choix se débloque à la première sortie ; la boucle se vérifie en dernier, sur tout le reste). Chaque palier : tests headless de ses parts pures, `node tools/run_tests.js` vert, banc de la spec 13, une ligne `D-` close et une ligne `V-` ouverte.
@@ -216,7 +219,7 @@ Ordre : A → B → C → D → E → F → G → **I** → H (le choix se débl
 | **B2** | Poser le follet | **Tranché (Xav, 24/09)** : `target_next` contextuel, état `poste` du follet |
 | `Q-137` | Forme de la condition de proximité | Valeur nommée `a_portee`, fournie par `main.js` |
 | `Q-138` | La stèle déchiffrée : descente directe, ou vue rapprochée avec « Descendre » ? | Descente directe, avec fondu |
-| `Q-139` | Où mène la porte de la salle 3 ? | Dehors, au pied de la stèle |
+| `Q-139` | Où mène la porte de la salle 3 ? | **Tranché (Xav, 24/09)** : dehors, près de la stèle rouge ; salles du sud vers le nord |
 | `Q-140` | Les noms : cracheurs, Zéros / *Zeros*, le Gardien, la compétence | Noms de travail, à écrire par Xav |
 | `Q-141` | Le follet de Zéros frappe-t-il ? | Non : Zéros frappe, son follet est la cible |
 | `Q-142` | Descentes suivantes : le levier de la salle 1 ouvre directement le passage ? | Oui |
@@ -225,7 +228,7 @@ Ordre : A → B → C → D → E → F → G → **I** → H (le choix se débl
 | `Q-145` | Un temps minimal entre deux descentes ? | Non |
 | `Q-146` | `?niveau=N` en debug, masque non persisté ? | Oui |
 | `Q-147` | Respec et re-choix du follet | **Tranché (Xav, 24/09)** : dans l'Annexe 1, palier I |
-| `Q-148` | **B3** : l'emplacement 3 s'équipe par quel bouton, puisque B ferme le menu ? | A (« Équiper en 3 ») ; à trancher avant la 2ᵉ compétence |
+| `Q-148` | **B3** : équiper sur l'emplacement 3 | **Tranché (Xav, 24/09)** : la fiche affiche 1 = X, 2 = Y, 3 = B ; A choisit parmi les trois ; équiper remplace |
 
 ## 11. Hors périmètre
 

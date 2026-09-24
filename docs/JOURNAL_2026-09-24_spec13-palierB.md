@@ -134,3 +134,8 @@ pour le même code) : seule la comparaison **avant/après du même soir** vaut.
   passer de ~4,7 ms (`R-22`) à ~1,5 ms.
 - **`Q-135`** : la tolérance de 3 niveaux sur 255, à confirmer.
 - Le palier suivant est **C** (la bande entrante), dans une session à lui.
+
+## 6. Validation et clôture (24/09)
+
+**`V-143` validée par Xav** : « V-143, tout à l'air ok ». « Je clos la session
+avant de passer au palier C. » `Q-135` reste à confirmer par Xav.

@@ -3,7 +3,7 @@ projet: RPG V2
 episode/session: Spec 14 (l'Annexe 1), palier C — les tireurs
 type: fichier de bord
 version: 1.0.0
-statut: livré, à valider (V-151)
+statut: livré et validé (V-151)
 catégorie: Journal
 date: 2026-09-25
 genere_par: claude
@@ -17,7 +17,7 @@ Demande de Xav : « go palier C ». Branche `annexe-1`. Pas de push.
 | Commit | Ticket | Ce qu'il faut en retenir |
 |---|---|---|
 | `076d361` | Ménage | Journal du palier B archivé, INDEX à jour |
-| (ce commit) | `D-209` — palier C | Les tirs (`projectiles.js`), le comportement `distance`, quatre cracheurs, la salle nettoyée, le levier qui apparaît, les leviers de la descente remis à zéro |
+| `96fe390` | `D-209` — palier C | Les tirs (`projectiles.js`), le comportement `distance`, quatre cracheurs, la salle nettoyée, le levier qui apparaît, les leviers de la descente remis à zéro |
 
 ## 1. Le palier C
 
@@ -63,3 +63,11 @@ Chiffres comparés à ceux du palier B (`docs/archives/JOURNAL_2026-09-24_annexe
 - `Q-154` (les crachats éclairent) et `Q-155` (aucun éclat) : à trancher.
 - La difficulté, à juger au ressenti : chaque cracheur crache toutes les 2,4 s, mais **quatre ensemble**, c'est un crachat toutes les 0,6 s environ. Immobile, un héros Nv.15 à 50 PV tombe en quelques secondes ; en bougeant, on esquive.
 - Suivant : **palier D**, Zéros (l'entité intouchable, son follet, le combat sans défaite, la relève, l'arrêt à 25 %, le dialogue provisoire).
+
+## 5. Validation (25/09)
+
+- `V-151` **validée par Xav** : « très bon design, bien vu de ne pas mettre de lumière sur les mobs, les projectiles ressorte mieux ! au début je les trouvais simple, mais, je suis niveau 33, et je suis quand même mort au bout d'un moment. on garde. »
+- `Q-154` tranchée par la même phrase : les tirs restent après le voile, les monstres sans lueur.
+- Difficulté gardée telle quelle (« on garde »), testée au Nv.33.
+- `Q-155` (aucun éclat) reste ouverte.
+- Question posée par Xav sur le banc de la spec 13 à chaque palier : une règle allégée est proposée (banc complet, sentinelle ou rien selon ce que le palier touche), en attente de sa décision.

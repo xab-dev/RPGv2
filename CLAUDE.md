@@ -40,7 +40,8 @@ Test de chaque catalogue : ajouter une entrée (arme, ennemi, recette, compagnon
 | Quoi | Où | Quand le lire |
 |---|---|---|
 | Ce qui est dû (dettes, questions, validations) | `docs/DOC_suivi-dettes.md` — **la seule liste** | les lignes que le ticket cite, jamais en entier (~120 k tokens) |
-| Décisions de fond du projet | `specs/00_ROADMAP.md`, du « Bloc à lire en premier » aux « Contraintes de méthode » | avant un ticket de code (le reste = histoire des phases, par section si besoin ; `Q-175`) |
+| D'où on part, décisions acquises, specs livrées, chemin connu, horizon | `specs/00_ROADMAP.md` (v2 du 25/09 ; l'originale : `docs/archives/ROADMAP_v1-9-0_2026-09-23.md`) | en entier avant un ticket de code (~110 lignes) |
+| Les specs livrées | `specs/NN_*.md` : elles **restent là**, contrats du code qui les cite | quand un ticket touche leur système |
 | La spec en cours | `specs/NN_*.md` | en entier, avant d'en coder un palier |
 | Le cap, et les décisions produit/techniques verrouillées | `docs/carte_mentale_RPG_V2_v1_8_0.md` §00, §0, §8 | quand un ticket touche le design ou l'intention |
 | Décisions datées archivées (**toujours en vigueur**) | `docs/archives/decisions_archives.md` | quand un ticket touche leur terrain (résumé plus bas) |
@@ -55,7 +56,7 @@ Test de chaque catalogue : ajouter une entrée (arme, ennemi, recette, compagnon
 
 Chaque règle est née d'un incident ; son histoire est dans l'archive citée (ou `docs/archives/CLAUDE_etat_2026-09-25.md`).
 
-- **Avant toute action de code** : la partie durable de la ROADMAP, puis la spec courante. Ne jamais rouvrir une décision actée ; un point de design non tranché se marque `[OUVERT]` et remonte à Xav.
+- **Avant toute action de code** : la ROADMAP, puis la spec courante. Ne jamais rouvrir une décision actée ; un point de design non tranché se marque `[OUVERT]` et remonte à Xav.
 - **Un sujet par ticket, une session courte par ticket** ; une spec par paliers se joue **un palier par session** ; Xav valide en jeu entre deux. Chaque ticket cite les identifiants du suivi qu'il touche.
 - **Une file de micro-tickets est permise** : branche dédiée, **un commit par ticket**, ordre fixe, **chaque commit retirable seul** (vérifié : `git revert 9997cec`). **L'état d'une file vit sur le disque** (le journal, une ligne par commit), jamais dans la mémoire de la session.
 - **Un ticket = un commit**, l'identifiant dans le titre ; jamais de commit fourre-tout (`1be4688`). **Jamais pousser.** Un correctif tenu à part d'une spec en cours part de `main` sur sa branche et prend ses identifiants **après** ceux de la branche en cours.

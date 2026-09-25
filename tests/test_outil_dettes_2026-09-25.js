@@ -10,7 +10,8 @@
 //      sans le texte qu'il exige : refusés, rien n'est écrit.
 //   3. La file est celle du vrai suivi : bien formée, sans ligne close, les
 //      plus anciennes d'abord (décision de Xav) ; et `A_FAIRE.md` la recopie.
-// Le vrai suivi est lu, jamais écrit : tout se joue sur des copies en mémoire.
+// Le vrai suivi est lu, jamais écrit ; les gestes se jouent sur un petit suivi
+// d'essai aux vrais en-têtes, en mémoire.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {
@@ -19,6 +20,21 @@ import {
 
 const REEL = fs.readFileSync(new URL('../docs/DOC_suivi-dettes.md', import.meta.url), 'utf8');
 const DATE = '25/09';
+
+// Un petit suivi aux VRAIS en-têtes de section, pour les gestes : le vrai
+// suivi peut avoir une file vide (c'est le but), et un test ne doit pas
+// dépendre de ce que Xav a déjà répondu.
+const ESSAI = [
+  '## 2. Questions — Xav tranche',
+  '| Id | Question | Contexte / ce qui est appliqué par défaut | Bloque | Décision | Statut |',
+  '|---|---|---|---|---|---|',
+  '| Q-1 | **Une question** (20/09) | ce qui est appliqué | — |  | ouvert |',
+  '## 3. Validations en jeu — Xav joue',
+  '| Id | Quoi | Depuis | Comment | Verdict | Statut |',
+  '|---|---|---|---|---|---|',
+  '| V-1 | **À voir** | 21/09 | regarder ceci |  | ouvert |',
+  '',
+].join('\n');
 
 const lignesChangees = (a, b) => {
   const la = a.split('\n');
@@ -31,7 +47,6 @@ const lignesChangees = (a, b) => {
 {
   const suivi = lireSuivi(REEL);
   const { file, plusTard } = fileDeXav(suivi);
-  assert.ok(file.length > 0, 'la file du vrai suivi n’est pas vide');
   const ids = new Set();
   for (const l of [...file, ...plusTard]) {
     assert.ok(!ids.has(l.id), `${l.id} apparaît deux fois`);
@@ -53,13 +68,13 @@ const lignesChangees = (a, b) => {
 
 // --- 1. Une réponse change UNE ligne, et la laisse bien formée ---------------
 {
-  const { file } = fileDeXav(lireSuivi(REEL));
+  const { file } = fileDeXav(lireSuivi(ESSAI));
   const v = file.find((l) => l.prefixe === 'V');
   const q = file.find((l) => l.prefixe === 'Q');
 
-  const rv = repondre(REEL, { id: v.id, empreinte: v.empreinte, geste: 'ok', date: DATE });
+  const rv = repondre(ESSAI, { id: v.id, empreinte: v.empreinte, geste: 'ok', date: DATE });
   assert.ok(!rv.erreur, rv.erreur);
-  const changees = lignesChangees(REEL, rv.texte);
+  const changees = lignesChangees(ESSAI, rv.texte);
   assert.deepEqual(changees, [v.index], `seule la ligne de ${v.id} change`);
   const vApres = lireSuivi(rv.texte).lignes.find((l) => l.id === v.id);
   assert.ok(vApres.bienFormee);
@@ -68,7 +83,7 @@ const lignesChangees = (a, b) => {
   assert.equal(etatPourXav(vApres), 'hors', 'une validation OK sort de la file');
 
   // Un « | » tapé par Xav ne crée pas de colonne.
-  const rq = repondre(REEL, { id: q.id, empreinte: q.empreinte, geste: 'reponse', texte: 'oui | mais plus tard', date: DATE });
+  const rq = repondre(ESSAI, { id: q.id, empreinte: q.empreinte, geste: 'reponse', texte: 'oui | mais plus tard', date: DATE });
   assert.ok(!rq.erreur, rq.erreur);
   const qApres = lireSuivi(rq.texte).lignes.find((l) => l.id === q.id);
   assert.ok(qApres.bienFormee, 'le « | » de la réponse est échappé');
@@ -77,15 +92,15 @@ const lignesChangees = (a, b) => {
 
   // Annuler rend le texte exact.
   const annule = retablir(rv.texte, { id: v.id, avant: rv.avant, apres: rv.apres });
-  assert.equal(annule.texte, REEL, 'annuler rend le suivi octet pour octet');
+  assert.equal(annule.texte, ESSAI, 'annuler rend le suivi octet pour octet');
   console.log('  une réponse ne change que sa ligne, la laisse bien formée, et s’annule exactement');
 }
 
 // --- 5. Plus tard, puis reprendre -------------------------------------------
 {
-  const { file } = fileDeXav(lireSuivi(REEL));
+  const { file } = fileDeXav(lireSuivi(ESSAI));
   const l = file[0];
-  const r1 = repondre(REEL, { id: l.id, empreinte: l.empreinte, geste: 'plus_tard', date: DATE });
+  const r1 = repondre(ESSAI, { id: l.id, empreinte: l.empreinte, geste: 'plus_tard', date: DATE });
   assert.ok(!r1.erreur, r1.erreur);
   const apres1 = fileDeXav(lireSuivi(r1.texte));
   assert.ok(!apres1.file.some((x) => x.id === l.id) && apres1.plusTard.some((x) => x.id === l.id), '« plus tard » range la ligne dans la pile');
@@ -93,7 +108,7 @@ const lignesChangees = (a, b) => {
   const r2 = repondre(r1.texte, { id: l.id, empreinte: tard.empreinte, geste: 'reprendre', date: DATE });
   assert.ok(!r2.erreur, r2.erreur);
   assert.ok(fileDeXav(lireSuivi(r2.texte)).file.some((x) => x.id === l.id), '« reprendre » la remet dans la file');
-  assert.equal(r2.texte, REEL, 'et rend la ligne telle qu’elle était');
+  assert.equal(r2.texte, ESSAI, 'et rend la ligne telle qu’elle était');
   console.log('  « plus tard » range la ligne, « reprendre » la rend telle quelle');
 }
 

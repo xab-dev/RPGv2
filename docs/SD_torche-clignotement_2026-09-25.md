@@ -95,4 +95,5 @@ as les infos, je te laisse gérer la technique ».
 | Commit | Ticket | Ce qu'il fait |
 |---|---|---|
 | `3c49a71` | `D-218` | La graine fixe, une liste des flammes, le vacillement dans `ornements.js`, le test, cette fiche |
-| 2 | `D-219` | Le plafond de 3 Hz (`ornements.js#FREQUENCE_MAX_HZ`, `rythmeLumineuxHz`), son test sur le catalogue réel, `Q-164` |
+| `fc5d428` | `D-219` | Le plafond de 3 Hz (`ornements.js#FREQUENCE_MAX_HZ`, `rythmeLumineuxHz`), son test sur le catalogue réel, `Q-164` |
+| (ce commit) | `V-158` | Validé en jeu par Xav (« V-158, all good ») ; branche prête à fusionner dans `main` avec `annexe-1` |

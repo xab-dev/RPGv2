@@ -6,6 +6,7 @@
   "description": "RPG action-aventure 2D data-driven (HTML5/JS/Canvas), jouable manette, clavier et tactile - fondations closes, Region Maison en cours",
   "scripts": {
     "start": "node serveur_local.js",
-    "test": "node tools/run_tests.js"
+    "test": "node tools/run_tests.js",
+    "dettes": "node tools/dettes/serveur.mjs"
   }
 }

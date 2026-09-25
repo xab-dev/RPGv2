@@ -132,3 +132,29 @@ test neuf a attrapé la mutation qui recrée le défaut.
 - `V-164` **validée** : « V164 vues ».
 - « tu peux fusionner et push dans main » : `polish-libre-2026-09-25` fusionnée
   dans `main` (`--no-ff`) et poussée, sans release.
+
+## 7. L'outil des dettes (`D-227`, branche `outil-dettes`)
+
+Demande de Xav : « chaque dette lui coûte au moins 10 minutes […] J'ai besoin
+que tu me simplifies le travail, sans pour autant qu'on le néglige […] une
+dette qui s'affiche, la réponse à écrire, et ça actualise tout le truc ».
+Solution proposée avant tout code, choisie par Xav : la **page locale**, les
+**plus anciennes d'abord**.
+
+- **Le constat, mesuré** : le suivi fait 635 lignes mais **402 Ko** (≈ 120 000
+  tokens) ; tout le texte du dépôt, 6,6 Mo (≈ 2 millions de tokens). La file
+  de Xav : **112 lignes** (V-, Q-, E- ouvertes, et les D- qui l'attendent),
+  12 mises de côté (gelées, reportées).
+- `0a25a03` : 14 lignes de la file n'avaient pas le nombre de colonnes de leur
+  en-tête (le verdict et le statut fusionnés). Remises en forme, sans changer
+  un mot : l'outil n'écrit jamais dans une ligne qu'il ne sait pas découper.
+- **La date d'une ligne** est sa naissance : « Depuis », sinon la date de son
+  titre, sinon celle de sa voisine de série. Pas la première date du texte :
+  `Q-61` n'y portait que la date d'une retouche.
+- **Le test a trouvé un défaut** : le marqueur « répondu par Xav » était
+  comparé en minuscules à « Xav » : une `D-` répondue restait dans la file.
+- Essayé sous Chrome sans fenêtre, sur une **copie** du suivi
+  (`DETTES_SUIVI`) : une ligne changée par réponse, un « | » tapé échappé,
+  Ctrl+Z qui rend le fichier octet pour octet, les écritures d'une autre
+  origine refusées (403).
+- **Pas poussé** : c'est à Xav de dire si `A_FAIRE.md` va sur GitHub.

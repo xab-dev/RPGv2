@@ -65,6 +65,7 @@ Test à appliquer à chaque catalogue de données : ajouter une entrée (arme, e
 - Vérification syntaxique : `node --check <fichier>.js` sur chaque fichier JS livré (aucune dépendance, `package.json` déclare `"type": "module"`).
 - Tests : `node tests/<nom>.js` pour un fichier isolé, ou `node tools/run_tests.js` (= `npm test`) pour toute la suite d'un coup. Pas de framework de test, scripts headless autonomes basés sur `node:assert/strict`.
 - Serveur local : `node serveur_local.js` (statique, sans dépendance, réponses `no-store`), sert le jeu sur `http://localhost:8080`.
+- Dettes de Xav : `npm run dettes` (`tools/dettes/`, outil de dev, port 8090, boucle locale seulement) — une ligne du suivi à la fois, les plus anciennes d'abord ; la réponse s'écrit dans `docs/DOC_suivi-dettes.md` et régénère `A_FAIRE.md` (la file, **générée : ne jamais l'éditer** ; locale, ignorée par Git tant que Xav ne la partage pas).
 
 ## Architecture (état courant)
 
@@ -416,6 +417,17 @@ deux listes finissent toujours par se contredire.
 
 **Lecture.** Ne lis dans ce document que les lignes dont le ticket courant cite
 l'identifiant. Le reste ne concerne pas ta session et noierait ton travail.
+Le suivi pèse ~120 000 tokens : on ne le lit **jamais en entier**.
+
+**Les réponses de Xav** (25/09) : Xav répond par `npm run dettes`, qui écrit
+dans le suivi sans commiter. Au ménage de début de session, lis **seulement
+`git diff docs/DOC_suivi-dettes.md`** : c'est tout ce qu'il a répondu. Puis
+traite-le : une `Q-` « tranchée » s'applique (ou ouvre sa `D-`) ; un `non` ou
+un « répondu par Xav » sur une `V-`, une `D-` ou une `E-` attend ton geste, et
+tu retires le marqueur « répondu par Xav » une fois traité ; un « plus tard »
+est un choix de Xav, qui ne se reprend que par lui. Commite ses réponses avec
+le ménage. Ne crée jamais une ligne que l'outil ne sait pas lire : une ligne a
+exactement les colonnes de l'en-tête de sa section, sinon il refuse d'y écrire.
 
 **Dans le périmètre du ticket, tu gardes l'initiative.** Quand un point de design
 n'est pas tranché, tu peux retenir une valeur ou une solution par défaut et

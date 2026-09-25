@@ -7,9 +7,11 @@ Ce fichier dit à Claude Code ce qu'il doit savoir **avant d'agir** dans ce dép
 > un jeu fluide et hybride entre chill et speed run, médiéval-post-industriel, rpg-like, AI relationship (et qui reste flou même pour Xav, on avance à l'aveugle maintenant que l'équivalent de RPG-v1 est atteint), il faut pouvoir anticiper l'impossible d'aujourd'hui qui deviendra possible demain. — Xav, 25/09
 
 - **Le point de départ** : refonte complète d'un prototype V1 jetable (`monde/rpg_v0_1_0.js`, hors dépôt), dont seuls des patrons sont repris ; « vitrine d'un jeu conçu et développé avec des agents IA, projet laboratoire ». L'équivalent de la V1 est atteint : le cap est flou **par nature**, il oriente, il ne se tranche pas.
-- **La relation avec l'IA** : le follet est un LLM scripté — « le héros c'est Xav, le follet c'est Claude ». L'alignement caché passe par lui. Claude propose des moments de dialogue du follet (trois options, Xav choisit).
-- **Anticiper l'impossible** = la règle d'architecture ci-dessous, et des modules séparés au point qu'une phase future remplace le rendu (vue 3/4 à terme) sans toucher au reste.
-- Ma lecture de ces mots est à confirmer : `Q-176` ; détail dans `docs/NS_menage-contexte-claude_2026-09-25.md` §1.
+- **La relation avec l'IA** : « le feu follet, c'est Claude, et le héros, c'est Xav ou n'importe qui d'autre, un joueur ». Le follet est un LLM scripté ; l'alignement caché passe par lui. Claude propose des moments de dialogue du follet (trois options, Xav choisit).
+- **Médiéval-post-industriel** : « château fort mélangé à Tchernobyl » — métal rouillé, automatismes.
+- **Horizon, jamais une spec tant qu'elle n'est pas écrite** : le follet **agentique** (trier les coffres, une mine autonome au sous-sol, plusieurs follets laissés au travail pendant qu'on se balade avec un autre) ; une **carte Build** dans le menu Héros (follet, stats prioritaires, équipement, selon ce que contiennent les coffres).
+- **Anticiper l'impossible** = la règle d'architecture ci-dessous, et des modules séparés au point qu'une phase future remplace le rendu (vue 3/4 à terme) sans toucher au reste. Ce que l'architecture devra accepter pour l'horizon : `Q-177`.
+- **Le cap se suit dans `docs/carte_mentale_RPG_V2_v1_8_0.md` §00** (tranché par Xav : `Q-176`) ; ce qui s'y précise ne se recopie pas ici.
 
 ## Le projet
 
@@ -40,7 +42,7 @@ Test de chaque catalogue : ajouter une entrée (arme, ennemi, recette, compagnon
 | Ce qui est dû (dettes, questions, validations) | `docs/DOC_suivi-dettes.md` — **la seule liste** | les lignes que le ticket cite, jamais en entier (~120 k tokens) |
 | Décisions de fond du projet | `specs/00_ROADMAP.md`, du « Bloc à lire en premier » aux « Contraintes de méthode » | avant un ticket de code (le reste = histoire des phases, par section si besoin ; `Q-175`) |
 | La spec en cours | `specs/NN_*.md` | en entier, avant d'en coder un palier |
-| Décisions produit/techniques verrouillées | `docs/carte_mentale_RPG_V2_v1_7_0.md` §0, §8 | quand un ticket touche le design |
+| Le cap, et les décisions produit/techniques verrouillées | `docs/carte_mentale_RPG_V2_v1_8_0.md` §00, §0, §8 | quand un ticket touche le design ou l'intention |
 | Décisions datées archivées (**toujours en vigueur**) | `docs/archives/decisions_archives.md` | quand un ticket touche leur terrain (résumé plus bas) |
 | Carte des modules | `docs/ARCHITECTURE.md` | quand un ticket touche un module ; à tenir à jour |
 | Histoire des sessions | `docs/archives/INDEX.md` | en cas de doute sur une décision passée |
@@ -89,7 +91,7 @@ Chaque règle est née d'un incident ; son histoire est dans l'archive citée (o
 
 ## Décisions produit verrouillées (ne pas rouvrir)
 
-Détail complet : `docs/carte_mentale_RPG_V2_v1_7_0.md` §0 et §8, et `docs/archives/decisions_archives.md` (15 au 25/09, verbatim, **toutes en vigueur**). Une décision **nouvelle** s'ajoute à la table en fin de section ; une révision le dit (« *révise* … »).
+Détail complet : `docs/carte_mentale_RPG_V2_v1_8_0.md` §0 et §8, et `docs/archives/decisions_archives.md` (15 au 25/09, verbatim, **toutes en vigueur**). Une décision **nouvelle** s'ajoute à la table en fin de section ; une révision le dit (« *révise* … »).
 
 - **Fondations** : 3 éléments, extensibles en données · 4 stats primaires (Force, Agilité, Vitalité, Esprit) ; tout le scaling de dégâts part de la Force, l'élément porte le type, jamais la puissance · 5 slots d'action, 3 d'équipement, en données · progression sur deux axes (XP → stats ; jalons narratifs → capacités) · un seul système de recettes · layouts écrits à la main + décor procédural à graine fixe · narration diffuse, aucun journal de quêtes ni objectif affiché · périmètre M1 fermé (Grotte → Région Maison → 1ère zone → Château → Boss 1 → Poste avancé) ; console, cartouches, Codex = M2+.
 - **Stats et combat** : toute stat primaire a au moins une dérivée, un système lit la dérivée (`D-141`) · **Esprit amplifie les compétences** : Force × puissance d'Esprit × multiplicateur, en un seul point, et une hâte avec plancher ; sans Force, rien · un niveau se crédite depuis le niveau de la sauvegarde, jamais repris ; chaque niveau a son flag (`D-205`) · une compétence se vise (curseur, stick droit, doigt) ; `competences.js#pointVise` est LE point de résolution, la visée ne dépend pas du regard.

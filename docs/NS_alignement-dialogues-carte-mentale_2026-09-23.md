@@ -64,7 +64,7 @@ Deux notes d'architecture, pas de design :
 - Eau négatif est le seul régime qui touche des **dérivées** (`derivee_vitesse_deplacement_px_s`, cadence d'attaque) et non la stat : la synergie doit pouvoir déclarer un modificateur **de dérivée** en données, sinon Eau devient un cas particulier dans le code. À poser dans Spec 10 comme forme générique, un seul point de résolution (patron `D-141`).
 - « Les monstres se déplacent plus vite » emprunte le canal de l'entrave avec un signe positif : le modificateur de vitesse d'un monstre dans l'aura doit accepter les deux sens. Même canal pour le « /2 » de Terre (un facteur, jamais une seconde constante).
 
-## 3. Amendements de la carte mentale → `carte_mentale_RPG_V2_v1_7_0.md` (Claude Code, documentation seule)
+## 3. Amendements de la carte mentale → `carte_mentale_RPG_V2_v1_8_0.md` (Claude Code, documentation seule)
 
 Renommer le fichier (v1.6.0 → v1.7.0), mettre à jour l'en-tête et le lien dans `CLAUDE.md`. Éditions **par ancre de section**, jamais de remplacement global (règle 8 du suivi).
 

@@ -274,7 +274,7 @@ rpg_v2/
 ├── locales/fr.json, en.json
 ├── specs/                  00_ROADMAP.md, 0N_*.md par phase
 ├── docs/                   DOC_suivi-dettes.md (registre vivant : LA liste de ce qui est dû) +
-│                           carte_mentale_RPG_V2_v1_7_0.md + fiches de diagnostic/ticket actives
+│                           carte_mentale_RPG_V2_v1_8_0.md + fiches de diagnostic/ticket actives
 │                           (SD_*.md, MT_*.md, NS_*.md, CHECKLIST_visuelle.md) + archives/
 │                           (journaux de session clos, fiches et NS closes) + captures/
 │                           (album de référence par jalon)

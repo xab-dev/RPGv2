@@ -277,5 +277,59 @@
         "text_key": "dlg.ambiance.stele_carnet"
       }
     }
+  },
+  {
+    "id": "dlg_zeros_debut",
+    "declencheur": "rencontre_zeros_debut",
+    "entree": "l1",
+    "noeuds": {
+      "l1": {
+        "locuteur": "enemy_zeros",
+        "text_key": "dlg.zeros.debut.1",
+        "suite": "l2"
+      },
+      "l2": {
+        "locuteur": "enemy_zeros",
+        "text_key": "dlg.zeros.debut.2"
+      }
+    }
+  },
+  {
+    "id": "dlg_annexe_releve",
+    "declencheur": "rencontre_releve",
+    "mesure": false,
+    "entree": "l1",
+    "noeuds": {
+      "l1": {
+        "locuteur": "follet",
+        "text_key": "dlg.releve.1"
+      }
+    }
+  },
+  {
+    "id": "dlg_zeros_fin",
+    "declencheur": "rencontre_zeros_fin",
+    "entree": "l1",
+    "noeuds": {
+      "l1": {
+        "locuteur": "enemy_zeros",
+        "text_key": "dlg.zeros.fin.1",
+        "suite": "l2"
+      },
+      "l2": {
+        "locuteur": "enemy_zeros",
+        "text_key": "dlg.zeros.fin.2",
+        "suite": "l3"
+      },
+      "l3": {
+        "locuteur": "enemy_zeros",
+        "text_key": "dlg.zeros.fin.3",
+        "suite": "l4"
+      },
+      "l4": {
+        "locuteur": "enemy_zeros",
+        "text_key": "dlg.zeros.fin.4"
+      }
+    }
   }
 ]

@@ -153,7 +153,9 @@ export function distanceRelachePx(companion) {
 // 70 px effleuré par l'aura d'un follet qui rentre serait engagé à une frame
 // et relâché à la suivante (la relâche, elle, se mesure depuis le héros).
 export function monstreEngageable(monstre, hero, follet, companion) {
-  if (!monstre || monstre.mort) return false;
+  // Spec 14, §4.3 : le follet ignore un intouchable (Zéros) — il n'a rien à y
+  // faire, et c'est la cible voulue par la scène qu'il doit prendre.
+  if (!monstre || monstre.mort || monstre.intouchable) return false;
   const dHero = distance(hero, monstre);
   if (dHero > distanceRelachePx(companion)) return false;
   if (dHero <= resoudreOrbiteRayonPx()) return true;
@@ -266,7 +268,7 @@ export function cibleSuivante(follet, hero, monstres, companion) {
   if (!follet) return follet;
   const portee = distanceRelachePx(companion);
   const candidats = monstres
-    .filter((m) => m && !m.mort && distance(hero, m) <= portee)
+    .filter((m) => m && !m.mort && !m.intouchable && distance(hero, m) <= portee)
     .sort((a, b) => distance(hero, a) - distance(hero, b) || String(a.id).localeCompare(String(b.id)));
   if (candidats.length === 0) return follet;
 
@@ -278,4 +280,23 @@ export function cibleSuivante(follet, hero, monstres, companion) {
   // Pas de saut de position : `avancerPosition` amortit l'approche de la
   // nouvelle cible exactement comme celle d'une cible engagée toute seule.
   return { ...follet, etat: 'engager', cibleMonstreId: suivant.id };
+}
+
+// --- Une orbite de follet, autour d'un autre centre (spec 14, §4.3) --------
+// Le follet de Zéros tourne autour de Zéros comme le nôtre autour du héros :
+// même loi d'amortissement (`D-53`, indépendante du nombre de frames), avec
+// son rayon et sa vitesse lus dans SES données (`enemies.json > orbite`), pas
+// dans les constantes de notre follet. `corps` porte `x`, `y` et `angleOrbite`
+// (absent au premier appel : l'angle part de zéro). Pur.
+export function avancerOrbiteAutour(corps, centre, { rayonPx, vitesseRadS }, deltaS) {
+  const angleOrbite = (corps.angleOrbite || 0) + deltaS * vitesseRadS;
+  const k = amortissement(deltaS);
+  const cibleX = centre.x + Math.cos(angleOrbite) * rayonPx;
+  const cibleY = centre.y + Math.sin(angleOrbite) * rayonPx;
+  return {
+    ...corps,
+    x: corps.x + (cibleX - corps.x) * k,
+    y: corps.y + (cibleY - corps.y) * k,
+    angleOrbite,
+  };
 }

@@ -13,7 +13,8 @@
 //    déclarent en DONNÉES seules.
 // 5. Le vrai orchestrateur, en salle 1 : les cracheurs tirent, un crachat
 //    touche le héros ; le dernier tombé pose le flag de la salle ; le levier
-//    apparaît alors (pas avant), s'actionne et ouvre le passage ; revenir dans
+//    apparaît alors (pas avant), s'actionne et ouvre le passage (aux descentes
+//    suivantes, Zéros déjà rencontré : `Q-142`, depuis le palier D) ; revenir dans
 //    la salle ne fait pas renaître les cracheurs ; une descente neuve remet
 //    les cracheurs, le levier et le passage à zéro.
 // 6. Aucun id du palier dans le code système.
@@ -260,9 +261,14 @@ const aPorteeDuLevier = { valeur: 'a_portee', egal: LEVIER.id };
 }
 
 // 5b. Nettoyée : le flag, le levier qui apparaît, le passage.
+// Depuis le palier D, le levier lève son propre flag de descente et la
+// rencontre de la salle ouvre le passage. Ici, une descente SUIVANTE (Zéros
+// déjà rencontré, `Q-142`) : le levier ouvre le passage tout de suite. La
+// première fois est au test du palier D.
+const PASSAGE = SALLE_1.rencontre.flags_fin[0];
 {
   // Le héros au pied du levier, là où il apparaîtra.
-  const b = banc({ x: LEVIER.position.x, y: LEVIER.position.y + 0.6 });
+  const b = banc({ x: LEVIER.position.x, y: LEVIER.position.y + 0.6, flagsSave: { [SALLE_1.rencontre.flag_rencontre]: true } });
   b.frame();
   assert.equal(b.orch.evaluerCondition(aPorteeDuLevier), false, 'avant : le levier n\'existe pas');
   b.frame(etat({ interact: true }));
@@ -277,9 +283,10 @@ const aPorteeDuLevier = { valeur: 'a_portee', egal: LEVIER.id };
   assert.equal(b.save.flags[FLAG_NETTOYEE], true, 'le dernier tombé : la salle est nettoyée, sauvegardée');
   assert.equal(b.orch.evaluerCondition(aPorteeDuLevier), true, 'le levier est là');
   b.frame(etat({ interact: true }));
-  assert.equal(b.orch.evaluerCondition(LEVIER.flag_pose), true, 'actionné, il ouvre le passage');
+  assert.equal(b.orch.evaluerCondition(LEVIER.flag_pose), true, 'actionné');
+  assert.equal(b.orch.evaluerCondition(PASSAGE), true, 'il ouvre le passage, dans la même frame');
   assert.equal(b.save.puzzles[LEVIER.id].actif, true);
-  const passage = SALLE_1.portails.find((p) => p.condition === LEVIER.flag_pose);
+  const passage = SALLE_1.portails.find((p) => p.condition === PASSAGE);
   const h = b.orch.obtenirHero();
   h.x = (passage.zone.x + 0.5) * T;
   h.y = (passage.zone.y + 0.5) * T;
@@ -304,7 +311,7 @@ const aPorteeDuLevier = { valeur: 'a_portee', egal: LEVIER.id };
   const t = scene(SCENE_SURFACE).tile_size;
   const b = banc({
     sceneId: SCENE_SURFACE, x: STELE.position.x, y: STELE.position.y + 1.1 - 0.5,
-    flagsSave: { [INDICE.dechiffrement.flag]: true, flag_ambiance_stele_carnet: true, [FLAG_NETTOYEE]: true, [LEVIER.flag_pose]: true },
+    flagsSave: { [INDICE.dechiffrement.flag]: true, flag_ambiance_stele_carnet: true, [FLAG_NETTOYEE]: true, [LEVIER.flag_pose]: true, [PASSAGE]: true },
     puzzles: { [LEVIER.id]: { actif: true } },
   });
   b.orch.obtenirHero().y = (STELE.position.y + 1.1) * t;
@@ -314,7 +321,8 @@ const aPorteeDuLevier = { valeur: 'a_portee', egal: LEVIER.id };
   b.frame(etat(), 1000);
   assert.equal(b.orch.obtenirScene().id, SALLE_1.id);
   assert.equal(b.save.flags[FLAG_NETTOYEE], undefined, 'la salle est à nettoyer de nouveau');
-  assert.equal(b.save.flags[LEVIER.flag_pose], undefined, 'le passage est refermé');
+  assert.equal(b.save.flags[LEVIER.flag_pose], undefined, 'le levier est à relever');
+  assert.equal(b.save.flags[PASSAGE], undefined, 'le passage est refermé');
   assert.equal(b.save.puzzles[LEVIER.id].actif, false, 'le levier est rabaissé');
   assert.equal(tireurs(b.orch).length, SALLE_1.spawns.length, 'les cracheurs sont revenus');
   console.log('OK descente neuve : cracheurs, levier et passage remis à zéro');

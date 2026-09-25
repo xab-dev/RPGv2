@@ -393,5 +393,17 @@
   "weapon.torche": "Torch",
   "item.torche": "Torch",
   "item.torche.description": "A branch, grass bound tight with rope. It strikes like a sword, and it burns.",
-  "recipe.torche": "Torch"
+  "recipe.torche": "Torch",
+  "enemy.zeros": "Zeros",
+  "enemy.follet_zeros": "Zeros’s wisp",
+  "locuteur.enemy_zeros": "Zeros",
+  "flag.annexe_levier_1": "Descent: the antechamber lever",
+  "flag.zeros_rencontre": "Zeros, met",
+  "dlg.zeros.debut.1": "Well. You found a wisp too.",
+  "dlg.zeros.debut.2": "You won’t touch me. Him, maybe. Show me what yours is worth.",
+  "dlg.releve.1": "Get up. Keep fighting!",
+  "dlg.zeros.fin.1": "Enough. You strike true… for someone who doesn’t yet know what shines beside him.",
+  "dlg.zeros.fin.2": "You and I are one. One in the light, the other in its shadow.",
+  "dlg.zeros.fin.3": "A wisp doesn’t follow: it waits. It waits to be told where to stand. I learned what yours hasn’t told you.",
+  "dlg.zeros.fin.4": "Go on. We’ll meet again, further on, where the stone answers."
 }

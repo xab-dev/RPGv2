@@ -935,7 +935,14 @@ export function dessinerScene(ctx, {
     // cf. le `continue` ci-dessus). Seule la primitive `teinte: true` du
     // visuel (le corps) blanchit ; une éventuelle facette non-teintable
     // reste visible par-dessus.
-    dessinerVisuel(ctx, monstre.visuel, mx, my, { teinte: monstre.flashMs > 0 ? '#ffffff' : null });
+    // Spec 14, palier D : `miroir` (Zéros, la silhouette du héros retournée)
+    // et `alpha` (le fondu d'une rencontre), résolus par l'appelant.
+    const alphaMonstre = monstre.alpha == null ? 1 : monstre.alpha;
+    dessinerVisuel(ctx, monstre.visuel, mx, my, {
+      teinte: monstre.flashMs > 0 ? '#ffffff' : null,
+      miroir: monstre.miroir === true,
+      alpha: alphaMonstre,
+    });
 
     // Barre de PV (§3.1) : visible seulement si le monstre est "actif"
     // (engagé ou déjà touché) — jamais sur un monstre inerte à distance,
@@ -949,6 +956,7 @@ export function dessinerScene(ctx, {
       // fond noir et un aplat rouge — un monstre touché parle la même langue
       // que la jauge de PV du héros.
       ctx.save();
+      if (alphaMonstre !== 1) ctx.globalAlpha *= alphaMonstre;
       dessinerBarre(ctx, { x: barreX, y: barreY, largeur: barreLargeur, hauteur: barreHauteur }, ratioPv, PALETTE_JAUGES.pv);
       ctx.restore();
     }

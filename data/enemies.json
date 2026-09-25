@@ -49,5 +49,45 @@
     "loot_table": "loot_annexe_cracheur",
     "render": { "visuel": "visuel_monstre_cracheur" },
     "xp": 30
+  },
+  {
+    "id": "enemy_zeros",
+    "label_key": "enemy.zeros",
+    "pv": 100,
+    "force": 18,
+    "vitesse": 45,
+    "portee_attaque": 24,
+    "distance_contact_px": 16,
+    "cadence_attaque_ms": 1100,
+    "comportement": "melee",
+    "intouchable": true,
+    "element": null,
+    "loot_table": "loot_aucun",
+    "render": {
+      "visuel": "visuel_zeros",
+      "miroir": true
+    },
+    "xp": 0
+  },
+  {
+    "id": "enemy_follet_zeros",
+    "label_key": "enemy.follet_zeros",
+    "pv": 160,
+    "force": 0,
+    "vitesse": 0,
+    "portee_attaque": 0,
+    "cadence_attaque_ms": 1000,
+    "comportement": "orbite",
+    "orbite": {
+      "autour": "enemy_zeros",
+      "rayon_px": 40,
+      "vitesse_rad_s": 1.4
+    },
+    "element": null,
+    "loot_table": "loot_aucun",
+    "render": {
+      "visuel": "visuel_follet_zeros"
+    },
+    "xp": 0
   }
 ]

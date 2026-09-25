@@ -358,5 +358,13 @@
   {
     "id": "flag_annexe_sortie",
     "label_key": "flag.annexe_sortie"
+  },
+  {
+    "id": "flag_annexe_levier_1",
+    "label_key": "flag.annexe_levier_1"
+  },
+  {
+    "id": "flag_zeros_rencontre",
+    "label_key": "flag.zeros_rencontre"
   }
 ]

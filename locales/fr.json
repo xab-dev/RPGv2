@@ -393,5 +393,17 @@
   "weapon.torche": "Torche",
   "item.torche": "Torche",
   "item.torche.description": "Une branche, de l’herbe serrée dans la corde. Elle frappe comme une épée, et elle brûle.",
-  "recipe.torche": "Torche"
+  "recipe.torche": "Torche",
+  "enemy.zeros": "Zéros",
+  "enemy.follet_zeros": "Le follet de Zéros",
+  "locuteur.enemy_zeros": "Zéros",
+  "flag.annexe_levier_1": "Descente : le levier de l’antichambre",
+  "flag.zeros_rencontre": "Zéros, rencontré",
+  "dlg.zeros.debut.1": "Tiens. Toi aussi, tu as trouvé un follet.",
+  "dlg.zeros.debut.2": "Moi, tu ne me toucheras pas. Lui, peut-être. Montre-moi ce que vaut le tien.",
+  "dlg.releve.1": "Relève-toi. Continue de te battre !",
+  "dlg.zeros.fin.1": "Assez. Tu frappes juste… pour quelqu’un qui ne sait pas encore ce qui brille à côté de lui.",
+  "dlg.zeros.fin.2": "Toi et moi, nous ne faisons qu’un. L’un dans la lumière, l’autre dans son ombre.",
+  "dlg.zeros.fin.3": "Un follet ne suit pas : il attend. Il attend qu’on lui dise où se tenir. J’ai appris ce que le tien ne t’a pas dit.",
+  "dlg.zeros.fin.4": "Passe. Nous nous reverrons, plus loin, là où la pierre répond."
 }

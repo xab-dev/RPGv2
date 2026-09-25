@@ -25,6 +25,11 @@ export function creerMonstre(donneesEnnemi, { x, y, id = donneesEnnemi.id }) {
     dotAccumulateurMs: 0,
     flashMs: 0, // §3.1 03_grotte-polish : compte à rebours du blanchiment "touché", feedback pur (combat.js#FLASH_TOUCHE_MS)
     mort: false,
+    // Spec 14, §4.3 : un monstre INTOUCHABLE (Zéros) ne prend aucun dégât, et
+    // ni l'auto-attaque ni le follet ne le choisissent. Porté par l'instance,
+    // lu depuis l'entrée d'ennemi : chaque système qui choisit ou blesse un
+    // monstre le lit ici, jamais dans le catalogue.
+    intouchable: donneesEnnemi.intouchable === true,
   };
 }
 
@@ -32,20 +37,30 @@ export function creerMonstre(donneesEnnemi, { x, y, id = donneesEnnemi.id }) {
 // donnée sur l'ennemi — cf. enemies.json — prête pour un 2ᵉ archétype sans
 // modifier cette fonction, juste un `if (donnees.comportement === ...)`
 // ajouté au point d'appel le jour où il existe réellement, cf. §6).
-export function approcherEnLigneDroite(monstre, cibleX, cibleY, vitesse, deltaS) {
+//
+// `arretPx` (spec 14, palier D) : la distance où il s'arrête. 0 par défaut —
+// un rampant va jusque sur le héros, comme depuis la Phase 1. Zéros, qui a la
+// taille du héros, disparaîtrait sous lui : son entrée déclare un contact.
+export function approcherEnLigneDroite(monstre, cibleX, cibleY, vitesse, deltaS, arretPx = 0) {
   if (monstre.mort) return monstre;
   const dx = cibleX - monstre.x;
   const dy = cibleY - monstre.y;
   const distance = Math.hypot(dx, dy);
-  if (distance <= 0.0001) return monstre;
+  if (distance <= Math.max(0.0001, arretPx)) return monstre;
   const pas = vitesse * deltaS;
-  const ratio = Math.min(1, pas / distance);
+  const ratio = Math.min(1, pas / distance, (distance - arretPx) / distance);
   return { ...monstre, x: monstre.x + dx * ratio, y: monstre.y + dy * ratio };
 }
 
+// LE point où un monstre perd des PV : l'auto-attaque, la brûlure, le DoT de
+// l'aura et les tirs du joueur (spec 14, palier G) passent tous ici. Un
+// intouchable n'y perd rien ; une entité qui porte `pvPlancher` (la cible
+// d'une rencontre, `rencontre.js#plancherCible`) s'arrête à ce plancher et ne
+// meurt pas — la rencontre finit là.
 export function infligerDegats(entite, degats) {
-  if (entite.mort) return entite;
-  const pv = Math.max(0, entite.pv - Math.max(0, degats));
+  if (entite.mort || entite.intouchable) return entite;
+  const plancher = entite.pvPlancher > 0 ? entite.pvPlancher : 0;
+  const pv = Math.max(Math.min(plancher, entite.pv), entite.pv - Math.max(0, degats));
   return { ...entite, pv, mort: pv <= 0 };
 }
 

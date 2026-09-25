@@ -64,6 +64,7 @@ import {
   creerFollet, mettreAJourEtat as mettreAJourFollet, avancerPosition as avancerFollet, monstreEngageable,
   cibleSuivante as cibleSuivanteFollet,
   resoudreEchelleJeu as resoudreEchelleJeuFollet, echelleFolletEnTransition, resoudreRayonAuraPx,
+  avancerOrbiteAutour,
 } from './companion.js';
 import { creerGenerateur, resoudreLoot } from './loot.js';
 import { etatInitial as etatInitialPuzzles, activerLevier } from './puzzles.js';
@@ -83,6 +84,10 @@ import {
   sceneNettoyee,
 } from './spawns.js';
 import { creerComportement, avancerComportement, deciderTireur } from './comportement_monstres.js';
+import {
+  deciderRencontre, creerEtatRencontre, avancerRencontre, passerALaFin, passerALEffacement,
+  rencontreAgit, rencontreEnCours, opaciteRencontre, plancherCible, cibleAuSeuil,
+} from './rencontre.js';
 import {
   creerProjectiles, tirer as tirerProjectile, avancerProjectiles, viderProjectiles, projectilesEnVol, CAMP_MONSTRES, CAMP_HEROS,
 } from './projectiles.js';
@@ -1429,6 +1434,11 @@ export function creerOrchestrateurGrotte({
   // allouée une fois. État de SESSION : vidé à chaque entrée en scène, jamais
   // sauvegardé (§6).
   const projectiles = creerProjectiles();
+  // Spec 14, palier D : la RENCONTRE lancée dans la scène (`rencontre.js`),
+  // `{ def, etat }` — `def` est lue dans `scenes.json`. État de SESSION : remis
+  // à null à chaque entrée en scène, jamais sauvegardé ; une rencontre
+  // interrompue (escalier, rechargement) se rejoue, son flag n'étant pas posé.
+  let rencontre = null;
   // `D-158` : le geste de chaque levier (bascule.js), par id — un état
   // d'AFFICHAGE, jamais sauvegardé : la vérité reste `puzzlesEtat`. Un levier
   // sans entrée ici se pose à sa place, sans rejouer son geste.
@@ -1971,6 +1981,7 @@ export function creerOrchestrateurGrotte({
     // repart de la nuit en cours, plafond vide (palier B, « non persistés »).
     accumulateursSpawn = {};
     viderProjectiles(projectiles);
+    rencontre = null;
 
     follet = save.hero.companion ? creerFollet(save.hero.companion, hero, sensOrbiteFollet()) : null;
     puzzlesEtat = { ...etatInitialPuzzles(registre), ...save.puzzles };
@@ -3507,6 +3518,81 @@ export function creerOrchestrateurGrotte({
     if (sceneNettoyee(monstres)) flags.set(nettoyage.flag);
   }
 
+  // Le follet de Zéros (spec 14, §4.3) : il tourne autour du monstre que son
+  // entrée nomme (`orbite.autour`), avec la loi d'orbite de notre follet
+  // (`companion.js#avancerOrbiteAutour`) et SES nombres. Il vole : aucun mur ne
+  // l'arrête, comme le nôtre. Sans centre vivant, il reste où il est.
+  function deplacerEnOrbite(monstre, donneesEnnemi, deltaS) {
+    const { autour, rayon_px: rayonPx, vitesse_rad_s: vitesseRadS } = donneesEnnemi.orbite;
+    const centre = monstres.find((m) => !m.mort && m.enemyId === autour);
+    if (!centre) return { ...monstre };
+    return avancerOrbiteAutour(monstre, centre, { rayonPx, vitesseRadS }, deltaS);
+  }
+
+  // Spec 14, palier D : la RENCONTRE de la scène, si elle en déclare une
+  // (`scenes.json > rencontre`). Ce script ne sait pas que c'est Zéros : ses
+  // monstres, sa cible, son seuil, ses dialogues et ses flags vivent dans ses
+  // données, `rencontre.js` dit où elle en est. Appelée après le combat, dans
+  // le temps de jeu : gelée sous UI, donc sous ses propres dialogues.
+  function majRencontre(deltaMs) {
+    const def = registre.obtenir('scenes', scene.id).rencontre;
+    if (!def) return;
+    const decision = deciderRencontre(def, { evaluer: (c) => flags.evaluate(c), has: flags.has, enCours: rencontre !== null });
+    // Les descentes suivantes (`Q-142`) : la rencontre a déjà eu lieu, ce
+    // qu'elle ouvrait s'ouvre tout de suite.
+    if (decision === 'raccourci') {
+      for (const f of def.flags_fin) flags.set(f);
+      return;
+    }
+    if (decision === 'demarrer') {
+      demarrerRencontre(def);
+      return;
+    }
+    if (!rencontre) return;
+    const { etat, evenement } = avancerRencontre(rencontre.etat, deltaMs, def.fondu_ms);
+    rencontre.etat = etat;
+    if (evenement === 'combat' && def.dialogue_debut) ouvrirDialogueCatalogue(def.dialogue_debut);
+    if (evenement === 'efface') terminerRencontre(def);
+    // La cible au seuil : tout se fige (le dialogue gèle le jeu), le dialogue
+    // de fin parle ; fermé, l'effacement commence.
+    if (etat.phase === 'combat' && cibleAuSeuil(monstres, def.cible)) {
+      rencontre.etat = passerALaFin(etat);
+      ouvrirDialogueCatalogue(def.dialogue, {
+        onFermer: () => {
+          if (rencontre) rencontre.etat = passerALEffacement(rencontre.etat);
+        },
+      });
+    }
+  }
+
+  // Les monstres de la rencontre naissent à leur place, marqués (`rencontre`) :
+  // `sceneNettoyee` ne les compte pas, la boucle les tient inertes hors
+  // combat, le dessin les fond. La cible reçoit son plancher de PV : elle
+  // s'arrête au seuil, elle ne meurt pas (`entities.js#infligerDegats`).
+  function demarrerRencontre(def) {
+    rencontre = { def, etat: creerEtatRencontre() };
+    const nes = def.monstres.map((m) => {
+      compteurMonstresNes += 1;
+      const monstre = creerMonstre(registre.obtenir('enemies', m.enemy), {
+        x: (m.position.x + 0.5) * scene.tileSize,
+        y: (m.position.y + 0.5) * scene.tileSize,
+        id: `${m.enemy}#${compteurMonstresNes}`,
+      });
+      monstre.rencontre = true;
+      if (m.enemy === def.cible) monstre.pvPlancher = plancherCible(monstre.pvMax, def.seuil_fin);
+      return monstre;
+    });
+    monstres = [...monstres, ...nes];
+  }
+
+  // L'effacement fini : ses monstres partent, son flag (une seule fois) et ses
+  // flags de fin (le passage) sont posés — la sauvegarde suit par `onUnlock`.
+  function terminerRencontre(def) {
+    monstres = monstres.filter((m) => !m.rencontre);
+    flags.set(def.flag_rencontre);
+    for (const f of def.flags_fin) flags.set(f);
+  }
+
   function mettreAJourCombat(deltaMs, etatGameplay, statsPrimaires, statsDerivees) {
     const deltaS = deltaMs / 1000;
     anneauAttaqueMs = tickCooldown(anneauAttaqueMs, deltaMs);
@@ -3543,6 +3629,9 @@ export function creerOrchestrateurGrotte({
     const regimeFrame = etatAlignement();
     monstres = monstres.map((monstre) => {
       if (monstre.mort) return monstre;
+      // Spec 14, palier D : pendant les fondus et le dialogue de fin, les
+      // monstres d'une rencontre ne font rien — ni pas, ni coup.
+      if (monstre.rencontre && !rencontreAgit(rencontre && rencontre.etat)) return monstre;
       const donneesEnnemi = registre.obtenir('enemies', monstre.enemyId);
       const { force, vitesse, dot } = statsEffectivesMonstre(registre, donneesEnnemi, follet, {
         position: { x: monstre.x, y: monstre.y },
@@ -3553,8 +3642,9 @@ export function creerOrchestrateurGrotte({
       // désintérêt) ; ceux de la Grotte vont droit au but, comme en Phase 1.
       let suivant;
       if (donneesEnnemi.comportement === 'distance') suivant = deplacerTireur(monstre, donneesEnnemi, force, vitesse, deltaS, deltaMs);
+      else if (donneesEnnemi.comportement === 'orbite') suivant = deplacerEnOrbite(monstre, donneesEnnemi, deltaS);
       else if (monstre.spawnId) suivant = deplacerMonstreDuChaos(monstre, vitesse, deltaS, deltaMs);
-      else suivant = approcherEnLigneDroite(monstre, hero.x, hero.y, vitesse, deltaS);
+      else suivant = approcherEnLigneDroite(monstre, hero.x, hero.y, vitesse, deltaS, donneesEnnemi.distance_contact_px || 0);
       suivant.cooldownAttaqueMs = tickCooldown(suivant.cooldownAttaqueMs, deltaMs);
       suivant.flashMs = tickCooldown(suivant.flashMs || 0, deltaMs);
 
@@ -3572,10 +3662,12 @@ export function creerOrchestrateurGrotte({
         suivant.dotAccumulateurMs += deltaMs;
         while (suivant.dotAccumulateurMs >= dot.intervalle_ms) {
           suivant.dotAccumulateurMs -= dot.intervalle_ms;
+          const pvAvantDot = suivant.pv;
           suivant = infligerDegats(suivant, dot.valeur);
           // Le tick de DoT (Feu) doit être visible sans que le joueur frappe
           // (§3.1 : "y compris sous DoT Feu sans frapper", critère manuel §7).
-          suivant.flashMs = FLASH_TOUCHE_MS;
+          // Seulement s'il a blessé : un intouchable (spec 14) ne flashe pas.
+          if (suivant.pv < pvAvantDot) suivant.flashMs = FLASH_TOUCHE_MS;
         }
       } else {
         suivant.dotAccumulateurMs = 0;
@@ -3642,6 +3734,14 @@ export function creerOrchestrateurGrotte({
     }
 
     verifierNettoyage();
+
+    // Spec 14, §4.3 : dans une rencontre SANS DÉFAITE, tomber à 0 PV ne tue
+    // pas — le follet relève le héros, PV pleins, sans malus ni retour à la
+    // Grotte. La règle vit sur la rencontre (`sans_defaite`), jamais sur un id.
+    if (hero.pv <= 0 && !hero.mort && rencontre && rencontre.def.sans_defaite && rencontreEnCours(rencontre.etat)) {
+      hero.pv = hero.pvMax;
+      if (rencontre.def.dialogue_releve) ouvrirDialogueCatalogue(rencontre.def.dialogue_releve);
+    }
 
     if (hero.pv <= 0 && !hero.mort) {
       Object.assign(hero, mourir(hero, {
@@ -4009,6 +4109,7 @@ export function creerOrchestrateurGrotte({
       if (etatGameplay.interact.pressed) essayerInteraction();
       if (etatGameplay.consume.pressed) essayerConsommer();
       mettreAJourCombat(deltaMs, etatGameplay, statsPrimaires, statsDerivees);
+      majRencontre(deltaMs);
       verifierEntreesDeZone();
       indices.maj(deltaMs);
       verifierIndicesNiveau();
@@ -4393,6 +4494,11 @@ export function creerOrchestrateurGrotte({
         // §3.1 03_grotte-polish : barre de PV visible ssi "actif" (engagé ou
         // déjà touché) — jamais un monstre inerte à distance.
         actif: estMonstreActif(m, follet),
+        // Spec 14, palier D : Zéros est la silhouette du héros retournée
+        // (`render.miroir`), et les monstres d'une rencontre arrivent et
+        // partent en fondu.
+        miroir: donneesEnnemi.render.miroir === true,
+        alpha: m.rencontre && rencontre ? opaciteRencontre(rencontre.etat, rencontre.def.fondu_ms) : 1,
       };
     });
 
@@ -4922,6 +5028,7 @@ export function creerOrchestrateurGrotte({
     vueStele = null;
     dechiffrement = null;
     viderProjectiles(projectiles);
+    rencontre = null;
     logoNiveauMs = null;
     basculesLeviers.clear();
     cooldownAttaqueHerosMs = 0;
@@ -4989,6 +5096,8 @@ export function creerOrchestrateurGrotte({
     obtenirMonstres: () => monstres,
     // Spec 14, palier C : les tirs en vol (copies des emplacements actifs).
     obtenirProjectiles: () => projectilesEnVol(projectiles).map((p) => ({ ...p })),
+    // Spec 14, palier D : la rencontre lancée dans la scène (sa phase), ou null.
+    obtenirRencontre: () => (rencontre ? { phase: rencontre.etat.phase, tMs: rencontre.etat.tMs } : null),
     obtenirChoixFollet: () => choixFollet,
     obtenirIntro: () => intro,
     obtenirOuvertureLogo: () => ouvertureLogoMs,

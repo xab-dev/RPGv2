@@ -173,7 +173,10 @@ export function zonesSignalees(scene, tables, { phase, evaluerCondition, opacite
 // nettoie pas d'eux. Une scène entrée sans aucun monstre à elle (déjà
 // nettoyée, ou dont la condition les a retenus) n'est pas « nettoyée » à
 // nouveau : rien n'est tombé.
+//
+// Ceux d'une RENCONTRE (`rencontre.js`, Zéros) non plus : ils arrivent après,
+// et l'un d'eux est intouchable — il ne tomberait jamais.
 export function sceneNettoyee(monstres) {
-  const aElle = monstres.filter((m) => !m.spawnId);
+  const aElle = monstres.filter((m) => !m.spawnId && !m.rencontre);
   return aElle.length > 0 && aElle.every((m) => m.mort);
 }

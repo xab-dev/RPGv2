@@ -551,6 +551,8 @@ function validerScene(entry, catalogs, path) {
     }
   }
 
+  if (entry.rencontre !== undefined) erreurs.push(...erreursRencontre(entry, catalogs, path, flagsDeclares));
+
   // lumieres[] : `type` distingue un halo (perce le voile, révèle le sol) et
   // un faisceau (§3.4 03_grotte-polish, atmosphère additive, ne perce jamais
   // le voile) — chaque type a ses propres champs requis. `type` absent =
@@ -1193,9 +1195,75 @@ function validerPuzzle(entry, catalogs, path) {
 }
 
 // Les comportements qu'un ennemi peut déclarer. `melee` va droit au héros ;
-// `distance` (spec 14, palier C) garde ses distances et tire.
-const COMPORTEMENTS_ENNEMI = ['melee', 'distance'];
+// `distance` (spec 14, palier C) garde ses distances et tire ; `orbite`
+// (palier D) tourne autour d'un autre monstre, comme un follet autour du héros.
+const COMPORTEMENTS_ENNEMI = ['melee', 'distance', 'orbite'];
+const CHAMPS_ORBITE = ['rayon_px', 'vitesse_rad_s'];
 const CHAMPS_ATTAQUE_DISTANCE = ['portee_tuiles', 'recul_tuiles', 'cadence_ms', 'vitesse_px_s', 'rayon_px', 'course_tuiles'];
+
+// `orbite` (spec 14, §4.3, le follet de Zéros) : exigée par le comportement
+// `orbite`, refusée sans lui. `autour` nomme l'ennemi dont il fait le tour ;
+// un monstre qui tournerait autour de lui-même ne bougerait jamais.
+function erreursOrbiteEnnemi(entry, catalogs, path) {
+  const o = entry.orbite;
+  if (entry.comportement !== 'orbite') {
+    return o !== undefined ? [`${path} > orbite sans comportement "orbite"`] : [];
+  }
+  if (!o || typeof o !== 'object') return [`${path} > comportement "orbite" sans orbite`];
+  const erreurs = [];
+  for (const champ of CHAMPS_ORBITE) {
+    if (typeof o[champ] !== 'number' || !(o[champ] > 0)) erreurs.push(`${path} > orbite.${champ} doit être un nombre > 0`);
+  }
+  if (o.autour === entry.id) erreurs.push(`${path} > orbite.autour : un monstre ne tourne pas autour de lui-même`);
+  else if (!(catalogs.enemies || []).some((e) => e.id === o.autour)) {
+    erreurs.push(`${path} > orbite.autour "${o.autour}" introuvable dans enemies.json`);
+  }
+  return erreurs;
+}
+
+// `rencontre` (spec 14, §4.3, `rencontre.js`) : le combat mis en scène d'une
+// salle. Tout ce qui la fait finir doit exister, sinon elle ne finirait
+// jamais : une cible parmi ses monstres, touchable, un seuil dans ]0 ; 1[.
+// Son flag et ses flags de fin sont déclarés ; ses dialogues existent.
+function erreursRencontre(entry, catalogs, path, flagsDeclares) {
+  const r = entry.rencontre;
+  const chemin = `${path} > rencontre`;
+  if (!r || typeof r !== 'object') return [`${chemin} doit être un objet`];
+  const erreurs = [];
+  if (r.declencheur === undefined || r.declencheur === null) erreurs.push(`${chemin} > declencheur manquant (une condition)`);
+  else erreurs.push(...erreursCondition(r.declencheur, `${chemin} > declencheur`, flagsDeclares));
+  if (!flagsDeclares.has(r.flag_rencontre)) erreurs.push(`${chemin} > flag_rencontre "${r.flag_rencontre}" non déclaré dans flags.json`);
+  if (!Array.isArray(r.flags_fin) || r.flags_fin.length === 0) {
+    erreurs.push(`${chemin} > flags_fin doit être une liste non vide (ce que la fin ouvre)`);
+  } else {
+    for (const f of r.flags_fin) if (!flagsDeclares.has(f)) erreurs.push(`${chemin} > flags_fin : "${f}" non déclaré dans flags.json`);
+  }
+  const enemies = catalogs.enemies || [];
+  const monstres = Array.isArray(r.monstres) ? r.monstres : [];
+  if (monstres.length === 0) erreurs.push(`${chemin} > monstres doit être une liste non vide`);
+  monstres.forEach((m, i) => {
+    if (!enemies.some((e) => e.id === (m && m.enemy))) erreurs.push(`${chemin} > monstres[${i}] : enemy "${m && m.enemy}" introuvable dans enemies.json`);
+    const p = m && m.position;
+    if (!p || !Number.isInteger(p.x) || !Number.isInteger(p.y) || p.x < 0 || p.y < 0 || p.x >= entry.width || p.y >= entry.height) {
+      erreurs.push(`${chemin} > monstres[${i}] : position hors de la scène`);
+    }
+  });
+  const cible = enemies.find((e) => e.id === r.cible);
+  if (!monstres.some((m) => m && m.enemy === r.cible)) erreurs.push(`${chemin} > cible "${r.cible}" absente de ses monstres`);
+  else if (cible && cible.intouchable) erreurs.push(`${chemin} > cible "${r.cible}" intouchable : la rencontre ne finirait jamais`);
+  if (typeof r.seuil_fin !== 'number' || !(r.seuil_fin > 0 && r.seuil_fin < 1)) erreurs.push(`${chemin} > seuil_fin doit être dans ]0 ; 1[`);
+  if (typeof r.fondu_ms !== 'number' || r.fondu_ms < 0) erreurs.push(`${chemin} > fondu_ms doit être un nombre >= 0`);
+  if (typeof r.sans_defaite !== 'boolean') erreurs.push(`${chemin} > sans_defaite doit être un booléen`);
+  const dialogues = new Set((catalogs.dialogues || []).map((d) => d.id));
+  if (!dialogues.has(r.dialogue)) erreurs.push(`${chemin} > dialogue "${r.dialogue}" introuvable dans dialogues.json`);
+  for (const champ of ['dialogue_debut', 'dialogue_releve']) {
+    if (r[champ] !== undefined && !dialogues.has(r[champ])) erreurs.push(`${chemin} > ${champ} "${r[champ]}" introuvable dans dialogues.json`);
+  }
+  // La relève n'existe que dans un combat sans défaite : sans lui, la mort
+  // renvoie à la Grotte et personne ne dirait la réplique.
+  if (r.dialogue_releve !== undefined && r.sans_defaite !== true) erreurs.push(`${chemin} > dialogue_releve sans sans_defaite`);
+  return erreurs;
+}
 
 // `attaque_distance` (spec 14, §4.3) : exigée par `distance`, refusée sans
 // lui (une attaque que personne ne tire serait une donnée écrite pour rien).
@@ -1257,8 +1325,10 @@ function validerConversation(entry, catalogs, path) {
       erreurs.push(`${chemin} doit être un objet`);
       continue;
     }
-    if (!LOCUTEURS_DIALOGUE.includes(noeud.locuteur)) {
-      erreurs.push(`${chemin} > locuteur doit être l'un de ${LOCUTEURS_DIALOGUE.join('/')}`);
+    // Spec 14, §4.3 : un personnage qui parle et qui se bat (Zéros) est une
+    // entrée d'ennemi — son nom affiché passe par `locuteur.<id>` comme les autres.
+    if (!LOCUTEURS_DIALOGUE.includes(noeud.locuteur) && !(catalogs.enemies || []).some((e) => e.id === noeud.locuteur)) {
+      erreurs.push(`${chemin} > locuteur doit être l'un de ${LOCUTEURS_DIALOGUE.join('/')}, ou un id de enemies.json`);
     }
     if (typeof noeud.text_key !== 'string') erreurs.push(`${chemin} > text_key manquant`);
     const options = noeud.options === undefined ? [] : noeud.options;
@@ -2297,6 +2367,23 @@ export const SCHEMAS = {
       }
       erreurs.push(...erreursRenderVisuel(entry, catalogs, path));
       erreurs.push(...erreursAttaqueDistance(entry, catalogs, path));
+      erreurs.push(...erreursOrbiteEnnemi(entry, catalogs, path));
+      // Spec 14, §4.3 : `intouchable` (Zéros) et `render.miroir` (sa silhouette
+      // retournée) sont des booléens ; une chaîne « true » passerait pour vraie
+      // au dessin et pour fausse aux dégâts.
+      if (entry.intouchable !== undefined && typeof entry.intouchable !== 'boolean') {
+        erreurs.push(`${path} > intouchable doit être un booléen`);
+      }
+      // `distance_contact_px` : où un monstre au corps à corps s'arrête. Au-delà
+      // de sa portée d'attaque, il ne frapperait jamais.
+      if (entry.distance_contact_px !== undefined) {
+        const d = entry.distance_contact_px;
+        if (typeof d !== 'number' || d < 0) erreurs.push(`${path} > distance_contact_px doit être un nombre >= 0`);
+        else if (d >= entry.portee_attaque) erreurs.push(`${path} > distance_contact_px doit être inférieure à portee_attaque (sinon il ne frappe jamais)`);
+      }
+      if (entry.render && entry.render.miroir !== undefined && typeof entry.render.miroir !== 'boolean') {
+        erreurs.push(`${path} > render.miroir doit être un booléen`);
+      }
       return erreurs;
     },
   },

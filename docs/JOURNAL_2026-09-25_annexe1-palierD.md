@@ -65,3 +65,7 @@ Demande de Xav : « go palier D ». Branche `annexe-1`. Pas de push.
 - Les textes de Zéros sont provisoires (`E-05`), dans `locales/fr.json` et `en.json` (`dlg.zeros.*`, `dlg.releve.1`).
 - Au Nv.33, tu tomberas peut-être moins vite : Zéros frappe 18. S'il ne te fait pas tomber, la relève ne se verra pas — `force` dans `data/enemies.json > enemy_zeros`.
 - Suivant : **palier E**, les deux mains (`levier_maintenu`, le follet posé).
+
+## 5. Après le palier (25/09, 2 h)
+
+- `Q-159` **tranchée par Xav** : « on a passé 30 minutes à écrire l'annexe, on a fait que le mini boss et on a passé au moins 5 heures de tests [...] on écrit, on avance, on corrige les bug, et de temps en temps on vérifie notre budget perf. » Plus de banc ni de capture par palier ; le banc complet à la fin d'une spec ou à la demande. La question posée au §3 (banc complet maintenant ?) tombe avec elle.

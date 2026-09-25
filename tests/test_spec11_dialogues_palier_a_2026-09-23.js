@@ -331,13 +331,18 @@ function partieALaMaison({ contacts = () => [] } = {}) {
   // Laisser la ligne s'écrire et s'armer, par petites frames (le delta de
   // jeu est plafonné) : ~3 s de jeu suffisent largement.
   const attendre = () => { for (let i = 0; i < 200; i += 1) tick(); };
-  return { save, dialogue, orch, tick, attendre };
+  // `D-243` : la question de la maison s'arrête comme une réplique ; un
+  // appui armé fait paraître ses options, qui s'arment à neuf.
+  const faireParaitre = () => { tick({ attack: b(true) }); attendre(); };
+  return { save, dialogue, orch, tick, attendre, faireParaitre };
 }
 {
   // Lire, choisir « Quelqu'un vit peut-être ici » : +1, puis +0,1 de lecture.
-  const { save, dialogue, orch, tick, attendre } = partieALaMaison();
+  const { save, dialogue, orch, tick, attendre, faireParaitre } = partieALaMaison();
   assert.equal(save.hero.alignement, 0);
   attendre();
+  assert.equal(dialogue.ligneCourante().options, null, 'D-243 : la question attend un appui');
+  faireParaitre();
   assert.equal(dialogue.ligneCourante().options.length, 3);
   tick({ move: { x: 0, y: 1 } });
   tick();
@@ -352,13 +357,14 @@ function partieALaMaison({ contacts = () => [] } = {}) {
 }
 {
   // Spammer A pendant l'écriture puis laisser l'option par défaut : −1 net.
-  const { save, dialogue, tick, attendre } = partieALaMaison();
+  const { save, dialogue, tick, attendre, faireParaitre } = partieALaMaison();
   // La frame qui suit l'ouverture est neutre par construction (défense de la
   // Phase 1b : le geste qui a ouvert ne ferme pas) — elle ne compte donc rien.
   tick();
   for (let i = 0; i < 6; i += 1) { tick({ attack: b(true) }); tick(); }
   assert.equal(dialogue.etatConversation().spamCompte, 6);
   attendre();
+  faireParaitre();
   tick({ attack: b(true) });
   assert.equal(dialogue.estOuvert(), false);
   assert.equal(save.hero.alignement, -1, 'six spams plafonnés à −1, l’option defaut ne pèse rien');
@@ -368,6 +374,11 @@ function partieALaMaison({ contacts = () => [] } = {}) {
   // Au doigt, sur le vrai orchestrateur : tap, tap sur la troisième option.
   let aTaper = [];
   const { save, dialogue, tick, attendre } = partieALaMaison({ contacts: () => { const c = aTaper; aTaper = []; return c; } });
+  attendre();
+  // `D-243` : un tap sur le texte fait paraître les options.
+  const geoQuestion = geometrieBoiteDialogue(0, RESOLUTION_LOGIQUE);
+  aTaper = [{ x: geoQuestion.boite.x + 40, y: geoQuestion.boite.y + 30 }];
+  tick();
   attendre();
   const geo = geometrieBoiteDialogue(3, RESOLUTION_LOGIQUE);
   const surOption3 = { x: geo.options[2].x + 30, y: geo.options[2].y + 9 };

@@ -1527,6 +1527,15 @@ function validerConversation(entry, catalogs, path) {
     if (options.length > 0 && noeud.suite !== undefined) {
       erreurs.push(`${chemin} > suite sur un nœud à options : ce sont les options qui mènent quelque part`);
     }
+    // `D-243` : l'appui de plus avant les options. Un booléen, et seulement
+    // sur un nœud qui en a : sur une réplique, il ne validerait rien.
+    if (noeud.valider_avant_options !== undefined) {
+      if (typeof noeud.valider_avant_options !== 'boolean') {
+        erreurs.push(`${chemin} > valider_avant_options doit être un booléen`);
+      } else if (options.length === 0) {
+        erreurs.push(`${chemin} > valider_avant_options sur un nœud sans option : il n'y a rien à faire paraître`);
+      }
+    }
     if (options.length > 0) {
       const defauts = options.filter((o) => o && o.defaut === true).length;
       if (defauts !== 1) erreurs.push(`${chemin} > ${defauts} option(s) defaut : il en faut exactement une (celle de qui avance sans choisir)`);

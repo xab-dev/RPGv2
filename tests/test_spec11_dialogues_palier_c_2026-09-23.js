@@ -179,6 +179,11 @@ function partie(niveau) {
 // Choisit le rang voulu au stick (depuis la sélection courante), confirme.
 function choisir(dialogue, tick, attendre, rang) {
   attendre();
+  // `D-243` : la question s'arrête comme une réplique ; un appui armé fait
+  // paraître ses options, qui s'arment à neuf.
+  assert.equal(dialogue.ligneCourante().options, null, 'la question attend un appui avant ses options');
+  tick({ attack: b(true) });
+  attendre();
   let sel = dialogue.ligneCourante().selection;
   while (sel !== rang) {
     tick({ move: { x: 0, y: rang > sel ? 1 : -1 } });

@@ -361,6 +361,8 @@ export function creerDialogue({ paginer = null } = {}) {
   function chargerNoeud() {
     const resolu = conversation.resoudre(conversation.etat.noeud);
     conversation.options = resolu.options;
+    conversation.validerAvantOptions = resolu.validerAvantOptions === true;
+    conversation.optionsRevelees = false;
     const fenetres = paginer ? paginer(resolu.texte) : [resolu.texte];
     lignes = fenetres.map((texte) => ({ locuteur: resolu.locuteur, portrait: resolu.portrait || null, texte }));
     index = 0;
@@ -369,9 +371,22 @@ export function creerDialogue({ paginer = null } = {}) {
 
   // §4.2 : « on ne peut pas choisir ce qu'on n'a pas lu » — les options
   // n'existent qu'une fois la DERNIÈRE fenêtre du nœud tapée et armée.
+  //
+  // `D-243` (Xav, 25/09 : « le dialogue continue automatiquement vers les
+  // questions et je me fais avoir à chaque fois ») : le joueur avance les
+  // répliques d'un appui chacune, et l'appui de trop, celui de l'habitude,
+  // tombait sur l'option présélectionnée. Un nœud qui déclare
+  // `valider_avant_options` s'arrête d'abord comme une réplique (▼), et c'est
+  // un appui de plus qui fait paraître les options — armées à neuf : l'appui
+  // qui les montre n'en choisit jamais une. Au cas par cas, en données, parce
+  // que c'est une affaire de narration (ce qu'on veut induire), pas de moteur.
+  function optionsAttendentValidation() {
+    return conversation.validerAvantOptions && !conversation.optionsRevelees
+      && conversation.options.length > 0;
+  }
   function optionsVisibles() {
     return conversation !== null && index === lignes.length - 1 && estArmee()
-      && conversation.options.length > 0;
+      && conversation.options.length > 0 && !optionsAttendentValidation();
   }
 
   // Un appui, d'où qu'il vienne (bouton, touche, doigt sur la bulle) : UN
@@ -395,6 +410,13 @@ export function creerDialogue({ paginer = null } = {}) {
     if (index < lignes.length - 1) {
       index += 1;
       reinitialiserLigne();
+      return;
+    }
+    // `D-243` : la validation ne passe pas par le graphe (comme une fenêtre
+    // de plus, le nœud reste UN nœud) ; l'armement repart de zéro.
+    if (optionsAttendentValidation()) {
+      conversation.optionsRevelees = true;
+      msDepuisAffichageComplet = 0;
       return;
     }
     conversation.etat = avancerConversation(conversation.etat, conversation.donnees, true, true);
@@ -440,7 +462,10 @@ export function creerDialogue({ paginer = null } = {}) {
   }
 
   function demarrer(donnees, { resoudre, poids, onResultat = null, onFermer = null }) {
-    conversation = { donnees, etat: ouvrirConversation(donnees), resoudre, poids, onResultat, options: [] };
+    conversation = {
+      donnees, etat: ouvrirConversation(donnees), resoudre, poids, onResultat,
+      options: [], validerAvantOptions: false, optionsRevelees: false,
+    };
     ouvert = true;
     onFermeture = onFermer;
     pousseePrecedente = 0;
@@ -449,8 +474,9 @@ export function creerDialogue({ paginer = null } = {}) {
 
   return {
     // Spec 11 : ouvrir un dialogue à NŒUDS. `resoudre(noeudId)` rend
-    // `{ locuteur, texte, options: [texte] }` déjà traduits (l'appelant tient
-    // i18n) ; `poids` est `alignement.json#poids_defaut` ; `onResultat` reçoit
+    // `{ locuteur, texte, options: [texte], validerAvantOptions? }` déjà
+    // traduits (l'appelant tient i18n) ; `poids` est
+    // `alignement.json#poids_defaut` ; `onResultat` reçoit
     // les conséquences ordonnées, une fois, à la fin naturelle.
     demarrerConversation: demarrer,
     // L'état pur de la conversation en cours (tests, relevé) — `null` hors
@@ -559,5 +585,6 @@ export function resoudreNoeud(donnees, noeudId, registre, i18n, companionId, per
     portrait: parleFollet ? companionId : null,
     texte: i18n.t(noeud.text_key, params),
     options: optionsDe(noeud).map((o) => i18n.t(o.text_key)),
+    validerAvantOptions: noeud.valider_avant_options === true,
   };
 }

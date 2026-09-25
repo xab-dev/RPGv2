@@ -196,6 +196,9 @@ const b = (v) => ({ pressed: v, held: v });
   assert.ok(dialogue.etatConversation());
   const attendre = () => { for (let i = 0; i < 200; i += 1) tickJeu(); };
   attendre();
+  // `D-243` : un appui armé fait paraître les options de la question.
+  tickJeu({ attack: b(true) });
+  attendre();
   tickJeu({ move: { x: 0, y: 1 } }); tickJeu();
   tickJeu({ move: { x: 0, y: 1 } }); tickJeu();
   assert.equal(dialogue.ligneCourante().selection, 2);

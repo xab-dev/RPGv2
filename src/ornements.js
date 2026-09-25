@@ -44,6 +44,56 @@ export function facteurRespiration(effet, tMs) {
   return 1 + effet.amplitude * Math.sin((tMs / effet.periode_ms) * Math.PI * 2);
 }
 
+// Le second souffle d'une flamme bat plus vite que le premier, d'un rapport
+// irrationnel (le nombre d'or) : les deux ne retombent jamais en phase, et la
+// flamme ne bat pas comme un métronome.
+export const RAPPORT_SECOND_SOUFFLE = 1.618;
+
+// Le vacillement d'une flamme (`specs/15` palier E) : deux souffles mêlés.
+// `graine` ∈ [0, 1[ décale la phase d'une fraction de période : elle dit QUI
+// est la flamme, jamais où elle est en ce moment (`D-218` : une graine tirée
+// de la position d'une flamme qui marche défile sous les pas, et la flamme
+// clignote). Sans effet, 1 exactement : Bas est fixe.
+export function facteurVacillement(effet, tMs, graine = 0) {
+  if (!effet) return 1;
+  const t = tMs + graine * effet.periode_ms;
+  return (facteurRespiration(effet, t) + facteurRespiration(effet, t * RAPPORT_SECOND_SOUFFLE)) / 2;
+}
+
+// `D-219` : aucun effet ne bat plus vite que 3 fois par seconde. C'est le
+// seuil des recommandations sur l'épilepsie photosensible (WCAG 2.3.1, et les
+// règles de diffusion télévisée qui en sont la source) : au-delà de 3 éclats
+// par seconde, un clignotement peut déclencher une crise, et la zone la plus
+// dangereuse va de 15 à 25 Hz. Ces règles tolèrent un clignotement rapide
+// s'il est petit ou peu contrasté ; on ne sait mesurer ni l'un ni l'autre
+// sans navigateur, donc le plafond vaut pour TOUT effet, sans exception.
+// Ce n'est pas un réglage, c'est un plafond : on ne le relève pas.
+export const FREQUENCE_MAX_HZ = 3;
+
+// Le rythme le plus rapide qu'un effet peut imprimer à la lumière, en Hz. Un
+// type d'effet qui bat se classe ici, une fois : un type absent de la table
+// rend `undefined`, et le test du catalogue refuse l'effet (un type nouveau
+// doit dire s'il clignote). Une respiration est comptée avec le second
+// souffle, puisque toute respiration peut être lue comme un vacillement.
+const RYTHME_PAR_TYPE = {
+  respiration: (e) => (1000 / e.periode_ms) * RAPPORT_SECOND_SOUFFLE,
+  filet: (e) => 1000 / e.periode_ms, // chaque particule naît et meurt une fois par période
+  orbite: (e) => 1000 / e.periode_ms, // l'alpha suit la profondeur, un tour par période
+  curseur: (e) => 1000 / e.periode_ms,
+  vol: (e) => 1000 / e.periode_ms,
+  // Le noir le plus court suivi de l'ouverture la plus courte : un battement.
+  clignement: (e) => 1000 / (e.noir_ms + Math.min(...e.ouvertures_ms)),
+  // Ne battent pas : des traînées qui s'effacent une fois, un texte qui
+  // monte, un symbole qui apparaît.
+  particules: () => 0,
+  texte: () => 0,
+  logo: () => 0,
+};
+export function rythmeLumineuxHz(effet) {
+  const rythme = RYTHME_PAR_TYPE[effet.type];
+  return rythme ? rythme(effet) : undefined;
+}
+
 // Le filet (`D-191`) : `nb_particules` qui montent d'un point en décrivant une
 // boucle, comme un filet d'éruption solaire. Chacune vit une période, décalée
 // des autres d'une fraction ; son âge `a` ∈ [0, 1[ dit tout : elle monte de

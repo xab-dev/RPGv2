@@ -54,3 +54,33 @@ export function prendre(liste, dureeMs) {
 export function rendre(liste, restantMs, dureeMs) {
   return restantMs < dureeMs ? [restantMs, ...liste] : liste;
 }
+
+// Les FLAMMES à l'écran (`D-218`) : la torche tenue, puis chaque objet planté
+// qui brûle — une seule liste, lue par la lumière (le vacillement) et par les
+// braises. Deux listes tenues à part avaient chacune leur graine, et chacune
+// l'avait tirée de la position du moment.
+//
+// La graine d'une flamme décale son rythme de celui des autres (deux torches
+// voisines ne battent pas ensemble). Elle doit rester FIXE tant que la flamme
+// existe : une plantée ne bouge plus, sa position suffit ; la tenue marche
+// avec le héros, sa graine est une constante. Tirée de la position du héros,
+// elle défilait de 36 à 60 ms de phase par pixel, et la flamme clignotait
+// entre 3 et 15 Hz en marchant.
+export const GRAINE_FLAMME_TENUE = 0;
+
+// Une graine ∈ [0, 1[ tirée d'une position immobile — ramenée dans [0, 1[
+// même pour une coordonnée négative (`%` en garde le signe).
+export function grainePosition(x, y) {
+  const g = (x * 0.53 + y * 0.29) % 1;
+  return g < 0 ? g + 1 : g;
+}
+
+// `tenue` : `{ x, y, lumiere }` ou `null` ; `plantes` : `[{ x, y, lumiere }]`,
+// `lumiere` à `null` pour un objet éteint (il n'a pas de flamme).
+export function flammesAffichees(tenue, plantes) {
+  return [
+    ...(tenue ? [{ x: tenue.x, y: tenue.y, lumiere: tenue.lumiere, graine: GRAINE_FLAMME_TENUE }] : []),
+    ...plantes.filter((p) => p.lumiere)
+      .map((p) => ({ x: p.x, y: p.y, lumiere: p.lumiere, graine: grainePosition(p.x, p.y) })),
+  ];
+}

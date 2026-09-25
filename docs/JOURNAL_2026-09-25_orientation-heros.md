@@ -95,4 +95,8 @@ compétence qui introduit la visée »), la seule `P1` née du ménage.
 | `ab5426a` | DOC | `Q-167` tranchée, `V-166` validée ; `D-247` à `D-249` ouverts |
 | `cdb8fb0` | `D-247` | L'Onde part vers le curseur (souris au clavier, stick droit à la manette), au bout de sa portée ; sinon la cible automatique. `competences.js#pointVise`, `curseur.js#viseeDuCurseur`, `lireVisee`. Vu sous Chrome. `V-167`, `Q-168` |
 | `5ee6846` | `D-248` | Le bouton d'une compétence part au relâchement ; un glissé vise, un toucher garde la visée automatique ; le trait de visée pendant le glissé. `touch.js` (`verbesVisants`, `viseeTactile`, `glissesEnCours`), `lireVisee(verbe)` → `{ ecran }` ou `{ direction }`, `render.js#dessinerVisees`. Vu sous Chrome au profil téléphone. `V-168`, `Q-169` |
-| (ce commit) | `D-249` | Huit directions : secteurs de 45° avec marge ; la capuche devient une pièce, qui penche (cisaillement autour de sa base) à l'opposé du regard ; le visage de trois-quarts. Le test de `D-229` suit le contrat changé par Xav. Vu au banc et en jeu. `V-169`, `Q-170` |
+| `f99e3fe` | `D-249` | Huit directions : secteurs de 45° avec marge ; la capuche devient une pièce, qui penche (cisaillement autour de sa base) à l'opposé du regard ; le visage de trois-quarts. Le test de `D-229` suit le contrat changé par Xav. Vu au banc et en jeu. `V-169`, `Q-170` |
+
+## 6. Fusion
+
+- Xav : « pour que je puisse faire mes tests correctement, fusionne puis push ». `orientation-heros` fusionnée dans `main` (`--no-ff`) et poussée, sans release. `V-167` à `V-169` restent à voir en jeu.

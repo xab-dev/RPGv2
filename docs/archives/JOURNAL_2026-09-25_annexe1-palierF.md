@@ -19,7 +19,7 @@ Demande de Xav : « Zéros c'était pour voir le feu follet me relever, j'ai rem
 | `d677ae5` | Réglages de Xav | Zéros : force 21, portée 32 ; son follet : 360 PV |
 | `3c02893` | Ménage | Journal du palier E archivé, INDEX à jour |
 | `bfa4b2d` | DOC | `Q-158` et `Q-160` tranchées par Xav : « Q-158 et Q-160 ok », le retenu tient |
-| (ce commit) | `D-212` : palier F | Le Gardien : le comportement `boss`, la salve, la barre en haut de l'écran |
+| `468ce0b` | `D-212` : palier F | Le Gardien : le comportement `boss`, la salve, la barre en haut de l'écran |
 
 ## 1. Le palier F
 

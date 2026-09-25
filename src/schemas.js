@@ -1904,6 +1904,12 @@ function validerCarteMenu(carte, catalogs, chemin, flagsDeclares) {
     if (carte.danger === true && typeof carte[champ] !== 'string') erreurs.push(`${chemin} > danger: true exige "${champ}"`);
     if (carte.danger !== true && carte[champ] !== undefined) erreurs.push(`${chemin} > "${champ}" n'a de sens qu'avec danger: true`);
   }
+  // `D-244` : la pop-up qui suit « Oui, … » — facultative, et seulement sur
+  // une carte dangereuse (c'est une seconde confirmation, pas une première).
+  if (carte.cle_popup !== undefined) {
+    if (carte.danger !== true) erreurs.push(`${chemin} > "cle_popup" n'a de sens qu'avec danger: true`);
+    else if (typeof carte.cle_popup !== 'string') erreurs.push(`${chemin} > cle_popup doit être une clé de texte`);
+  }
   erreurs.push(...erreursCondition(carte.condition, chemin, flagsDeclares));
   // Spec 14, palier I : quand l'écran qu'ouvre la carte laisse CHOISIR (Stats :
   // tout reprendre, ranger une compétence). Une condition de flags ordinaire.

@@ -332,12 +332,20 @@ function monter({ vraies = ['stations_placables', 'plein_ecran_disponible'] } = 
   assert.equal(menu.estOuvert(), false);
   assert.deepEqual(journal.filter((j) => j === 'FERME'), ['FERME'], 'fermé une fois, et une seule');
 
-  // « Oui » : agit, PUIS ferme.
+  // « Oui » : la pop-up (`D-244`), puis son « Oui » agit, PUIS ferme.
   menu.ouvrir();
   assert.equal(menu.obtenirEtat().focus, 0, 'une réouverture repart de la racine, focus en tête');
   parCarte('carte_parametres').declencher('click');
   parCarte('carte_sauvegarde').declencher('click');
   parCarte('carte_reinitialiser').declencher('click');
+  cran(1, 0);
+  appuyer({ attack: true });
+  assert.equal(menu.obtenirEtat().ecran, 'carte_reinitialiser#oui#popup', '« Oui » ouvre la pop-up');
+  assert.equal(menu.obtenirEtat().focus, 0, 'focus par défaut sur son « Non »');
+  assert.ok(!journal.includes('REINITIALISER'), 'rien n’est effacé avant le second oui');
+  appuyer({ skill3: true }); // B : la pop-up se referme, la confirmation revient
+  assert.deepEqual([menu.obtenirEtat().ecran, menu.obtenirEtat().focus], ['carte_reinitialiser#confirmation', 1], 'focus rendu au « Oui » qui l’avait ouverte');
+  appuyer({ attack: true });
   cran(1, 0);
   appuyer({ attack: true });
   assert.deepEqual(journal.slice(-2), ['REINITIALISER', 'FERME']);

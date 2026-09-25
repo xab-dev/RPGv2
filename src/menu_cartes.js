@@ -74,7 +74,7 @@ export function choisirGrille(nbCases) {
 function clesDeTexte(ecran) {
   const cles = [{ cle: ecran.cle_titre, chemin: `menus.json > ${ecran.id} > cle_titre` }];
   for (const carte of ecran.cartes || []) {
-    for (const champ of ['cle_titre', 'cle_phrase', 'cle_confirmation', 'cle_confirmer']) {
+    for (const champ of ['cle_titre', 'cle_phrase', 'cle_confirmation', 'cle_confirmer', 'cle_popup']) {
       if (carte[champ] !== undefined) cles.push({ cle: carte[champ], chemin: `menus.json > ${ecran.id} > ${carte.id} > ${champ}` });
     }
   }
@@ -476,6 +476,7 @@ export function creerNavigationEcrans({ onFermer = () => {} } = {}) {
 export const CLES_TEXTE_COMPOSANT = [
   'menu.fermer', 'menu.retour',
   'menu.confirmation_non', 'menu.confirmation_non_phrase', 'menu.confirmation_oui_phrase',
+  'menu.popup_non', 'menu.popup_oui',
 ];
 
 // L'écran de confirmation d'une carte `danger` (§3, §4.1) : deux cartes,
@@ -506,6 +507,40 @@ export function construireConfirmation(carte, iconeRetour) {
         // et où l'on revient après. Absents pour une carte du catalogue.
         ...(carte.faire ? { faire: carte.faire } : {}),
         ...(carte.apres ? { apres: carte.apres } : {}),
+        // `D-244` : « Oui » ouvre encore la pop-up, qui seule exécute.
+        ...(carte.cle_popup ? { cle_popup: carte.cle_popup } : {}),
+      },
+    ],
+  };
+}
+
+// `D-244` (Xav, 25/09 : « pas de menu supplémentaire mais une pop-up : "es tu
+// sur ? pense à exporter ta sauvegarde d'abord." OUI/NON ») : la seconde
+// confirmation d'une carte `danger` qui déclare `cle_popup`. Un écran de la
+// pile comme un autre — ouvert par empilement, fermé par un retour, donc
+// fermable au doigt et au bouton B par le seul chemin de la pile —, que la
+// grille dessine en boîte par-dessus l'écran qu'elle recouvre (`popup: true`).
+//
+// Même règle de sécurité que `construireConfirmation` : « Non » en case 0,
+// donc le focus par défaut, et c'est écrit ici, pas dans le catalogue.
+// `carteOui` est la carte « Oui, … » de l'écran de confirmation : elle porte
+// l'action ; la pop-up la recopie SANS `cle_popup`, sans quoi « Oui » rouvrirait
+// une pop-up au lieu d'agir.
+export function construirePopup(carteOui, iconeRetour) {
+  const { cle_popup: clePopup, ...sansPopup } = carteOui;
+  return {
+    id: `${carteOui.id}#popup`,
+    popup: true,
+    cle_texte: clePopup,
+    cartes: [
+      {
+        id: `${carteOui.id}#popup_non`, case: 0, type: 'action', interne: 'retour',
+        cle_titre: 'menu.popup_non', phrase: '', icone: iconeRetour,
+      },
+      {
+        ...sansPopup,
+        id: `${carteOui.id}#popup_oui`, case: 1,
+        cle_titre: 'menu.popup_oui', phrase: '',
       },
     ],
   };

@@ -46,6 +46,10 @@
          des écrans maître-détail. */
       --menu-vignette-ombre: rgba(0, 0, 0, 0.34);
       --menu-marque-arete: rgba(0, 0, 0, 0.35);
+      /* `D-244` : le voile sous une pop-up. Assez sombre pour que la boîte
+         soit seule à se lire, assez clair pour qu'on voie encore l'écran
+         qu'elle recouvre (on sait à quoi « Oui » dit oui). */
+      --menu-popup-voile: rgba(0, 0, 0, 0.6);
       --menu-carte-bordure-px: 1px;
       --menu-carte-rayon-u: 8;
       /* Blanc cassé et gris bleuté : deux niveaux de lecture, pas trois. */
@@ -373,6 +377,37 @@
        de l'icône : on empile. */
     .cartes-grille[data-colonnes="3"] .carte { flex-direction: column; align-items: flex-start; justify-content: center; gap: calc(6 * var(--u)); }
     .cartes-grille[data-colonnes="3"] .carte-icone { width: calc(28 * var(--u)); height: calc(28 * var(--u)); }
+
+    /* `D-244` — la pop-up d'une seconde confirmation (« Es-tu sûr ? »). Un
+       voile sur TOUT l'écran, en-tête compris : le doigt n'atteint plus que la
+       boîte, dont « Non » est la sortie — toujours visible, rien ne défile
+       (budget : 12 · texte ~30 · 10 · rangée 56 · 12 ≈ 120 u sur 270). Le
+       trait de la boîte est celui du danger : on ne confirme ici que ce qui
+       efface. */
+    .cartes-popup {
+      position: absolute; inset: 0; z-index: 1;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--menu-popup-voile);
+    }
+    .cartes-popup[hidden] { display: none; }
+    .cartes-popup-boite {
+      box-sizing: border-box; width: calc(280 * var(--u)); max-width: calc(100% - 2 * var(--jeu-x) - 24 * var(--u));
+      display: flex; flex-direction: column; gap: calc(10 * var(--u));
+      padding: calc(12 * var(--u));
+      background: var(--menu-carte);
+      border: var(--menu-focus-bordure-px) solid var(--menu-danger);
+      border-radius: calc(var(--menu-carte-rayon-u) * var(--u));
+    }
+    .cartes-popup-texte {
+      margin: 0; text-align: center; line-height: 1.3;
+      font-size: calc(11 * var(--u)); color: var(--menu-texte-titre);
+    }
+    .cartes-popup-cartes {
+      display: grid; gap: calc(12 * var(--u));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      height: calc(56 * var(--u));
+    }
+    .cartes-popup-cartes .carte-phrase:empty { display: none; }
 
     /* --- Écrans « maître-détail » (specs/08_menus-cartes.md, palier C) ------
        Posées par `ui/ecran_fiches.js`. `.ecran-fiches` s'ajoute à

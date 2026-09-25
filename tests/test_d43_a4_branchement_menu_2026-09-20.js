@@ -299,6 +299,8 @@ function construireBanc({ dansLaMaison = true, compagnon, pleinEcranDisponible =
   banc.carte('carte_reinitialiser').declencher('click');
   assert.equal(journal.includes('REINITIALISER'), false, 'la carte danger ouvre une confirmation, elle n’efface rien');
   banc.carte('carte_reinitialiser#oui').declencher('click');
+  assert.equal(journal.includes('REINITIALISER'), false, '« Oui » ouvre la pop-up (`D-244`), il n’efface rien');
+  banc.carte('carte_reinitialiser#oui#popup_oui').declencher('click');
   assert.deepEqual(journal.slice(-1), ['REINITIALISER']);
   assert.equal(menu.estOuvert(), false);
   console.log('OK actions : exporter / importer / réinitialiser — agir puis fermer, confirmation avant le danger');

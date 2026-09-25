@@ -89,5 +89,58 @@
       "visuel": "visuel_follet_zeros"
     },
     "xp": 0
+  },
+  {
+    "id": "enemy_gardien",
+    "label_key": "enemy.gardien",
+    "pv": 1000,
+    "force": 8,
+    "vitesse": 50,
+    "portee_attaque": 28,
+    "distance_contact_px": 18,
+    "cadence_attaque_ms": 1200,
+    "comportement": "boss",
+    "boss": true,
+    "attaque_distance": {
+      "portee_tuiles": 7,
+      "recul_tuiles": 4,
+      "cadence_ms": 1800,
+      "vitesse_px_s": 140,
+      "rayon_px": 4,
+      "course_tuiles": 9,
+      "salve": {
+        "nombre": 3,
+        "ecart_deg": 16
+      },
+      "visuel": "visuel_projectile_gardien"
+    },
+    "modes": [
+      {
+        "type": "agressif",
+        "poids": 40,
+        "facteur_vitesse": 1.6,
+        "tir": false
+      },
+      {
+        "type": "kite",
+        "poids": 40,
+        "tir": true
+      },
+      {
+        "type": "errance",
+        "poids": 20,
+        "tir": true
+      }
+    ],
+    "duree_mode_ms": {
+      "min": 3000,
+      "max": 6000
+    },
+    "element": null,
+    "loot_table": "loot_aucun",
+    "render": {
+      "visuel": "visuel_gardien"
+    },
+    "xp": 300
   }
 ]

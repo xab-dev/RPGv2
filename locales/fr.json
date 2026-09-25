@@ -411,5 +411,7 @@
   "dlg.zeros.fin.1": "Assez. Tu frappes juste… pour quelqu’un qui ne sait pas encore ce qui brille à côté de lui.",
   "dlg.zeros.fin.2": "Toi et moi, nous ne faisons qu’un. L’un dans la lumière, l’autre dans son ombre.",
   "dlg.zeros.fin.3": "Un follet ne suit pas : il attend. Il attend qu’on lui dise où se tenir. J’ai appris ce que le tien ne t’a pas dit.",
-  "dlg.zeros.fin.4": "Passe. Nous nous reverrons, plus loin, là où la pierre répond."
+  "dlg.zeros.fin.4": "Passe. Nous nous reverrons, plus loin, là où la pierre répond.",
+  "enemy.gardien": "Le Gardien",
+  "flag.gardien_vaincu": "Le Gardien, vaincu"
 }

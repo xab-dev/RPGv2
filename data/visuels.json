@@ -18186,5 +18186,464 @@
         "alpha": 0.35
       }
     ]
+  },
+  {
+    "id": "visuel_gardien",
+    "ancre": "centre",
+    "teintable": true,
+    "ombre": {
+      "dy": 12,
+      "w": 30,
+      "h": 6,
+      "alpha": 0.42
+    },
+    "primitives": [
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -5,
+            7
+          ],
+          [
+            -6.5,
+            12.5
+          ]
+        ],
+        "couleur": "#15171d",
+        "epaisseur": 3.4
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            5,
+            7
+          ],
+          [
+            6.5,
+            12.5
+          ]
+        ],
+        "couleur": "#15171d",
+        "epaisseur": 3.4
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -11,
+            -6
+          ],
+          [
+            -14.5,
+            2
+          ],
+          [
+            -13,
+            7
+          ]
+        ],
+        "couleur": "#262a34",
+        "epaisseur": 3.6,
+        "teinte": true
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            11,
+            -6
+          ],
+          [
+            14.5,
+            2
+          ],
+          [
+            13,
+            7
+          ]
+        ],
+        "couleur": "#262a34",
+        "epaisseur": 3.6,
+        "teinte": true
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -12,
+            5
+          ],
+          [
+            -13,
+            -3
+          ],
+          [
+            -9,
+            -10
+          ],
+          [
+            -4,
+            -12.5
+          ],
+          [
+            4,
+            -12.5
+          ],
+          [
+            9,
+            -10
+          ],
+          [
+            13,
+            -3
+          ],
+          [
+            12,
+            5
+          ],
+          [
+            6,
+            9
+          ],
+          [
+            -6,
+            9
+          ]
+        ],
+        "couleur": "#3b4150",
+        "teinte": true
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -13,
+            -3
+          ],
+          [
+            -9,
+            -10
+          ],
+          [
+            -5,
+            -9
+          ],
+          [
+            -8,
+            -2
+          ]
+        ],
+        "couleur": "#262a34",
+        "teinte": true
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            13,
+            -3
+          ],
+          [
+            9,
+            -10
+          ],
+          [
+            5,
+            -9
+          ],
+          [
+            8,
+            -2
+          ]
+        ],
+        "couleur": "#262a34",
+        "teinte": true
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -4,
+            -12
+          ],
+          [
+            -3.2,
+            -17
+          ],
+          [
+            3.2,
+            -17
+          ],
+          [
+            4,
+            -12
+          ]
+        ],
+        "couleur": "#262a34",
+        "teinte": true
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -12.4,
+            -3
+          ],
+          [
+            -8.6,
+            -9.6
+          ]
+        ],
+        "couleur": "#8a93a6",
+        "epaisseur": 0.8,
+        "alpha": 0.4
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -4,
+            -12.2
+          ],
+          [
+            3.6,
+            -12.2
+          ]
+        ],
+        "couleur": "#8a93a6",
+        "epaisseur": 0.8,
+        "alpha": 0.35
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            6,
+            -6
+          ],
+          [
+            8.4,
+            -1.4
+          ],
+          [
+            7,
+            3
+          ]
+        ],
+        "couleur": "#15171d",
+        "epaisseur": 0.7,
+        "alpha": 0.7
+      },
+      {
+        "forme": "ligne",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -6.5,
+            2
+          ],
+          [
+            -4,
+            6.4
+          ]
+        ],
+        "couleur": "#15171d",
+        "epaisseur": 0.7,
+        "alpha": 0.7
+      },
+      {
+        "forme": "cercle",
+        "dx": -14,
+        "dy": 7.5,
+        "w": 4.6,
+        "h": 4.6,
+        "couleur": "#262a34",
+        "teinte": true
+      },
+      {
+        "forme": "cercle",
+        "dx": 14,
+        "dy": 7.5,
+        "w": 4.6,
+        "h": 4.6,
+        "couleur": "#262a34",
+        "teinte": true
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0,
+            -6.5
+          ],
+          [
+            3,
+            -2
+          ],
+          [
+            0,
+            2.5
+          ],
+          [
+            -3,
+            -2
+          ]
+        ],
+        "couleur": "#7cc4ff"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0,
+            -4.6
+          ],
+          [
+            1.4,
+            -2
+          ],
+          [
+            0,
+            0.6
+          ],
+          [
+            -1.4,
+            -2
+          ]
+        ],
+        "couleur": "#d6f0ff"
+      },
+      {
+        "forme": "cercle",
+        "dx": -1.6,
+        "dy": -14.6,
+        "w": 1.5,
+        "h": 1.5,
+        "couleur": "#7cc4ff"
+      },
+      {
+        "forme": "cercle",
+        "dx": 1.6,
+        "dy": -14.6,
+        "w": 1.5,
+        "h": 1.5,
+        "couleur": "#7cc4ff"
+      }
+    ]
+  },
+  {
+    "id": "visuel_projectile_gardien",
+    "ancre": "centre",
+    "primitives": [
+      {
+        "forme": "degrade_radial",
+        "dx": 0,
+        "dy": 0,
+        "w": 16,
+        "h": 16,
+        "couleur": "#7cc4ff",
+        "degrade": {
+          "direction": "radial",
+          "stops": [
+            {
+              "offset": 0,
+              "couleur": "#7cc4ff",
+              "alpha": 0.5
+            },
+            {
+              "offset": 1,
+              "couleur": "#7cc4ff",
+              "alpha": 0
+            }
+          ]
+        }
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0,
+            -4
+          ],
+          [
+            3,
+            0
+          ],
+          [
+            0,
+            4
+          ],
+          [
+            -3,
+            0
+          ]
+        ],
+        "couleur": "#4a8fd0"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            0,
+            -2.4
+          ],
+          [
+            1.6,
+            0
+          ],
+          [
+            0,
+            2.4
+          ],
+          [
+            -1.6,
+            0
+          ]
+        ],
+        "couleur": "#d6f0ff"
+      },
+      {
+        "forme": "cercle",
+        "dx": -0.7,
+        "dy": -1.2,
+        "w": 1.1,
+        "h": 1.1,
+        "couleur": "#ffffff",
+        "alpha": 0.85
+      }
+    ]
   }
 ]

@@ -85,13 +85,13 @@ import {
   tablesDeScene, tableActive, tirerPositionApparition, tirerPointDomaine, estEnZoneSurePx, zonesSignalees,
   sceneNettoyee,
 } from './spawns.js';
-import { creerComportement, avancerComportement, deciderTireur } from './comportement_monstres.js';
+import { creerComportement, avancerComportement, deciderTireur, creerEtatBoss, deciderBoss } from './comportement_monstres.js';
 import {
   deciderRencontre, creerEtatRencontre, avancerRencontre, passerALaFin, passerALEffacement,
   rencontreAgit, rencontreEnCours, opaciteRencontre, plancherCible, cibleAuSeuil,
 } from './rencontre.js';
 import {
-  creerProjectiles, tirer as tirerProjectile, avancerProjectiles, viderProjectiles, projectilesEnVol, CAMP_MONSTRES, CAMP_HEROS,
+  creerProjectiles, tirer as tirerProjectile, viseesSalve, avancerProjectiles, viderProjectiles, projectilesEnVol, CAMP_MONSTRES, CAMP_HEROS,
 } from './projectiles.js';
 import { peutRecolter, trouverRessourceProche } from './resources.js';
 import {
@@ -3487,28 +3487,99 @@ export function creerOrchestrateurGrotte({
     const attaque = donneesEnnemi.attaque_distance;
     const suivant = { ...monstre, cooldownTirMs: tickCooldown(monstre.cooldownTirMs || 0, deltaMs) };
     const decision = deciderTireur({ monstre, hero, attaque, tileSize: scene.tileSize, cooldownTirMs: suivant.cooldownTirMs });
-    if (decision.tirer && tirerProjectile(projectiles, {
-      x: monstre.x,
-      y: monstre.y,
-      versX: hero.x,
-      versY: hero.y,
-      vitesse: attaque.vitesse_px_s,
-      rayon: attaque.rayon_px,
-      degats: force,
-      camp: CAMP_MONSTRES,
-      visuel: attaque.visuel,
-      courseMaxPx: attaque.course_tuiles * scene.tileSize,
-    })) {
-      suivant.cooldownTirMs = attaque.cadence_ms;
-    }
+    if (decision.tirer && tirerVersLeHeros(monstre, attaque, force)) suivant.cooldownTirMs = attaque.cadence_ms;
     if (!decision.but) return suivant;
     const vise = approcherEnLigneDroite(monstre, decision.but.x, decision.but.y, vitesse, deltaS);
+    return { ...suivant, ...pasAvecCollisions(monstre, vise) };
+  }
+
+  // Le tir d'un monstre vers le héros : un projectile, ou une SALVE en éventail
+  // si son attaque en déclare une (§4.5). Rend vrai si au moins un tir est
+  // parti — la cadence ne repart qu'alors, comme avant la salve.
+  function tirerVersLeHeros(monstre, attaque, force) {
+    let parti = false;
+    for (const visee of viseesSalve(monstre.x, monstre.y, hero.x, hero.y, attaque.salve)) {
+      parti = tirerProjectile(projectiles, {
+        x: monstre.x,
+        y: monstre.y,
+        versX: visee.x,
+        versY: visee.y,
+        vitesse: attaque.vitesse_px_s,
+        rayon: attaque.rayon_px,
+        degats: force,
+        camp: CAMP_MONSTRES,
+        visuel: attaque.visuel,
+        courseMaxPx: attaque.course_tuiles * scene.tileSize,
+      }) || parti;
+    }
+    return parti;
+  }
+
+  // Le pas VOULU d'un monstre (`vise`), rendu au mur : la boîte du monstre
+  // glisse comme celle du héros. Rend la position résolue et ce qu'il a
+  // réellement parcouru (ce que l'anti-blocage de l'errance observe).
+  function pasAvecCollisions(monstre, vise) {
     const rayon = RAYON_MONSTRE_PX;
     const boite = { x: monstre.x - rayon, y: monstre.y - rayon, largeur: rayon * 2, hauteur: rayon * 2 };
     const resolu = resoudreDeplacement(scene, boite, vise.x - monstre.x, vise.y - monstre.y, flags.has);
-    suivant.x = resolu.x + rayon;
-    suivant.y = resolu.y + rayon;
-    return suivant;
+    const x = resolu.x + rayon;
+    const y = resolu.y + rayon;
+    return { x, y, distanceParcouruePx: Math.hypot(x - monstre.x, y - monstre.y) };
+  }
+
+  // La barre du boss (§4.5) : le premier monstre vivant de la salle dont
+  // l'entrée déclare `boss`. Son nom se lit ici, pas dans `ui/hud.js`.
+  function barreDuBoss() {
+    for (const m of monstres) {
+      if (m.mort) continue;
+      const donnees = registre.obtenir('enemies', m.enemyId);
+      if (!donnees.boss) continue;
+      return { nom: i18n.t(donnees.label_key), ratio: m.pvMax > 0 ? m.pv / m.pvMax : 0 };
+    }
+    return null;
+  }
+
+  // Le BOSS (spec 14, §4.5) : `comportement_monstres.js#deciderBoss` tire son
+  // mode au sort et dit où aller et s'il faut tirer ; le pas et le tir se font
+  // ici, par les mêmes chemins que le tireur. Son corps à corps est celui de
+  // tout monstre (plus bas, à `portee_attaque`). En mode agressif, il s'arrête
+  // au contact (`distance_contact_px`), comme Zéros. Le hasard n'a pas de
+  // graine : un boss qui rejouerait la même danse à chaque essai se réciterait.
+  function deplacerBoss(monstre, donneesEnnemi, force, vitesse, deltaS, deltaMs) {
+    const attaque = donneesEnnemi.attaque_distance;
+    const cooldownTirMs = tickCooldown(monstre.cooldownTirMs || 0, deltaMs);
+    const decision = deciderBoss(monstre.modeBoss || creerEtatBoss(), {
+      deltaMs,
+      monstre,
+      hero,
+      tileSize: scene.tileSize,
+      modes: donneesEnnemi.modes,
+      dureeModeMs: donneesEnnemi.duree_mode_ms,
+      attaque,
+      cooldownTirMs,
+      distanceParcouruePx: monstre.distanceParcouruePx || 0,
+      alea: Math.random,
+      tirerPoint: pointLibreDeLaSalle,
+    });
+    const suivant = { ...monstre, modeBoss: decision.etat, cooldownTirMs };
+    if (decision.tirer && tirerVersLeHeros(monstre, attaque, force)) suivant.cooldownTirMs = attaque.cadence_ms;
+    if (!decision.but) return { ...suivant, distanceParcouruePx: 0 };
+    const vise = approcherEnLigneDroite(
+      monstre, decision.but.x, decision.but.y, vitesse * decision.facteurVitesse, deltaS, donneesEnnemi.distance_contact_px || 0,
+    );
+    return { ...suivant, ...pasAvecCollisions(monstre, vise) };
+  }
+
+  // Un point libre de la salle, au centre d'une case qui n'est pas un mur ;
+  // null après quelques essais malheureux (l'errance réessaiera à la frame
+  // suivante). Les bords sont exclus : ce sont les murs de toute salle.
+  function pointLibreDeLaSalle() {
+    for (let essai = 0; essai < 8; essai += 1) {
+      const x = (1 + Math.floor(Math.random() * (scene.width - 2)) + 0.5) * scene.tileSize;
+      const y = (1 + Math.floor(Math.random() * (scene.height - 2)) + 0.5) * scene.tileSize;
+      if (!scene.estSolideAuPoint(x, y, flags.has)) return { x, y };
+    }
+    return null;
   }
 
   // Les tirs en vol avancent ; ceux qui touchent le héros lui retirent ses PV,
@@ -3734,6 +3805,7 @@ export function creerOrchestrateurGrotte({
       let suivant;
       if (donneesEnnemi.comportement === 'distance') suivant = deplacerTireur(monstre, donneesEnnemi, force, vitesse, deltaS, deltaMs);
       else if (donneesEnnemi.comportement === 'orbite') suivant = deplacerEnOrbite(monstre, donneesEnnemi, deltaS);
+      else if (donneesEnnemi.comportement === 'boss') suivant = deplacerBoss(monstre, donneesEnnemi, force, vitesse, deltaS, deltaMs);
       else if (monstre.spawnId) suivant = deplacerMonstreDuChaos(monstre, vitesse, deltaS, deltaMs);
       else suivant = approcherEnLigneDroite(monstre, hero.x, hero.y, vitesse, deltaS, donneesEnnemi.distance_contact_px || 0);
       suivant.cooldownAttaqueMs = tickCooldown(suivant.cooldownAttaqueMs, deltaMs);
@@ -4585,7 +4657,8 @@ export function creerOrchestrateurGrotte({
         visuel: registre.obtenir('visuels', donneesEnnemi.render.visuel),
         // §3.1 03_grotte-polish : barre de PV visible ssi "actif" (engagé ou
         // déjà touché) — jamais un monstre inerte à distance.
-        actif: estMonstreActif(m, follet),
+        // Un boss (§4.5) a sa barre en haut de l'écran : jamais les deux.
+        actif: !donneesEnnemi.boss && estMonstreActif(m, follet),
         // Spec 14, palier D : Zéros est la silhouette du héros retournée
         // (`render.miroir`), et les monstres d'une rencontre arrivent et
         // partent en fondu.
@@ -5035,6 +5108,7 @@ export function creerOrchestrateurGrotte({
       // `D-177` : la cible d'INTERACT, par LA fonction qui décide de l'appui.
       // Calculée seulement quand le doigt a la main : c'est là qu'elle se voit.
       iconesCibles: input.tactileActif() ? { interact: visuelCibleInteraction(cibleInteraction()) } : {},
+      boss: barreDuBoss(),
     });
     // Indices de commande (§2 : "masqué" sous UI) — résolution i18n ici (même
     // patron que les autres calques : hud_hints.js ne connaît jamais i18n).
@@ -5186,6 +5260,7 @@ export function creerOrchestrateurGrotte({
     obtenirFollet: () => follet,
     obtenirScene: () => scene,
     obtenirMonstres: () => monstres,
+    obtenirBarreBoss: () => barreDuBoss(),
     // Spec 14, palier C : les tirs en vol (copies des emplacements actifs).
     obtenirProjectiles: () => projectilesEnVol(projectiles).map((p) => ({ ...p })),
     // Spec 14, palier D : la rencontre lancée dans la scène (sa phase), ou null.

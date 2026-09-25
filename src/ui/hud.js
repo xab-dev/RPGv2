@@ -9,7 +9,7 @@
 import {
   boutonsTactilesVisibles, JOYSTICK, BANDEAU_HAUT, elementsBandeauHaut, echelleIconeArme,
   placerIconesBuffs, alphaPulsationBuff, echelleIconeBuff, ICONE_BUFF, echelleIconeBandeau,
-  ICONE_BOUTON_TACTILE, echelleIconeBoutonTactile, ICONE_CIBLE_TACTILE,
+  ICONE_BOUTON_TACTILE, echelleIconeBoutonTactile, ICONE_CIBLE_TACTILE, BARRE_BOSS,
 } from './hud_layout.js';
 import { cadrer } from './icone_canvas.js';
 import { RESOLUTION_LOGIQUE } from '../render.js';
@@ -236,6 +236,21 @@ function dessinerJauge(ctx, x, y, ratio, palette, visuelIcone) {
   );
 }
 
+// La barre du boss : la MÊME barre que les PV (`ui/barre.js`), en long, et
+// son nom au-dessus, avec l'ombre d'un pixel du nombre des PV.
+function dessinerBarreBoss(ctx, { nom, ratio }) {
+  const b = BARRE_BOSS;
+  dessinerBarre(ctx, b, ratio, PALETTE_JAUGES.pv);
+  ctx.font = policeBandeau(8);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const milieu = b.x + b.largeur / 2;
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+  ctx.fillText(nom, milieu, b.nom_y + 1);
+  ctx.fillStyle = '#fff';
+  ctx.fillText(nom, milieu, b.nom_y);
+}
+
 export function dessinerHud(ctx, {
   i18n, pv, pvMax, eclats, companion, visuelFollet, tactileActif,
   // `verbe → visuel` : ce qu'il faut dessiner dans chaque case (arme équipée,
@@ -278,6 +293,9 @@ export function dessinerHud(ctx, {
   // MAINTENANT (la cible d'INTERACT à portée), résolu par main.js au même
   // calcul que l'appui. Il remplace l'icône du bouton tant qu'il est là.
   iconesCibles = {},
+  // Spec 14, §4.5 : `{ nom, ratio }` du boss vivant de la salle, résolu par
+  // main.js (le nom déjà traduit) ; absent = pas de barre.
+  boss = null,
 }) {
   ctx.save();
 
@@ -406,6 +424,8 @@ export function dessinerHud(ctx, {
       ctx.restore();
     }
   }
+
+  if (boss) dessinerBarreBoss(ctx, boss);
 
   ctx.restore();
 

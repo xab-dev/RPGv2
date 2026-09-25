@@ -649,6 +649,7 @@
     "spawn": { "x": 12, "y": 15 },
     "obscurite": { "opacite": 0.72 },
     "descente": { "flags": ["flag_annexe_sortie"] },
+    "nettoyage": { "flag": "flag_gardien_vaincu" },
     "lumieres": [
       {"type": "faisceau", "x": 128, "y": 32, "angle": -6, "ouverture": 11, "longueur": 190, "alpha": 0.13},
       {"type": "faisceau", "x": 320, "y": 32, "angle": 5, "ouverture": 12, "longueur": 210, "alpha": 0.14},
@@ -660,7 +661,9 @@
     ],
     "decor": {"densite": 0.04, "motifs": [{"visuel": "visuel_flaque", "poids": 0.2}, {"visuel": "visuel_flaque_grande", "poids": 0.2}, {"visuel": "visuel_flaque_claire", "poids": 0.2}, {"visuel": "visuel_flaque_sombre", "poids": 0.2}, {"visuel": "visuel_flaque_mouillee", "poids": 0.2}, {"visuel": "visuel_rocher_petit", "poids": 2}, {"visuel": "visuel_rocher_grand", "poids": 1}, {"visuel": "visuel_cristal", "poids": 2, "lumiere": {"rayon": 28, "dy": 6, "couleur": "#7cc4ff"}}]},
     "interactifs": [],
-    "spawns": [],
+    "spawns": [
+      {"enemy": "enemy_gardien", "position": {"x": 12, "y": 5}, "condition": {"not": "flag_gardien_vaincu"}}
+    ],
     "portails": [
       {"zone": {"x": 12, "y": 17, "w": 1, "h": 1}, "cible": "scene_annexe_salle_2", "spawn": {"x": 17, "y": 1}, "condition": null},
       {"zone": {"x": 12, "y": 0, "w": 1, "h": 1}, "cible": "scene_maison_exterieur", "spawn": {"x": 18, "y": 47}, "condition": "flag_annexe_sortie"}

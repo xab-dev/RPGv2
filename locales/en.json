@@ -411,5 +411,7 @@
   "dlg.zeros.fin.1": "Enough. You strike true… for someone who doesn’t yet know what shines beside him.",
   "dlg.zeros.fin.2": "You and I are one. One in the light, the other in its shadow.",
   "dlg.zeros.fin.3": "A wisp doesn’t follow: it waits. It waits to be told where to stand. I learned what yours hasn’t told you.",
-  "dlg.zeros.fin.4": "Go on. We’ll meet again, further on, where the stone answers."
+  "dlg.zeros.fin.4": "Go on. We’ll meet again, further on, where the stone answers.",
+  "enemy.gardien": "The Warden",
+  "flag.gardien_vaincu": "The Warden, defeated"
 }

@@ -66,6 +66,26 @@ export function tirer(etat, { x, y, versX, versY, vitesse, rayon, degats, camp, 
   return true;
 }
 
+// Une SALVE (spec 14, §4.5, le Gardien) : `nombre` tirs en éventail, écartés
+// de `ecart_deg` l'un de l'autre et centrés sur la visée. Rend les points
+// visés, un par tir, à la même distance que la visée d'origine ; sans salve,
+// la visée seule. Le tir lui-même reste `tirer`, un par point : une salve
+// n'est pas un projectile d'une autre sorte.
+export function viseesSalve(x, y, versX, versY, salve) {
+  const nombre = salve && Number.isInteger(salve.nombre) && salve.nombre > 1 ? salve.nombre : 1;
+  if (nombre === 1) return [{ x: versX, y: versY }];
+  const dx = versX - x;
+  const dy = versY - y;
+  const visees = [];
+  for (let i = 0; i < nombre; i += 1) {
+    const angle = ((i - (nombre - 1) / 2) * salve.ecart_deg * Math.PI) / 180;
+    const c = Math.cos(angle);
+    const s = Math.sin(angle);
+    visees.push({ x: x + dx * c - dy * s, y: y + dx * s + dy * c });
+  }
+  return visees;
+}
+
 // Avance les projectiles en vol. Mute la réserve en place (c'est un système de
 // particules, comme `poussiere.js`) et rend la liste des TOUCHES de la frame,
 // `[{ cibleId, degats }]`, que l'appelant applique : ce module n'écrit jamais

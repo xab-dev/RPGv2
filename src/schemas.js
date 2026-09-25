@@ -6,6 +6,7 @@ import { TYPES_CARTE, CASES_MAX } from './menu_cartes.js';
 import { OPTIONS_MIN, OPTIONS_MAX, erreursGrapheConversation } from './dialogue.js';
 import { NOMS_COTES } from './lisieres.js';
 import { flagDeNiveau } from './xp.js';
+import { MODES_BOSS } from './comportement_monstres.js';
 
 // `D-39` — « le corps ne sort jamais de son aura », vérifié AU CHARGEMENT.
 //
@@ -1246,8 +1247,11 @@ function validerPuzzle(entry, catalogs, path) {
 
 // Les comportements qu'un ennemi peut déclarer. `melee` va droit au héros ;
 // `distance` (spec 14, palier C) garde ses distances et tire ; `orbite`
-// (palier D) tourne autour d'un autre monstre, comme un follet autour du héros.
-const COMPORTEMENTS_ENNEMI = ['melee', 'distance', 'orbite'];
+// (palier D) tourne autour d'un autre monstre, comme un follet autour du héros ;
+// `boss` (palier F) change de mode de déplacement au hasard, frappe et tire.
+const COMPORTEMENTS_ENNEMI = ['melee', 'distance', 'orbite', 'boss'];
+// Ceux qui tirent : leur `attaque_distance` est exigée, et refusée aux autres.
+const COMPORTEMENTS_TIREURS = ['distance', 'boss'];
 const CHAMPS_ORBITE = ['rayon_px', 'vitesse_rad_s'];
 const CHAMPS_ATTAQUE_DISTANCE = ['portee_tuiles', 'recul_tuiles', 'cadence_ms', 'vitesse_px_s', 'rayon_px', 'course_tuiles'];
 
@@ -1324,11 +1328,11 @@ function erreursAttaqueDistance(entry, catalogs, path) {
     erreurs.push(`${path} > comportement "${entry.comportement}" inconnu (${COMPORTEMENTS_ENNEMI.join(' | ')})`);
   }
   const a = entry.attaque_distance;
-  if (entry.comportement !== 'distance') {
-    if (a !== undefined) erreurs.push(`${path} > attaque_distance sans comportement "distance"`);
+  if (!COMPORTEMENTS_TIREURS.includes(entry.comportement)) {
+    if (a !== undefined) erreurs.push(`${path} > attaque_distance sans comportement qui tire (${COMPORTEMENTS_TIREURS.join(' | ')})`);
     return erreurs;
   }
-  if (!a || typeof a !== 'object') return [...erreurs, `${path} > comportement "distance" sans attaque_distance`];
+  if (!a || typeof a !== 'object') return [...erreurs, `${path} > comportement "${entry.comportement}" sans attaque_distance`];
   for (const champ of CHAMPS_ATTAQUE_DISTANCE) {
     if (typeof a[champ] !== 'number' || !(a[champ] > 0)) erreurs.push(`${path} > attaque_distance.${champ} doit être un nombre > 0`);
   }
@@ -1337,6 +1341,48 @@ function erreursAttaqueDistance(entry, catalogs, path) {
   }
   if (!(catalogs.visuels || []).some((v) => v.id === a.visuel)) {
     erreurs.push(`${path} > attaque_distance.visuel "${a.visuel}" introuvable dans visuels.json`);
+  }
+  // La SALVE (§4.5), facultative : plusieurs tirs en éventail. Un seul tir
+  // s'écrit sans salve ; un écart nul superposerait les tirs.
+  if (a.salve !== undefined) {
+    const sv = a.salve;
+    if (!sv || !Number.isInteger(sv.nombre) || sv.nombre < 2) erreurs.push(`${path} > attaque_distance.salve.nombre doit être un entier >= 2`);
+    if (!sv || typeof sv.ecart_deg !== 'number' || !(sv.ecart_deg > 0) || sv.ecart_deg >= 90) {
+      erreurs.push(`${path} > attaque_distance.salve.ecart_deg doit être dans ]0 ; 90[`);
+    }
+  }
+  return erreurs;
+}
+
+// Les MODES du boss (spec 14, §4.5) : exigés par `boss`, refusés sans lui.
+// Chaque type au plus une fois, un poids positif au moins (sinon aucun mode ne
+// sort du tirage), une durée de mode qui en est une.
+function erreursModesBoss(entry, path) {
+  const modes = entry.modes;
+  const duree = entry.duree_mode_ms;
+  if (entry.comportement !== 'boss') {
+    const erreurs = [];
+    if (modes !== undefined) erreurs.push(`${path} > modes sans comportement "boss"`);
+    if (duree !== undefined) erreurs.push(`${path} > duree_mode_ms sans comportement "boss"`);
+    return erreurs;
+  }
+  const erreurs = [];
+  if (!Array.isArray(modes) || modes.length === 0) return [`${path} > comportement "boss" sans modes (une liste non vide)`];
+  const vus = new Set();
+  modes.forEach((m, i) => {
+    const chemin = `${path} > modes[${i}]`;
+    if (!m || !MODES_BOSS.includes(m.type)) erreurs.push(`${chemin} > type "${m && m.type}" inconnu (${MODES_BOSS.join(' | ')})`);
+    else if (vus.has(m.type)) erreurs.push(`${chemin} > type "${m.type}" en double`);
+    else vus.add(m.type);
+    if (!m || typeof m.poids !== 'number' || m.poids < 0) erreurs.push(`${chemin} > poids doit être un nombre >= 0`);
+    if (m && typeof m.tir !== 'boolean') erreurs.push(`${chemin} > tir doit être un booléen`);
+    if (m && m.facteur_vitesse !== undefined && !(typeof m.facteur_vitesse === 'number' && m.facteur_vitesse > 0)) {
+      erreurs.push(`${chemin} > facteur_vitesse doit être un nombre > 0`);
+    }
+  });
+  if (!modes.some((m) => m && typeof m.poids === 'number' && m.poids > 0)) erreurs.push(`${path} > modes : aucun poids positif, aucun mode ne sortirait`);
+  if (!duree || typeof duree.min !== 'number' || typeof duree.max !== 'number' || !(duree.min > 0) || duree.max < duree.min) {
+    erreurs.push(`${path} > duree_mode_ms doit être { min > 0, max >= min }`);
   }
   return erreurs;
 }
@@ -2423,6 +2469,9 @@ export const SCHEMAS = {
       erreurs.push(...erreursRenderVisuel(entry, catalogs, path));
       erreurs.push(...erreursAttaqueDistance(entry, catalogs, path));
       erreurs.push(...erreursOrbiteEnnemi(entry, catalogs, path));
+      erreurs.push(...erreursModesBoss(entry, path));
+      // `boss` (§4.5) : sa barre de PV en haut de l'écran, pas au-dessus de lui.
+      if (entry.boss !== undefined && typeof entry.boss !== 'boolean') erreurs.push(`${path} > boss doit être un booléen`);
       // Spec 14, §4.3 : `intouchable` (Zéros) et `render.miroir` (sa silhouette
       // retournée) sont des booléens ; une chaîne « true » passerait pour vraie
       // au dessin et pour fausse aux dégâts.

@@ -370,5 +370,9 @@
   {
     "id": "flag_follet_pose_appris",
     "label_key": "flag.follet_pose_appris"
+  },
+  {
+    "id": "flag_gardien_vaincu",
+    "label_key": "flag.gardien_vaincu"
   }
 ]

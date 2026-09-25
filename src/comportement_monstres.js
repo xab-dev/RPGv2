@@ -219,3 +219,83 @@ export function deciderTireur({ monstre, hero, attaque, tileSize, cooldownTirMs 
   if (distanceHero > portee) return { but: { x: hero.x, y: hero.y }, tirer: false };
   return { but: null, tirer };
 }
+
+// --- Le BOSS (spec 14, §4.5, comportement `boss`) --------------------------
+// Trois gestes : le corps à corps (celui de tout monstre, fait par main.js à
+// la portée `portee_attaque`), le tir (`attaque_distance`, la même que le
+// tireur, salve comprise) et un MODE DE DÉPLACEMENT tiré au sort, qui dure
+// `duree_mode_ms` puis se retire. Les modes sont une liste en données
+// (`modes: [{ type, poids, facteur_vitesse?, tir }]`) ; ce module ne connaît
+// que leurs trois TYPES, jamais un boss :
+//   agressif : il fonce sur le héros ;
+//   kite     : il garde ses distances et tire — c'est exactement le tireur
+//              (`deciderTireur`), avec le `recul_tuiles` de son attaque ;
+//   errance  : il se replace vers un point tiré au hasard, puis un autre.
+// Chaque mode dit s'il tire (`tir`). Comme les autres décisions, celle-ci ne
+// déplace rien : `main.js` fait le pas (collisions comprises) et le tir.
+export const MODES_BOSS = ['agressif', 'kite', 'errance'];
+
+// Sans avancer pendant ce temps en errance, il change de point : même idée que
+// l'anti-blocage du Chaos, sans en avoir la table (le boss n'est pas né d'un
+// `spawns.json`). *Provisoire*, jamais vu en jeu.
+const BLOCAGE_ERRANCE_MS = 700;
+
+export function creerEtatBoss() {
+  return { mode: null, resteMs: 0, but: null, blocageMs: 0 };
+}
+
+// Le tirage pondéré d'un mode. `alea()` dans [0 ; 1[ ; un poids nul ne sort
+// jamais. Rend l'entrée de la liste, pas son type : le mode porte ses nombres.
+export function tirerModeBoss(modes, alea) {
+  const total = modes.reduce((s, m) => s + m.poids, 0);
+  let tirage = alea() * total;
+  for (const mode of modes) {
+    if (mode.poids <= 0) continue;
+    if (tirage < mode.poids) return mode;
+    tirage -= mode.poids;
+  }
+  return modes.filter((m) => m.poids > 0).pop();
+}
+
+// Une frame de décision du boss. `ctx` :
+//   deltaMs, monstre {x,y}, hero {x,y}, tileSize,
+//   modes, dureeModeMs { min, max }, attaque (son `attaque_distance`),
+//   cooldownTirMs, distanceParcouruePx (ce qu'il a bougé à la frame d'avant),
+//   alea(), tirerPoint() : un point libre de la salle, ou null.
+// Rend `{ etat, but, facteurVitesse, tirer }`.
+export function deciderBoss(etat, ctx) {
+  const {
+    deltaMs, monstre, hero, tileSize, modes, dureeModeMs, attaque,
+    cooldownTirMs, distanceParcouruePx = 0, alea, tirerPoint,
+  } = ctx;
+  let suivant = { ...etat, resteMs: etat.resteMs - deltaMs };
+  if (!suivant.mode || suivant.resteMs <= 0) {
+    suivant = {
+      mode: tirerModeBoss(modes, alea),
+      resteMs: dureeModeMs.min + alea() * (dureeModeMs.max - dureeModeMs.min),
+      but: null,
+      blocageMs: 0,
+    };
+  }
+  const mode = suivant.mode;
+  const facteurVitesse = typeof mode.facteur_vitesse === 'number' ? mode.facteur_vitesse : 1;
+  const aPortee = distance(monstre.x, monstre.y, hero.x, hero.y) <= attaque.portee_tuiles * tileSize;
+  const tirer = mode.tir === true && aPortee && cooldownTirMs <= 0;
+
+  if (mode.type === 'agressif') {
+    return { etat: suivant, but: { x: hero.x, y: hero.y }, facteurVitesse, tirer };
+  }
+  if (mode.type === 'kite') {
+    const decision = deciderTireur({ monstre, hero, attaque, tileSize, cooldownTirMs });
+    return { etat: suivant, but: decision.but, facteurVitesse, tirer: mode.tir === true && decision.tirer };
+  }
+
+  // errance : un point, puis un autre, une fois atteint ou s'il n'avance plus.
+  suivant.blocageMs = suivant.but && distanceParcouruePx < SEUIL_IMMOBILE_PX ? suivant.blocageMs + deltaMs : 0;
+  const atteint = suivant.but && distance(monstre.x, monstre.y, suivant.but.x, suivant.but.y) <= TOLERANCE_BUT_PX;
+  if (!suivant.but || atteint || suivant.blocageMs >= BLOCAGE_ERRANCE_MS) {
+    suivant.but = tirerPoint();
+    suivant.blocageMs = 0;
+  }
+  return { etat: suivant, but: suivant.but, facteurVitesse, tirer };
+}

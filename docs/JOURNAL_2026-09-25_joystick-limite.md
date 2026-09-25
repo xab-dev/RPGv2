@@ -35,3 +35,10 @@ Sur `main`, partie de `99e8bda` (`v0.8.63`). Pas de push.
 | Commit | Ticket | Ce qu'il faut en retenir |
 |---|---|---|
 | `f2f2338` | Ménage | Journal du joystick en laisse archivé ; aucune réponse nouvelle au suivi ; `D-14` (le plancher mobile, un téléphone acheté pour ça) reporté dans « Où on en est » |
+| `bec4cf7` | `D-251` | `bornerCentreJoystick` ramène le centre dans `LIMITE_JOYSTICK` (tangent au bord gauche, au bas et à l'**horizontale** du milieu, rayon = hauteur / 4), le cercle dessiné entier dedans à `margeLimite` (4 px) : il ne dérive plus que de 18,5 px, ne sort jamais du cadre ; la pose y passe aussi. `V-175` à voir au téléphone, `Q-179` à trancher. Suite verte, 221 fichiers |
+| (celui-ci, tagué `v0.8.66`) | Version | `package.json` à `0.8.66`, « Où on en est » ; Xav vérifie et pousse (le tag avec) |
+
+## Pour Xav
+
+- **À trancher** : `Q-179` — surtout (1) le jeu de 18,5 px (le cercle entier dans la limite) et (2) un pouce posé hors de la limite qui fait partir le héros dès le contact.
+- **À voir au téléphone** : `V-175`, guidé par `docs/CHECKLIST_visuelle.md`.

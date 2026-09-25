@@ -1,4 +1,5 @@
 import { COTE_REFERENCE_ICONE } from './icone_canvas.js';
+import { RESOLUTION_LOGIQUE } from '../render.js';
 
 // Layout HUD/tactile (§2.1/§3.9 de specs/02_grotte.md, repositionné par le
 // diagnostic SD_ui-lisibilite §3 pour la résolution logique 480x270,
@@ -27,7 +28,52 @@ import { COTE_REFERENCE_ICONE } from './icone_canvas.js';
 // cercle dessiné avant de sortir de la bande. Seul le premier contact est
 // concerné — un doigt déjà attribué continue de piloter hors de la bande.
 // PROVISOIRE, jamais validé au pouce.
-export const JOYSTICK = { cx: 70, cy: 200, rayonZone: 45, limiteX: 160 };
+//
+// `D-138` (25/09, Xav : « go C ») : le joystick FLOTTE, en laisse. `cx/cy`
+// n'est plus que la position de REPOS (le cercle dessiné quand aucun pouce ne
+// le tient) ; dès qu'un pouce le prend, le centre est l'endroit où il s'est
+// posé, et le cercle se fait tirer derrière le doigt quand celui-ci s'en
+// éloigne de plus de `rayonZone`. Avec un centre fixe, le pouce ne tombait
+// jamais pile dessus et le héros allait moins vite d'un côté que de l'autre
+// (pouce posé 25 px à droite du centre : 44 % de la vitesse vers la gauche).
+// La laisse, c'est ce qui manque aux joysticks flottants qui déçoivent : sans
+// elle, un pouce qui a dérivé de 2 cm doit tout retraverser pour faire
+// demi-tour ; avec elle, un demi-tour ne coûte jamais plus que le rayon plus
+// la course de pleine vitesse.
+//
+// Deux fractions de `rayonZone`, PROVISOIRES :
+//   - `zoneMorte` (10 %) : un pouce posé qui tremble ne fait ni avancer le
+//     héros d'un pixel, ni tourner sa capuche (huit directions, `D-249`) ;
+//   - `pleineVitesse` (70 %) : la pleine vitesse arrive AVANT le bord du
+//     cercle, qu'on ne voit pas sous son pouce. Entre les deux, la vitesse
+//     monte en ligne droite : la marche lente reste, comme au stick de la
+//     manette (Xav : « je préfère garder le choix »).
+// `marge` : jusqu'où le centre peut s'approcher d'un bord de l'écran — la
+// course de pleine vitesse, pour qu'aucune direction ne soit bridée par le
+// bord (un pouce posé à 3 px du bord gauche n'aurait sinon aucune course vers
+// la gauche).
+export const JOYSTICK = {
+  cx: 70, cy: 200, rayonZone: 45, limiteX: 160, zoneMorte: 0.1, pleineVitesse: 0.7,
+};
+
+// Le centre du joystick pour un point donné, gardé à la course de pleine
+// vitesse des bords de l'écran logique. Un seul endroit : la pose du pouce et
+// la laisse passent toutes deux par lui.
+export function bornerCentreJoystick(x, y) {
+  const marge = JOYSTICK.rayonZone * JOYSTICK.pleineVitesse;
+  return {
+    x: Math.min(Math.max(x, marge), RESOLUTION_LOGIQUE.largeur - marge),
+    y: Math.min(Math.max(y, marge), RESOLUTION_LOGIQUE.hauteur - marge),
+  };
+}
+
+// La magnitude du déplacement pour une distance pouce → centre : nulle dans la
+// zone morte, 1 à partir de la pleine vitesse, en ligne droite entre les deux.
+export function magnitudeJoystick(distance) {
+  const r = distance / JOYSTICK.rayonZone;
+  const m = (r - JOYSTICK.zoneMorte) / (JOYSTICK.pleineVitesse - JOYSTICK.zoneMorte);
+  return Math.min(1, Math.max(0, m));
+}
 
 // Bas-droite (§3 : "attaque bas-droite ≈ 420, 210"), rayon 28 = seul bouton
 // vraiment utile en Phase 1 (les 4 autres sont grisés, cf. ui/hud.js).

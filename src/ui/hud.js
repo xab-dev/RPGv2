@@ -213,7 +213,7 @@ function fondSlot(ctx, y, hauteur) {
   return degrade;
 }
 
-function dessinerBoutonsTactiles(ctx, iconesSlots, verbesActions, couleurActive, iconesBoutons, iconesCibles, jaugesSlots) {
+function dessinerBoutonsTactiles(ctx, iconesSlots, verbesActions, couleurActive, iconesBoutons, iconesCibles, jaugesSlots, joystick) {
   for (const bouton of boutonsTactilesVisibles(verbesActions)) {
     ctx.beginPath();
     ctx.arc(bouton.cx, bouton.cy, bouton.rayon, 0, Math.PI * 2);
@@ -255,9 +255,36 @@ function dessinerBoutonsTactiles(ctx, iconesSlots, verbesActions, couleurActive,
     }
   }
 
+  dessinerJoystick(ctx, joystick);
+}
+
+// `D-138` : rayon du rond qui suit le pouce, en unités logiques. PROVISOIRE,
+// jamais vu au doigt : assez gros pour dépasser d'un pouce qui le couvre
+// (≈ 3 mm à l'A04), assez petit pour que sa position dans le cercle se lise.
+const RAYON_ROND_POUCE = 12;
+
+// Le cercle suit le joystick là où le pouce l'a posé, et un rond suit le
+// doigt, retenu au bord du cercle : le joueur voit enfin où en est son pouce,
+// ce qu'un doigt qui couvre un cercle fixe ne lui disait pas. Au repos, le
+// cercle seul, à sa place d'origine (`JOYSTICK.cx/cy`) : il dit où poser le
+// pouce la première fois.
+function dessinerJoystick(ctx, joystick) {
+  const cx = joystick ? joystick.cx : JOYSTICK.cx;
+  const cy = joystick ? joystick.cy : JOYSTICK.cy;
   ctx.beginPath();
-  ctx.arc(JOYSTICK.cx, JOYSTICK.cy, JOYSTICK.rayonZone, 0, Math.PI * 2);
+  ctx.arc(cx, cy, JOYSTICK.rayonZone, 0, Math.PI * 2);
   ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+  ctx.stroke();
+  if (!joystick) return;
+  const dx = joystick.x - cx;
+  const dy = joystick.y - cy;
+  const distance = Math.hypot(dx, dy);
+  const retenue = distance > JOYSTICK.rayonZone ? JOYSTICK.rayonZone / distance : 1;
+  ctx.beginPath();
+  ctx.arc(cx + dx * retenue, cy + dy * retenue, RAYON_ROND_POUCE, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.25)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.5)';
   ctx.stroke();
 }
 
@@ -336,6 +363,9 @@ function dessinerBarreBoss(ctx, { nom, ratio }) {
 
 export function dessinerHud(ctx, {
   i18n, pv, pvMax, eclats, companion, visuelFollet, tactileActif,
+  // `D-138` : `{ cx, cy, x, y }` du joystick tenu (`touch.js#joystickAffiche`),
+  // ou `null` au repos.
+  joystick = null,
   // `verbe → visuel` : ce qu'il faut dessiner dans chaque case (arme équipée,
   // consommable équipé, plus tard une compétence). Table résolue par main.js,
   // comme `visuelFollet` — un verbe absent = case vide. *Remplace* le
@@ -518,7 +548,7 @@ export function dessinerHud(ctx, {
   // §4 : jamais les deux à la fois. Sur tactile, les boutons SONT les slots.
   const couleurActive = (companion && companion.render.couleur) || COULEUR_SLOT_ACTIF;
   if (tactileActif) {
-    dessinerBoutonsTactiles(ctx, iconesSlots, verbesActions, couleurActive, iconesBoutons, iconesCibles, jaugesSlots);
+    dessinerBoutonsTactiles(ctx, iconesSlots, verbesActions, couleurActive, iconesBoutons, iconesCibles, jaugesSlots, joystick);
   } else if (barreActions) {
     // Diagnostic SD_dialogues-invisibles_2026-09-15 : même défaut que
     // dialogue_box.js — `ctx.canvas.width/height` est la taille PHYSIQUE

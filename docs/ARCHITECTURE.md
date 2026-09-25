@@ -34,7 +34,7 @@ rpg_v2/
 │   ├── storage_indexeddb.js adaptateur IndexedDB pour save.js
 │   ├── input/              input.js (fusion clavier+manette+tactile en verbes, loquet tactile,
 │   │                       loquet périphérique actif), gamepad.js, keyboard.js (reset sur `blur`),
-│   │                       touch.js (joystick+boutons)
+│   │                       touch.js (joystick flottant en laisse + boutons)
 │   ├── scene.js            layout (tableau ou lignes+légende) → forêt procédurale → structures ;
 │   │                       collisions 4 coins + glissement + correction de coin (chevauchement
 │   │                       ≤ `TOLERANCE_COIN_PX`, cf. `docs/archives/JOURNAL_2026-09-16_diagnostic-accrochage-arbre.md`) ; portes conditionnelles ;

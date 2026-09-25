@@ -33,11 +33,15 @@ ménage archive les deux**.
   `v0.1.1`, alors que `v0.7.0` existait déjà ; publié en `v0.8.0` avec son
   accord.
 
-## En suspens
+## Clôture
 
-- `avertissement-epilepsie` (`D-220`, `D-221`, validés) **n'est ni fusionnée
-  dans `main` ni poussée** : elle attend la décision de Xav (une release
-  `v0.8.1`, ou la suivante).
-- La branche vit dans le dossier `../RPGv2-torche` (worktree Git). Le
-  dossier principal est toujours sur `annexe-1`, avec le changement
-  d'`enemies.json` non commité, déjà dans `main` (`3293fee`).
+- Xav : « oui, fusionne et push sur main. Quand tout est validé, supprime les
+  anciennes branches inutilisées. » `avertissement-epilepsie` est fusionnée
+  dans `main` (`66fa875`) et poussée, **sans release** : `v0.8.0` reste la
+  dernière, et `D-220` et `D-221` iront dans la suivante.
+- **Toutes les branches de travail sont supprimées**, locales et distantes.
+  Avant la suppression, `git branch --merged` a vérifié que chacune était
+  entièrement contenue dans `main`. Il ne reste que `main`.
+- Le worktree `../RPGv2-torche` est retiré, et le dossier principal repasse
+  sur `main`. Son changement d'`enemies.json` non commité est effacé :
+  c'était exactement le contenu de `3293fee`.

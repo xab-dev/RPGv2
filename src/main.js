@@ -33,6 +33,7 @@ import {
   dessinerSurlignages, dessinerProjectiles, dessinerOndes, dessinerVisees,
 } from './render.js';
 import { creerStoreIndexedDB } from './storage_indexeddb.js';
+import { lireTriche, NOM_BASE_TRICHE, xpNiveauMax, recetteGratuite } from './triche.js';
 import {
   charger as chargerSave, sauvegarder, importerSauvegarde as importerSauvegardeDansStore,
   saveNeuve, reinitialiserSauvegarde, VISUEL_HEROS_ID, COULEUR_HERO_NEUTRE,
@@ -747,6 +748,11 @@ export function creerOrchestrateurGrotte({
   // (`flags.js#lireFlagsForces`). Tenus pour vrais toute la session, jamais
   // sauvegardés. Vide par défaut : un test headless n'a rien à fournir.
   flagsForces = [],
+  // `?cheat=phenom` (`triche.js`), DÉJÀ lu par `demarrerJeu` : le dernier
+  // niveau, les recettes visibles et gratuites, les compétences connues —
+  // jamais un flag posé. `false` par défaut : un test headless n'a rien à
+  // fournir.
+  triche = false,
   // Spec 11 §4.2 : les doigts posés depuis la frame précédente, en
   // coordonnées logiques (`touch.js#lireContactsNouveaux`). Lus UNE fois par
   // frame, au début de `maj()` ; seule la bulle de dialogue s'en sert. Vide
@@ -1090,6 +1096,10 @@ export function creerOrchestrateurGrotte({
       console.info(`[spec 14] niveau(x) rattrapé(s) au chargement : ${rattrapes.join(', ')}.`);
     }
   }
+  // Même endroit, même raison : sous la triche, le dernier niveau est crédité
+  // ici, avant que `niveauPrecedent` ne le lise — une partie neuve n'ouvre
+  // donc pas sur le symbole de la montée de niveau.
+  appliquerTriche();
 
   // Indices de commande (specs/04_indices-commandes.md) : les flags qu'il
   // pose vivent dans le même registre de flags que le reste (§3.10 :
@@ -2561,7 +2571,8 @@ export function creerOrchestrateurGrotte({
     // Le tri (24/09) passe APRÈS le filtre : il range ce que le joueur voit,
     // et une recette cachée ne réserve aucune place.
     return trierRecettes(
-      entreesVisibles(recettesDeStation(registre, station.id), flags),
+      // Sous la triche, tout se montre : c'est ce qu'elle est venue voir.
+      triche ? recettesDeStation(registre, station.id) : entreesVisibles(recettesDeStation(registre, station.id), flags),
       registre.tous('recipe_categories').map((c) => c.id),
       (r) => i18n.t(r.label_key),
     )
@@ -2570,8 +2581,11 @@ export function creerOrchestrateurGrotte({
         // l'action — c'est ce qui permet de dire « ta poche est pleine »
         // AVANT de tenter, au lieu de laisser une tuile non grisée ne rien
         // faire.
+        // `rCout` : la recette dont on paie le prix — gratuite sous la
+        // triche. Le verdict et l'action la lisent, la fiche lit `r`.
+        const rCout = triche ? recetteGratuite(r) : r;
         const verdict = peutFabriquer(
-          r, save.inventaire.items, flags, save.cooldowns, heureMs, save.inventaire.eclats,
+          rCout, save.inventaire.items, flags, save.cooldowns, heureMs, save.inventaire.eclats,
           r.sortie.item
             ? ((pocheApresEntrees) => plafondPourItem(
               pocheApresEntrees, r.sortie.item, capacitePoche(), obtenirItemDef,
@@ -2667,7 +2681,7 @@ export function creerOrchestrateurGrotte({
           libelleAction: i18n.t('menu.fiche.fabriquer'),
           grisee: !verdict.ok,
           action: () => {
-            const resultat = fabriquer(r, {
+            const resultat = fabriquer(rCout, {
               poche: save.inventaire.items,
               flags,
               cooldowns: save.cooldowns,
@@ -3203,7 +3217,7 @@ export function creerOrchestrateurGrotte({
         // `D-62` : la puissance des compétences ne s'annonce pas avant la
         // première) et s'écrire en pourcentage (`affichage`).
         lignes: registre.tous('stats_derivees')
-          .filter((d) => d.stat === s.id && estVisible(d, flags))
+          .filter((d) => d.stat === s.id && (triche || estVisible(d, flags)))
           .map((d) => `${i18n.t(d.label_key)} : ${valeurDeriveeAffichee(d, statsDerivees[d.id])}`),
         libelleAction: peutAjouter ? i18n.t('menu.stats_ajouter') : null,
         grisee: false,
@@ -3271,7 +3285,7 @@ export function creerOrchestrateurGrotte({
     const correspondance = emplacements
       .map((slot, i) => i18n.t('competence.fiche_emplacement_bouton', { n: i + 1, glyphe: glypheVerbe(slot.verb) }))
       .join(' · ');
-    return registre.tous('skills').filter((c) => flags.has(c.flag)).map((competence) => {
+    return registre.tous('skills').filter(competenceConnue).map((competence) => {
       const durees = dureesCompetence(competence, statsDerivees);
       const ici = emplacementDe(save.hero.competences, competence.id);
       const rang = emplacements.findIndex((slot) => slot.id === ici);
@@ -3743,6 +3757,22 @@ export function creerOrchestrateurGrotte({
     return resultat.niveauxFranchis;
   }
 
+  // `?cheat=phenom` : le dernier niveau, par le chemin de tout gain d'XP (ses
+  // flags de niveau et ses points à répartir compris), puis chaque compétence
+  // rangée comme le parchemin la range (`rangerCompetenceApprise`) — sans
+  // quoi « connue » ne donnerait rien à lancer avant un passage par Stats. Appelée au
+  // chargement et à chaque « Nouvelle partie » : une partie trichée repart
+  // toujours au dernier niveau. Sans triche, ne fait rien.
+  function appliquerTriche() {
+    if (!triche) return;
+    const manque = xpNiveauMax(registre.tous('levels')) - save.hero.xp;
+    if (manque > 0) appliquerXpHeros(manque);
+    const emplacements = emplacementsCompetence().map((s) => s.id);
+    for (const competence of registre.tous('skills')) {
+      save.hero.competences = rangerCompetenceApprise(save.hero.competences, competence, emplacements);
+    }
+  }
+
   function onMonstreMort(donneesEnnemi) {
     const table = registre.obtenir('loot_tables', donneesEnnemi.loot_table);
     const alea = creerGenerateur((Date.now() ^ Math.floor(Math.random() * 0x7fffffff)) >>> 0);
@@ -3992,12 +4022,19 @@ export function creerOrchestrateurGrotte({
   // la sauvegarde nomme sans que le catalogue le connaisse (une compétence ou
   // un emplacement retiré), ou qu'on n'a pas APPRIS (son flag), ne se range
   // nulle part : rien ne se lance qu'on n'ait appris.
+  // Une compétence est connue quand son flag est posé — ou sous la triche,
+  // qui ne le pose pas : le coffre du parchemin (`coffreOuvert`) lit le flag
+  // seul, et reste donc fermé jusqu'à ce qu'on l'ouvre.
+  function competenceConnue(competence) {
+    return triche || flags.has(competence.flag);
+  }
+
   function competencesEquipees() {
     const equipees = [];
     for (const [emplacement, competenceId] of Object.entries(save.hero.competences || {})) {
       const competence = registre.obtenir('skills', competenceId);
       const slot = registre.obtenir('action_slots', emplacement);
-      if (!competence || !estEmplacementCompetence(slot) || !flags.has(competence.flag)) continue;
+      if (!competence || !estEmplacementCompetence(slot) || !competenceConnue(competence)) continue;
       equipees.push({ competence, emplacement, verbe: slot.verb });
     }
     return equipees;
@@ -5774,6 +5811,7 @@ export function creerOrchestrateurGrotte({
     hero = creerHeros({ x: 0, y: 0, rayon: rayonHeros(), pvMax: 1 });
     hero.pv = save.hero.pv; // null : recalculé au premier calculerStatsHeros(), comme au tout premier boot
     orientationHeros = creerOrientation();
+    appliquerTriche();
     etatModifie = false;
     dernierAutosave = performance.now();
     // Rejoue la cinématique depuis le début (§3.1) : entrerDansScene()
@@ -6048,7 +6086,11 @@ export async function demarrerJeu() {
   const registre = construireRegistre(donnees);
   const i18n = creerI18n(dictionnaires, 'fr');
 
-  const store = creerStoreIndexedDB();
+  // `?cheat=phenom` : lu AVANT le store, parce que la partie trichée a sa
+  // propre base — la vraie partie n'est jamais chargée, donc jamais écrasée.
+  const triche = lireTriche(window.location.search);
+  if (triche) console.info('?cheat : triche active (dernier niveau, recettes gratuites, compétences connues), sauvegarde à part.');
+  const store = triche ? creerStoreIndexedDB(NOM_BASE_TRICHE) : creerStoreIndexedDB();
   const { payload: save } = await chargerSave(store);
   i18n.definirLangue(save.settings.lang);
   // `D-226` : la page dit la langue qu'elle parle. `index.html` naît en `fr` ;
@@ -6423,6 +6465,7 @@ export async function demarrerJeu() {
     registre, i18n, save, store, dialogue, menu, input, ctxLogique, ctxVisible, canvasLogique,
     alignementForce: alignementDebug.valeur,
     flagsForces: flagsDebug.ids,
+    triche,
     onPremierGeste: armerAudioUneFois,
     moniteurPerf,
     // La PRÉSENCE de la carte « Plein écran » est une condition de

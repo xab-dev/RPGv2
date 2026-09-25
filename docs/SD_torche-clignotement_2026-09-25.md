@@ -67,8 +67,32 @@ graine reste fixe : elles respiraient normalement.
 
 À voir en jeu : `V-158`.
 
+## La règle des 3 Hz (`D-219`)
+
+Xav, 25/09 : « je ne me rends pas compte de ce que ça fait, 3 Hz [...] si tu
+as les infos, je te laisse gérer la technique ».
+
+- **Ce que disent les recommandations.** WCAG 2.1, critère 2.3.1 : pas plus
+  de **trois éclats par seconde**. Il reprend les règles de la télévision
+  (ITU-R BT.1702, Ofcom), écrites après les crises de 1997 devant *Pokémon*.
+  L'épilepsie photosensible touche environ une personne sur 4 000, surtout
+  entre 7 et 19 ans. La zone la plus dangereuse va de **15 à 25 Hz** : le
+  pire cas de la torche (14,6 Hz en descendant) y touchait presque.
+- **À quoi ressemble 3 Hz.** Trois battements par seconde : un cœur qui
+  s'emballe franchement. La flamme corrigée respire à 1,4 et 2,3 Hz, un
+  vacillement doux. Le halo du follet est à 0,36 Hz, une respiration lente.
+- **Ce qui est retenu.** Un plafond de 3 Hz pour **tout** effet du catalogue,
+  tenu par test. Les recommandations tolèrent un clignotement rapide s'il
+  est petit ou peu contrasté, mais on ne sait mesurer ni la surface ni le
+  contraste sans navigateur : le plafond ne fait donc pas d'exception.
+- **Ce qu'il ne couvre pas.** Un bug qui fait défiler une phase, comme ici :
+  la période était bonne, c'est l'horloge qui s'emballait. Le test de la
+  flamme tient ce cas-là, et le reste revient au ressenti de Xav en jeu.
+- **Question ouverte.** Un avertissement au lancement : `Q-164`.
+
 ## Fichier de bord de la branche
 
 | Commit | Ticket | Ce qu'il fait |
 |---|---|---|
-| 1 | `D-218` | La graine fixe, une liste des flammes, le vacillement dans `ornements.js`, le test, cette fiche |
+| `3c49a71` | `D-218` | La graine fixe, une liste des flammes, le vacillement dans `ornements.js`, le test, cette fiche |
+| 2 | `D-219` | Le plafond de 3 Hz (`ornements.js#FREQUENCE_MAX_HZ`, `rythmeLumineuxHz`), son test sur le catalogue réel, `Q-164` |

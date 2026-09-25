@@ -21,6 +21,11 @@
   // Échelle PROPRE à l'usage (une station vaut 2,1 : voir puzzles.json). Elle
   // se compose avec les échelles de rendu ci-dessous, comme en jeu.
   const echelleUsage = Number(params.get('echelle')) || 1;
+  // `D-229` : `&orientations=sud,est,nord,ouest` rend une ligne par direction
+  // du regard (les poses que le visuel déclare), `&teinte=#rrggbb` teinte
+  // les primitives teintables comme le follet le fait en jeu.
+  const orientations = (params.get('orientations') || '').split(',').filter(Boolean);
+  const teinte = params.get('teinte') || null;
   const visuels = await (await fetch('../data/visuels.json')).json();
 
   // (échelle de rendu, agrandissement de la loupe, légende)
@@ -34,7 +39,8 @@
   // l'écran et les trois vues ne se comparent plus d'un coup d'œil.
   const HAUTEUR_VIGNETTE_PX = 230;
   const hote = document.getElementById('bancs');
-  for (const id of ids) {
+  const lignes = ids.flatMap((id) => (orientations.length ? orientations : [null]).map((o) => [id, o]));
+  for (const [id, orientation] of lignes) {
   const v = visuels.find((e) => e.id === id);
   const ligne = document.createElement('div');
   hote.append(ligne);
@@ -56,7 +62,7 @@
     const loupe = Math.max(1, Math.round(HAUTEUR_VIGNETTE_PX / hauteur));
     const source = document.createElement('canvas');
     source.width = cote; source.height = hauteur;
-    dessinerVisuel(source.getContext('2d'), v, cote / 2, -haut * e, { echelle: e });
+    dessinerVisuel(source.getContext('2d'), v, cote / 2, -haut * e, { echelle: e, orientation, teinte });
 
     const fig = document.createElement('figure');
     const vue = document.createElement('canvas');
@@ -67,6 +73,6 @@
     fig.append(vue, Object.assign(document.createElement('figcaption'), { textContent: legende }));
     ligne.append(fig);
   }
-  ligne.insertAdjacentHTML('beforeend', `<span>${id} — ${v.primitives.length} primitives, ×${echelleUsage}</span>`);
+  ligne.insertAdjacentHTML('beforeend', `<span>${id}${orientation ? ` (${orientation})` : ''} — ${v.primitives.length} primitives, ×${echelleUsage}</span>`);
   }
 </script></body></html>

@@ -17,7 +17,7 @@ import { creerSourceManette } from './input/gamepad.js';
 import { creerSourceTactile } from './input/touch.js';
 import { creerPleinEcranTactile } from './plein_ecran.js';
 import { verrouillerMenuContextuel } from './souris.js';
-import { creerCurseur } from './curseur.js';
+import { creerCurseur, viseeDuCurseur } from './curseur.js';
 import { ornementActif, etincellesOrbite, facteurRespiration, facteurVacillement, particulesFilet } from './ornements.js';
 import { brule, entamees, normaliser, consumer, prendre, rendre, flammesAffichees } from './combustion.js';
 import { creerCoucheInput, etatNeutre } from './input/input.js';
@@ -30,7 +30,7 @@ import {
   creerBoucle, dessinerScene, dessinerObscurite, dessinerSignalZones, dessinerPaupieres, dessinerTextesFlottants, dessinerLogo, presenter,
   RESOLUTION_LOGIQUE, calculerRectanglePresentation, versCoordonneesLogiques, AURA_TRAIT,
   definirEchelleForcee, dimensionsEcranPhysiquesActuelles, invaliderCoucheStatique,
-  dessinerSurlignages, dessinerProjectiles, dessinerOndes,
+  dessinerSurlignages, dessinerProjectiles, dessinerOndes, dessinerVisees,
 } from './render.js';
 import { creerStoreIndexedDB } from './storage_indexeddb.js';
 import {
@@ -56,6 +56,7 @@ import {
   modificateursHeros, statsEffectivesMonstre, tickBuffsActifs, ajouterBuffActif, modificateursBuffsActifs,
   tickSoinsBuffsActifs, iconeBuffBandeau,
   modificateursDeriveesHeros, appliquerModificateursDerivees, dotsHeros, estDansAura, poserStatutCoup, tickStatutsCoup } from './status.js';
+import { creerOrientation, avancerOrientation } from './orientation.js';
 import { creerHeros, creerMonstre, approcherEnLigneDroite, infligerDegats, mourir, respawn, reconcilierPvMax } from './entities.js';
 import {
   resoudreArmeEquipee, resoudreAutoAttaque, tickCooldown, estMonstreActif, FLASH_ATTAQUE_MS, FLASH_TOUCHE_MS,
@@ -121,7 +122,7 @@ import {
 import { dessinerEcranStele, zoneGravureStele } from './ui/ecran_stele.js';
 import {
   creerEtatCompetence, dureesCompetence, chargeActive, avancerCompetence, competencePrete, lancerCompetence,
-  ratiosCompetence, resoudreDegats, choisirCible, estEmplacementCompetence, valeurCompetenceEn,
+  ratiosCompetence, resoudreDegats, pointVise, estEmplacementCompetence, valeurCompetenceEn,
   equiperCompetence, emplacementDe, rangerCompetenceApprise,
 } from './competences.js';
 import { lignesEcrites, ecritureFinie, dureeEcriture } from './parchemin.js';
@@ -751,6 +752,20 @@ export function creerOrchestrateurGrotte({
   // frame, au début de `maj()` ; seule la bulle de dialogue s'en sert. Vide
   // par défaut : un test headless n'a rien à fournir.
   lireContactsTactiles = () => [],
+  // `D-247`, `D-248` : ce que le joueur VISE pour le verbe qu'il lance —
+  // `{ ecran: { x, y } }` (un point d'écran logique : le curseur, s'il est
+  // tenu par le périphérique qui joue, `curseur.js#viseeDuCurseur`),
+  // `{ direction: { dx, dy } }` (le glissé d'un doigt depuis le bouton), ou
+  // `null`. Jamais un périphérique. `null` par défaut : un test headless
+  // vise automatiquement.
+  lireVisee = () => null,
+  // `D-248` : les glissés EN COURS (`[{ verbe, dx, dy }]`), pour montrer où
+  // le doigt vise avant qu'il se lève. Vide par défaut.
+  lireGlisses = () => [],
+  // `D-248` : les verbes dont le bouton VISE (une compétence y est rangée),
+  // annoncés à chaque frame à la source tactile. Même patron
+  // qu'`onVerbesActions` : no-op par défaut.
+  onVerbesVisants = () => {},
   // Ticket L2-L3 (journal du 23/09) : les trois calques du symbole du jeu, déjà
   // lancés en chargement par `demarrerJeu` (des `Image` DOM, que l'orchestrateur
   // ne sait pas créer). Vide par défaut : un test headless n'a rien à fournir,
@@ -1460,6 +1475,9 @@ export function creerOrchestrateurGrotte({
   // reinitialiserPartie() doit pouvoir repartir d'un héros neuf.
   let hero = creerHeros({ x: 0, y: 0, rayon: rayonHeros(), pvMax: 1 });
   hero.pv = save.hero.pv; // null tant que les stats dérivées n'ont pas encore tourné une fois
+  // `D-229` : où regarde le héros — un état d'AFFICHAGE, tenu à part de
+  // l'entité (qui porte le gameplay) et jamais sauvegardé (`orientation.js`).
+  let orientationHeros = creerOrientation();
   let scene, decor, monstres, follet;
   let lumieresDecor = [];
   let puzzlesEtat = {};
@@ -4012,7 +4030,7 @@ export function creerOrchestrateurGrotte({
         durees,
       });
       if (etatGameplay[verbe] && etatGameplay[verbe].pressed && competencePrete(etat, durees)) {
-        if (lancerCompetenceVers(competence, statsDerivees)) etat = lancerCompetence(etat, durees);
+        if (lancerCompetenceVers(competence, verbe, statsDerivees)) etat = lancerCompetence(etat, durees);
         else signalerRefusConteneur(CLE_TEXTE_AUCUNE_CIBLE, hero.x, hero.y);
       }
       etatsCompetences.set(competence.id, etat);
@@ -4021,19 +4039,21 @@ export function creerOrchestrateurGrotte({
     ratiosEmplacements = ratios;
   }
 
-  // Le tir d'une compétence : vers sa cible (`competences.js#choisirCible`),
-  // avec les dégâts de SON point de résolution, par le seul chemin de tir du
-  // jeu. Rend vrai si le tir est parti.
-  function lancerCompetenceVers(competence, statsDerivees) {
+  // Le tir d'une compétence : vers ce que le joueur vise, sinon vers sa cible
+  // automatique (`competences.js#pointVise`, `D-247`), avec les dégâts de SON
+  // point de résolution, par le seul chemin de tir du jeu. Rend vrai si le
+  // tir est parti.
+  function lancerCompetenceVers(competence, verbe, statsDerivees) {
     const porteePx = competence.portee_tuiles * scene.tileSize;
-    const cible = choisirCible({
+    const cible = pointVise({
+      visee: viseeDansLeMonde(lireVisee(verbe), porteePx),
       follet,
       hero,
       porteePx,
       monstres: monstres.map((m) => ({ id: m.id, x: m.x, y: m.y, mort: m.mort, visable: !m.intouchable })),
     });
     if (!cible) return false;
-    return tirerProjectile(projectiles, {
+    const parti = tirerProjectile(projectiles, {
       x: hero.x,
       y: hero.y,
       versX: cible.x,
@@ -4047,6 +4067,23 @@ export function creerOrchestrateurGrotte({
       zonePx: competence.effet.rayon_px,
       etiquette: { couleur: competence.effet.couleur },
     });
+    // `D-229` : le héros regarde celui qu'il vise, le temps qu'on le voie.
+    if (parti) orientationHeros = avancerOrientation(orientationHeros, { deltaMs: 0, vers: { dx: cible.x - hero.x, dy: cible.y - hero.y } });
+    return parti;
+  }
+
+  // Ce que le joueur vise, en un point du MONDE. Un point d'écran le devient
+  // par la caméra du DESSIN (le curseur désigne ce que le joueur voit sous
+  // lui) ; une direction, par le héros et la portée.
+  function viseeDansLeMonde(visee, porteePx) {
+    if (!visee) return null;
+    if (visee.ecran) {
+      const camera = cameraCourante();
+      return { x: visee.ecran.x + camera.x, y: visee.ecran.y + camera.y };
+    }
+    const { dx, dy } = visee.direction;
+    const n = Math.hypot(dx, dy);
+    return n > 0 ? { x: hero.x + (dx / n) * porteePx, y: hero.y + (dy / n) * porteePx } : null;
   }
 
   // La SALLE NETTOYÉE (spec 14, §4.3) : une scène qui déclare `nettoyage`
@@ -4655,6 +4692,7 @@ export function creerOrchestrateurGrotte({
     // (aujourd'hui : le `preventDefault` de `Tab`, qui arrive hors frame).
     onEtatUi(uiOuverte);
     onVerbesActions(verbesActionsVisibles());
+    onVerbesVisants(competencesEquipees().map((e) => e.verbe));
     onZonesMonde(zonesTactilesMonde(uiOuverte));
     // Auto (§5.2) : lu sur la MÊME frame et le MÊME `uiOuverte` que tout le
     // reste — jamais un second calcul de « le jeu a-t-il la main ».
@@ -4689,6 +4727,10 @@ export function creerOrchestrateurGrotte({
     const dy = etatGameplay.move.y * statsDerivees.derivee_vitesse_deplacement_px_s * deltaS;
     const xAvantDeplacement = hero.x;
     const yAvantDeplacement = hero.y;
+    // `D-229` : le GESTE tourne le héros, pas le chemin après collision —
+    // pousser contre un mur le tourne vers lui. Sous UI, le geste est neutre :
+    // il garde sa direction.
+    orientationHeros = avancerOrientation(orientationHeros, { deltaMs, dx: etatGameplay.move.x, dy: etatGameplay.move.y });
     if (dx !== 0 || dy !== 0) {
       const resultat = resoudreDeplacement(scene, hitboxHeros(), dx, dy, flags.has);
       hero.x = resultat.x + hero.rayon;
@@ -5354,6 +5396,7 @@ export function creerOrchestrateurGrotte({
       // Héros neutre avant le choix du follet, teinté à sa couleur ensuite
       // (§3.4 03_grotte-polish) — jamais combinées, jamais une 2ᵉ silhouette.
       heroTeinte: companionActif ? companionActif.render.couleur : COULEUR_HERO_NEUTRE,
+      heroOrientation: orientationHeros.direction,
       monstres: monstresAffiches,
       follet: follet && companionActif ? {
         // `D-39` : la SILHOUETTE tourne sur la petite orbite, autour du point
@@ -5445,6 +5488,17 @@ export function creerOrchestrateurGrotte({
     dessinerProjectiles(ctxLogique, {
       camera,
       projectiles: projectilesEnVol(projectiles).map((p) => ({ x: p.x, y: p.y, visuel: registre.obtenir('visuels', p.visuel) })),
+    });
+    // `D-248` : là où le doigt vise, tant qu'il glisse — de la portée de la
+    // compétence, à sa couleur, après le voile comme les tirs.
+    const parVerbe = new Map(competencesEquipees().map((e) => [e.verbe, e.competence]));
+    dessinerVisees(ctxLogique, {
+      camera,
+      hero,
+      visees: lireGlisses().filter((g) => parVerbe.has(g.verbe)).map((g) => {
+        const c = parVerbe.get(g.verbe);
+        return { dx: g.dx, dy: g.dy, longueur: c.portee_tuiles * scene.tileSize, rayon: c.effet.rayon_px, couleur: c.effet.couleur };
+      }),
     });
     // Palier G : l'onde d'un tir à zone, là où il a éclaté — elle s'élargit
     // jusqu'au rayon qu'il a touché et s'efface.
@@ -5719,6 +5773,7 @@ export function creerOrchestrateurGrotte({
     respawnsEnAttente = {};
     hero = creerHeros({ x: 0, y: 0, rayon: rayonHeros(), pvMax: 1 });
     hero.pv = save.hero.pv; // null : recalculé au premier calculerStatsHeros(), comme au tout premier boot
+    orientationHeros = creerOrientation();
     etatModifie = false;
     dernierAutosave = performance.now();
     // Rejoue la cinématique depuis le début (§3.1) : entrerDansScene()
@@ -5748,6 +5803,8 @@ export function creerOrchestrateurGrotte({
     choixFolletActif,
     reinitialiserPartie,
     obtenirHero: () => hero,
+    // `D-229` : où regarde le héros (état d'affichage, `orientation.js`).
+    obtenirOrientationHeros: () => orientationHeros.direction,
     // Palier C (`D-113`) : la table des grains de tuiles, telle que
     // `render.js` la reçoit. Exposée pour les tests — le dessin n'est jamais
     // exercé headless, donc c'est la seule façon de prouver qu'un preset
@@ -6106,18 +6163,23 @@ export async function demarrerJeu() {
   let verbesActionsDebloques = [];
   // `Q-40` : même patron, pour les cibles qui suivent le monde (le follet).
   let zonesMondeTactiles = [];
+  // `D-248` : même patron, pour les boutons qui visent (une compétence rangée).
+  let verbesVisantsTactiles = [];
+  // Seule source de vérité pour écran -> logique (diagnostic
+  // SD_ui-lisibilite §3c) : versCoordonneesLogiques() est la même fonction
+  // pure, testée, dont presenter()/calculerRectanglePresentation() dessine
+  // la réciproque (logique -> écran) — plus de formule recopiée ici. Le doigt
+  // et, depuis `D-247`, le curseur qui vise passent par elle.
+  function ecranVersLogique(clientX, clientY) {
+    const rect = calculerRectanglePresentation(canvasVisible.width, canvasVisible.height);
+    return versCoordonneesLogiques(clientX, clientY, rect);
+  }
   const sourceTactile = creerSourceTactile(canvasVisible, {
     surRelachement: () => pleinEcran.demanderUneFois(),
     verbesActions: () => verbesActionsDebloques,
     zonesMonde: () => zonesMondeTactiles,
-    // Seule source de vérité pour écran -> logique (diagnostic
-    // SD_ui-lisibilite §3c) : versCoordonneesLogiques() est la même fonction
-    // pure, testée, dont presenter()/calculerRectanglePresentation() dessine
-    // la réciproque (logique -> écran) — plus de formule recopiée ici.
-    versLogique(clientX, clientY) {
-      const rect = calculerRectanglePresentation(canvasVisible.width, canvasVisible.height);
-      return versCoordonneesLogiques(clientX, clientY, rect);
-    },
+    verbesVisants: () => verbesVisantsTactiles,
+    versLogique: ecranVersLogique,
   });
   // `D-54` : « le jeu a-t-il la main ? », écrit par l'orchestrateur à chaque
   // frame (`onEtatUi`), lu par le clavier au moment du `keydown` pour décider
@@ -6370,7 +6432,19 @@ export async function demarrerJeu() {
     onEtatUi: (ouverte) => { uiCapteLesVerbes = ouverte; },
     onVerbesActions: (verbes) => { verbesActionsDebloques = verbes; },
     onZonesMonde: (zones) => { zonesMondeTactiles = zones; },
+    onVerbesVisants: (verbes) => { verbesVisantsTactiles = verbes; },
     lireContactsTactiles: () => sourceTactile.lireContactsNouveaux(),
+    // `D-247` : `curseur` est déclaré plus bas ; il n'est lu qu'à la première
+    // frame, bien après sa création.
+    // Le doigt d'abord : un glissé qui vient de lancer ce verbe dit où il
+    // visait ; sinon le curseur, s'il est tenu par le périphérique qui joue.
+    lireVisee: (verbe) => {
+      const direction = sourceTactile.viseeTactile(verbe);
+      if (direction) return { direction };
+      const point = viseeDuCurseur(curseur.position(), input.peripheriqueActif());
+      return point ? { ecran: ecranVersLogique(point.x, point.y) } : null;
+    },
+    lireGlisses: () => sourceTactile.glissesEnCours(),
     // Le curseur n'est pas dans la scène, mais ses étincelles sont des
     // particules cosmétiques comme les autres : les laisser derrière ferait un
     // Bas à moitié appliqué, visible à la souris. Ici, et pas derrière chaque

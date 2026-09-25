@@ -8,6 +8,7 @@ import { NOMS_COTES } from './lisieres.js';
 import { flagDeNiveau } from './xp.js';
 import { MODES_BOSS } from './comportement_monstres.js';
 import { SOURCES_CHARGE, EFFETS_COMPETENCE, estEmplacementCompetence } from './competences.js';
+import { ORIENTATIONS } from './orientation.js';
 
 // `D-39` — « le corps ne sort jamais de son aura », vérifié AU CHARGEMENT.
 //
@@ -1737,6 +1738,43 @@ function validerVisuel(entry, catalogs, path) {
     return erreurs;
   }
 
+  // `D-229` : ce qu'une direction du regard fait aux PIÈCES du visuel (le
+  // visage du héros, sa capuche) —
+  // `{ <direction>: { <piece>: null | { dx?, dy?, echelle_x?, cisaillement?, pivot_y? } } }`.
+  // Une direction inconnue ne serait jamais demandée, une pièce qu'aucune
+  // primitive ne porte ne bougerait rien : les deux passeraient sans que
+  // personne le voie, donc refusées au boot.
+  if (entry.orientations !== undefined) {
+    const o = entry.orientations;
+    const pieces = new Set(entry.primitives.map((p) => p && p.piece).filter((n) => n !== undefined));
+    if (!o || typeof o !== 'object' || Array.isArray(o)) {
+      erreurs.push(`${path} > orientations doit être { <${ORIENTATIONS.join(' | ')}>: { <piece>: null | { dx?, echelle_x? } } }`);
+    } else {
+      for (const [direction, poses] of Object.entries(o)) {
+        const cheminO = `${path} > orientations > ${direction}`;
+        if (!ORIENTATIONS.includes(direction)) {
+          erreurs.push(`${cheminO} : direction inconnue (${ORIENTATIONS.join(', ')})`);
+          continue;
+        }
+        if (!poses || typeof poses !== 'object' || Array.isArray(poses)) {
+          erreurs.push(`${cheminO} doit être un objet { <piece>: null | { dx?, echelle_x? } }`);
+          continue;
+        }
+        for (const [piece, pose] of Object.entries(poses)) {
+          if (!pieces.has(piece)) erreurs.push(`${cheminO} > "${piece}" : aucune primitive ne porte cette pièce`);
+          if (pose === null) continue;
+          const cles = pose && typeof pose === 'object' ? Object.keys(pose) : null;
+          const nombres = ['dx', 'dy', 'cisaillement', 'pivot_y'];
+          if (!cles || cles.some((c) => c !== 'echelle_x' && !nombres.includes(c))
+            || nombres.some((c) => pose[c] !== undefined && typeof pose[c] !== 'number')
+            || (pose.echelle_x !== undefined && (typeof pose.echelle_x !== 'number' || pose.echelle_x <= 0))) {
+            erreurs.push(`${cheminO} > ${piece} doit être null (cachée) ou { dx?, dy?, cisaillement?, pivot_y? : nombres ; echelle_x? : nombre > 0 }`);
+          }
+        }
+      }
+    }
+  }
+
   entry.primitives.forEach((p, i) => {
     const chemin = `${path} > primitives[${i}]`;
     if (!FORMES_VISUEL.includes(p.forme)) {
@@ -1771,6 +1809,9 @@ function validerVisuel(entry, catalogs, path) {
     }
     if (p.alpha !== undefined && typeof p.alpha !== 'number') {
       erreurs.push(`${chemin} > alpha doit être numérique`);
+    }
+    if (p.piece !== undefined && (typeof p.piece !== 'string' || p.piece === '')) {
+      erreurs.push(`${chemin} > piece doit être un nom (chaîne non vide)`);
     }
     if (p.rotation !== undefined && typeof p.rotation !== 'number') {
       erreurs.push(`${chemin} > rotation doit être numérique`);

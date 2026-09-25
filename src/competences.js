@@ -106,6 +106,32 @@ export function choisirCible({ follet, monstres, hero, porteePx }) {
   return meilleur;
 }
 
+// `D-247` (`Q-167`, Xav) : OÙ PART une compétence. Le joueur vise (`visee`, un
+// point du monde : le curseur, plus tard le doigt) : le tir part vers lui, et
+// va jusqu'au bout de sa portée — la visée donne une direction, jamais une
+// promesse d'arriver sur le point (`[OUVERT]`, `Q-168`). Personne ne vise, ou
+// le point est sur le héros : la cible automatique (`choisirCible`). Rend
+// `{ x, y, cible }` (le point visé, et le monstre visé s'il y en a un), ou
+// `null` quand il n'y a rien à viser. LE point de résolution d'un tir de
+// compétence : `main.js` tire vers ce qu'il rend, et rien d'autre.
+//
+// Provisoire, non validé en jeu : en deçà, le curseur est SUR le héros et sa
+// direction ne veut rien dire (un pixel de trop à gauche tirerait à gauche).
+export const RAYON_VISEE_MORTE_PX = 6;
+
+export function pointVise({ visee = null, hero, porteePx, follet, monstres }) {
+  if (visee) {
+    const dx = visee.x - hero.x;
+    const dy = visee.y - hero.y;
+    const distance = Math.hypot(dx, dy);
+    if (distance > RAYON_VISEE_MORTE_PX) {
+      return { x: hero.x + (dx / distance) * porteePx, y: hero.y + (dy / distance) * porteePx, cible: null };
+    }
+  }
+  const cible = choisirCible({ follet, monstres, hero, porteePx });
+  return cible ? { x: cible.x, y: cible.y, cible } : null;
+}
+
 // ── Équiper (spec 14, §4.9, palier I) ─────────────────────────────────────
 // Ce que le joueur a rangé où : `{ id d'emplacement : id de compétence }`
 // (`save.hero.competences`). Les fonctions ci-dessous rendent une table

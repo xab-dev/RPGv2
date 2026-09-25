@@ -148,6 +148,19 @@ export function unionRectangles(a, b) {
   return { x, y, w: Math.max(a.x + a.w, b.x + b.w) - x, h: Math.max(a.y + a.h, b.y + b.h) - y };
 }
 
+// `D-247` : le curseur vise-t-il ? Seulement s'il est tenu par le périphérique
+// qui joue : la souris quand le joueur est au clavier, le stick droit quand il
+// est à la manette. Sans cette règle, une souris posée au bord du bureau
+// viserait à la place d'un joueur à la manette qui n'a jamais touché le stick
+// droit — et au doigt, jamais : un curseur ne suit pas un doigt. Rend le
+// point, ou `null` (la visée automatique reprend la main). Pur.
+export function viseeDuCurseur(position, peripherique) {
+  if (!position) return null;
+  const tenu = (position.source === 'souris' && peripherique === 'clavier')
+    || (position.source === 'stick' && peripherique === 'manette');
+  return tenu ? { x: position.x, y: position.y } : null;
+}
+
 // --- La part DOM ------------------------------------------------------------
 
 export function creerCurseur({
@@ -162,6 +175,7 @@ export function creerCurseur({
 } = {}) {
   const inerte = {
     disponible: () => false,
+    position: () => null,
     avancer() {},
     dessiner() {},
     definirEffets() {},
@@ -427,6 +441,11 @@ export function creerCurseur({
 
   return {
     disponible: () => tetePosee,
+    // `D-247` : où est le curseur, en pixels CSS (`clientX`/`clientY`), et
+    // qui le tient (`souris` ou `stick`) ; `null` tant que rien ne l'a
+    // bougé. Une LECTURE : ce module ne sait pas qu'on vise avec
+    // (`viseeDuCurseur` décide si la position compte).
+    position: () => (x === null ? null : { x, y, source: mode }),
     // Palier D de `specs/09_reglages-graphiques.md` (§4.5) : le curseur suit
     // le changement de preset comme le reste, sans recharger. Deux
     // configurations, rien d'autre — ce module ne saura jamais qu'un preset

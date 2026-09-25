@@ -10,6 +10,65 @@
       "h": 5,
       "alpha": 0.38
     },
+    "orientations": {
+      "sud_est": {
+        "capuche": {
+          "cisaillement": 0.085,
+          "pivot_y": 5
+        },
+        "visage": {
+          "dx": 1,
+          "echelle_x": 0.82
+        }
+      },
+      "est": {
+        "capuche": {
+          "cisaillement": 0.18,
+          "pivot_y": 5
+        },
+        "visage": {
+          "dx": 2,
+          "echelle_x": 0.62
+        }
+      },
+      "nord_est": {
+        "capuche": {
+          "cisaillement": 0.145,
+          "pivot_y": 5
+        },
+        "visage": null
+      },
+      "nord": {
+        "visage": null
+      },
+      "nord_ouest": {
+        "capuche": {
+          "cisaillement": -0.145,
+          "pivot_y": 5
+        },
+        "visage": null
+      },
+      "ouest": {
+        "capuche": {
+          "cisaillement": -0.18,
+          "pivot_y": 5
+        },
+        "visage": {
+          "dx": -2.2,
+          "echelle_x": 0.62
+        }
+      },
+      "sud_ouest": {
+        "capuche": {
+          "cisaillement": -0.085,
+          "pivot_y": 5
+        },
+        "visage": {
+          "dx": -1.3,
+          "echelle_x": 0.82
+        }
+      }
+    },
     "primitives": [
       {
         "forme": "polygone",
@@ -219,7 +278,8 @@
             -5.8
           ]
         ],
-        "couleur": "#080a0e"
+        "couleur": "#080a0e",
+        "piece": "capuche"
       },
       {
         "forme": "polygone",
@@ -275,7 +335,8 @@
             -5.4
           ]
         ],
-        "couleur": "#1a1f27"
+        "couleur": "#1a1f27",
+        "piece": "capuche"
       },
       {
         "forme": "polygone",
@@ -324,7 +385,8 @@
           ]
         ],
         "couleur": "#cdd8e6",
-        "alpha": 0.5
+        "alpha": 0.5,
+        "piece": "capuche"
       },
       {
         "forme": "polygone",
@@ -361,7 +423,8 @@
           ]
         ],
         "couleur": "#9fb2c8",
-        "alpha": 0.3
+        "alpha": 0.3,
+        "piece": "capuche"
       },
       {
         "forme": "ellipse",
@@ -370,7 +433,8 @@
         "w": 8,
         "h": 8.2,
         "couleur": "#a8bacf",
-        "alpha": 0.32
+        "alpha": 0.32,
+        "piece": "visage"
       },
       {
         "forme": "ellipse",
@@ -378,7 +442,8 @@
         "dy": 0.4,
         "w": 7.3,
         "h": 7.5,
-        "couleur": "#05070b"
+        "couleur": "#05070b",
+        "piece": "visage"
       },
       {
         "forme": "cercle",
@@ -387,7 +452,8 @@
         "w": 7.4,
         "couleur": "#cfe6ff",
         "alpha": 0.1,
-        "teinte": true
+        "teinte": true,
+        "piece": "visage"
       },
       {
         "forme": "cercle",
@@ -396,7 +462,8 @@
         "w": 4.6,
         "couleur": "#cfe6ff",
         "alpha": 0.22,
-        "teinte": true
+        "teinte": true,
+        "piece": "visage"
       },
       {
         "forme": "cercle",
@@ -404,7 +471,8 @@
         "dy": 0.2,
         "w": 3.2,
         "couleur": "#cfe6ff",
-        "teinte": true
+        "teinte": true,
+        "piece": "visage"
       }
     ]
   },

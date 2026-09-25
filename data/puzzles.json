@@ -166,5 +166,26 @@
     "competence": "skill_onde",
     "armement_ms": 400,
     "visible_si": "flag_gardien_vaincu"
+  },
+  {
+    "id": "puzzle_annexe_levier_recompense",
+    "type": "levier",
+    "position": {
+      "x": 15,
+      "y": 1
+    },
+    "flag_pose": "flag_annexe_sortie",
+    "visible_si": "flag_gardien_vaincu",
+    "recompense": {
+      "item": "item_eclat",
+      "quantite": 1,
+      "decalage": {
+        "x": 0,
+        "y": 1
+      }
+    },
+    "render": {
+      "visuel": "visuel_levier"
+    }
   }
 ]

@@ -657,16 +657,17 @@
       {"type": "faisceau", "x": 672, "y": 32, "angle": 7, "ouverture": 11, "longueur": 190, "alpha": 0.13},
       {"x": 384, "y": 288, "rayon": 96, "couleur": "#9fb8c8"},
       {"x": 400, "y": 552, "rayon": 30, "couleur": "#9fb8c8"},
-      {"x": 400, "y": 24, "rayon": 48, "couleur": "#fff0c8", "condition": "flag_annexe_sortie"}
+      {"x": 400, "y": 24, "rayon": 48, "couleur": "#fff0c8", "condition": "flag_annexe_sortie"},
+      {"x": 496, "y": 52, "rayon": 44, "couleur": "#fff0c8", "condition": "flag_gardien_vaincu"}
     ],
     "decor": {"densite": 0.04, "motifs": [{"visuel": "visuel_flaque", "poids": 0.2}, {"visuel": "visuel_flaque_grande", "poids": 0.2}, {"visuel": "visuel_flaque_claire", "poids": 0.2}, {"visuel": "visuel_flaque_sombre", "poids": 0.2}, {"visuel": "visuel_flaque_mouillee", "poids": 0.2}, {"visuel": "visuel_rocher_petit", "poids": 2}, {"visuel": "visuel_rocher_grand", "poids": 1}, {"visuel": "visuel_cristal", "poids": 2, "lumiere": {"rayon": 28, "dy": 6, "couleur": "#7cc4ff"}}]},
-    "interactifs": ["puzzle_annexe_coffre"],
+    "interactifs": ["puzzle_annexe_coffre", "puzzle_annexe_levier_recompense"],
     "spawns": [
       {"enemy": "enemy_gardien", "position": {"x": 12, "y": 5}, "condition": {"not": "flag_gardien_vaincu"}}
     ],
     "portails": [
       {"zone": {"x": 12, "y": 17, "w": 1, "h": 1}, "cible": "scene_annexe_salle_2", "spawn": {"x": 17, "y": 1}, "condition": null},
-      {"zone": {"x": 12, "y": 0, "w": 1, "h": 1}, "cible": "scene_maison_exterieur", "spawn": {"x": 18, "y": 47}, "condition": "flag_annexe_sortie"}
+      {"zone": {"x": 12, "y": 0, "w": 1, "h": 1}, "cible": "scene_maison_exterieur", "spawn": {"x": 18, "y": 47}, "condition": "flag_annexe_sortie", "fondu_ms": 900}
     ],
     "portes": [
       {"position": {"x": 12, "y": 0}, "flag": "flag_annexe_sortie", "tile_avant": "tile_mur", "tile_apres": "tile_passage"}

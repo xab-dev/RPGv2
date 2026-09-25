@@ -458,6 +458,8 @@ const aPortee = { valeur: 'a_portee', egal: STELE.id };
     b.orch.obtenirHero().x = (avancer.zone.x + 0.5) * t;
     b.orch.obtenirHero().y = (avancer.zone.y + 0.5) * t;
     b.frame();
+    // Palier H (`Q-153`) : la sortie passe par un fondu, la scène change au plus noir.
+    if (avancer.fondu_ms) b.frame(etat(), avancer.fondu_ms);
     assert.equal(b.orch.obtenirScene().id, avancer.cible, `${ici} → ${avancer.cible}`);
     ici = avancer.cible;
   }

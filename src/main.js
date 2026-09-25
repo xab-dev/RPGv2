@@ -125,6 +125,7 @@ import {
 } from './competences.js';
 import { lignesEcrites, ecritureFinie, dureeEcriture } from './parchemin.js';
 import { dessinerEcranParchemin } from './ui/ecran_parchemin.js';
+import { creerFondu, avancerFondu, alphaFondu } from './fondu_scene.js';
 import { flagsDeLaDescente, interactifsDeLaDescente, descenteDisponible } from './descente.js';
 import {
   decroitre as decroitreSurvie, consommer as consommerSurvie, appliquerMalusRespawn,
@@ -1572,6 +1573,10 @@ export function creerOrchestrateurGrotte({
   // competenceId, ecritureMs }`, ou `null`. Une UI ouverte comme la stèle :
   // le jeu gèle, MENU se tait.
   let vueParchemin = null;
+  // Spec 14, palier H : le FONDU d'un portail qui en déclare un (`fondu_ms`,
+  // `fondu_scene.js`), ou `null`. Le jeu gèle pendant qu'il court ; la scène
+  // change au plus noir.
+  let fonduScene = null;
   // Spec 14 : l'indice qui se déchiffre dans le carnet, l'état de
   // `indices.js#creerDechiffrement`, ou `null`. Il n'avance que carnet
   // ouvert ; fermé avant la fin (le « Fermer » tactile), il reprend à la
@@ -1592,7 +1597,8 @@ export function creerOrchestrateurGrotte({
   function uiOuverteMaintenant() {
     return (
       menu.estOuvert() || dialogue.estOuvert() || choixFolletActif() || intro !== null || depart !== null ||
-      ouvertureLogoMs !== null || prologue !== null || vueStele !== null || vueParchemin !== null || constructionActif()
+      ouvertureLogoMs !== null || prologue !== null || vueStele !== null || vueParchemin !== null || fonduScene !== null
+      || constructionActif()
     );
   }
 
@@ -2230,8 +2236,13 @@ export function creerOrchestrateurGrotte({
     if (cible.genre === 'interactif') {
       const { puzzle, puzzleId } = cible;
       if (puzzle.type === 'levier') {
+        const etaitActif = !!(puzzlesEtat[puzzleId] && puzzlesEtat[puzzleId].actif);
         puzzlesEtat = activerLevier(registre, puzzlesEtat, puzzleId, flags);
         save.puzzles = puzzlesEtat;
+        // Spec 14, palier H : un levier qui déclare une récompense la dépose
+        // la première fois qu'on l'actionne dans son état — un levier de
+        // descente repart éteint à chaque descente, donc une fois par descente.
+        if (!etaitActif && puzzle.recompense) deposerRecompense(puzzle);
         etatModifie = true;
         return;
       }
@@ -2288,6 +2299,10 @@ export function creerOrchestrateurGrotte({
 
     if (cible.genre === 'jete') {
       const jeteProche = cible.jete;
+      if (ramasserMonnaie(jeteProche.itemId, jeteProche.position)) {
+        ecrireObjetsJetesDeLaScene(retirerObjetJete(objetsJetesDeLaScene(), jeteProche.index));
+        return;
+      }
       const resultat = ajouterItem(save.inventaire.items, jeteProche.itemId, 1, plafondPoche(jeteProche.itemId));
       if (resultat.ajoute <= 0) {
         signalerRefusConteneur(CLE_TEXTE_POCHE_PLEINE, jeteProche.position.x, jeteProche.position.y);
@@ -3413,6 +3428,34 @@ export function creerOrchestrateurGrotte({
   // fiche de la Poche l'annonce déjà avant l'essai, cf. `solPleinSousHeros`).
   // Un objet équipé qu'on jette quitte sa case tout seul : c'est la
   // revalidation de chaque frame qui s'en charge (`D-92`), rien à faire ici.
+  // Spec 14, palier H : la récompense d'un levier, posée au sol à `decalage`
+  // tuiles de lui, comme un objet jeté — elle ne repousse pas, ne disparaît pas
+  // à l'aube et ne rapporte aucune XP (`D-145`) : on la voit, on la ramasse.
+  // Sans contrôle de place : c'est le jeu qui la pose, et la case est choisie
+  // en données (tenue libre par test).
+  function deposerRecompense(puzzle) {
+    const { item, quantite, decalage } = puzzle.recompense;
+    const pose = scene.poseEffectiveInteractif(puzzle.id);
+    let jetes = objetsJetesDeLaScene();
+    for (let i = 0; i < quantite; i += 1) {
+      jetes = poserObjetJete(jetes, item, pose.x + decalage.x, pose.y + decalage.y, scene.tileSize);
+    }
+    ecrireObjetsJetesDeLaScene(jetes);
+  }
+
+  // Un objet qui EST une monnaie (`monnaie` sur l'entrée, spec 14 palier H) ne
+  // va pas en poche : ramassé, il crédite la monnaie — il n'y en a qu'une
+  // (`ID_MONNAIE`, `Q-49`), le schéma refuse toute autre. Rend vrai s'il l'a
+  // fait ; l'appelant retire alors l'objet du sol.
+  function ramasserMonnaie(itemId, position) {
+    const itemDef = registre.obtenir('items', itemId);
+    if (!itemDef.monnaie) return false;
+    save.inventaire.eclats += 1;
+    signalerGainItem(itemId, 1, position.x, position.y);
+    etatModifie = true;
+    return true;
+  }
+
   function essayerJeter(itemId) {
     if (!scene || !itemId || (save.inventaire.items[itemId] || 0) <= 0) return false;
     if (solPleinSousHeros()) {
@@ -4294,6 +4337,14 @@ export function creerOrchestrateurGrotte({
       }
       vueParchemin = vueSteleTerminee(vue) ? null : { ...vueParchemin, vue, ecritureMs };
     }
+    // Spec 14, palier H : le fondu d'un portail. La scène change au plus noir,
+    // une seule fois ; le jeu reste gelé jusqu'à la fin du fondu.
+    const fonduEtaitActif = fonduScene !== null;
+    if (fonduEtaitActif) {
+      const pas = avancerFondu(fonduScene, deltaMs);
+      fonduScene = pas.termine ? null : pas.fondu;
+      if (pas.changerMaintenant) entrerDansScene(pas.fondu.destination.cible, pas.fondu.destination.position);
+    }
     const logoEtaitActif = ouvertureLogoMs !== null;
     if (logoEtaitActif) {
       ouvertureLogoMs += deltaMs;
@@ -4350,7 +4401,7 @@ export function creerOrchestrateurGrotte({
       const relire = avancerDechiffrementCarnet(deltaMs, accelererCarnet);
       if (relire) menu.rafraichirIndices();
     }
-    if (etatBrut.menu.pressed && !dechiffrementRetient && !dialogueOuvertMaintenant && !choixFolletActif() && !introEtaitActive && !departEtaitActif && !steleEtaitActive && !parcheminEtaitActif) {
+    if (etatBrut.menu.pressed && !dechiffrementRetient && !dialogueOuvertMaintenant && !choixFolletActif() && !introEtaitActive && !departEtaitActif && !steleEtaitActive && !parcheminEtaitActif && !fonduEtaitActif) {
       if (constructionActif()) {
         quitterConstructionVersMenuPause();
       } else if (!menu.estOuvert()) {
@@ -4372,7 +4423,7 @@ export function creerOrchestrateurGrotte({
     // les verbes d'une frame qu'une UI a consommée, quel que soit le verbe.
     const uiOuverte = (
       menu.estOuvert() || dialogueOuvertMaintenant || choixFolletActif() || introEtaitActive || departEtaitActif ||
-      constructionActif() || menuFermeParVerbe || steleEtaitActive || parcheminEtaitActif
+      constructionActif() || menuFermeParVerbe || steleEtaitActive || parcheminEtaitActif || fonduEtaitActif
     );
     // `D-92`/`D-93` : avant tout le reste, y compris avant l'UI — un écran
     // Coffre ouvert vide la poche, et la case d'attaque doit dire la vérité
@@ -4569,10 +4620,14 @@ export function creerOrchestrateurGrotte({
 
       const portail = portailFranchi(scene, hitboxHeros(), flags);
       if (portail) {
-        entrerDansScene(portail.cible, {
+        const position = {
           x: (portail.spawn.x + 0.5) * registre.obtenir('scenes', portail.cible).tile_size,
           y: (portail.spawn.y + 0.5) * registre.obtenir('scenes', portail.cible).tile_size,
-        });
+        };
+        // Spec 14, palier H (`Q-153`) : un portail qui déclare un fondu passe
+        // par le noir ; les autres changent de scène d'une frame à l'autre.
+        if (portail.fondu_ms) fonduScene = creerFondu(portail.fondu_ms, { cible: portail.cible, position });
+        else entrerDansScene(portail.cible, position);
       }
     }
 
@@ -5348,6 +5403,14 @@ export function creerOrchestrateurGrotte({
     }
     if (vueStele !== null) dessinerEcranStele(ctxLogique, contenuVueStele());
     if (vueParchemin !== null) dessinerEcranParchemin(ctxLogique, contenuVueParchemin());
+    // Palier H : le voile noir du fondu, par-dessus la scène et le HUD.
+    if (fonduScene !== null) {
+      ctxLogique.save();
+      ctxLogique.globalAlpha = alphaFondu(fonduScene);
+      ctxLogique.fillStyle = '#000';
+      ctxLogique.fillRect(0, 0, RESOLUTION_LOGIQUE.largeur, RESOLUTION_LOGIQUE.hauteur);
+      ctxLogique.restore();
+    }
 
     // Paupières (§3.5 étape 1) : rideau de cinématique, dessiné en TOUT
     // DERNIER — il doit couvrir la scène, le HUD et même l'écran de choix
@@ -5415,6 +5478,7 @@ export function creerOrchestrateurGrotte({
     prologue = null;
     vueStele = null;
     vueParchemin = null;
+    fonduScene = null;
     dechiffrement = null;
     viderProjectiles(projectiles);
     ondes = [];
@@ -5499,6 +5563,7 @@ export function creerOrchestrateurGrotte({
     contenuVueStele: () => contenuVueStele(),
     // Spec 14, palier G : le parchemin, les compétences et leurs ondes.
     obtenirVueParchemin: () => vueParchemin,
+    obtenirFonduScene: () => fonduScene,
     contenuVueParchemin: () => contenuVueParchemin(),
     obtenirEtatsCompetences: () => Object.fromEntries(etatsCompetences),
     obtenirJaugesSlots: () => ratiosEmplacements,

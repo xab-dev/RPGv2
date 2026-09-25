@@ -228,5 +228,15 @@
       "visuel": "visuel_etincelle_argile"
     },
     "pile_max": 1
+  },
+  {
+    "id": "item_eclat",
+    "label_key": "item.eclat",
+    "description_key": "item.eclat.description",
+    "categorie": "valeur",
+    "monnaie": "monnaie_eclats",
+    "render": {
+      "visuel": "visuel_icone_eclat"
+    }
   }
 ]

@@ -422,5 +422,7 @@
   "parchemin.bouton": "Pour la lancer : {glyphe}",
   "parchemin.action.fermer": "Fermer",
   "parchemin.action.tactile_fermer": "Touche l’écran : fermer",
-  "competence.aucune_cible": "Aucune cible"
+  "competence.aucune_cible": "Aucune cible",
+  "item.eclat": "Éclat",
+  "item.eclat.description": "Un éclat tombé du levier. Ramassé, il rejoint les autres."
 }

@@ -836,6 +836,11 @@ function validerScene(entry, catalogs, path) {
       erreurs.push(`${chemin} > spawn doit être { x, y }`);
     }
     erreurs.push(...erreursCondition(portail.condition, chemin, flagsDeclares));
+    // `fondu_ms` (spec 14, palier H, `Q-153`) : ce portail passe par un fondu au
+    // noir. Facultatif : Xav n'en veut qu'à la sortie de l'Annexe.
+    if (portail.fondu_ms !== undefined && !(typeof portail.fondu_ms === 'number' && portail.fondu_ms > 0)) {
+      erreurs.push(`${chemin} > fondu_ms doit être un nombre de ms > 0`);
+    }
   });
 
   for (const interactifId of entry.interactifs || []) {
@@ -1109,6 +1114,19 @@ function validerPuzzle(entry, catalogs, path) {
   if (entry.type === 'levier') {
     if (!entry.position || typeof entry.position.x !== 'number' || typeof entry.position.y !== 'number') {
       erreurs.push(`${path} > position doit être { x, y }`);
+    }
+    // Spec 14, palier H : `recompense` — le levier DÉPOSE un objet au sol, à
+    // `decalage` tuiles de lui, la première fois qu'on l'actionne dans son état
+    // (un levier de descente : une fois par descente). On VOIT la récompense.
+    if (entry.recompense !== undefined) {
+      const r = entry.recompense;
+      if (!r || !(catalogs.items || []).some((it) => it.id === r.item)) {
+        erreurs.push(`${path} > recompense.item "${r && r.item}" introuvable dans items.json`);
+      }
+      if (!r || !Number.isInteger(r.quantite) || r.quantite < 1) erreurs.push(`${path} > recompense.quantite doit être un entier >= 1`);
+      if (!r || !r.decalage || typeof r.decalage.x !== 'number' || typeof r.decalage.y !== 'number') {
+        erreurs.push(`${path} > recompense.decalage doit être { x, y } en tuiles`);
+      }
     }
     // Seules les instances "levier" sont dessinées individuellement (une
     // "sequence" ne fait que référencer des leviers déjà rendus) — §2.1 de
@@ -2663,6 +2681,12 @@ export const SCHEMAS = {
       // aucune règle spéciale ici, juste une catégorie de plus.
       if (!CATEGORIES_ITEM.includes(entry.categorie)) {
         erreurs.push(`${path} > categorie doit être l'une de ${CATEGORIES_ITEM.join('/')}`);
+      }
+      // Spec 14, palier H : un objet qui EST une monnaie (l'éclat que dépose le
+      // levier-récompense). Ramassé, il crédite la monnaie et n'entre jamais en
+      // poche.
+      if (entry.monnaie !== undefined && !(catalogs.monnaies || []).some((m) => m.id === entry.monnaie)) {
+        erreurs.push(`${path} > monnaie "${entry.monnaie}" introuvable dans monnaies.json`);
       }
       // `specs/15` palier B : ce qui BRÛLE (la torche). Une durée en temps
       // actif, les phases du cycle où il se consume (une phase inconnue ne

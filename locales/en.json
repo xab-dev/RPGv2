@@ -422,5 +422,7 @@
   "parchemin.bouton": "To cast it: {glyphe}",
   "parchemin.action.fermer": "Close",
   "parchemin.action.tactile_fermer": "Touch the screen: close",
-  "competence.aucune_cible": "No target"
+  "competence.aucune_cible": "No target",
+  "item.eclat": "Shard",
+  "item.eclat.description": "A shard dropped by the lever. Picked up, it joins the others."
 }

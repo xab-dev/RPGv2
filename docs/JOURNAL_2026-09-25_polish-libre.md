@@ -3,7 +3,7 @@ projet: RPG V2
 episode/session: Sentinelle, puis polish libre (harmonisation, incohérences)
 type: fichier de bord
 version: 1.0.0
-statut: livré, à valider (V-164)
+statut: livré, validé (V-164), fusionné et poussé
 catégorie: Journal
 date: 2026-09-25
 genere_par: claude
@@ -126,3 +126,9 @@ test neuf a attrapé la mutation qui recrée le défaut.
   prochain banc complet dirait si c’est la profondeur.
 - **Rien n’est poussé.** La branche se fusionne quand tu le dis ; chaque
   commit se retire seul (`git revert <commit>`).
+
+## 6. Retour de Xav et clôture
+
+- `V-164` **validée** : « V164 vues ».
+- « tu peux fusionner et push dans main » : `polish-libre-2026-09-25` fusionnée
+  dans `main` (`--no-ff`) et poussée, sans release.

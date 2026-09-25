@@ -80,6 +80,8 @@ rpg_v2/
 │   │                       DANS la case qui la reçoit, entre son grain et son objet
 │   ├── visuels.js          dessinerVisuel() : seul point qui interprète `data/visuels.json`
 │   │                       (primitives + teinte/alpha/échelle/rotation)
+│   │                       ; `courberPoints` (`D-252`) : le pli d'une pièce (la capuche de profil),
+│   │                       seule déformation hors transform du contexte, gardée par pose
 │   ├── intro.js            2 machines à états pures : intro (clignements+orbite, ≤8s) et départ
 │   │                       (follets non élus qui repartent) — propre à la Grotte, pas un moteur
 │   │                       de cinématiques généralisé
@@ -204,7 +206,7 @@ rpg_v2/
 │   ├── orientation.js      `D-229`, `D-249` : OÙ REGARDE le héros — huit secteurs de 45° (marge à la
 │   │                       frontière), le tir d'une compétence qui le tourne vers sa cible un instant ;
 │   │                       `poseDePiece` : ce qu'une direction fait à une PIÈCE d'un visuel
-│   │                       (`visuels.json > orientations` : le visage, la capuche qui penche) — pur
+│   │                       (`visuels.json > orientations` : le visage, la capuche qui penche ou se plie) — pur
 │   ├── logo.js             le symbole du jeu (« la sagesse pour tout et pour tous », Xav) : son
 │   │                       apparition signe après signe, dans l'ordre de lecture — pur ; dessiné par
 │   │                       `render.js#dessinerLogo` (trois calques d'`images/logo/`, meilleur effort)

@@ -1749,7 +1749,8 @@ function validerVisuel(entry, catalogs, path) {
 
   // `D-229` : ce qu'une direction du regard fait aux PIÈCES du visuel (le
   // visage du héros, sa capuche) —
-  // `{ <direction>: { <piece>: null | { dx?, dy?, echelle_x?, cisaillement?, pivot_y? } } }`.
+  // `{ <direction>: { <piece>: null | { dx?, dy?, echelle_x?, cisaillement?, pivot_y?, courbure?, longueur? } } }`
+  // (la courbure, `D-252`, plie les polygones de la pièce : `visuels.js#courberPoints`).
   // Une direction inconnue ne serait jamais demandée, une pièce qu'aucune
   // primitive ne porte ne bougerait rien : les deux passeraient sans que
   // personne le voie, donc refusées au boot.
@@ -1773,11 +1774,16 @@ function validerVisuel(entry, catalogs, path) {
           if (!pieces.has(piece)) erreurs.push(`${cheminO} > "${piece}" : aucune primitive ne porte cette pièce`);
           if (pose === null) continue;
           const cles = pose && typeof pose === 'object' ? Object.keys(pose) : null;
-          const nombres = ['dx', 'dy', 'cisaillement', 'pivot_y'];
-          if (!cles || cles.some((c) => c !== 'echelle_x' && !nombres.includes(c))
+          const nombres = ['dx', 'dy', 'cisaillement', 'pivot_y', 'courbure'];
+          const positifs = ['echelle_x', 'longueur'];
+          if (!cles || cles.some((c) => !positifs.includes(c) && !nombres.includes(c))
             || nombres.some((c) => pose[c] !== undefined && typeof pose[c] !== 'number')
-            || (pose.echelle_x !== undefined && (typeof pose.echelle_x !== 'number' || pose.echelle_x <= 0))) {
-            erreurs.push(`${cheminO} > ${piece} doit être null (cachée) ou { dx?, dy?, cisaillement?, pivot_y? : nombres ; echelle_x? : nombre > 0 }`);
+            || positifs.some((c) => pose[c] !== undefined && (typeof pose[c] !== 'number' || pose[c] <= 0))) {
+            erreurs.push(`${cheminO} > ${piece} doit être null (cachée) ou { dx?, dy?, cisaillement?, pivot_y?, courbure? : nombres ; echelle_x?, longueur? : nombres > 0 }`);
+          } else if (pose.courbure !== undefined && pose.longueur === undefined) {
+            // `D-252` : une courbure sans longueur n'a pas de pointe où
+            // atteindre son angle (`visuels.js#courberPoints`).
+            erreurs.push(`${cheminO} > ${piece} : une courbure demande sa longueur`);
           }
         }
       }

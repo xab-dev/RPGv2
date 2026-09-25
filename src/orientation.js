@@ -80,7 +80,9 @@ export function avancerOrientation(etat, { deltaMs, dx = 0, dy = 0, vers = null 
 // est cachée (le visage, de dos) ; `{ dx, dy, echelle_x, cisaillement,
 // pivot_y }` = resserrée à l'horizontale, penchée (`cisaillement` : x glisse de
 // cisaillement × (y − pivot_y), et la ligne `pivot_y` ne bouge pas — la base
-// de la capuche reste posée, sa pointe penche), puis décalée. Lu par le seul
+// de la capuche reste posée, sa pointe penche), puis décalée ; depuis
+// `D-252`, `{ courbure, longueur }` plie la pièce au-dessus de `pivot_y` au lieu
+// de la pencher (le sommet reste sur l'axe, la pointe se couche). Lu par le seul
 // `visuels.js#dessinerVisuel` : le dessin ne connaît aucun nom de direction.
 export function poseDePiece(visuel, direction, piece) {
   const poses = visuel && visuel.orientations && direction ? visuel.orientations[direction] : undefined;

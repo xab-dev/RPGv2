@@ -132,6 +132,65 @@ function dessinerPrimitive(ctx, primitive, teinte) {
   ctx.restore();
 }
 
+// `D-252` : la COURBURE d'une pièce, la seule déformation qui ne soit pas une
+// transform du contexte. Xav, 26/09, sur le héros de profil : le cisaillement
+// penchait toute la capuche, son sommet quittait l'axe du héros et le visage
+// se lisait « en diagonale » ; il veut le sommet SUR l'axe, et la direction
+// dite par la seule pointe. Une transform affine ne sait pas faire ça (elle
+// déplace le sommet avec la pointe) : les points se plient, un à un, autour du
+// point de l'axe (x = 0) à la hauteur `pivot_y`. Sous cette ligne, rien ne
+// bouge ; au-dessus, un point tourne d'autant plus qu'il est haut, jusqu'à
+// `courbure` degrés à `longueur` unités du pivot (positif : la pointe part
+// vers l'est). Le bas de la capuche reste posé, le haut s'arrondit en dôme, la
+// pointe se couche vers l'arrière.
+// Provisoire, non validé en jeu : le pli croît comme la hauteur à cette
+// puissance — à 1, le flanc avant se casse en coude ; au-delà, le bas reste
+// droit et le pli se concentre vers la pointe.
+const PROGRESSIVITE_COURBURE = 1.5;
+// Une arête droite reste droite une fois ses deux bouts pliés : chaque arête
+// se coupe en autant de segments avant le pli, sans quoi le dôme serait un
+// polygone à facettes. Provisoire, non validé en jeu.
+const SEGMENTS_PAR_ARETE_COURBEE = 6;
+
+// Pure, exportée pour les tests : les `points` d'un polygone dont l'origine
+// est à `(ox, oy)` dans le repère du visuel, pliés selon `pose`.
+export function courberPoints(points, pose, ox = 0, oy = 0) {
+  const pivotY = pose.pivot_y ?? 0;
+  const angleMax = (pose.courbure * Math.PI) / 180;
+  const longueur = pose.longueur;
+  const denses = [];
+  points.forEach(([x0, y0], i) => {
+    const [x1, y1] = points[(i + 1) % points.length];
+    for (let k = 0; k < SEGMENTS_PAR_ARETE_COURBEE; k += 1) {
+      const t = k / SEGMENTS_PAR_ARETE_COURBEE;
+      denses.push([x0 + (x1 - x0) * t, y0 + (y1 - y0) * t]);
+    }
+  });
+  return denses.map(([x, y]) => {
+    const hauteur = pivotY - (y + oy);
+    if (hauteur <= 0) return [x, y];
+    const a = angleMax * Math.min(1, hauteur / longueur) ** PROGRESSIVITE_COURBURE;
+    const rx = x + ox;
+    const ry = -hauteur;
+    return [rx * Math.cos(a) - ry * Math.sin(a) - ox, pivotY + rx * Math.sin(a) + ry * Math.cos(a) - oy];
+  });
+}
+
+// Les primitives pliées ne changent qu'avec leur pose, qui est une donnée
+// fixe : on les garde, plutôt que de refaire soixante-dix points par
+// primitive à chaque frame.
+const primitivesCourbees = new WeakMap();
+function primitiveCourbee(primitive, pose) {
+  let parPrimitive = primitivesCourbees.get(pose);
+  if (!parPrimitive) primitivesCourbees.set(pose, (parPrimitive = new WeakMap()));
+  let courbee = parPrimitive.get(primitive);
+  if (!courbee) {
+    courbee = { ...primitive, points: courberPoints(primitive.points, pose, primitive.dx || 0, primitive.dy || 0) };
+    parPrimitive.set(primitive, courbee);
+  }
+  return courbee;
+}
+
 // Point d'entrée unique (§3.3) : dessine `visuel` (une entrée de
 // visuels.json) à la position logique (x,y). `options.teinte` (couleur CSS)
 // ne s'applique qu'aux primitives `teinte: true` ; `options.alpha` module la
@@ -180,8 +239,8 @@ export function dessinerVisuel(ctx, visuel, x, y, options = {}) {
   for (const primitive of visuel.primitives) {
     // `D-229` : une primitive qui appartient à une PIÈCE (`piece`, le visage
     // du héros, sa capuche) suit la pose que le visuel déclare pour
-    // `options.orientation` — cachée, ou resserrée, penchée autour de la ligne
-    // `pivot_y` et décalée (`orientation.js#poseDePiece`).
+    // `options.orientation` — cachée, ou pliée (`D-252`), resserrée, penchée
+    // autour de la ligne `pivot_y` et décalée (`orientation.js#poseDePiece`).
     // Sans orientation, ou sans pose déclarée, elle se dessine telle quelle :
     // la pose de référence est le dessin validé en jeu.
     const pose = primitive.piece === undefined ? undefined : poseDePiece(visuel, orientation, primitive.piece);
@@ -196,7 +255,10 @@ export function dessinerVisuel(ctx, visuel, x, y, options = {}) {
     if (pose.cisaillement) ctx.transform(1, 0, pose.cisaillement, 1, 0, 0);
     if (pose.echelle_x !== undefined) ctx.scale(pose.echelle_x, 1);
     ctx.translate(0, -pivot);
-    dessinerPrimitive(ctx, primitive, teinte);
+    // `D-252` : la courbure plie les points d'un polygone (voir
+    // `courberPoints`) ; une forme sans points suit le reste de la pose.
+    const pliee = pose.courbure && primitive.points ? primitiveCourbee(primitive, pose) : primitive;
+    dessinerPrimitive(ctx, pliee, teinte);
     ctx.restore();
   }
 

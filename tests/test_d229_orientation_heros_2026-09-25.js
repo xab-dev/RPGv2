@@ -10,7 +10,7 @@
 // 2. Données : le héros déclare ses poses — de dos (nord, et ses deux
 //    diagonales), le visage disparaît en entier ; de profil et de
 //    trois-quarts face, il se décale du côté regardé ; la pointe de la
-//    capuche penche à l'opposé du regard. La pose de face n'est pas déclarée :
+//    capuche penche (ou se plie, `D-252`) à l'opposé du regard. La pose de face n'est pas déclarée :
 //    c'est le dessin validé en jeu.
 // 3. Dessin : sans orientation, ou de face, `dessinerVisuel` émet exactement
 //    les mêmes ordres qu'avant ; de dos, les primitives du visage manquent ;
@@ -28,7 +28,7 @@ import {
   ORIENTATIONS, ORIENTATION_INITIALE, MARGE_BASCULE_DEG, DUREE_REGARD_TIR_MS,
   directionDe, orienterDepuisMouvement, creerOrientation, avancerOrientation, poseDePiece,
 } from '../src/orientation.js';
-import { dessinerVisuel } from '../src/visuels.js';
+import { dessinerVisuel, courberPoints } from '../src/visuels.js';
 import { chargerCataloguesDepuisDisque, chargerLocalesDepuisDisque } from '../src/io_node.js';
 import { SCHEMAS } from '../src/schemas.js';
 import { validerCatalogues, construireRegistre } from '../src/registry.js';
@@ -104,9 +104,12 @@ const VISAGE = HEROS.primitives.filter((p) => p.piece === 'visage');
   const CAPUCHE = HEROS.primitives.filter((p) => p.piece === 'capuche');
   assert.ok(CAPUCHE.length > 0, 'la capuche est une pièce');
   const pointe = CAPUCHE.flatMap((p) => p.points || []).reduce((a, b) => (b[1] < a[1] ? b : a));
+  // Depuis `D-252`, une pose peut plier la pointe au lieu de la pencher : on
+  // la plie par la fonction du dessin avant le reste de la pose.
   const pointeDe = (direction) => {
     const pose = poseDePiece(HEROS, direction, 'capuche') || {};
-    return (pose.dx ?? 0) + pointe[0] * (pose.echelle_x ?? 1) + (pose.cisaillement ?? 0) * (pointe[1] - (pose.pivot_y ?? 0));
+    const [x, y] = pose.courbure ? courberPoints([pointe], pose)[0] : pointe;
+    return (pose.dx ?? 0) + x * (pose.echelle_x ?? 1) + (pose.cisaillement ?? 0) * (y - (pose.pivot_y ?? 0));
   };
   for (const d of ['est', 'sud_est', 'nord_est']) assert.ok(pointeDe(d) < pointeDe('sud'), `${d} : la pointe penche vers l'ouest`);
   for (const d of ['ouest', 'sud_ouest', 'nord_ouest']) assert.ok(pointeDe(d) > pointeDe('sud'), `${d} : la pointe penche vers l'est`);

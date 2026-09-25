@@ -21,7 +21,8 @@ Branche `annexe-1`, **poussée sur `origin/annexe-1`** au début de la nuit (une
 | — | Push | `annexe-1` poussée sur `origin` (nouvelle branche distante), jusqu'à `6959ae8` |
 | `00b3100` | Ménage | Journal du palier F archivé (sa ligne `D-212` pointe `468ce0b`), INDEX à jour |
 | `4bd6cf2` | `D-213` : palier G | Le coffre, le parchemin aux lettres d'or, `skills.json` et son schéma, `competences.js`, l'Onde qui éclate, la jauge |
-| (ce commit) | `D-214` : palier H | Le levier-récompense, l'éclat au sol qui est une monnaie, le fondu de la sortie |
+| `bc750dc` | `D-214` : palier H | Le levier-récompense, l'éclat au sol qui est une monnaie, le fondu de la sortie |
+| (ce commit) | Polish G et H | Le parchemin centré dans son rouleau, le coffre ouvert plus lisible, le scénario de captures `annexe_parchemin.mjs` ; `Q-162` (g) |
 
 ## 1. Le palier G : le parchemin
 
@@ -58,3 +59,13 @@ Toutes celles de la spec (§4.6), plus la portée (7 tuiles, comme l'attaque à 
 ### Ce que Xav doit voir
 
 `V-156`.
+
+## 3. Le polish de la nuit
+
+Xav dort : pas d'yeux sur l'écran. J'ai donc regardé les paliers G et H dans **Chrome sans fenêtre** (`tools/scenarios/annexe_parchemin.mjs`, profils `grand`, `pc` et `telephone` ; les images vont sous `docs/captures/scenarios/`, non versionnées). Ce que j'y ai vu, et ce que j'ai fait :
+
+- **Le parchemin** laissait un grand vide en bas du rouleau : le bloc (icône, titre, texte) est désormais **centré** dans sa hauteur. Lisible au téléphone (DPR 3), lettres d'or sur le papier clair.
+- **Le coffre ouvert** se lisait comme un coffre fermé plus haut : l'intérieur du couvercle est plus clair, l'ouverture plus haute et plus sombre. C'est encore discret ; Xav jugera (`V-155`).
+- **La jauge** se lit : le trait qui fait le tour de la case pendant la charge, le liseré clair quand elle est prête, le secteur sombre qui se retire pendant la recharge.
+- **L'éclat au sol** se voit sous le levier, dans son halo, et la porte s'ouvre.
+- **Relevé, pas corrigé** : face aux cracheurs, qui gardent leurs distances, le follet n'engage que si l'on va au contact ; la charge monte donc lentement contre les tireurs. C'est la règle d'engagement du follet, hors de ce palier : `Q-162` (g).

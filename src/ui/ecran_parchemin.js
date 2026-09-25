@@ -41,9 +41,10 @@ const INTERLIGNE_TITRE = 24;
 const INTERLIGNE_TEXTE = 15;
 const ECART_PARAGRAPHE = 6;
 const MARGE_TEXTE = 22;
-// L'icône de la compétence, en tête du rouleau, dans un halo d'or.
+// L'icône de la compétence, en tête du rouleau, dans un halo d'or ; l'écart
+// entre elle et le titre.
 const TAILLE_ICONE = 34;
-const HAUT_ICONE = 30;
+const ECART_ICONE = 8;
 const TAILLE_PARTICULE = 1.3;
 const MONTEE_FONDU = 8;
 
@@ -123,9 +124,26 @@ export function dessinerEcranParchemin(ctx, contenu) {
   dessinerRouleau(ctx, x - DEBORD_ROULEAU, y - HAUTEUR_ROULEAU / 2, LARGEUR + 2 * DEBORD_ROULEAU);
   dessinerRouleau(ctx, x - DEBORD_ROULEAU, y + HAUTEUR - HAUTEUR_ROULEAU / 2, LARGEUR + 2 * DEBORD_ROULEAU);
 
+  // La mise en page d'abord, sur le texte ENTIER : chaque ligne coupée une
+  // fois à la largeur de la feuille. Le bloc (icône + texte) est centré dans
+  // la hauteur du rouleau : un texte court ne laisse pas un bas vide.
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  const largeurTexte = LARGEUR - 2 * MARGE_TEXTE;
+  const blocs = contenu.lignesCompletes.map((complete, i) => {
+    const titre = i === 0;
+    ctx.font = titre ? POLICE_TITRE : POLICE_TEXTE;
+    const coupees = decouperEnFenetres(complete, (t) => ctx.measureText(t).width, largeurTexte, Infinity)[0].split('\n');
+    return { titre, coupees, interligne: titre ? INTERLIGNE_TITRE : INTERLIGNE_TEXTE };
+  });
+  const hauteurTexte = blocs.reduce((h, b) => h + b.coupees.length * b.interligne + (b.titre ? 0 : ECART_PARAGRAPHE), 0)
+    - ECART_PARAGRAPHE;
+  const hauteurBloc = TAILLE_ICONE + ECART_ICONE + hauteurTexte;
+  const hautBloc = y + Math.max(HAUTEUR_ROULEAU, Math.round((HAUTEUR - hauteurBloc) / 2));
+
   // L'icône, dans un halo qui respire doucement.
   const cx = x + LARGEUR / 2;
-  const iy = y + HAUT_ICONE;
+  const iy = hautBloc + TAILLE_ICONE / 2;
   const souffle = 0.75 + 0.25 * Math.sin((vue.ms / 1800) * Math.PI * 2);
   const halo = ctx.createRadialGradient(cx, iy, 2, cx, iy, TAILLE_ICONE * 0.8);
   halo.addColorStop(0, `rgba(255, 214, 120, ${0.55 * souffle})`);
@@ -140,18 +158,12 @@ export function dessinerEcranParchemin(ctx, contenu) {
     dessinerVisuel(ctx, contenu.icone, cx, iy, { echelle: 2.4, alpha });
   }
 
-  // Le texte : chaque ligne entière est coupée UNE fois à la largeur de la
-  // feuille ; la plume en révèle autant de signes qu'elle en a écrit.
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'top';
-  const largeurTexte = LARGEUR - 2 * MARGE_TEXTE;
-  let ly = iy + TAILLE_ICONE / 2 + 8;
+  // Le texte : la plume révèle, ligne après ligne, autant de signes qu'elle
+  // en a écrit.
+  let ly = iy + TAILLE_ICONE / 2 + ECART_ICONE;
   const hautTexte = ly;
-  contenu.lignesCompletes.forEach((complete, i) => {
-    const titre = i === 0;
+  blocs.forEach(({ titre, coupees, interligne }, i) => {
     ctx.font = titre ? POLICE_TITRE : POLICE_TEXTE;
-    const interligne = titre ? INTERLIGNE_TITRE : INTERLIGNE_TEXTE;
-    const coupees = decouperEnFenetres(complete, (t) => ctx.measureText(t).width, largeurTexte, Infinity)[0].split('\n');
     let reste = Array.from(contenu.lignes[i] || '').length;
     for (const morceau of coupees) {
       const signes = Array.from(morceau);

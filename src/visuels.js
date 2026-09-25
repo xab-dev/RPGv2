@@ -179,8 +179,9 @@ export function dessinerVisuel(ctx, visuel, x, y, options = {}) {
 
   for (const primitive of visuel.primitives) {
     // `D-229` : une primitive qui appartient à une PIÈCE (`piece`, le visage
-    // du héros) suit la pose que le visuel déclare pour `options.orientation`
-    // — cachée, ou décalée puis resserrée à l'horizontale autour de l'ancre.
+    // du héros, sa capuche) suit la pose que le visuel déclare pour
+    // `options.orientation` — cachée, ou resserrée, penchée autour de la ligne
+    // `pivot_y` et décalée (`orientation.js#poseDePiece`).
     // Sans orientation, ou sans pose déclarée, elle se dessine telle quelle :
     // la pose de référence est le dessin validé en jeu.
     const pose = primitive.piece === undefined ? undefined : poseDePiece(visuel, orientation, primitive.piece);
@@ -189,9 +190,12 @@ export function dessinerVisuel(ctx, visuel, x, y, options = {}) {
       dessinerPrimitive(ctx, primitive, teinte);
       continue;
     }
+    const pivot = pose.pivot_y ?? 0;
     ctx.save();
-    ctx.translate(pose.dx ?? 0, 0);
+    ctx.translate(pose.dx ?? 0, (pose.dy ?? 0) + pivot);
+    if (pose.cisaillement) ctx.transform(1, 0, pose.cisaillement, 1, 0, 0);
     if (pose.echelle_x !== undefined) ctx.scale(pose.echelle_x, 1);
+    ctx.translate(0, -pivot);
     dessinerPrimitive(ctx, primitive, teinte);
     ctx.restore();
   }

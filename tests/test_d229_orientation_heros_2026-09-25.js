@@ -1,16 +1,21 @@
-// `D-229` (`Q-51`) — le héros regarde quelque part : vers où il marche, et
-// vers celui qu'il vise quand une compétence part.
+// `D-229` (`Q-51`), `D-249` (`Q-167`) — le héros regarde quelque part, dans
+// huit directions : vers où il marche, et vers celui qu'il vise quand une
+// compétence part.
 //
 // Contrats :
-// 1. `orientation.js` : l'axe dominant du geste ; un geste nul garde la
-//    direction ; une diagonale ne fait pas sauter le visage d'un côté à
-//    l'autre ; un tir tourne le héros vers sa cible, et la marche ne le
+// 1. `orientation.js` : le secteur de 45° du geste ; un geste nul garde la
+//    direction ; un geste à la frontière de deux secteurs ne fait pas sauter
+//    la pose ; un tir tourne le héros vers sa cible, et la marche ne le
 //    retourne qu'une fois le regard écoulé.
-// 2. Données : le héros déclare ses poses — de dos, le visage disparaît en
-//    entier ; de profil, il se décale du côté regardé. La pose de face n'est
-//    pas déclarée : c'est le dessin validé en jeu.
+// 2. Données : le héros déclare ses poses — de dos (nord, et ses deux
+//    diagonales), le visage disparaît en entier ; de profil et de
+//    trois-quarts face, il se décale du côté regardé ; la pointe de la
+//    capuche penche à l'opposé du regard. La pose de face n'est pas déclarée :
+//    c'est le dessin validé en jeu.
 // 3. Dessin : sans orientation, ou de face, `dessinerVisuel` émet exactement
-//    les mêmes ordres qu'avant ; de dos, les primitives du visage manquent.
+//    les mêmes ordres qu'avant ; de dos, les primitives du visage manquent ;
+//    les huit directions donnent huit dessins différents (Xav : « varier de
+//    façon visible »).
 // 4. Démarrage : une direction inconnue, une pièce que rien ne porte, une
 //    pose mal formée sont refusées.
 // 5. Orchestrateur : marcher tourne le héros ; tirer l'Onde le tourne vers la
@@ -20,7 +25,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  ORIENTATIONS, ORIENTATION_INITIALE, RAPPORT_BASCULE_DIAGONALE, DUREE_REGARD_TIR_MS,
+  ORIENTATIONS, ORIENTATION_INITIALE, MARGE_BASCULE_DEG, DUREE_REGARD_TIR_MS,
   directionDe, orienterDepuisMouvement, creerOrientation, avancerOrientation, poseDePiece,
 } from '../src/orientation.js';
 import { dessinerVisuel } from '../src/visuels.js';
@@ -40,19 +45,22 @@ import { CAMP_HEROS } from '../src/projectiles.js';
   assert.equal(directionDe(-1, 0.2), 'ouest');
   assert.equal(directionDe(0.1, -1), 'nord');
   assert.equal(directionDe(0, 1), 'sud');
-  assert.equal(directionDe(1, 1), 'est', 'à égalité, le profil (un tir en diagonale se voit mieux de côté)');
+  assert.equal(directionDe(1, 1), 'sud_est', 'une diagonale du clavier : sa diagonale');
+  assert.equal(directionDe(-1, -1), 'nord_ouest');
+  assert.equal(directionDe(1, -1), 'nord_est');
+  assert.equal(directionDe(-1, 1), 'sud_ouest');
+  assert.equal(ORIENTATIONS.length, 8, 'huit directions (Xav)');
   assert.ok(ORIENTATIONS.includes(ORIENTATION_INITIALE));
 
   assert.equal(orienterDepuisMouvement('nord', 0, 0), 'nord', 'un geste nul garde la direction');
   assert.equal(orienterDepuisMouvement('sud', 1, 0), 'est');
-  // Une diagonale juste au-delà de 45° ne bascule pas…
-  const presque = (RAPPORT_BASCULE_DIAGONALE + 1) / 2;
-  assert.equal(orienterDepuisMouvement('est', 1, presque), 'est', 'la diagonale hésite : on garde');
-  assert.equal(orienterDepuisMouvement('sud', presque, 1), 'sud');
-  // … au-delà de la marge, si.
-  assert.equal(orienterDepuisMouvement('est', 1, RAPPORT_BASCULE_DIAGONALE * 1.1), 'sud');
-  // La marge ne vaut que pour une composante du geste : partir à l'opposé bascule.
-  assert.equal(orienterDepuisMouvement('est', -1, 0.9), 'ouest');
+  // Juste au-delà de la frontière (22,5°), dans la marge : on garde…
+  const vers = (deg) => [Math.cos((deg * Math.PI) / 180), Math.sin((deg * Math.PI) / 180)];
+  assert.equal(orienterDepuisMouvement('est', ...vers(22.5 + MARGE_BASCULE_DEG / 2)), 'est', 'à la frontière, on garde');
+  assert.equal(directionDe(...vers(22.5 + MARGE_BASCULE_DEG / 2)), 'sud_est', 'alors que sans passé, c\'est l\'autre secteur');
+  // … au-delà de la marge, on bascule.
+  assert.equal(orienterDepuisMouvement('est', ...vers(22.5 + MARGE_BASCULE_DEG * 1.5)), 'sud_est');
+  assert.equal(orienterDepuisMouvement('est', -1, 0.3), 'ouest', 'partir à l\'opposé bascule');
 
   let o = creerOrientation();
   assert.deepEqual(o, { direction: ORIENTATION_INITIALE, regardMs: 0 });
@@ -80,7 +88,9 @@ const VISAGE = HEROS.primitives.filter((p) => p.piece === 'visage');
 {
   assert.ok(VISAGE.length > 0, 'le héros a un visage qui peut bouger');
   assert.equal(HEROS.orientations.sud, undefined, 'la pose de face est le dessin validé : rien à déclarer');
-  assert.equal(poseDePiece(HEROS, 'nord', 'visage'), null, 'de dos, le visage disparaît');
+  for (const dos of ['nord', 'nord_est', 'nord_ouest']) {
+    assert.equal(poseDePiece(HEROS, dos, 'visage'), null, `${dos} : de dos, le visage disparaît`);
+  }
   // De profil : le centre du visage (dessiné autour de son dx) part du côté regardé.
   const centre = VISAGE.reduce((s, p) => s + p.dx, 0) / VISAGE.length;
   const centreDe = (direction) => {
@@ -88,9 +98,19 @@ const VISAGE = HEROS.primitives.filter((p) => p.piece === 'visage');
     assert.ok(pose && typeof pose === 'object', `${direction} : une pose de profil`);
     return (pose.dx ?? 0) + centre * (pose.echelle_x ?? 1);
   };
-  assert.ok(centreDe('est') > centre, 'regardant à l\'est, le visage glisse vers l\'est');
-  assert.ok(centreDe('ouest') < centre, 'regardant à l\'ouest, vers l\'ouest');
-  console.log('OK données : de dos sans visage, de profil décalé du côté regardé');
+  for (const d of ['est', 'sud_est']) assert.ok(centreDe(d) > centre, `${d} : le visage glisse vers l'est`);
+  for (const d of ['ouest', 'sud_ouest']) assert.ok(centreDe(d) < centre, `${d} : le visage glisse vers l'ouest`);
+  // La pointe de la capuche : son point le plus haut, déplacé par la pose.
+  const CAPUCHE = HEROS.primitives.filter((p) => p.piece === 'capuche');
+  assert.ok(CAPUCHE.length > 0, 'la capuche est une pièce');
+  const pointe = CAPUCHE.flatMap((p) => p.points || []).reduce((a, b) => (b[1] < a[1] ? b : a));
+  const pointeDe = (direction) => {
+    const pose = poseDePiece(HEROS, direction, 'capuche') || {};
+    return (pose.dx ?? 0) + pointe[0] * (pose.echelle_x ?? 1) + (pose.cisaillement ?? 0) * (pointe[1] - (pose.pivot_y ?? 0));
+  };
+  for (const d of ['est', 'sud_est', 'nord_est']) assert.ok(pointeDe(d) < pointeDe('sud'), `${d} : la pointe penche vers l'ouest`);
+  for (const d of ['ouest', 'sud_ouest', 'nord_ouest']) assert.ok(pointeDe(d) > pointeDe('sud'), `${d} : la pointe penche vers l'est`);
+  console.log('OK données : de dos sans visage, le visage du côté regardé, la pointe à l\'opposé');
 }
 
 // --- 3. Le dessin -------------------------------------------------------------------
@@ -110,7 +130,9 @@ function ordres(options) {
   assert.equal(remplissages(ordres({ teinte: '#ff0000', orientation: 'nord' })), remplissages(reference) - VISAGE.length,
     'de dos : toutes les primitives du visage, et elles seules, manquent');
   assert.equal(remplissages(ordres({ teinte: '#ff0000', orientation: 'est' })), remplissages(reference), 'de profil : rien ne manque');
-  console.log('OK dessin : la face inchangée, le dos sans visage, le profil complet');
+  const dessins = new Set(ORIENTATIONS.map((o) => JSON.stringify(ordres({ teinte: '#ff0000', orientation: o }))));
+  assert.equal(dessins.size, ORIENTATIONS.length, 'huit directions, huit dessins');
+  console.log('OK dessin : la face inchangée, le dos sans visage, le profil complet, huit dessins');
 }
 
 // --- 4. Le démarrage --------------------------------------------------------------
@@ -123,6 +145,7 @@ function ordres(options) {
   assert.ok(erreursAvec((v) => { v.orientations.nordest = { visage: null }; }).some((e) => e.includes('direction inconnue')));
   assert.ok(erreursAvec((v) => { v.orientations.nord = { chapeau: null }; }).some((e) => e.includes('aucune primitive ne porte')));
   assert.ok(erreursAvec((v) => { v.orientations.est.visage = { dx: 'loin' }; }).some((e) => e.includes('orientations > est > visage')));
+  assert.ok(erreursAvec((v) => { v.orientations.est.capuche = { cisaillement: 'fort' }; }).some((e) => e.includes('orientations > est > capuche')));
   assert.ok(erreursAvec((v) => { v.orientations.est.visage = { echelle_x: 0 }; }).some((e) => e.includes('orientations > est > visage')));
   assert.ok(erreursAvec((v) => { v.primitives[0].piece = ''; }).some((e) => e.includes('piece doit être un nom')));
   console.log('OK démarrage : direction, pièce et pose mal déclarées refusées');

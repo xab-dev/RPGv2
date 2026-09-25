@@ -1739,7 +1739,8 @@ function validerVisuel(entry, catalogs, path) {
   }
 
   // `D-229` : ce qu'une direction du regard fait aux PIÈCES du visuel (le
-  // visage du héros) — `{ <direction>: { <piece>: null | { dx?, echelle_x? } } }`.
+  // visage du héros, sa capuche) —
+  // `{ <direction>: { <piece>: null | { dx?, dy?, echelle_x?, cisaillement?, pivot_y? } } }`.
   // Une direction inconnue ne serait jamais demandée, une pièce qu'aucune
   // primitive ne porte ne bougerait rien : les deux passeraient sans que
   // personne le voie, donc refusées au boot.
@@ -1763,10 +1764,11 @@ function validerVisuel(entry, catalogs, path) {
           if (!pieces.has(piece)) erreurs.push(`${cheminO} > "${piece}" : aucune primitive ne porte cette pièce`);
           if (pose === null) continue;
           const cles = pose && typeof pose === 'object' ? Object.keys(pose) : null;
-          if (!cles || cles.some((c) => c !== 'dx' && c !== 'echelle_x')
-            || (pose.dx !== undefined && typeof pose.dx !== 'number')
+          const nombres = ['dx', 'dy', 'cisaillement', 'pivot_y'];
+          if (!cles || cles.some((c) => c !== 'echelle_x' && !nombres.includes(c))
+            || nombres.some((c) => pose[c] !== undefined && typeof pose[c] !== 'number')
             || (pose.echelle_x !== undefined && (typeof pose.echelle_x !== 'number' || pose.echelle_x <= 0))) {
-            erreurs.push(`${cheminO} > ${piece} doit être null (cachée) ou { dx?: nombre, echelle_x?: nombre > 0 }`);
+            erreurs.push(`${cheminO} > ${piece} doit être null (cachée) ou { dx?, dy?, cisaillement?, pivot_y? : nombres ; echelle_x? : nombre > 0 }`);
           }
         }
       }

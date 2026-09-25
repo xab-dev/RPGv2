@@ -3,7 +3,7 @@ projet: RPG V2
 episode/session: Spec 14 (l'Annexe 1), palier F — le Gardien
 type: fichier de bord
 version: 1.0.0
-statut: livré, à valider (V-154)
+statut: livré et validé (V-154)
 catégorie: Journal
 date: 2026-09-25
 genere_par: claude
@@ -75,3 +75,9 @@ Les boutons sont dans `data/enemies.json > enemy_gardien` :
 ## 4. Hors de ce commit
 
 - Rien. La capture PNG non suivie de `docs/captures/v1/raw/` reste où elle est. Elle avait été emportée par erreur dans le commit de ménage ; je l'en ai retirée avant de continuer.
+
+## 5. Validation (25/09)
+
+- `V-154` **validée par Xav** : « il est très dur. et c'est très bien ! rien à dire. je vois plusieurs piste d'équilibrage : recette de l'arc au niveau 10, réduction des degat du boss (au cac on prend les 3 attaques en même temps) . mais pour l'instant on ne fait rien, c'est parfait ! je vais voir si j'arrive à le battre avant le niveau 50, sinon on nerf. »
+- Ses pistes d'équilibrage sont notées en `Q-161`, sans rien toucher. Il essaie de battre le Gardien avant le Nv.50 ; sinon, on l'affaiblit.
+- Session close avant le palier G.

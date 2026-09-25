@@ -7,7 +7,9 @@
 // position du canvas) qui la fournit ; ce module ne connaît que des
 // coordonnées déjà logiques, comme le reste du jeu.
 
-import { JOYSTICK, boutonsTactiles, boutonsTactilesVisibles } from '../ui/hud_layout.js';
+import {
+  JOYSTICK, boutonsTactiles, boutonsTactilesVisibles, bornerCentreJoystick, magnitudeJoystick,
+} from '../ui/hud_layout.js';
 
 // `D-248` (`Q-167`, Xav : « un tap and drag de la compétence pour
 // téléphone ») : provisoire, non validé au doigt. En deçà, un doigt posé sur le
@@ -85,6 +87,9 @@ export function creerSourceTactile(cible, {
   // vrai nouveau touchstart, jamais par un simple "il a déjà touché un jour".
   let nbContacts = 0;
   let idJoystick = null; // le doigt qui a "pris" le joystick, jusqu'à son relâchement
+  // `D-138` : le centre du joystick tant qu'un doigt le tient — là où il s'est
+  // posé, puis tiré derrière lui (la laisse, cf. `JOYSTICK`). `null` au repos.
+  let centreJoystick = null;
   const doigts = new Map(); // identifier -> position logique { x, y }
   // Spec 11 §4.2 : les doigts POSÉS depuis la dernière lecture, en
   // coordonnées logiques. Un contact est une position, pas un verbe : il sort
@@ -107,15 +112,34 @@ export function creerSourceTactile(cible, {
   }
 
   // Un doigt qui apparaît dans la bande gauche de l'écran (JOYSTICK.limiteX)
-  // "prend" le joystick et continue à le piloter même s'il glisse loin du
-  // centre visuel (comportement standard d'un joystick virtuel) — la
-  // magnitude reste clampée à 1 par ailleurs (rayonZone). Le premier doigt
-  // qui prend la zone fait foi tant qu'il n'est pas relâché (§4).
+  // "prend" le joystick et continue à le piloter même s'il glisse hors de la
+  // bande. Le premier doigt qui prend la zone fait foi tant qu'il n'est pas
+  // relâché (§4). `D-138` : le centre naît sous lui — le pouce n'a plus à
+  // viser un cercle qu'il couvre.
   function attribuerJoystickSiBesoin(points) {
     if (idJoystick !== null && doigts.has(idJoystick)) return;
     idJoystick = null;
+    centreJoystick = null;
     const candidat = points.find((p) => p.x < JOYSTICK.limiteX);
-    if (candidat) idJoystick = candidat.identifier;
+    if (candidat) {
+      idJoystick = candidat.identifier;
+      centreJoystick = bornerCentreJoystick(candidat.x, candidat.y);
+    }
+  }
+
+  // La laisse : un doigt qui s'éloigne du centre de plus de `rayonZone` le
+  // tire derrière lui. Suivie à chaque événement, pas à chaque frame : le
+  // centre dépend du CHEMIN du doigt, et la cadence des événements est la
+  // plus fine qu'on ait de ce chemin.
+  function tirerLaisse() {
+    const doigt = idJoystick !== null ? doigts.get(idJoystick) : undefined;
+    if (!doigt || !centreJoystick) return;
+    const dx = doigt.x - centreJoystick.x;
+    const dy = doigt.y - centreJoystick.y;
+    const distance = Math.hypot(dx, dy);
+    if (distance <= JOYSTICK.rayonZone) return;
+    const recul = JOYSTICK.rayonZone / distance;
+    centreJoystick = bornerCentreJoystick(doigt.x - dx * recul, doigt.y - dy * recul);
   }
 
   // Empêche le scroll/zoom natif du navigateur pendant le jeu — sans effet
@@ -137,6 +161,8 @@ export function creerSourceTactile(cible, {
       doigts.set(p.identifier, p);
     }
     attribuerJoystickSiBesoin(points);
+    // Un second doigt qui se pose rapporte aussi la position du premier.
+    tirerLaisse();
   }
 
   // Un doigt qui se POSE sur un bouton visible et qui vise lui appartient
@@ -153,6 +179,7 @@ export function creerSourceTactile(cible, {
     bloquerComportementNatif(e);
     const points = positionsLogiques(e.touches);
     for (const p of points) doigts.set(p.identifier, p);
+    tirerLaisse();
   }
   // `annule` : un contact interrompu par le système (`touchcancel`) ne lance
   // rien — le joueur n'a pas levé le doigt.
@@ -173,7 +200,10 @@ export function creerSourceTactile(cible, {
       doigtsVisants.delete(id);
       doigts.delete(id);
     }
-    if (idJoystick !== null && !restants.has(idJoystick)) idJoystick = null;
+    if (idJoystick !== null && !restants.has(idJoystick)) {
+      idJoystick = null;
+      centreJoystick = null;
+    }
   }
 
   // `touchend` seul (jamais `touchcancel`, cf. l'en-tête). Le crochet part
@@ -219,6 +249,14 @@ export function creerSourceTactile(cible, {
       }
       return enCours;
     },
+    // `D-138` : ce que le HUD dessine du joystick — son centre et le doigt qui
+    // le tient, ou `null` au repos (le cercle reste alors à `JOYSTICK.cx/cy`).
+    // Une position, jamais un verbe : même règle que `glissesEnCours`.
+    joystickAffiche() {
+      const doigt = idJoystick !== null ? doigts.get(idJoystick) : undefined;
+      if (!doigt || !centreJoystick) return null;
+      return { cx: centreJoystick.x, cy: centreJoystick.y, x: doigt.x, y: doigt.y };
+    },
     lireContactsNouveaux() {
       const lus = contactsNouveaux;
       contactsNouveaux = [];
@@ -227,11 +265,10 @@ export function creerSourceTactile(cible, {
     instantane() {
       let move = { x: 0, y: 0 };
       const doigtJoystick = idJoystick !== null ? doigts.get(idJoystick) : undefined;
-      if (doigtJoystick) {
-        const dx = doigtJoystick.x - JOYSTICK.cx;
-        const dy = doigtJoystick.y - JOYSTICK.cy;
-        const distance = Math.hypot(dx, dy);
-        const magnitude = Math.min(1, distance / JOYSTICK.rayonZone);
+      if (doigtJoystick && centreJoystick) {
+        const dx = doigtJoystick.x - centreJoystick.x;
+        const dy = doigtJoystick.y - centreJoystick.y;
+        const magnitude = magnitudeJoystick(Math.hypot(dx, dy));
         if (magnitude > 0) {
           const angle = Math.atan2(dy, dx);
           move = { x: Math.cos(angle) * magnitude, y: Math.sin(angle) * magnitude };

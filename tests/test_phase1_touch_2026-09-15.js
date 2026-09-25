@@ -24,37 +24,40 @@ function toucher(id, x, y) {
   return { identifier: id, clientX: x, clientY: y };
 }
 
-// 1. Un doigt au centre du joystick -> move = {0,0}.
+// `D-138` : le joystick flotte — son centre est l'endroit où le pouce s'est
+// posé. Les contrats de la laisse, de la zone morte et de la marche lente
+// vivent dans `test_d138_joystick_laisse_2026-09-25.js` ; ici, ceux du 15/09
+// réécrits pour un centre qui naît sous le pouce.
+const PLEINE_COURSE = JOYSTICK.rayonZone * JOYSTICK.pleineVitesse;
+
+// 1. Un doigt qui se pose -> move = {0,0}, où qu'il tombe dans la bande.
 {
   const cible = creerFausseCible();
   const tactile = creerSourceTactile(cible);
-  cible.emettre('touchstart', [toucher(1, JOYSTICK.cx, JOYSTICK.cy)]);
+  cible.emettre('touchstart', [toucher(1, JOYSTICK.cx + 20, JOYSTICK.cy - 10)]);
   const etat = tactile.instantane();
   assert.equal(etat.move.x, 0);
   assert.equal(etat.move.y, 0);
 }
 
-// 2. Un doigt poussé à la limite de la zone -> magnitude 1, normalisée.
+// 2. Un doigt poussé de la course de pleine vitesse -> magnitude 1, normalisée.
 {
   const cible = creerFausseCible();
   const tactile = creerSourceTactile(cible);
-  cible.emettre('touchstart', [toucher(1, JOYSTICK.cx + JOYSTICK.rayonZone, JOYSTICK.cy)]);
+  cible.emettre('touchstart', [toucher(1, JOYSTICK.cx, JOYSTICK.cy)]);
+  cible.emettre('touchmove', [toucher(1, JOYSTICK.cx + PLEINE_COURSE, JOYSTICK.cy)]);
   const etat = tactile.instantane();
   assert.ok(Math.abs(etat.move.x - 1) < 1e-9);
   assert.equal(etat.move.y, 0);
 }
 
-// 3. Un doigt au-delà du rayon visuel (mais toujours dans la bande qui
-// capture le joystick, §2.3) -> magnitude clampée à 1 (jamais plus). Le point
-// est pris juste avant la frontière plutôt qu'à une distance fixe : ce test
-// vérifie le clamp, il ne doit pas casser quand la bande se règle (`D-137`).
+// 3. Un doigt poussé bien au-delà -> magnitude clampée à 1 (jamais plus).
 {
   const cible = creerFausseCible();
   const tactile = creerSourceTactile(cible);
-  assert.ok(JOYSTICK.limiteX - 1 > JOYSTICK.cx + JOYSTICK.rayonZone, 'la bande doit dépasser le cercle dessiné');
-  cible.emettre('touchstart', [toucher(1, JOYSTICK.limiteX - 1, JOYSTICK.cy)]);
-  const etat = tactile.instantane();
-  assert.equal(etat.move.x, 1);
+  cible.emettre('touchstart', [toucher(1, JOYSTICK.cx, JOYSTICK.cy)]);
+  cible.emettre('touchmove', [toucher(1, JOYSTICK.cx + 3 * JOYSTICK.rayonZone, JOYSTICK.cy)]);
+  assert.equal(tactile.instantane().move.x, 1);
 }
 
 // 3 bis. `D-137` : un PREMIER contact hors de la bande ne prend pas le
@@ -63,6 +66,7 @@ function toucher(id, x, y) {
   const cible = creerFausseCible();
   const tactile = creerSourceTactile(cible);
   cible.emettre('touchstart', [toucher(1, JOYSTICK.limiteX + 1, JOYSTICK.cy)]);
+  cible.emettre('touchmove', [toucher(1, JOYSTICK.limiteX + 1 + JOYSTICK.rayonZone, JOYSTICK.cy)]);
   const etat = tactile.instantane();
   assert.equal(etat.move.x, 0);
   assert.equal(etat.move.y, 0);
@@ -82,7 +86,8 @@ function toucher(id, x, y) {
 {
   const cible = creerFausseCible();
   const tactile = creerSourceTactile(cible);
-  cible.emettre('touchstart', [toucher(1, JOYSTICK.cx + JOYSTICK.rayonZone, JOYSTICK.cy)]);
+  cible.emettre('touchstart', [toucher(1, JOYSTICK.cx, JOYSTICK.cy)]);
+  cible.emettre('touchmove', [toucher(1, JOYSTICK.cx + JOYSTICK.rayonZone, JOYSTICK.cy)]);
   assert.notEqual(tactile.instantane().move.x, 0);
   cible.emettre('touchend', []);
   const etat = tactile.instantane();
@@ -94,8 +99,9 @@ function toucher(id, x, y) {
 {
   const cible = creerFausseCible();
   const tactile = creerSourceTactile(cible);
-  cible.emettre('touchstart', [toucher(1, JOYSTICK.cx + JOYSTICK.rayonZone, JOYSTICK.cy)]);
-  cible.emettre('touchmove', [toucher(1, JOYSTICK.cx + JOYSTICK.rayonZone, JOYSTICK.cy), toucher(2, JOYSTICK.cx, JOYSTICK.cy)]);
+  cible.emettre('touchstart', [toucher(1, JOYSTICK.cx, JOYSTICK.cy)]);
+  cible.emettre('touchmove', [toucher(1, JOYSTICK.cx + JOYSTICK.rayonZone, JOYSTICK.cy)]);
+  cible.emettre('touchstart', [toucher(1, JOYSTICK.cx + JOYSTICK.rayonZone, JOYSTICK.cy), toucher(2, JOYSTICK.cx - 20, JOYSTICK.cy)]);
   const etat = tactile.instantane();
   assert.ok(etat.move.x > 0.9, 'le premier doigt (identifier 1) doit continuer à faire foi');
 }

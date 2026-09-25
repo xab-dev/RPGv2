@@ -768,6 +768,8 @@ export function creerOrchestrateurGrotte({
   // `D-248` : les glissés EN COURS (`[{ verbe, dx, dy }]`), pour montrer où
   // le doigt vise avant qu'il se lève. Vide par défaut.
   lireGlisses = () => [],
+  // `D-138` : le joystick tactile tenu, pour le dessin — `null` au repos.
+  lireJoystick = () => null,
   // `D-248` : les verbes dont le bouton VISE (une compétence y est rangée),
   // annoncés à chaque frame à la source tactile. Même patron
   // qu'`onVerbesActions` : no-op par défaut.
@@ -5612,6 +5614,7 @@ export function creerOrchestrateurGrotte({
       companion: companionActif,
       visuelFollet: companionActif ? registre.obtenir('visuels', companionActif.render.visuel) : null,
       tactileActif: input.tactileActif(),
+      joystick: lireJoystick(),
       // `D-63` : résolu ici, comme `visuelArme` et `visuelFollet` — `hud.js`
       // ne connaît ni catalogue ni flag.
       verbesActions: verbesActionsVisibles(),
@@ -6488,6 +6491,7 @@ export async function demarrerJeu() {
       return point ? { ecran: ecranVersLogique(point.x, point.y) } : null;
     },
     lireGlisses: () => sourceTactile.glissesEnCours(),
+    lireJoystick: () => sourceTactile.joystickAffiche(),
     // Le curseur n'est pas dans la scène, mais ses étincelles sont des
     // particules cosmétiques comme les autres : les laisser derrière ferait un
     // Bas à moitié appliqué, visible à la souris. Ici, et pas derrière chaque

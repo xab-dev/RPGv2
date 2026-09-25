@@ -3,7 +3,7 @@ projet: RPG V2
 episode/session: Spec 14 (l'Annexe 1), palier I — choisir
 type: fichier de bord
 version: 1.0.0
-statut: livré — à voir par Xav : V-157 ; à trancher : Q-163
+statut: livré — à voir par Xav : V-157 ; Q-163 tranchée (suites D-216, D-217)
 catégorie: Journal
 date: 2026-09-25
 genere_par: claude
@@ -17,7 +17,9 @@ Demande de Xav : « spec 14 palier I, go ! ». Branche `annexe-1`, non poussée.
 | Commit | Ticket | Ce qu'il faut en retenir |
 |---|---|---|
 | `22b3bf2` | Ménage | Journal de la nuit du 25/09 archivé, INDEX à jour, chemin du banc de référence corrigé dans `CLAUDE.md` |
-| (ce commit) | `D-215` : palier I | La sauvegarde en v9, « Tout reprendre », les compétences en cartes dans Stats et leur emplacement, la carte Follet, le déblocage |
+| `abf9f01` | `D-215` : palier I | La sauvegarde en v9, « Tout reprendre », les compétences en cartes dans Stats et leur emplacement, la carte Follet, le déblocage |
+| (ce commit) | Verdict | `Q-163` tranchée par Xav ; `D-216` (Y) et `D-217` (la phrase) ouvertes ; les vues de l'album de l'Annexe |
+| — | Push | `annexe-1` poussée sur `origin`, pour sauvegarde |
 
 **Non commité, pas à moi** : `data/enemies.json` porte un réglage de Xav (le Gardien à 444 PV et 7 de force). Laissé tel quel, hors du commit.
 
@@ -55,3 +57,9 @@ Demande de Xav : « spec 14 palier I, go ! ». Branche `annexe-1`, non poussée.
   - la phrase commune de la confirmation dit « Cette action ne s'annule pas », ce qui est un peu dur pour un choix gratuit ;
   - le texte du follet au déblocage est à réécrire.
 - **Suivant** : l'album de référence de la spec, qui la clôt.
+
+## 4. Retour de Xav (26/09)
+
+- `Q-163` **tranchée** : « Q-163: ok pour X. ajout de Y : réinitialiser tout (les stats) . oui, il faut changer la phrase de réinitilisation, c'est des détails UX pas très important pour l'instant, prio gameplay et graphisme (puis UX/UI) ».
+- Deux suites ouvertes, **non codées** (priorité de Xav : gameplay et graphisme, puis UX/UI) : `D-216` (l'action Y, dont le partage avec X est à préciser) et `D-217` (la phrase de la confirmation).
+- Session close : `annexe-1` poussée sur `origin` pour sauvegarde. Reste l'album de clôture de la spec, pris par Xav (annexe B du suivi : les six vues, plus huit vues de l'Annexe).

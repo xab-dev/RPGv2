@@ -130,7 +130,8 @@ export function creerSourceTactile(cible, {
   // La laisse : un doigt qui s'éloigne du centre de plus de `rayonZone` le
   // tire derrière lui. Suivie à chaque événement, pas à chaque frame : le
   // centre dépend du CHEMIN du doigt, et la cadence des événements est la
-  // plus fine qu'on ait de ce chemin.
+  // plus fine qu'on ait de ce chemin. Le centre tiré reste dans la limite
+  // (`D-251`, `LIMITE_JOYSTICK`) : au-delà, le doigt s'éloigne seul.
   function tirerLaisse() {
     const doigt = idJoystick !== null ? doigts.get(idJoystick) : undefined;
     if (!doigt || !centreJoystick) return;

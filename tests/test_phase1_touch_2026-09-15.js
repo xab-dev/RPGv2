@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import { creerSourceTactile } from '../src/input/touch.js';
 import { creerCoucheInput } from '../src/input/input.js';
-import { JOYSTICK, BOUTON_ATTAQUE } from '../src/ui/hud_layout.js';
+import { JOYSTICK, LIMITE_JOYSTICK, BOUTON_ATTAQUE } from '../src/ui/hud_layout.js';
 
 // Faux EventTarget minimal, identité écran = logique (versLogique par défaut).
 function creerFausseCible() {
@@ -30,11 +30,13 @@ function toucher(id, x, y) {
 // réécrits pour un centre qui naît sous le pouce.
 const PLEINE_COURSE = JOYSTICK.rayonZone * JOYSTICK.pleineVitesse;
 
-// 1. Un doigt qui se pose -> move = {0,0}, où qu'il tombe dans la bande.
+// 1. Un doigt qui se pose -> move = {0,0}, où qu'il tombe dans la limite
+// (`D-251` : posé au-delà, le cercle reste dans la limite et le héros part).
 {
   const cible = creerFausseCible();
   const tactile = creerSourceTactile(cible);
-  cible.emettre('touchstart', [toucher(1, JOYSTICK.cx + 20, JOYSTICK.cy - 10)]);
+  const ecart = LIMITE_JOYSTICK.rayonCentre * 0.6;
+  cible.emettre('touchstart', [toucher(1, LIMITE_JOYSTICK.cx + ecart, LIMITE_JOYSTICK.cy - ecart)]);
   const etat = tactile.instantane();
   assert.equal(etat.move.x, 0);
   assert.equal(etat.move.y, 0);
@@ -57,7 +59,11 @@ const PLEINE_COURSE = JOYSTICK.rayonZone * JOYSTICK.pleineVitesse;
   const tactile = creerSourceTactile(cible);
   cible.emettre('touchstart', [toucher(1, JOYSTICK.cx, JOYSTICK.cy)]);
   cible.emettre('touchmove', [toucher(1, JOYSTICK.cx + 3 * JOYSTICK.rayonZone, JOYSTICK.cy)]);
-  assert.equal(tactile.instantane().move.x, 1);
+  // `D-251` : le centre tiré bute sur la limite, la direction peut s'en
+  // écarter d'un poil ; le contrat est la magnitude.
+  const { move } = tactile.instantane();
+  assert.ok(Math.abs(Math.hypot(move.x, move.y) - 1) < 1e-9);
+  assert.ok(move.x > 0.99);
 }
 
 // 3 bis. `D-137` : un PREMIER contact hors de la bande ne prend pas le
@@ -79,7 +85,7 @@ const PLEINE_COURSE = JOYSTICK.rayonZone * JOYSTICK.pleineVitesse;
   const tactile = creerSourceTactile(cible);
   cible.emettre('touchstart', [toucher(1, JOYSTICK.cx, JOYSTICK.cy)]);
   cible.emettre('touchmove', [toucher(1, JOYSTICK.limiteX + 40, JOYSTICK.cy)]);
-  assert.equal(tactile.instantane().move.x, 1);
+  assert.ok(tactile.instantane().move.x > 0.99);
 }
 
 // 4. Relâchement -> move revient à {0,0} immédiatement (aucun état collé).

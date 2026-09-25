@@ -48,23 +48,45 @@ import { RESOLUTION_LOGIQUE } from '../render.js';
 //     cercle, qu'on ne voit pas sous son pouce. Entre les deux, la vitesse
 //     monte en ligne droite : la marche lente reste, comme au stick de la
 //     manette (Xav : « je préfère garder le choix »).
-// `marge` : jusqu'où le centre peut s'approcher d'un bord de l'écran — la
-// course de pleine vitesse, pour qu'aucune direction ne soit bridée par le
-// bord (un pouce posé à 3 px du bord gauche n'aurait sinon aucune course vers
-// la gauche).
+//
+// `D-251` (25/09, Xav au téléphone : le cercle « peut être drag à travers tout
+// l'écran ») : la laisse a une LIMITE, un cercle jamais dessiné qui touche le
+// bord gauche, le bas et l'horizontale du milieu de l'écran (`LIMITE_JOYSTICK`).
+// Le cercle du joystick y reste ENTIER, à `margeLimite` px de son bord : il ne
+// déborde jamais du cadre. Au-delà, le centre reste au bord de la limite et le
+// héros va à fond vers le pouce, comme un joystick fixe. La pose du pouce y est
+// soumise aussi : un cercle né hors de la limite serait aussitôt rattrapé par
+// elle. `margeLimite` (4 px, « quelques pixels ») est PROVISOIRE.
 export const JOYSTICK = {
-  cx: 70, cy: 200, rayonZone: 45, limiteX: 160, zoneMorte: 0.1, pleineVitesse: 0.7,
+  cx: 70, cy: 200, rayonZone: 45, limiteX: 160, zoneMorte: 0.1, pleineVitesse: 0.7, margeLimite: 4,
 };
 
-// Le centre du joystick pour un point donné, gardé à la course de pleine
-// vitesse des bords de l'écran logique. Un seul endroit : la pose du pouce et
-// la laisse passent toutes deux par lui.
+// Le cercle limite, déduit de l'écran logique : tangent au bas et à
+// l'horizontale du milieu, son rayon est le quart de la hauteur ; tangent au
+// bord gauche, son centre est à un rayon de lui. `rayonCentre` : le disque où
+// le CENTRE du joystick peut aller pour que tout son cercle y tienne — 18,5 px
+// en 480x270 : la laisse devient un jeu de quelques pas de pouce, plus une
+// traversée de l'écran.
+const RAYON_LIMITE = RESOLUTION_LOGIQUE.hauteur / 4;
+export const LIMITE_JOYSTICK = {
+  cx: RAYON_LIMITE,
+  cy: RESOLUTION_LOGIQUE.hauteur - RAYON_LIMITE,
+  rayon: RAYON_LIMITE,
+  rayonCentre: RAYON_LIMITE - JOYSTICK.margeLimite - JOYSTICK.rayonZone,
+};
+
+// Le centre du joystick pour un point donné, ramené dans la limite (le point
+// le plus proche du disque `rayonCentre`). Un seul endroit : la pose du pouce
+// et la laisse passent toutes deux par lui. La limite est à plus d'une course
+// de pleine vitesse des bords de l'écran, ce qui rend inutile l'ancienne marge
+// aux bords (`D-138`).
 export function bornerCentreJoystick(x, y) {
-  const marge = JOYSTICK.rayonZone * JOYSTICK.pleineVitesse;
-  return {
-    x: Math.min(Math.max(x, marge), RESOLUTION_LOGIQUE.largeur - marge),
-    y: Math.min(Math.max(y, marge), RESOLUTION_LOGIQUE.hauteur - marge),
-  };
+  const dx = x - LIMITE_JOYSTICK.cx;
+  const dy = y - LIMITE_JOYSTICK.cy;
+  const distance = Math.hypot(dx, dy);
+  if (distance <= LIMITE_JOYSTICK.rayonCentre) return { x, y };
+  const recul = LIMITE_JOYSTICK.rayonCentre / distance;
+  return { x: LIMITE_JOYSTICK.cx + dx * recul, y: LIMITE_JOYSTICK.cy + dy * recul };
 }
 
 // La magnitude du déplacement pour une distance pouce → centre : nulle dans la

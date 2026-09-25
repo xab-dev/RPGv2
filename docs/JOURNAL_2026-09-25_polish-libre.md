@@ -27,7 +27,8 @@ Branche `polish-libre-2026-09-25`, partie de `main`. Pas de push.
 | `80261f6` | `D-29` | `image-rendering: pixelated` retiré d'`index.html` (décision verrouillée du 15/09) |
 | `ddc8db5` | `D-44` | La langue choisie est sauvegardée (`save.settings.lang`), comme la musique ; test neuf |
 | `14205ee` | `D-226` | `<html lang>` suit la langue du jeu (démarrage et bascule) ; vérifié sous Chrome |
-| (ce commit) | `D-41` | `status_effects.icone` retiré (14 entrées, schéma) et refusé au boot ; rien ne change à l'écran |
+| `3034dfb` | `D-41` | `status_effects.icone` retiré (14 entrées, schéma) et refusé au boot ; rien ne change à l'écran |
+| (ce commit) | `D-10` | Déjà résolu le 17/09 (`e1c4ff3`), jamais clos : un test le tient désormais |
 
 ## 1. La sentinelle (`traversee_nuit.mjs`, Moyen, ×1 et ×6)
 

@@ -58,3 +58,12 @@ Branche `triche`, partie de `main`. Pas de push.
   répartir, les compétences rangées d'office, les lignes de Stats visibles,
   aucune marque à l'écran).
 - **Rien n'est poussé.**
+
+## 4. Fusion
+
+- Xav : « je valide les essais sur chrome, tu peux fusionner et pousser dans
+  main pour les test téléphone, puis supprime les branches inutilisées (-d) ».
+  `V-170` reste à écrire par lui (réponse par `npm run dettes`), avec `Q-171`.
+- `triche` fusionnée dans `main` (`--no-ff`) et poussée, sans release ;
+  `profondeur`, `polish-libre-2026-09-25`, `outil-dettes`, `orientation-heros`
+  et `triche` supprimées (`git branch -d`, toutes contenues dans `main`).

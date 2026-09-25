@@ -92,6 +92,10 @@ rpg_v2/
 │   │                       ≤ `TOLERANCE_COIN_PX`, cf. `docs/archives/JOURNAL_2026-09-16_diagnostic-accrochage-arbre.md`) ; portes conditionnelles ;
 │   │                       portailFranchi() ; `puzzle(id)` (`D-121`) — LE point de
 │   │                       résolution d'un interactif, catalogue OU instance créée en jeu
+│   ├── formes_collision.js `D-224` : la FORME qui bloque dans une case (`tiles.json > collision`) —
+│   │                       rectangle aux coins arrondis au pied de la case ; un côté se ferme jusqu'au
+│   │                       bord dès qu'une voisine solide le touche (la forêt reste fermée) ; la
+│   │                       sortie d'un point, que la correction de coin mesure ; pur
 │   ├── camera.js           bornée sur grande scène, centrée sur scène plus petite que le viewport
 │   ├── decor.js            décor procédural pondéré (PRNG mulberry32) + couleurTuile (variantes/teinte)
 │   │                       + `tuileDeSol` (`render.sol`, une tuile-objet posée sur une surface),

@@ -21,6 +21,7 @@
 // rectangle, jamais encodés à la main dans le layout).
 import { mulberry32 } from './decor.js';
 import { resoudreEmpreinteInteractif, empreinteAbsoluePuzzle } from './structures.js';
+import { formeCollision, pointDansForme, sortieDeForme } from './formes_collision.js';
 
 function decoderLayout(donnees) {
   if (donnees.legende) {
@@ -182,12 +183,48 @@ export function chargerScene(registre, sceneId, overridesInteractifs = {}, inter
   // (§3 04_stations-proportions-collision) s'ajoute à la même fonction —
   // "une seule fonction de collision" testée par resoudreDeplacement ci-
   // dessous, jamais une 2ᵉ passe séparée.
+  // `D-224` : la forme de collision d'une case dont la tuile en déclare une
+  // (`formes_collision.js`), ou `null` (la case entière). Calculée à la
+  // demande : seuls les points qui tombent dans une telle case la paient, et
+  // les portes (qui changent une voisine) sont relues à chaque fois.
+  function formeDeCase(tx, ty, tuile, estFlagActif) {
+    if (!tuile.collision) return null;
+    const ferme = (dx, dy) => {
+      const voisine = tuileA(tx + dx, ty + dy, estFlagActif);
+      return !voisine || voisine.solid;
+    };
+    return formeCollision(tuile.collision, donnees.tile_size, {
+      N: ferme(0, -1), S: ferme(0, 1), E: ferme(1, 0), O: ferme(-1, 0),
+      NE: ferme(1, -1), NO: ferme(-1, -1), SE: ferme(1, 1), SO: ferme(-1, 1),
+    });
+  }
+
   function estSolideAuPoint(px, py, estFlagActif) {
-    const tx = Math.floor(px / donnees.tile_size);
-    const ty = Math.floor(py / donnees.tile_size);
+    const T = donnees.tile_size;
+    const tx = Math.floor(px / T);
+    const ty = Math.floor(py / T);
     const tuile = tuileA(tx, ty, estFlagActif);
-    if (!tuile || tuile.solid) return true;
+    if (!tuile) return true;
+    if (tuile.solid) {
+      const forme = formeDeCase(tx, ty, tuile, estFlagActif);
+      if (!forme || pointDansForme(forme, px - tx * T, py - ty * T)) return true;
+    }
     return empreintesSolides.some((rect) => dansRectangle(px, py, rect));
+  }
+
+  // `D-224` : de combien pousser un point le long d'un axe pour qu'il sorte
+  // de la forme de sa case — le chevauchement de la correction de coin
+  // (`resoudreDeplacement`). `null` quand la case n'a pas de forme : l'appelant
+  // mesure alors jusqu'au bord de la case, comme il l'a toujours fait.
+  function sortieAxe(px, py, axe, sens, estFlagActif) {
+    const T = donnees.tile_size;
+    const tx = Math.floor(px / T);
+    const ty = Math.floor(py / T);
+    const tuile = tuileA(tx, ty, estFlagActif);
+    if (!tuile || !tuile.solid) return null;
+    const forme = formeDeCase(tx, ty, tuile, estFlagActif);
+    if (!forme) return null;
+    return sortieDeForme(forme, px - tx * T, py - ty * T, axe, sens);
   }
 
   return {
@@ -242,6 +279,7 @@ export function chargerScene(registre, sceneId, overridesInteractifs = {}, inter
     // une seconde lecture du registre côté rendu.
     tuile: (id) => tuileParId.get(id),
     estSolideAuPoint,
+    sortieAxe,
     // Exposé pour les tests (headless, jamais le rendu) et pour
     // trouverPositionLibrePlusProche ci-dessous — la géométrie brute, jamais
     // recalculée ailleurs (§3 : "une seule fonction de collision").
@@ -315,6 +353,26 @@ export function resoudreDeplacement(scene, hitbox, dx, dy, estFlagActif) {
     return solide(nx, ny) || solide(nx + largeur, ny) || solide(nx, ny + hauteur) || solide(nx + largeur, ny + hauteur);
   }
 
+  // Le chevauchement d'un bord : de combien pousser, le long de `axe` et dans
+  // `sens`, pour que ses coins solides sortent de ce qui les bloque. Jusqu'au
+  // bord de la case, comme toujours ; `D-224` : jusqu'au bord de la FORME
+  // quand la case en a une (un arbre aux coins arrondis), pour que le héros
+  // glisse autour de l'arc au lieu de buter. Une scène sans `sortieAxe` (les
+  // scènes factices des tests) mesure à la case.
+  function chevauchement(points, axe, sens) {
+    let max = 0;
+    for (const [px, py] of points) {
+      if (!solide(px, py)) continue;
+      const forme = scene.sortieAxe ? scene.sortieAxe(px, py, axe, sens, estFlagActif) : null;
+      const v = axe === 'y' ? py : px;
+      const d = forme !== null && forme !== undefined
+        ? forme
+        : (sens > 0 ? (Math.floor(v / tileSize) + 1) * tileSize - v : v - Math.floor(v / tileSize) * tileSize);
+      max = Math.max(max, d);
+    }
+    return max;
+  }
+
   // `decalage` ne vaut non-null que dans le cas simple et sûr à corriger : un
   // seul des deux coins du bord testé est solide (l'autre est libre) — un
   // vrai mur plein (2 coins solides) n'est jamais corrigé, pour ne jamais
@@ -337,8 +395,8 @@ export function resoudreDeplacement(scene, hitbox, dx, dy, estFlagActif) {
     const hautSolide = solide(nxCandidat, y) || solide(nxCandidat + largeur, y);
     const basSolide = solide(nxCandidat, y + hauteur) || solide(nxCandidat + largeur, y + hauteur);
     const decalY = hautSolide
-      ? decalage(true, basSolide, (Math.floor(y / tileSize) + 1) * tileSize - y) // pousse vers le bas
-      : decalage(false, basSolide, -(y + hauteur - Math.floor((y + hauteur) / tileSize) * tileSize)); // pousse vers le haut
+      ? decalage(true, basSolide, chevauchement([[nxCandidat, y], [nxCandidat + largeur, y]], 'y', 1)) // pousse vers le bas
+      : decalage(false, basSolide, -chevauchement([[nxCandidat, y + hauteur], [nxCandidat + largeur, y + hauteur]], 'y', -1)); // pousse vers le haut
     if (decalY !== null && !coinsSolides(nxCandidat, y + decalY)) {
       x = nxCandidat;
       y += decalY;
@@ -356,8 +414,8 @@ export function resoudreDeplacement(scene, hitbox, dx, dy, estFlagActif) {
     const gaucheSolide = solide(x, nyCandidat) || solide(x, nyCandidat + hauteur);
     const droiteSolide = solide(x + largeur, nyCandidat) || solide(x + largeur, nyCandidat + hauteur);
     const decalX = gaucheSolide
-      ? decalage(true, droiteSolide, (Math.floor(x / tileSize) + 1) * tileSize - x) // pousse vers la droite
-      : decalage(false, droiteSolide, -(x + largeur - Math.floor((x + largeur) / tileSize) * tileSize)); // pousse vers la gauche
+      ? decalage(true, droiteSolide, chevauchement([[x, nyCandidat], [x, nyCandidat + hauteur]], 'x', 1)) // pousse vers la droite
+      : decalage(false, droiteSolide, -chevauchement([[x + largeur, nyCandidat], [x + largeur, nyCandidat + hauteur]], 'x', -1)); // pousse vers la gauche
     if (decalX !== null && !coinsSolides(x + decalX, nyCandidat)) {
       x += decalX;
       y = nyCandidat;

@@ -249,6 +249,30 @@ function validerTile(entry, catalogs, path) {
   if (entry.render && entry.render.lisiere !== undefined) {
     erreurs.push(...erreursLisiere(entry, catalogs, `${path} > render.lisiere`));
   }
+  // `D-224` : `collision` (facultative) — la forme qui bloque, plus petite que
+  // la case (`formes_collision.js`). Une tuile non solide ne bloque rien : lui
+  // en donner une serait une faute silencieuse. En px logiques ; ce qui
+  // déborderait la case y est ramené au calcul (la taille de case est celle
+  // de la scène, que ce catalogue ne connaît pas).
+  if (entry.collision !== undefined) {
+    const c = entry.collision;
+    if (!c || typeof c !== 'object' || Array.isArray(c)) {
+      erreurs.push(`${path} > collision doit être un objet { largeur, hauteur, rayon?, retrait_bas? }`);
+    } else {
+      if (!entry.solid) erreurs.push(`${path} > collision sur une tuile non solide : elle ne bloquerait rien`);
+      for (const champ of ['largeur', 'hauteur']) {
+        if (typeof c[champ] !== 'number' || !(c[champ] > 0)) erreurs.push(`${path} > collision.${champ} doit être un nombre > 0`);
+      }
+      for (const champ of ['rayon', 'retrait_bas']) {
+        if (c[champ] !== undefined && (typeof c[champ] !== 'number' || c[champ] < 0)) {
+          erreurs.push(`${path} > collision.${champ} doit être un nombre >= 0`);
+        }
+      }
+      if (typeof c.rayon === 'number' && c.rayon > Math.min(c.largeur, c.hauteur) / 2) {
+        erreurs.push(`${path} > collision.rayon dépasse la moitié du plus petit côté`);
+      }
+    }
+  }
   return erreurs;
 }
 

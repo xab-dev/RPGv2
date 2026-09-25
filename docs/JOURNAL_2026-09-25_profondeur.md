@@ -3,7 +3,7 @@ projet: RPG V2
 episode/session: Hors spec — la profondeur
 type: fichier de bord
 version: 1.0.0
-statut: livré, à voir en jeu (V-161) ; Q-165 et Q-166 ouvertes
+statut: D-222 validée (V-161) ; D-223 et D-224 à voir en jeu ; Q-165 et Q-166 ouvertes
 catégorie: Journal
 date: 2026-09-25
 genere_par: claude
@@ -22,7 +22,8 @@ Branche `profondeur`, partie de `main`. Non poussée.
 | Commit | Ticket | Ce qu'il faut en retenir |
 |---|---|---|
 | `8aed350` | Ménage | Les deux journaux du 25/09 (palier I, torche-épilepsie-Zéros) archivés, INDEX à jour, deux renvois corrigés |
-| (ce commit) | `D-222` | La profondeur : `src/profondeur.js`, le calque à plat, une seule liste triée par le pied |
+| `65e4e35` | `D-222` | La profondeur : `src/profondeur.js`, le calque à plat, une seule liste triée par le pied |
+| (ce commit) | `D-224` | `V-161` validée par Xav (« parfait, aucun ralentissement »). La hitbox des arbres de la forêt : une forme aux coins arrondis, fermée côté voisin solide (`src/formes_collision.js`) |
 
 **Non commité, pas à moi** : `docs/captures/v1/raw/Capture d'écran 2026-09-24 130012.png`, une capture de Xav. Un premier `git add` l'avait prise dans le commit du ménage ; retirée aussitôt (`--amend`), le fichier est intact sur le disque.
 
@@ -67,3 +68,24 @@ décidait lequel passait devant (« pierre sur de l'herbe »).
   l'herbe ?), la nuit, la grotte, l'Annexe, les stations, et la fluidité en
   forêt dense. Aucun banc lancé (`Q-159`) : une cinquantaine de poses de tampon
   par frame en forêt, que le calque payait une fois par case franchie.
+
+## 4. Retour de Xav, et la hitbox des arbres (`D-224`)
+
+Xav : « parfait, aucun ralentissement, nette amélioration du confort visuel et
+de la logique du réel ». Deux demandes : un fondu quand le héros passe à
+travers un élément (`D-223`), et la hitbox des arbres de la forêt réduite, aux
+angles arrondis « comme les cartes du menu » (`D-224`).
+
+- **La forme** : `tiles.json > collision` sur `tile_arbre_fond` (20 × 16,
+  rayon 7, relevée de 3 px : provisoire). Géométrie pure dans
+  `src/formes_collision.js`.
+- **Le piège évité** : rétrécir chaque arbre ouvrait la forêt entre deux
+  arbres voisins. Un côté reste donc fermé jusqu'au bord dès qu'une voisine
+  solide le touche (diagonales comprises) ; seuls les côtés exposés
+  rétrécissent. Prouvé sur les 7167 paires de cases solides voisines de la
+  Maison.
+- **Le glissement** : la correction de coin mesure le chevauchement sur la
+  forme, plus sur la case. Contre un coin arrondi, le héros contourne l'arc.
+  Une marge d'un millionième de pixel : poussé pile sur l'arc, le point
+  restait dedans d'un cheveu.
+- **À voir en jeu** : `V-162`.

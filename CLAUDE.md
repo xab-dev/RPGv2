@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Le jeu est en ligne : `https://xab-dev.github.io/RPGv2/`** (GitHub Pages, servi depuis `main`). **Un `push` sur `main` publie le jeu** : ce n'est plus une sauvegarde, c'est une mise en ligne. Les `push` restent à la main de Xav. Les vérifications sur téléphone se font par cette URL.
 
+**Dernière publication : `v0.8.0`, le 25/09.** `annexe-1` (spec 14) et `torche-vacillement` (`D-218`, `D-219`, SD_torche) ont été fusionnées dans `main`, chacune par un commit de fusion, et poussées à la demande de Xav. Les branches restent, mais tout le travail qu'elles portaient est dans `main`. Un correctif tenu à part d'une spec en cours part de `main` sur sa propre branche, et prend ses identifiants **après** ceux de la branche en cours, pour qu'aucun doublon n'apparaisse à la fusion.
+
 **Les fondations sont closes avec la session du 23/09** (`Q-20` : le critère fixé par Xav était cette session de tri et de ménage). Livré et validé en jeu : Phases 0 à 3 (la Grotte, la Région Maison dehors et dedans), le chantier Construction (`specs/05`), le polish post-Construction, le chaos nocturne (`specs/07`), les menus en cartes (`specs/08`), les réglages graphiques (`specs/09`) et la file « inventaire survivaliste ». L'histoire de ces étapes est dans `docs/archives/INDEX.md` ; l'ancien en-tête de ce fichier, qui la racontait, est archivé tel quel dans `docs/archives/CLAUDE_etat_2026-09-23.md`.
 
 **Ne se reprend jamais par initiative** : la lumière du follet (`D-35`, ticket annulé par Xav le 20/09 ; le rayon de 100 px est une valeur d'essai posée par lui, pas une décision).
@@ -258,9 +260,12 @@ rpg_v2/
 │   ├── poussiere.js        traînée de poussière (héros, follet) : réserve de bouffées à capacité
 │   │                       en données, émission interpolée le long du segment parcouru
 │   ├── ornements.js        `D-134` : étincelles et halo qui respire (réglage Haut) — reçoit un
-│   │                       NOMBRE (le levier `ornements`), jamais un preset
+│   │                       NOMBRE (le levier `ornements`), jamais un preset ; le vacillement
+│   │                       d'une flamme (`facteurVacillement`) ; `FREQUENCE_MAX_HZ` (`D-219`) et
+│   │                       `rythmeLumineuxHz` : aucun effet du catalogue ne bat au-delà de 3 Hz
 │   ├── combustion.js       `specs/15` : ce qui BRÛLE (la torche) — quand (phases du cycle), la file
 │   │                       des objets entamés de la poche, s'éteindre, prendre, rendre — pur ;
+│   │                       `flammesAffichees` (`D-218`) : LA liste des flammes à l'écran, graine fixe ;
 │   │                       `save.inventaire.combustion` et `save.monde.objets_plantes` sont
 │   │                       facultatifs (absents = rien), aucune migration
 │   ├── qualite.js          `specs/09` : LE point de résolution des réglages graphiques ; les
@@ -392,6 +397,7 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 | **Esprit amplifie les compétences** (*révise* D1⑧ « Esprit = réserve, rien d'autre », reconfirmée le 23/09) : dégâts d'une compétence = `derivee_degats_attaque` (Force) × `derivee_puissance_competence` (Esprit) × le multiplicateur de la compétence, composés en **un seul point** ; et `derivee_hate_competence` (Esprit) raccourcit charge et recharge, avec un plancher. Deux dérivées d'une seule stat chacune : le schéma des dérivées ne change pas. Sans Force, une compétence ne fait rien | 2026-09-24 | choix de Xav (« un mix entre (a) et (b) »), `specs/14_annexe-1.md` §0 B1 |
 | **L'état d'une descente est fait de flags ordinaires, qu'on RETIRE** : chaque salle de l'Annexe déclare les siens (`descente: { flags }`), l'Annexe est la scène d'arrivée et ce qu'on atteint par ses portails sans en sortir (`descente.js`), et l'entrée par la stèle les retire en un seul point (`flags.js#retirer`, la sauvegarde suit). Un flag de descente n'est jamais la cible d'un unlock (refusé au démarrage). Une porte de l'Annexe attend un flag de descente, jamais un flag persistant | 2026-09-24 | `D-207`, `specs/14` palier B |
 | **Un niveau se crédite depuis le niveau de la sauvegarde, jamais depuis l'XP, et ne se reprend jamais** : la table des niveaux peut s'allonger, et une sauvegarde qui a déjà l'XP d'un niveau nouveau le reçoit au chargement, flag et points compris. Chaque niveau du catalogue a son flag, exigé au démarrage | 2026-09-24 | `D-205`, `specs/14` palier A ; le passé n'est pas réparé (`D-206`, sans objet : décision de Xav) |
+| **Aucun effet ne bat au-delà de 3 Hz** (seuil des recommandations sur l'épilepsie photosensible, WCAG 2.3.1), tenu par test sur le vrai catalogue : c'est un plafond, pas un réglage. Et **la graine d'un effet qui bat dit QUI est l'objet, jamais où il est en ce moment** : tirée de la position d'un objet qui bouge, elle défile sous ses pas (la torche tenue battait jusqu'à 15 Hz) | 2026-09-25 | `D-218`, `D-219` ; Xav : « je te laisse gérer la technique » ; un avertissement au lancement : `Q-164` |
 
 ## Ce qui est dû : dettes, questions, validations
 

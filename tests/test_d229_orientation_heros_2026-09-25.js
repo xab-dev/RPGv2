@@ -10,10 +10,12 @@
 // 2. Données : le héros déclare ses poses — de dos (nord, et ses deux
 //    diagonales), le visage disparaît en entier ; de profil et de
 //    trois-quarts face, il se décale du côté regardé ; la pointe de la
-//    capuche penche (ou se plie, `D-252`) à l'opposé du regard. La pose de face n'est pas déclarée :
-//    c'est le dessin validé en jeu.
-// 3. Dessin : sans orientation, ou de face, `dessinerVisuel` émet exactement
-//    les mêmes ordres qu'avant ; de dos, les primitives du visage manquent ;
+//    capuche penche (ou se plie, `D-252`) à l'opposé du regard. De face,
+//    le visage est là (depuis `D-254`, la face redresse sa pointe et son
+//    visage sur l'axe : elle se déclare comme les autres).
+// 3. Dessin : sans orientation, `dessinerVisuel` émet exactement les ordres
+//    du dessin d'auteur ; de face, rien ne manque ; de dos, les primitives du
+//    visage manquent ;
 //    les huit directions donnent huit dessins différents (Xav : « varier de
 //    façon visible »).
 // 4. Démarrage : une direction inconnue, une pièce que rien ne porte, une
@@ -87,7 +89,7 @@ const HEROS = donnees.visuels.find((v) => v.id === VISUEL_HEROS_ID);
 const VISAGE = HEROS.primitives.filter((p) => p.piece === 'visage');
 {
   assert.ok(VISAGE.length > 0, 'le héros a un visage qui peut bouger');
-  assert.equal(HEROS.orientations.sud, undefined, 'la pose de face est le dessin validé : rien à déclarer');
+  assert.notEqual(poseDePiece(HEROS, 'sud', 'visage'), null, 'de face, le visage est là');
   for (const dos of ['nord', 'nord_est', 'nord_ouest']) {
     assert.equal(poseDePiece(HEROS, dos, 'visage'), null, `${dos} : de dos, le visage disparaît`);
   }
@@ -98,8 +100,9 @@ const VISAGE = HEROS.primitives.filter((p) => p.piece === 'visage');
     assert.ok(pose && typeof pose === 'object', `${direction} : une pose de profil`);
     return (pose.dx ?? 0) + centre * (pose.echelle_x ?? 1);
   };
-  for (const d of ['est', 'sud_est']) assert.ok(centreDe(d) > centre, `${d} : le visage glisse vers l'est`);
-  for (const d of ['ouest', 'sud_ouest']) assert.ok(centreDe(d) < centre, `${d} : le visage glisse vers l'ouest`);
+  // (par rapport au visage de face, lui-même posé depuis `D-254`)
+  for (const d of ['est', 'sud_est']) assert.ok(centreDe(d) > centreDe('sud'), `${d} : le visage glisse vers l'est`);
+  for (const d of ['ouest', 'sud_ouest']) assert.ok(centreDe(d) < centreDe('sud'), `${d} : le visage glisse vers l'ouest`);
   // La pointe de la capuche : son point le plus haut, déplacé par la pose.
   const CAPUCHE = HEROS.primitives.filter((p) => p.piece === 'capuche');
   assert.ok(CAPUCHE.length > 0, 'la capuche est une pièce');
@@ -129,14 +132,18 @@ function ordres(options) {
 }
 {
   const reference = ordres({ teinte: '#ff0000' });
-  assert.deepEqual(ordres({ teinte: '#ff0000', orientation: 'sud' }), reference, 'de face : exactement le dessin d\'avant');
+  assert.deepEqual(ordres({ teinte: '#ff0000', orientation: null }), reference, 'sans orientation : le dessin d\'auteur');
   const remplissages = (a) => a.filter((x) => x[0] === 'fill').length;
-  assert.equal(remplissages(ordres({ teinte: '#ff0000', orientation: 'nord' })), remplissages(reference) - VISAGE.length,
+  // `D-254` : une primitive cachée ne paraît que là où sa pièce est posée
+  // (la pointe rabattue, de dos) ; on la compte à part.
+  const cacheesMontrees = (d) => HEROS.primitives.filter((p) => p.cachee && poseDePiece(HEROS, d, p.piece)).length;
+  assert.equal(remplissages(ordres({ teinte: '#ff0000', orientation: 'sud' })), remplissages(reference) + cacheesMontrees('sud'), 'de face : rien ne manque');
+  assert.equal(remplissages(ordres({ teinte: '#ff0000', orientation: 'nord' })), remplissages(reference) - VISAGE.length + cacheesMontrees('nord'),
     'de dos : toutes les primitives du visage, et elles seules, manquent');
-  assert.equal(remplissages(ordres({ teinte: '#ff0000', orientation: 'est' })), remplissages(reference), 'de profil : rien ne manque');
+  assert.equal(remplissages(ordres({ teinte: '#ff0000', orientation: 'est' })), remplissages(reference) + cacheesMontrees('est'), 'de profil : rien ne manque');
   const dessins = new Set(ORIENTATIONS.map((o) => JSON.stringify(ordres({ teinte: '#ff0000', orientation: o }))));
   assert.equal(dessins.size, ORIENTATIONS.length, 'huit directions, huit dessins');
-  console.log('OK dessin : la face inchangée, le dos sans visage, le profil complet, huit dessins');
+  console.log('OK dessin : le dessin d\'auteur sans orientation, la face complète, le dos sans visage, le profil complet, huit dessins');
 }
 
 // --- 4. Le démarrage --------------------------------------------------------------

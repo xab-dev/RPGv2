@@ -15,8 +15,10 @@
 
 // Les huit directions (`D-249`, Xav : « 8 positions »), rangées par angle à
 // l'écran, de 45° en 45°, en partant de l'est et en tournant vers le bas
-// (l'axe y de l'écran descend). `sud` est la pose de référence : c'est celle
-// que le dessin validé en jeu montre, et un visuel n'a rien à déclarer pour elle.
+// (l'axe y de l'écran descend). `sud` est la pose initiale ; jusqu'à `D-254`,
+// elle montrait le dessin d'auteur tel quel. Depuis, le héros la déclare
+// comme les autres (Xav, 26/09 : la pointe et le visage sur l'axe vertical) ;
+// sans orientation, un visuel se dessine tel qu'il est écrit.
 export const ORIENTATIONS = ['est', 'sud_est', 'sud', 'sud_ouest', 'ouest', 'nord_ouest', 'nord', 'nord_est'];
 export const ORIENTATION_INITIALE = 'sud';
 const SECTEUR_DEG = 360 / ORIENTATIONS.length;

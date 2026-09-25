@@ -11,12 +11,17 @@
 //    positive ; l'origine de la primitive est prise en compte.
 // 2. Données : toute direction qui plie la capuche garde son sommet (le point
 //    le plus haut, pose appliquée) plus près de l'axe que sa pointe — c'est
-//    la plainte de Xav (le cisaillement emportait le sommet avec la pointe).
+//    la plainte de Xav (le cisaillement emportait le sommet avec la pointe) ;
+//    une direction qui redresse la pointe (`D-254`, face et dos) rapproche de
+//    l'axe la pointe et le sommet du dessin d'auteur.
 // 3. Dessin : une pose pliée dessine deux fois exactement la même chose (les
 //    points pliés se gardent, ils ne se refont pas au hasard d'une frame).
 //    Le miroir (`D-253`) reflète la pièce, et elle seule.
+//    `D-254` : le rabat écrase le haut en calotte ; une primitive cachée ne
+//    paraît que là où sa pièce est posée.
 // 4. Démarrage : une courbure sans longueur, une longueur nulle, un miroir
-//    qui n'est pas un booléen, refusés.
+//    qui n'est pas un booléen, un rabat incomplet, une primitive cachée sans
+//    pièce, refusés.
 // Aucune valeur de réglage n'est épinglée : elles sont lues dans les données.
 import assert from 'node:assert/strict';
 import path from 'node:path';
@@ -48,6 +53,21 @@ const proche = (a, b, msg) => assert.ok(Math.abs(a - b) < 1e-9, `${msg} (${a} �
   proche(yd, 2, 'l\'origine de la primitive compte : y (repère de la primitive)');
   console.log('OK courberPoints : le bas posé, la pointe tournée autour du pivot');
 }
+{
+  // `D-254` : le rabat. Sous la ligne, rien ne bouge ; au-dessus, tout tient
+  // dans la calotte ; la pointe (à `longueur` de la ligne) en fait le sommet,
+  // le reste monte avec la hauteur, sans jamais la dépasser.
+  const rabat = { y: -2, longueur: 4, hauteur: 1 };
+  const [[xb, yb]] = courberPoints([[3, 0]], { rabat });
+  assert.ok(xb === 3 && yb === 0, 'sous la ligne du rabat, rien ne bouge');
+  const [[xp, yp]] = courberPoints([[0.5, -6]], { rabat });
+  proche(xp, 0.5, 'le rabat ne déplace pas un point en largeur');
+  proche(yp, rabat.y - rabat.hauteur, 'la pointe devient le haut de la calotte');
+  const hauts = [-2.5, -3, -4, -5, -8].map((y) => courberPoints([[0, y]], { rabat })[0][1]);
+  assert.ok(hauts.every((y, i) => y >= rabat.y - rabat.hauteur && y < rabat.y && (i === 0 || y <= hauts[i - 1])),
+    `au-dessus de la ligne : dans la calotte, d'autant plus haut qu'on partait haut (${hauts.map((y) => y.toFixed(2))})`);
+  console.log('OK rabat : le bas posé, le haut écrasé en calotte');
+}
 
 // --- 2. Les données -----------------------------------------------------------------
 const RACINE = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -71,9 +91,16 @@ const POINTE = plusHaut(CAPUCHE.flatMap((p) => p.points));
     const pose = poseDePiece(HEROS, d, 'capuche');
     const sommet = plusHaut(CAPUCHE.flatMap((p) => courberPoints(p.points, pose, p.dx || 0, p.dy || 0)).map((pt) => poser({ ...pose, courbure: 0 }, pt)));
     const [xPointe] = poser(pose, POINTE);
-    assert.ok(Math.abs(sommet[0]) < Math.abs(xPointe), `${d} : le sommet (x = ${sommet[0].toFixed(2)}) plus près de l'axe que la pointe (x = ${xPointe.toFixed(2)})`);
+    if (Math.abs(xPointe) > Math.abs(POINTE[0])) {
+      assert.ok(Math.abs(sommet[0]) < Math.abs(xPointe), `${d} : le sommet (x = ${sommet[0].toFixed(2)}) plus près de l'axe que la pointe (x = ${xPointe.toFixed(2)})`);
+    } else {
+      // `D-254` : la face et le dos redressent la pointe du dessin d'auteur,
+      // qui part à droite de l'axe — la pointe et le sommet s'en rapprochent.
+      assert.ok(Math.abs(xPointe) < Math.abs(POINTE[0]) && Math.abs(sommet[0]) < Math.abs(POINTE[0]),
+        `${d} : la pointe (x = ${xPointe.toFixed(2)}) et le sommet (x = ${sommet[0].toFixed(2)}) plus près de l'axe que sur le dessin d'auteur (x = ${POINTE[0]})`);
+    }
   }
-  console.log(`OK données : ${pliees.join(', ')} — le sommet sur l'axe, la pointe à l'écart`);
+  console.log(`OK données : ${pliees.join(', ')} — le sommet sur l'axe, la pointe à l'écart ou redressée`);
 }
 
 // --- 3. Le dessin -------------------------------------------------------------------
@@ -103,6 +130,19 @@ function ordres(options) {
   dessinerVisuel(ctx, avecMiroir, 0, 0, { orientation: 'est' });
   const reflets = appels.filter((a) => a[0] === 'scale' && a[1] === -1 && a[2] === 1).length;
   assert.equal(reflets, CAPUCHE.length, 'une primitive de la capuche, un reflet ; rien d\'autre');
+  // `D-254` : une primitive cachée ne paraît que dans une direction qui pose
+  // sa pièce.
+  const avecCachee = structuredClone(HEROS);
+  avecCachee.primitives.push({ forme: 'cercle', dx: 0, dy: 0, w: 1, couleur: '#123456', piece: 'temoin', cachee: true });
+  avecCachee.orientations = { nord: { temoin: {} } };
+  const couleurs = (orientation) => {
+    const a = [];
+    const c = new Proxy({}, { get: () => () => {}, set(_, prop, v) { if (prop === 'fillStyle') a.push(v); return true; } });
+    dessinerVisuel(c, avecCachee, 0, 0, { orientation });
+    return a;
+  };
+  assert.ok(couleurs('nord').includes('#123456'), 'posée : elle paraît');
+  for (const o of [null, 'sud', 'est']) assert.ok(!couleurs(o).includes('#123456'), `${o} : sans pose, elle reste cachée`);
   console.log('OK dessin : la capuche pliée, stable d\'une frame à l\'autre ; le miroir sur la seule pièce');
 }
 
@@ -117,7 +157,10 @@ function ordres(options) {
   assert.ok(erreursAvec((v) => { v.orientations.est.capuche = { courbure: 30, longueur: 0 }; }).some((e) => e.includes('orientations > est > capuche')));
   assert.ok(erreursAvec((v) => { v.orientations.est.capuche = { courbure: 'forte', longueur: 5 }; }).some((e) => e.includes('orientations > est > capuche')));
   assert.ok(erreursAvec((v) => { v.orientations.est.capuche = { miroir: 'oui' }; }).some((e) => e.includes('orientations > est > capuche')));
-  console.log('OK démarrage : une courbure mal déclarée refusée');
+  assert.ok(erreursAvec((v) => { v.orientations.nord.capuche = { rabat: { y: -8, longueur: 0, hauteur: 1 } }; }).some((e) => e.includes('orientations > nord > capuche')));
+  assert.ok(erreursAvec((v) => { v.orientations.nord.capuche = { rabat: { y: -8, longueur: 3 } }; }).some((e) => e.includes('orientations > nord > capuche')));
+  assert.ok(erreursAvec((v) => { v.primitives[0].cachee = true; }).some((e) => e.includes('cachee vaut true')), 'une primitive cachée sans pièce ne paraîtrait jamais');
+  console.log('OK démarrage : une courbure, un miroir, un rabat ou une primitive cachée mal déclarés refusés');
 }
 
 console.log('OK test_d252_capuche_courbee');

@@ -1749,7 +1749,7 @@ function validerVisuel(entry, catalogs, path) {
 
   // `D-229` : ce qu'une direction du regard fait aux PIÈCES du visuel (le
   // visage du héros, sa capuche) —
-  // `{ <direction>: { <piece>: null | { dx?, dy?, echelle_x?, cisaillement?, pivot_y?, courbure?, longueur?, miroir? } } }`
+  // `{ <direction>: { <piece>: null | { dx?, dy?, echelle_x?, cisaillement?, pivot_y?, courbure?, longueur?, miroir?, rabat? } } }`
   // (la courbure, `D-252`, plie les polygones de la pièce : `visuels.js#courberPoints`).
   // Une direction inconnue ne serait jamais demandée, une pièce qu'aucune
   // primitive ne porte ne bougerait rien : les deux passeraient sans que
@@ -1776,11 +1776,16 @@ function validerVisuel(entry, catalogs, path) {
           const cles = pose && typeof pose === 'object' ? Object.keys(pose) : null;
           const nombres = ['dx', 'dy', 'cisaillement', 'pivot_y', 'courbure'];
           const positifs = ['echelle_x', 'longueur'];
-          if (!cles || cles.some((c) => c !== 'miroir' && !positifs.includes(c) && !nombres.includes(c))
+          // `D-254` : `rabat` = { y : nombre ; longueur, hauteur : nombres > 0 }.
+          const r = pose && pose.rabat;
+          const rabatMalForme = r !== undefined && (!r || typeof r !== 'object'
+            || Object.keys(r).some((c) => !['y', 'longueur', 'hauteur'].includes(c))
+            || typeof r.y !== 'number' || !(r.longueur > 0) || !(r.hauteur > 0));
+          if (!cles || rabatMalForme || cles.some((c) => c !== 'miroir' && c !== 'rabat' && !positifs.includes(c) && !nombres.includes(c))
             || (pose.miroir !== undefined && typeof pose.miroir !== 'boolean')
             || nombres.some((c) => pose[c] !== undefined && typeof pose[c] !== 'number')
             || positifs.some((c) => pose[c] !== undefined && (typeof pose[c] !== 'number' || pose[c] <= 0))) {
-            erreurs.push(`${cheminO} > ${piece} doit être null (cachée) ou { dx?, dy?, cisaillement?, pivot_y?, courbure? : nombres ; echelle_x?, longueur? : nombres > 0 ; miroir? : booléen }`);
+            erreurs.push(`${cheminO} > ${piece} doit être null (cachée) ou { dx?, dy?, cisaillement?, pivot_y?, courbure? : nombres ; echelle_x?, longueur? : nombres > 0 ; miroir? : booléen ; rabat? : { y, longueur > 0, hauteur > 0 } }`);
           } else if (pose.courbure !== undefined && pose.longueur === undefined) {
             // `D-252` : une courbure sans longueur n'a pas de pointe où
             // atteindre son angle (`visuels.js#courberPoints`).
@@ -1828,6 +1833,11 @@ function validerVisuel(entry, catalogs, path) {
     }
     if (p.piece !== undefined && (typeof p.piece !== 'string' || p.piece === '')) {
       erreurs.push(`${chemin} > piece doit être un nom (chaîne non vide)`);
+    }
+    // `D-254` : une primitive cachée ne paraît que dans les directions qui
+    // posent sa pièce ; sans pièce, elle ne paraîtrait jamais.
+    if (p.cachee !== undefined && (p.cachee !== true || p.piece === undefined)) {
+      erreurs.push(`${chemin} > cachee vaut true, et seulement sur une primitive qui porte une pièce`);
     }
     if (p.rotation !== undefined && typeof p.rotation !== 'number') {
       erreurs.push(`${chemin} > rotation doit être numérique`);

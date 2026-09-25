@@ -152,12 +152,28 @@ const PROGRESSIVITE_COURBURE = 1.5;
 // polygone à facettes. Provisoire, non validé en jeu.
 const SEGMENTS_PAR_ARETE_COURBEE = 6;
 
+// `D-254` : le RABAT, l'autre pli, vers l'œil ou loin de lui. Xav, 26/09 :
+// « de face, on [doit avoir] l'impression que la pointe pointe vers
+// l'arrière […] de dos, que la pointe pointe vers nous », le pli au niveau
+// du front. Une pointe qui part vers l'œil ou à l'opposé ne dépasse plus du
+// crâne : au-dessus de la ligne `rabat.y`, la capuche s'écrase en une
+// calotte arrondie de `rabat.hauteur` (un quart d'ellipse, du bord de la
+// ligne à la pointe, qui est à `rabat.longueur` au-dessus). La pointe
+// rabattue elle-même, quand on la voit, est une pièce à part, dessinée à la
+// main (`cachee`, voir `dessinerVisuel`) : un pli ne sait pas dire la lumière.
+function rabattre(y, rabat) {
+  const t = Math.min(1, (rabat.y - y) / rabat.longueur);
+  return rabat.y - rabat.hauteur * Math.sqrt(1 - (1 - t) ** 2);
+}
+
 // Pure, exportée pour les tests : les `points` d'un polygone dont l'origine
-// est à `(ox, oy)` dans le repère du visuel, pliés selon `pose`.
+// est à `(ox, oy)` dans le repère du visuel, pliés selon `pose` — la
+// courbure d'abord, le rabat ensuite (chacun s'il est déclaré).
 export function courberPoints(points, pose, ox = 0, oy = 0) {
   const pivotY = pose.pivot_y ?? 0;
-  const angleMax = (pose.courbure * Math.PI) / 180;
+  const angleMax = ((pose.courbure ?? 0) * Math.PI) / 180;
   const longueur = pose.longueur;
+  const { rabat } = pose;
   const denses = [];
   points.forEach(([x0, y0], i) => {
     const [x1, y1] = points[(i + 1) % points.length];
@@ -167,12 +183,15 @@ export function courberPoints(points, pose, ox = 0, oy = 0) {
     }
   });
   return denses.map(([x, y]) => {
-    const hauteur = pivotY - (y + oy);
-    if (hauteur <= 0) return [x, y];
-    const a = angleMax * Math.min(1, hauteur / longueur) ** PROGRESSIVITE_COURBURE;
-    const rx = x + ox;
-    const ry = -hauteur;
-    return [rx * Math.cos(a) - ry * Math.sin(a) - ox, pivotY + rx * Math.sin(a) + ry * Math.cos(a) - oy];
+    let vx = x + ox;
+    let vy = y + oy;
+    const hauteur = pivotY - vy;
+    if (angleMax !== 0 && hauteur > 0) {
+      const a = angleMax * Math.min(1, hauteur / longueur) ** PROGRESSIVITE_COURBURE;
+      [vx, vy] = [vx * Math.cos(a) + hauteur * Math.sin(a), pivotY + vx * Math.sin(a) - hauteur * Math.cos(a)];
+    }
+    if (rabat && vy < rabat.y) vy = rabattre(vy, rabat);
+    return [vx - ox, vy - oy];
   });
 }
 
@@ -242,9 +261,11 @@ export function dessinerVisuel(ctx, visuel, x, y, options = {}) {
     // `options.orientation` — cachée, ou pliée (`D-252`), resserrée, penchée
     // autour de la ligne `pivot_y` et décalée (`orientation.js#poseDePiece`).
     // Sans orientation, ou sans pose déclarée, elle se dessine telle quelle :
-    // la pose de référence est le dessin validé en jeu.
+    // la pose de référence est le dessin validé en jeu. `D-254` : une
+    // primitive `cachee` est l'inverse — elle n'existe que dans une direction
+    // qui déclare une pose pour sa pièce (la pointe rabattue, vue de dos).
     const pose = primitive.piece === undefined ? undefined : poseDePiece(visuel, orientation, primitive.piece);
-    if (pose === null) continue;
+    if (pose === null || (primitive.cachee && pose === undefined)) continue;
     if (pose === undefined) {
       dessinerPrimitive(ctx, primitive, teinte);
       continue;
@@ -265,7 +286,7 @@ export function dessinerVisuel(ctx, visuel, x, y, options = {}) {
     ctx.translate(0, -pivot);
     // `D-252` : la courbure plie les points d'un polygone (voir
     // `courberPoints`) ; une forme sans points suit le reste de la pose.
-    const pliee = pose.courbure && primitive.points ? primitiveCourbee(primitive, pose) : primitive;
+    const pliee = (pose.courbure || pose.rabat) && primitive.points ? primitiveCourbee(primitive, pose) : primitive;
     dessinerPrimitive(ctx, pliee, teinte);
     ctx.restore();
   }

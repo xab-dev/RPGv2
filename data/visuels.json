@@ -44,7 +44,38 @@
         },
         "visage": null
       },
+      "sud": {
+        "capuche": {
+          "courbure": -8,
+          "longueur": 9.5,
+          "pivot_y": -2,
+          "rabat": {
+            "y": -8.2,
+            "longueur": 3.3,
+            "hauteur": 1.8
+          }
+        },
+        "pli_front": {},
+        "visage": {
+          "dx": -0.7
+        }
+      },
       "nord": {
+        "capuche": {
+          "courbure": -8,
+          "longueur": 9.5,
+          "pivot_y": -2,
+          "rabat": {
+            "y": -7.4,
+            "longueur": 4.1,
+            "hauteur": 1.8
+          }
+        },
+        "pointe_rabattue": {
+          "dy": 0.8,
+          "cisaillement": -0.3,
+          "pivot_y": -8.2
+        },
         "visage": null
       },
       "nord_ouest": {
@@ -434,6 +465,170 @@
         "couleur": "#9fb2c8",
         "alpha": 0.3,
         "piece": "capuche"
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -2.2,
+            -8.3
+          ],
+          [
+            -1.2,
+            -9.3
+          ],
+          [
+            0.3,
+            -9.8
+          ],
+          [
+            1.9,
+            -9.4
+          ],
+          [
+            2.9,
+            -8.3
+          ],
+          [
+            1.5,
+            -8.7
+          ],
+          [
+            0.3,
+            -8.85
+          ],
+          [
+            -1,
+            -8.7
+          ]
+        ],
+        "couleur": "#0d1015",
+        "alpha": 0.9,
+        "piece": "pli_front",
+        "cachee": true
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -1.2,
+            -7.2
+          ],
+          [
+            1.8,
+            -7.2
+          ],
+          [
+            0.4,
+            -5.6
+          ]
+        ],
+        "couleur": "#0d1015",
+        "alpha": 0.6,
+        "piece": "pointe_rabattue",
+        "cachee": true
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -2.3,
+            -8.4
+          ],
+          [
+            2.6,
+            -8.4
+          ],
+          [
+            0.3,
+            -6
+          ]
+        ],
+        "couleur": "#080a0e",
+        "piece": "pointe_rabattue",
+        "cachee": true
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -1.8,
+            -8.2
+          ],
+          [
+            2,
+            -8.2
+          ],
+          [
+            0.3,
+            -6.6
+          ]
+        ],
+        "couleur": "#2f3846",
+        "piece": "pointe_rabattue",
+        "cachee": true
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -1.8,
+            -8.2
+          ],
+          [
+            0.3,
+            -6.6
+          ],
+          [
+            -0.2,
+            -7.4
+          ],
+          [
+            -1,
+            -8.2
+          ]
+        ],
+        "couleur": "#9fb2c8",
+        "alpha": 0.45,
+        "piece": "pointe_rabattue",
+        "cachee": true
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [
+          [
+            -1.8,
+            -8.2
+          ],
+          [
+            2,
+            -8.2
+          ],
+          [
+            1.7,
+            -7.9
+          ],
+          [
+            -1.5,
+            -7.9
+          ]
+        ],
+        "couleur": "#cdd8e6",
+        "alpha": 0.35,
+        "piece": "pointe_rabattue",
+        "cachee": true
       },
       {
         "forme": "ellipse",

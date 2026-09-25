@@ -17,7 +17,7 @@ profondeur entre les tuiles, héros est affiché par-dessus un arbre s'il est
 placé au nord de celui-ci. Pareil pour certains éléments du décor qui perdent
 toute logique (flaque sur un arbre, pierre sur de l'herbe, etc.). Fix this. »
 
-Branche `profondeur`, partie de `main`. Non poussée.
+Branche `profondeur`, partie de `main`, fusionnée dans `main` et poussée en fin de session (§7).
 
 | Commit | Ticket | Ce qu'il faut en retenir |
 |---|---|---|
@@ -118,3 +118,14 @@ angles arrondis « comme les cartes du menu » (`D-224`).
 - `Q-165` (la règle « ombre = debout ») : « pas sûr, je pense qu'il faut la
   généraliser et aussi faire du cas par cas. L'objectif à terme étant de
   transposer le jeu en vue du dessus 3/4. À méditer. » Ouverte, rien de codé.
+
+## 7. Clôture
+
+Xav : « fusionne et pousse sur main. Je clos la session avant de faire polish
+et sentinelle. » `profondeur` est fusionnée dans `main` (`--no-ff`, aucun
+conflit : `origin/main` n'avait pas bougé) et poussée, **sans release** —
+`v0.8.0` reste la dernière ; `D-220` à `D-224` iront dans la suivante. La
+branche `profondeur` est gardée en local (entièrement contenue dans `main`),
+à supprimer quand Xav le voudra. Prochaine session annoncée : polish, puis
+sentinelle (`traversee_nuit.mjs` en Moyen, ×1 et ×6) — la première mesure
+depuis que les arbres se posent à chaque frame.

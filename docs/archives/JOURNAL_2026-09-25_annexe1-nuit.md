@@ -23,7 +23,7 @@ Branche `annexe-1`, **poussée sur `origin/annexe-1`** au début de la nuit (une
 | `4bd6cf2` | `D-213` : palier G | Le coffre, le parchemin aux lettres d'or, `skills.json` et son schéma, `competences.js`, l'Onde qui éclate, la jauge |
 | `bc750dc` | `D-214` : palier H | Le levier-récompense, l'éclat au sol qui est une monnaie, le fondu de la sortie |
 | `a9d821c` | Polish G et H | Le parchemin centré dans son rouleau, le coffre ouvert plus lisible, le scénario de captures `annexe_parchemin.mjs` ; `Q-162` (g) |
-| (ce commit) | Banc complet | Les 12 passages de la spec 13 sur le code de G, H et du polish : aucune régression ; ces chiffres deviennent la référence |
+| `cbb4a9f` | Banc complet | Les 12 passages de la spec 13 sur le code de G, H et du polish : aucune régression ; ces chiffres deviennent la référence |
 | — | Push | `annexe-1` repoussée sur `origin`, jusqu'au banc |
 
 ## 1. Le palier G : le parchemin

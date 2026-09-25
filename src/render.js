@@ -940,7 +940,8 @@ function dessinerElement(ctx, element, scene) {
       // `heroTeinte` est déjà résolu par l'appelant (main.js,
       // save.js#COULEUR_HERO_NEUTRE ou companion.render.couleur), jamais une
       // 2ᵉ silhouette dessinée pour le cas "neutre".
-      dessinerVisuel(ctx, scene.heroVisuel, scene.hero.x - camera.x, scene.hero.y - camera.y, { teinte: scene.heroTeinte });
+      // `D-229` : le visage suit la direction du regard (`orientation.js`).
+      dessinerVisuel(ctx, scene.heroVisuel, scene.hero.x - camera.x, scene.hero.y - camera.y, { teinte: scene.heroTeinte, orientation: scene.heroOrientation });
       break;
     case 'follet':
       dessinerFollet(ctx, scene.follet, scene.sillage, scene.ornementsFollet, camera);
@@ -1089,7 +1090,7 @@ function dessinerFollet(ctx, follet, sillage, ornementsFollet, camera) {
 // connaît jamais visuels.json par id, seulement dessinerVisuel (§3.3 : une
 // seule fonction de rendu, plus aucune forme d'entité dessinée inline ici).
 export function dessinerScene(ctx, {
-  scene, decor, camera, hero, heroVisuel, heroTeinte = null, monstres = [], follet, puzzles = [], estFlagActif, anneauAttaque,
+  scene, decor, camera, hero, heroVisuel, heroTeinte = null, heroOrientation = null, monstres = [], follet, puzzles = [], estFlagActif, anneauAttaque,
   visuelsTuiles = new Map(), objetsSol = [], structures = [], fantome = null,
   // `specs/13` palier D : la table des lisières (`lisieres.js#tableLisieres`),
   // construite par `main.js` et rendue telle quelle à `lisieresCase` — ce
@@ -1241,7 +1242,7 @@ export function dessinerScene(ctx, {
     const b = boiteElement(element);
     return !!b && b.maxX > boiteHeros.minX && b.minX < boiteHeros.maxX && b.maxY > boiteHeros.minY && b.minY < boiteHeros.maxY;
   };
-  const scenePeinte = { camera, echelle, hero, heroVisuel, heroTeinte, follet, sillage, ornementsFollet };
+  const scenePeinte = { camera, echelle, hero, heroVisuel, heroTeinte, heroOrientation, follet, sillage, ornementsFollet };
   for (const { element, alpha, repasse } of ordonnerAvecFondus(aTrier, elementHeros, fonduProfondeurPx, touche)) {
     if (!repasse) {
       dessinerElement(ctx, element, scenePeinte);

@@ -254,6 +254,10 @@ rpg_v2/
 │   ├── vol_follet.js       `D-39` : la petite orbite du corps du follet autour de son point logique
 │   ├── bascule.js          `D-158` : le geste d'un levier dans le temps (butée, dépassement, voyant
 │   │                       à la butée, halo en fondu) — pur, un état d'AFFICHAGE jamais sauvegardé
+│   ├── orientation.js      `D-229` : OÙ REGARDE le héros — l'axe dominant du geste (marge en
+│   │                       diagonale), le tir d'une compétence qui le tourne vers sa cible un instant ;
+│   │                       `poseDePiece` : ce qu'une direction fait à une PIÈCE d'un visuel
+│   │                       (`visuels.json > orientations`, le visage) — état d'affichage, pur
 │   ├── logo.js             le symbole du jeu (« la sagesse pour tout et pour tous », Xav) : son
 │   │                       apparition signe après signe, dans l'ordre de lecture — pur ; dessiné par
 │   │                       `render.js#dessinerLogo` (trois calques d'`images/logo/`, meilleur effort)
@@ -411,6 +415,7 @@ Décisions datées, nées en cours de développement (détail dans l'archive cit
 | **Aucun effet ne bat au-delà de 3 Hz** (seuil des recommandations sur l'épilepsie photosensible, WCAG 2.3.1), tenu par test sur le vrai catalogue : c'est un plafond, pas un réglage. Et **la graine d'un effet qui bat dit QUI est l'objet, jamais où il est en ce moment** : tirée de la position d'un objet qui bouge, elle défile sous ses pas (la torche tenue battait jusqu'à 15 Hz) | 2026-09-25 | `D-218`, `D-219` ; Xav : « je te laisse gérer la technique » ; un avertissement au lancement : `Q-164` |
 | **Une option de dialogue par défaut peut avoir des conséquences** (*révise* `specs/11` §0, « une option `defaut` n'a jamais de conséquence ») : à équilibrer au cas par cas, neutre, positif et négatif à parts égales. Le schéma la refuse encore : `D-240` | 2026-09-25 | `Q-111` |
 | **L'alignement reste un secret** : aucune réplique ne fait sentir un palier ; le joueur le déduit de ce qui existe déjà (la rotation du follet, LE repère, et la synergie inversée). Des interactions à ±5 qui l'inversent sont à prévoir (première plantation, hors scope), et **Claude propose des dialogues** quand il juge le moment bon | 2026-09-25 | `Q-102`, `Q-110` |
+| **Le héros regarde, par une PIÈCE de son visuel** : une primitive porte `piece`, le visuel déclare ce que chaque direction lui fait (`orientations` : cachée, ou décalée et resserrée) ; la pose de face n'est jamais déclarée, c'est le dessin validé. La direction est un état d'affichage (`orientation.js`), jamais sauvegardé, et la **visée ne dépend pas du regard** | 2026-09-25 | `D-229`, forme par défaut `Q-167` |
 
 ## Ce qui est dû : dettes, questions, validations
 

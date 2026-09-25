@@ -10,6 +10,23 @@
       "h": 5,
       "alpha": 0.38
     },
+    "orientations": {
+      "est": {
+        "visage": {
+          "dx": 2,
+          "echelle_x": 0.62
+        }
+      },
+      "ouest": {
+        "visage": {
+          "dx": -2.2,
+          "echelle_x": 0.62
+        }
+      },
+      "nord": {
+        "visage": null
+      }
+    },
     "primitives": [
       {
         "forme": "polygone",
@@ -370,7 +387,8 @@
         "w": 8,
         "h": 8.2,
         "couleur": "#a8bacf",
-        "alpha": 0.32
+        "alpha": 0.32,
+        "piece": "visage"
       },
       {
         "forme": "ellipse",
@@ -378,7 +396,8 @@
         "dy": 0.4,
         "w": 7.3,
         "h": 7.5,
-        "couleur": "#05070b"
+        "couleur": "#05070b",
+        "piece": "visage"
       },
       {
         "forme": "cercle",
@@ -387,7 +406,8 @@
         "w": 7.4,
         "couleur": "#cfe6ff",
         "alpha": 0.1,
-        "teinte": true
+        "teinte": true,
+        "piece": "visage"
       },
       {
         "forme": "cercle",
@@ -396,7 +416,8 @@
         "w": 4.6,
         "couleur": "#cfe6ff",
         "alpha": 0.22,
-        "teinte": true
+        "teinte": true,
+        "piece": "visage"
       },
       {
         "forme": "cercle",
@@ -404,7 +425,8 @@
         "dy": 0.2,
         "w": 3.2,
         "couleur": "#cfe6ff",
-        "teinte": true
+        "teinte": true,
+        "piece": "visage"
       }
     ]
   },

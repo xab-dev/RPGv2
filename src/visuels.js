@@ -13,6 +13,8 @@
 // mobile incertains) — le volume vient de formes annexes (reflet, facette
 // éclairée) plutôt que d'un flou.
 
+import { poseDePiece } from './orientation.js';
+
 // Convention de taille de référence pour les silhouettes de follet (§3.1) :
 // visuels.json les dessine à ce rayon-là ; chaque appelant (scène, HUD, écran
 // de choix) calcule `echelle = tailleVoulue / TAILLE_REFERENCE_FOLLET_PX`
@@ -140,7 +142,7 @@ function dessinerPrimitive(ctx, primitive, teinte) {
 // d'inclinaison par graine" sur l'herbe, decor.js#genererDecor) plutôt que de
 // dupliquer une silhouette pré-tournée pour chaque instance.
 export function dessinerVisuel(ctx, visuel, x, y, options = {}) {
-  const { teinte = null, alpha = 1, echelle = 1, rotation = 0, miroir = false } = options;
+  const { teinte = null, alpha = 1, echelle = 1, rotation = 0, miroir = false, orientation = null } = options;
   // MT_heros-echelle_2026-09-19 : `visuel.echelle` est l'échelle PROPRE de la
   // silhouette (sa taille de référence en données), multipliée par l'échelle
   // d'INSTANCE passée à l'appel (une station tournée, un follet au HUD). Deux
@@ -176,7 +178,22 @@ export function dessinerVisuel(ctx, visuel, x, y, options = {}) {
   }
 
   for (const primitive of visuel.primitives) {
+    // `D-229` : une primitive qui appartient à une PIÈCE (`piece`, le visage
+    // du héros) suit la pose que le visuel déclare pour `options.orientation`
+    // — cachée, ou décalée puis resserrée à l'horizontale autour de l'ancre.
+    // Sans orientation, ou sans pose déclarée, elle se dessine telle quelle :
+    // la pose de référence est le dessin validé en jeu.
+    const pose = primitive.piece === undefined ? undefined : poseDePiece(visuel, orientation, primitive.piece);
+    if (pose === null) continue;
+    if (pose === undefined) {
+      dessinerPrimitive(ctx, primitive, teinte);
+      continue;
+    }
+    ctx.save();
+    ctx.translate(pose.dx ?? 0, 0);
+    if (pose.echelle_x !== undefined) ctx.scale(pose.echelle_x, 1);
     dessinerPrimitive(ctx, primitive, teinte);
+    ctx.restore();
   }
 
   ctx.restore();

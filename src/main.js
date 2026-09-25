@@ -56,6 +56,7 @@ import {
   modificateursHeros, statsEffectivesMonstre, tickBuffsActifs, ajouterBuffActif, modificateursBuffsActifs,
   tickSoinsBuffsActifs, iconeBuffBandeau,
   modificateursDeriveesHeros, appliquerModificateursDerivees, dotsHeros, estDansAura, poserStatutCoup, tickStatutsCoup } from './status.js';
+import { creerOrientation, avancerOrientation } from './orientation.js';
 import { creerHeros, creerMonstre, approcherEnLigneDroite, infligerDegats, mourir, respawn, reconcilierPvMax } from './entities.js';
 import {
   resoudreArmeEquipee, resoudreAutoAttaque, tickCooldown, estMonstreActif, FLASH_ATTAQUE_MS, FLASH_TOUCHE_MS,
@@ -1460,6 +1461,9 @@ export function creerOrchestrateurGrotte({
   // reinitialiserPartie() doit pouvoir repartir d'un héros neuf.
   let hero = creerHeros({ x: 0, y: 0, rayon: rayonHeros(), pvMax: 1 });
   hero.pv = save.hero.pv; // null tant que les stats dérivées n'ont pas encore tourné une fois
+  // `D-229` : où regarde le héros — un état d'AFFICHAGE, tenu à part de
+  // l'entité (qui porte le gameplay) et jamais sauvegardé (`orientation.js`).
+  let orientationHeros = creerOrientation();
   let scene, decor, monstres, follet;
   let lumieresDecor = [];
   let puzzlesEtat = {};
@@ -4033,7 +4037,7 @@ export function creerOrchestrateurGrotte({
       monstres: monstres.map((m) => ({ id: m.id, x: m.x, y: m.y, mort: m.mort, visable: !m.intouchable })),
     });
     if (!cible) return false;
-    return tirerProjectile(projectiles, {
+    const parti = tirerProjectile(projectiles, {
       x: hero.x,
       y: hero.y,
       versX: cible.x,
@@ -4047,6 +4051,9 @@ export function creerOrchestrateurGrotte({
       zonePx: competence.effet.rayon_px,
       etiquette: { couleur: competence.effet.couleur },
     });
+    // `D-229` : le héros regarde celui qu'il vise, le temps qu'on le voie.
+    if (parti) orientationHeros = avancerOrientation(orientationHeros, { deltaMs: 0, vers: { dx: cible.x - hero.x, dy: cible.y - hero.y } });
+    return parti;
   }
 
   // La SALLE NETTOYÉE (spec 14, §4.3) : une scène qui déclare `nettoyage`
@@ -4689,6 +4696,10 @@ export function creerOrchestrateurGrotte({
     const dy = etatGameplay.move.y * statsDerivees.derivee_vitesse_deplacement_px_s * deltaS;
     const xAvantDeplacement = hero.x;
     const yAvantDeplacement = hero.y;
+    // `D-229` : le GESTE tourne le héros, pas le chemin après collision —
+    // pousser contre un mur le tourne vers lui. Sous UI, le geste est neutre :
+    // il garde sa direction.
+    orientationHeros = avancerOrientation(orientationHeros, { deltaMs, dx: etatGameplay.move.x, dy: etatGameplay.move.y });
     if (dx !== 0 || dy !== 0) {
       const resultat = resoudreDeplacement(scene, hitboxHeros(), dx, dy, flags.has);
       hero.x = resultat.x + hero.rayon;
@@ -5354,6 +5365,7 @@ export function creerOrchestrateurGrotte({
       // Héros neutre avant le choix du follet, teinté à sa couleur ensuite
       // (§3.4 03_grotte-polish) — jamais combinées, jamais une 2ᵉ silhouette.
       heroTeinte: companionActif ? companionActif.render.couleur : COULEUR_HERO_NEUTRE,
+      heroOrientation: orientationHeros.direction,
       monstres: monstresAffiches,
       follet: follet && companionActif ? {
         // `D-39` : la SILHOUETTE tourne sur la petite orbite, autour du point
@@ -5719,6 +5731,7 @@ export function creerOrchestrateurGrotte({
     respawnsEnAttente = {};
     hero = creerHeros({ x: 0, y: 0, rayon: rayonHeros(), pvMax: 1 });
     hero.pv = save.hero.pv; // null : recalculé au premier calculerStatsHeros(), comme au tout premier boot
+    orientationHeros = creerOrientation();
     etatModifie = false;
     dernierAutosave = performance.now();
     // Rejoue la cinématique depuis le début (§3.1) : entrerDansScene()
@@ -5748,6 +5761,8 @@ export function creerOrchestrateurGrotte({
     choixFolletActif,
     reinitialiserPartie,
     obtenirHero: () => hero,
+    // `D-229` : où regarde le héros (état d'affichage, `orientation.js`).
+    obtenirOrientationHeros: () => orientationHeros.direction,
     // Palier C (`D-113`) : la table des grains de tuiles, telle que
     // `render.js` la reçoit. Exposée pour les tests — le dessin n'est jamais
     // exercé headless, donc c'est la seule façon de prouver qu'un preset

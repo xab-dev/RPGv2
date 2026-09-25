@@ -22,6 +22,8 @@ Branche `polish-libre-2026-09-25`, partie de `main`. Pas de push.
 | Commit | Ticket | Ce qu'il faut en retenir |
 |---|---|---|
 | `ed24e23` | Ménage | Le journal de la profondeur archivé, INDEX à jour |
+| `027d419` | DOC | Les dates « 26/09 » ramenées au 25/09 (hors archives) ; la sentinelle et le diagnostic |
+| (ce commit) | `D-225` | La clé morte `menu.follet_actuel` retirée des deux locales |
 
 ## 1. La sentinelle (`traversee_nuit.mjs`, Moyen, ×1 et ×6)
 

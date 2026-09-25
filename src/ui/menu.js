@@ -241,7 +241,7 @@ export function clesTexteEtats(langues) {
 // canvas, ni les compagnons, ni `visuels.json`.
 export function initialiserMenu({
   document, i18n, menus, exporterSauvegarde, importerSauvegarde,
-  musiqueActive = () => true, basculerMusique = () => {}, listerPoche = () => [],
+  musiqueActive = () => true, basculerMusique = () => {}, langueChoisie = () => {}, listerPoche = () => [],
   // `D-118` : ce que la poche a d'occupé, relu à chaque affichage — même
   // patron que le sous-titre des Stats. L'écran ne calcule rien : il ne sait
   // pas ce qu'est un slot, et c'est très bien ainsi.
@@ -477,10 +477,15 @@ export function initialiserMenu({
   // Langue : bascule vers la langue SUIVANTE parmi celles qui sont chargées
   // (deux aujourd'hui ; à la troisième, la spec prévoit que la carte devienne
   // un dossier — §8). Convention manette : ATTACK bascule.
+  // `D-44` : le choix est RENDU à qui l'enregistre (`langueChoisie`, main.js
+  // l'écrit dans `save.settings.lang`), même patron que la musique : ce module
+  // ne connaît pas la sauvegarde. Sans ça, le jeu repartait en français à
+  // chaque visite.
   function actionBasculerLangue() {
     const langues = i18n.languesDisponibles ? i18n.languesDisponibles() : ['fr', 'en'];
     const suivante = langues[(langues.indexOf(i18n.langueCourante()) + 1) % langues.length];
     i18n.definirLangue(suivante);
+    langueChoisie(i18n.langueCourante());
   }
 
   // Plein écran (`D-30`, rouvert le 20/09) — deux règles, conservées telles

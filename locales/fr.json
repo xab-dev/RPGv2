@@ -429,7 +429,6 @@
   "menu.follet": "Follet",
   "menu.follet_titre": "Follet",
   "menu.carte.follet_phrase": "Celui qui t’accompagne.",
-  "menu.follet_actuel": "Avec toi",
   "menu.follet_choisir": "Choisir",
   "menu.follet_element": "Élément : {element}",
   "menu.follet_avec_toi": "Il t’accompagne en ce moment.",

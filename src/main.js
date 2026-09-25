@@ -5994,6 +5994,12 @@ export async function demarrerJeu() {
   const store = creerStoreIndexedDB();
   const { payload: save } = await chargerSave(store);
   i18n.definirLangue(save.settings.lang);
+  // `D-226` : la page dit la langue qu'elle parle. `index.html` naît en `fr` ;
+  // un jeu en anglais déclaré français, c'est Chrome qui propose de le
+  // « traduire », une césure et une synthèse vocale françaises. Un seul
+  // point, appelé au démarrage et à chaque bascule du menu.
+  const annoncerLangue = (langue) => { document.documentElement.lang = langue; };
+  annoncerLangue(i18n.langueCourante());
 
   // `specs/10` §2.1 : après la migration 7 -> 8, une sauvegarde sans
   // `hero.alignement` (ou hors bornes) est un échec DUR, dit par le même écran
@@ -6202,6 +6208,10 @@ export async function demarrerJeu() {
       save.settings.musique = !(save.settings.musique !== false);
       definirMusiqueActive(save.settings.musique);
     },
+    // `D-44` : la langue est un réglage de PARTIE (`save.js#REGLAGES_APPAREIL`
+    // ne la cite pas), lue au démarrage ; rien ne l'écrivait. Même chemin que
+    // la musique : mutation directe, persistée au prochain autosave.
+    langueChoisie: (langue) => { save.settings.lang = langue; annoncerLangue(langue); },
     // `D-64` (T7) : le volume. Même patron exactement que la musique —
     // l'état réel vit dans `save.settings`, l'effet dans `audio.js`, et le
     // menu ne connaît ni l'un ni l'autre.

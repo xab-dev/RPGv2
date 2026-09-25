@@ -974,6 +974,14 @@ function validerRegimesSynergie(entry, catalogs, path) {
 
 function validerStatusEffect(entry, catalogs, path) {
   const erreurs = [];
+  // `D-41` : un effet n'a PAS d'icône à lui. Au bandeau, un buff montre
+  // l'icône de la stat qu'il renforce (`D-13`, `stats.json > icone`) ou celle
+  // qu'il emprunte (`icone_bandeau`) — une par stat, jamais une par recette.
+  // Le champ `icone` était requis et lu par personne : quelqu'un aurait pu le
+  // câbler en croyant bien faire. Il est refusé, avec le bon chemin.
+  if (entry.icone !== undefined) {
+    erreurs.push(`${path} > icone n'existe pas sur un effet : son icône est celle de sa stat (stats.json > icone), ou icone_bandeau`);
+  }
   if (!FAMILLES_STATUS.includes(entry.famille)) {
     erreurs.push(`${path} > famille doit être l'une de ${FAMILLES_STATUS.join('/')}`);
   }
@@ -2034,7 +2042,7 @@ export const SCHEMAS = {
     custom: null,
   },
   status_effects: {
-    requiredFields: ['id', 'label_key', 'famille', 'cible', 'valeur', 'mode', 'duree', 'cumul', 'icone'],
+    requiredFields: ['id', 'label_key', 'famille', 'cible', 'valeur', 'mode', 'duree', 'cumul'],
     idField: 'id',
     refs: [],
     custom: validerStatusEffect,

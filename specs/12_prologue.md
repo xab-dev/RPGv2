@@ -54,7 +54,7 @@ La v1.0.0 (textes neutres, police de la bulle) est validée comme **base** ; Xav
 
 | # | Signe | Titre | Texte (FR ; l'EN suit le même ton dans `locales/en.json`) |
 |---|---|---|---|
-| 1 | 🜁 | Avertissement du laboratoire | Ce jeu contient des substances imaginaires à haute concentration. · Ne pas secouer. Ne pas lire à voix haute après minuit. · Il n'y a pas de journal de quêtes. Personne ne vous dira où aller : ce n'est pas un oubli, c'est la formule. · La partie se conserve d'elle-même, en flacon bien bouché. |
+| 1 | 🜁 | Avertissement du laboratoire | Ce jeu contient des substances imaginaires à haute concentration. · Ne pas secouer. Ne pas lire à voix haute après minuit. · En continuant, vous acceptez d'être seul responsable de votre risque épileptique. *(Remplace, le 25/09, « Il n'y a pas de journal de quêtes… c'est la formule » : `Q-164`, `D-220`.)* · La partie se conserve d'elle-même, en flacon bien bouché. |
 | 2 | 🜄 | Ce que l'on sait du jeu | On sait peu de chose, et c'est très bien ainsi. · *il y a une grotte. / il y a quelque chose qui brille dans la grotte. / ce quelque chose vous choisit — ou vous le choisissez, les archives divergent.* · *dehors, une maison attend. elle n'est pas finie. / vous non plus.* |
 | 3 | 🜂 | Ce que l'on sait de vous | Vous tenez le rôle. Pas celui d'un héros écrit d'avance : le vôtre. · Le monde laisse des indices, parfois une phrase dans le vent, parfois rien du tout — et le rien du tout est aussi un indice. · Ce que vous choisissez, et la façon dont vous le faites, sera retenu. Même quand rien ne le montre. · *le jour, on ramasse. la nuit, le monde se souvient qu'il a des dents.* |
 | 4 | 🜃 | Réveille-toi. | (titre seul) |

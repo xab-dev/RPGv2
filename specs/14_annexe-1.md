@@ -3,7 +3,7 @@ projet: RPG V2
 episode/session: Carte Maison — l'Annexe 1 (la stèle, Zéros, les leviers, le Gardien, la première compétence)
 type: spec par paliers
 version: 1.4.0
-statut: courante — paliers A et B livrés le 24/09 et validés (V-149, V-150) ; palier C livré le 25/09 et validé (V-151) ; palier D livré le 25/09 et validé (V-152) ; palier E livré le 25/09 et validé (V-153) ; palier F livré le 25/09 et validé (V-154) ; palier G livré le 25/09 (V-155 : reste le téléphone) ; palier H livré le 25/09, avant I à la demande de Xav, et validé (V-156) ; palier I livré le 25/09 ; **spec validée par Xav le 26/09**, close quand l'album de référence sera pris (reporté : Xav cherche de l'aide) ; B1, B2, B3, Q-138 et l'équilibrage tranchés par Xav le 24/09 (§0)
+statut: courante — paliers A et B livrés le 24/09 et validés (V-149, V-150) ; palier C livré le 25/09 et validé (V-151) ; palier D livré le 25/09 et validé (V-152) ; palier E livré le 25/09 et validé (V-153) ; palier F livré le 25/09 et validé (V-154) ; palier G livré le 25/09 (V-155 : reste le téléphone) ; palier H livré le 25/09, avant I à la demande de Xav, et validé (V-156) ; palier I livré le 25/09 ; **spec validée par Xav le 25/09**, close quand l'album de référence sera pris (reporté : Xav cherche de l'aide) ; B1, B2, B3, Q-138 et l'équilibrage tranchés par Xav le 24/09 (§0)
 catégorie: Spec
 date: 2026-09-24
 Ids_suivi: [Q-120, Q-13, "D-205 (A), D-207 (B), D-209 (C), D-210 (D), D-211 (E), D-212 (F), D-213 (G), D-214 (H), D- (à créer : un par palier)", "Q-137 à Q-148 (inscrites au suivi le 24/09)", Q-152, Q-153, Q-154, Q-155, Q-18, "V-149 (A), V-150 (B), V-151 (C), V-152 (D), V-153 (E), V-154 (F), V-155 (G), V-156 (H), V- (à créer : un par palier)"]

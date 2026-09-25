@@ -33,6 +33,7 @@ ou rien).
 |---|---|---|
 | `428bee0` | Ménage | Journal du ménage du contexte archivé ; aucune réponse nouvelle au suivi ; branches fusionnées supprimées |
 | `d379359` | `D-138` | Le centre naît sous le pouce (gardé à une course des bords) et se fait tirer au-delà de `rayonZone` ; zone morte 10 %, pleine vitesse à 70 %, marche lente en ligne droite entre les deux ; le HUD dessine le cercle qui suit et un rond sous le pouce. `V-174` à voir au téléphone (avec `V-79`), `Q-178` à confirmer. Suite verte, 221 fichiers |
+| (celui-ci, tagué `v0.8.63`) | Versions | Règle de Xav : `v0.x.0` un gros patch, `v0.x.y` = y commits depuis `v0.x.0` ; décision dans la table de `CLAUDE.md`, `package.json` à `0.8.63` ; `D-14` : le plancher mobile sera un téléphone acheté pour ça |
 
 ## Pour Xav
 

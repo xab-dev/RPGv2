@@ -27,7 +27,7 @@ Test de chaque catalogue : ajouter une entrée (arme, ennemi, recette, compagnon
 
 ## Où on en est
 
-- **Dernière publication : `v0.8.0`** (25/09). `main` contient en plus, sans release : épilepsie (`D-220`, `D-221`), profondeur (`D-222` à `D-224`), polish libre, `npm run dettes`, orientation et visée (`D-229`, `D-247` à `D-249`), triche `?cheat=phenom` (`D-250`), dettes `D-243`, `D-244`, `D-246` (`V-171` à `V-173` à voir), le ménage du contexte (`DOC-10`) et le joystick en laisse (`D-138`, `V-174` à voir, `Q-178`) — poussés le 25/09.
+- **Dernière publication : `v0.8.63`** (25/09, tag seul ; dernière release : `v0.8.0`). Depuis `v0.8.0` : épilepsie (`D-220`, `D-221`), profondeur (`D-222` à `D-224`), polish libre, `npm run dettes`, orientation et visée (`D-229`, `D-247` à `D-249`), triche `?cheat=phenom` (`D-250`), dettes `D-243`, `D-244`, `D-246` (`V-171` à `V-173` à voir), le ménage du contexte (`DOC-10`) et le joystick en laisse (`D-138`, `V-174` à voir, `Q-178`) — poussés le 25/09.
 - **Branches ouvertes** : aucune.
 - **Fondations closes** (23/09, `Q-20`). **Spec 14 (Annexe 1) validée** le 25/09 ; close quand l'album de référence sera pris (annexe B du suivi).
 - **Prochaine étape : finir la carte Maison** par des **annexes et tunnels**, jamais une carte nouvelle — puis le journal d'indices et de traces, l'Annexe 2. Critère de clôture de la Région Maison : **la boucle de 2 heures** (sauvegarde neuve → 2 h → Nv. 30 → l'envie de changer d'endroit). Le rythme ne se rouvre pas avant le Boss 1 (`Q-62`).
@@ -105,6 +105,7 @@ Détail complet : `docs/carte_mentale_RPG_V2_v1_8_0.md` §0 et §8, et `docs/arc
 
 | Décision | Date | Détail |
 |---|---|---|
+| **Versions** : `v0.x.0` = un gros patch (une release GitHub) ; `v0.x.y` = y commits depuis `v0.x.0`, merges compris (le nombre de `git describe --tags`, `git rev-list --count v0.x.0..HEAD`), tagué à chaque push sur `main`, `package.json` au même numéro. On reste en `v0` tant que Xav n'a pas validé la boucle de 2 heures | 25/09 | Xav : « v0.x pour les gros patch et v0.x.y pour TOUS les commit de la version x. exemple: v0.8.249 » |
 
 ## Ce qui est dû : dettes, questions, validations
 

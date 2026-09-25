@@ -44,6 +44,22 @@ export function facteurRespiration(effet, tMs) {
   return 1 + effet.amplitude * Math.sin((tMs / effet.periode_ms) * Math.PI * 2);
 }
 
+// Le second souffle d'une flamme bat plus vite que le premier, d'un rapport
+// irrationnel (le nombre d'or) : les deux ne retombent jamais en phase, et la
+// flamme ne bat pas comme un métronome.
+export const RAPPORT_SECOND_SOUFFLE = 1.618;
+
+// Le vacillement d'une flamme (`specs/15` palier E) : deux souffles mêlés.
+// `graine` ∈ [0, 1[ décale la phase d'une fraction de période : elle dit QUI
+// est la flamme, jamais où elle est en ce moment (`D-218` : une graine tirée
+// de la position d'une flamme qui marche défile sous les pas, et la flamme
+// clignote). Sans effet, 1 exactement : Bas est fixe.
+export function facteurVacillement(effet, tMs, graine = 0) {
+  if (!effet) return 1;
+  const t = tMs + graine * effet.periode_ms;
+  return (facteurRespiration(effet, t) + facteurRespiration(effet, t * RAPPORT_SECOND_SOUFFLE)) / 2;
+}
+
 // Le filet (`D-191`) : `nb_particules` qui montent d'un point en décrivant une
 // boucle, comme un filet d'éruption solaire. Chacune vit une période, décalée
 // des autres d'une fraction ; son âge `a` ∈ [0, 1[ dit tout : elle monte de

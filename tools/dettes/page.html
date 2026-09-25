@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dettes</title>
+<!-- OUTIL DE DEV (`tools/dettes/serveur.mjs`), jamais chargé par le jeu.
+     Une ligne du suivi à la fois ; la réponse s'écrit dans le suivi. -->
+<style>
+  @font-face { font-family: "Almendra"; src: url("/fonts/Almendra-Regular.ttf"); }
+  @font-face { font-family: "Uncial"; src: url("/fonts/UncialAntiqua-Regular.ttf"); }
+  :root {
+    --fond: #0f1319; --carte: #171d26; --bord: #2a3342; --texte: #e6e9ef; --doux: #9aa4b5;
+    --accent: #4aa3ff; --ok: #3fb97a; --non: #e5686b; --tard: #c9a13b;
+    --V: #3fb97a; --Q: #4aa3ff; --E: #c38cff; --D: #e0874a; --A: #e5686b;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--fond); color: var(--texte); font: 16px/1.5 system-ui, "Segoe UI", sans-serif; }
+  header { position: sticky; top: 0; background: var(--fond); border-bottom: 1px solid var(--bord); padding: 12px 20px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; z-index: 2; }
+  h1 { font: 400 22px "Uncial", serif; margin: 0; letter-spacing: .02em; }
+  .compte { color: var(--doux); font-size: 14px; }
+  .barre { flex: 1 1 160px; height: 6px; background: var(--bord); border-radius: 3px; overflow: hidden; min-width: 120px; }
+  .barre > div { height: 100%; background: var(--ok); width: 0; transition: width .3s; }
+  .onglets button { background: none; border: 1px solid var(--bord); color: var(--doux); padding: 4px 12px; border-radius: 14px; cursor: pointer; font-size: 14px; }
+  .onglets button.actif { color: var(--texte); border-color: var(--accent); }
+  main { max-width: 860px; margin: 24px auto; padding: 0 16px 120px; }
+  .carte { background: var(--carte); border: 1px solid var(--bord); border-radius: 12px; padding: 22px 24px; }
+  .entete { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+  .puce { font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 10px; color: #0f1319; }
+  .id { font: 600 15px ui-monospace, Consolas, monospace; }
+  .date { color: var(--doux); font-size: 14px; }
+  .titre { font: 400 24px/1.3 "Almendra", serif; margin: 6px 0 14px; }
+  .etiquette { color: var(--doux); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; margin: 16px 0 4px; }
+  .texte { white-space: pre-wrap; overflow-wrap: anywhere; }
+  .texte.replie { max-height: 11.5em; overflow: hidden; -webkit-mask-image: linear-gradient(#000 70%, transparent); mask-image: linear-gradient(#000 70%, transparent); }
+  .lien { background: none; border: 0; color: var(--accent); cursor: pointer; padding: 4px 0; font-size: 14px; }
+  .deja { color: var(--doux); font-size: 14px; }
+  code { font: 13px ui-monospace, Consolas, monospace; background: #0d1117; padding: 1px 5px; border-radius: 4px; }
+  textarea { width: 100%; min-height: 80px; margin-top: 18px; background: #0d1117; color: var(--texte); border: 1px solid var(--bord); border-radius: 8px; padding: 10px 12px; font: 15px/1.45 system-ui, sans-serif; resize: vertical; }
+  textarea:focus { outline: none; border-color: var(--accent); }
+  .gestes { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+  .gestes button { border: 1px solid var(--bord); background: #1f2733; color: var(--texte); padding: 9px 16px; border-radius: 8px; cursor: pointer; font-size: 15px; }
+  .gestes button:hover { border-color: var(--accent); }
+  .gestes button kbd { font: 12px ui-monospace, monospace; color: var(--doux); margin-right: 6px; }
+  .gestes .ok { border-color: var(--ok); } .gestes .non { border-color: var(--non); } .gestes .tard { border-color: var(--tard); }
+  .gestes .passer { margin-left: auto; background: none; }
+  .note { color: var(--doux); font-size: 13px; margin-top: 10px; }
+  .message { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: #1f2733; border: 1px solid var(--bord); padding: 10px 18px; border-radius: 10px; display: none; max-width: 90vw; }
+  .message.erreur { border-color: var(--non); }
+  .pied { position: fixed; bottom: 0; left: 0; right: 0; background: var(--fond); border-top: 1px solid var(--bord); padding: 8px 20px; display: flex; gap: 16px; align-items: center; font-size: 13px; color: var(--doux); }
+  .pied button { background: none; border: 1px solid var(--bord); color: var(--texte); padding: 4px 10px; border-radius: 6px; cursor: pointer; }
+  .pied button:disabled { opacity: .4; cursor: default; }
+  .liste { list-style: none; padding: 0; margin: 0; }
+  .liste li { padding: 10px 12px; border-bottom: 1px solid var(--bord); cursor: pointer; display: flex; gap: 10px; align-items: baseline; }
+  .liste li:hover { background: var(--carte); }
+  .liste .id { white-space: nowrap; min-width: 4.2em; } .liste .date { white-space: nowrap; }
+  .vide { text-align: center; color: var(--doux); padding: 60px 0; font: 22px "Almendra", serif; }
+  .alerte { border: 1px solid var(--non); border-radius: 8px; padding: 8px 12px; margin-top: 12px; color: var(--non); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Dettes</h1>
+  <span class="compte" id="compte"></span>
+  <div class="barre"><div id="progression"></div></div>
+  <span class="onglets"><button id="ongletFile" class="actif">File</button> <button id="ongletTard">Plus tard</button></span>
+</header>
+<main id="contenu"></main>
+<div class="pied">
+  <span id="pied"></span>
+  <button id="annuler" title="Ctrl+Z">↶ Annuler la dernière réponse</button>
+</div>
+<div class="message" id="message"></div>
+<script>
+// Une ligne à la fois. Les gestes au clavier : 1, 2, 3, 4, flèche droite pour
+// passer, Ctrl+Entrée pour envoyer le texte, Ctrl+Z pour annuler.
+const etat = { file: [], plusTard: [], vue: 'file', position: 0, repondues: 0, derniere: null, choisie: null };
+
+const $ = (id) => document.getElementById(id);
+const echapper = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+// Le Markdown du suivi, juste ce qu'il faut pour le lire : gras, code, pipes échappés.
+const rendre = (s) => echapper(s).replace(/\\\|/g, '|').replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
+
+function afficherMessage(texte, erreur = false) {
+  const m = $('message');
+  m.textContent = texte;
+  m.className = erreur ? 'message erreur' : 'message';
+  m.style.display = 'block';
+  clearTimeout(afficherMessage.minuteur);
+  afficherMessage.minuteur = setTimeout(() => { m.style.display = 'none'; }, erreur ? 6000 : 2200);
+}
+
+async function appeler(chemin, corps) {
+  const reponse = await fetch(chemin, corps ? { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Dettes': '1' }, body: JSON.stringify(corps) } : {});
+  const donnees = await reponse.json();
+  etat.file = donnees.file || etat.file;
+  etat.plusTard = donnees.plusTard || etat.plusTard;
+  etat.derniere = donnees.derniere !== undefined ? donnees.derniere : etat.derniere;
+  if (!reponse.ok) throw new Error(donnees.erreur || `erreur ${reponse.status}`);
+  return donnees;
+}
+
+function ligneCourante() {
+  if (etat.vue === 'tard') return etat.choisie ? etat.plusTard.find((l) => l.id === etat.choisie) : null;
+  if (!etat.file.length) return null;
+  etat.position = Math.min(etat.position, etat.file.length - 1);
+  return etat.file[etat.position];
+}
+
+// Les gestes proposés dépendent de ce qu'est la ligne.
+function gestesDe(l) {
+  if (etat.vue === 'tard') return [{ geste: 'reprendre', libelle: 'La remettre dans la file', classe: 'ok', touche: '1' }];
+  if (l.prefixe === 'V') return [
+    { geste: 'ok', libelle: 'Vu, OK', classe: 'ok', touche: '1' },
+    { geste: 'deja_vu', libelle: 'Déjà vu en route', classe: 'ok', touche: '2' },
+    { geste: 'non', libelle: 'Pas bon…', classe: 'non', touche: '3', texte: true },
+    { geste: 'plus_tard', libelle: 'Plus tard', classe: 'tard', touche: '4' },
+  ];
+  if (l.prefixe === 'Q') return [
+    { geste: 'ok', libelle: 'D’accord avec le défaut', classe: 'ok', touche: '1' },
+    { geste: 'reponse', libelle: 'Répondre', touche: '2', texte: true },
+    { geste: 'plus_tard', libelle: 'Plus tard', classe: 'tard', touche: '4' },
+  ];
+  return [
+    { geste: 'reponse', libelle: 'Répondre', touche: '2', texte: true },
+    { geste: 'plus_tard', libelle: 'Plus tard', classe: 'tard', touche: '4' },
+  ];
+}
+
+function afficher() {
+  const total = etat.file.length + etat.repondues;
+  $('compte').textContent = etat.vue === 'file'
+    ? `${etat.file.length ? etat.position + 1 : 0} / ${etat.file.length} dans la file · ${etat.repondues} traitée${etat.repondues > 1 ? 's' : ''} · ${etat.plusTard.length} plus tard`
+    : `${etat.plusTard.length} mises de côté`;
+  $('progression').style.width = total ? `${(100 * etat.repondues) / total}%` : '0';
+  $('ongletFile').className = etat.vue === 'file' ? 'actif' : '';
+  $('ongletTard').className = etat.vue === 'tard' ? 'actif' : '';
+  $('annuler').disabled = !etat.derniere;
+  $('pied').textContent = etat.derniere ? `Dernière réponse : ${etat.derniere}. Tout est écrit dans docs/DOC_suivi-dettes.md.` : 'Tout est écrit dans docs/DOC_suivi-dettes.md, et A_FAIRE.md suit.';
+
+  const contenu = $('contenu');
+  if (etat.vue === 'tard' && !etat.choisie) {
+    contenu.innerHTML = etat.plusTard.length
+      ? `<ul class="liste">${etat.plusTard.map((l) => `<li data-id="${l.id}"><span class="id">${l.id}</span><span class="date">${l.date}</span><span>${rendre(l.titre)}</span></li>`).join('')}</ul>`
+      : '<div class="vide">Rien de mis de côté.</div>';
+    contenu.querySelectorAll('li').forEach((li) => li.addEventListener('click', () => { etat.choisie = li.dataset.id; afficher(); }));
+    return;
+  }
+  const l = ligneCourante();
+  if (!l) { contenu.innerHTML = '<div class="vide">La file est vide. Beau travail.</div>'; return; }
+  const gestes = gestesDe(l);
+  const long = l.aFaire.length > 700;
+  contenu.innerHTML = `
+    <div class="carte">
+      <div class="entete">
+        <span class="puce" style="background: var(--${l.prefixe})">${echapper(l.genre)}</span>
+        <span class="id">${l.id}</span><span class="date">depuis le ${l.date}</span>
+        ${etat.vue === 'tard' ? '<button class="lien" id="retourListe">← la liste</button>' : ''}
+      </div>
+      <div class="titre">${rendre(l.titre)}</div>
+      <div class="etiquette">${l.prefixe === 'V' ? 'Comment regarder' : l.prefixe === 'Q' ? 'Le contexte, et ce qui est appliqué par défaut' : 'Ce qu’on sait'}</div>
+      <div class="texte${long ? ' replie' : ''}" id="aFaire">${rendre(l.aFaire)}</div>
+      ${long ? '<button class="lien" id="toutLire">Tout lire</button>' : ''}
+      ${l.dejaEcrit && l.dejaEcrit !== '—' ? `<div class="etiquette">Déjà écrit</div><div class="deja texte">${rendre(l.dejaEcrit)}</div>` : ''}
+      <div class="etiquette">Statut</div><div class="deja">${rendre(l.statut || '(aucun)')}</div>
+      ${l.bienFormee ? '' : '<div class="alerte">Cette ligne est mal formée : l’outil ne peut pas y écrire. Dis-le à Claude.</div>'}
+      <textarea id="texte" placeholder="Ta réponse, ou une note (facultative pour « OK » et « Plus tard »). Ctrl+Entrée envoie."></textarea>
+      <div class="gestes">
+        ${gestes.map((g) => `<button class="${g.classe || ''}" data-geste="${g.geste}"><kbd>${g.touche}</kbd>${g.libelle}</button>`).join('')}
+        ${etat.vue === 'file' ? '<button class="passer" data-geste="passer"><kbd>→</kbd>Passer</button>' : ''}
+      </div>
+      <div class="note">« Passer » n’écrit rien : la ligne reviendra. « Plus tard » la range dans la pile, d’où elle se reprend.</div>
+    </div>`;
+  if (long) $('toutLire').addEventListener('click', () => { $('aFaire').classList.remove('replie'); $('toutLire').remove(); });
+  if ($('retourListe')) $('retourListe').addEventListener('click', () => { etat.choisie = null; afficher(); });
+  contenu.querySelectorAll('[data-geste]').forEach((b) => b.addEventListener('click', () => faire(b.dataset.geste)));
+  window.scrollTo(0, 0);
+}
+
+async function faire(geste) {
+  const l = ligneCourante();
+  if (!l) return;
+  if (geste === 'passer') { etat.position = (etat.position + 1) % etat.file.length; afficher(); return; }
+  const g = gestesDe(l).find((x) => x.geste === geste);
+  if (!g) return;
+  const texte = $('texte').value.trim();
+  if (g.texte && !texte) { $('texte').focus(); afficherMessage('Écris ce qui ne va pas, puis Ctrl+Entrée.'); etat.enAttente = geste; return; }
+  try {
+    await appeler('/api/repondre', { id: l.id, empreinte: l.empreinte, geste, texte });
+    if (geste === 'reprendre') { etat.choisie = null; } else { etat.repondues += 1; }
+    etat.enAttente = null;
+    afficherMessage(`${l.id} : écrit dans le suivi ✓`);
+  } catch (e) {
+    afficherMessage(e.message, true);
+  }
+  afficher();
+}
+
+async function annuler() {
+  if (!etat.derniere) return;
+  try {
+    const id = etat.derniere;
+    await appeler('/api/annuler', {});
+    etat.repondues = Math.max(0, etat.repondues - 1);
+    const i = etat.file.findIndex((l) => l.id === id);
+    if (i >= 0) etat.position = i;
+    afficherMessage(`${id} : réponse annulée`);
+  } catch (e) {
+    afficherMessage(e.message, true);
+  }
+  afficher();
+}
+
+document.addEventListener('keydown', (e) => {
+  const dansTexte = document.activeElement && document.activeElement.id === 'texte';
+  if (dansTexte && e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    const l = ligneCourante();
+    if (!l) return;
+    // Ctrl+Entrée envoie le geste qui attendait un texte, sinon le geste « texte » de la ligne.
+    const g = etat.enAttente || (gestesDe(l).find((x) => x.texte) || {}).geste;
+    if (g) faire(g);
+    return;
+  }
+  if (dansTexte) { if (e.key === 'Escape') document.activeElement.blur(); return; }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); annuler(); return; }
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.key === 'ArrowRight' && etat.vue === 'file') { faire('passer'); return; }
+  const l = ligneCourante();
+  if (!l) return;
+  const g = gestesDe(l).find((x) => x.touche === e.key);
+  if (g) { e.preventDefault(); faire(g.geste); }
+});
+$('annuler').addEventListener('click', annuler);
+$('ongletFile').addEventListener('click', () => { etat.vue = 'file'; etat.choisie = null; afficher(); });
+$('ongletTard').addEventListener('click', () => { etat.vue = 'tard'; etat.choisie = null; afficher(); });
+
+appeler('/api/etat').then(afficher).catch((e) => afficherMessage(e.message, true));
+</script>
+</body>
+</html>

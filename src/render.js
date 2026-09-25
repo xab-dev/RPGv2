@@ -1933,8 +1933,9 @@ export function presenter(ctxVisible, canvasLogique) {
   // CSS via `style` : avant ce ticket, le buffer était dimensionné en
   // pixels CSS (largeurEcran = window.innerWidth sans tenir compte du DPR),
   // ce qui forçait le navigateur à ré-échantillonner lui-même un buffer
-  // trop petit pour l'écran réel — flou/blocs (`image-rendering: pixelated`
-  // d'index.html) même à un facteur entier par ailleurs correct.
+  // trop petit pour l'écran réel — flou/blocs (`image-rendering: pixelated`,
+  // que portait alors index.html, retiré par `D-29`) même à un facteur entier
+  // par ailleurs correct.
   if (canvas.width !== largeurPhysique || canvas.height !== hauteurPhysique) {
     canvas.width = largeurPhysique;
     canvas.height = hauteurPhysique;

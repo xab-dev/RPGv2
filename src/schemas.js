@@ -249,6 +249,30 @@ function validerTile(entry, catalogs, path) {
   if (entry.render && entry.render.lisiere !== undefined) {
     erreurs.push(...erreursLisiere(entry, catalogs, `${path} > render.lisiere`));
   }
+  // `D-224` : `collision` (facultative) — la forme qui bloque, plus petite que
+  // la case (`formes_collision.js`). Une tuile non solide ne bloque rien : lui
+  // en donner une serait une faute silencieuse. En px logiques ; ce qui
+  // déborderait la case y est ramené au calcul (la taille de case est celle
+  // de la scène, que ce catalogue ne connaît pas).
+  if (entry.collision !== undefined) {
+    const c = entry.collision;
+    if (!c || typeof c !== 'object' || Array.isArray(c)) {
+      erreurs.push(`${path} > collision doit être un objet { largeur, hauteur, rayon?, retrait_bas? }`);
+    } else {
+      if (!entry.solid) erreurs.push(`${path} > collision sur une tuile non solide : elle ne bloquerait rien`);
+      for (const champ of ['largeur', 'hauteur']) {
+        if (typeof c[champ] !== 'number' || !(c[champ] > 0)) erreurs.push(`${path} > collision.${champ} doit être un nombre > 0`);
+      }
+      for (const champ of ['rayon', 'retrait_bas']) {
+        if (c[champ] !== undefined && (typeof c[champ] !== 'number' || c[champ] < 0)) {
+          erreurs.push(`${path} > collision.${champ} doit être un nombre >= 0`);
+        }
+      }
+      if (typeof c.rayon === 'number' && c.rayon > Math.min(c.largeur, c.hauteur) / 2) {
+        erreurs.push(`${path} > collision.rayon dépasse la moitié du plus petit côté`);
+      }
+    }
+  }
   return erreurs;
 }
 
@@ -3285,11 +3309,16 @@ SCHEMAS.graphismes = {
   custom(entry, catalogs, path) {
     const erreurs = [];
     if (entry.id === 'budget_carte') return erreursBudgetCarte(entry, path);
+    if (entry.id === 'profondeur') return erreursProfondeur(entry, path);
     if (entry.id !== 'graphismes_presets') return erreurs;
     // `specs/13` palier F : le budget est lu à chaque entrée en scène sous
     // `?debug=fps` ; son absence ne se découvrirait qu'au premier relevé.
     if (!(catalogs.graphismes || []).some((e) => e.id === 'budget_carte')) {
       erreurs.push(`${path} > l'entrée "budget_carte" manque au catalogue (le plafond d'entrée en scène, specs/13 §4.6)`);
+    }
+    // `D-223` : la bande du fondu est lue au démarrage, à chaque partie.
+    if (!(catalogs.graphismes || []).some((e) => e.id === 'profondeur')) {
+      erreurs.push(`${path} > l'entrée "profondeur" manque au catalogue (la bande du fondu d'un passage, D-223)`);
     }
 
     if (!Array.isArray(entry.leviers) || entry.leviers.length === 0) {
@@ -3387,6 +3416,18 @@ SCHEMAS.graphismes = {
 // mesurée au palier A sur le PC de Xav, en Moyen (16 à 24 ms sans fenêtre,
 // 14 ms à la main) — le défaut validé par Xav avec la spec. Dépassé, c'est un
 // avertissement en console, jamais un échec : c'est une mesure.
+// `D-223` : la largeur, en px logiques, de la BANDE du fondu d'un passage
+// (`profondeur.js#ordonnerAvecFondus`) : sur combien de pas un élément que le
+// héros traverse passe de derrière lui à devant lui. 0 éteint le fondu (le
+// tri seul, d'un coup) : c'est une valeur, pas une absence.
+function erreursProfondeur(entry, path) {
+  const v = entry.fondu_px;
+  if (typeof v !== 'number' || !Number.isFinite(v) || v < 0) {
+    return [`${path} > fondu_px doit être un nombre >= 0 (la bande du fondu, en px ; 0 = aucun fondu)`];
+  }
+  return [];
+}
+
 function erreursBudgetCarte(entry, path) {
   const v = entry.entree_scene_max_ms;
   if (typeof v !== 'number' || !Number.isFinite(v) || v <= 0) {

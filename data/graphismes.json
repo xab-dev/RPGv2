@@ -36,5 +36,9 @@
   {
     "id": "budget_carte",
     "entree_scene_max_ms": 40
+  },
+  {
+    "id": "profondeur",
+    "fondu_px": 16
   }
 ]

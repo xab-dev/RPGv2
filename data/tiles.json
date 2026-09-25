@@ -36,7 +36,7 @@
                 "lisiere": { "rang": 1 } } },
   { "id": "tile_arbre", "solid": true, "ressource": "res_bois",
     "render": { "type": "couleur", "valeur": "#b7a171", "sol": "tile_chemin", "visuel": "visuel_arbre_recoltable" } },
-  { "id": "tile_arbre_fond", "solid": true, "render": { "type": "couleur", "valeur": "#5a9147", "sol": "tile_herbe", "visuel": "visuel_arbre",
+  { "id": "tile_arbre_fond", "solid": true, "collision": { "largeur": 20, "hauteur": 16, "rayon": 7, "retrait_bas": 3 }, "render": { "type": "couleur", "valeur": "#5a9147", "sol": "tile_herbe", "visuel": "visuel_arbre",
                 "visuel_variantes": ["visuel_arbre_chene", "visuel_arbre_sapin"], "miroir": true } },
   { "id": "tile_rocher", "solid": true, "ressource": "res_pierre",
     "render": { "type": "couleur", "valeur": "#5a9147", "sol": "tile_herbe", "visuel": "visuel_rocher_recoltable" } },

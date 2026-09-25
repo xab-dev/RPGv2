@@ -83,7 +83,14 @@ function boiteRelative(visuel, echelle, rotation, miroir) {
 // Un visuel posé à `(x, y)` du monde, avec les options que `render.js` passe
 // à `dessinerVisuel` (`echelle`, `rotation` en degrés, `miroir`), peint-il
 // dans la vue ?
-export function visuelDansLeChamp(visuel, x, y, vue, { echelle = 1, rotation = 0, miroir = false } = {}) {
+export function visuelDansLeChamp(visuel, x, y, vue, options = {}) {
+  return boiteDansLeChamp(boiteDuVisuel(visuel, x, y, options), vue);
+}
+
+// La boîte, dans le MONDE, de ce que peint un visuel posé à `(x, y)` — la même
+// que juge le champ. `D-223` s'en sert pour savoir si deux dessins se touchent
+// (le fondu d'un passage n'a lieu que là où l'ordre se voit).
+export function boiteDuVisuel(visuel, x, y, { echelle = 1, rotation = 0, miroir = false } = {}) {
   const b = boiteRelative(visuel, echelle || 1, rotation || 0, miroir);
-  return boiteDansLeChamp({ minX: x + b.minX, maxX: x + b.maxX, minY: y + b.minY, maxY: y + b.maxY }, vue);
+  return { minX: x + b.minX, maxX: x + b.maxX, minY: y + b.minY, maxY: y + b.maxY };
 }

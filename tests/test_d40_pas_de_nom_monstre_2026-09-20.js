@@ -36,17 +36,28 @@ assert.deepEqual(validerCatalogues(catalogues), []);
 {
   const render = fs.readFileSync(path.join(RACINE, 'src', 'render.js'), 'utf8');
 
-  // Le bloc du dessin des monstres ne doit plus contenir de texte du tout.
-  const debut = render.indexOf('dessinerVisuel(ctx, monstre.visuel');
-  assert.ok(debut > 0, 'le dessin des monstres doit rester repérable dans render.js');
-  const blocMonstre = render.slice(debut, render.indexOf('// Héros (§3.4', debut));
-  assert.ok(!/fillText/.test(blocMonstre), 'aucun texte ne doit être dessiné sur un monstre');
-  assert.ok(!/monstre\.label/.test(blocMonstre), 'render.js ne doit plus lire monstre.label');
+  // Le dessin des monstres ne doit plus contenir de texte du tout. Depuis
+  // `D-222` (la profondeur), il vit en deux morceaux : le CORPS, trié avec
+  // tout ce qui se tient debout (`dessinerCorpsMonstre`), et la BARRE DE PV,
+  // peinte après le tri pour qu'un arbre ne la cache pas (la boucle sur
+  // `barres` de `dessinerScene`). Les deux sont lus.
+  const debut = render.indexOf('function dessinerCorpsMonstre');
+  assert.ok(debut > 0, 'le dessin du corps des monstres doit rester repérable dans render.js');
+  const blocCorps = render.slice(debut, render.indexOf('\n}\n', debut));
+  assert.ok(/dessinerVisuel\(ctx, monstre\.visuel/.test(blocCorps), 'le corps du monstre doit être dessiné par son visuel');
+  const debutBarres = render.indexOf('for (const monstre of barres)');
+  assert.ok(debutBarres > 0, 'la boucle des barres de PV doit rester repérable dans render.js');
+  const blocBarres = render.slice(debutBarres, render.indexOf('\n  }\n', debutBarres));
+  for (const bloc of [blocCorps, blocBarres]) {
+    assert.ok(!/fillText/.test(bloc), 'aucun texte ne doit être dessiné sur un monstre');
+    assert.ok(!/monstre\.label/.test(bloc), 'render.js ne doit plus lire monstre.label');
+  }
 
   // ...mais la barre de PV, elle, reste : le ticket dit explicitement qu'une
-  // jauge de vie n'est pas concernée par le retrait.
-  assert.ok(/monstre\.actif/.test(blocMonstre) && /ratioPv/.test(blocMonstre),
-    'la barre de PV du monstre doit rester');
+  // jauge de vie n'est pas concernée par le retrait. Elle ne vient que pour un
+  // monstre actif.
+  assert.ok(/if \(monstre\.actif\) barres\.push\(monstre\)/.test(render), 'la barre ne doit venir que pour un monstre actif');
+  assert.ok(/ratioPv/.test(blocBarres) && /dessinerBarre/.test(blocBarres), 'la barre de PV du monstre doit rester');
 
   // Et l'orchestrateur ne compose plus le libellé : le retirer du dessin
   // seulement aurait laissé un `i18n.t()` par monstre et par frame, payé

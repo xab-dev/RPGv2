@@ -107,7 +107,13 @@ const POINTE = plusHaut(CAPUCHE.flatMap((p) => p.points));
 function ordres(options) {
   const appels = [];
   const ctx = new Proxy({}, {
-    get(_, prop) { return (...args) => appels.push([String(prop), ...args]); },
+    // Un dégradé (`D-255`, la pointe rabattue) se crée, puis reçoit ses paliers.
+    get(_, prop) {
+      return (...args) => {
+        appels.push([String(prop), ...args]);
+        return String(prop).startsWith('create') ? { addColorStop: (...a) => appels.push(['addColorStop', ...a]) } : undefined;
+      };
+    },
     set(_, prop, valeur) { appels.push([`=${String(prop)}`, valeur]); return true; },
   });
   dessinerVisuel(ctx, HEROS, 10, 20, options);
@@ -124,7 +130,13 @@ function ordres(options) {
   avecMiroir.orientations = { est: { capuche: { miroir: true } } };
   const appels = [];
   const ctx = new Proxy({}, {
-    get(_, prop) { return (...args) => appels.push([String(prop), ...args]); },
+    // Un dégradé (`D-255`, la pointe rabattue) se crée, puis reçoit ses paliers.
+    get(_, prop) {
+      return (...args) => {
+        appels.push([String(prop), ...args]);
+        return String(prop).startsWith('create') ? { addColorStop: (...a) => appels.push(['addColorStop', ...a]) } : undefined;
+      };
+    },
     set(_, prop, valeur) { appels.push([`=${String(prop)}`, valeur]); return true; },
   });
   dessinerVisuel(ctx, avecMiroir, 0, 0, { orientation: 'est' });
@@ -143,6 +155,19 @@ function ordres(options) {
   };
   assert.ok(couleurs('nord').includes('#123456'), 'posée : elle paraît');
   for (const o of [null, 'sud', 'est']) assert.ok(!couleurs(o).includes('#123456'), `${o} : sans pose, elle reste cachée`);
+  // `D-255` : la lumière ne se reflète pas — sous un miroir, une primitive
+  // prend son style `reflet` ; sans miroir, le sien.
+  const avecReflet = structuredClone(HEROS);
+  avecReflet.primitives.push({ forme: 'cercle', dx: 0, dy: 0, w: 1, couleur: '#aaaaaa', reflet: { couleur: '#bbbbbb' }, piece: 'temoin' });
+  avecReflet.orientations = { est: { temoin: { miroir: true } }, ouest: { temoin: {} } };
+  const styles = (orientation) => {
+    const a = [];
+    const c = new Proxy({}, { get: () => () => {}, set(_, prop, v) { if (prop === 'fillStyle') a.push(v); return true; } });
+    dessinerVisuel(c, avecReflet, 0, 0, { orientation });
+    return a;
+  };
+  assert.ok(styles('est').includes('#bbbbbb') && !styles('est').includes('#aaaaaa'), 'reflétée : le style du reflet');
+  assert.ok(styles('ouest').includes('#aaaaaa') && !styles('ouest').includes('#bbbbbb'), 'sans miroir : son propre style');
   console.log('OK dessin : la capuche pliée, stable d\'une frame à l\'autre ; le miroir sur la seule pièce');
 }
 
@@ -160,6 +185,8 @@ function ordres(options) {
   assert.ok(erreursAvec((v) => { v.orientations.nord.capuche = { rabat: { y: -8, longueur: 0, hauteur: 1 } }; }).some((e) => e.includes('orientations > nord > capuche')));
   assert.ok(erreursAvec((v) => { v.orientations.nord.capuche = { rabat: { y: -8, longueur: 3 } }; }).some((e) => e.includes('orientations > nord > capuche')));
   assert.ok(erreursAvec((v) => { v.primitives[0].cachee = true; }).some((e) => e.includes('cachee vaut true')), 'une primitive cachée sans pièce ne paraîtrait jamais');
+  assert.ok(erreursAvec((v) => { v.primitives[0].reflet = { couleur: '#000000' }; }).some((e) => e.includes('reflet doit être')), 'un reflet sans pièce ne servirait jamais');
+  assert.ok(erreursAvec((v) => { v.primitives.find((p) => p.reflet).reflet = { teinte: true }; }).some((e) => e.includes('reflet doit être')));
   console.log('OK démarrage : une courbure, un miroir, un rabat ou une primitive cachée mal déclarés refusés');
 }
 

@@ -1834,6 +1834,17 @@ function validerVisuel(entry, catalogs, path) {
     if (p.piece !== undefined && (typeof p.piece !== 'string' || p.piece === '')) {
       erreurs.push(`${chemin} > piece doit être un nom (chaîne non vide)`);
     }
+    // `D-255` : le style d'une primitive quand sa pièce est reflétée
+    // (`visuels.js#primitiveReflet`) — la lumière ne se reflète pas.
+    if (p.reflet !== undefined) {
+      const r = p.reflet;
+      if (!r || typeof r !== 'object' || Array.isArray(r) || p.piece === undefined
+        || Object.keys(r).some((c) => c !== 'couleur' && c !== 'alpha')
+        || (r.couleur !== undefined && typeof r.couleur !== 'string')
+        || (r.alpha !== undefined && typeof r.alpha !== 'number')) {
+        erreurs.push(`${chemin} > reflet doit être { couleur?, alpha? }, sur une primitive qui porte une pièce`);
+      }
+    }
     // `D-254` : une primitive cachée ne paraît que dans les directions qui
     // posent sa pièce ; sans pièce, elle ne paraîtrait jamais.
     if (p.cachee !== undefined && (p.cachee !== true || p.piece === undefined)) {

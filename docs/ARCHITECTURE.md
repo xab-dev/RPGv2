@@ -305,7 +305,9 @@ rpg_v2/
                             AUX TAILLES RÉELLES du jeu — monde à DPR 1 et 3, tuile de la Poche —
                             puis agrandies au plus proche voisin ; agrandir la transform
                             épaissirait les traits avec, et ferait juger une image que personne ne
-                            voit)
+                            voit), et banc_orientations.html (`D-255`, `?id=` : les huit directions
+                            du regard d'une silhouette en rose des vents, à ×3 sur le gris et sur la
+                            terre de la Maison, à ×9 avec l'axe — juger que les vues se répondent)
 ```
 
 `registry.js`/`save.js` restent purs (aucun accès disque/réseau/DOM) : les adaptateurs (`io_node.js`/`io_navigateur.js`, `storage_indexeddb.js`/`creerStoreMemoire()`) leur fournissent des données déjà prêtes. Convention d'`id` : minuscules, `_` comme séparateur, préfixé par la catégorie au singulier (`tile_sol`, `elem_feu`). Un `id` dupliqué ou une référence croisée cassée = échec dur au boot avec le chemin exact de l'erreur.

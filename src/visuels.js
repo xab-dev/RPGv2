@@ -210,6 +210,24 @@ function primitiveCourbee(primitive, pose) {
   return courbee;
 }
 
+// `D-255` : la LUMIÈRE ne se reflète pas. Une pièce en `miroir` (les vues de
+// l'est, reflets de celles de l'ouest) emporte avec sa forme les liserés que
+// la lumière, venue d'en haut à gauche, pose sur son flanc gauche : reflétés,
+// ils passaient à droite, quand le corps gardait les siens à gauche (Xav :
+// les primitives doivent servir à « être plus précis sur les effets de
+// lumière »). Une primitive déclare donc son style reflété (`reflet`,
+// `{ couleur?, alpha? }`) : le liseré clair, passé à l'ombre, y prend le ton
+// du sombre, et l'inverse. Gardé comme les pliées : aucune copie par frame.
+const primitivesReflet = new WeakMap();
+function primitiveReflet(primitive) {
+  let refletee = primitivesReflet.get(primitive);
+  if (!refletee) {
+    refletee = { ...primitive, ...primitive.reflet };
+    primitivesReflet.set(primitive, refletee);
+  }
+  return refletee;
+}
+
 // Point d'entrée unique (§3.3) : dessine `visuel` (une entrée de
 // visuels.json) à la position logique (x,y). `options.teinte` (couleur CSS)
 // ne s'applique qu'aux primitives `teinte: true` ; `options.alpha` module la
@@ -287,7 +305,7 @@ export function dessinerVisuel(ctx, visuel, x, y, options = {}) {
     // `D-252` : la courbure plie les points d'un polygone (voir
     // `courberPoints`) ; une forme sans points suit le reste de la pose.
     const pliee = (pose.courbure || pose.rabat) && primitive.points ? primitiveCourbee(primitive, pose) : primitive;
-    dessinerPrimitive(ctx, pliee, teinte);
+    dessinerPrimitive(ctx, pose.miroir && primitive.reflet ? primitiveReflet(pliee) : pliee, teinte);
     ctx.restore();
   }
 

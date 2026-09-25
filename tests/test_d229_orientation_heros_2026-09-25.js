@@ -98,7 +98,7 @@ const VISAGE = HEROS.primitives.filter((p) => p.piece === 'visage');
   const centreDe = (direction) => {
     const pose = poseDePiece(HEROS, direction, 'visage');
     assert.ok(pose && typeof pose === 'object', `${direction} : une pose de profil`);
-    return (pose.dx ?? 0) + centre * (pose.echelle_x ?? 1);
+    return (pose.dx ?? 0) + centre * (pose.echelle_x ?? 1) * (pose.miroir ? -1 : 1);
   };
   // (par rapport au visage de face, lui-même posé depuis `D-254`)
   for (const d of ['est', 'sud_est']) assert.ok(centreDe(d) > centreDe('sud'), `${d} : le visage glisse vers l'est`);
@@ -124,7 +124,13 @@ const VISAGE = HEROS.primitives.filter((p) => p.piece === 'visage');
 function ordres(options) {
   const appels = [];
   const ctx = new Proxy({}, {
-    get(_, prop) { return (...args) => appels.push([String(prop), ...args]); },
+    // Un dégradé (`D-255`, la pointe rabattue) se crée, puis reçoit ses paliers.
+    get(_, prop) {
+      return (...args) => {
+        appels.push([String(prop), ...args]);
+        return String(prop).startsWith('create') ? { addColorStop: (...a) => appels.push(['addColorStop', ...a]) } : undefined;
+      };
+    },
     set(_, prop, valeur) { appels.push([`=${String(prop)}`, valeur]); return true; },
   });
   dessinerVisuel(ctx, HEROS, 10, 20, options);

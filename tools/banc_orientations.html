@@ -1,0 +1,101 @@
+<!doctype html>
+<!-- OUTIL DE DEV, jamais chargé par le jeu : les HUIT directions du regard
+     d'une silhouette (`orientations` de data/visuels.json), rangées en rose
+     des vents, pour juger d'un coup d'œil qu'elles se répondent — la leçon de
+     `D-252` à `D-254` (26/09) : une vue réglée seule contre la vue de face
+     cachait l'écart avec sa voisine (les `_est` contre les `_ouest`).
+     Rendu AUX TAILLES RÉELLES puis agrandi au plus proche voisin, comme
+     banc_visuel.html (agrandir la transform épaissirait les traits).
+     ?id=visuel_heros (défaut) &teinte=%23ff6a3d (la couleur du follet)
+     &axe=non pour retirer l'axe vertical des planches agrandies. -->
+<html lang="fr"><head><meta charset="utf-8"><title>Banc des orientations</title>
+<style>
+  body { background:#1b1f24; color:#d8d2c4; font:12px monospace; margin:0; padding:14px; }
+  .planche { display:inline-block; vertical-align:top; margin:0 18px 18px 0; }
+  .planche h2 { font-size:12px; font-weight:normal; opacity:.7; margin:0 0 6px; }
+  .rose { display:grid; grid-template-columns:repeat(3, auto); gap:4px; }
+  figure { margin:0; text-align:center; }
+  figcaption { opacity:.6; margin-top:2px; }
+  .centre { display:flex; align-items:center; justify-content:center; text-align:center; opacity:.7; padding:6px; }
+</style></head><body>
+<div id="planches"></div>
+<script type="module">
+  import { dessinerVisuel } from '../src/visuels.js';
+  import { boitePrimitive } from '../src/structures.js';
+  import { ORIENTATIONS, poseDePiece } from '../src/orientation.js';
+  const params = new URLSearchParams(location.search);
+  const id = params.get('id') || 'visuel_heros';
+  const teinte = params.get('teinte') || '#ff6a3d';
+  const axe = params.get('axe') !== 'non';
+  const visuels = await (await fetch('../data/visuels.json')).json();
+  const v = visuels.find((e) => e.id === id);
+
+  // La rose des vents : le nord en haut, comme à l'écran.
+  const ROSE = ['nord_ouest', 'nord', 'nord_est', 'ouest', null, 'est', 'sud_ouest', 'sud', 'sud_est'];
+  // (échelle de rendu, fond, axe ?, légende). Le fond clair est la terre de
+  // la Maison en plein jour : une silhouette sombre s'y juge autrement que
+  // sur le gris du banc.
+  const PLANCHES = [
+    [3, '#2b3138', false, 'monde, DPR 3 (×3) — le jeu'],
+    [3, '#c9b27a', false, 'monde, DPR 3 (×3), sur la terre de la Maison'],
+    [9, '#2b3138', axe, 'tuile de la Poche (≈ ×9)'],
+  ];
+  const HAUTEUR_CASE_PX = 120;
+
+  // Ce qu'une direction dessine : les primitives que sa pose ne cache pas
+  // (même règle que `visuels.js#dessinerVisuel`).
+  const dessinees = (o) => v.primitives.filter((p) => {
+    if (p.piece === undefined) return true;
+    const pose = poseDePiece(v, o, p.piece);
+    return pose !== null && !(p.cachee && pose === undefined);
+  }).length;
+
+  // Le cadre suit la silhouette (ombre comprise), avec une marge pour une
+  // pointe pliée qui déborderait du dessin d'auteur.
+  const boites = v.primitives.map((p) => boitePrimitive(p));
+  if (v.ombre) boites.push(boitePrimitive({ dx: 0, dy: v.ombre.dy, w: v.ombre.w, h: v.ombre.h }));
+  const bas = Math.max(0, ...boites.map((b) => b.maxY)) + 2;
+  const haut = Math.min(0, ...boites.map((b) => b.minY)) - 3;
+  const large = Math.max(...boites.map((b) => Math.max(-b.minX, b.maxX))) + 3;
+
+  for (const [echelle, fond, avecAxe, legende] of PLANCHES) {
+    const planche = document.createElement('div');
+    planche.className = 'planche';
+    planche.innerHTML = `<h2>${legende}</h2>`;
+    const rose = document.createElement('div');
+    rose.className = 'rose';
+    planche.append(rose);
+    const cote = Math.round(2 * large * echelle);
+    const hauteur = Math.round((bas - haut) * echelle);
+    const loupe = Math.max(1, Math.round(HAUTEUR_CASE_PX / hauteur));
+    for (const o of ROSE) {
+      if (o === null) {
+        rose.insertAdjacentHTML('beforeend', `<div class="centre">${id}<br>${v.primitives.length} primitives</div>`);
+        continue;
+      }
+      const source = document.createElement('canvas');
+      source.width = cote; source.height = hauteur;
+      const sctx = source.getContext('2d');
+      sctx.fillStyle = fond;
+      sctx.fillRect(0, 0, cote, hauteur);
+      dessinerVisuel(sctx, v, cote / 2, -haut * echelle, { echelle, orientation: o, teinte });
+      const vue = document.createElement('canvas');
+      vue.width = cote * loupe; vue.height = hauteur * loupe;
+      const ctx = vue.getContext('2d');
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(source, 0, 0, vue.width, vue.height);
+      if (avecAxe) {
+        ctx.strokeStyle = 'rgba(255, 60, 90, 0.55)';
+        ctx.beginPath();
+        ctx.moveTo(vue.width / 2 + 0.5, 0);
+        ctx.lineTo(vue.width / 2 + 0.5, vue.height);
+        ctx.stroke();
+      }
+      const fig = document.createElement('figure');
+      fig.append(vue, Object.assign(document.createElement('figcaption'), { textContent: `${o} · ${dessinees(o)}` }));
+      rose.append(fig);
+    }
+    document.getElementById('planches').append(planche);
+  }
+  if (!ORIENTATIONS.every((o) => ROSE.includes(o))) throw new Error('banc_orientations : la rose ne couvre pas ORIENTATIONS');
+</script></body></html>

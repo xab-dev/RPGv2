@@ -21,8 +21,8 @@ Branche `triche`, partie de `main`. Pas de push.
 
 | Commit | Ticket | Ce qu'il faut en retenir |
 |---|---|---|
-| `c0a2d30` | Ménage | Journal de l'orientation du héros archivé ; aucune réponse nouvelle de Xav au suivi |
-| (ce commit) | `D-250` | La triche : Nv.50, recettes visibles et gratuites, compétences connues, aucun flag posé, sauvegarde à part |
+| `8df55cd` | Ménage | Journal de l'orientation du héros archivé ; aucune réponse nouvelle de Xav au suivi |
+| `0dcb737` | `D-250` | La triche : Nv.50, recettes visibles et gratuites, compétences connues, aucun flag posé, sauvegarde à part |
 
 ## 1. Les deux points tranchés par Xav avant le code
 
@@ -47,7 +47,7 @@ Branche `triche`, partie de `main`. Pas de push.
   parchemin reste fermé. L'Atelier montre tout et paie la version gratuite ;
   la fiche dit toujours ce que la vraie recette demande.
 - `tests/test_triche_2026-09-25.js` : trois mutations attrapées (la recette
-  payée, la compétence inconnue, le niveau non crédité). Suite verte (218).
+  payée, la compétence inconnue, le niveau non crédité). Suite verte (217 fichiers).
 - `tools/scenarios/triche.mjs` : sous Chrome sans fenêtre, le jeu démarre
   sans erreur, et seule la base `rpg_v2_triche` est ouverte.
 

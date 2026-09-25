@@ -11,6 +11,7 @@ import { lisieresCase, visuelsDesLisieres } from './lisieres.js';
 import { dessinerBarre, PALETTE_JAUGES } from './ui/barre.js';
 import { boiteDansLeChamp, disqueDansLeChamp, vueDeCamera, visuelDansLeChamp } from './champ.js';
 import { POLICE_CALLIGRAPHIE, POLICE_CHIFFRES } from './polices.js';
+import { estDebout, objetsDeboutDeLaFenetre, piedDe, tableAPlat, trierParPied, tuilesDebout } from './profondeur.js';
 
 const DELTA_MAX_MS = 100; // provisoire : une frame ne rattrape jamais plus de 100 ms
 
@@ -398,6 +399,13 @@ function influenceDu(decor, visuelsTuiles, lisieres, tileSize) {
     return influence;
   }
   const memeDecor = influence && influence.decor === decor && influence.tileSize === tileSize;
+  // `D-222` : le calque ne peint plus que ce qui est À PLAT (`profondeur.js`) ;
+  // son rayon ne compte donc que ce qui y reste. Ce qui se tient debout a son
+  // propre rayon, `rayonDebout` : jusqu'où, hors de sa case, un arbre ou un
+  // caillou peut peindre — la marge de la fenêtre que la passe triée lit.
+  const visuelsDecor = new Set(decor.map((m) => m.visuel));
+  const table = tableAPlat(visuelsTuiles);
+  const debout = tuilesDebout(visuelsTuiles);
   influence = {
     decor,
     visuelsTuiles,
@@ -405,9 +413,15 @@ function influenceDu(decor, visuelsTuiles, lisieres, tileSize) {
     tileSize,
     index: memeDecor ? influence.index : indexerDecor(decor, tileSize),
     rayon: rayonInfluence({
-      visuelsTuiles,
-      visuelsDecor: new Set(decor.map((m) => m.visuel)),
+      visuelsTuiles: table,
+      visuelsDecor: [...visuelsDecor].filter((v) => !estDebout(v)),
       visuelsLisieres: visuelsDesLisieres(lisieres),
+      tileSize,
+      rotationDecorMaxDeg: ROTATION_MAX_DEG,
+    }),
+    rayonDebout: rayonInfluence({
+      visuelsTuiles: new Map([...visuelsTuiles].filter(([id]) => debout.has(id))),
+      visuelsDecor: [...visuelsDecor].filter(estDebout),
       tileSize,
       rotationDecorMaxDeg: ROTATION_MAX_DEG,
     }),
@@ -599,12 +613,18 @@ function canvasDuCalque(i, tileSize, echelle) {
 // l'ordre qui DÉFINIT le calque (`specs/13` §4.3) : case par case, ligne par
 // ligne, l'aplat, le grain de sa surface, les lisières qu'elle reçoit, l'objet
 // de la tuile ; puis le décor, dans l'ordre de sa liste. La lisière passe donc
-// SOUS l'arbre et SUR le grain. La reconstruction complète et la bande d'un
+// SOUS l'arbre et SUR le grain.
+// `D-222` : seulement ce qui est À PLAT. Un objet de tuile ou un motif de décor
+// qui se tient debout (`profondeur.js`) n'est plus cuit ici : il se peint à
+// chaque frame, trié avec les entités par son pied (`dessinerScene`). Cuit, il
+// était sous le héros quoi qu'il arrive, et la flaque du décor peinte après lui
+// recouvrait sa couronne. La reconstruction complète et la bande d'un
 // défilement passent toutes deux par ici : c'est ce qui garantit qu'elles
 // peignent la même chose. Le contexte est sous la transform du calque
 // (`echelle`) et y reste.
 function peindreCellules(ctxCouche, scene, index, echelle, estFlagActif, fenetre, cellules, visuelsTuiles, lisieres) {
   const { xDebut, yDebut } = fenetre;
+  const debout = tuilesDebout(visuelsTuiles);
   for (const { x, y } of cellules) {
     const couleur = couleurTuile(scene, x, y, estFlagActif);
     if (!couleur) continue;
@@ -619,12 +639,12 @@ function peindreCellules(ctxCouche, scene, index, echelle, estFlagActif, fenetre
     // Une tuile sans `render.sol` EST sa surface : son dessin est son grain,
     // et il passe avant les lisières.
     const sol = tuile && tuileDeSol(scene, tuile);
-    const grainSol = sol && visuelsTuiles.get(sol.id);
+    const grainSol = sol && !debout.has(sol.id) && visuelsTuiles.get(sol.id);
     if (grainSol) dessinerVisuelDeTuile(ctxCouche, scene, sol, grainSol, x, y, localX, localY, echelle);
     for (const pose of lisieresCase(scene, x, y, estFlagActif, lisieres)) {
       dessinerLisiere(ctxCouche, pose, localX, localY, scene.tileSize, echelle);
     }
-    const visuelsTuile = tuile && tuile !== sol && visuelsTuiles.get(tuile.id);
+    const visuelsTuile = tuile && tuile !== sol && !debout.has(tuile.id) && visuelsTuiles.get(tuile.id);
     if (visuelsTuile) dessinerVisuelDeTuile(ctxCouche, scene, tuile, visuelsTuile, x, y, localX, localY, echelle);
   }
 
@@ -633,6 +653,7 @@ function peindreCellules(ctxCouche, scene, index, echelle, estFlagActif, fenetre
   // un parcours de tout `decor`, dont la longueur suit la taille de la carte
   // (§4.5). Le décor garde son dessin vectoriel (rotation continue, §4.4).
   for (const motif of motifsDesCellules(index, cellules)) {
+    if (estDebout(motif.visuel)) continue;
     dessinerVisuel(ctxCouche, motif.visuel, motif.x - xDebut * scene.tileSize, motif.y - yDebut * scene.tileSize, {
       rotation: motif.rotation,
     });
@@ -788,6 +809,155 @@ function dessinerCoucheStatique(ctx, scene, decor, camera, estFlagActif, visuels
   ctx.restore();
 }
 
+// `D-222` : ce qui se tient DEBOUT dans le monde statique, autour de la vue —
+// les objets de tuile (arbres, rochers) et les motifs de décor debout
+// (cailloux, touffes, cristaux), prêts à trier avec les entités. Ils ne sont
+// plus cuits dans le calque (`peindreCellules`) : ils se posent à chaque frame.
+//
+// La fenêtre est celle de la vue, élargie du rayon de ce qui est debout
+// (`influenceDu#rayonDebout`, déduit des dessins : la couronne d'un arbre de la
+// rangée sous l'écran dépasse dans l'écran). La liste ne se refait que quand
+// cette fenêtre, les portes, le décor ou la table des grains changent — une
+// fois par case franchie, comme le calque ; entre deux, elle est relue telle
+// quelle, et `dessinerScene` n'en garde que ce qui est dans le champ. Elle ne
+// lit jamais que les cases de sa fenêtre (`specs/13` §4.6).
+let deboutStatiques = null;
+function dessinsDeboutStatiques(scene, decor, camera, estFlagActif, visuelsTuiles, lisieres) {
+  const { index, rayonDebout } = influenceDu(decor, visuelsTuiles, lisieres, scene.tileSize);
+  const fenetre = selectionnerTuilesVisibles(camera, RESOLUTION_LOGIQUE, scene.tileSize, Math.max(MARGE_FENETRE_TUILES, rayonDebout));
+  const signature = signaturePortesScene(scene, estFlagActif);
+  const cle = `${scene.id}|${fenetre.xDebut},${fenetre.yDebut},${fenetre.xFin},${fenetre.yFin}|${signature}`;
+  if (deboutStatiques && deboutStatiques.cle === cle && deboutStatiques.decor === decor
+    && deboutStatiques.visuelsTuiles === visuelsTuiles) {
+    return deboutStatiques.elements;
+  }
+  const tuiles = objetsDeboutDeLaFenetre(scene, fenetre, estFlagActif, visuelsTuiles)
+    .map((o) => ({ ...o, genre: 'tuile', rotation: 0 }));
+  const motifs = motifsDesCellules(index, cellulesAPeindre(fenetre))
+    .filter((m) => estDebout(m.visuel))
+    .map((m) => ({
+      genre: 'decor', x: m.x, y: m.y, visuel: m.visuel, rotation: m.rotation, miroir: false,
+      pied: piedDe(m.visuel, m.y, { rotation: m.rotation }),
+    }));
+  // Le décor avant les tuiles : à pied égal, le tri (stable) garde cet ordre.
+  deboutStatiques = { cle, decor, visuelsTuiles, elements: [...motifs, ...tuiles] };
+  return deboutStatiques.elements;
+}
+
+// Un objet de tuile debout, posé depuis son TAMPON (le même cache que le
+// calque : un arbre est tramé une fois par dessin, miroir et échelle). Le
+// calque montre une ancre de tuile au pixel physique `round(ancre × échelle)`,
+// recopié à l'écran décalé de `caméra × échelle` : l'arbre est posé exactement
+// là, donc il glisse avec son sol au même sous-pixel près — ni tremblement
+// entre le tronc et l'herbe, ni ré-échantillonnage de plus que le sol. Sous
+// l'instrument `definirTamponsActifs(false)`, le dessin vectoriel.
+function poserObjetDeTuile(ctx, objet, camera, echelle) {
+  if (!tamponsActifs) {
+    dessinerVisuel(ctx, objet.visuel, objet.x - camera.x, objet.y - camera.y, { miroir: objet.miroir });
+    return;
+  }
+  const cle = cleTampon({ id: objet.visuel.id, nbPrimitives: objet.visuel.primitives.length, miroir: objet.miroir, rotation: 0, echelle });
+  const tampon = cacheTampons.obtenir(cle, objet.visuel, echelle, objet.miroir, 0);
+  poserTampon(
+    ctx, tampon,
+    Math.round(objet.x * echelle) - camera.x * echelle,
+    Math.round(objet.y * echelle) - camera.y * echelle,
+    echelle,
+  );
+}
+
+// Un interactif (levier, station, coffre, stèle) et sa pièce mobile.
+function dessinerInteractif(ctx, levier, camera) {
+  dessinerVisuel(ctx, levier.visuel, levier.x - camera.x, levier.y - camera.y, {
+    teinte: levier.actif ? COULEUR_LEVIER_ACTIF : null,
+    // specs/04_stations-proportions-collision.md : échelle par entrée
+    // (stations ×2,1, leviers 1 par défaut) — dessinerVisuel() default déjà
+    // 1 si absent, jamais un second défaut ici.
+    echelle: levier.echelle,
+    // specs/05_construction-stations.md §3 : rotation par quart de tour
+    // (0 pour tout interactif jamais tourné, levier compris) — même champ
+    // `options.rotation` (degrés) que dessinerVisuel() expose déjà.
+    rotation: levier.rotation || 0,
+  });
+  // `D-158` : la pièce qui bascule (le manche), posée à son pivot — pivot
+  // tourné avec l'interactif (une station tournée par quart de tour
+  // garderait sa pièce en place), puis son propre angle par-dessus.
+  if (levier.pieceMobile) {
+    const { visuel, pivot, angle } = levier.pieceMobile;
+    const rad = ((levier.rotation || 0) * Math.PI) / 180;
+    const echelle = levier.echelle || 1;
+    const px = (pivot[0] * Math.cos(rad) - pivot[1] * Math.sin(rad)) * echelle;
+    const py = (pivot[0] * Math.sin(rad) + pivot[1] * Math.cos(rad)) * echelle;
+    dessinerVisuel(ctx, visuel, levier.x + px - camera.x, levier.y + py - camera.y, {
+      teinte: levier.actif ? COULEUR_LEVIER_ACTIF : null,
+      echelle: levier.echelle,
+      rotation: (levier.rotation || 0) + angle,
+    });
+  }
+}
+
+// Le corps d'un monstre (sa barre de PV se peint à part, après la profondeur).
+function dessinerCorpsMonstre(ctx, monstre, camera) {
+  // Flash "touché" (§3.1 03_grotte-polish) : teinte forcée en blanc pendant
+  // FLASH_TOUCHE_MS, sur un coup d'auto-attaque comme sur un tick de DoT
+  // (main.js#mettreAJourCombat pose monstre.flashMs dans les deux cas) —
+  // s'arrête de lui-même si le monstre meurt (il n'est alors plus dessiné).
+  // Seule la primitive `teinte: true` du visuel (le corps) blanchit ; une
+  // éventuelle facette non-teintable reste visible par-dessus.
+  // Spec 14, palier D : `miroir` (Zéros, la silhouette du héros retournée)
+  // et `alpha` (le fondu d'une rencontre), résolus par l'appelant.
+  //
+  // `D-40` (décision de Xav, 20/09) : **plus de nom au-dessus des monstres**
+  // — on les distingue par la forme et la couleur. Les noms restent dans
+  // `enemies.json` et les locales pour le futur bestiaire.
+  dessinerVisuel(ctx, monstre.visuel, monstre.x - camera.x, monstre.y - camera.y, {
+    teinte: monstre.flashMs > 0 ? '#ffffff' : null,
+    miroir: monstre.miroir === true,
+    alpha: monstre.alpha == null ? 1 : monstre.alpha,
+  });
+}
+
+// Le follet, son sillage et ses étincelles : un seul élément de la profondeur,
+// peint d'un bloc — le sillage passe sous sa silhouette, l'orbite derrière
+// puis devant.
+function dessinerFollet(ctx, follet, sillage, ornementsFollet, camera) {
+  // Sillage du follet (`D-36`) : même mécanisme que la poussière, dessiné
+  // juste avant la silhouette pour passer dessous. render.js ne sait pas que
+  // c'est un follet : il reçoit un visuel, une teinte et des bouffées.
+  if (sillage && sillage.bouffees.length > 0) {
+    for (const b of sillage.bouffees) {
+      dessinerVisuel(ctx, sillage.visuel, b.x - camera.x, b.y - camera.y, {
+        teinte: sillage.teinte,
+        alpha: b.alpha,
+        echelle: b.echelle,
+      });
+    }
+  }
+
+  // `D-134` : une orbite se lit parce qu'elle passe DERRIÈRE puis DEVANT ce
+  // qu'elle entoure — d'où deux passes autour de la silhouette du follet.
+  const dessinerEtincelles = (devant) => {
+    if (!ornementsFollet) return;
+    for (const e of ornementsFollet.etincelles) {
+      if (e.devant !== devant) continue;
+      dessinerVisuel(ctx, ornementsFollet.visuel, e.x - camera.x, e.y - camera.y, {
+        teinte: ornementsFollet.teinte, alpha: e.alpha, echelle: e.echelle,
+      });
+    }
+  };
+
+  if (!follet) return;
+  dessinerEtincelles(false);
+  // `D-34` : `follet.echelle` est résolue par main.js (échelle de jeu en
+  // données, interpolée à la sortie de la cinématique). Absente = 1, donc
+  // un appelant qui l'ignore dessine comme avant.
+  dessinerVisuel(ctx, follet.visuel, follet.x - camera.x, follet.y - camera.y, {
+    teinte: follet.couleur,
+    echelle: follet.echelle === undefined ? 1 : follet.echelle,
+  });
+  dessinerEtincelles(true);
+}
+
 // Dessine scène + décor + leviers + monstres + follet + héros sur le
 // contexte logique (480x270 en unités logiques, quel que soit le facteur
 // physique du canvas hors-écran — cf. ajusterCanvasLogiquePhysique
@@ -825,6 +995,8 @@ export function dessinerScene(ctx, {
   // Tuiles + décor (§3.4 grotte-polish, fenêtré §2.2 03_maison-exterieur) :
   // calque statique pré-rendu, recadré par caméra — remplace les anciennes
   // boucles inline (fillRect par tuile + petit carré par motif de décor).
+  // Depuis `D-222`, seulement ce qui est À PLAT : ce qui se tient debout est
+  // trié plus bas avec les entités.
   dessinerCoucheStatique(ctx, scene, decor, camera, estFlagActif, visuelsTuiles, lisieres, surRecalculCoucheStatique);
 
   // `specs/13` palier F (§4.6) : une entité hors du champ ne se dessine pas.
@@ -838,6 +1010,25 @@ export function dessinerScene(ctx, {
   const vue = vueDeCamera(camera, RESOLUTION_LOGIQUE);
   const dessines = { monstres: 0, puzzles: 0, objetsSol: 0 };
 
+  // `D-222` : LA PROFONDEUR. Tout ce qui se tient debout (`profondeur.js` : ce
+  // qui porte une ombre portée) se peint dans UNE liste, triée du nord au sud
+  // par son pied : les arbres et les rochers de la carte, les cailloux et les
+  // touffes du décor, les interactifs, les objets au sol, les monstres, le
+  // héros, le follet. Un héros au nord d'un arbre passe derrière son feuillage,
+  // au sud il passe devant. Ce qui est à plat est déjà sur le calque, dessous.
+  // Avant, chaque famille avait son rang fixe (leviers, objets, monstres,
+  // héros, follet), et le calque cuisait les arbres sous tout le monde.
+  //
+  // Ce qui dépasse d'une entité sans être un objet du monde (la barre de PV
+  // d'un monstre, le fantôme d'une pose) se peint après la liste : c'est une
+  // indication, un arbre ne doit pas la cacher.
+  const echelle = echelleDepuisCanvas(ctx.canvas.width);
+  const aTrier = [];
+  for (const statique of dessinsDeboutStatiques(scene, decor, camera, estFlagActif, visuelsTuiles, lisieres)) {
+    if (!visuelDansLeChamp(statique.visuel, statique.x, statique.y, vue, { miroir: statique.miroir, rotation: statique.rotation })) continue;
+    aTrier.push(statique);
+  }
+
   // Leviers (§2.1/§3.3 : première fois qu'un puzzle "levier" a un rendu du
   // tout — Phase 1 posait le flag sans jamais rien afficher). Ancre "bas" :
   // (x,y) est le point de contact au sol, cf. visuel_levier.
@@ -846,37 +1037,115 @@ export function dessinerScene(ctx, {
     // l'interactif : si le corps est hors champ, elle l'est aussi.
     if (!visuelDansLeChamp(levier.visuel, levier.x, levier.y, vue, { echelle: levier.echelle, rotation: levier.rotation })) continue;
     dessines.puzzles += 1;
-    dessinerVisuel(ctx, levier.visuel, levier.x - camera.x, levier.y - camera.y, {
-      teinte: levier.actif ? COULEUR_LEVIER_ACTIF : null,
-      // specs/04_stations-proportions-collision.md : échelle par entrée
-      // (stations ×2,1, leviers 1 par défaut) — dessinerVisuel() default déjà
-      // 1 si absent, jamais un second défaut ici.
-      echelle: levier.echelle,
-      // specs/05_construction-stations.md §3 : rotation par quart de tour
-      // (0 pour tout interactif jamais tourné, levier compris) — même champ
-      // `options.rotation` (degrés) que dessinerVisuel() expose déjà.
-      rotation: levier.rotation || 0,
+    aTrier.push({
+      genre: 'puzzle', levier, pied: piedDe(levier.visuel, levier.y, { echelle: levier.echelle, rotation: levier.rotation }),
     });
-    // `D-158` : la pièce qui bascule (le manche), posée à son pivot — pivot
-    // tourné avec l'interactif (une station tournée par quart de tour
-    // garderait sa pièce en place), puis son propre angle par-dessus.
-    if (levier.pieceMobile) {
-      const { visuel, pivot, angle } = levier.pieceMobile;
-      const rad = ((levier.rotation || 0) * Math.PI) / 180;
-      const echelle = levier.echelle || 1;
-      const px = (pivot[0] * Math.cos(rad) - pivot[1] * Math.sin(rad)) * echelle;
-      const py = (pivot[0] * Math.sin(rad) + pivot[1] * Math.cos(rad)) * echelle;
-      dessinerVisuel(ctx, visuel, levier.x + px - camera.x, levier.y + py - camera.y, {
-        teinte: levier.actif ? COULEUR_LEVIER_ACTIF : null,
-        echelle: levier.echelle,
-        rotation: (levier.rotation || 0) + angle,
+  }
+
+  // Objets au sol (03_maison-exterieur §3.3) : branche/caillou/fruit — même
+  // patron que les leviers ci-dessus, ancre "centre" (cf. visuel_branche &co).
+  for (const objet of objetsSol) {
+    if (!visuelDansLeChamp(objet.visuel, objet.x, objet.y, vue)) continue;
+    dessines.objetsSol += 1;
+    aTrier.push({ genre: 'objet', objet, pied: piedDe(objet.visuel, objet.y) });
+  }
+
+  const barres = [];
+  for (const monstre of monstres) {
+    if (monstre.mort) continue;
+    // Le corps OU sa barre de PV (qui dépasse au-dessus de la tête) : un
+    // monstre sous le bord haut de l'écran peut n'y montrer que sa barre.
+    const { largeur: barreL, hauteur: barreH, decalage_y: barreDy } = BARRE_PV_MONSTRE;
+    const barreVisible = monstre.actif && boiteDansLeChamp({
+      minX: monstre.x - barreL / 2, maxX: monstre.x + barreL / 2,
+      minY: monstre.y + barreDy, maxY: monstre.y + barreDy + barreH,
+    }, vue);
+    const corpsVisible = visuelDansLeChamp(monstre.visuel, monstre.x, monstre.y, vue);
+    if (!barreVisible && !corpsVisible) continue;
+    dessines.monstres += 1;
+    if (corpsVisible) aTrier.push({ genre: 'monstre', monstre, pied: piedDe(monstre.visuel, monstre.y) });
+    // Barre de PV (§3.1) : visible seulement si le monstre est "actif"
+    // (engagé ou déjà touché) — jamais sur un monstre inerte à distance,
+    // même déjà visible à l'écran.
+    if (monstre.actif) barres.push(monstre);
+  }
+
+  aTrier.push({ genre: 'heros', pied: piedDe(heroVisuel, hero.y) });
+  if (follet) {
+    aTrier.push({
+      genre: 'follet', pied: piedDe(follet.visuel, follet.y, { echelle: follet.echelle === undefined ? 1 : follet.echelle }),
+    });
+  }
+
+  // Traînée de poussière : au ras du sol, donc SOUS tout ce qui est debout
+  // (avant `D-222`, juste sous le héros). Dans le monde (coordonnées caméra,
+  // comme toute entité) : le calque d'obscurité, appliqué bien plus tard,
+  // l'assombrit la nuit sans code dédié, exactement comme le reste de la scène.
+  if (poussiere && poussiere.bouffees.length > 0) {
+    for (const b of poussiere.bouffees) {
+      dessinerVisuel(ctx, poussiere.visuel, b.x - camera.x, b.y - camera.y, {
+        alpha: b.alpha,
+        echelle: b.echelle,
       });
     }
   }
+  // Un sillage sans silhouette (le follet vient de disparaître) finit de
+  // s'effacer au sol ; sinon il est peint avec le follet, sous lui.
+  if (!follet) dessinerFollet(ctx, null, sillage, null, camera);
 
-  // Fantôme de pose (§3, mode Construction) : dessiné après les stations
-  // réelles pour rester lisible par-dessus, jamais solide (aucune interaction
-  // ni collision tant que la pose n'est pas confirmée).
+  for (const element of trierParPied(aTrier)) {
+    switch (element.genre) {
+      case 'tuile':
+        poserObjetDeTuile(ctx, element, camera, echelle);
+        break;
+      case 'decor':
+        dessinerVisuel(ctx, element.visuel, element.x - camera.x, element.y - camera.y, { rotation: element.rotation });
+        break;
+      case 'puzzle':
+        dessinerInteractif(ctx, element.levier, camera);
+        break;
+      case 'objet':
+        dessinerVisuel(ctx, element.objet.visuel, element.objet.x - camera.x, element.objet.y - camera.y, {});
+        break;
+      case 'monstre':
+        dessinerCorpsMonstre(ctx, element.monstre, camera);
+        break;
+      case 'heros':
+        // Héros (§3.4 03_grotte-polish) : gris neutre au spawn (avant choix
+        // du follet), teinté à la couleur du compagnon choisi ensuite —
+        // `heroTeinte` est déjà résolu par l'appelant (main.js,
+        // save.js#COULEUR_HERO_NEUTRE ou companion.render.couleur), jamais une
+        // 2ᵉ silhouette dessinée pour le cas "neutre".
+        dessinerVisuel(ctx, heroVisuel, hero.x - camera.x, hero.y - camera.y, { teinte: heroTeinte });
+        break;
+      case 'follet':
+        dessinerFollet(ctx, follet, sillage, ornementsFollet, camera);
+        break;
+      default:
+        break;
+    }
+  }
+
+  // Barres de PV, après la liste (voir plus haut).
+  for (const monstre of barres) {
+    const { largeur: barreLargeur, hauteur: barreHauteur, decalage_y } = BARRE_PV_MONSTRE;
+    const barreX = monstre.x - camera.x - barreLargeur / 2;
+    const barreY = monstre.y - camera.y + decalage_y;
+    const ratioPv = monstre.pvMax > 0 ? Math.max(0, Math.min(1, monstre.pv / monstre.pvMax)) : 0;
+    const alphaMonstre = monstre.alpha == null ? 1 : monstre.alpha;
+    // `D-165` : la barre du bandeau (creux, corps, reflet, arête), plus un
+    // fond noir et un aplat rouge — un monstre touché parle la même langue
+    // que la jauge de PV du héros.
+    ctx.save();
+    if (alphaMonstre !== 1) ctx.globalAlpha *= alphaMonstre;
+    dessinerBarre(ctx, { x: barreX, y: barreY, largeur: barreLargeur, hauteur: barreHauteur }, ratioPv, PALETTE_JAUGES.pv);
+    ctx.restore();
+  }
+
+  // Fantôme de pose (§3, mode Construction) : dessiné après tout ce qui est
+  // debout pour rester lisible par-dessus — c'est une intention, pas encore un
+  // objet du monde —, jamais solide (aucune interaction ni collision tant que
+  // la pose n'est pas confirmée).
   if (fantome) {
     const gx = fantome.x - camera.x;
     const gy = fantome.y - camera.y;
@@ -904,127 +1173,6 @@ export function dessinerScene(ctx, {
       ctx.stroke();
     }
     ctx.restore();
-  }
-
-  // Objets au sol (03_maison-exterieur §3.3) : branche/caillou/fruit — même
-  // patron que les leviers ci-dessus, ancre "centre" (cf. visuel_branche &co).
-  for (const objet of objetsSol) {
-    if (!visuelDansLeChamp(objet.visuel, objet.x, objet.y, vue)) continue;
-    dessines.objetsSol += 1;
-    dessinerVisuel(ctx, objet.visuel, objet.x - camera.x, objet.y - camera.y, {});
-  }
-
-  for (const monstre of monstres) {
-    if (monstre.mort) continue;
-    // Le corps OU sa barre de PV (qui dépasse au-dessus de la tête) : un
-    // monstre sous le bord haut de l'écran peut n'y montrer que sa barre.
-    const { largeur: barreL, hauteur: barreH, decalage_y: barreDy } = BARRE_PV_MONSTRE;
-    const barreVisible = monstre.actif && boiteDansLeChamp({
-      minX: monstre.x - barreL / 2, maxX: monstre.x + barreL / 2,
-      minY: monstre.y + barreDy, maxY: monstre.y + barreDy + barreH,
-    }, vue);
-    if (!barreVisible && !visuelDansLeChamp(monstre.visuel, monstre.x, monstre.y, vue)) continue;
-    dessines.monstres += 1;
-    const mx = monstre.x - camera.x;
-    const my = monstre.y - camera.y;
-
-    // Flash "touché" (§3.1 03_grotte-polish) : teinte forcée en blanc pendant
-    // FLASH_TOUCHE_MS, sur un coup d'auto-attaque comme sur un tick de DoT
-    // (main.js#mettreAJourCombat pose monstre.flashMs dans les deux cas) —
-    // s'arrête de lui-même si le monstre meurt (il n'est alors plus dessiné,
-    // cf. le `continue` ci-dessus). Seule la primitive `teinte: true` du
-    // visuel (le corps) blanchit ; une éventuelle facette non-teintable
-    // reste visible par-dessus.
-    // Spec 14, palier D : `miroir` (Zéros, la silhouette du héros retournée)
-    // et `alpha` (le fondu d'une rencontre), résolus par l'appelant.
-    const alphaMonstre = monstre.alpha == null ? 1 : monstre.alpha;
-    dessinerVisuel(ctx, monstre.visuel, mx, my, {
-      teinte: monstre.flashMs > 0 ? '#ffffff' : null,
-      miroir: monstre.miroir === true,
-      alpha: alphaMonstre,
-    });
-
-    // Barre de PV (§3.1) : visible seulement si le monstre est "actif"
-    // (engagé ou déjà touché) — jamais sur un monstre inerte à distance,
-    // même déjà visible à l'écran.
-    if (monstre.actif) {
-      const { largeur: barreLargeur, hauteur: barreHauteur, decalage_y } = BARRE_PV_MONSTRE;
-      const barreX = mx - barreLargeur / 2;
-      const barreY = my + decalage_y;
-      const ratioPv = monstre.pvMax > 0 ? Math.max(0, Math.min(1, monstre.pv / monstre.pvMax)) : 0;
-      // `D-165` : la barre du bandeau (creux, corps, reflet, arête), plus un
-      // fond noir et un aplat rouge — un monstre touché parle la même langue
-      // que la jauge de PV du héros.
-      ctx.save();
-      if (alphaMonstre !== 1) ctx.globalAlpha *= alphaMonstre;
-      dessinerBarre(ctx, { x: barreX, y: barreY, largeur: barreLargeur, hauteur: barreHauteur }, ratioPv, PALETTE_JAUGES.pv);
-      ctx.restore();
-    }
-
-    // `D-40` (décision de Xav, 20/09) : **plus de nom au-dessus des
-    // monstres**. L'étiquette du §4 de SD_ui-lisibilite chargeait l'affichage
-    // — on les distingue désormais par la forme et la couleur, et rien n'est
-    // mis à la place. Seul le DESSIN part : les noms restent dans
-    // `enemies.json` et dans les locales pour le futur bestiaire et le
-    // journal des découvertes. La barre de PV ci-dessus n'est pas concernée,
-    // c'est un bloc distinct.
-  }
-
-  // Héros (§3.4 03_grotte-polish) : gris neutre au spawn (avant choix du
-  // follet), teinté à la couleur du compagnon choisi ensuite — `heroTeinte`
-  // est déjà résolu par l'appelant (main.js, save.js#COULEUR_HERO_NEUTRE ou
-  // companion.render.couleur), jamais une 2ᵉ silhouette dessinée pour le cas
-  // "neutre".
-  // Traînée de poussière : SOUS le héros (dessinée juste avant lui) et dans
-  // le monde (coordonnées caméra, comme toute entité) — donc le calque
-  // d'obscurité, appliqué bien plus tard, l'assombrit la nuit sans code
-  // dédié, exactement comme le reste de la scène.
-  if (poussiere && poussiere.bouffees.length > 0) {
-    for (const b of poussiere.bouffees) {
-      dessinerVisuel(ctx, poussiere.visuel, b.x - camera.x, b.y - camera.y, {
-        alpha: b.alpha,
-        echelle: b.echelle,
-      });
-    }
-  }
-
-  dessinerVisuel(ctx, heroVisuel, hero.x - camera.x, hero.y - camera.y, { teinte: heroTeinte });
-
-  // Sillage du follet (`D-36`) : même mécanisme que la poussière, dessiné
-  // juste avant la silhouette pour passer dessous. render.js ne sait pas que
-  // c'est un follet : il reçoit un visuel, une teinte et des bouffées.
-  if (sillage && sillage.bouffees.length > 0) {
-    for (const b of sillage.bouffees) {
-      dessinerVisuel(ctx, sillage.visuel, b.x - camera.x, b.y - camera.y, {
-        teinte: sillage.teinte,
-        alpha: b.alpha,
-        echelle: b.echelle,
-      });
-    }
-  }
-
-  // `D-134` : une orbite se lit parce qu'elle passe DERRIÈRE puis DEVANT ce
-  // qu'elle entoure — d'où deux passes autour de la silhouette du follet.
-  const dessinerEtincelles = (devant) => {
-    if (!ornementsFollet) return;
-    for (const e of ornementsFollet.etincelles) {
-      if (e.devant !== devant) continue;
-      dessinerVisuel(ctx, ornementsFollet.visuel, e.x - camera.x, e.y - camera.y, {
-        teinte: ornementsFollet.teinte, alpha: e.alpha, echelle: e.echelle,
-      });
-    }
-  };
-
-  if (follet) {
-    dessinerEtincelles(false);
-    // `D-34` : `follet.echelle` est résolue par main.js (échelle de jeu en
-    // données, interpolée à la sortie de la cinématique). Absente = 1, donc
-    // un appelant qui l'ignore dessine comme avant.
-    dessinerVisuel(ctx, follet.visuel, follet.x - camera.x, follet.y - camera.y, {
-      teinte: follet.couleur,
-      echelle: follet.echelle === undefined ? 1 : follet.echelle,
-    });
-    dessinerEtincelles(true);
   }
 
   // Anneau d'attaque (§3.1 03_grotte-polish, spec 02_grotte.md §3.5 jamais

@@ -116,6 +116,10 @@ rpg_v2/
 │   │                       un objet au sol, une lumière ou un surlignage hors de la vue ne se
 │   │                       dessinent pas ; jugé sur ce qui se PEINT (`tampons.js#boiteDessin`, un
 │   │                       halo par son disque), jamais sur la position seule ; pur
+│   ├── profondeur.js       `D-222` : LA PROFONDEUR — ce qui porte une ombre portée se tient DEBOUT,
+│   │                       son pied est le centre de son ombre, tout ce qui est debout se peint trié
+│   │                       du nord au sud (`Q-165`) ; le calque statique ne garde que ce qui est à
+│   │                       plat (sol, grain, lisières, flaques, murs) ; pur. render.js pose la liste
 │   ├── lisieres.js         `specs/13` palier D (`Q-52`) : les LISIÈRES — qui déborde sur qui
 │   │                       (`tiles.json > render.lisiere` : rang, bord, coin), et les POSES
 │   │                       qu'une case reçoit (`lisieresCase`) ; pur. Une lisière se dessine

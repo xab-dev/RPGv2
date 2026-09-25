@@ -268,9 +268,24 @@ function ouvrirConfirmationReset(menu) {
   assert.equal(reinitialisations, 0, 'ATTACK sur le focus par défaut ne réinitialise jamais');
   assert.equal(menu.obtenirEtatCartes().ecran, 'menu_sauvegarde');
 
-  // « Oui » : un cran à droite, délibéré. Réinitialise UNE fois, et ferme tout.
+  // « Oui » : un cran à droite, délibéré. Puis la pop-up (`D-244`), focus
+  // sur son « Non » : marteler A n'y efface toujours rien.
   menu.traiterInput(etat());
   valider(menu, 'carte_reinitialiser');
+  cran(menu, 1, 0);
+  menu.traiterInput(etat({ attack: true }));
+  menu.traiterInput(etat());
+  const popup = menu.obtenirEtatCartes();
+  assert.equal(popup.ecran, 'carte_reinitialiser#oui#popup', '« Oui » ouvre la pop-up');
+  assert.equal(popup.cases[popup.focus], 'carte_reinitialiser#oui#popup_non', 'son « Non » est focalisé par défaut');
+  assert.equal(reinitialisations, 0, 'rien n’est effacé avant le second oui');
+  menu.traiterInput(etat({ attack: true }));
+  assert.equal(reinitialisations, 0, 'A sur le « Non » de la pop-up n’efface rien');
+  assert.equal(menu.obtenirEtatCartes().ecran, 'carte_reinitialiser#confirmation', 'il rend la confirmation');
+  // Le second oui, délibéré lui aussi : réinitialise UNE fois, et ferme tout.
+  menu.traiterInput(etat());
+  menu.traiterInput(etat({ attack: true }));
+  menu.traiterInput(etat());
   cran(menu, 1, 0);
   menu.traiterInput(etat({ attack: true }));
   assert.equal(reinitialisations, 1);

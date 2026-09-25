@@ -1,6 +1,8 @@
 # Carte mentale — RPG V2
 
-**Version : 1.7.0** — **cadrage clos. Roadmap rédigée : `specs/00_ROADMAP.md`. Fondations closes le 2026-09-23 (`Q-20`). Chantier courant : la carte Maison elle-même — systèmes et contenu, annexes et tunnels — jusqu'à la boucle de 2 heures. Ordre détaillé dans `specs/00_ROADMAP.md`, ce qui reste dû dans `docs/DOC_suivi-dettes.md`.**
+**Version : 1.8.0** — **le cap du jeu est écrit en §00 (2026-09-25).** **cadrage clos. Roadmap rédigée : `specs/00_ROADMAP.md`. Fondations closes le 2026-09-23 (`Q-20`). Chantier courant : la carte Maison elle-même — systèmes et contenu, annexes et tunnels — jusqu'à la boucle de 2 heures. Ordre détaillé dans `specs/00_ROADMAP.md`, ce qui reste dû dans `docs/DOC_suivi-dettes.md`.**
+
+**Changelog depuis 1.7.0 (2026-09-25)** : ménage du contexte de Claude (`docs/NS_menage-contexte-claude_2026-09-25.md`), aucun code touché. **Nouvelle section §00, « Le cap »** : les mots de Xav sur ce que doit être le jeu à la fin, et ce qu’il en a précisé (`Q-176`) — le follet c’est Claude, le héros un joueur ; médiéval-post-industriel = « château fort mélangé à Tchernobyl » ; le follet **agentique** (trier les coffres, une mine autonome au sous-sol, plusieurs follets laissés au travail) ; une **carte Build** dans le menu Héros. Ce que l’architecture devra accepter : `Q-177`. D11 reçoit ⑧, la mindmap deux branches d’horizon. Les décisions des 24 et 25/09 ne sont pas encore reportées en §8 (`DOC-12`).
 
 **Changelog depuis 1.6.0 (2026-09-23)** : session de documentation (`NS_alignement-dialogues-carte-mentale_2026-09-23.md` v1.1.0, décisions de Xav des 22 et 23/09), aucun code touché. **L'alignement entre en M1** (D11⑦) : stat **cachée**, distincte d'Esprit (D1⑧ confirmée), bornes `[−5 ; +5]`, effets **par le follet seul** — orbite inversée, synergie qui change de camp (table des régimes négatifs en §8). **Dialogues à conséquences** en chantier (D12), **follet = LLM scripté** (D13). **Pas de nouvelle carte** : la carte Maison s'agrandit par des **annexes** (mini-boss + énigme) et des tunnels (§2, §3, §3bis) ; respec et re-choix du follet **après l'Annexe 1, illimités et gratuits** (D1⑥, D11⑤). Boucle 5 min chiffrée par Xav (§2). **Journal d'indices et de traces** en menu permanent (D16). P1 : open source assumé, aucune sollicitation directe de dons ; pas de cloud sans multijoueur réseau (P3, C5⑦) ; double tampon ✅ (C5⑥). Quatre risques de §0bis clos ou reformulés.
 
@@ -17,6 +19,35 @@
 **Changelog depuis 1.0.0 — révision de cadrage demandée par Xav** : la plateforme primaire devient **PC à la manette**, mobile mené en parallèle (révise C1/C3/C7/C9). Le modèle économique passe de payant-une-fois à **gratuit + dons** (révise P1). Le budget de performance se scinde en deux cibles (révise C11①). Trois risques de §0bis sont résolus ou reformulés par ces révisions.
 
 > **Format** : Markdown + Mermaid, un seul fichier. Lisible en brut, rendu par Obsidian / VS Code / GitHub, versionnable, patchable par Claude Code.
+
+---
+
+## 00. Le cap — ce que doit être le jeu à la fin (2026-09-25)
+
+Le lieu où l'intention du jeu se suit. Il **oriente, il ne se tranche pas** : rien ici n'est une spec, et rien ne se code avant qu'une spec l'écrive. Les décisions verrouillées restent en §0 et §8. Né de `Q-176` et de `docs/NS_menage-contexte-claude_2026-09-25.md`.
+
+**Les mots de Xav (25/09)** :
+
+> un jeu fluide et hybride entre chill et speed run, médiéval-post-industriel, rpg-like, AI relationship (et qui reste flou même pour Xav, on avance à l'aveugle maintenant que l'équivalent de RPG-v1 est atteint), il faut pouvoir anticiper l'impossible d'aujourd'hui qui deviendra possible demain.
+
+**Ce qu'il en a précisé le même jour** (`Q-176`, réponse de Xav) :
+
+| Fil | Ce que Xav en dit | Ce qui existe déjà |
+|---|---|---|
+| **La relation avec l'IA** | « le feu follet, c'est Claude, et le héros, c'est Xav ou n'importe qui d'autre, un joueur » | le follet-LLM scripté (D12/D13, §8 du 23/09), l'alignement caché qui passe par lui (D11⑦) |
+| **Médiéval-post-industriel** | « le côté hybride, en mode ambiance château fort mélangé à Tchernobyl » ; « pour l'instant on n'a pas trop, mais du métal rouillé, des automatismes » | le Château (M1), le Chaos nocturne ; la ferronnerie et le concasseur annoncés (stations à venir) ; la Crypte X (circuit imprimé, portes logiques) |
+| **Le follet agentique** | « probablement beaucoup d'utilisation du feu follet en mode agentique » — première piste : **trier les coffres** ; deuxième : **une station de minage autonome au sous-sol** ; ensuite : **sélectionner plusieurs feux follets, les laisser en agentique quelque part, et se balader avec un autre** | un follet, un seul ; l'état `poste` (posé sur ce qu'on lui confie, spec 14 palier E) en est la première graine ; le coffre et ses conteneurs (`inventory.js`) |
+| **La carte Build** | une carte du menu Héros encore libre deviendrait une **carte Build** : choisir vite le follet, les stats prioritaires, les équipements déjà équipés…, **en fonction de ce qui est disponible dans les coffres** | la carte Follet et les compétences en cartes dans Stats (spec 14 palier I) ; respec et re-choix du follet illimités et gratuits depuis le menu |
+| **Chill et speed run** | « hybride » | la boucle de 5 min et la boucle de 2 h (chill) ; la descente de l'Annexe et son Gardien (tendu) ; la fluidité tenue (`R-11`, `Q-159`) |
+| **Anticiper l'impossible** | « l'impossible d'aujourd'hui qui deviendra possible demain » | la règle d'architecture (§7) ; les modules séparés au point de changer le rendu (vue 3/4 à terme) |
+
+**Ce que l'architecture devra accepter** (propositions de Claude, à trancher : `Q-177`) — ce qui est impossible aujourd'hui, et ce qui le rendrait possible :
+
+- **Plusieurs follets** : la sauvegarde et l'orchestrateur n'en connaissent qu'un ; il faudra un follet *par instance* (identité, élément, poste), et que le choix de la Grotte en devienne le premier.
+- **Un follet qui travaille loin du joueur** : aujourd'hui seule la scène affichée vit. Le tri des coffres peut se faire sur place, mais la mine autonome demande un temps qui avance **hors de la scène** — plutôt un bilan calculé au retour (temps actif écoulé → production) qu'une simulation qui tourne en fond, dans la ligne « aucun timer d'attente » (§0) et « jauges gelées hors session ».
+- **Un follet qui agit sur l'inventaire** : trier un coffre, c'est une suite d'opérations sur les conteneurs — `inventory.js` en a déjà le point de résolution unique ; l'agent doit passer par lui, jamais à côté.
+- **Un build** = une photographie de choix déjà possibles (follet, stats, compétences, équipement) appliquée d'un coup, qui ne crée rien : ce qui manque dans les coffres le dit.
+- **`src/main.js`** (6 600 lignes, « tout le reste ») est le point qui grossit le plus : chaque système agentique qui s'y ajouterait l'alourdirait. À découper **quand** le second cas d'usage arrive (discipline de scope), pas avant.
 
 ---
 
@@ -139,6 +170,8 @@ mindmap
       Exploration
       Lien
       Alignement
+      Agentique (horizon)
+      Plusieurs follets (horizon)
     CONSOLE
       Contrat cartouche
       haTD
@@ -283,7 +316,7 @@ Note de lecture (Xav) : « fluidité » désigne le **ressenti des mouvements** 
 | D8 | **Loot & récompenses** | 🟡 | ✅① table par ennemi + table par zone, combinées · ② pondérations / rareté · ③ pity timer · ④ récompenses de première fois vs répétables · ⑤ sources hors combat (récolte, énigme, mini-jeu) |
 | D9 | **Recettes** | 🟡 | ✅① système unique, stations et catégories en données · ② schéma d'une recette · ③ découverte (connue vs à trouver) · ④ liste des stations en M1 (cuisine seule ?) · ⑤ temps de fabrication · ⑥ buffs alimentaires = vrai système de build · ⑦ échec / qualité |
 | D10 | **Jardinage** | 🟡 | ✅① croissance à l'action, jamais au temps réel · ② schéma d'une culture · ③ nombre de parcelles / extension · ④ arrosage, saisons, aléas · ⑤ lien avec la cuisine |
-| D11 | **Compagnons** | 🟡 | ✅ le follet suit dès la Grotte, **double action** (joueur : attaque / vitesse d'attaque / déplacement — monstres : ralentissement / dégâts) et **seule source de lumière la nuit** · ① stats propres · ③ capacités d'exploration · ④ équipable ? · ✅⑤ re-choix du follet **après l'Annexe 1, illimité et gratuit depuis le menu** (*révise* « après Boss 1 », 2026-09-23) · ⑥ lien comportemental (M2+) · ✅⑦ **alignement M1**, stat cachée séparée d'Esprit, bornes `[−5 ; +5]`, effets par le follet seul (orbite inversée, synergie qui change de camp) — 2026-09-23, spec `10_alignement-follet.md` à écrire |
+| D11 | **Compagnons** | 🟡 | ✅ le follet suit dès la Grotte, **double action** (joueur : attaque / vitesse d'attaque / déplacement — monstres : ralentissement / dégâts) et **seule source de lumière la nuit** · ① stats propres · ③ capacités d'exploration · ④ équipable ? · ✅⑤ re-choix du follet **après l'Annexe 1, illimité et gratuit depuis le menu** (*révise* « après Boss 1 », 2026-09-23) · ⑥ lien comportemental (M2+) · ✅⑦ **alignement M1**, stat cachée séparée d'Esprit, bornes `[−5 ; +5]`, effets par le follet seul (orbite inversée, synergie qui change de camp) — 2026-09-23, spec `10_alignement-follet.md` à écrire · ⑧ **horizon (2026-09-25, §00)** : le follet **agentique** — trier les coffres, une mine autonome au sous-sol, plusieurs follets laissés au travail pendant qu’on se balade avec un autre ; une carte **Build** dans le menu Héros (`Q-177`) |
 | D12 | **Dialogues à conséquences** (ex « PNJ & dialogues ») | 🟡 | ①②③ **en chantier** (2026-09-23) : options avec conséquences typées (alignement, flag, effet de monde), branches par conditions du registre de flags, conséquences persistantes en sauvegarde — spec `11_dialogues-consequences.md` à écrire ; tous les dialogues existants (FR et EN) sont à revoir · ④ marchands · ⑤ PNJ récurrents vs décor · ⑥ dialogue influencé par l'élément choisi |
 | D13 | **Quêtes & narration** | 🟡 | ✅① lore diffus, aucun journal d'objectifs · ② déclenché par les **dialogues à conséquences et les flags** (2026-09-23) · ③ comment un joueur revenu après une semaine se réoriente (voir §0bis, et D16 : journal d'indices et de traces) · ④ rattachement de M1 à la trame M1→M7 · ⑤ volume de texte à écrire pour M1 — **à rechiffrer avec l'arc Nv.15+** · ✅⑧ **le follet est un LLM scripté, hors-ligne — le héros c'est Xav, le follet c'est Claude** (2026-09-23) : on se réveille enfant, on ne sait rien ; le follet apprend la vie sans expliquer et laisse découvrir étape par étape ; arc de l'usage simple au power user, les échanges poussés donnant alignement, compétences, résolution d'énigmes ; réponses multiples et suite narrative au Nv.15 |
 | D14 | **Énigmes / puzzles** | 🟡 | ✅① types réutilisables + pièces uniques · ② rôle du compagnon dans la résolution · ③ difficulté / indices · ④ blocage dur ou contournable · ⑤ piste « DaVinciCode » · ✅⑥ **fil « Crypte X »** (*acté 2026-09-16, gros point*) : un casse-tête **réparti sur tout le monde** — un bouton dans la Maison, un levier dans le Château, des symboles éparpillés dont un seul est à noter dans un cryptex une fois ouvert, la grotte de départ en fait partie ; **conçu comme un circuit imprimé superposé à la carte du monde, avec des portes logiques à connecter et une combinaison finale**. Dépend d'une **vision globale du monde** : **rien n'est dessiné avant le Poste avancé**. Dès la Phase 2, chaque scène réserve en données les emplacements (bouton, levier, symboles) sans poser d'objet, pour ne jamais redessiner une carte pour lui. Jeu de mots assumé : crypte X / secret eggs. *2026-09-23* : le fil gagne un **lieu d'écriture**, le carnet du cryptex dans le journal d'indices et de traces (D16①) |
@@ -414,6 +447,7 @@ Ajouter une entrée (arme, ennemi, recette, cartouche, compagnon…)
 | 2026-09-23 | P3① / C5⑦ | **Pas de sauvegarde cloud** tant qu'il n'y a pas de multijoueur en réseau ; export/import + local | Clôt le risque « coût réel du cloud » |
 | 2026-09-23 | C5⑥ | Double tampon ✅ — « OK, petite sécurité en plus, aucun problème constaté », priorité basse (P3) | Verdict de Xav |
 | 2026-09-23 | D13 / D16 | **Journal d'indices et de traces** : dernier bouton du menu principal (menu permanent), rappelle l'histoire parcourue, sous-page **Indices** de lore par zone, carnet du cryptex | Répond au risque « joueur revenu après une semaine » sans jamais afficher d'objectif |
+| 2026-09-25 | §00 | **Le cap du jeu est écrit** : fluide, hybride chill / speed run, médiéval-post-industriel (« château fort mélangé à Tchernobyl »), rpg-like, relation avec l’IA (le follet c’est Claude, le héros un joueur), anticiper l’impossible d’aujourd’hui ; horizon : le follet agentique et la carte Build | Réponse de Xav à `Q-176` ; l’équivalent de la V1 est atteint, le cap devient flou et doit s’écrire |
 
 ### Table des régimes de synergie (2026-09-23, Xav) — complète D6③ et `specs/02_grotte.md` §3.4
 

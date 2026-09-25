@@ -77,7 +77,9 @@ export const FREQUENCE_MAX_HZ = 3;
 // souffle, puisque toute respiration peut être lue comme un vacillement.
 const RYTHME_PAR_TYPE = {
   respiration: (e) => (1000 / e.periode_ms) * RAPPORT_SECOND_SOUFFLE,
-  filet: (e) => 1000 / e.periode_ms, // chaque particule naît et meurt une fois par période
+  // Chaque particule naît et meurt une fois par période — celle de son motif
+  // (`D-246`) : le plus rapide des motifs donne le rythme.
+  filet: (e) => Math.max(...motifsFilet(e).map((m) => 1000 / m.periode_ms)),
   orbite: (e) => 1000 / e.periode_ms, // l'alpha suit la profondeur, un tour par période
   curseur: (e) => 1000 / e.periode_ms,
   vol: (e) => 1000 / e.periode_ms,
@@ -94,6 +96,22 @@ export function rythmeLumineuxHz(effet) {
   return rythme ? rythme(effet) : undefined;
 }
 
+// `D-246` (Xav, 25/09 : des braises « avec des mouvements chaotiques : part
+// sur le côté, fait une boucle, rapide, lente… (différents patterns) ») : un
+// filet peut déclarer ses MOTIFS, un petit catalogue de trajectoires ; sans
+// `motifs`, l'effet est son propre et unique motif (la plume, d'avant).
+export function motifsFilet(effet) {
+  return Array.isArray(effet.motifs) ? effet.motifs : [effet];
+}
+
+// Un tirage dans [0, 1[ qui ne dépend que de ses entrées : la même particule,
+// dans la même vie, sur la même flamme, tire toujours la même chose. Aucun état
+// à tenir, et rien qui défile d'une frame à l'autre (`D-218`).
+function tirage(a, b, c) {
+  const v = Math.sin(a * 12.9898 + b * 78.233 + c * 37.719) * 43758.5453;
+  return v - Math.floor(v);
+}
+
 // Le filet (`D-191`) : `nb_particules` qui montent d'un point en décrivant une
 // boucle, comme un filet d'éruption solaire. Chacune vit une période, décalée
 // des autres d'une fraction ; son âge `a` ∈ [0, 1[ dit tout : elle monte de
@@ -103,18 +121,39 @@ export function rythmeLumineuxHz(effet) {
 // à tenir entre deux frames ni à vider quand l'objet disparaît. `graine`
 // décale la phase d'un objet à l'autre (deux plumes voisines ne soufflent pas
 // en même temps).
+//
+// `D-246` : la particule `i` suit le motif `i` (modulo le catalogue), à SA
+// période — des braises rapides et des lentes montent ensemble. Un motif peut
+// faire une boucle (`boucle_px`, `boucles`) : un cercle parcouru en montant,
+// qui redescend un instant si le cercle est assez grand. Et `alea` ∈ [0, 1]
+// casse la régularité : à chaque VIE d'une particule (sa naissance, invisible,
+// alpha 0), elle retire son côté, le sens de sa dérive et son ampleur
+// (1 ± alea). Sans `alea`, rien n'est tiré : la plume reste au pixel près.
 export function particulesFilet(effet, tMs, x, y, graine = 0) {
   if (!effet) return [];
+  const motifs = motifsFilet(effet);
+  const alea = effet.alea ?? 0;
   const particules = [];
   for (let i = 0; i < effet.nb_particules; i++) {
-    const brut = tMs / effet.periode_ms + i / effet.nb_particules + graine;
-    const a = brut - Math.floor(brut);
+    const motif = motifs[i % motifs.length];
+    const brut = tMs / motif.periode_ms + i / effet.nb_particules + graine;
+    const vieNumero = Math.floor(brut);
+    const a = brut - vieNumero;
     const vie = Math.sin(Math.PI * a);
     // Une particule sur deux boucle de l'autre côté : un filet, pas une file.
-    const cote = i % 2 === 0 ? 1 : -1;
+    let cote = i % 2 === 0 ? 1 : -1;
+    let sensDerive = 1;
+    let ampleur = 1;
+    if (alea > 0) {
+      cote = tirage(i, vieNumero, graine) < 0.5 ? 1 : -1;
+      sensDerive = tirage(i + 31, vieNumero, graine) < 0.5 ? 1 : -1;
+      ampleur = 1 + alea * (2 * tirage(i + 67, vieNumero, graine) - 1);
+    }
+    const angle = 2 * Math.PI * a * (motif.boucles ?? 1);
+    const boucle = motif.boucle_px ?? 0;
     particules.push({
-      x: x + cote * effet.courbure_px * vie + effet.derive_px * a,
-      y: y - effet.hauteur_px * a,
+      x: x + ampleur * (cote * (motif.courbure_px * vie + boucle * Math.sin(angle)) + sensDerive * motif.derive_px * a),
+      y: y - ampleur * (motif.hauteur_px * a - boucle * (1 - Math.cos(angle))),
       alpha: effet.alpha * vie,
       echelle: effet.echelle * (1 - 0.5 * a),
     });

@@ -185,12 +185,13 @@ function nouvelOrchestrateur(save) {
   let bandeauVisible = false;
   let pauseOuverte = false;
   let appelsOuvrirPlacement = 0;
+  let appelsOuvrirCraft = 0;
   const menu = {
     estOuvert: () => listeOuverte || pauseOuverte,
     traiterInput: () => {},
     ouvrir: () => { pauseOuverte = true; listeOuverte = false; bandeauVisible = false; },
     fermer: () => { pauseOuverte = false; listeOuverte = false; bandeauVisible = false; },
-    ouvrirCraft: () => {},
+    ouvrirCraft: () => { appelsOuvrirCraft += 1; },
     rafraichirCraft: () => {},
     ouvrirCoffre: () => {},
     rafraichirCoffre: () => {},
@@ -214,6 +215,7 @@ function nouvelOrchestrateur(save) {
     orchestrateur, frames, menu,
     menuEtat: () => ({ listeOuverte, bandeauVisible, pauseOuverte }),
     obtenirAppelsOuvrirPlacement: () => appelsOuvrirPlacement,
+    obtenirAppelsOuvrirCraft: () => appelsOuvrirCraft,
   };
 }
 
@@ -229,6 +231,14 @@ function saveDansLaMaison() {
   save.flags = {
     flag_follet_choisi: true, flag_grotte_sortie: true, flag_grotte_sequence: true,
     flag_grotte_monstre_tue: true, flag_levier_salle1: true, flag_maison_decouverte: true,
+    // La première visite déjà faite : sans ce flag, la question du follet
+    // s'ouvrait en entrant, et l'INTERACT de C3 la fermait (option par défaut)
+    // au lieu d'atteindre l'atelier — le test passait par accident. `D-243`
+    // l'a révélé : la question attend désormais un appui avant ses options.
+    flag_ambiance_maison_premiere_visite: true,
+    // Même raison : la première fois, l'atelier ouvre sa réplique avant le
+    // Craft (`stations.json > premiere_interaction`) ; C3 veut le Craft.
+    flag_atelier_premiere_interaction: true,
   };
   return save;
 }
@@ -268,7 +278,7 @@ function saveDansLaMaison() {
 // nouvelle position ----------------------------------------------------
 {
   const save = saveDansLaMaison();
-  const { orchestrateur, frames, menu, menuEtat, obtenirAppelsOuvrirPlacement } = nouvelOrchestrateur(save);
+  const { orchestrateur, frames, menu, menuEtat, obtenirAppelsOuvrirPlacement, obtenirAppelsOuvrirCraft } = nouvelOrchestrateur(save);
   const entrees = orchestrateur.entreesConstruction();
   const labelAtelier = i18n.t('station.atelier');
   const entreeAtelier = entrees.find((e) => e.texte === labelAtelier);
@@ -348,8 +358,10 @@ function saveDansLaMaison() {
   frames.push(etat({ interact: true }));
   orchestrateur.maj(16);
   // Rôle "craft" (station_type_atelier) : ouvre le menu Craft, jamais un
-  // dialogue — vérifié indirectement (aucun dialogue bloqué ouvert).
+  // dialogue — vérifié directement depuis `D-243` (avant, l'appui tombait
+  // dans la question de la Maison, et « aucun dialogue ouvert » passait).
   assert.equal(orchestrateur.dialogueOuvert(), false, 'INTERACT sur l\'atelier déplacé ouvre Craft, pas un dialogue');
+  assert.equal(obtenirAppelsOuvrirCraft(), 1, 'et c\'est bien le Craft qui s\'ouvre');
   console.log('OK grille / rotation 4 quarts / confirmation / INTERACT à la nouvelle position');
 }
 

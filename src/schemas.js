@@ -1527,6 +1527,15 @@ function validerConversation(entry, catalogs, path) {
     if (options.length > 0 && noeud.suite !== undefined) {
       erreurs.push(`${chemin} > suite sur un nœud à options : ce sont les options qui mènent quelque part`);
     }
+    // `D-243` : l'appui de plus avant les options. Un booléen, et seulement
+    // sur un nœud qui en a : sur une réplique, il ne validerait rien.
+    if (noeud.valider_avant_options !== undefined) {
+      if (typeof noeud.valider_avant_options !== 'boolean') {
+        erreurs.push(`${chemin} > valider_avant_options doit être un booléen`);
+      } else if (options.length === 0) {
+        erreurs.push(`${chemin} > valider_avant_options sur un nœud sans option : il n'y a rien à faire paraître`);
+      }
+    }
     if (options.length > 0) {
       const defauts = options.filter((o) => o && o.defaut === true).length;
       if (defauts !== 1) erreurs.push(`${chemin} > ${defauts} option(s) defaut : il en faut exactement une (celle de qui avance sans choisir)`);
@@ -1895,6 +1904,12 @@ function validerCarteMenu(carte, catalogs, chemin, flagsDeclares) {
     if (carte.danger === true && typeof carte[champ] !== 'string') erreurs.push(`${chemin} > danger: true exige "${champ}"`);
     if (carte.danger !== true && carte[champ] !== undefined) erreurs.push(`${chemin} > "${champ}" n'a de sens qu'avec danger: true`);
   }
+  // `D-244` : la pop-up qui suit « Oui, … » — facultative, et seulement sur
+  // une carte dangereuse (c'est une seconde confirmation, pas une première).
+  if (carte.cle_popup !== undefined) {
+    if (carte.danger !== true) erreurs.push(`${chemin} > "cle_popup" n'a de sens qu'avec danger: true`);
+    else if (typeof carte.cle_popup !== 'string') erreurs.push(`${chemin} > cle_popup doit être une clé de texte`);
+  }
   erreurs.push(...erreursCondition(carte.condition, chemin, flagsDeclares));
   // Spec 14, palier I : quand l'écran qu'ouvre la carte laisse CHOISIR (Stats :
   // tout reprendre, ranger une compétence). Une condition de flags ordinaire.
@@ -2206,16 +2221,51 @@ export const SCHEMAS = {
         if (!Number.isInteger(entry.nb_particules) || entry.nb_particules < 0) {
           erreurs.push(`${path} > nb_particules doit être un entier positif ou nul`);
         }
-        if (typeof entry.periode_ms !== 'number' || entry.periode_ms <= 0) {
-          erreurs.push(`${path} > periode_ms doit être un nombre strictement positif`);
-        }
-        if (typeof entry.hauteur_px !== 'number' || entry.hauteur_px < 0) {
-          erreurs.push(`${path} > hauteur_px doit être un nombre positif ou nul`);
-        }
-        for (const champ of ['courbure_px', 'derive_px']) {
-          if (typeof entry[champ] !== 'number' || !Number.isFinite(entry[champ])) {
-            erreurs.push(`${path} > ${champ} doit être un nombre fini`);
+        // `D-246` : la trajectoire vit sur l'effet, ou dans ses `motifs` —
+        // jamais les deux : une trajectoire écrite pour rien ne doit pas
+        // passer pour une trajectoire qui marche.
+        const TRAJECTOIRE = ['periode_ms', 'hauteur_px', 'courbure_px', 'derive_px', 'boucle_px', 'boucles'];
+        const erreursTrajectoire = (m, chemin) => {
+          const e = [];
+          if (typeof m.periode_ms !== 'number' || m.periode_ms <= 0) {
+            e.push(`${chemin} > periode_ms doit être un nombre strictement positif`);
           }
+          if (typeof m.hauteur_px !== 'number' || m.hauteur_px < 0) {
+            e.push(`${chemin} > hauteur_px doit être un nombre positif ou nul`);
+          }
+          for (const champ of ['courbure_px', 'derive_px']) {
+            if (typeof m[champ] !== 'number' || !Number.isFinite(m[champ])) {
+              e.push(`${chemin} > ${champ} doit être un nombre fini`);
+            }
+          }
+          if (m.boucle_px !== undefined && (typeof m.boucle_px !== 'number' || m.boucle_px < 0)) {
+            e.push(`${chemin} > boucle_px doit être un nombre positif ou nul`);
+          }
+          if (m.boucles !== undefined) {
+            if (!Number.isInteger(m.boucles) || m.boucles < 1) e.push(`${chemin} > boucles doit être un entier >= 1`);
+            else if (m.boucle_px === undefined) e.push(`${chemin} > boucles sans boucle_px : il n'y a pas de boucle à répéter`);
+          }
+          return e;
+        };
+        if (entry.motifs !== undefined) {
+          if (!Array.isArray(entry.motifs) || entry.motifs.length === 0) {
+            erreurs.push(`${path} > motifs doit être une liste non vide`);
+          } else {
+            const doublons = TRAJECTOIRE.filter((c) => entry[c] !== undefined);
+            if (doublons.length > 0) erreurs.push(`${path} > ${doublons.join(', ')} : avec des motifs, la trajectoire vit dans chaque motif`);
+            entry.motifs.forEach((m, i) => {
+              if (!m || typeof m !== 'object') erreurs.push(`${path} > motifs[${i}] doit être un objet`);
+              else erreurs.push(...erreursTrajectoire(m, `${path} > motifs[${i}]`));
+            });
+            if (Number.isInteger(entry.nb_particules) && entry.nb_particules < entry.motifs.length) {
+              erreurs.push(`${path} > ${entry.motifs.length} motifs pour ${entry.nb_particules} particules : un motif ne serait jamais suivi`);
+            }
+          }
+        } else {
+          erreurs.push(...erreursTrajectoire(entry, path));
+        }
+        if (entry.alea !== undefined && (typeof entry.alea !== 'number' || entry.alea < 0 || entry.alea > 1)) {
+          erreurs.push(`${path} > alea doit être un nombre dans [0, 1]`);
         }
         if (typeof entry.echelle !== 'number' || entry.echelle <= 0) {
           erreurs.push(`${path} > echelle doit être un nombre strictement positif`);

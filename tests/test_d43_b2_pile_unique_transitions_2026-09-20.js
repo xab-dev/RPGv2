@@ -331,7 +331,14 @@ const profondeur = (banc) => banc.menu.obtenirEtatPile().profondeur;
   jouer(banc, etat({ skill3: true }), 'B sur la confirmation');
   assert.deepEqual([sommet(banc), profondeur(banc)], ['menu_sauvegarde', 3]);
   cliquer(banc, carte(banc, 'carte_reinitialiser'), 'danger (3)');
-  cliquer(banc, carte(banc, 'carte_reinitialiser#oui'), '« Oui » : agit, puis ferme TOUT');
+  // `D-244` : « Oui » empile la pop-up, un niveau de la MÊME pile ; son
+  // « Non » la dépile, son « Oui » agit puis ferme TOUT.
+  cliquer(banc, carte(banc, 'carte_reinitialiser#oui'), '« Oui » : la pop-up s’empile');
+  assert.deepEqual([sommet(banc), profondeur(banc), banc.journal], ['carte_reinitialiser#oui#popup', 5, []]);
+  cliquer(banc, carte(banc, 'carte_reinitialiser#oui#popup_non'), '« Non » de la pop-up');
+  assert.deepEqual([sommet(banc), profondeur(banc)], ['carte_reinitialiser#confirmation', 4]);
+  cliquer(banc, carte(banc, 'carte_reinitialiser#oui'), '« Oui » (2)');
+  cliquer(banc, carte(banc, 'carte_reinitialiser#oui#popup_oui'), '« Oui » de la pop-up : agit, puis ferme TOUT');
   assert.deepEqual([banc.menu.estOuvert(), profondeur(banc), banc.journal], [false, 0, ['reinitialiser']]);
 
   // Une action ordinaire ferme tout, depuis la profondeur 3.

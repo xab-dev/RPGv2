@@ -23,7 +23,7 @@
 // `creerMenuCartes()`.
 import {
   resoudreCases, premiereCasePresente, voisin, choisirGrille, nombreCases, iconeCarte,
-  creerLecteurDirection, creerNavigationEcrans, construireConfirmation,
+  creerLecteurDirection, creerNavigationEcrans, construireConfirmation, construirePopup,
 } from '../menu_cartes.js';
 
 // Le faux DOM des tests headless n'a ni `setProperty` ni `setAttribute` : leur
@@ -112,7 +112,28 @@ export function creerMenuCartes({
   entete.appendChild(message);
   entete.appendChild(boutonEntete);
 
+  // `D-244` : la pop-up. Un voile sur tout l'écran (le doigt n'atteint plus
+  // les cartes recouvertes), une boîte au centre : un texte, deux cartes. Elle
+  // vit DANS cet élément : la pile n'a toujours qu'une vue visible, celle-ci,
+  // qui dessine l'écran recouvert et la boîte par-dessus.
+  const popup = document.createElement('div');
+  popup.className = 'cartes-popup';
+  popup.hidden = true;
+  poserAttribut(popup, 'role', 'alertdialog');
+  const boitePopup = document.createElement('div');
+  boitePopup.className = 'cartes-popup-boite';
+  const textePopup = document.createElement('p');
+  textePopup.className = 'cartes-popup-texte';
+  const cartesPopup = document.createElement('div');
+  cartesPopup.className = 'cartes-popup-cartes';
+  boitePopup.appendChild(textePopup);
+  boitePopup.appendChild(cartesPopup);
+  popup.appendChild(boitePopup);
+
+  // Avant l’en-tête dans le DOM : la sortie reste le dernier élément du
+  // document (voir plus haut) ; la boîte passe au-dessus par la feuille de style.
   el.appendChild(corps);
+  el.appendChild(popup);
   el.appendChild(entete);
   afficherEcran(el, false);
   document.body.appendChild(el);
@@ -185,11 +206,14 @@ export function creerMenuCartes({
   // verbe ATTACK, qui valide la carte focalisée. Une bascule cliquée puis
   // validée au clavier s'activerait deux fois dans la même frame : elle
   // reviendrait à son état de départ, sans que rien ne bouge à l'écran.
-  function creerCarte(carte, i) {
+  // `inerte` (`D-244`) : une carte de l'écran qu'une pop-up recouvre. Elle se
+  // voit, elle ne s'active pas — ni écouteur, ni rôle : son rang `i` n'est pas
+  // celui des cases navigables, qui sont alors celles de la pop-up.
+  function creerCarte(carte, i, { inerte = false } = {}) {
     const elCarte = document.createElement('div');
     elCarte.dataset.case = String(i);
     elCarte.dataset.carte = carte.id;
-    poserAttribut(elCarte, 'role', 'button');
+    if (!inerte) poserAttribut(elCarte, 'role', 'button');
     const icone = document.createElement('canvas');
     icone.className = 'carte-icone';
     icone.dataset.icone = iconeCarte(carte, evaluerCondition);
@@ -205,6 +229,7 @@ export function creerMenuCartes({
     textes.appendChild(elPhrase);
     elCarte.appendChild(icone);
     elCarte.appendChild(textes);
+    if (inerte) return elCarte;
     // Souris : le survol pose le focus. Tactile : un appui active directement
     // (§4.3) — le clic pose le focus PUIS active, par la même fonction que le
     // verbe ATTACK (`activer`) : un seul chemin, pas de parité à surveiller.
@@ -229,9 +254,19 @@ export function creerMenuCartes({
   function rendre() {
     const sommet = niveauCourant();
     if (!sommet) return;
-    const ecran = sommet.ecran;
-    colonnes = choisirGrille(nombreCases(ecran)).colonnes;
-    cases = resoudreCases(ecran, evaluerCondition);
+    // `D-244` : une pop-up se dessine par-dessus l'écran qu'elle recouvre ;
+    // la grille montre celui-ci, inerte, et les cases navigables sont celles
+    // de la boîte.
+    const enPopup = sommet.popup === true;
+    const fond = enPopup ? sommet.dessous : sommet;
+    const ecran = fond.ecran;
+    const colonnesFond = choisirGrille(nombreCases(ecran)).colonnes;
+    const casesFond = resoudreCases(ecran, evaluerCondition);
+    // La boîte : ses cartes sur UNE rangée, sans case vide (la grille 2 × 2
+    // de `resoudreCases` en ajouterait deux, qu’aucun doigt ne verrait).
+    const nbPopup = enPopup ? nombreCases(sommet.ecran) : 0;
+    cases = enPopup ? resoudreCases(sommet.ecran, evaluerCondition).slice(0, nbPopup) : casesFond;
+    colonnes = enPopup ? nbPopup : colonnesFond;
     // Le focus mémorisé peut viser une carte qui vient de disparaître (une
     // condition devenue fausse pendant qu'un sous-écran était ouvert).
     if (sommet.focus === null || sommet.focus === undefined || !cases[sommet.focus]) {
@@ -245,12 +280,15 @@ export function creerMenuCartes({
     poserAttribut(boutonEntete, 'aria-label', i18n.t(cleSortie));
     iconeEntete.dataset.icone = aLaRacine ? racine.icone_fermer : racine.icone_retour;
 
-    grille.dataset.colonnes = String(colonnes);
+    grille.dataset.colonnes = String(colonnesFond);
     grille.innerHTML = GRILLE_VIDE;
-    elementsCases = cases.map((carte, i) => {
+    const elementsFond = casesFond.map((carte, i) => {
       let elCase;
       if (carte) {
-        elCase = creerCarte(carte, i);
+        elCase = creerCarte(carte, i, { inerte: enPopup });
+        // La carte qui a ouvert la pop-up garde son focus, sous le voile :
+        // on voit à quoi « Oui » dit oui.
+        if (enPopup) elCase.className = classesCarte(carte, i === fond.focus);
       } else {
         // Case vide : elle tient sa place dans la grille (positions stables),
         // elle ne dessine rien, et rien ne peut la focaliser — ni écouteur,
@@ -263,6 +301,18 @@ export function creerMenuCartes({
       grille.appendChild(elCase);
       return elCase;
     });
+    cartesPopup.innerHTML = GRILLE_VIDE;
+    popup.hidden = !enPopup;
+    if (enPopup) {
+      textePopup.textContent = i18n.t(sommet.ecran.cle_texte);
+      elementsCases = cases.map((carte, i) => {
+        const elCase = creerCarte(carte, i);
+        cartesPopup.appendChild(elCase);
+        return elCase;
+      });
+    } else {
+      elementsCases = elementsFond;
+    }
     appliquerFocus();
     dessinerIcones();
   }
@@ -362,6 +412,8 @@ export function creerMenuCartes({
     message.textContent = AUCUN_MESSAGE;
     if (carte.interne === 'retour') {
       retour();
+    } else if (carte.interne === 'confirmer' && carte.cle_popup) {
+      nav.empiler({ ...niveauPour(construirePopup(carte, racine.icone_retour)), popup: true, dessous: niveauCourant() });
     } else if (carte.interne === 'confirmer') {
       executerAction(carte);
     } else if (carte.type === 'dossier') {

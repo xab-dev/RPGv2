@@ -8,8 +8,7 @@
     "valeur": 1,
     "mode": "plat",
     "duree": "permanente",
-    "cumul": false,
-    "icone": "buff_force"
+    "cumul": false
   },
   {
     "id": "buff_agilite",
@@ -20,8 +19,7 @@
     "valeur": 1,
     "mode": "plat",
     "duree": "permanente",
-    "cumul": false,
-    "icone": "buff_agilite"
+    "cumul": false
   },
   {
     "id": "buff_vitalite",
@@ -32,8 +30,7 @@
     "valeur": 1,
     "mode": "plat",
     "duree": "permanente",
-    "cumul": false,
-    "icone": "buff_vitalite"
+    "cumul": false
   },
   {
     "id": "buff_repas",
@@ -44,8 +41,7 @@
     "valeur": 2,
     "mode": "plat",
     "duree": 180000,
-    "cumul": false,
-    "icone": "buff_repas"
+    "cumul": false
   },
   {
     "id": "dot_brulure",
@@ -57,8 +53,7 @@
     "mode": "plat",
     "intervalle_ms": 500,
     "duree": "aura",
-    "cumul": false,
-    "icone": "dot_brulure"
+    "cumul": false
   },
   {
     "id": "debuff_affaiblissement",
@@ -69,8 +64,7 @@
     "valeur": -1,
     "mode": "plat",
     "duree": "aura",
-    "cumul": false,
-    "icone": "debuff_affaiblissement"
+    "cumul": false
   },
   {
     "id": "controle_entrave",
@@ -81,8 +75,7 @@
     "valeur": -0.5,
     "mode": "pourcent",
     "duree": "aura",
-    "cumul": false,
-    "icone": "controle_entrave"
+    "cumul": false
   },
   {
     "id": "dot_brulure_heros",
@@ -94,8 +87,7 @@
     "mode": "plat",
     "intervalle_ms": 1500,
     "duree": "aura",
-    "cumul": false,
-    "icone": "dot_brulure"
+    "cumul": false
   },
   {
     "id": "dot_brulure_torche",
@@ -107,8 +99,7 @@
     "mode": "plat",
     "intervalle_ms": 500,
     "duree": 3000,
-    "cumul": false,
-    "icone": "dot_brulure"
+    "cumul": false
   },
   {
     "id": "controle_entrave_heros",
@@ -119,8 +110,7 @@
     "valeur": -0.3,
     "mode": "pourcent",
     "duree": "aura",
-    "cumul": false,
-    "icone": "controle_entrave"
+    "cumul": false
   },
   {
     "id": "debuff_lenteur_heros",
@@ -131,8 +121,7 @@
     "valeur": -0.1,
     "mode": "pourcent",
     "duree": "permanente",
-    "cumul": false,
-    "icone": "debuff_lenteur"
+    "cumul": false
   },
   {
     "id": "buff_cadence_heros",
@@ -143,8 +132,7 @@
     "valeur": -0.1,
     "mode": "pourcent",
     "duree": "permanente",
-    "cumul": false,
-    "icone": "buff_cadence"
+    "cumul": false
   },
   {
     "id": "controle_acceleration",
@@ -155,8 +143,7 @@
     "valeur": 0.3,
     "mode": "pourcent",
     "duree": "aura",
-    "cumul": false,
-    "icone": "controle_acceleration"
+    "cumul": false
   },
   {
     "id": "buff_regeneration",
@@ -169,7 +156,6 @@
     "intervalle_ms": 2000,
     "duree": 60000,
     "cumul": false,
-    "icone": "buff_regeneration",
     "icone_bandeau": { "stat": "stat_vitalite", "teinte": "#5ec46a" }
   }
 ]

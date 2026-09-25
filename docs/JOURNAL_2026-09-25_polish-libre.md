@@ -26,7 +26,8 @@ Branche `polish-libre-2026-09-25`, partie de `main`. Pas de push.
 | `9f9732e` | `D-225` | La clé morte `menu.follet_actuel` retirée des deux locales |
 | `80261f6` | `D-29` | `image-rendering: pixelated` retiré d'`index.html` (décision verrouillée du 15/09) |
 | `ddc8db5` | `D-44` | La langue choisie est sauvegardée (`save.settings.lang`), comme la musique ; test neuf |
-| (ce commit) | `D-226` | `<html lang>` suit la langue du jeu (démarrage et bascule) ; vérifié sous Chrome |
+| `14205ee` | `D-226` | `<html lang>` suit la langue du jeu (démarrage et bascule) ; vérifié sous Chrome |
+| (ce commit) | `D-41` | `status_effects.icone` retiré (14 entrées, schéma) et refusé au boot ; rien ne change à l'écran |
 
 ## 1. La sentinelle (`traversee_nuit.mjs`, Moyen, ×1 et ×6)
 

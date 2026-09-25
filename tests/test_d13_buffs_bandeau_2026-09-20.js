@@ -231,4 +231,19 @@ const registre = construireRegistre(catalogues);
   }
 }
 
+// --- `D-41` : un effet n'a pas d'icône à lui --------------------------------
+// Le champ `status_effects.icone` était requis et lu par personne : une icône
+// par EFFET, la granularité que cette règle refuse. Il est retiré, et refusé
+// au boot avec le bon chemin, pour que personne ne le recâble.
+{
+  assert.ok(catalogues.status_effects.every((e) => !('icone' in e)),
+    'aucun effet du catalogue ne porte d’icône à lui');
+  const copie = JSON.parse(JSON.stringify(catalogues));
+  copie.status_effects[0].icone = 'visuel_buff_force';
+  const erreursIcone = validerCatalogues(copie);
+  assert.ok(erreursIcone.some((e) => /status_effects.*icone n'existe pas sur un effet/.test(e)),
+    `une icône posée sur un effet doit tomber au boot : ${erreursIcone.join(' | ')}`);
+  console.log('  un effet n’a pas d’icône à lui : refusé au boot');
+}
+
 console.log('OK test_d13_buffs_bandeau');

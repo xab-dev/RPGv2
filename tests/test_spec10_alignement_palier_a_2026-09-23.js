@@ -84,7 +84,7 @@ const { bornes } = config;
 
 // --- 3. Sauvegarde : partie neuve, migration 7 -> 8, échec dur ----------
 {
-  assert.equal(VERSION_SCHEMA_COURANTE, 8);
+  assert.equal(VERSION_SCHEMA_COURANTE, 9);
   const neuve = saveNeuve();
   assert.equal(neuve.hero.alignement, 0, 'un héros naît neutre');
   assert.equal(lireAlignement(neuve.hero, bornes), 0);
@@ -92,7 +92,7 @@ const { bornes } = config;
   const v7 = { ...saveNeuve(), schema_version: 7 };
   delete v7.hero.alignement;
   const migre = migrer(v7);
-  assert.equal(migre.schema_version, 8);
+  assert.equal(migre.schema_version, VERSION_SCHEMA_COURANTE);
   assert.ok(Object.prototype.hasOwnProperty.call(migre.hero, 'alignement'), 'le champ est ÉCRIT, pas sous-entendu');
   assert.equal(migre.hero.alignement, 0);
   assert.equal(migre.hero.niveau, v7.hero.niveau, 'la migration ne touche que son champ');
@@ -143,7 +143,7 @@ const { bornes } = config;
       assert.equal(migre.monde.heure, deVersion.monde.heure, `${fichier} : heure du cycle`);
       assert.deepEqual(migre.inventaire, deVersion.inventaire, `${fichier} : poche`);
     }
-    console.log(`OK les ${fichiers.length} sauvegardes réelles (versions ${[...versions].sort().join(', ')}) migrent en v8 sans perte, neutres si elles ont migré`);
+    console.log(`OK les ${fichiers.length} sauvegardes réelles (versions ${[...versions].sort().join(', ')}) migrent en v${VERSION_SCHEMA_COURANTE} sans perte, neutres si elles ont migré`);
   }
 }
 

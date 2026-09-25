@@ -141,5 +141,14 @@
     ],
     "dialogue": "dlg_ambiance_stele_carnet",
     "flag": "flag_ambiance_stele_carnet"
+  },
+  {
+    "id": "amb_choix_debloque",
+    "condition": "flag_competence_1",
+    "scenes": [
+      "scene_maison_exterieur"
+    ],
+    "dialogue": "dlg_choix_debloque",
+    "flag": "flag_choix_debloque"
   }
 ]

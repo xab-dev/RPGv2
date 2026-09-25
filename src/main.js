@@ -121,7 +121,8 @@ import {
 import { dessinerEcranStele, zoneGravureStele } from './ui/ecran_stele.js';
 import {
   creerEtatCompetence, dureesCompetence, chargeActive, avancerCompetence, competencePrete, lancerCompetence,
-  ratiosCompetence, resoudreDegats, choisirCible,
+  ratiosCompetence, resoudreDegats, choisirCible, estEmplacementCompetence, valeurCompetenceEn,
+  equiperCompetence, emplacementDe, rangerCompetenceApprise,
 } from './competences.js';
 import { lignesEcrites, ecritureFinie, dureeEcriture } from './parchemin.js';
 import { dessinerEcranParchemin } from './ui/ecran_parchemin.js';
@@ -258,6 +259,10 @@ const RAYON_TOIT_FOLLET_ABSENT_PX = 90;
 // arbitraire, sans effet sur le gameplay (les 3 follets sont équivalents en
 // interface) ; Xav pourra le changer librement en relisant ce tableau.
 const ORDRE_CHOIX_FOLLET = ['comp_follet_feu', 'comp_follet_eau', 'comp_follet_terre'];
+// Spec 14, §4.9 : changer de follet depuis le menu — un fondu COURT, jamais la
+// cinématique de la Grotte : l'ancien se résorbe pendant la première moitié,
+// le nouveau grandit pendant la seconde. PROVISOIRE, à juger en jeu par Xav.
+const DUREE_CHANGEMENT_FOLLET_MS = 500;
 // `D-103` (T10) : LA monnaie du jeu, par son id de catalogue. Elle est citée
 // à deux endroits — le bandeau et la fiche d'une recette qui coûte des éclats
 // — donc elle se déclare au NIVEAU MODULE (`D-72`) : un nom écrit deux fois
@@ -1018,6 +1023,13 @@ export function creerOrchestrateurGrotte({
       // calcul que la cible d'INTERACT (`interactifAPortee`), jamais un second
       // seuil de distance — « au pied de la pierre » est l'endroit d'où on la lit.
       a_portee: () => interactifAPortee()?.puzzleId ?? null,
+      // Spec 14, palier I : une valeur par emplacement de compétence — 1 si
+      // une compétence y est rangée (`competences.js#valeurCompetenceEn`).
+      // La case du HUD la cite : elle s'affiche quand on y range quelque chose.
+      ...Object.fromEntries(emplacementsCompetence().map((slot) => [
+        valeurCompetenceEn(slot.id),
+        () => (competencesEquipees().some((e) => e.emplacement === slot.id) ? 1 : 0),
+      ])),
     }, valeursExternes());
   }
   let flags = construireFlags();
@@ -1464,6 +1476,10 @@ export function creerOrchestrateurGrotte({
   // Les ondes des tirs à zone qui viennent d'éclater, `{ x, y, rayon, couleur,
   // ms }` : un retour visuel, rien d'autre. Vidées avec les tirs.
   let ondes = [];
+  // Spec 14, palier I : le follet qu'on vient de quitter, pendant le fondu
+  // (`{ ancien, ms }`) — un état d'AFFICHAGE : le nouveau follet est déjà le
+  // vrai (synergie, aura, sauvegarde) dès l'instant du choix.
+  let changementFollet = null;
   // Spec 14, palier D : la RENCONTRE lancée dans la scène (`rencontre.js`),
   // `{ def, etat }` — `def` est lue dans `scenes.json`. État de SESSION : remis
   // à null à chaque entrée en scène, jamais sauvegardé ; une rencontre
@@ -2030,6 +2046,7 @@ export function creerOrchestrateurGrotte({
     ondes = [];
     rencontre = null;
     extinctionsLeviers = new Map();
+    changementFollet = null;
 
     follet = save.hero.companion ? creerFollet(save.hero.companion, hero, sensOrbiteFollet()) : null;
     puzzlesEtat = { ...etatInitialPuzzles(registre), ...save.puzzles };
@@ -3143,10 +3160,17 @@ export function creerOrchestrateurGrotte({
     return `${Math.round(valeur)}`;
   }
 
-  function obtenirEntreesStats() {
+  // Spec 14, palier I : `choisir` — la carte qui ouvre l'écran le permet-elle
+  // (`menus.json > choisir_si`, relu par le menu) ? Alors chaque stat propose
+  // aussi « Tout reprendre » (X), et chaque compétence « Ranger » (A).
+  // `iconeReprendre` : la silhouette de la carte « Oui, tout reprendre »,
+  // déclarée sur la carte Stats (`icone_reprendre`) — un id de dessin ne
+  // s'écrit pas ici.
+  function obtenirEntreesStats({ choisir = true, iconeReprendre = null } = {}) {
     const statsPrimaires = calculerStatsPrimaires(registre, resoudreModificateursHeros());
     const statsDerivees = calculerStatsDerivees(registre, statsPrimaires);
-    return registre.tous('stats').map((s) => {
+    const reprendre = choisir && pointsDepenses() > 0;
+    const entreesStats = registre.tous('stats').map((s) => {
       const peutAjouter = save.hero.points_stats_libres > 0;
       const suffixe = peutAjouter ? ` (${i18n.t('menu.stats_ajouter')})` : '';
       return {
@@ -3169,8 +3193,173 @@ export function creerOrchestrateurGrotte({
           etatModifie = true;
           menu.rafraichirStats();
         },
+        // « Tout reprendre » (§4.9) : la seconde action de chaque stat, parce
+        // qu'elle les touche toutes. Un danger : confirmée par les deux cartes
+        // de toujours (« Non » d'abord), puis retour à cette page.
+        libelleActionSecondaire: reprendre ? i18n.t('menu.stats_reprendre') : null,
+        actionSecondaire: reprendre ? () => demanderToutReprendre(iconeReprendre) : null,
       };
     });
+    return [...entreesStats, ...entreesCompetences(statsDerivees, choisir)];
+  }
+
+  // Les points que le joueur a RÉPARTIS (ceux des stats, pas leur base).
+  function pointsDepenses() {
+    return Object.values(save.hero.stats.points).reduce((total, n) => total + (n > 0 ? n : 0), 0);
+  }
+
+  // Tout reprendre (§4.9) : chaque point réparti redevient libre, les stats
+  // retrouvent leur base. On rend ce qui a été DÉPENSÉ, sans recompter depuis
+  // le niveau : un point ne se crée ni ne se perd. Les PV suivent au prochain
+  // calcul des stats, par `entities.js#reconcilierPvMax` (une baisse de PV max
+  // les borne, sans perte de plus).
+  function toutReprendre() {
+    save.hero.points_stats_libres += pointsDepenses();
+    save.hero.stats.points = {};
+    etatModifie = true;
+  }
+
+  function demanderToutReprendre(icone) {
+    menu.demanderConfirmation({
+      id: 'stats_tout_reprendre',
+      cle_confirmation: 'menu.stats_reprendre_confirmation',
+      cle_confirmer: 'menu.stats_reprendre_oui',
+      icone,
+      faire: toutReprendre,
+      apres: 'retour',
+    });
+  }
+
+  function glypheVerbe(verbe) {
+    const peripherique = input.peripheriqueActif ? input.peripheriqueActif() : 'manette';
+    return i18n.t(`glyphe.${peripherique}.${verbe}`);
+  }
+
+  // Les compétences, en cartes sous les quatre stats (§4.9) : une tuile par
+  // compétence APPRISE — une compétence non apprise est invisible (`D-62`).
+  // La fiche dit ce qu'elle fait, sa charge et sa recharge calculées avec
+  // l'Esprit du moment (c'est là qu'un point d'Esprit se VOIT), où elle est
+  // rangée, et quel bouton lance chaque emplacement (B3).
+  function entreesCompetences(statsDerivees, choisir) {
+    const emplacements = emplacementsCompetence();
+    // Deux décimales : un point d'Esprit ôte quelques centièmes de seconde, et
+    // c'est précisément ce que le joueur vient voir ici.
+    const secondes = (ms) => (ms / 1000).toLocaleString(i18n.langueCourante(), {
+      minimumFractionDigits: 2, maximumFractionDigits: 2,
+    });
+    const correspondance = emplacements
+      .map((slot, i) => i18n.t('competence.fiche_emplacement_bouton', { n: i + 1, glyphe: glypheVerbe(slot.verb) }))
+      .join(' · ');
+    return registre.tous('skills').filter((c) => flags.has(c.flag)).map((competence) => {
+      const durees = dureesCompetence(competence, statsDerivees);
+      const ici = emplacementDe(save.hero.competences, competence.id);
+      const rang = emplacements.findIndex((slot) => slot.id === ici);
+      return {
+        titre: i18n.t(competence.label_key),
+        icone: competence.icone,
+        groupe: i18n.t('menu.stats_groupe_competences'),
+        // Rangée : la tuile porte le repère « équipé » (une forme).
+        marque: rang >= 0,
+        lignes: [
+          i18n.t(competence.description_key),
+          i18n.t('competence.fiche_charge', { n: secondes(durees.chargeMs) }),
+          i18n.t('competence.fiche_recharge', { n: secondes(durees.rechargeMs) }),
+          rang >= 0
+            ? i18n.t('competence.fiche_rangee', { n: rang + 1, glyphe: glypheVerbe(emplacements[rang].verb) })
+            : i18n.t('competence.fiche_non_rangee'),
+          i18n.t('competence.fiche_emplacements', { liste: correspondance }),
+        ],
+        libelleAction: choisir ? i18n.t('competence.ranger') : null,
+        grisee: false,
+        action: () => {
+          if (choisir) proposerEmplacements(competence);
+        },
+      };
+    });
+  }
+
+  // A sur une compétence (B3) : le choix parmi les emplacements, en cartes,
+  // par le fonctionnement normal du menu. Chaque carte dit son bouton de jeu
+  // et ce qu'elle contient ; choisir un emplacement occupé REMPLACE ce qui s'y
+  // trouvait. Puis retour à la page Stats, qui se relit.
+  function proposerEmplacements(competence) {
+    const nom = i18n.t(competence.label_key);
+    menu.empilerChoix({
+      id: `choix_emplacement#${competence.id}`,
+      titre: i18n.t('competence.choix_titre', { nom }),
+      cartes: emplacementsCompetence().map((slot, i) => {
+        const occupant = registre.obtenir('skills', (save.hero.competences || {})[slot.id]);
+        let phrase = i18n.t('competence.emplacement_libre');
+        if (occupant && occupant.id === competence.id) phrase = i18n.t('competence.emplacement_ici');
+        else if (occupant) phrase = i18n.t('competence.emplacement_remplace', { nom: i18n.t(occupant.label_key) });
+        return {
+          id: `choix_emplacement#${slot.id}`,
+          case: i,
+          type: 'action',
+          titre: i18n.t('competence.emplacement', { n: i + 1, glyphe: glypheVerbe(slot.verb) }),
+          phrase,
+          icone: occupant ? occupant.icone : competence.icone,
+          faire: () => equiperCompetenceDansEmplacement(competence.id, slot.id),
+          apres: 'retour',
+        };
+      }),
+    });
+  }
+
+  // La carte Follet (§4.9) : les follets du catalogue, en maître-détail. Celui
+  // qui accompagne porte le repère ; les autres se choisissent par A.
+  // L'alignement ne bouge pas (c'est une stat du héros) ; la synergie suit le
+  // nouvel élément, par la table existante.
+  function obtenirEntreesFollet() {
+    return registre.tous('companions').map((compagnon) => {
+      const actuel = compagnon.id === save.hero.companion;
+      const element = registre.obtenir('elements', compagnon.element);
+      return {
+        titre: i18n.t(compagnon.label_key),
+        icone: compagnon.render.visuel,
+        teinteIcone: compagnon.render.couleur,
+        marque: actuel,
+        lignes: [
+          i18n.t('menu.follet_element', { element: element ? i18n.t(element.label_key) : '' }),
+          ...(actuel ? [i18n.t('menu.follet_avec_toi')] : []),
+        ],
+        libelleAction: actuel ? null : i18n.t('menu.follet_choisir'),
+        grisee: false,
+        action: () => choisirFollet(compagnon.id),
+      };
+    });
+  }
+
+  // Choisir un follet : il change TOUT DE SUITE — sauvegarde, synergie, aura —
+  // et le menu se ferme pour qu'on le voie arriver (le fondu court). Le
+  // nouveau part de là où était l'ancien : c'est lui qui prend sa place.
+  function choisirFollet(companionId) {
+    if (companionId === save.hero.companion) return;
+    const ancien = follet ? follet.companionId : null;
+    const position = follet ? { x: follet.x, y: follet.y } : null;
+    save.hero.companion = companionId;
+    follet = { ...creerFollet(companionId, hero, sensOrbiteFollet()), ...(position || {}) };
+    changementFollet = ancien ? { ancien, ms: 0 } : null;
+    etatModifie = true;
+    menu.fermer();
+  }
+
+  // Le follet qu'on DESSINE : l'ancien pendant la première moitié du fondu.
+  function companionAffiche() {
+    if (changementFollet && changementFollet.ms < DUREE_CHANGEMENT_FOLLET_MS / 2) return changementFollet.ancien;
+    return follet.companionId;
+  }
+
+  // La taille du follet dessiné pendant le fondu, de 1 à 0 puis de 0 à 1 —
+  // adoucie aux deux bouts. Hors fondu : 1.
+  function facteurChangementFollet() {
+    if (!changementFollet) return 1;
+    const moitie = DUREE_CHANGEMENT_FOLLET_MS / 2;
+    const t = changementFollet.ms < moitie
+      ? 1 - changementFollet.ms / moitie
+      : (changementFollet.ms - moitie) / moitie;
+    const borne = Math.min(1, Math.max(0, t));
+    return borne * borne * (3 - 2 * borne);
   }
 
   // Les Indices du menu (`indices.js`) : un indice illisible (sa `lisible_si`
@@ -3271,6 +3460,11 @@ export function creerOrchestrateurGrotte({
   function ouvrirCoffreParchemin(puzzle) {
     const competence = registre.obtenir('skills', puzzle.competence);
     flags.set(competence.flag);
+    // Apprise, elle se range d'elle-même (dans son emplacement par défaut
+    // s'il est libre) : le parchemin dit le bouton qui la lance, il doit dire vrai.
+    save.hero.competences = rangerCompetenceApprise(
+      save.hero.competences, competence, emplacementsCompetence().map((s) => s.id),
+    );
     etatModifie = true;
     vueParchemin = { vue: creerVueStele(puzzle.id), puzzleId: puzzle.id, competenceId: competence.id, ecritureMs: 0 };
   }
@@ -3281,7 +3475,8 @@ export function creerOrchestrateurGrotte({
   // la lecture change le bouton écrit.
   function lignesParchemin(competenceId) {
     const competence = registre.obtenir('skills', competenceId);
-    const verbe = registre.obtenir('action_slots', competence.emplacement).verb;
+    const emplacement = emplacementDe(save.hero.competences, competenceId) || competence.emplacement;
+    const verbe = registre.obtenir('action_slots', emplacement).verb;
     const peripherique = input.peripheriqueActif ? input.peripheriqueActif() : 'manette';
     return [
       i18n.t(competence.label_key),
@@ -3771,14 +3966,34 @@ export function creerOrchestrateurGrotte({
     ondes = ondes.map((o) => ({ ...o, ms: o.ms + deltaMs })).filter((o) => o.ms < DUREE_ONDE_MS);
   }
 
-  // Spec 14, §4.6 : les compétences APPRISES, et le verbe de l'emplacement où
-  // chacune se range. Aujourd'hui, l'emplacement par défaut de son entrée
-  // (`emplacement`) ; le palier I y mettra le choix du joueur
-  // (`save.hero.competences`) — ce point, et lui seul, changera.
+  // Spec 14, §4.9 : les compétences ÉQUIPÉES, et le verbe de l'emplacement où
+  // chacune est rangée — le choix du joueur (`save.hero.competences`). Ce que
+  // la sauvegarde nomme sans que le catalogue le connaisse (une compétence ou
+  // un emplacement retiré), ou qu'on n'a pas APPRIS (son flag), ne se range
+  // nulle part : rien ne se lance qu'on n'ait appris.
   function competencesEquipees() {
-    return registre.tous('skills')
-      .filter((c) => flags.has(c.flag))
-      .map((c) => ({ competence: c, verbe: registre.obtenir('action_slots', c.emplacement).verb }));
+    const equipees = [];
+    for (const [emplacement, competenceId] of Object.entries(save.hero.competences || {})) {
+      const competence = registre.obtenir('skills', competenceId);
+      const slot = registre.obtenir('action_slots', emplacement);
+      if (!competence || !estEmplacementCompetence(slot) || !flags.has(competence.flag)) continue;
+      equipees.push({ competence, emplacement, verbe: slot.verb });
+    }
+    return equipees;
+  }
+
+  // Les emplacements de compétence, dans l'ordre du catalogue : « Emplacement
+  // 1, 2, 3 » est ce rang, jamais un numéro écrit dans les données.
+  function emplacementsCompetence() {
+    return registre.tous('action_slots').filter(estEmplacementCompetence);
+  }
+
+  // Ranger une compétence (B3) : elle quitte son ancien emplacement, et celle
+  // qu'elle remplace n'est plus équipée. Sa charge la suit (l'état est tenu
+  // par compétence, pas par emplacement).
+  function equiperCompetenceDansEmplacement(competenceId, emplacementId) {
+    save.hero.competences = equiperCompetence(save.hero.competences, competenceId, emplacementId);
+    etatModifie = true;
   }
 
   // Une frame de jeu des compétences : la charge monte (le follet engage), la
@@ -3995,6 +4210,10 @@ export function creerOrchestrateurGrotte({
   function mettreAJourCombat(deltaMs, etatGameplay, statsPrimaires, statsDerivees) {
     const deltaS = deltaMs / 1000;
     anneauAttaqueMs = tickCooldown(anneauAttaqueMs, deltaMs);
+    if (changementFollet) {
+      changementFollet = { ...changementFollet, ms: changementFollet.ms + deltaMs };
+      if (changementFollet.ms >= DUREE_CHANGEMENT_FOLLET_MS) changementFollet = null;
+    }
 
     // Le compagnon est résolu AVANT la mise à jour du follet : depuis `D-37`,
     // la règle d'engagement lit l'aura (donc le catalogue), et non plus une
@@ -4906,7 +5125,11 @@ export function creerOrchestrateurGrotte({
     // plus bas pour comparer d'une frame à l'autre.
     moniteurPerf.enregistrerPositionHero(hero.x - camera.x, hero.y - camera.y);
 
-    const companionActif = follet ? registre.obtenir('companions', follet.companionId) : null;
+    // Pendant la première moitié d'un changement de follet, c'est encore
+    // l'ANCIEN qu'on voit (sa couleur, sa lumière), qui se résorbe.
+    const companionActif = follet
+      ? registre.obtenir('companions', companionAffiche())
+      : null;
     const heroVisuel = registre.obtenir('visuels', VISUEL_HEROS_ID);
 
     // `D-40` : plus d'étiquette de nom (l'ancien §4 de SD_ui-lisibilite est
@@ -5141,7 +5364,7 @@ export function creerOrchestrateurGrotte({
         y: follet.y + corpsFollet.dy,
         visuel: registre.obtenir('visuels', companionActif.render.visuel),
         couleur: companionActif.render.couleur,
-        echelle: echelleFolletAffichee(companionActif),
+        echelle: echelleFolletAffichee(companionActif) * facteurChangementFollet(),
       } : null,
       puzzles: puzzlesAffiches,
       estFlagActif: flags.has,
@@ -5482,6 +5705,7 @@ export function creerOrchestrateurGrotte({
     dechiffrement = null;
     viderProjectiles(projectiles);
     ondes = [];
+    changementFollet = null;
     etatsCompetences.clear();
     ratiosEmplacements = {};
     rencontre = null;
@@ -5605,7 +5829,9 @@ export function creerOrchestrateurGrotte({
     // une fois l'orchestrateur construit (même patron que
     // reinitialiserPartie ci-dessus) — le menu Stats n'a besoin d'appeler
     // que cette seule fonction, jamais de connaître registre/save/i18n.
-    obtenirEntreesStats: () => obtenirEntreesStats(),
+    obtenirEntreesStats: (options) => obtenirEntreesStats(options),
+    obtenirEntreesFollet: () => obtenirEntreesFollet(),
+    obtenirChangementFollet: () => changementFollet,
     sousTitreStats: () => sousTitreStats(),
     obtenirEntreesIndices: () => obtenirEntreesIndices(),
     // Spec 14 : le menu prévient qu'il ouvre le carnet (`menu.definirOuvertureIndices`).
@@ -6153,6 +6379,7 @@ export async function demarrerJeu() {
   // Même patron (§3.4) : le menu Stats a besoin de l'orchestrateur pour
   // résoudre les stats/points courants.
   menu.definirEntreesStats(orchestrateur.obtenirEntreesStats, orchestrateur.sousTitreStats);
+  menu.definirEntreesFollet(orchestrateur.obtenirEntreesFollet);
   // specs/05_construction-stations.md §3 : même patron de couture différée
   // (le menu ne connaît ni la scène ni la position du héros).
   menu.definirEvaluateurCondition(orchestrateur.evaluerCondition);

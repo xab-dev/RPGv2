@@ -44,7 +44,14 @@
       {
         "id": "carte_stats", "case": 1, "type": "dossier",
         "cle_titre": "menu.stats", "cle_phrase": "menu.carte.stats_phrase",
-        "icone": "visuel_icone_menu_stats", "cible": "ecran_stats"
+        "icone": "visuel_icone_menu_stats", "cible": "ecran_stats",
+        "choisir_si": "flag_choix_debloque", "icone_reprendre": "visuel_icone_menu_danger"
+      },
+      {
+        "id": "carte_follet", "case": 2, "type": "dossier",
+        "cle_titre": "menu.follet", "cle_phrase": "menu.carte.follet_phrase",
+        "icone": "visuel_icone_menu_follet", "cible": "ecran_follet",
+        "condition": "flag_choix_debloque"
       }
     ]
   },

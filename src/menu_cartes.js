@@ -502,6 +502,10 @@ export function construireConfirmation(carte, iconeRetour) {
         id: `${carte.id}#oui`, case: 1, type: 'action', interne: 'confirmer', danger: true,
         cle_titre: carte.cle_confirmer, cle_phrase: 'menu.confirmation_oui_phrase', icone: carte.icone,
         action: carte.action,
+        // Une action qui n'est pas du catalogue (spec 14 palier I) : son geste,
+        // et où l'on revient après. Absents pour une carte du catalogue.
+        ...(carte.faire ? { faire: carte.faire } : {}),
+        ...(carte.apres ? { apres: carte.apres } : {}),
       },
     ],
   };

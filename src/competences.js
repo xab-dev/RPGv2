@@ -105,3 +105,54 @@ export function choisirCible({ follet, monstres, hero, porteePx }) {
   }
   return meilleur;
 }
+
+// ── Équiper (spec 14, §4.9, palier I) ─────────────────────────────────────
+// Ce que le joueur a rangé où : `{ id d'emplacement : id de compétence }`
+// (`save.hero.competences`). Les fonctions ci-dessous rendent une table
+// NEUVE, jamais la table reçue modifiée : la sauvegarde ne change que par
+// l'appelant, qui la remplace d'un bloc.
+
+// Un emplacement de compétence est un emplacement d'action dont le verbe est
+// `skill_N` — la règle que le schéma de `skills.json` appliquait déjà à
+// `emplacement`, dite une fois ici pour les deux.
+export function estEmplacementCompetence(slot) {
+  return !!slot && typeof slot.verb === 'string' && /^skill_\d+$/.test(slot.verb);
+}
+
+// Le nom de la valeur de condition qui dit combien de compétences sont
+// rangées dans un emplacement (0 ou 1) : c'est elle que `action_slots.json`
+// cite pour montrer une case au HUD (`visible_si`). Une case s'affiche donc
+// quand quelque chose y est rangé, comme la case du consommable.
+export function valeurCompetenceEn(emplacementId) {
+  return `competence_en_${emplacementId}`;
+}
+
+// Ranger une compétence dans un emplacement (B3) : elle QUITTE celui où elle
+// était, et celle qui occupait l'emplacement choisi devient non équipée —
+// jamais échangée.
+export function equiperCompetence(equipees, competenceId, emplacementId) {
+  const suivantes = {};
+  for (const [emplacement, id] of Object.entries(equipees || {})) {
+    if (id !== competenceId && emplacement !== emplacementId) suivantes[emplacement] = id;
+  }
+  suivantes[emplacementId] = competenceId;
+  return suivantes;
+}
+
+// L'emplacement où une compétence est rangée, ou `null`.
+export function emplacementDe(equipees, competenceId) {
+  const trouve = Object.entries(equipees || {}).find(([, id]) => id === competenceId);
+  return trouve ? trouve[0] : null;
+}
+
+// Une compétence qu'on vient d'APPRENDRE se range d'elle-même : dans son
+// emplacement par défaut (`emplacement` de son entrée) s'il est libre, sinon
+// dans le premier libre (dans l'ordre de `emplacements`), sinon nulle part —
+// elle ne chasse jamais ce que le joueur a déjà rangé. Déjà rangée, rien ne
+// bouge. Rend la table suivante.
+export function rangerCompetenceApprise(equipees, competence, emplacements) {
+  if (emplacementDe(equipees, competence.id)) return { ...equipees };
+  const libre = (id) => !(equipees || {})[id];
+  const cible = libre(competence.emplacement) ? competence.emplacement : emplacements.find(libre);
+  return cible ? equiperCompetence(equipees, competence.id, cible) : { ...equipees };
+}

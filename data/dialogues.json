@@ -348,5 +348,14 @@
         "glyphe": "target_next"
       }
     }
+  },
+  {
+    "id": "dlg_choix_debloque",
+    "declencheur": "premiere sortie de l'Annexe avec une competence apprise (spec 14, palier I)",
+    "entree": "l1",
+    "noeuds": {
+      "l1": { "locuteur": "follet", "text_key": "dlg.annexe.choix_debloque", "suite": "l2" },
+      "l2": { "locuteur": "follet", "text_key": "dlg.annexe.choix_debloque_menu" }
+    }
   }
 ]

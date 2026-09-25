@@ -64,6 +64,10 @@
     "label_key": "flag.competence_1"
   },
   {
+    "id": "flag_choix_debloque",
+    "label_key": "flag.choix_debloque"
+  },
+  {
     "id": "flag_competence_2",
     "label_key": "flag.competence_2"
   },

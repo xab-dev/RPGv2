@@ -17,6 +17,9 @@
 //
 //   titre          le nom — sous la tuile, et en tête de la fiche
 //   icone          un id de `visuels.json` (dessiné par `dessinerIcone`, injecté)
+//   teinteIcone    (spec 14, palier I) la teinte de CETTE icône, une couleur CSS —
+//                  absente, elle prend l'accent du menu. Un follet se montre à sa
+//                  couleur, jamais à celle du follet qui accompagne
 //   quantite       le nombre affiché en pastille sur la tuile (absent = pas de pastille)
 //   marque         vrai = la tuile porte un repère (« équipé ») — une forme, pas une couleur seule
 //   lignes         le détail de la fiche : une chaîne, ou `{ texte, icone? }` quand la
@@ -69,6 +72,12 @@ function poserAttribut(el, nom, valeur) {
 }
 
 const VIDE = '';
+
+// La teinte d'une icône est la couleur CSS de son canvas (`icone_canvas.js`) :
+// la poser sur l'élément lui-même l'emporte sur l'accent de la feuille de style.
+function poserTeinte(el, couleur) {
+  if (couleur && el.style) el.style.color = couleur;
+}
 
 // Une ligne de fiche, sous sa forme unique (`D-103`). Elle en a DEUX en
 // entrée — une chaîne (le cas de loin le plus courant : une catégorie, un
@@ -186,6 +195,7 @@ export function creerEcranFiches({
       const icone = document.createElement('canvas');
       icone.className = 'carte-icone fiche-icone';
       icone.dataset.icone = entree.icone;
+      poserTeinte(icone, entree.teinteIcone);
       tete.appendChild(icone);
     }
     const elTitre = document.createElement('span');
@@ -279,6 +289,7 @@ export function creerEcranFiches({
       const icone = document.createElement('canvas');
       icone.className = 'carte-icone tuile-icone';
       icone.dataset.icone = entree.icone;
+      poserTeinte(icone, entree.teinteIcone);
       elTuile.appendChild(icone);
     }
     // `D-07` : le nom se CACHE, il ne se supprime pas — la tuile le porte en

@@ -169,7 +169,15 @@ export function creerMenuCartes({
   // écran de `D-30` : jamais un booléen tenu par le menu).
   function textePhrase(carte) {
     if (carte.type === 'bascule') return i18n.t(etats[carte.etat]());
-    return i18n.t(carte.cle_phrase);
+    return carte.phrase ?? i18n.t(carte.cle_phrase);
+  }
+
+  // Une carte du catalogue nomme ses textes par CLÉ. Une carte construite en
+  // jeu (un choix proposé par une fiche, spec 14 palier I) peut les apporter
+  // déjà écrits — « Emplacement 1 · X » porte un glyphe que seul l'appelant
+  // connaît. Les deux formes, un seul point.
+  function texteTitre(porteur) {
+    return porteur.titre ?? i18n.t(porteur.cle_titre);
   }
 
   // Un `<div>`, pas un `<button>`. Un bouton natif GARDE le focus du
@@ -189,7 +197,7 @@ export function creerMenuCartes({
     textes.className = 'carte-textes';
     const elTitre = document.createElement('span');
     elTitre.className = 'carte-titre';
-    elTitre.textContent = i18n.t(carte.cle_titre);
+    elTitre.textContent = texteTitre(carte);
     const elPhrase = document.createElement('span');
     elPhrase.className = carte.type === 'bascule' ? 'carte-phrase carte-etat' : 'carte-phrase';
     elPhrase.textContent = textePhrase(carte);
@@ -231,7 +239,7 @@ export function creerMenuCartes({
     }
 
     const aLaRacine = nav.profondeur() === 1;
-    titre.textContent = i18n.t(ecran.cle_titre);
+    titre.textContent = texteTitre(ecran);
     const cleSortie = aLaRacine ? 'menu.fermer' : 'menu.retour';
     motEntete.textContent = i18n.t(cleSortie);
     poserAttribut(boutonEntete, 'aria-label', i18n.t(cleSortie));
@@ -320,10 +328,15 @@ export function creerMenuCartes({
     nav.retour();
   }
 
-  // « Agit, puis ferme » (§4.1).
+  // « Agit, puis ferme » (§4.1). Une carte construite en jeu peut porter son
+  // geste (`faire`) au lieu d'un nom d'action du catalogue, et revenir à
+  // l'écran d'en dessous au lieu de tout fermer (`apres: 'retour'`) : choisir
+  // un emplacement ou tout reprendre ramène à la page Stats, qui se relit.
   function executerAction(carte) {
-    actions[carte.action]();
-    nav.fermerTout();
+    if (typeof carte.faire === 'function') carte.faire();
+    else actions[carte.action]();
+    if (carte.apres === 'retour') retour();
+    else nav.fermerTout();
   }
 
   // Une bascule change un état SUR PLACE, l'écran reste ouvert. Son résultat
@@ -363,7 +376,7 @@ export function creerMenuCartes({
         // ce composant ne sait pas ce que fait la fonction, et un appelant
         // sans pile partagée (le banc d'essai) rappelle `reafficher()`.
         nav.masquerSommet();
-        ecrans[carte.cible]();
+        ecrans[carte.cible](carte);
       }
     } else if (carte.type === 'bascule') {
       executerBascule(carte);
@@ -402,6 +415,21 @@ export function creerMenuCartes({
     },
     rafraichir() {
       if (nav.estOuvert() && niveauCourant()) rendre();
+    },
+    // Spec 14, palier I : un écran de cartes CONSTRUIT par l'appelant, empilé
+    // sur ce qui est affiché (une fiche, le plus souvent). Mêmes cartes, même
+    // geste, même retour : rien d'inventé, c'est le fonctionnement normal du
+    // menu. `ecran` : { id, titre, cartes: [{ id, case, type: 'action', titre,
+    // phrase, icone, faire, apres?, danger? }] }.
+    empilerChoix(ecran) {
+      lecteur.reinitialiser();
+      nav.empiler(niveauPour(ecran));
+    },
+    // La confirmation d'un danger, pour une action qui n'est pas une carte du
+    // catalogue : la même, construite au même point (« Non » d'abord).
+    demanderConfirmation(carte) {
+      lecteur.reinitialiser();
+      nav.empiler(niveauPour(construireConfirmation(carte, racine.icone_retour)));
     },
     actualiserGeometrie,
     traiterInput(etat) {

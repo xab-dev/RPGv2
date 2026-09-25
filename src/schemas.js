@@ -7,7 +7,7 @@ import { OPTIONS_MIN, OPTIONS_MAX, erreursGrapheConversation } from './dialogue.
 import { NOMS_COTES } from './lisieres.js';
 import { flagDeNiveau } from './xp.js';
 import { MODES_BOSS } from './comportement_monstres.js';
-import { SOURCES_CHARGE, EFFETS_COMPETENCE } from './competences.js';
+import { SOURCES_CHARGE, EFFETS_COMPETENCE, estEmplacementCompetence } from './competences.js';
 
 // `D-39` — « le corps ne sort jamais de son aura », vérifié AU CHARGEMENT.
 //
@@ -1823,6 +1823,15 @@ function validerCarteMenu(carte, catalogs, chemin, flagsDeclares) {
     if (carte.danger !== true && carte[champ] !== undefined) erreurs.push(`${chemin} > "${champ}" n'a de sens qu'avec danger: true`);
   }
   erreurs.push(...erreursCondition(carte.condition, chemin, flagsDeclares));
+  // Spec 14, palier I : quand l'écran qu'ouvre la carte laisse CHOISIR (Stats :
+  // tout reprendre, ranger une compétence). Une condition de flags ordinaire.
+  if (carte.choisir_si !== undefined) {
+    if (carte.type !== 'dossier') erreurs.push(`${chemin} > choisir_si n'a de sens que sur une carte dossier`);
+    erreurs.push(...erreursCondition(carte.choisir_si, `${chemin} > choisir_si`, flagsDeclares));
+  }
+  if (carte.icone_reprendre !== undefined && !(catalogs.visuels || []).some((v) => v.id === carte.icone_reprendre)) {
+    erreurs.push(`${chemin} > icone_reprendre > "${carte.icone_reprendre}" introuvable dans visuels.json`);
+  }
   return erreurs;
 }
 
@@ -3466,7 +3475,7 @@ function erreursCompetence(entry, catalogs, path) {
   }
   const slot = (catalogs.action_slots || []).find((a) => a.id === entry.emplacement);
   if (!slot) erreurs.push(`${path} > emplacement "${entry.emplacement}" introuvable dans action_slots.json`);
-  else if (!/^skill_\d+$/.test(slot.verb)) erreurs.push(`${path} > emplacement "${entry.emplacement}" n'est pas un emplacement de compétence (verbe ${slot.verb})`);
+  else if (!estEmplacementCompetence(slot)) erreurs.push(`${path} > emplacement "${entry.emplacement}" n'est pas un emplacement de compétence (verbe ${slot.verb})`);
   if (!(catalogs.flags || []).some((f) => f.id === entry.flag)) {
     erreurs.push(`${path} > flag "${entry.flag}" non déclaré dans flags.json`);
   } else if ((catalogs.scenes || []).some((sc) => sc.descente && (sc.descente.flags || []).includes(entry.flag))) {

@@ -43,7 +43,7 @@ assert.deepEqual(erreurs, []);
 assert.deepEqual(validerCatalogues(donnees, SCHEMAS), []);
 const registre = construireRegistre(donnees);
 
-function monterPartie({ flagsSupplementaires = {}, poche = {} } = {}) {
+function monterPartie({ flagsSupplementaires = {}, poche = {}, competences = {} } = {}) {
   const i18n = creerI18n(dictionnaires, 'fr');
   const store = creerStoreMemoire();
   const save = saveNeuve();
@@ -51,6 +51,7 @@ function monterPartie({ flagsSupplementaires = {}, poche = {} } = {}) {
   save.hero.companion = 'comp_follet_eau';
   save.hero.pv = 40;
   save.inventaire.items = { ...poche };
+  save.hero.competences = { ...competences };
   save.flags = {
     flag_follet_choisi: true, flag_grotte_sortie: true, flag_grotte_sequence: true,
     flag_grotte_monstre_tue: true, flag_levier_salle1: true, flag_premier_ramassage: true,
@@ -120,25 +121,38 @@ function monterPartie({ flagsSupplementaires = {}, poche = {} } = {}) {
   console.log('OK la case du consommable suit la poche : elle apparaît, et elle repart');
 }
 
-// --- 3. Les compétences, une à une, avec leur flag ---------------------
-// Aucune compétence n'existe dans le jeu aujourd'hui : leurs flags sont
-// déclarés et jamais posés. C'est exactement ce qu'il faut — le jour où une
-// compétence arrive, elle pose son flag et sa case apparaît, sans code.
+// --- 3. Les compétences, une à une, là où elles sont rangées ------------
+// Spec 14, palier I : une case de compétence s'affiche quand une compétence
+// APPRISE y est RANGÉE (`competence_en_<emplacement>`), comme la case du
+// consommable suit la poche. Apprise sans être rangée, ou rangée sans être
+// apprise, elle ne montre rien.
 {
   assert.deepEqual(
-    monterPartie({ flagsSupplementaires: { flag_competence_2: true } }).orch.obtenirVerbesActions(),
-    ['attack', 'skill_2'],
-    'une seule compétence débloquée = une seule case de plus, la sienne',
+    monterPartie({ flagsSupplementaires: { flag_competence_1: true }, competences: { slot_skill_3: 'skill_onde' } })
+      .orch.obtenirVerbesActions(),
+    ['attack', 'skill_3'],
+    'rangée en 3 : une seule case de plus, la sienne',
+  );
+  assert.deepEqual(
+    monterPartie({ flagsSupplementaires: { flag_competence_1: true } }).orch.obtenirVerbesActions(),
+    ['attack'],
+    'apprise mais rangée nulle part : aucune case',
+  );
+  assert.deepEqual(
+    monterPartie({ competences: { slot_skill_1: 'skill_onde' } }).orch.obtenirVerbesActions(),
+    ['attack'],
+    'rangée sans être apprise : aucune case',
   );
   assert.deepEqual(
     monterPartie({
-      flagsSupplementaires: { flag_competence_1: true, flag_competence_2: true, flag_competence_3: true },
+      flagsSupplementaires: { flag_competence_1: true },
+      competences: { slot_skill_1: 'skill_onde' },
       poche: { item_fruit: 1 },
     }).orch.obtenirVerbesActions(),
-    ['attack', 'skill_1', 'skill_2', 'skill_3', 'consume'],
-    'tout débloqué = les cinq cases, dans l\'ordre du catalogue',
+    ['attack', 'skill_1', 'consume'],
+    "dans l'ordre du catalogue",
   );
-  console.log('OK les cases de compétences n\'existent qu\'avec leur flag');
+  console.log("OK les cases de compétences n'existent que là où une compétence apprise est rangée");
 }
 
 // --- 4. INTERACT et MENU ne sont pas des actions -----------------------

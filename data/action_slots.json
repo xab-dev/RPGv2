@@ -6,17 +6,17 @@
   {
     "id": "slot_skill_1",
     "verb": "skill_1",
-    "visible_si": "flag_competence_1"
+    "visible_si": { "valeur": "competence_en_slot_skill_1", "min": 1 }
   },
   {
     "id": "slot_skill_2",
     "verb": "skill_2",
-    "visible_si": "flag_competence_2"
+    "visible_si": { "valeur": "competence_en_slot_skill_2", "min": 1 }
   },
   {
     "id": "slot_skill_3",
     "verb": "skill_3",
-    "visible_si": "flag_competence_3"
+    "visible_si": { "valeur": "competence_en_slot_skill_3", "min": 1 }
   },
   {
     "id": "slot_consommable",

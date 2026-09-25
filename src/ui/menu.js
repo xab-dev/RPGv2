@@ -198,6 +198,8 @@ const ECRAN_POCHE = 'ecran_poche';
 const ECRAN_STATS = 'ecran_stats';
 const ECRAN_CONSTRUCTION = 'ecran_construction';
 const ECRAN_INDICES = 'ecran_indices';
+// Spec 14, palier I : le choix du follet, depuis le menu Héros.
+const ECRAN_FOLLET = 'ecran_follet';
 // Craft et Coffre ne sont cités par aucune carte (INTERACT les ouvre depuis le
 // monde) : ces deux ids ne servent qu'à nommer leur niveau dans la pile.
 const ECRAN_CRAFT = 'ecran_craft';
@@ -513,6 +515,9 @@ export function initialiserMenu({
   // resoudre les stats/points depuis main.js, qui construit le menu.
   let fournisseurEntreesStats = () => [];
   let fournisseurSousTitreStats = () => '';
+  // Spec 14, palier I : les trois follets, et le choix — que seul main.js sait
+  // faire (le follet vit dans l'orchestrateur).
+  let fournisseurEntreesFollet = () => [];
   // Même patron pour Construction (§3) : liste des stations placable de la
   // structure où se trouve le héros — dépend de main.js (scène/position).
   let fournisseurEntreesConstruction = () => [];
@@ -564,9 +569,22 @@ export function initialiserMenu({
     }),
     // Stats (palier C3) : maître-détail, comme la Poche. Le sous-titre (points
     // libres, progression d'XP) est relu à chaque affichage.
-    [ECRAN_STATS]: () => navigation.empiler({
+    // Spec 14, palier I : la carte qui ouvre Stats peut dire, en données, quand
+    // on y CHOISIT (tout reprendre, ranger une compétence : `choisir_si`) —
+    // relu à chaque affichage, comme les conditions des cartes. Sans
+    // condition, on choisit toujours.
+    [ECRAN_STATS]: (carte) => navigation.empiler({
       vue: ecranFiches, id: ECRAN_STATS, titre: i18n.t('menu.stats_titre'),
-      obtenirEntrees: () => fournisseurEntreesStats(), sousTitre: () => fournisseurSousTitreStats(),
+      obtenirEntrees: () => fournisseurEntreesStats({
+        choisir: !carte || carte.choisir_si === undefined || evaluerCondition(carte.choisir_si),
+        iconeReprendre: (carte && carte.icone_reprendre) || null,
+      }),
+      sousTitre: () => fournisseurSousTitreStats(),
+    }),
+    // Spec 14, palier I : les follets, en maître-détail comme la Poche.
+    [ECRAN_FOLLET]: () => navigation.empiler({
+      vue: ecranFiches, id: ECRAN_FOLLET, titre: i18n.t('menu.follet_titre'),
+      obtenirEntrees: () => fournisseurEntreesFollet(),
     }),
     [ECRAN_CONSTRUCTION]: () => navigation.empiler(niveauConstruction()),
     // Les Indices : maître-détail en lecture seule (aucune entrée n'a
@@ -721,6 +739,14 @@ export function initialiserMenu({
       fournisseurEntreesStats = fn;
       fournisseurSousTitreStats = sousTitre;
     },
+    definirEntreesFollet(fn) {
+      fournisseurEntreesFollet = fn;
+    },
+    // Spec 14, palier I : ce qu'une fiche propose de CHOISIR (l'emplacement
+    // d'une compétence) ou de CONFIRMER (tout reprendre) s'empile en cartes sur
+    // la pile du menu — `ui/grille_cartes.js#empilerChoix`, `#demanderConfirmation`.
+    empilerChoix: (ecran) => menuCartes.empilerChoix(ecran),
+    demanderConfirmation: (carte) => menuCartes.demanderConfirmation(carte),
     // Écrans contextuels ouverts directement par INTERACT sur une station
     // (Palier A/E, hors du menu Pause) — `obtenirEntrees` est fourni à
     // l'ouverture par main.js (dépend de la station visée, donc pas fixé à

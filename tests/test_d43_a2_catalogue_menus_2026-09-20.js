@@ -49,7 +49,10 @@ function refuse(abimer, motif, message) {
   assert.deepEqual(racine.cartes.map((c) => c.case), [0, 1, 3, 3], 'Héros · Paramètres · (case 2 libre, rien n\'y est déclaré) · contextuelle (Construction, sinon Indices)');
   assert.equal(carte(donnees.menus, 'carte_construction').condition !== undefined, true, 'la carte contextuelle porte une condition');
   assert.equal(carte(donnees.menus, 'carte_indices').condition, undefined, 'les Indices sont la candidate par défaut');
-  assert.deepEqual(ecran(donnees.menus, 'menu_heros').cartes.map((c) => c.cible), ['ecran_poche', 'ecran_stats'], 'pas de carte « Feu follet » tant que sa page n\'existe pas');
+  // Spec 14, palier I : la page Follet existe, sa carte arrive — sous condition
+  // (le choix débloqué à la sortie de l'Annexe).
+  assert.deepEqual(ecran(donnees.menus, 'menu_heros').cartes.map((c) => c.cible), ['ecran_poche', 'ecran_stats', 'ecran_follet'], 'Poche, Stats, et Follet depuis le palier I');
+  assert.ok(carte(donnees.menus, 'carte_follet').condition !== undefined, 'la carte Follet attend le déblocage');
   // 'D-64' (T7) : une 4e bascule, le Volume. L'ecran passe de 2x2 a 3x2 —
   // la STRUCTURE des menus est gelee depuis le 21/09, une carte de plus dans
   // un ecran existant ne la touche pas. Palier D de `specs/09` : une 5e
@@ -68,7 +71,7 @@ function refuse(abimer, motif, message) {
   for (const n of [0, 7, 12, -1, 2.5, undefined]) assert.equal(choisirGrille(n), null, `${n} → aucune grille`);
   // On compte les CASES, pas les cartes : la racine a 3 cartes et 4 cases.
   assert.equal(nombreCases(ecran(donnees.menus, 'menu_racine')), 4);
-  assert.equal(nombreCases(ecran(donnees.menus, 'menu_heros')), 2);
+  assert.equal(nombreCases(ecran(donnees.menus, 'menu_heros')), 3, 'Poche, Stats, Follet (palier I de la spec 14)');
   for (const e of donnees.menus) assert.ok(choisirGrille(nombreCases(e)), `${e.id} a une grille`);
   console.log('OK grille : 1-4 → 2 × 2, 5-6 → 3 × 2, le reste refusé ; les cases comptent, pas les cartes');
 }
@@ -152,7 +155,7 @@ function refuse(abimer, motif, message) {
   const enregistres = {
     actions: [...new Set(donnees.menus.flatMap((e) => e.cartes).map((c) => c.action).filter(Boolean))],
     etats: [...new Set(donnees.menus.flatMap((e) => e.cartes).map((c) => c.etat).filter(Boolean))],
-    ecrans: ['ecran_poche', 'ecran_stats', 'ecran_construction', 'ecran_indices'],
+    ecrans: ['ecran_poche', 'ecran_stats', 'ecran_follet', 'ecran_construction', 'ecran_indices'],
     valeurs: ['niveau', 'stations_placables', 'plein_ecran_disponible'],
   };
   assert.deepEqual(erreursCablageMenus(donnees.menus, enregistres), []);
@@ -174,14 +177,15 @@ function refuse(abimer, motif, message) {
 
 // --- 9. Test du catalogue : un écran de plus = une entrée, aucun code ---------------
 {
-  // « La page du follet » de la spec, telle qu'elle arrivera : un dossier de
-  // plus chez Héros, et son écran. Rien d'autre que du JSON.
+  // Un dossier de plus chez Héros, et son écran. Rien d'autre que du JSON.
+  // (L'exemple d'origine était « la page du follet » ; elle est arrivée au
+  // palier I de la spec 14, par un écran existant : l'essai prend sa suite.)
   const erreurs = erreursApres((menus) => {
     ecran(menus, 'menu_heros').cartes.push({
-      id: 'carte_follet', case: 2, type: 'dossier', cle_titre: 'menu.carte.heros', cle_phrase: 'menu.carte.heros_phrase',
-      icone: 'visuel_icone_menu_heros', cible: 'menu_follet', condition: { valeur: 'niveau', min: 1 },
+      id: 'carte_essai', case: 3, type: 'dossier', cle_titre: 'menu.carte.heros', cle_phrase: 'menu.carte.heros_phrase',
+      icone: 'visuel_icone_menu_heros', cible: 'menu_essai', condition: { valeur: 'niveau', min: 1 },
     });
-    menus.push({ id: 'menu_follet', cle_titre: 'menu.carte.heros', cartes: [{ ...carte(menus, 'carte_musique'), id: 'carte_follet_reglage' }] });
+    menus.push({ id: 'menu_essai', cle_titre: 'menu.carte.heros', cartes: [{ ...carte(menus, 'carte_musique'), id: 'carte_essai_reglage' }] });
   });
   assert.deepEqual(erreurs, [], 'ajouter un écran au catalogue ne demande aucune ligne de code');
   console.log('OK test du catalogue : un écran ajouté en données seules reste valide');

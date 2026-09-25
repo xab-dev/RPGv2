@@ -131,6 +131,9 @@ function etat(verbes = {}) {
   for (const s of DESCENTE) if (s.rencontre) persistants[s.rencontre.flag_rencontre] = true;
   for (const p of donnees.puzzles) if (p.explication) persistants[p.explication.flag] = true;
   for (const a of donnees.ambiances) if (JSON.stringify(a.condition || '').includes('a_portee')) persistants[a.flag] = true;
+  // Palier I : le déblocage du choix, qu'on entend à la première sortie après
+  // le parchemin — déjà entendu, lui aussi.
+  for (const a of donnees.ambiances) if (JSON.stringify(a.condition || '').includes(COMPETENCE.flag)) persistants[a.flag] = true;
 
   const save = saveNeuve();
   save.hero.scene = STELE.descente.scene;

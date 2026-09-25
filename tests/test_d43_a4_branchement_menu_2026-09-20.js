@@ -173,11 +173,14 @@ function construireBanc({ dansLaMaison = true, compagnon, pleinEcranDisponible =
   // Spec 11 palier D : `remplissage_coffre`, la porte du chapitre 3.
   // Spec 14 palier B (`Q-137`) : `a_portee`, l'interactif à portée — un NOM,
   // comparé par `egal`, au pied de la stèle bleue.
+  // Spec 14 palier I : une valeur par emplacement de compétence
+  // (`competence_en_<emplacement>`), dérivée du catalogue des emplacements.
   assert.deepEqual(enregistres.valeurs.sort(),
-    ['a_portee', 'consommables_en_poche', 'niveau', 'objets_au_coffre', 'plein_ecran_disponible',
+    ['a_portee', 'competence_en_slot_skill_1', 'competence_en_slot_skill_2', 'competence_en_slot_skill_3',
+      'consommables_en_poche', 'niveau', 'objets_au_coffre', 'plein_ecran_disponible',
       'remplissage_coffre', 'slots_libres_poche', 'stations_placables', 'stations_posees']);
   // Indices (Xav, 23/09) : un quatrième écran ouvert par une carte.
-  assert.deepEqual(enregistres.ecrans, ['ecran_poche', 'ecran_stats', 'ecran_construction', 'ecran_indices'],
+  assert.deepEqual(enregistres.ecrans, ['ecran_poche', 'ecran_stats', 'ecran_follet', 'ecran_construction', 'ecran_indices'],
     'les écrans ouverts par une carte — Craft et Coffre s’ouvrent par INTERACT, pas par une carte');
 
   // Les textes que le CODE choisit (états des bascules, composant) existent

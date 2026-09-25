@@ -188,7 +188,7 @@ const T = SALLE_3.tile_size;
   // Une seconde compétence, sur le deuxième emplacement : des données seulement.
   const c = structuredClone(donnees);
   const slot2 = c.action_slots.find((a) => a.verb === 'skill_2');
-  c.skills.push({ ...structuredClone(COMPETENCE), id: 'skill_essai', emplacement: slot2.id, flag: slot2.visible_si });
+  c.skills.push({ ...structuredClone(COMPETENCE), id: 'skill_essai', emplacement: slot2.id, flag: 'flag_competence_2' });
   assert.deepEqual(validerCatalogues(c), [], 'une seconde compétence chargée par le follet : une entrée JSON');
   console.log('OK démarrage : compétence, coffre et dérivée mal déclarés refusés ; une seconde compétence en données');
 }
@@ -207,8 +207,10 @@ function etat(verbes = {}) {
   }
   return e;
 }
-function banc({ scene = SALLE_3, flagsSave = {}, position = null } = {}) {
+function banc({ scene = SALLE_3, flagsSave = {}, position = null, competences = {} } = {}) {
   const save = saveNeuve();
+  // Palier I : ce qui est ÉQUIPÉ vit dans la sauvegarde, à côté de ce qui est appris.
+  save.hero.competences = { ...competences };
   save.hero.scene = scene.id;
   save.hero.companion = 'comp_follet_eau';
   save.hero.niveau = 30;
@@ -306,7 +308,9 @@ const lignesEsprit = (orch) => orch.obtenirEntreesStats()[registre.tous('stats')
 
 // En salle 1, face aux cracheurs : la charge monte pendant l'engagement, le tir part et blesse.
 {
-  const b = banc({ scene: SALLE_1, flagsSave: { [COMPETENCE.flag]: true } });
+  const b = banc({
+    scene: SALLE_1, flagsSave: { [COMPETENCE.flag]: true }, competences: { [COMPETENCE.emplacement]: COMPETENCE.id },
+  });
   b.frame();
   const hero = b.orch.obtenirHero();
   const vivants = () => b.orch.obtenirMonstres().filter((m) => !m.mort);
@@ -359,7 +363,14 @@ const lignesEsprit = (orch) => orch.obtenirEntreesStats()[registre.tous('stats')
     for (const nom of (await fs.readdir(dossier)).filter((f) => f.endsWith('.js'))) {
       const code = (await fs.readFile(path.join(dossier, nom), 'utf8')).split('\n')
         .filter((l) => !l.trim().startsWith('//')).join('\n');
-      for (const id of ids) assert.ok(!code.includes(id), `${nom} cite "${id}" hors commentaire`);
+      // Seule exception, le palier I : la migration v8 -> v9 de `save.js` tourne
+      // AVANT que le registre n'existe (patron d'`ID_COFFRE_DE_BASE`) ; elle
+      // nomme la compétence du parchemin et son flag une fois chacun, pas plus.
+      for (const id of ids) {
+        const n = code.split(id).length - 1;
+        if (nom === 'save.js') assert.ok(n <= 1, `save.js cite "${id}" ${n} fois : une seule constante de migration`);
+        else assert.ok(n === 0, `${nom} cite "${id}" hors commentaire`);
+      }
     }
   }
   console.log('OK aucun id du palier (coffre, compétence, son flag, ses dessins) dans le code système');

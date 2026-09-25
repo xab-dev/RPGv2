@@ -19178,5 +19178,47 @@
         "couleur": "#fff6e0"
       }
     ]
+  },
+  {
+    "id": "visuel_icone_menu_follet",
+    "ancre": "centre",
+    "teintable": true,
+    "primitives": [
+      {
+        "forme": "polygone",
+        "dx": -0.8,
+        "dy": 0.4,
+        "points": [[0, -6.2], [3.6, -0.9], [4.2, 0.4], [4.4, 1.7], [4.1, 3], [3.5, 4.2], [2.5, 5.1], [1.3, 5.7], [0, 5.9], [-1.3, 5.7], [-2.5, 5.1], [-3.5, 4.2], [-4.1, 3], [-4.4, 1.7], [-4.2, 0.4], [-3.6, -0.9]],
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "ellipse",
+        "dx": -0.3,
+        "dy": 2.6,
+        "w": 3.6,
+        "h": 3,
+        "couleur": "#0d1017",
+        "alpha": 0.8
+      },
+      {
+        "forme": "cercle",
+        "dx": 4.6,
+        "dy": -4.4,
+        "w": 2.2,
+        "h": 2.2,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      },
+      {
+        "forme": "cercle",
+        "dx": 5.6,
+        "dy": -0.8,
+        "w": 1.2,
+        "h": 1.2,
+        "couleur": "#f2e9d8",
+        "teinte": true
+      }
+    ]
   }
 ]

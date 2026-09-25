@@ -3,7 +3,7 @@ projet: RPG V2
 episode/session: Spec 14 (l'Annexe 1), palier D — Zéros
 type: fichier de bord
 version: 1.0.0
-statut: livré, à valider (V-152)
+statut: livré et validé (V-152)
 catégorie: Journal
 date: 2026-09-25
 genere_par: claude
@@ -17,7 +17,7 @@ Demande de Xav : « go palier D ». Branche `annexe-1`. Pas de push.
 | Commit | Ticket | Ce qu'il faut en retenir |
 |---|---|---|
 | `5c8771e` | Ménage | Journal du palier C archivé, INDEX à jour |
-| (ce commit) | `D-210` — palier D | La rencontre en données, Zéros intouchable, son follet en orbite, la relève, la fin au seuil, le passage |
+| `3fffdbb` | `D-210` — palier D | La rencontre en données, Zéros intouchable, son follet en orbite, la relève, la fin au seuil, le passage |
 
 ## 1. Le palier D
 
@@ -69,3 +69,11 @@ Demande de Xav : « go palier D ». Branche `annexe-1`. Pas de push.
 ## 5. Après le palier (25/09, 2 h)
 
 - `Q-159` **tranchée par Xav** : « on a passé 30 minutes à écrire l'annexe, on a fait que le mini boss et on a passé au moins 5 heures de tests [...] on écrit, on avance, on corrige les bug, et de temps en temps on vérifie notre budget perf. » Plus de banc ni de capture par palier ; le banc complet à la fin d'une spec ou à la demande. La question posée au §3 (banc complet maintenant ?) tombe avec elle.
+- Précisé ensuite par Xav : « fin de spec ou quand xav part dormir on en profite pour banc complet, quand xav reveiller on en profite pour avancer. je prefere faire des betise, devoir corriger, et apprendre, plutot que de regarder un test se rejouer pendant toute la journée. bien sur que l'on peut faire une sentinelle en milieu de spec pour etre sur qu'on a pas tout cassé, mais on ne peux pas perdre 1 heure à chaque palier. »
+
+## 6. Validation (25/09)
+
+- `V-152` **validée par Xav** : « Concernant Zéros, tout est parfait ! La scène est très bien amenée, et le combat était un peu rapide, mais je vais l'ajuster. C'est bien, Aucun lag en Haut, rien, c'était fluide, c'est jouable, c'est dynamique, c'est parfait ! »
+- `Q-157` tranchée par la même validation (« la scène est très bien amenée ») : Zéros garde sa réplique d'arrivée.
+- Le combat est « un peu rapide » : Xav le règle lui-même en données (`enemy_zeros`, `enemy_follet_zeros`, `scenes.json > rencontre`).
+- `Q-158` (la rencontre ne rapporte rien) reste ouverte.

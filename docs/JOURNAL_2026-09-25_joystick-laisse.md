@@ -38,4 +38,4 @@ ou rien).
 
 - **À trancher** : `Q-178`, surtout le point (2) — un pouce posé tout contre un bord fait partir le héros dès le contact.
 - **À voir au téléphone** : `V-174` (et `V-79` dans le même essai), guidé par `docs/CHECKLIST_visuelle.md`.
-- `main` contient la fusion de `menage-contexte` (`50f1326`), **non poussée**. Rien n'est poussé.
+- Xav, 25/09 : « fusionne tout dans main pour les test téléphone. puis pousse, on publie tout » — `joystick-laisse` fusionnée dans `main` et poussée (avec `menage-contexte`), sans release.

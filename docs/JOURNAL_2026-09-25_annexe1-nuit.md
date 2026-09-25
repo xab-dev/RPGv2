@@ -3,7 +3,7 @@ projet: RPG V2
 episode/session: Spec 14 (l'Annexe 1), la nuit du 25/09 — palier G, palier H, polish, banc complet
 type: fichier de bord
 version: 1.0.0
-statut: livré (G, H, polish, banc) — à voir par Xav : V-155, V-156, Q-162
+statut: livré (G, H, polish, banc) ; V-156 validé, Q-162 tranchée, V-155 reste au téléphone
 catégorie: Journal
 date: 2026-09-25
 genere_par: claude
@@ -97,3 +97,10 @@ Les douze passages (`cout_calque` et `traversee_nuit`, Bas / Moyen / Haut, ×1 e
 - **À trancher** : `Q-162`, les choix par défaut du palier G, dont **(g)** : contre des tireurs qui gardent leurs distances, la charge monte lentement, parce que le follet n'engage qu'au contact.
 - **Suivant** : le **palier I** (choisir ses stats, ses compétences et son follet ; la migration v8 → v9), puis l'album de clôture de la spec.
 - **Pour revenir en arrière** : chaque commit de la nuit se retire seul (`git revert <commit>`), dans l'ordre inverse si l'on retire H et G ensemble.
+
+## 6. Retour de Xav (26/09)
+
+- `V-156` **validée** : « V-156: vu. »
+- `V-155` : « V-155 reste à voir au téléphone ». La ligne reste ouverte pour le doigt.
+- `Q-162` **tranchée** : « Q-162: oui, c'est voulu (gestion des compétences, équilibrage : le joueur se charge sur les premiers mobs puis la compétences et disponnible pour les pochains qu'il croisera. » La charge lente contre les tireurs est voulue ; rien ne change.
+- Session close avant le palier I.

@@ -3,7 +3,7 @@ projet: RPG V2
 episode/session: Sentinelle, puis polish libre (harmonisation, incohérences)
 type: fichier de bord
 version: 1.0.0
-statut: en cours
+statut: livré, à valider (V-164)
 catégorie: Journal
 date: 2026-09-25
 genere_par: claude
@@ -28,7 +28,8 @@ Branche `polish-libre-2026-09-25`, partie de `main`. Pas de push.
 | `ddc8db5` | `D-44` | La langue choisie est sauvegardée (`save.settings.lang`), comme la musique ; test neuf |
 | `14205ee` | `D-226` | `<html lang>` suit la langue du jeu (démarrage et bascule) ; vérifié sous Chrome |
 | `3034dfb` | `D-41` | `status_effects.icone` retiré (14 entrées, schéma) et refusé au boot ; rien ne change à l'écran |
-| (ce commit) | `D-10` | Déjà résolu le 17/09 (`e1c4ff3`), jamais clos : un test le tient désormais |
+| `faf06bb` | `D-10` | Déjà résolu le 17/09 (`e1c4ff3`), jamais clos : un test le tient désormais |
+| (ce commit) | DOC | `V-164` ouverte (ce qu’il faut voir en jeu), bilan de la session |
 
 ## 1. La sentinelle (`traversee_nuit.mjs`, Moyen, ×1 et ×6)
 
@@ -99,3 +100,29 @@ Un commit par ticket, dans cet ordre, chacun retirable seul : (1) les dates,
 (6) `D-41`, (7) `D-10`.
 
 ## 4. Itération
+
+Les sept tickets du plan sont livrés, dans l’ordre, un commit chacun. Suite
+verte à chaque commit (212 fichiers à la fin, deux tests neufs : `D-44` et
+`D-10`, et un bloc de plus dans `test_d13_buffs_bandeau` pour `D-41`) ; chaque
+test neuf a attrapé la mutation qui recrée le défaut.
+
+- **`D-10` était déjà résolu** : le câblage date du bandeau de placement
+  (`e1c4ff3`, 17/09), la ligne n’avait jamais été close. Un test le tient.
+- **`D-41` va au-delà du retrait** : le champ est refusé au boot, avec le bon
+  mécanisme dans le message. C’est un choix de Claude ; le retirer seulement
+  aurait suffi.
+- **Deux faux pas de shell, rattrapés avant tout commit** : une substitution
+  `sed` au délimiteur `#` (le texte en contenait un : `D-29` corrigé par
+  `--amend` sur le commit du ticket, local), et un `python3` qui attendait
+  en silence (l’alias du Windows Store) : arrêté, rien n’avait été écrit.
+
+## 5. Pour Xav
+
+- **À voir en jeu** : `V-164` (la langue qui survit au rechargement, les
+  icônes des menus, la Construction au clavier), cinq minutes.
+- **À trancher** : `D-46` (« retire » ou « garde ») ; les statuts périmés de
+  `Q-138` à `Q-153` ; la branche locale `profondeur`, à supprimer ou non.
+- **La sentinelle** : rien de cassé, +20 % partout. Un A/B sur `8aed350` au
+  prochain banc complet dirait si c’est la profondeur.
+- **Rien n’est poussé.** La branche se fusionne quand tu le dis ; chaque
+  commit se retire seul (`git revert <commit>`).

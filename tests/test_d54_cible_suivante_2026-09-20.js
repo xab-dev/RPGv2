@@ -228,7 +228,12 @@ const folletEn = (x, y) => ({ ...creerFollet(COMP.id, hero(0, 0)), x, y });
 {
   const source = fs.readFileSync(path.join(RACINE, 'src', 'main.js'), 'utf8');
   const iAuto = source.indexOf('mettreAJourFollet(follet, hero, monstres, companionDuFollet)');
-  const iChoix = source.indexOf('cibleSuivanteFollet(follet, hero, monstres, companionDuFollet)');
+  // Spec 14, palier E : la cible ordonnée passe par `cibleOrdonnee` (rappeler
+  // un follet posé, le poser sur un levier tenu, sinon la cible suivante) —
+  // l'ordre de la frame, lui, ne change pas.
+  const iChoix = source.indexOf('follet = cibleOrdonnee(follet, companionDuFollet)');
+  assert.ok(source.includes('return cibleSuivanteFollet(folletCourant, hero, monstres, companion)'),
+    'hors follet posé et hors levier tenu, RB reste la cible suivante');
   // Sans la parenthèse fermante : depuis `specs/10` palier B, l'appel porte
   // un 5ᵉ argument (le sens de l'orbite).
   const iVol = source.indexOf('avancerFollet(follet, hero, monstres, deltaS');

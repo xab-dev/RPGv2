@@ -84,7 +84,7 @@ const { bornes } = config;
 
 // --- 3. Sauvegarde : partie neuve, migration 7 -> 8, échec dur ----------
 {
-  assert.equal(VERSION_SCHEMA_COURANTE, 8);
+  assert.equal(VERSION_SCHEMA_COURANTE, 9);
   const neuve = saveNeuve();
   assert.equal(neuve.hero.alignement, 0, 'un héros naît neutre');
   assert.equal(lireAlignement(neuve.hero, bornes), 0);
@@ -92,7 +92,7 @@ const { bornes } = config;
   const v7 = { ...saveNeuve(), schema_version: 7 };
   delete v7.hero.alignement;
   const migre = migrer(v7);
-  assert.equal(migre.schema_version, 8);
+  assert.equal(migre.schema_version, VERSION_SCHEMA_COURANTE);
   assert.ok(Object.prototype.hasOwnProperty.call(migre.hero, 'alignement'), 'le champ est ÉCRIT, pas sous-entendu');
   assert.equal(migre.hero.alignement, 0);
   assert.equal(migre.hero.niveau, v7.hero.niveau, 'la migration ne touche que son champ');
@@ -128,7 +128,14 @@ const { bornes } = config;
       versions.add(payload.schema_version);
       const migre = migrer(payload);
       assert.equal(migre.schema_version, VERSION_SCHEMA_COURANTE, `${fichier} : migrée`);
-      assert.equal(lireAlignement(migre.hero, bornes), 0, `${fichier} : née neutre`);
+      // Née neutre si ELLE A MIGRÉ vers la v8 ; une sauvegarde déjà en v8 a
+      // vécu son alignement, et la migration ne doit pas le lui reprendre
+      // (la première, `rpg_v2_save_Nv30.json`, est arrivée le 24/09).
+      if (payload.schema_version < 8) {
+        assert.equal(lireAlignement(migre.hero, bornes), 0, `${fichier} : née neutre`);
+      } else {
+        assert.equal(lireAlignement(migre.hero, bornes), payload.hero.alignement, `${fichier} : alignement gardé`);
+      }
       // Sans perte (`D-15`) : lieu, niveau, heure du cycle, poche.
       const deVersion = migrer(payload, payload.schema_version < 7 ? 7 : payload.schema_version);
       assert.equal(migre.hero.scene, deVersion.hero.scene, `${fichier} : lieu`);
@@ -136,7 +143,7 @@ const { bornes } = config;
       assert.equal(migre.monde.heure, deVersion.monde.heure, `${fichier} : heure du cycle`);
       assert.deepEqual(migre.inventaire, deVersion.inventaire, `${fichier} : poche`);
     }
-    console.log(`OK les ${fichiers.length} sauvegardes réelles (versions ${[...versions].sort().join(', ')}) migrent en v8, neutres, sans perte`);
+    console.log(`OK les ${fichiers.length} sauvegardes réelles (versions ${[...versions].sort().join(', ')}) migrent en v${VERSION_SCHEMA_COURANTE} sans perte, neutres si elles ont migré`);
   }
 }
 

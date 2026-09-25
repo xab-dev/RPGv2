@@ -7,6 +7,14 @@
     "render": { "visuel": "visuel_levier" }
   },
   {
+    "id": "puzzle_annexe_levier_salle_1",
+    "type": "levier",
+    "position": { "x": 10, "y": 6 },
+    "flag_pose": "flag_annexe_levier_1",
+    "visible_si": "flag_annexe_salle_1_nettoyee",
+    "render": { "visuel": "visuel_levier" }
+  },
+  {
     "id": "puzzle_levier_s2_milieu",
     "type": "levier",
     "position": { "x": 10, "y": 3 },
@@ -79,7 +87,8 @@
     "solide": true,
     "indice": "indice_grotte_entree",
     "couleur": "#3fb8ff",
-    "armement_ms": 250
+    "armement_ms": 250,
+    "descente": { "scene": "scene_annexe_salle_1", "flag_requis": "flag_indice_grotte_dechiffre" }
   },
   {
     "id": "stele_miroir",
@@ -97,5 +106,86 @@
     "couleur": "#d97757",
     "armement_ms": 250,
     "flag": "flag_stele_miroir_lue"
+  },
+  {
+    "id": "puzzle_annexe_levier_gauche",
+    "type": "levier_maintenu",
+    "position": {
+      "x": 6,
+      "y": 4
+    },
+    "maintien": {
+      "portee_px": 44,
+      "extinction_ms": 600
+    },
+    "render": {
+      "visuel": "visuel_levier"
+    }
+  },
+  {
+    "id": "puzzle_annexe_levier_droite",
+    "type": "levier_maintenu",
+    "position": {
+      "x": 28,
+      "y": 4
+    },
+    "maintien": {
+      "portee_px": 44,
+      "extinction_ms": 600
+    },
+    "render": {
+      "visuel": "visuel_levier"
+    }
+  },
+  {
+    "id": "puzzle_annexe_deux_mains",
+    "type": "simultane",
+    "tous_allumes": [
+      "puzzle_annexe_levier_gauche",
+      "puzzle_annexe_levier_droite"
+    ],
+    "flag_pose": "flag_annexe_passage_2",
+    "explication": {
+      "apres_extinctions": 2,
+      "dialogue": "dlg_follet_pose",
+      "flag": "flag_follet_pose_appris"
+    }
+  },
+  {
+    "id": "puzzle_annexe_coffre",
+    "type": "coffre_parchemin",
+    "position": {
+      "x": 12,
+      "y": 8
+    },
+    "render": {
+      "visuel": "visuel_coffre_parchemin",
+      "visuel_ouvert": "visuel_coffre_parchemin_ouvert"
+    },
+    "echelle": 1.6,
+    "competence": "skill_onde",
+    "armement_ms": 400,
+    "visible_si": "flag_gardien_vaincu"
+  },
+  {
+    "id": "puzzle_annexe_levier_recompense",
+    "type": "levier",
+    "position": {
+      "x": 15,
+      "y": 1
+    },
+    "flag_pose": "flag_annexe_sortie",
+    "visible_si": "flag_gardien_vaincu",
+    "recompense": {
+      "item": "item_eclat",
+      "quantite": 1,
+      "decalage": {
+        "x": 0,
+        "y": 1
+      }
+    },
+    "render": {
+      "visuel": "visuel_levier"
+    }
   }
 ]

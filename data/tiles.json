@@ -15,6 +15,9 @@
   { "id": "tile_sortie", "solid": false, "render": { "type": "couleur", "valeur": "#3e4640", "sol": "tile_sol", "visuel": "visuel_sortie_grotte" } },
   { "id": "tile_sortie_jour", "solid": false, "render": { "type": "couleur", "valeur": "#3e4640", "sol": "tile_sol", "visuel": "visuel_sortie_jour" } },
   { "id": "tile_vide", "solid": true, "render": { "type": "couleur", "valeur": "#000000" } },
+  { "id": "tile_escalier", "solid": false, "render": { "type": "couleur", "valeur": "#3e4640", "sol": "tile_sol", "visuel": "visuel_escalier" } },
+  { "id": "tile_passage", "solid": false, "render": { "type": "couleur", "valeur": "#3e4640", "sol": "tile_sol", "visuel": "visuel_passage" } },
+  { "id": "tile_passage_sud", "solid": false, "render": { "type": "couleur", "valeur": "#3e4640", "sol": "tile_sol", "visuel": "visuel_passage_sud" } },
 
   { "id": "tile_herbe", "solid": false,
     "render": { "type": "couleur", "valeur": "#5a9147", "variantes": ["#5c9349", "#578c44"], "variation_teinte": 0.018,

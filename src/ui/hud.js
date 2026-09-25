@@ -9,7 +9,7 @@
 import {
   boutonsTactilesVisibles, JOYSTICK, BANDEAU_HAUT, elementsBandeauHaut, echelleIconeArme,
   placerIconesBuffs, alphaPulsationBuff, echelleIconeBuff, ICONE_BUFF, echelleIconeBandeau,
-  ICONE_BOUTON_TACTILE, echelleIconeBoutonTactile, ICONE_CIBLE_TACTILE,
+  ICONE_BOUTON_TACTILE, echelleIconeBoutonTactile, ICONE_CIBLE_TACTILE, BARRE_BOSS,
 } from './hud_layout.js';
 import { cadrer } from './icone_canvas.js';
 import { RESOLUTION_LOGIQUE } from '../render.js';
@@ -121,6 +121,87 @@ function dessinerIconeSlot(ctx, visuel, cx, cy, taille) {
   dessinerVisuel(ctx, visuel, cx, cy, { echelle: echelleIconeArme(taille) });
 }
 
+// Spec 14, §4.6 : la JAUGE d'un emplacement de compétence. Deux formes, pas
+// deux couleurs (P4②, le vocabulaire des buffs au bandeau) :
+//   - la CHARGE est un trait qui fait le tour de la case, depuis le haut, dans
+//     le sens des aiguilles — il se ferme quand la compétence est chargée ;
+//   - la RECHARGE est un voile sombre posé sur l'icône, un secteur qui se
+//     retire dans le même sens, comme l'aiguille d'une horloge.
+// Prête (les deux remplies), le tour est fermé et plus clair. `jauge` :
+// `{ charge, recharge, prete }`, reçue de main.js ; absente = rien.
+// PROVISOIRES, à juger en jeu.
+const COULEUR_CHARGE = 'rgba(243, 226, 176, 0.75)';
+const COULEUR_PRETE = '#ffe9a8';
+const VOILE_RECHARGE = 'rgba(0, 0, 0, 0.6)';
+const EPAISSEUR_CHARGE = 1.5;
+
+// Le secteur de la recharge, du haut, dans le sens des aiguilles, sur `ratio`
+// du tour. Rogné à la case par l'appelant quand elle est carrée.
+function secteurRecharge(ctx, cx, cy, rayon, ratio) {
+  const depart = -Math.PI / 2;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.arc(cx, cy, rayon, depart, depart + ratio * Math.PI * 2);
+  ctx.closePath();
+  ctx.fillStyle = VOILE_RECHARGE;
+  ctx.fill();
+}
+
+// Le trait de la charge autour d'une case CARRÉE : le périmètre parcouru
+// depuis le milieu du bord haut, sur `ratio` de sa longueur.
+function tracerPerimetre(ctx, x, y, w, h, ratio) {
+  const coins = [[x + w / 2, y], [x + w, y], [x + w, y + h], [x, y + h], [x, y], [x + w / 2, y]];
+  let reste = ratio * 2 * (w + h);
+  ctx.beginPath();
+  ctx.moveTo(coins[0][0], coins[0][1]);
+  for (let i = 1; i < coins.length && reste > 0; i += 1) {
+    const [x0, y0] = coins[i - 1];
+    const [x1, y1] = coins[i];
+    const longueur = Math.hypot(x1 - x0, y1 - y0);
+    const part = Math.min(1, reste / longueur);
+    ctx.lineTo(x0 + (x1 - x0) * part, y0 + (y1 - y0) * part);
+    reste -= longueur;
+  }
+}
+
+function styleCharge(ctx, jauge) {
+  ctx.strokeStyle = jauge.prete ? COULEUR_PRETE : COULEUR_CHARGE;
+  ctx.lineWidth = EPAISSEUR_CHARGE;
+}
+
+function dessinerJaugeRonde(ctx, jauge, cx, cy, rayon) {
+  if (!jauge) return;
+  ctx.save();
+  if (jauge.recharge > 0) secteurRecharge(ctx, cx, cy, rayon, jauge.recharge);
+  if (jauge.charge > 0) {
+    styleCharge(ctx, jauge);
+    const depart = -Math.PI / 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, rayon + 2, depart, depart + Math.min(1, jauge.charge) * Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function dessinerJaugeCarree(ctx, jauge, x, y, taille) {
+  if (!jauge) return;
+  ctx.save();
+  if (jauge.recharge > 0) {
+    ctx.beginPath();
+    ctx.rect(x, y, taille, taille);
+    ctx.clip();
+    secteurRecharge(ctx, x + taille / 2, y + taille / 2, taille, jauge.recharge);
+    ctx.restore();
+    ctx.save();
+  }
+  if (jauge.charge > 0) {
+    styleCharge(ctx, jauge);
+    tracerPerimetre(ctx, x - 1.5, y - 1.5, taille + 3, taille + 3, Math.min(1, jauge.charge));
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
 // Le fond d'une case, rond ou carré : un dégradé vertical très court, du
 // clair en haut vers le sombre en bas. Une seule fonction pour les deux
 // formes — sans quoi la case du doigt et la case du clavier finiraient par
@@ -132,7 +213,7 @@ function fondSlot(ctx, y, hauteur) {
   return degrade;
 }
 
-function dessinerBoutonsTactiles(ctx, iconesSlots, verbesActions, couleurActive, iconesBoutons, iconesCibles) {
+function dessinerBoutonsTactiles(ctx, iconesSlots, verbesActions, couleurActive, iconesBoutons, iconesCibles, jaugesSlots) {
   for (const bouton of boutonsTactilesVisibles(verbesActions)) {
     ctx.beginPath();
     ctx.arc(bouton.cx, bouton.cy, bouton.rayon, 0, Math.PI * 2);
@@ -144,6 +225,7 @@ function dessinerBoutonsTactiles(ctx, iconesSlots, verbesActions, couleurActive,
     ctx.strokeStyle = bouton.verbe === 'attack' ? couleurActive : COULEUR_SLOT_BORD;
     ctx.stroke();
     dessinerIconeSlot(ctx, iconesSlots[bouton.verbe], bouton.cx, bouton.cy, bouton.rayon * ICONE_PART_DU_BOUTON);
+    dessinerJaugeRonde(ctx, jaugesSlots[bouton.verbe], bouton.cx, bouton.cy, bouton.rayon);
     // `D-176` : un bouton qui n'est pas une case d'action (MENU) n'a pas
     // d'icône de slot ; il porte la sienne, en filigrane.
     const iconeBouton = iconesBoutons[bouton.verbe];
@@ -181,7 +263,7 @@ function dessinerBoutonsTactiles(ctx, iconesSlots, verbesActions, couleurActive,
 
 // Ligne statique en bas au centre (§4), même liste de verbes que les boutons
 // tactiles mais jamais leurs positions (celles-ci n'ont de sens qu'au doigt).
-function dessinerSlotsBas(ctx, resolution, iconesSlots, verbesActions, couleurActive) {
+function dessinerSlotsBas(ctx, resolution, iconesSlots, verbesActions, couleurActive, jaugesSlots) {
   if (verbesActions.length === 0) return;
   // La barre se RESSERRE sur ce qui existe, elle ne laisse pas de cases
   // vides : au tactile les boutons gardent leurs positions (le placement est
@@ -206,6 +288,7 @@ function dessinerSlotsBas(ctx, resolution, iconesSlots, verbesActions, couleurAc
     ctx.strokeStyle = verbe === 'attack' ? couleurActive : COULEUR_SLOT_BORD;
     ctx.strokeRect(x, y, SLOT_TAILLE, SLOT_TAILLE);
     dessinerIconeSlot(ctx, iconesSlots[verbe], x + SLOT_TAILLE / 2, y + SLOT_TAILLE / 2, SLOT_TAILLE * ICONE_PART_DE_LA_CASE);
+    dessinerJaugeCarree(ctx, jaugesSlots[verbe], x, y, SLOT_TAILLE);
   });
 }
 
@@ -234,6 +317,21 @@ function dessinerJauge(ctx, x, y, ratio, palette, visuelIcone) {
     ratio,
     palette,
   );
+}
+
+// La barre du boss : la MÊME barre que les PV (`ui/barre.js`), en long, et
+// son nom au-dessus, avec l'ombre d'un pixel du nombre des PV.
+function dessinerBarreBoss(ctx, { nom, ratio }) {
+  const b = BARRE_BOSS;
+  dessinerBarre(ctx, b, ratio, PALETTE_JAUGES.pv);
+  ctx.font = policeBandeau(8);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const milieu = b.x + b.largeur / 2;
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+  ctx.fillText(nom, milieu, b.nom_y + 1);
+  ctx.fillStyle = '#fff';
+  ctx.fillText(nom, milieu, b.nom_y);
 }
 
 export function dessinerHud(ctx, {
@@ -278,6 +376,12 @@ export function dessinerHud(ctx, {
   // MAINTENANT (la cible d'INTERACT à portée), résolu par main.js au même
   // calcul que l'appui. Il remplace l'icône du bouton tant qu'il est là.
   iconesCibles = {},
+  // Spec 14, §4.5 : `{ nom, ratio }` du boss vivant de la salle, résolu par
+  // main.js (le nom déjà traduit) ; absent = pas de barre.
+  boss = null,
+  // Spec 14, §4.6 : `verbe → { charge, recharge, prete }`, la jauge de chaque
+  // emplacement de compétence. Un verbe absent = une case sans jauge.
+  jaugesSlots = {},
 }) {
   ctx.save();
 
@@ -407,17 +511,19 @@ export function dessinerHud(ctx, {
     }
   }
 
+  if (boss) dessinerBarreBoss(ctx, boss);
+
   ctx.restore();
 
   // §4 : jamais les deux à la fois. Sur tactile, les boutons SONT les slots.
   const couleurActive = (companion && companion.render.couleur) || COULEUR_SLOT_ACTIF;
   if (tactileActif) {
-    dessinerBoutonsTactiles(ctx, iconesSlots, verbesActions, couleurActive, iconesBoutons, iconesCibles);
+    dessinerBoutonsTactiles(ctx, iconesSlots, verbesActions, couleurActive, iconesBoutons, iconesCibles, jaugesSlots);
   } else if (barreActions) {
     // Diagnostic SD_dialogues-invisibles_2026-09-15 : même défaut que
     // dialogue_box.js — `ctx.canvas.width/height` est la taille PHYSIQUE
     // depuis le MT rendu-net, jamais la résolution logique sous laquelle ce
     // dessin est réellement placé (transform f encore active).
-    dessinerSlotsBas(ctx, RESOLUTION_LOGIQUE, iconesSlots, verbesActions, couleurActive);
+    dessinerSlotsBas(ctx, RESOLUTION_LOGIQUE, iconesSlots, verbesActions, couleurActive, jaugesSlots);
   }
 }

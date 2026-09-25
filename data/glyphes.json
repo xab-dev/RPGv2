@@ -56,5 +56,12 @@
     "manette_key": "glyphe.manette.menu",
     "tactile_key": "glyphe.tactile.menu",
     "tactile_icone": "visuel_icone_menu_parametres"
+  },
+  {
+    "id": "glyphe_target_next",
+    "verbe": "target_next",
+    "clavier_key": "glyphe.clavier.target_next",
+    "manette_key": "glyphe.manette.target_next",
+    "tactile_key": "glyphe.tactile.target_next"
   }
 ]

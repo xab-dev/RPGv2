@@ -15,6 +15,7 @@
 // d'un néon.
 
 import { RESOLUTION_LOGIQUE } from '../render.js';
+import { POLICE_CHIFFRES, POLICE_CALLIGRAPHIE } from '../polices.js';
 import { decouperEnFenetres } from '../dialogue.js';
 import { mulberry32 } from '../decor.js';
 import { alphaParticule } from '../stele.js';
@@ -64,6 +65,69 @@ const DEPHASAGE_LIGNE = 0.09;
 const TAILLE_PARTICULE = 1.4;
 // PS1 : de combien la pierre monte pendant le fondu d'entrée.
 const MONTEE_FONDU = 8;
+// Spec 14 : les actions de la vue (Descendre, Fermer), en bas à droite, hors
+// de la pierre — on lit la gravure, pas un bouton posé dessus.
+const POLICE_ACTION = `10px "${POLICE_CHIFFRES}", "${POLICE_CALLIGRAPHIE}", serif`;
+const MARGE_ACTIONS = 10;
+const INTERLIGNE_ACTIONS = 16;
+const COULEUR_ACTION = '#d8dee8';
+const TOUCHE_PADDING_X = 3;
+const HAUTEUR_TOUCHE = 12;
+const ECART_TOUCHE = 5;
+
+// Le coin haut-gauche de la pierre à l'écran, `alpha` étant le fondu : un
+// seul calcul pour le dessin et pour la zone que le doigt touche.
+function originePierre(alpha) {
+  const { largeur, hauteur } = RESOLUTION_LOGIQUE;
+  return {
+    x: Math.round((largeur - LARGEUR_PIERRE) / 2),
+    y: Math.round((hauteur - HAUTEUR_PIERRE) / 2) + 4 + Math.round((1 - alpha) * MONTEE_FONDU),
+  };
+}
+
+// Le panneau gravé, en unités LOGIQUES, pierre posée (fondu fini). Spec 14 :
+// au doigt, le toucher SUR la gravure descend — les boutons du jeu sont sous
+// la vue. Pur : lu par `main.js`, jamais `ctx.canvas`.
+export function zoneGravureStele() {
+  const { x, y } = originePierre(1);
+  return {
+    x: x + MARGE_GRAVURE_X - MARGE_PANNEAU,
+    y: y + HAUT_GRAVURE - MARGE_PANNEAU,
+    w: LARGEUR_PIERRE - 2 * MARGE_GRAVURE_X + 2 * MARGE_PANNEAU,
+    h: HAUTEUR_PIERRE - HAUT_GRAVURE - BAS_GRAVURE + 2 * MARGE_PANNEAU,
+  };
+}
+
+// `actions` : [{ glyphe, texte }] — le glyphe dans une petite touche, puis le
+// texte ; alignées à droite, de bas en haut dans l'ordre inverse (la
+// première action est la plus haute).
+export function dessinerActions(ctx, actions, alpha) {
+  if (!actions || actions.length === 0) return;
+  const { largeur, hauteur } = RESOLUTION_LOGIQUE;
+  ctx.save();
+  ctx.font = POLICE_ACTION;
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'left';
+  actions.forEach((action, i) => {
+    const yc = hauteur - MARGE_ACTIONS - (actions.length - 1 - i) * INTERLIGNE_ACTIONS - HAUTEUR_TOUCHE / 2;
+    const largeurTexte = ctx.measureText(action.texte).width;
+    const largeurGlyphe = action.glyphe ? ctx.measureText(action.glyphe).width + 2 * TOUCHE_PADDING_X : 0;
+    const ecart = action.glyphe ? ECART_TOUCHE : 0;
+    let x = largeur - MARGE_ACTIONS - largeurTexte - ecart - largeurGlyphe;
+    ctx.globalAlpha = alpha * 0.9;
+    if (action.glyphe) {
+      ctx.strokeStyle = COULEUR_ACTION;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(Math.round(x) + 0.5, Math.round(yc - HAUTEUR_TOUCHE / 2) + 0.5, Math.round(largeurGlyphe), HAUTEUR_TOUCHE);
+      ctx.fillStyle = COULEUR_ACTION;
+      ctx.fillText(action.glyphe, x + TOUCHE_PADDING_X + 0.5, yc + 1);
+      x += largeurGlyphe + ecart;
+    }
+    ctx.fillStyle = COULEUR_ACTION;
+    ctx.fillText(action.texte, x, yc + 1);
+  });
+  ctx.restore();
+}
 
 function rgba(hex, alpha) {
   const n = parseInt(hex.slice(1), 16);
@@ -86,16 +150,17 @@ function tracerDalle(ctx, x, y, w, h) {
   ctx.closePath();
 }
 
-// `contenu` : { id, lignes (hiéroglyphes), couleur (#rrggbb), vue (`stele.js`),
-// alpha (le fondu d'entrée et de sortie, `stele.js#alphaVueStele`) }.
+// `contenu` : { id, lignes (hiéroglyphes, ou le texte clair une fois l'indice
+// déchiffré), couleur (#rrggbb), actions ([{ glyphe, texte }], spec 14 : vide
+// sur une stèle sans descente), vue (`stele.js`), alpha (le fondu d'entrée
+// et de sortie, `stele.js#alphaVueStele`) }.
 export function dessinerEcranStele(ctx, contenu) {
   const { largeur, hauteur } = RESOLUTION_LOGIQUE;
   const { vue, couleur, alpha = 1 } = contenu;
   if (alpha <= 0) return;
   // PS1 : la pierre monte de quelques pixels en apparaissant — un regard
   // qui se lève vers elle, pas un panneau qui tombe.
-  const x = Math.round((largeur - LARGEUR_PIERRE) / 2);
-  const y = Math.round((hauteur - HAUTEUR_PIERRE) / 2) + 4 + Math.round((1 - alpha) * MONTEE_FONDU);
+  const { x, y } = originePierre(alpha);
   const lueurA = (dephasage) => LUEUR_MIN + (1 - LUEUR_MIN) * (0.5 + 0.5 * Math.sin((vue.ms / PERIODE_LUEUR_MS - dephasage) * Math.PI * 2));
   const lueur = lueurA(0);
 
@@ -224,4 +289,5 @@ export function dessinerEcranStele(ctx, contenu) {
     }
   }
   ctx.restore();
+  dessinerActions(ctx, contenu.actions, alpha);
 }

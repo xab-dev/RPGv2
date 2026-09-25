@@ -1,14 +1,20 @@
 [
   {
     "id": "indices_config",
-    "hieroglyphes": "✻✽✶✢·▐▛▜▌▘▝▗▖⎿{}<>/=;_|"
+    "hieroglyphes": "✻✽✶✢·▐▛▜▌▘▝▗▖⎿{}<>/=;_|",
+    "dechiffrement_ms": 2500,
+    "acceleration": 5
   },
   {
     "id": "indice_grotte_entree",
     "cle_titre": "lore.grotte_entree.titre",
     "lignes": ["lore.grotte_entree.ligne_1", "lore.grotte_entree.ligne_2"],
     "icone": "visuel_icone_menu_indices",
-    "lisible_si": { "valeur": "niveau", "min": 15 }
+    "lisible_si": "flag_indice_grotte_dechiffre",
+    "dechiffrement": {
+      "condition": { "all": [{ "valeur": "niveau", "min": 15 }, { "valeur": "a_portee", "egal": "stele_grotte" }] },
+      "flag": "flag_indice_grotte_dechiffre"
+    }
   },
   {
     "id": "indice_pierre_qui_repond",

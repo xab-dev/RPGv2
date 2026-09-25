@@ -1,1 +1,28 @@
-[]
+[
+  {
+    "id": "skill_onde",
+    "label_key": "skill.onde",
+    "description_key": "skill.onde.description",
+    "element": null,
+    "emplacement": "slot_skill_1",
+    "flag": "flag_competence_1",
+    "charge": {
+      "source": "engagement_follet",
+      "duree_ms": 4000
+    },
+    "cooldown_ms": 8000,
+    "portee_tuiles": 7,
+    "effet": {
+      "type": "zone",
+      "rayon_px": 40,
+      "multiplicateur": 2.5,
+      "couleur": "#fff1c8"
+    },
+    "projectile": {
+      "vitesse_px_s": 220,
+      "rayon_px": 4,
+      "visuel": "visuel_onde"
+    },
+    "icone": "visuel_icone_onde"
+  }
+]

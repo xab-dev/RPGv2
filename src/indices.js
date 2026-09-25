@@ -54,12 +54,74 @@ export function lignesBrouillees(indice, traduire, hieroglyphes) {
   return indice.lignes.map((cle, i) => brouillerTexte(traduire(cle), `${indice.id}#${i}`, hieroglyphes));
 }
 
+// --- Le DÉCHIFFREMENT (spec 14, §4.1) ------------------------------------------
+// Au pied de la pierre, le carnet ouvert, les signes d'un indice se changent en
+// lettres « sous les yeux du joueur », UN SIGNE À LA FOIS, dans l'ordre de
+// lecture (le titre, puis les lignes). Le brouillage étant déterministe et
+// caractère pour caractère (même longueur, mêmes blancs), l'animation n'est
+// qu'un mélange entre le texte brouillé et le texte clair : les `n` premiers
+// signes sont en clair, les autres encore des hiéroglyphes. Aucun état à part
+// du temps écoulé.
+
+function estBlanc(c) {
+  return /\s/.test(c);
+}
+
+// `textes` : [{ clair, brouille }], dans l'ordre de lecture. `progression` de 0
+// à 1. Rend les textes mêlés, dans le même ordre.
+export function textesEnDechiffrement(textes, progression) {
+  const total = textes.reduce((n, t) => n + Array.from(t.clair).filter((c) => !estBlanc(c)).length, 0);
+  let restants = Math.floor(Math.max(0, Math.min(1, progression)) * total);
+  return textes.map(({ clair, brouille }) => {
+    const signes = Array.from(brouille);
+    return Array.from(clair).map((c, i) => {
+      if (estBlanc(c)) return c;
+      if (restants > 0) {
+        restants -= 1;
+        return c;
+      }
+      return signes[i] ?? c;
+    }).join('');
+  });
+}
+
+// Le temps du déchiffrement. `accelere` : B (ou MENU) pendant l'animation ne
+// ferme pas l'écran, il l'ACCÉLÈRE jusqu'à la fin — fermer marquerait l'indice
+// comme lu sans que le joueur l'ait vu. Un état d'affichage, jamais sauvegardé :
+// c'est le flag du déchiffrement qui dit que l'indice est lu.
+export function creerDechiffrement(indiceId) {
+  return { indiceId, ms: 0, accelere: false };
+}
+
+export function accelererDechiffrement(d) {
+  return { ...d, accelere: true };
+}
+
+// `reglage` : { dechiffrement_ms, acceleration } de `indices_config`.
+export function avancerDechiffrement(d, deltaMs, reglage) {
+  return { ...d, ms: d.ms + deltaMs * (d.accelere ? reglage.acceleration : 1) };
+}
+
+export function progressionDechiffrement(d, reglage) {
+  return Math.min(1, d.ms / reglage.dechiffrement_ms);
+}
+
 // Les entrées de l'écran Indices, déjà résolues pour `ui/ecran_fiches.js` :
 // { id, lisible, titre, icone, lignes, chasseFixe }. Les indices non visibles n'y sont
 // pas (`D-62`) — `estVisible` est fourni par l'appelant, qui le tient de
 // `visibilite.js`, LE filtre anti-spoil.
-export function entreesIndices(indices, { estVisible, estLisible, traduire, hieroglyphes }) {
+// `dechiffrement` (facultatif) : { indiceId, progression } — l'indice en train
+// de se déchiffrer s'écrit à mi-chemin, en chasse fixe jusqu'au dernier signe.
+export function entreesIndices(indices, { estVisible, estLisible, traduire, hieroglyphes, dechiffrement = null }) {
   return indices.filter((indice) => estVisible(indice)).map((indice) => {
+    if (dechiffrement && dechiffrement.indiceId === indice.id && dechiffrement.progression < 1) {
+      const textes = [
+        { clair: traduire(indice.cle_titre), brouille: brouillerTexte(traduire(indice.cle_titre), `${indice.id}#titre`, hieroglyphes) },
+        ...indice.lignes.map((cle, i) => ({ clair: traduire(cle), brouille: lignesBrouillees(indice, traduire, hieroglyphes)[i] })),
+      ];
+      const [titre, ...lignes] = textesEnDechiffrement(textes, dechiffrement.progression);
+      return { id: indice.id, lisible: false, titre, icone: indice.icone || null, lignes, chasseFixe: true };
+    }
     const lisible = indice.lisible_si === undefined || indice.lisible_si === null || !!estLisible(indice.lisible_si);
     return {
       id: indice.id,

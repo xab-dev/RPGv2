@@ -5,6 +5,9 @@ import { resoudreEchelleJeu } from './companion.js';
 import { TYPES_CARTE, CASES_MAX } from './menu_cartes.js';
 import { OPTIONS_MIN, OPTIONS_MAX, erreursGrapheConversation } from './dialogue.js';
 import { NOMS_COTES } from './lisieres.js';
+import { flagDeNiveau } from './xp.js';
+import { MODES_BOSS } from './comportement_monstres.js';
+import { SOURCES_CHARGE, EFFETS_COMPETENCE, estEmplacementCompetence } from './competences.js';
 
 // `D-39` — « le corps ne sort jamais de son aura », vérifié AU CHARGEMENT.
 //
@@ -110,6 +113,16 @@ function erreursCondition(condition, chemin, declares) {
         erreurs.push(`${chemin} > condition.valeur doit être un nom non vide`);
       }
       const bornes = ['min', 'max'].filter((b) => condition[b] !== undefined);
+      // `egal` (spec 14, `Q-137`) : une valeur qui est un NOM, pas un nombre
+      // (`a_portee`, l'interactif à portée). Soit une égalité, soit des bornes :
+      // les deux ensemble ne voudraient rien dire.
+      if (condition.egal !== undefined) {
+        if (typeof condition.egal !== 'string' || condition.egal.length === 0) {
+          erreurs.push(`${chemin} > condition.egal doit être un nom non vide`);
+        }
+        if (bornes.length > 0) erreurs.push(`${chemin} > condition sur valeur : egal OU min/max, jamais les deux`);
+        return erreurs;
+      }
       if (bornes.length === 0) erreurs.push(`${chemin} > condition sur valeur sans min ni max`);
       for (const b of bornes) {
         if (typeof condition[b] !== 'number') erreurs.push(`${chemin} > condition.${b} doit être numérique`);
@@ -512,6 +525,36 @@ function validerScene(entry, catalogs, path) {
   const enemiesDeclares = new Set((catalogs.enemies || []).map((e) => e.id));
   const tuilesDeclarees = tileIds;
 
+  // `descente` (spec 14, §4.2) : les flags de l'état de la DESCENTE, que
+  // l'entrée par la stèle remet à zéro (`descente.js`). Un flag cible d'un
+  // unlock reviendrait tout seul au premier `set()` venu : refusé. Liste vide
+  // admise — une salle peut appartenir à la descente sans rien retenir.
+  if (entry.descente !== undefined) {
+    const flagsDescente = entry.descente && entry.descente.flags;
+    if (!Array.isArray(flagsDescente)) {
+      erreurs.push(`${path} > descente doit être { flags: [...] }`);
+    } else {
+      const ciblesUnlock = new Set((catalogs.unlocks || []).map((u) => u.target));
+      for (const id of flagsDescente) {
+        if (!flagsDeclares.has(id)) erreurs.push(`${path} > descente.flags : "${id}" non déclaré dans flags.json`);
+        else if (ciblesUnlock.has(id)) erreurs.push(`${path} > descente.flags : "${id}" est la cible d'un unlock, il reviendrait après la remise à zéro`);
+      }
+    }
+  }
+
+  // `nettoyage` (spec 14, §4.3) : le flag que la scène pose quand le dernier
+  // monstre de SES spawns tombe. Une scène sans spawn ne serait jamais
+  // nettoyée : refusé plutôt que d'attendre pour rien.
+  if (entry.nettoyage !== undefined) {
+    const flag = entry.nettoyage && entry.nettoyage.flag;
+    if (!flagsDeclares.has(flag)) erreurs.push(`${path} > nettoyage.flag "${flag}" non déclaré dans flags.json`);
+    if (!Array.isArray(entry.spawns) || entry.spawns.length === 0) {
+      erreurs.push(`${path} > nettoyage : la scène n'a aucun spawn, elle ne serait jamais nettoyée`);
+    }
+  }
+
+  if (entry.rencontre !== undefined) erreurs.push(...erreursRencontre(entry, catalogs, path, flagsDeclares));
+
   // lumieres[] : `type` distingue un halo (perce le voile, révèle le sol) et
   // un faisceau (§3.4 03_grotte-polish, atmosphère additive, ne perce jamais
   // le voile) — chaque type a ses propres champs requis. `type` absent =
@@ -793,6 +836,11 @@ function validerScene(entry, catalogs, path) {
       erreurs.push(`${chemin} > spawn doit être { x, y }`);
     }
     erreurs.push(...erreursCondition(portail.condition, chemin, flagsDeclares));
+    // `fondu_ms` (spec 14, palier H, `Q-153`) : ce portail passe par un fondu au
+    // noir. Facultatif : Xav n'en veut qu'à la sortie de l'Annexe.
+    if (portail.fondu_ms !== undefined && !(typeof portail.fondu_ms === 'number' && portail.fondu_ms > 0)) {
+      erreurs.push(`${chemin} > fondu_ms doit être un nombre de ms > 0`);
+    }
   });
 
   for (const interactifId of entry.interactifs || []) {
@@ -839,8 +887,15 @@ function validerStatDerivee(entry, catalogs, path) {
   } else if (f.min !== undefined && typeof f.min !== 'number') {
     erreurs.push(`${path} > formule.min doit être numérique`);
   }
+  // `affichage` (spec 14, palier G) : comment la fiche Stats écrit la valeur.
+  // Absent, un entier (PV, dégâts, ms). `pourcentage` : un facteur autour de
+  // 1 (la puissance et la hâte des compétences), qu'un entier arrondirait à 1.
+  if (entry.affichage !== undefined && !AFFICHAGES_DERIVEE.includes(entry.affichage)) {
+    erreurs.push(`${path} > affichage "${entry.affichage}" inconnu (${AFFICHAGES_DERIVEE.join(' | ')})`);
+  }
   return erreurs;
 }
+export const AFFICHAGES_DERIVEE = ['pourcentage'];
 
 const FAMILLES_STATUS = ['buff', 'dot', 'debuff', 'controle'];
 const CIBLES_STATUS = ['joueur', 'monstre'];
@@ -1045,12 +1100,33 @@ function erreursGeometrieInteractif(entry, catalogs, path) {
 function validerPuzzle(entry, catalogs, path) {
   const erreurs = [];
   const flagsDeclares = new Set((catalogs.flags || []).map((f) => f.id));
+  // `visible_si` (spec 14, §4.3) : un interactif qui APPARAÎT. La condition
+  // est validée par `registry.js`, comme sur tout catalogue (`D-62`). Mais les
+  // empreintes solides d'une scène sont posées une fois à l'entrée : un
+  // interactif solide qui apparaîtrait en cours de route serait un mur
+  // invisible avant d'être là. Refusé, jusqu'à ce qu'un cas en ait besoin.
+  if (entry.visible_si != null && entry.solide) {
+    erreurs.push(`${path} > visible_si : un interactif solide ne peut pas apparaître (sa collision est posée à l'entrée en scène)`);
+  }
   if (entry.flag_pose != null && !flagsDeclares.has(entry.flag_pose)) {
     erreurs.push(`${path} > flag_pose "${entry.flag_pose}" introuvable dans flags.json`);
   }
   if (entry.type === 'levier') {
     if (!entry.position || typeof entry.position.x !== 'number' || typeof entry.position.y !== 'number') {
       erreurs.push(`${path} > position doit être { x, y }`);
+    }
+    // Spec 14, palier H : `recompense` — le levier DÉPOSE un objet au sol, à
+    // `decalage` tuiles de lui, la première fois qu'on l'actionne dans son état
+    // (un levier de descente : une fois par descente). On VOIT la récompense.
+    if (entry.recompense !== undefined) {
+      const r = entry.recompense;
+      if (!r || !(catalogs.items || []).some((it) => it.id === r.item)) {
+        erreurs.push(`${path} > recompense.item "${r && r.item}" introuvable dans items.json`);
+      }
+      if (!r || !Number.isInteger(r.quantite) || r.quantite < 1) erreurs.push(`${path} > recompense.quantite doit être un entier >= 1`);
+      if (!r || !r.decalage || typeof r.decalage.x !== 'number' || typeof r.decalage.y !== 'number') {
+        erreurs.push(`${path} > recompense.decalage doit être { x, y } en tuiles`);
+      }
     }
     // Seules les instances "levier" sont dessinées individuellement (une
     // "sequence" ne fait que référencer des leviers déjà rendus) — §2.1 de
@@ -1068,6 +1144,56 @@ function validerPuzzle(entry, catalogs, path) {
     }
     if (typeof entry.reinit_si_erreur !== 'boolean') {
       erreurs.push(`${path} > reinit_si_erreur doit être un booléen`);
+    }
+  } else if (entry.type === 'levier_maintenu') {
+    // Spec 14, §4.4 : un levier qu'on TIENT. `maintien` dit jusqu'où un
+    // mainteneur le tient (`portee_px`, depuis son centre) et combien de temps
+    // il reste allumé sans personne (`extinction_ms`).
+    if (!entry.position || typeof entry.position.x !== 'number' || typeof entry.position.y !== 'number') {
+      erreurs.push(`${path} > position doit être { x, y }`);
+    }
+    const m = entry.maintien;
+    if (!m || typeof m.portee_px !== 'number' || !(m.portee_px > 0)) {
+      erreurs.push(`${path} > maintien.portee_px doit être un nombre de pixels > 0`);
+    }
+    if (!m || typeof m.extinction_ms !== 'number' || !(m.extinction_ms >= 0)) {
+      erreurs.push(`${path} > maintien.extinction_ms doit être un nombre de ms positif ou nul`);
+    }
+    erreurs.push(...erreursRenderVisuel(entry, catalogs, path));
+    erreurs.push(...erreursGeometrieInteractif(entry, catalogs, path));
+  } else if (entry.type === 'simultane') {
+    // Spec 14, §4.4 : quand TOUS ces leviers tenus sont allumés à la fois,
+    // `flag_pose` est posé. `explication` (facultative) : après
+    // `apres_extinctions` extinctions, le follet ouvre `dialogue`, une seule
+    // fois par partie (`flag`, qui doit donc être persistant).
+    const parId = new Map((catalogs.puzzles || []).map((p) => [p.id, p]));
+    if (!Array.isArray(entry.tous_allumes) || entry.tous_allumes.length < 2) {
+      erreurs.push(`${path} > tous_allumes doit lister au moins deux leviers tenus`);
+    } else {
+      for (const id of entry.tous_allumes) {
+        const levier = parId.get(id);
+        if (!levier) erreurs.push(`${path} > tous_allumes[] > "${id}" introuvable dans puzzles.json`);
+        else if (levier.type !== 'levier_maintenu') erreurs.push(`${path} > tous_allumes[] > "${id}" n'est pas un levier_maintenu`);
+      }
+    }
+    if (typeof entry.flag_pose !== 'string') {
+      erreurs.push(`${path} > flag_pose est requis (c'est lui qui ouvre, pas l'état des leviers)`);
+    }
+    if (entry.explication !== undefined) {
+      const e = entry.explication;
+      if (!e || !Number.isInteger(e.apres_extinctions) || e.apres_extinctions < 1) {
+        erreurs.push(`${path} > explication.apres_extinctions doit être un entier >= 1`);
+      }
+      if (!e || !(catalogs.dialogues || []).some((d) => d.id === e.dialogue)) {
+        erreurs.push(`${path} > explication.dialogue "${e && e.dialogue}" introuvable dans dialogues.json`);
+      }
+      if (!e || !(catalogs.flags || []).some((f) => f.id === e.flag)) {
+        erreurs.push(`${path} > explication.flag "${e && e.flag}" non déclaré dans flags.json`);
+      } else if ((catalogs.scenes || []).some((sc) => sc.descente && (sc.descente.flags || []).includes(e.flag))) {
+        // Un flag de descente est retiré à chaque descente : l'explication se
+        // rejouerait à chaque fois, contre §4.4 (« sans le dialogue »).
+        erreurs.push(`${path} > explication.flag "${e.flag}" est un flag de descente (l'explication ne se rejoue pas)`);
+      }
     }
   } else if (entry.type === 'station_placeholder') {
     // 03_maison-exterieur §3.4 : table/coffre/atelier/puits — interactif
@@ -1123,10 +1249,189 @@ function validerPuzzle(entry, catalogs, path) {
     if (entry.flag !== undefined && !(catalogs.flags || []).some((f) => f.id === entry.flag)) {
       erreurs.push(`${path} > flag "${entry.flag}" non déclaré dans flags.json`);
     }
+    // `descente` (spec 14, `Q-138`) : la pierre est une ENTRÉE. Sa vue
+    // rapprochée gagne l'action Descendre dès que `flag_requis` est posé, et
+    // mène au point d'arrivée (`spawn`) de `scene`. Une scène d'arrivée qui ne
+    // déclare pas sa propre `descente` n'aurait aucun état à remettre à zéro :
+    // ce serait un portail, pas une descente.
+    if (entry.descente !== undefined) {
+      const d = entry.descente;
+      const cible = d && (catalogs.scenes || []).find((sc) => sc.id === d.scene);
+      if (!cible) erreurs.push(`${path} > descente.scene "${d && d.scene}" introuvable dans scenes.json`);
+      else if (!cible.descente) erreurs.push(`${path} > descente.scene "${d.scene}" ne déclare pas de descente (ses flags à remettre à zéro)`);
+      if (!d || !(catalogs.flags || []).some((f) => f.id === d.flag_requis)) {
+        erreurs.push(`${path} > descente.flag_requis "${d && d.flag_requis}" non déclaré dans flags.json`);
+      }
+    }
+    erreurs.push(...erreursRenderVisuel(entry, catalogs, path));
+    erreurs.push(...erreursGeometrieInteractif(entry, catalogs, path));
+  } else if (entry.type === 'coffre_parchemin') {
+    // Spec 14, §4.6 : un coffre qui ne contient qu'un PARCHEMIN. L'ouvrir
+    // apprend `competence` (son flag est posé) et ouvre la vue du parchemin ;
+    // ouvert, il le reste : son état EST le flag de la compétence, rien
+    // d'autre à sauvegarder. `armement_ms` : comme la stèle, le temps avant
+    // que la vue accepte d'être fermée.
+    if (!entry.position || typeof entry.position.x !== 'number' || typeof entry.position.y !== 'number') {
+      erreurs.push(`${path} > position doit être { x, y }`);
+    }
+    if (!(catalogs.skills || []).some((c) => c.id === entry.competence)) {
+      erreurs.push(`${path} > competence "${entry.competence}" introuvable dans skills.json`);
+    }
+    if (typeof entry.armement_ms !== 'number' || !(entry.armement_ms >= 0)) {
+      erreurs.push(`${path} > armement_ms doit être un nombre de ms positif ou nul`);
+    }
+    // Ouvert, il se dessine autrement ; son empreinte reste celle du visuel
+    // fermé (le coffre ne grandit pas en s'ouvrant).
+    const ouvert = entry.render && entry.render.visuel_ouvert;
+    if (!(catalogs.visuels || []).some((v) => v.id === ouvert)) {
+      erreurs.push(`${path} > render.visuel_ouvert "${ouvert}" introuvable dans visuels.json`);
+    }
     erreurs.push(...erreursRenderVisuel(entry, catalogs, path));
     erreurs.push(...erreursGeometrieInteractif(entry, catalogs, path));
   } else {
-    erreurs.push(`${path} > type "${entry.type}" inconnu (levier | sequence | station_placeholder | station | stele)`);
+    erreurs.push(`${path} > type "${entry.type}" inconnu (levier | levier_maintenu | sequence | simultane | station_placeholder | station | stele | coffre_parchemin)`);
+  }
+  return erreurs;
+}
+
+// Les comportements qu'un ennemi peut déclarer. `melee` va droit au héros ;
+// `distance` (spec 14, palier C) garde ses distances et tire ; `orbite`
+// (palier D) tourne autour d'un autre monstre, comme un follet autour du héros ;
+// `boss` (palier F) change de mode de déplacement au hasard, frappe et tire.
+const COMPORTEMENTS_ENNEMI = ['melee', 'distance', 'orbite', 'boss'];
+// Ceux qui tirent : leur `attaque_distance` est exigée, et refusée aux autres.
+const COMPORTEMENTS_TIREURS = ['distance', 'boss'];
+const CHAMPS_ORBITE = ['rayon_px', 'vitesse_rad_s'];
+const CHAMPS_ATTAQUE_DISTANCE = ['portee_tuiles', 'recul_tuiles', 'cadence_ms', 'vitesse_px_s', 'rayon_px', 'course_tuiles'];
+
+// `orbite` (spec 14, §4.3, le follet de Zéros) : exigée par le comportement
+// `orbite`, refusée sans lui. `autour` nomme l'ennemi dont il fait le tour ;
+// un monstre qui tournerait autour de lui-même ne bougerait jamais.
+function erreursOrbiteEnnemi(entry, catalogs, path) {
+  const o = entry.orbite;
+  if (entry.comportement !== 'orbite') {
+    return o !== undefined ? [`${path} > orbite sans comportement "orbite"`] : [];
+  }
+  if (!o || typeof o !== 'object') return [`${path} > comportement "orbite" sans orbite`];
+  const erreurs = [];
+  for (const champ of CHAMPS_ORBITE) {
+    if (typeof o[champ] !== 'number' || !(o[champ] > 0)) erreurs.push(`${path} > orbite.${champ} doit être un nombre > 0`);
+  }
+  if (o.autour === entry.id) erreurs.push(`${path} > orbite.autour : un monstre ne tourne pas autour de lui-même`);
+  else if (!(catalogs.enemies || []).some((e) => e.id === o.autour)) {
+    erreurs.push(`${path} > orbite.autour "${o.autour}" introuvable dans enemies.json`);
+  }
+  return erreurs;
+}
+
+// `rencontre` (spec 14, §4.3, `rencontre.js`) : le combat mis en scène d'une
+// salle. Tout ce qui la fait finir doit exister, sinon elle ne finirait
+// jamais : une cible parmi ses monstres, touchable, un seuil dans ]0 ; 1[.
+// Son flag et ses flags de fin sont déclarés ; ses dialogues existent.
+function erreursRencontre(entry, catalogs, path, flagsDeclares) {
+  const r = entry.rencontre;
+  const chemin = `${path} > rencontre`;
+  if (!r || typeof r !== 'object') return [`${chemin} doit être un objet`];
+  const erreurs = [];
+  if (r.declencheur === undefined || r.declencheur === null) erreurs.push(`${chemin} > declencheur manquant (une condition)`);
+  else erreurs.push(...erreursCondition(r.declencheur, `${chemin} > declencheur`, flagsDeclares));
+  if (!flagsDeclares.has(r.flag_rencontre)) erreurs.push(`${chemin} > flag_rencontre "${r.flag_rencontre}" non déclaré dans flags.json`);
+  if (!Array.isArray(r.flags_fin) || r.flags_fin.length === 0) {
+    erreurs.push(`${chemin} > flags_fin doit être une liste non vide (ce que la fin ouvre)`);
+  } else {
+    for (const f of r.flags_fin) if (!flagsDeclares.has(f)) erreurs.push(`${chemin} > flags_fin : "${f}" non déclaré dans flags.json`);
+  }
+  const enemies = catalogs.enemies || [];
+  const monstres = Array.isArray(r.monstres) ? r.monstres : [];
+  if (monstres.length === 0) erreurs.push(`${chemin} > monstres doit être une liste non vide`);
+  monstres.forEach((m, i) => {
+    if (!enemies.some((e) => e.id === (m && m.enemy))) erreurs.push(`${chemin} > monstres[${i}] : enemy "${m && m.enemy}" introuvable dans enemies.json`);
+    const p = m && m.position;
+    if (!p || !Number.isInteger(p.x) || !Number.isInteger(p.y) || p.x < 0 || p.y < 0 || p.x >= entry.width || p.y >= entry.height) {
+      erreurs.push(`${chemin} > monstres[${i}] : position hors de la scène`);
+    }
+  });
+  const cible = enemies.find((e) => e.id === r.cible);
+  if (!monstres.some((m) => m && m.enemy === r.cible)) erreurs.push(`${chemin} > cible "${r.cible}" absente de ses monstres`);
+  else if (cible && cible.intouchable) erreurs.push(`${chemin} > cible "${r.cible}" intouchable : la rencontre ne finirait jamais`);
+  if (typeof r.seuil_fin !== 'number' || !(r.seuil_fin > 0 && r.seuil_fin < 1)) erreurs.push(`${chemin} > seuil_fin doit être dans ]0 ; 1[`);
+  if (typeof r.fondu_ms !== 'number' || r.fondu_ms < 0) erreurs.push(`${chemin} > fondu_ms doit être un nombre >= 0`);
+  if (typeof r.sans_defaite !== 'boolean') erreurs.push(`${chemin} > sans_defaite doit être un booléen`);
+  const dialogues = new Set((catalogs.dialogues || []).map((d) => d.id));
+  if (!dialogues.has(r.dialogue)) erreurs.push(`${chemin} > dialogue "${r.dialogue}" introuvable dans dialogues.json`);
+  for (const champ of ['dialogue_debut', 'dialogue_releve']) {
+    if (r[champ] !== undefined && !dialogues.has(r[champ])) erreurs.push(`${chemin} > ${champ} "${r[champ]}" introuvable dans dialogues.json`);
+  }
+  // La relève n'existe que dans un combat sans défaite : sans lui, la mort
+  // renvoie à la Grotte et personne ne dirait la réplique.
+  if (r.dialogue_releve !== undefined && r.sans_defaite !== true) erreurs.push(`${chemin} > dialogue_releve sans sans_defaite`);
+  return erreurs;
+}
+
+// `attaque_distance` (spec 14, §4.3) : exigée par `distance`, refusée sans
+// lui (une attaque que personne ne tire serait une donnée écrite pour rien).
+// Les dégâts ne s'y écrivent pas : ils suivent la `force` du monstre.
+function erreursAttaqueDistance(entry, catalogs, path) {
+  const erreurs = [];
+  if (!COMPORTEMENTS_ENNEMI.includes(entry.comportement)) {
+    erreurs.push(`${path} > comportement "${entry.comportement}" inconnu (${COMPORTEMENTS_ENNEMI.join(' | ')})`);
+  }
+  const a = entry.attaque_distance;
+  if (!COMPORTEMENTS_TIREURS.includes(entry.comportement)) {
+    if (a !== undefined) erreurs.push(`${path} > attaque_distance sans comportement qui tire (${COMPORTEMENTS_TIREURS.join(' | ')})`);
+    return erreurs;
+  }
+  if (!a || typeof a !== 'object') return [...erreurs, `${path} > comportement "${entry.comportement}" sans attaque_distance`];
+  for (const champ of CHAMPS_ATTAQUE_DISTANCE) {
+    if (typeof a[champ] !== 'number' || !(a[champ] > 0)) erreurs.push(`${path} > attaque_distance.${champ} doit être un nombre > 0`);
+  }
+  if (a.recul_tuiles >= a.portee_tuiles) {
+    erreurs.push(`${path} > attaque_distance : recul_tuiles doit être inférieur à portee_tuiles (sinon il recule sans jamais tirer)`);
+  }
+  if (!(catalogs.visuels || []).some((v) => v.id === a.visuel)) {
+    erreurs.push(`${path} > attaque_distance.visuel "${a.visuel}" introuvable dans visuels.json`);
+  }
+  // La SALVE (§4.5), facultative : plusieurs tirs en éventail. Un seul tir
+  // s'écrit sans salve ; un écart nul superposerait les tirs.
+  if (a.salve !== undefined) {
+    const sv = a.salve;
+    if (!sv || !Number.isInteger(sv.nombre) || sv.nombre < 2) erreurs.push(`${path} > attaque_distance.salve.nombre doit être un entier >= 2`);
+    if (!sv || typeof sv.ecart_deg !== 'number' || !(sv.ecart_deg > 0) || sv.ecart_deg >= 90) {
+      erreurs.push(`${path} > attaque_distance.salve.ecart_deg doit être dans ]0 ; 90[`);
+    }
+  }
+  return erreurs;
+}
+
+// Les MODES du boss (spec 14, §4.5) : exigés par `boss`, refusés sans lui.
+// Chaque type au plus une fois, un poids positif au moins (sinon aucun mode ne
+// sort du tirage), une durée de mode qui en est une.
+function erreursModesBoss(entry, path) {
+  const modes = entry.modes;
+  const duree = entry.duree_mode_ms;
+  if (entry.comportement !== 'boss') {
+    const erreurs = [];
+    if (modes !== undefined) erreurs.push(`${path} > modes sans comportement "boss"`);
+    if (duree !== undefined) erreurs.push(`${path} > duree_mode_ms sans comportement "boss"`);
+    return erreurs;
+  }
+  const erreurs = [];
+  if (!Array.isArray(modes) || modes.length === 0) return [`${path} > comportement "boss" sans modes (une liste non vide)`];
+  const vus = new Set();
+  modes.forEach((m, i) => {
+    const chemin = `${path} > modes[${i}]`;
+    if (!m || !MODES_BOSS.includes(m.type)) erreurs.push(`${chemin} > type "${m && m.type}" inconnu (${MODES_BOSS.join(' | ')})`);
+    else if (vus.has(m.type)) erreurs.push(`${chemin} > type "${m.type}" en double`);
+    else vus.add(m.type);
+    if (!m || typeof m.poids !== 'number' || m.poids < 0) erreurs.push(`${chemin} > poids doit être un nombre >= 0`);
+    if (m && typeof m.tir !== 'boolean') erreurs.push(`${chemin} > tir doit être un booléen`);
+    if (m && m.facteur_vitesse !== undefined && !(typeof m.facteur_vitesse === 'number' && m.facteur_vitesse > 0)) {
+      erreurs.push(`${chemin} > facteur_vitesse doit être un nombre > 0`);
+    }
+  });
+  if (!modes.some((m) => m && typeof m.poids === 'number' && m.poids > 0)) erreurs.push(`${path} > modes : aucun poids positif, aucun mode ne sortirait`);
+  if (!duree || typeof duree.min !== 'number' || typeof duree.max !== 'number' || !(duree.min > 0) || duree.max < duree.min) {
+    erreurs.push(`${path} > duree_mode_ms doit être { min > 0, max >= min }`);
   }
   return erreurs;
 }
@@ -1165,10 +1470,17 @@ function validerConversation(entry, catalogs, path) {
       erreurs.push(`${chemin} doit être un objet`);
       continue;
     }
-    if (!LOCUTEURS_DIALOGUE.includes(noeud.locuteur)) {
-      erreurs.push(`${chemin} > locuteur doit être l'un de ${LOCUTEURS_DIALOGUE.join('/')}`);
+    // Spec 14, §4.3 : un personnage qui parle et qui se bat (Zéros) est une
+    // entrée d'ennemi — son nom affiché passe par `locuteur.<id>` comme les autres.
+    if (!LOCUTEURS_DIALOGUE.includes(noeud.locuteur) && !(catalogs.enemies || []).some((e) => e.id === noeud.locuteur)) {
+      erreurs.push(`${chemin} > locuteur doit être l'un de ${LOCUTEURS_DIALOGUE.join('/')}, ou un id de enemies.json`);
     }
     if (typeof noeud.text_key !== 'string') erreurs.push(`${chemin} > text_key manquant`);
+    // Spec 14, §4.4 : une réplique qui NOMME un bouton déclare son verbe ; son
+    // texte reçoit `{glyphe}`, le glyphe de ce verbe au périphérique actif.
+    if (noeud.glyphe !== undefined && !(catalogs.glyphes || []).some((g) => g.verbe === noeud.glyphe)) {
+      erreurs.push(`${chemin} > glyphe "${noeud.glyphe}" : aucun verbe de ce nom dans glyphes.json`);
+    }
     const options = noeud.options === undefined ? [] : noeud.options;
     if (!Array.isArray(options)) {
       erreurs.push(`${chemin} > options doit être un tableau`);
@@ -1511,6 +1823,15 @@ function validerCarteMenu(carte, catalogs, chemin, flagsDeclares) {
     if (carte.danger !== true && carte[champ] !== undefined) erreurs.push(`${chemin} > "${champ}" n'a de sens qu'avec danger: true`);
   }
   erreurs.push(...erreursCondition(carte.condition, chemin, flagsDeclares));
+  // Spec 14, palier I : quand l'écran qu'ouvre la carte laisse CHOISIR (Stats :
+  // tout reprendre, ranger une compétence). Une condition de flags ordinaire.
+  if (carte.choisir_si !== undefined) {
+    if (carte.type !== 'dossier') erreurs.push(`${chemin} > choisir_si n'a de sens que sur une carte dossier`);
+    erreurs.push(...erreursCondition(carte.choisir_si, `${chemin} > choisir_si`, flagsDeclares));
+  }
+  if (carte.icone_reprendre !== undefined && !(catalogs.visuels || []).some((v) => v.id === carte.icone_reprendre)) {
+    erreurs.push(`${chemin} > icone_reprendre > "${carte.icone_reprendre}" introuvable dans visuels.json`);
+  }
   return erreurs;
 }
 
@@ -2204,6 +2525,27 @@ export const SCHEMAS = {
         erreurs.push(`${path} > xp doit être un nombre >= 0`);
       }
       erreurs.push(...erreursRenderVisuel(entry, catalogs, path));
+      erreurs.push(...erreursAttaqueDistance(entry, catalogs, path));
+      erreurs.push(...erreursOrbiteEnnemi(entry, catalogs, path));
+      erreurs.push(...erreursModesBoss(entry, path));
+      // `boss` (§4.5) : sa barre de PV en haut de l'écran, pas au-dessus de lui.
+      if (entry.boss !== undefined && typeof entry.boss !== 'boolean') erreurs.push(`${path} > boss doit être un booléen`);
+      // Spec 14, §4.3 : `intouchable` (Zéros) et `render.miroir` (sa silhouette
+      // retournée) sont des booléens ; une chaîne « true » passerait pour vraie
+      // au dessin et pour fausse aux dégâts.
+      if (entry.intouchable !== undefined && typeof entry.intouchable !== 'boolean') {
+        erreurs.push(`${path} > intouchable doit être un booléen`);
+      }
+      // `distance_contact_px` : où un monstre au corps à corps s'arrête. Au-delà
+      // de sa portée d'attaque, il ne frapperait jamais.
+      if (entry.distance_contact_px !== undefined) {
+        const d = entry.distance_contact_px;
+        if (typeof d !== 'number' || d < 0) erreurs.push(`${path} > distance_contact_px doit être un nombre >= 0`);
+        else if (d >= entry.portee_attaque) erreurs.push(`${path} > distance_contact_px doit être inférieure à portee_attaque (sinon il ne frappe jamais)`);
+      }
+      if (entry.render && entry.render.miroir !== undefined && typeof entry.render.miroir !== 'boolean') {
+        erreurs.push(`${path} > render.miroir doit être un booléen`);
+      }
       return erreurs;
     },
   },
@@ -2348,6 +2690,12 @@ export const SCHEMAS = {
       // aucune règle spéciale ici, juste une catégorie de plus.
       if (!CATEGORIES_ITEM.includes(entry.categorie)) {
         erreurs.push(`${path} > categorie doit être l'une de ${CATEGORIES_ITEM.join('/')}`);
+      }
+      // Spec 14, palier H : un objet qui EST une monnaie (l'éclat que dépose le
+      // levier-récompense). Ramassé, il crédite la monnaie et n'entre jamais en
+      // poche.
+      if (entry.monnaie !== undefined && !(catalogs.monnaies || []).some((m) => m.id === entry.monnaie)) {
+        erreurs.push(`${path} > monnaie "${entry.monnaie}" introuvable dans monnaies.json`);
       }
       // `specs/15` palier B : ce qui BRÛLE (la torche). Une durée en temps
       // actif, les phases du cycle où il se consume (une phase inconnue ne
@@ -2836,6 +3184,13 @@ export const SCHEMAS = {
         if (typeof entry.hieroglyphes !== 'string' || entry.hieroglyphes.trim().length === 0) {
           erreurs.push(`${path} > hieroglyphes doit être une chaîne de signes non vide`);
         }
+        // Le déchiffrement (spec 14) : sa durée et le facteur de B, tous deux
+        // PROVISOIRES, lus par `indices.js#avancerDechiffrement`.
+        for (const champ of ['dechiffrement_ms', 'acceleration']) {
+          if (entry[champ] !== undefined && !(typeof entry[champ] === 'number' && entry[champ] > 0)) {
+            erreurs.push(`${path} > ${champ} doit être un nombre > 0`);
+          }
+        }
         return erreurs;
       }
       if (typeof entry.cle_titre !== 'string' || entry.cle_titre.length === 0) {
@@ -2853,6 +3208,28 @@ export const SCHEMAS = {
         erreurs.push(...erreursConditionVisibilite(entry.lisible_si, `${path} > lisible_si`, catalogs));
         if (!(catalogs.indices || []).some((e) => e.id === 'indices_config')) {
           erreurs.push(`${path} > lisible_si exige l'entrée "indices_config" (l'alphabet des hiéroglyphes)`);
+        }
+      }
+      // `dechiffrement` (spec 14, palier B) : l'indice se déchiffre quand le
+      // carnet s'ouvre alors que `condition` tient (au pied d'une pierre), et
+      // `flag` le retient. Sans `lisible_si` qui lise ce flag, le déchiffrement
+      // jouerait son animation sur un texte que rien ne rendrait lisible ensuite.
+      if (entry.dechiffrement !== undefined) {
+        const d = entry.dechiffrement;
+        if (!d || typeof d !== 'object' || d.condition === undefined) {
+          erreurs.push(`${path} > dechiffrement doit être { condition, flag }`);
+        } else {
+          erreurs.push(...erreursConditionVisibilite(d.condition, `${path} > dechiffrement.condition`, catalogs));
+          if (!(catalogs.flags || []).some((f) => f.id === d.flag)) {
+            erreurs.push(`${path} > dechiffrement.flag "${d.flag}" non déclaré dans flags.json`);
+          }
+          const config = (catalogs.indices || []).find((e) => e.id === 'indices_config');
+          if (!config || config.dechiffrement_ms === undefined || config.acceleration === undefined) {
+            erreurs.push(`${path} > dechiffrement exige dechiffrement_ms et acceleration dans "indices_config"`);
+          }
+          if (entry.lisible_si !== d.flag) {
+            erreurs.push(`${path} > dechiffrement : lisible_si doit être son flag ("${d.flag}"), sinon l'indice déchiffré resterait illisible`);
+          }
         }
       }
       return erreurs;
@@ -2878,6 +3255,13 @@ export const SCHEMAS = {
       }
       if (typeof entry.points_stats !== 'number' || entry.points_stats < 0) {
         erreurs.push(`${path} > points_stats doit être un nombre >= 0`);
+      }
+      // Le flag que ce niveau posera au franchissement (`xp.js#flagDeNiveau`)
+      // doit exister : sinon l'oubli ne se verrait qu'en jeu, au moment
+      // précis où le joueur franchit ce niveau (spec 14, palier A).
+      const flag = flagDeNiveau(entry.niveau);
+      if (typeof entry.niveau === 'number' && !(catalogs.flags || []).some((f) => f.id === flag)) {
+        erreurs.push(`${path} > le flag "${flag}" que ce niveau pose est absent de flags.json`);
       }
       return erreurs;
     },
@@ -3076,7 +3460,54 @@ SCHEMAS.alignement = {
   },
 };
 
-const CATALOGUES_MINIMAUX = ['armors', 'accessories', 'skills', 'crops', 'journal_entries'];
+// Spec 14, §4.6 : le catalogue des COMPÉTENCES, qui n'avait pas de schéma.
+// Une entrée dit ce qu'elle est (nom, description, élément — `null` : neutre),
+// ce qui l'apprend (`flag`, persistant : une descente ne la reprend pas),
+// l'emplacement où elle se range par défaut (un `slot_skill_N`), comment elle
+// se charge et se recharge, sa portée, son tir et son effet. Aucune valeur
+// n'est lue ailleurs que dans `competences.js` et le tir de `main.js`.
+function erreursCompetence(entry, catalogs, path) {
+  const erreurs = [];
+  const positif = (v) => typeof v === 'number' && Number.isFinite(v) && v > 0;
+  if (typeof entry.description_key !== 'string') erreurs.push(`${path} > description_key requise (le parchemin la lit)`);
+  if (entry.element != null && !(catalogs.elements || []).some((e) => e.id === entry.element)) {
+    erreurs.push(`${path} > element "${entry.element}" introuvable dans elements.json`);
+  }
+  const slot = (catalogs.action_slots || []).find((a) => a.id === entry.emplacement);
+  if (!slot) erreurs.push(`${path} > emplacement "${entry.emplacement}" introuvable dans action_slots.json`);
+  else if (!estEmplacementCompetence(slot)) erreurs.push(`${path} > emplacement "${entry.emplacement}" n'est pas un emplacement de compétence (verbe ${slot.verb})`);
+  if (!(catalogs.flags || []).some((f) => f.id === entry.flag)) {
+    erreurs.push(`${path} > flag "${entry.flag}" non déclaré dans flags.json`);
+  } else if ((catalogs.scenes || []).some((sc) => sc.descente && (sc.descente.flags || []).includes(entry.flag))) {
+    erreurs.push(`${path} > flag "${entry.flag}" est un flag de descente (une compétence apprise ne se reprend pas)`);
+  }
+  const c = entry.charge;
+  if (!c || !SOURCES_CHARGE.includes(c.source)) erreurs.push(`${path} > charge.source doit être ${SOURCES_CHARGE.join(' | ')}`);
+  if (!c || !positif(c.duree_ms)) erreurs.push(`${path} > charge.duree_ms doit être un nombre de ms > 0`);
+  if (!positif(entry.cooldown_ms)) erreurs.push(`${path} > cooldown_ms doit être un nombre de ms > 0`);
+  if (!positif(entry.portee_tuiles)) erreurs.push(`${path} > portee_tuiles doit être un nombre > 0`);
+  const e = entry.effet;
+  if (!e || !EFFETS_COMPETENCE.includes(e.type)) erreurs.push(`${path} > effet.type doit être ${EFFETS_COMPETENCE.join(' | ')}`);
+  if (!e || !positif(e.rayon_px)) erreurs.push(`${path} > effet.rayon_px doit être un nombre > 0`);
+  if (!e || !positif(e.multiplicateur)) erreurs.push(`${path} > effet.multiplicateur doit être un nombre > 0`);
+  if (!e || typeof e.couleur !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(e.couleur)) erreurs.push(`${path} > effet.couleur doit être #rrggbb (l'onde de l'éclat)`);
+  const p = entry.projectile;
+  if (!p || !positif(p.vitesse_px_s)) erreurs.push(`${path} > projectile.vitesse_px_s doit être un nombre > 0`);
+  if (!p || !positif(p.rayon_px)) erreurs.push(`${path} > projectile.rayon_px doit être un nombre > 0`);
+  if (!p || !(catalogs.visuels || []).some((v) => v.id === p.visuel)) {
+    erreurs.push(`${path} > projectile.visuel "${p && p.visuel}" introuvable dans visuels.json`);
+  }
+  return erreurs;
+}
+
+SCHEMAS.skills = {
+  requiredFields: ['id', 'label_key', 'description_key', 'emplacement', 'flag', 'charge', 'cooldown_ms', 'portee_tuiles', 'effet', 'projectile', 'icone'],
+  idField: 'id',
+  refs: [{ field: 'icone', catalog: 'visuels' }],
+  custom: erreursCompetence,
+};
+
+const CATALOGUES_MINIMAUX = ['armors', 'accessories', 'crops', 'journal_entries'];
 
 for (const nom of CATALOGUES_MINIMAUX) {
   SCHEMAS[nom] = schemaMinimal();

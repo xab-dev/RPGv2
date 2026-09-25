@@ -543,8 +543,13 @@ export function cleLocuteur(locuteur) {
 // résout la silhouette comme il le fait pour le HUD. Le nom reste calculé —
 // il sert de repli (pas encore de follet) et aux tests. Le narrateur n'a pas
 // de portrait : il reste « ... ».
-export function resoudreNoeud(donnees, noeudId, registre, i18n, companionId) {
+// `peripherique` (spec 14, §4.4) : celui qui est actif quand la réplique
+// s'affiche ; une réplique qui déclare `glyphe` (un verbe) nomme le bouton de
+// CE périphérique — RB, Tab, ou le geste au doigt. Lu à la résolution du
+// nœud, donc à jour si le joueur a changé de main entre deux répliques.
+export function resoudreNoeud(donnees, noeudId, registre, i18n, companionId, peripherique = 'manette') {
   const noeud = donnees.noeuds[noeudId];
+  const params = noeud.glyphe ? { glyphe: i18n.t(`glyphe.${peripherique}.${noeud.glyphe}`) } : undefined;
   const parleFollet = noeud.locuteur === 'follet' && Boolean(companionId);
   const locuteur = parleFollet
     ? i18n.t(registre.obtenir('companions', companionId).label_key)
@@ -552,7 +557,7 @@ export function resoudreNoeud(donnees, noeudId, registre, i18n, companionId) {
   return {
     locuteur,
     portrait: parleFollet ? companionId : null,
-    texte: i18n.t(noeud.text_key),
+    texte: i18n.t(noeud.text_key, params),
     options: optionsDe(noeud).map((o) => i18n.t(o.text_key)),
   };
 }

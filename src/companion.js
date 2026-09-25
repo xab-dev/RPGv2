@@ -153,7 +153,9 @@ export function distanceRelachePx(companion) {
 // 70 px effleuré par l'aura d'un follet qui rentre serait engagé à une frame
 // et relâché à la suivante (la relâche, elle, se mesure depuis le héros).
 export function monstreEngageable(monstre, hero, follet, companion) {
-  if (!monstre || monstre.mort) return false;
+  // Spec 14, §4.3 : le follet ignore un intouchable (Zéros) — il n'a rien à y
+  // faire, et c'est la cible voulue par la scène qu'il doit prendre.
+  if (!monstre || monstre.mort || monstre.intouchable) return false;
   const dHero = distance(hero, monstre);
   if (dHero > distanceRelachePx(companion)) return false;
   if (dHero <= resoudreOrbiteRayonPx()) return true;
@@ -165,6 +167,8 @@ export function monstreEngageable(monstre, hero, follet, companion) {
 // En `suivre` — donc aussi pendant le retour en orbite —, le follet accroche
 // le candidat le PLUS PROCHE DU HÉROS parmi les engageables.
 export function mettreAJourEtat(follet, hero, monstres, companion) {
+  // Posé (spec 14, B2), le follet n'engage rien : il tient ce qu'on lui a confié.
+  if (follet.etat === 'poste') return follet;
   if (follet.etat === 'engager') {
     const cible = monstres.find((m) => m.id === follet.cibleMonstreId);
     if (!cible || cible.mort || distance(hero, cible) > distanceRelachePx(companion)) {
@@ -212,6 +216,16 @@ export function avancerPosition(follet, hero, monstres, deltaS, orbite = {}) {
   // voulue, cohérente avec `D-51` : l'aura arrive AVEC le follet, l'effet
   // commence quand le cercle touche le monstre, pas à l'instant de la
   // décision d'engager.
+  // Posé : il va à son poste par la même loi qu'une approche, et y reste.
+  if (follet.etat === 'poste' && follet.poste) {
+    return {
+      ...follet,
+      x: follet.x + (follet.poste.x - follet.x) * k,
+      y: follet.y + (follet.poste.y - follet.y) * k,
+      angleOrbite,
+      facteurOrbite,
+    };
+  }
   if (follet.etat === 'engager') {
     const cible = monstres.find((m) => m.id === follet.cibleMonstreId);
     if (cible) {
@@ -266,7 +280,7 @@ export function cibleSuivante(follet, hero, monstres, companion) {
   if (!follet) return follet;
   const portee = distanceRelachePx(companion);
   const candidats = monstres
-    .filter((m) => m && !m.mort && distance(hero, m) <= portee)
+    .filter((m) => m && !m.mort && !m.intouchable && distance(hero, m) <= portee)
     .sort((a, b) => distance(hero, a) - distance(hero, b) || String(a.id).localeCompare(String(b.id)));
   if (candidats.length === 0) return follet;
 
@@ -278,4 +292,46 @@ export function cibleSuivante(follet, hero, monstres, companion) {
   // Pas de saut de position : `avancerPosition` amortit l'approche de la
   // nouvelle cible exactement comme celle d'une cible engagée toute seule.
   return { ...follet, etat: 'engager', cibleMonstreId: suivant.id };
+}
+
+// --- Une orbite de follet, autour d'un autre centre (spec 14, §4.3) --------
+// Le follet de Zéros tourne autour de Zéros comme le nôtre autour du héros :
+// même loi d'amortissement (`D-53`, indépendante du nombre de frames), avec
+// son rayon et sa vitesse lus dans SES données (`enemies.json > orbite`), pas
+// dans les constantes de notre follet. `corps` porte `x`, `y` et `angleOrbite`
+// (absent au premier appel : l'angle part de zéro). Pur.
+export function avancerOrbiteAutour(corps, centre, { rayonPx, vitesseRadS }, deltaS) {
+  const angleOrbite = (corps.angleOrbite || 0) + deltaS * vitesseRadS;
+  const k = amortissement(deltaS);
+  const cibleX = centre.x + Math.cos(angleOrbite) * rayonPx;
+  const cibleY = centre.y + Math.sin(angleOrbite) * rayonPx;
+  return {
+    ...corps,
+    x: corps.x + (cibleX - corps.x) * k,
+    y: corps.y + (cibleY - corps.y) * k,
+    angleOrbite,
+  };
+}
+
+// --- Le follet posé (spec 14, §4.4, B2 tranché par Xav) --------------------
+// Un ÉTAT du follet, à côté de `suivre` et `engager`, et non une exception de
+// la salle 2 : « très utile par la suite avec les mécanismes automatisés
+// (follet agentique) ». `poste` porte sa cible — `{ id, x, y }`, l'id de ce
+// qu'il tient et le point où il se tient — sans savoir ce que c'est : un
+// futur mécanisme qui confie une tâche au follet réutilisera cet état. De
+// session, jamais sauvegardé (une entrée de scène recrée le follet, donc le
+// rappelle). Pur.
+export function poserFollet(follet, poste) {
+  if (!follet || !poste) return follet;
+  return { ...follet, etat: 'poste', cibleMonstreId: null, poste: { id: poste.id, x: poste.x, y: poste.y } };
+}
+
+// Le rappel : il revient en orbite, par l'amortissement ordinaire.
+export function rappelerFollet(follet) {
+  if (!follet || follet.etat !== 'poste') return follet;
+  return { ...follet, etat: 'suivre', poste: null };
+}
+
+export function folletPoste(follet) {
+  return !!follet && follet.etat === 'poste';
 }

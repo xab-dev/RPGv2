@@ -143,7 +143,7 @@ const items = registre.tous('items').filter((i) => i.spawn);
 // aube jouée — un joueur qui reprend sa partie de nuit ne verrait rien du
 // nouveau semis.
 {
-  assert.equal(VERSION_SCHEMA_COURANTE, 8);
+  assert.equal(VERSION_SCHEMA_COURANTE, 9);
   const v5 = {
     ...saveNeuve(),
     schema_version: 5,

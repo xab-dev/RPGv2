@@ -935,7 +935,14 @@ export function dessinerScene(ctx, {
     // cf. le `continue` ci-dessus). Seule la primitive `teinte: true` du
     // visuel (le corps) blanchit ; une éventuelle facette non-teintable
     // reste visible par-dessus.
-    dessinerVisuel(ctx, monstre.visuel, mx, my, { teinte: monstre.flashMs > 0 ? '#ffffff' : null });
+    // Spec 14, palier D : `miroir` (Zéros, la silhouette du héros retournée)
+    // et `alpha` (le fondu d'une rencontre), résolus par l'appelant.
+    const alphaMonstre = monstre.alpha == null ? 1 : monstre.alpha;
+    dessinerVisuel(ctx, monstre.visuel, mx, my, {
+      teinte: monstre.flashMs > 0 ? '#ffffff' : null,
+      miroir: monstre.miroir === true,
+      alpha: alphaMonstre,
+    });
 
     // Barre de PV (§3.1) : visible seulement si le monstre est "actif"
     // (engagé ou déjà touché) — jamais sur un monstre inerte à distance,
@@ -949,6 +956,7 @@ export function dessinerScene(ctx, {
       // fond noir et un aplat rouge — un monstre touché parle la même langue
       // que la jauge de PV du héros.
       ctx.save();
+      if (alphaMonstre !== 1) ctx.globalAlpha *= alphaMonstre;
       dessinerBarre(ctx, { x: barreX, y: barreY, largeur: barreLargeur, hauteur: barreHauteur }, ratioPv, PALETTE_JAUGES.pv);
       ctx.restore();
     }
@@ -1421,6 +1429,53 @@ export function dessinerSurlignages(ctx, { surlignages = [], particules = [], ca
     if (!visuelDansLeChamp(p.visuel, p.x, p.y, vue, { echelle: p.echelle })) continue;
     dessinerVisuel(ctx, p.visuel, p.x - camera.x, p.y - camera.y, { alpha: p.alpha, echelle: p.echelle });
   }
+}
+
+// --- Les tirs en vol (spec 14, palier C) ------------------------------------
+// Dessinés APRÈS le voile, comme les surlignages : un crachat se voit venir
+// dans le noir de l'Annexe (0,72), où le dessiner sous le voile le rendrait
+// invisible hors des halos — et le lire à temps pour l'esquiver est tout le
+// jeu. `projectiles` arrive résolu par l'appelant ({ x, y, visuel }) : ce
+// fichier ne connaît ni `projectiles.js`, ni `visuels.json` par id. Trié par
+// le champ (`specs/13` palier F), sur ce qui se peint.
+export function dessinerProjectiles(ctx, { projectiles = [], camera }) {
+  if (projectiles.length === 0) return 0;
+  const vue = vueDeCamera(camera, RESOLUTION_LOGIQUE);
+  let dessines = 0;
+  for (const p of projectiles) {
+    if (!visuelDansLeChamp(p.visuel, p.x, p.y, vue)) continue;
+    dessines += 1;
+    dessinerVisuel(ctx, p.visuel, p.x - camera.x, p.y - camera.y, {});
+  }
+  return dessines;
+}
+
+// --- L'onde d'un tir à zone (spec 14, palier G, la compétence) --------------
+// Là où le tir a éclaté, un anneau s'élargit jusqu'au rayon qu'il a touché et
+// s'efface : le joueur VOIT la zone, sans qu'elle dure. Après le voile, comme
+// les tirs. `ondes` arrive résolu ({ x, y, rayon, couleur, t }, `t` de 0 à 1) ;
+// ce fichier ne connaît pas la compétence. ctx.save()/restore() : il touche au
+// trait et à l'alpha, jamais à la transform.
+const ONDE_RAYON_DEPART = 0.35;
+export function dessinerOndes(ctx, { ondes = [], camera }) {
+  if (ondes.length === 0) return;
+  ctx.save();
+  for (const o of ondes) {
+    const t = Math.min(1, Math.max(0, o.t));
+    const rayon = o.rayon * (ONDE_RAYON_DEPART + (1 - ONDE_RAYON_DEPART) * (1 - (1 - t) * (1 - t)));
+    const x = o.x - camera.x;
+    const y = o.y - camera.y;
+    ctx.globalAlpha = 0.18 * (1 - t);
+    ctx.fillStyle = o.couleur || '#ffffff';
+    ctx.beginPath();
+    ctx.arc(x, y, rayon, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 0.9 * (1 - t);
+    ctx.strokeStyle = o.couleur || '#ffffff';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+  ctx.restore();
 }
 
 // --- Textes flottants de gain (MT_texte-flottant_2026-09-19, `D-05`) ------

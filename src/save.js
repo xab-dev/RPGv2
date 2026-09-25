@@ -3,7 +3,7 @@
 // valeur) } — IndexedDB en jeu (src/storage_indexeddb.js), un store en
 // mémoire dans les tests (creerStoreMemoire ci-dessous).
 
-export const VERSION_SCHEMA_COURANTE = 8;
+export const VERSION_SCHEMA_COURANTE = 9;
 const CLE_ACTUELLE = 'save_current';
 const CLE_SUIVANTE = 'save_next';
 
@@ -84,6 +84,10 @@ export function saveNeuve() {
       // point (`main.js#modifierAlignement`), relu par `alignement.js#
       // lireAlignement`, qui refuse son absence plutôt que d'y substituer 0.
       alignement: ALIGNEMENT_DEPART,
+      // Spec 14, §4.9 : les compétences ÉQUIPÉES, { id d'emplacement : id de
+      // compétence }. Ce que le joueur a APPRIS vit ailleurs (le flag de la
+      // compétence) : une compétence apprise peut n'être rangée nulle part.
+      competences: {},
     },
     // items : poche (03_maison-exterieur §3.3), { id: quantite }.
     inventaire: { eclats: 0, items: {} },
@@ -294,11 +298,32 @@ function migrer_7_vers_8(payload) {
   return { ...payload, schema_version: 8, hero: { ...payload.hero, alignement: ALIGNEMENT_DEPART } };
 }
 
+// Ids de la compétence du parchemin, de son flag et de son emplacement par
+// défaut (`data/skills.json`), écrits en dur ICI pour la même raison que
+// `ID_COFFRE_DE_BASE` : la migration tourne avant que le registre n'existe.
+// Si l'un d'eux était un jour renommé, ce seul endroit devrait suivre.
+const ID_COMPETENCE_PARCHEMIN = 'skill_onde';
+const FLAG_COMPETENCE_PARCHEMIN = 'flag_competence_1';
+const EMPLACEMENT_COMPETENCE_PARCHEMIN = 'slot_skill_1';
+
+// Migration 8 -> 9 (spec 14, §4.9) : ce que le joueur ÉQUIPE devient un champ
+// (`hero.competences`). Jusqu'ici, une compétence apprise se rangeait d'office
+// dans l'emplacement que son entrée déclare : une partie qui a lu le
+// parchemin l'y retrouve donc, exactement là où elle la lançait. Une partie
+// qui ne l'a pas lu n'a rien d'équipé. Le champ est écrit dans les deux cas,
+// jamais laissé absent : c'est lui que le jeu relit, sans « ?? {} ».
+function migrer_8_vers_9(payload) {
+  const competences = payload.flags && payload.flags[FLAG_COMPETENCE_PARCHEMIN]
+    ? { [EMPLACEMENT_COMPETENCE_PARCHEMIN]: ID_COMPETENCE_PARCHEMIN }
+    : {};
+  return { ...payload, schema_version: 9, hero: { ...payload.hero, competences } };
+}
+
 // Chaîne de migrations, une fonction par palier. Un paramètre permet aux
 // tests d'injecter une chaîne fictive sans toucher à la table de production.
 const MIGRATIONS_PRODUCTION = {
   1: migrer_1_vers_2, 2: migrer_2_vers_3, 3: migrer_3_vers_4, 4: migrer_4_vers_5,
-  5: migrer_5_vers_6, 6: migrer_6_vers_7, 7: migrer_7_vers_8,
+  5: migrer_5_vers_6, 6: migrer_6_vers_7, 7: migrer_7_vers_8, 8: migrer_8_vers_9,
 };
 
 export function migrer(payload, versionCible = VERSION_SCHEMA_COURANTE, migrations = MIGRATIONS_PRODUCTION) {

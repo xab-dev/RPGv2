@@ -280,6 +280,11 @@ export function boutonsTactilesVisibles(verbesVisibles) {
 // par la fiche. PROVISOIRE : jamais validé en jeu par Xav.
 export const BANDEAU_HAUT = { x: 0, y: 0, largeur: 480, hauteur: 20 };
 
+// La BARRE DU BOSS (spec 14, §4.5) : sous le bandeau, centrée, son nom juste
+// au-dessus. Assez large pour qu'un coup se lise dans sa longueur, assez
+// étroite pour laisser libre le bouton MENU tactile (x ≥ 439). *Provisoire*.
+export const BARRE_BOSS = { x: 130, y: 33, largeur: 220, hauteur: 5, nom_y: 27 };
+
 const BANDEAU_PADDING = 6;
 const BANDEAU_ECART = 8;
 // `BANDEAU_CONTENU_FIN_X` (430) a disparu avec `D-17` : il existait pour que

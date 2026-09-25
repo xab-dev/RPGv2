@@ -30,7 +30,7 @@ import {
   creerBoucle, dessinerScene, dessinerObscurite, dessinerSignalZones, dessinerPaupieres, dessinerTextesFlottants, dessinerLogo, presenter,
   RESOLUTION_LOGIQUE, calculerRectanglePresentation, versCoordonneesLogiques, AURA_TRAIT,
   definirEchelleForcee, dimensionsEcranPhysiquesActuelles, invaliderCoucheStatique,
-  dessinerSurlignages,
+  dessinerSurlignages, dessinerProjectiles, dessinerOndes,
 } from './render.js';
 import { creerStoreIndexedDB } from './storage_indexeddb.js';
 import {
@@ -50,7 +50,7 @@ import {
   resoudrePreset, valeurLevier, appliquerParticules, appliquerGrainSol, lirePresetForce,
   cleEtatCarte, presetSuivant, creerDescenteAuto,
 } from './qualite.js';
-import { creerRegistreFlags } from './flags.js';
+import { creerRegistreFlags, lireFlagsForces } from './flags.js';
 import { calculerStatsPrimaires, calculerStatsDerivees, appliquerModulateurSurvie } from './stats.js';
 import {
   modificateursHeros, statsEffectivesMonstre, tickBuffsActifs, ajouterBuffActif, modificateursBuffsActifs,
@@ -64,9 +64,12 @@ import {
   creerFollet, mettreAJourEtat as mettreAJourFollet, avancerPosition as avancerFollet, monstreEngageable,
   cibleSuivante as cibleSuivanteFollet,
   resoudreEchelleJeu as resoudreEchelleJeuFollet, echelleFolletEnTransition, resoudreRayonAuraPx,
+  avancerOrbiteAutour, poserFollet, rappelerFollet, folletPoste,
 } from './companion.js';
 import { creerGenerateur, resoudreLoot } from './loot.js';
-import { etatInitial as etatInitialPuzzles, activerLevier } from './puzzles.js';
+import {
+  etatInitial as etatInitialPuzzles, activerLevier, allumerLevierMaintenu, avancerLevierMaintenu, simultanesResolus,
+} from './puzzles.js';
 import { creerDialogue, resoudreNoeud, erreursTextesDialogues } from './dialogue.js';
 import { creerEtatEffets, activer as activerEffet, tick as tickEffets, actif as effetActif } from './effets_monde.js';
 import {
@@ -80,8 +83,16 @@ import { etatLogo } from './logo.js';
 import { creerPrologue, avancerPrologue, alphaPrologue, prologueArme } from './prologue.js';
 import {
   tablesDeScene, tableActive, tirerPositionApparition, tirerPointDomaine, estEnZoneSurePx, zonesSignalees,
+  sceneNettoyee,
 } from './spawns.js';
-import { creerComportement, avancerComportement } from './comportement_monstres.js';
+import { creerComportement, avancerComportement, deciderTireur, creerEtatBoss, deciderBoss } from './comportement_monstres.js';
+import {
+  deciderRencontre, creerEtatRencontre, avancerRencontre, passerALaFin, passerALEffacement,
+  rencontreAgit, rencontreEnCours, opaciteRencontre, plancherCible, cibleAuSeuil,
+} from './rencontre.js';
+import {
+  creerProjectiles, tirer as tirerProjectile, viseesSalve, avancerProjectiles, viderProjectiles, projectilesEnVol, CAMP_MONSTRES, CAMP_HEROS,
+} from './projectiles.js';
 import { peutRecolter, trouverRessourceProche } from './resources.js';
 import {
   ajouterItem, retirerItem, resoudreCapacite, plafondPourItem, slotsOccupes, normaliserContenus,
@@ -100,14 +111,28 @@ import { creerEtatIndices } from './hints.js';
 import { estExpire, poserCooldown, tempsRestantMs } from './cooldowns.js';
 import { peutFabriquer, fabriquer, recettesDeStation, trierRecettes } from './recipes.js';
 import { entreesVisibles, estVisible } from './visibilite.js';
-import { entreesIndices, lignesBrouillees } from './indices.js';
-import { creerVueStele, avancerVueStele, vueSteleArmee, fermerVueStele, vueSteleTerminee, alphaVueStele } from './stele.js';
-import { dessinerEcranStele } from './ui/ecran_stele.js';
+import {
+  entreesIndices, lignesBrouillees, creerDechiffrement, accelererDechiffrement, avancerDechiffrement,
+  progressionDechiffrement,
+} from './indices.js';
+import {
+  creerVueStele, avancerVueStele, vueSteleArmee, fermerVueStele, vueSteleTerminee, alphaVueStele, demanderDescente,
+} from './stele.js';
+import { dessinerEcranStele, zoneGravureStele } from './ui/ecran_stele.js';
+import {
+  creerEtatCompetence, dureesCompetence, chargeActive, avancerCompetence, competencePrete, lancerCompetence,
+  ratiosCompetence, resoudreDegats, choisirCible, estEmplacementCompetence, valeurCompetenceEn,
+  equiperCompetence, emplacementDe, rangerCompetenceApprise,
+} from './competences.js';
+import { lignesEcrites, ecritureFinie, dureeEcriture } from './parchemin.js';
+import { dessinerEcranParchemin } from './ui/ecran_parchemin.js';
+import { creerFondu, avancerFondu, alphaFondu } from './fondu_scene.js';
+import { flagsDeLaDescente, interactifsDeLaDescente, descenteDisponible } from './descente.js';
 import {
   decroitre as decroitreSurvie, consommer as consommerSurvie, appliquerMalusRespawn,
   calculerModulateur as calculerModulateurSurvie, configSurvie, jaugeSousLeSeuil,
 } from './survival.js';
-import { crediter as crediterXp, xpDeCatalogue } from './xp.js';
+import { crediter as crediterXp, xpDeCatalogue, flagDeNiveau } from './xp.js';
 import { initialiserMenu, clesTexteEtats } from './ui/menu.js';
 import { creerDessinateurIcones } from './ui/icone_canvas.js';
 import { erreursCouleursUi } from './ui/couleurs_ui.js';
@@ -139,13 +164,25 @@ import {
 // indépendants qui pouvaient diverger sans que rien ne le signale.
 const RAYON_HERO_BASE_PX = 10;
 // specs/07_chaos-nocturne.md palier C : rayon de la boîte de collision d'un
-// monstre du Chaos. Les monstres posés à la main (la Grotte, Phase 1 validée)
+// monstre qui se cogne aux murs. Les monstres posés à la main (la Grotte, Phase 1 validée)
 // continuent d'aller droit au héros sans rien heurter — on ne rouvre pas un
 // comportement validé. Mais un monstre qui **erre** dans un Champ bordé de
 // forêt doit se cogner : sans ça, la règle anti-blocage de la spec n'aurait
-// rien à débloquer, et on verrait des rôdeurs traverser les arbres.
+// rien à débloquer, et on verrait des rôdeurs traverser les arbres. Un
+// TIREUR (spec 14) aussi : il recule, et reculer à travers un mur le
+// mettrait hors de portée de tout.
 // *Provisoire*, à l'œil : la silhouette du rampant tient dans 16 px.
-const RAYON_MONSTRE_CHAOS_PX = 8;
+const RAYON_MONSTRE_PX = 8;
+// Spec 14, palier G : combien de temps l'onde d'un tir à zone reste visible
+// après l'éclat. PROVISOIRE, à juger en jeu : assez pour lire la zone
+// touchée, assez court pour ne pas la confondre avec une zone qui dure.
+const DUREE_ONDE_MS = 360;
+// Le texte qui dit qu'une compétence prête n'a rien à viser.
+const CLE_TEXTE_AUCUNE_CIBLE = 'competence.aucune_cible';
+// L'id du héros parmi les cibles d'un projectile (`projectiles.js`) : les
+// monstres y entreront par leur id d'instance, qui ne peut pas le valoir
+// (`entities.js#creerMonstre` : `<enemy>#<n>`).
+const CIBLE_HEROS = 'heros';
 // Obscurité la plus forte du cycle : sert de référence au signal des zones de
 // Chaos (palier D), dont l'intensité suit la nuit. Lue depuis daynight.js,
 // jamais recopiée — changer la nuit changera le signal avec elle.
@@ -155,7 +192,10 @@ const DISTANCE_INTERACT_PX = 28;
 // Les types d'interactif qu'on prend « à la main » (INTERACT) ; un autre type
 // posé dans `scene.interactifs` est ignoré par le geste, qui passe au suivant.
 // Lu par `cibleInteraction` seule, qui dit ce que vise l'appui (`D-177`).
-const TYPES_INTERACTIFS_A_LA_MAIN = ['levier', 'station_placeholder', 'station', 'stele'];
+const TYPES_INTERACTIFS_A_LA_MAIN = ['levier', 'levier_maintenu', 'station_placeholder', 'station', 'stele', 'coffre_parchemin'];
+// Les interactifs qui ont un MANCHE (un geste de bascule, `D-158`) : le levier
+// qu'on bascule et, spec 14, celui qu'on tient.
+const TYPES_LEVIER = ['levier', 'levier_maintenu'];
 // MT_texte-flottant_2026-09-19 (`D-05`) : gabarit du texte de gain (« +{n}
 // {item} »), déclaré une seule fois ici. C'est une CLÉ de localisation, pas
 // un texte : le « + », l'ordre des morceaux et l'espace se traduisent comme
@@ -219,6 +259,10 @@ const RAYON_TOIT_FOLLET_ABSENT_PX = 90;
 // arbitraire, sans effet sur le gameplay (les 3 follets sont équivalents en
 // interface) ; Xav pourra le changer librement en relisant ce tableau.
 const ORDRE_CHOIX_FOLLET = ['comp_follet_feu', 'comp_follet_eau', 'comp_follet_terre'];
+// Spec 14, §4.9 : changer de follet depuis le menu — un fondu COURT, jamais la
+// cinématique de la Grotte : l'ancien se résorbe pendant la première moitié,
+// le nouveau grandit pendant la seconde. PROVISOIRE, à juger en jeu par Xav.
+const DUREE_CHANGEMENT_FOLLET_MS = 500;
 // `D-103` (T10) : LA monnaie du jeu, par son id de catalogue. Elle est citée
 // à deux endroits — le bandeau et la fiche d'une recette qui coûte des éclats
 // — donc elle se déclare au NIVEAU MODULE (`D-72`) : un nom écrit deux fois
@@ -635,6 +679,18 @@ function afficherErreurBoot(erreurs) {
 // `input.tactileActif()` (diagnostic SD_ui-lisibilite §3), qui seul sait
 // l'éteindre quand clavier/manette reprennent la main — sourceTactile.estActif()
 // seul ne le faisait jamais.
+// Un objet de valeurs nommées dont chaque valeur n'est calculée qu'à la
+// lecture (`calculs` : { nom: () => valeur }), plus des valeurs déjà connues
+// (`fixes`). Déclaré au niveau module : pur, testable, et hors des deux
+// grandes fonctions (`D-72`).
+export function valeursParesseuses(calculs, fixes = {}) {
+  const valeurs = { ...fixes };
+  for (const [nom, calcul] of Object.entries(calculs)) {
+    Object.defineProperty(valeurs, nom, { get: calcul, enumerable: true });
+  }
+  return valeurs;
+}
+
 export function creerOrchestrateurGrotte({
   registre, i18n, save, store, dialogue, menu, input, ctxLogique, ctxVisible, canvasLogique,
   // §3.6 03_maison-exterieur : callback déclenché UNE fois, au premier verbe
@@ -686,6 +742,10 @@ export function creerOrchestrateurGrotte({
   // (l'orchestrateur ne lit pas l'URL). `null` = ne force rien — c'est le
   // défaut, un test headless n'a rien à fournir.
   alignementForce = null,
+  // Spec 14, palier B : `?flags=a,b`, DÉJÀ lus et triés par `demarrerJeu`
+  // (`flags.js#lireFlagsForces`). Tenus pour vrais toute la session, jamais
+  // sauvegardés. Vide par défaut : un test headless n'a rien à fournir.
+  flagsForces = [],
   // Spec 11 §4.2 : les doigts posés depuis la frame précédente, en
   // coordonnées logiques (`touch.js#lireContactsNouveaux`). Lus UNE fois par
   // frame, au début de `maj()` ; seule la bulle de dialogue s'en sert. Vide
@@ -901,6 +961,13 @@ export function creerOrchestrateurGrotte({
         save.flags[id] = true;
         etatModifie = true;
       },
+      // Spec 14 : l'entrée par une stèle remet à zéro les flags de la
+      // descente (`commencerDescente`) — le miroir suit, dans l'autre sens.
+      onRetrait: (id) => {
+        delete save.flags[id];
+        etatModifie = true;
+      },
+      forces: flagsForces,
       // specs/07_chaos-nocturne.md §3 : valeurs nommées que les conditions de
       // données peuvent comparer (« niveau ≥ 5 » pour le palier 1 du Chaos).
       // Lue à chaque évaluation, jamais capturée : le seuil s'ouvre à l'instant
@@ -916,14 +983,21 @@ export function creerOrchestrateurGrotte({
   // LES valeurs nommées qu'une condition de données peut interroger. Une
   // seule déclaration : `nomsValeursConditions` en dérive ses clés, au lieu de
   // recopier la liste — deux listes finissent toujours par diverger (`D-71`).
+  // PARESSEUSES (spec 14, palier B) : chaque valeur est un accesseur, calculée
+  // seulement si une condition la lit. Une condition n'en lit qu'une, mais
+  // l'objet les calculait TOUTES (poche, coffre, stations, portée) à chaque
+  // évaluation — et une ligne d'ambiance pas encore vue s'évalue à chaque
+  // frame. Mesuré au banc de la spec 13 : `maj()` +17 à +40 % la nuit, rien
+  // qu'avec la ligne de la stèle. `Object.keys` et `in` voient toujours les
+  // mêmes noms : le contrôle de câblage au démarrage n'y voit pas de différence.
   function valeursConditions() {
-    return {
-      niveau: save.hero.niveau,
-      stations_placables: nombreStationsPlacables(),
+    return valeursParesseuses({
+      niveau: () => save.hero.niveau,
+      stations_placables: () => nombreStationsPlacables(),
       // `D-93` : combien de SORTES de consommables la poche porte. Un nombre,
       // donc une condition de données ordinaire — la barre du bas n'a aucun
       // code de déblocage à elle.
-      consommables_en_poche: consommablesEnPoche(),
+      consommables_en_poche: () => consommablesEnPoche(),
       // `D-125` (T9) : trois états du monde de plus, et pas un mot de lore
       // dedans. Une ligne du follet est une entrée de `ambiances.json` qui
       // les interroge ; la prochaine s'écrira de même, sans code.
@@ -933,19 +1007,30 @@ export function creerOrchestrateurGrotte({
       // `max: 0` qui ne dépend pas du nombre de slots du conteneur — le jour
       // où la poche en gagne un (une besace, `Q-65`), la condition tient
       // toujours, là où un `min: 4` serait devenu faux en silence.
-      slots_libres_poche: capacitePoche().slots
+      slots_libres_poche: () => capacitePoche().slots
         - slotsOccupes(save.inventaire.items, capacitePoche(), obtenirItemDef),
-      objets_au_coffre: objetsRangesAuCoffre(),
+      objets_au_coffre: () => objetsRangesAuCoffre(),
       // Spec 11 §7.3 : la part REMPLIE du coffre le plus plein de la scène, de
       // 0 à 1 — posée sur ce qui est rempli et non sur un nombre de slots, pour
       // qu'une condition « 70 % » survive à l'agrandissement du coffre.
-      remplissage_coffre: remplissageCoffre(),
+      remplissage_coffre: () => remplissageCoffre(),
       // `D-121` : une instance CRÉÉE en jeu, donc posée par le joueur — les
       // stations du catalogue n'en sont pas. Compté par la même fonction que
       // la résolution des interactifs, jamais par un second parcours.
-      stations_posees: instancesCreees(registre, scene.id, save.maison.stations).length,
-      ...valeursExternes(),
-    };
+      stations_posees: () => instancesCreees(registre, scene.id, save.maison.stations).length,
+      // Spec 14, `Q-137` : l'interactif à portée d'INTERACT (son id), ou
+      // `null`. Pas un nombre : une condition le compare par `egal`. Le même
+      // calcul que la cible d'INTERACT (`interactifAPortee`), jamais un second
+      // seuil de distance — « au pied de la pierre » est l'endroit d'où on la lit.
+      a_portee: () => interactifAPortee()?.puzzleId ?? null,
+      // Spec 14, palier I : une valeur par emplacement de compétence — 1 si
+      // une compétence y est rangée (`competences.js#valeurCompetenceEn`).
+      // La case du HUD la cite : elle s'affiche quand on y range quelque chose.
+      ...Object.fromEntries(emplacementsCompetence().map((slot) => [
+        valeurCompetenceEn(slot.id),
+        () => (competencesEquipees().some((e) => e.emplacement === slot.id) ? 1 : 0),
+      ])),
+    }, valeursExternes());
   }
   let flags = construireFlags();
 
@@ -972,6 +1057,19 @@ export function creerOrchestrateurGrotte({
       for (const p of bilan.perdus) {
         console.warn(`[D-118] poche ET coffre pleins au chargement : ${p.quantite} × ${p.item} n'a pas pu être rangé.`);
       }
+    }
+  }
+
+  // Spec 14, palier A : la table des niveaux s'allonge (Nv.30 → Nv.50). Une
+  // sauvegarde qui a déjà l'XP d'un niveau nouveau le reçoit ici, flag et
+  // points compris, dès le chargement : sans ce rattrapage, il ne serait
+  // crédité qu'au prochain gain d'XP, et le HUD afficherait d'ici là un
+  // niveau en retard. Après les flags, qu'il pose. Dit en console, comme
+  // la normalisation ci-dessus.
+  {
+    const rattrapes = appliquerXpHeros(0);
+    if (rattrapes.length) {
+      console.info(`[spec 14] niveau(x) rattrapé(s) au chargement : ${rattrapes.join(', ')}.`);
     }
   }
 
@@ -1362,10 +1460,40 @@ export function creerOrchestrateurGrotte({
   let scene, decor, monstres, follet;
   let lumieresDecor = [];
   let puzzlesEtat = {};
+  // Spec 14, palier C : les tirs en vol (`projectiles.js`), une réserve
+  // allouée une fois. État de SESSION : vidé à chaque entrée en scène, jamais
+  // sauvegardé (§6).
+  const projectiles = creerProjectiles();
+  // Spec 14, palier G : l'état de SESSION de chaque compétence apprise
+  // (`competences.js`), par id — sa charge et sa recharge. Jamais sauvegardé
+  // (§6) : une compétence en recharge au moment de quitter repart pleine.
+  const etatsCompetences = new Map();
+  // Ce que le HUD dessine sur chaque emplacement de compétence, `verbe →
+  // { charge, recharge, prete }`, relevé à la dernière frame de jeu : le
+  // dessin ne recalcule pas les dérivées, et sous UI la jauge reste où elle
+  // était, gelée comme la compétence.
+  let ratiosEmplacements = {};
+  // Les ondes des tirs à zone qui viennent d'éclater, `{ x, y, rayon, couleur,
+  // ms }` : un retour visuel, rien d'autre. Vidées avec les tirs.
+  let ondes = [];
+  // Spec 14, palier I : le follet qu'on vient de quitter, pendant le fondu
+  // (`{ ancien, ms }`) — un état d'AFFICHAGE : le nouveau follet est déjà le
+  // vrai (synergie, aura, sauvegarde) dès l'instant du choix.
+  let changementFollet = null;
+  // Spec 14, palier D : la RENCONTRE lancée dans la scène (`rencontre.js`),
+  // `{ def, etat }` — `def` est lue dans `scenes.json`. État de SESSION : remis
+  // à null à chaque entrée en scène, jamais sauvegardé ; une rencontre
+  // interrompue (escalier, rechargement) se rejoue, son flag n'étant pas posé.
+  let rencontre = null;
   // `D-158` : le geste de chaque levier (bascule.js), par id — un état
   // d'AFFICHAGE, jamais sauvegardé : la vérité reste `puzzlesEtat`. Un levier
   // sans entrée ici se pose à sa place, sans rejouer son geste.
   const basculesLeviers = new Map();
+  // Spec 14, §4.4 : combien de fois un levier tenu s'est éteint, par
+  // `simultane`, depuis l'entrée en scène — ce que compte l'explication du
+  // follet (« il a vu le problème »). De session : une entrée de scène repart
+  // de zéro, et l'explication, une fois dite, ne revient pas (son flag).
+  let extinctionsLeviers = new Map();
   // Objets au sol de la scène courante (03_maison-exterieur §3.3) :
   // { [itemId]: [{x,y}, ...] }, reconstruit/complété à chaque entrée en
   // scène (ground_items.js#remplirItemsSol), persisté par scène dans
@@ -1456,6 +1584,21 @@ export function creerOrchestrateurGrotte({
   // Une UI ouverte comme les autres — le jeu gèle, MENU se tait — ouverte par
   // INTERACT, fermée par B ou un toucher, et c'est tout.
   let vueStele = null;
+  // Spec 14, palier G : la vue du PARCHEMIN, ouverte par le coffre du Gardien —
+  // `{ vue (celle de stele.js : temps, fondu, particules), puzzleId,
+  // competenceId, ecritureMs }`, ou `null`. Une UI ouverte comme la stèle :
+  // le jeu gèle, MENU se tait.
+  let vueParchemin = null;
+  // Spec 14, palier H : le FONDU d'un portail qui en déclare un (`fondu_ms`,
+  // `fondu_scene.js`), ou `null`. Le jeu gèle pendant qu'il court ; la scène
+  // change au plus noir.
+  let fonduScene = null;
+  // Spec 14 : l'indice qui se déchiffre dans le carnet, l'état de
+  // `indices.js#creerDechiffrement`, ou `null`. Il n'avance que carnet
+  // ouvert ; fermé avant la fin (le « Fermer » tactile), il reprend à la
+  // prochaine ouverture — l'indice n'est VU qu'une fois le dernier signe tombé.
+  let dechiffrement = null;
+  const configIndices = registre.obtenir('indices', 'indices_config');
 
   function choixFolletActif() {
     return choixFollet !== null;
@@ -1470,7 +1613,8 @@ export function creerOrchestrateurGrotte({
   function uiOuverteMaintenant() {
     return (
       menu.estOuvert() || dialogue.estOuvert() || choixFolletActif() || intro !== null || depart !== null ||
-      ouvertureLogoMs !== null || prologue !== null || vueStele !== null || constructionActif()
+      ouvertureLogoMs !== null || prologue !== null || vueStele !== null || vueParchemin !== null || fonduScene !== null
+      || constructionActif()
     );
   }
 
@@ -1697,7 +1841,8 @@ export function creerOrchestrateurGrotte({
     const donnees = registre.obtenir('dialogues', dialogueId);
     if (!donnees) throw new Error(`dialogue "${dialogueId}" introuvable dans dialogues.json`);
     dialogue.demarrerConversation(donnees, {
-      resoudre: (noeudId) => resoudreNoeud(donnees, noeudId, registre, i18n, companionId),
+      resoudre: (noeudId) => resoudreNoeud(donnees, noeudId, registre, i18n, companionId,
+        input.peripheriqueActif ? input.peripheriqueActif() : 'manette'),
       poids: reglageAlignement.poids_defaut,
       onResultat: appliquerResultatDialogue,
       onFermer,
@@ -1897,6 +2042,11 @@ export function creerOrchestrateurGrotte({
     // Les monstres nocturnes ne traversent pas un changement de scène : on
     // repart de la nuit en cours, plafond vide (palier B, « non persistés »).
     accumulateursSpawn = {};
+    viderProjectiles(projectiles);
+    ondes = [];
+    rencontre = null;
+    extinctionsLeviers = new Map();
+    changementFollet = null;
 
     follet = save.hero.companion ? creerFollet(save.hero.companion, hero, sensOrbiteFollet()) : null;
     puzzlesEtat = { ...etatInitialPuzzles(registre), ...save.puzzles };
@@ -1973,6 +2123,31 @@ export function creerOrchestrateurGrotte({
     return empreinteAbsoluePuzzle(puzzle, visuel, scene.poseEffectiveInteractif(puzzle.id), scene.tileSize);
   }
 
+  // Spec 14, §4.3 : un interactif qui déclare `visible_si` n'EXISTE pas tant
+  // que sa condition ne tient pas — ni dessiné, ni pris par INTERACT, ni
+  // compté à portée (`a_portee`), ni proposé par l'indice de commande. Le
+  // verdict est celui de tout le jeu (`visibilite.js#estVisible`, `D-62` :
+  // absent = toujours visible). Sa collision n'est pas en cause : un
+  // interactif solide ne peut pas déclarer `visible_si` (refusé au démarrage).
+  function interactifsPresents() {
+    return scene.interactifs.filter((id) => estVisible(scene.puzzle(id), flags));
+  }
+
+  // Spec 14, §4.6 : un coffre à parchemin est OUVERT quand la compétence qu'il
+  // apprend l'est — son état n'est rien d'autre que ce flag, persistant. Ouvert,
+  // il ne se prend plus à la main et se dessine vide, à toutes les descentes.
+  function coffreOuvert(puzzle) {
+    return flags.has(registre.obtenir('skills', puzzle.competence).flag);
+  }
+
+  // Le dessin d'un interactif, tel que le monde ET le bouton tactile le
+  // montrent : un seul choix, sinon le bouton montrerait un coffre fermé
+  // devant un coffre ouvert. L'empreinte, elle, reste celle du visuel de base.
+  function visuelInteractif(puzzle) {
+    const ouvert = puzzle.type === 'coffre_parchemin' && coffreOuvert(puzzle);
+    return registre.obtenir('visuels', ouvert ? puzzle.render.visuel_ouvert : puzzle.render.visuel);
+  }
+
   // 03_maison-exterieur §3.2/§3.3 étend l'interaction à 4 cibles possibles,
   // essayées dans cet ordre (le premier trouvé à portée gagne, un seul par
   // appui) : levier/station de scene.interactifs (déjà des entités
@@ -1984,12 +2159,16 @@ export function creerOrchestrateurGrotte({
   // qu'on appuie ; il lit cette fonction-ci, et `essayerInteraction` aussi —
   // jamais deux calculs de « la cible », qui finiraient par montrer un coffre
   // et ouvrir un levier. Ne modifie rien : elle peut être lue à chaque frame.
-  function cibleInteraction() {
-    for (const puzzleId of scene.interactifs) {
+  // L'interactif qu'INTERACT prendrait à la main, ou `null` : extrait de
+  // `cibleInteraction` (spec 14) pour que la valeur `a_portee` des conditions
+  // lise LA même portée, par le même parcours.
+  function interactifAPortee() {
+    for (const puzzleId of interactifsPresents()) {
       // `D-121` : `scene.puzzle` et non `registre.obtenir` — un id venu de la
       // scène peut désigner une instance CRÉÉE (un coffre fabriqué), qui
       // n'est dans aucun catalogue.
       const puzzle = scene.puzzle(puzzleId);
+      if (puzzle.type === 'coffre_parchemin' && coffreOuvert(puzzle)) continue;
       // §3 : seuil mesuré au bord de l'empreinte, pas au centre (une station
       // ×2,1 solide dépasserait sinon DISTANCE_INTERACT_PX depuis l'extérieur
       // de son propre bord) — un levier (empreinte nulle) redonne exactement
@@ -1997,8 +2176,14 @@ export function creerOrchestrateurGrotte({
       if (distanceAuRectangle(hero.x, hero.y, rectangleInteractif(puzzle)) > DISTANCE_INTERACT_PX) continue;
       // Un interactif d'un autre type ne se prend pas à la main : le suivant
       // a sa chance, comme avant ce découpage.
-      if (TYPES_INTERACTIFS_A_LA_MAIN.includes(puzzle.type)) return { genre: 'interactif', puzzle, puzzleId };
+      if (TYPES_INTERACTIFS_A_LA_MAIN.includes(puzzle.type)) return { puzzle, puzzleId };
     }
+    return null;
+  }
+
+  function cibleInteraction() {
+    const interactif = interactifAPortee();
+    if (interactif) return { genre: 'interactif', ...interactif };
     // `specs/15` palier C : un objet planté se reprend d'INTERACT. Il passe
     // avant les objets au sol : c'est une chose dressée, qu'on vise.
     const planteProche = trouverObjetJeteProche(objetsPlantesDeLaScene(), hero, DISTANCE_INTERACT_PX);
@@ -2020,7 +2205,7 @@ export function creerOrchestrateurGrotte({
   // manche a touché sa butée, pas à l'appui. Sans état de geste (la toute
   // première frame), l'état réel, posé. `null` pour tout autre interactif.
   function gesteDuLevier(puzzle) {
-    if (puzzle.type !== 'levier') return null;
+    if (!TYPES_LEVIER.includes(puzzle.type)) return null;
     return basculesLeviers.get(puzzle.id) || avancerBascule(null, !!puzzlesEtat[puzzle.id]?.actif, 0);
   }
 
@@ -2045,7 +2230,7 @@ export function creerOrchestrateurGrotte({
   function visuelCibleInteraction(cible) {
     if (!cible) return null;
     if (cible.genre === 'interactif') {
-      const visuel = registre.obtenir('visuels', cible.puzzle.render.visuel);
+      const visuel = visuelInteractif(cible.puzzle);
       return { visuel, pieceMobile: pieceMobileDuLevier(cible.puzzle, visuel) };
     }
     let id = null;
@@ -2068,13 +2253,27 @@ export function creerOrchestrateurGrotte({
     if (cible.genre === 'interactif') {
       const { puzzle, puzzleId } = cible;
       if (puzzle.type === 'levier') {
+        const etaitActif = !!(puzzlesEtat[puzzleId] && puzzlesEtat[puzzleId].actif);
         puzzlesEtat = activerLevier(registre, puzzlesEtat, puzzleId, flags);
         save.puzzles = puzzlesEtat;
+        // Spec 14, palier H : un levier qui déclare une récompense la dépose
+        // la première fois qu'on l'actionne dans son état — un levier de
+        // descente repart éteint à chaque descente, donc une fois par descente.
+        if (!etaitActif && puzzle.recompense) deposerRecompense(puzzle);
         etatModifie = true;
+        return;
+      }
+      if (puzzle.type === 'levier_maintenu') {
+        puzzlesEtat = allumerLevierMaintenu(registre, puzzlesEtat, puzzleId);
+        save.puzzles = puzzlesEtat;
         return;
       }
       if (puzzle.type === 'station_placeholder') {
         ouvrirDialogueCatalogue(puzzle.dialogue);
+        return;
+      }
+      if (puzzle.type === 'coffre_parchemin') {
+        ouvrirCoffreParchemin(puzzle);
         return;
       }
       if (puzzle.type === 'stele') {
@@ -2117,6 +2316,10 @@ export function creerOrchestrateurGrotte({
 
     if (cible.genre === 'jete') {
       const jeteProche = cible.jete;
+      if (ramasserMonnaie(jeteProche.itemId, jeteProche.position)) {
+        ecrireObjetsJetesDeLaScene(retirerObjetJete(objetsJetesDeLaScene(), jeteProche.index));
+        return;
+      }
       const resultat = ajouterItem(save.inventaire.items, jeteProche.itemId, 1, plafondPoche(jeteProche.itemId));
       if (resultat.ajoute <= 0) {
         signalerRefusConteneur(CLE_TEXTE_POCHE_PLEINE, jeteProche.position.x, jeteProche.position.y);
@@ -2952,10 +3155,22 @@ export function creerOrchestrateurGrotte({
   // Les deux lignes purement informatives de l'ancienne liste — points libres,
   // progression d'XP — ne sont plus des entrées sans action : elles sont le
   // SOUS-TITRE de l'écran (`sousTitreStats`).
-  function obtenirEntreesStats() {
+  function valeurDeriveeAffichee(derivee, valeur) {
+    if (derivee.affichage === 'pourcentage') return i18n.t('derivee.format_pourcentage', { n: Math.round(valeur * 100) });
+    return `${Math.round(valeur)}`;
+  }
+
+  // Spec 14, palier I : `choisir` — la carte qui ouvre l'écran le permet-elle
+  // (`menus.json > choisir_si`, relu par le menu) ? Alors chaque stat propose
+  // aussi « Tout reprendre » (X), et chaque compétence « Ranger » (A).
+  // `iconeReprendre` : la silhouette de la carte « Oui, tout reprendre »,
+  // déclarée sur la carte Stats (`icone_reprendre`) — un id de dessin ne
+  // s'écrit pas ici.
+  function obtenirEntreesStats({ choisir = true, iconeReprendre = null } = {}) {
     const statsPrimaires = calculerStatsPrimaires(registre, resoudreModificateursHeros());
     const statsDerivees = calculerStatsDerivees(registre, statsPrimaires);
-    return registre.tous('stats').map((s) => {
+    const reprendre = choisir && pointsDepenses() > 0;
+    const entreesStats = registre.tous('stats').map((s) => {
       const peutAjouter = save.hero.points_stats_libres > 0;
       const suffixe = peutAjouter ? ` (${i18n.t('menu.stats_ajouter')})` : '';
       return {
@@ -2963,9 +3178,12 @@ export function creerOrchestrateurGrotte({
         titre: i18n.t(s.label_key),
         icone: s.icone || null,
         quantite: statsPrimaires[s.id],
+        // Spec 14, palier G : une dérivée peut attendre un flag (`visible_si`,
+        // `D-62` : la puissance des compétences ne s'annonce pas avant la
+        // première) et s'écrire en pourcentage (`affichage`).
         lignes: registre.tous('stats_derivees')
-          .filter((d) => d.stat === s.id)
-          .map((d) => `${i18n.t(d.label_key)} : ${Math.round(statsDerivees[d.id])}`),
+          .filter((d) => d.stat === s.id && estVisible(d, flags))
+          .map((d) => `${i18n.t(d.label_key)} : ${valeurDeriveeAffichee(d, statsDerivees[d.id])}`),
         libelleAction: peutAjouter ? i18n.t('menu.stats_ajouter') : null,
         grisee: false,
         action: () => {
@@ -2975,8 +3193,173 @@ export function creerOrchestrateurGrotte({
           etatModifie = true;
           menu.rafraichirStats();
         },
+        // « Tout reprendre » (§4.9) : la seconde action de chaque stat, parce
+        // qu'elle les touche toutes. Un danger : confirmée par les deux cartes
+        // de toujours (« Non » d'abord), puis retour à cette page.
+        libelleActionSecondaire: reprendre ? i18n.t('menu.stats_reprendre') : null,
+        actionSecondaire: reprendre ? () => demanderToutReprendre(iconeReprendre) : null,
       };
     });
+    return [...entreesStats, ...entreesCompetences(statsDerivees, choisir)];
+  }
+
+  // Les points que le joueur a RÉPARTIS (ceux des stats, pas leur base).
+  function pointsDepenses() {
+    return Object.values(save.hero.stats.points).reduce((total, n) => total + (n > 0 ? n : 0), 0);
+  }
+
+  // Tout reprendre (§4.9) : chaque point réparti redevient libre, les stats
+  // retrouvent leur base. On rend ce qui a été DÉPENSÉ, sans recompter depuis
+  // le niveau : un point ne se crée ni ne se perd. Les PV suivent au prochain
+  // calcul des stats, par `entities.js#reconcilierPvMax` (une baisse de PV max
+  // les borne, sans perte de plus).
+  function toutReprendre() {
+    save.hero.points_stats_libres += pointsDepenses();
+    save.hero.stats.points = {};
+    etatModifie = true;
+  }
+
+  function demanderToutReprendre(icone) {
+    menu.demanderConfirmation({
+      id: 'stats_tout_reprendre',
+      cle_confirmation: 'menu.stats_reprendre_confirmation',
+      cle_confirmer: 'menu.stats_reprendre_oui',
+      icone,
+      faire: toutReprendre,
+      apres: 'retour',
+    });
+  }
+
+  function glypheVerbe(verbe) {
+    const peripherique = input.peripheriqueActif ? input.peripheriqueActif() : 'manette';
+    return i18n.t(`glyphe.${peripherique}.${verbe}`);
+  }
+
+  // Les compétences, en cartes sous les quatre stats (§4.9) : une tuile par
+  // compétence APPRISE — une compétence non apprise est invisible (`D-62`).
+  // La fiche dit ce qu'elle fait, sa charge et sa recharge calculées avec
+  // l'Esprit du moment (c'est là qu'un point d'Esprit se VOIT), où elle est
+  // rangée, et quel bouton lance chaque emplacement (B3).
+  function entreesCompetences(statsDerivees, choisir) {
+    const emplacements = emplacementsCompetence();
+    // Deux décimales : un point d'Esprit ôte quelques centièmes de seconde, et
+    // c'est précisément ce que le joueur vient voir ici.
+    const secondes = (ms) => (ms / 1000).toLocaleString(i18n.langueCourante(), {
+      minimumFractionDigits: 2, maximumFractionDigits: 2,
+    });
+    const correspondance = emplacements
+      .map((slot, i) => i18n.t('competence.fiche_emplacement_bouton', { n: i + 1, glyphe: glypheVerbe(slot.verb) }))
+      .join(' · ');
+    return registre.tous('skills').filter((c) => flags.has(c.flag)).map((competence) => {
+      const durees = dureesCompetence(competence, statsDerivees);
+      const ici = emplacementDe(save.hero.competences, competence.id);
+      const rang = emplacements.findIndex((slot) => slot.id === ici);
+      return {
+        titre: i18n.t(competence.label_key),
+        icone: competence.icone,
+        groupe: i18n.t('menu.stats_groupe_competences'),
+        // Rangée : la tuile porte le repère « équipé » (une forme).
+        marque: rang >= 0,
+        lignes: [
+          i18n.t(competence.description_key),
+          i18n.t('competence.fiche_charge', { n: secondes(durees.chargeMs) }),
+          i18n.t('competence.fiche_recharge', { n: secondes(durees.rechargeMs) }),
+          rang >= 0
+            ? i18n.t('competence.fiche_rangee', { n: rang + 1, glyphe: glypheVerbe(emplacements[rang].verb) })
+            : i18n.t('competence.fiche_non_rangee'),
+          i18n.t('competence.fiche_emplacements', { liste: correspondance }),
+        ],
+        libelleAction: choisir ? i18n.t('competence.ranger') : null,
+        grisee: false,
+        action: () => {
+          if (choisir) proposerEmplacements(competence);
+        },
+      };
+    });
+  }
+
+  // A sur une compétence (B3) : le choix parmi les emplacements, en cartes,
+  // par le fonctionnement normal du menu. Chaque carte dit son bouton de jeu
+  // et ce qu'elle contient ; choisir un emplacement occupé REMPLACE ce qui s'y
+  // trouvait. Puis retour à la page Stats, qui se relit.
+  function proposerEmplacements(competence) {
+    const nom = i18n.t(competence.label_key);
+    menu.empilerChoix({
+      id: `choix_emplacement#${competence.id}`,
+      titre: i18n.t('competence.choix_titre', { nom }),
+      cartes: emplacementsCompetence().map((slot, i) => {
+        const occupant = registre.obtenir('skills', (save.hero.competences || {})[slot.id]);
+        let phrase = i18n.t('competence.emplacement_libre');
+        if (occupant && occupant.id === competence.id) phrase = i18n.t('competence.emplacement_ici');
+        else if (occupant) phrase = i18n.t('competence.emplacement_remplace', { nom: i18n.t(occupant.label_key) });
+        return {
+          id: `choix_emplacement#${slot.id}`,
+          case: i,
+          type: 'action',
+          titre: i18n.t('competence.emplacement', { n: i + 1, glyphe: glypheVerbe(slot.verb) }),
+          phrase,
+          icone: occupant ? occupant.icone : competence.icone,
+          faire: () => equiperCompetenceDansEmplacement(competence.id, slot.id),
+          apres: 'retour',
+        };
+      }),
+    });
+  }
+
+  // La carte Follet (§4.9) : les follets du catalogue, en maître-détail. Celui
+  // qui accompagne porte le repère ; les autres se choisissent par A.
+  // L'alignement ne bouge pas (c'est une stat du héros) ; la synergie suit le
+  // nouvel élément, par la table existante.
+  function obtenirEntreesFollet() {
+    return registre.tous('companions').map((compagnon) => {
+      const actuel = compagnon.id === save.hero.companion;
+      const element = registre.obtenir('elements', compagnon.element);
+      return {
+        titre: i18n.t(compagnon.label_key),
+        icone: compagnon.render.visuel,
+        teinteIcone: compagnon.render.couleur,
+        marque: actuel,
+        lignes: [
+          i18n.t('menu.follet_element', { element: element ? i18n.t(element.label_key) : '' }),
+          ...(actuel ? [i18n.t('menu.follet_avec_toi')] : []),
+        ],
+        libelleAction: actuel ? null : i18n.t('menu.follet_choisir'),
+        grisee: false,
+        action: () => choisirFollet(compagnon.id),
+      };
+    });
+  }
+
+  // Choisir un follet : il change TOUT DE SUITE — sauvegarde, synergie, aura —
+  // et le menu se ferme pour qu'on le voie arriver (le fondu court). Le
+  // nouveau part de là où était l'ancien : c'est lui qui prend sa place.
+  function choisirFollet(companionId) {
+    if (companionId === save.hero.companion) return;
+    const ancien = follet ? follet.companionId : null;
+    const position = follet ? { x: follet.x, y: follet.y } : null;
+    save.hero.companion = companionId;
+    follet = { ...creerFollet(companionId, hero, sensOrbiteFollet()), ...(position || {}) };
+    changementFollet = ancien ? { ancien, ms: 0 } : null;
+    etatModifie = true;
+    menu.fermer();
+  }
+
+  // Le follet qu'on DESSINE : l'ancien pendant la première moitié du fondu.
+  function companionAffiche() {
+    if (changementFollet && changementFollet.ms < DUREE_CHANGEMENT_FOLLET_MS / 2) return changementFollet.ancien;
+    return follet.companionId;
+  }
+
+  // La taille du follet dessiné pendant le fondu, de 1 à 0 puis de 0 à 1 —
+  // adoucie aux deux bouts. Hors fondu : 1.
+  function facteurChangementFollet() {
+    if (!changementFollet) return 1;
+    const moitie = DUREE_CHANGEMENT_FOLLET_MS / 2;
+    const t = changementFollet.ms < moitie
+      ? 1 - changementFollet.ms / moitie
+      : (changementFollet.ms - moitie) / moitie;
+    const borne = Math.min(1, Math.max(0, t));
+    return borne * borne * (3 - 2 * borne);
   }
 
   // Les Indices du menu (`indices.js`) : un indice illisible (sa `lisible_si`
@@ -2991,24 +3374,158 @@ export function creerOrchestrateurGrotte({
       estLisible: (condition) => flags.evaluate(condition),
       traduire: (cle) => i18n.t(cle),
       hieroglyphes: config ? config.hieroglyphes : '',
+      dechiffrement: dechiffrement
+        ? { indiceId: dechiffrement.indiceId, progression: progressionDechiffrement(dechiffrement, configIndices) }
+        : null,
     });
   }
 
-  // Ce que la vue de la stèle dessine : les lignes de SON indice, brouillées
-  // par le même point que l'écran Indices (`indices.js#lignesBrouillees`) —
-  // toujours en hiéroglyphes : c'est une gravure, elle ne se traduit pas
-  // quand le héros monte de niveau.
+  // Spec 14, §4.1 : le carnet (l'écran Indices) s'OUVRE. Un indice qui
+  // déclare un `dechiffrement` dont la condition tient (au pied de sa pierre,
+  // au bon niveau) se déchiffre : son flag est posé tout de suite — c'est lui
+  // que lit `lisible_si`, et la stèle avec —, et l'animation commence.
+  // Appelé par le menu à l'ouverture de l'écran, avant qu'il ne lise ses
+  // entrées, jamais par la lecture des entrées elle-même (qui se refait à
+  // chaque rafraîchissement).
+  function ouvrirCarnet() {
+    if (dechiffrement) return;
+    for (const indice of registre.tous('indices')) {
+      const d = indice.dechiffrement;
+      if (!d || flags.has(d.flag) || !flags.evaluate(d.condition)) continue;
+      flags.set(d.flag);
+      dechiffrement = creerDechiffrement(indice.id);
+      return;
+    }
+  }
+
+  // Le déchiffrement avance, carnet ouvert. Rend VRAI si le texte affiché a
+  // changé (l'écran est à relire), faux sinon — un écran DOM ne se refait
+  // pas à chaque frame pour rien.
+  function avancerDechiffrementCarnet(deltaMs, accelerer) {
+    const avant = progressionDechiffrement(dechiffrement, configIndices);
+    if (accelerer) dechiffrement = accelererDechiffrement(dechiffrement);
+    dechiffrement = avancerDechiffrement(dechiffrement, deltaMs, configIndices);
+    const apres = progressionDechiffrement(dechiffrement, configIndices);
+    if (apres >= 1) dechiffrement = null;
+    return apres !== avant;
+  }
+
+  // Ce que la vue de la stèle dessine : les lignes de SON indice. Tant que
+  // l'indice ne se lit pas, brouillées par le même point que l'écran Indices
+  // (`indices.js#lignesBrouillees`) : les mêmes signes. Déchiffré (spec 14),
+  // la gravure se lit en clair, comme le carnet.
+  // `actions` : ce que la vue propose, au glyphe du périphérique actif —
+  // Descendre n'existe que sur une stèle qui déclare sa descente, une fois
+  // son flag posé (`descente.js#descenteDisponible`).
   function contenuVueStele() {
     const puzzle = scene.puzzle(vueStele.puzzleId);
-    const config = registre.obtenir('indices', 'indices_config');
     const indice = registre.obtenir('indices', puzzle.indice);
+    const lisible = indice.lisible_si === undefined || flags.evaluate(indice.lisible_si);
     return {
       id: puzzle.id,
       couleur: puzzle.couleur,
-      lignes: lignesBrouillees(indice, (cle) => i18n.t(cle), config.hieroglyphes),
+      lignes: lisible
+        ? indice.lignes.map((cle) => i18n.t(cle))
+        : lignesBrouillees(indice, (cle) => i18n.t(cle), configIndices.hieroglyphes),
+      actions: descenteDisponible(puzzle, flags.has) ? actionsVueStele() : [],
       vue: vueStele,
       alpha: alphaVueStele(vueStele),
     };
+  }
+
+  // Les verbes de la vue d'une stèle qui descend : A (ou INTERACT, qui l'a
+  // ouverte) descend, B ferme. À l'écran, UN glyphe par action : A à la
+  // manette (la confirmation de toujours), E au clavier (la touche qui a
+  // ouvert la pierre). Au doigt, les boutons du jeu sont sous la vue : la
+  // gravure se touche pour descendre, le reste de l'écran pour fermer.
+  function actionsVueStele() {
+    const peripherique = input.peripheriqueActif ? input.peripheriqueActif() : 'manette';
+    if (peripherique === 'tactile') {
+      return [
+        { glyphe: null, texte: i18n.t('stele.action.tactile_descendre') },
+        { glyphe: null, texte: i18n.t('stele.action.tactile_fermer') },
+      ];
+    }
+    const verbeDescendre = peripherique === 'clavier' ? 'interact' : 'attack';
+    return [
+      { glyphe: i18n.t(`glyphe.${peripherique}.${verbeDescendre}`), texte: i18n.t('stele.action.descendre') },
+      { glyphe: i18n.t(`glyphe.${peripherique}.skill_3`), texte: i18n.t('stele.action.fermer') },
+    ];
+  }
+
+  // Spec 14, §4.6 : ouvrir le coffre, c'est prendre le parchemin — la
+  // compétence est apprise À L'OUVERTURE (son flag, persistant), pas à la
+  // fermeture de la vue : quitter le jeu pendant la lecture ne la reprend pas.
+  // L'emplacement qu'elle occupe apparaît avec ce flag (`action_slots.json`).
+  function ouvrirCoffreParchemin(puzzle) {
+    const competence = registre.obtenir('skills', puzzle.competence);
+    flags.set(competence.flag);
+    // Apprise, elle se range d'elle-même (dans son emplacement par défaut
+    // s'il est libre) : le parchemin dit le bouton qui la lance, il doit dire vrai.
+    save.hero.competences = rangerCompetenceApprise(
+      save.hero.competences, competence, emplacementsCompetence().map((s) => s.id),
+    );
+    etatModifie = true;
+    vueParchemin = { vue: creerVueStele(puzzle.id), puzzleId: puzzle.id, competenceId: competence.id, ecritureMs: 0 };
+  }
+
+  // Le texte du parchemin : le nom de la compétence, ce qu'elle fait, et le
+  // bouton qui la lance, au glyphe du périphérique ACTIF — relu à chaque
+  // frame, comme la vue de la stèle : changer de manette au clavier pendant
+  // la lecture change le bouton écrit.
+  function lignesParchemin(competenceId) {
+    const competence = registre.obtenir('skills', competenceId);
+    const emplacement = emplacementDe(save.hero.competences, competenceId) || competence.emplacement;
+    const verbe = registre.obtenir('action_slots', emplacement).verb;
+    const peripherique = input.peripheriqueActif ? input.peripheriqueActif() : 'manette';
+    return [
+      i18n.t(competence.label_key),
+      i18n.t(competence.description_key),
+      i18n.t('parchemin.bouton', { glyphe: i18n.t(`glyphe.${peripherique}.${verbe}`) }),
+    ];
+  }
+
+  // `lignes` : ce que la plume a écrit jusqu'ici ; `lignesCompletes` : le texte
+  // entier, pour que la mise en page ne bouge pas pendant l'écriture. L'action
+  // Fermer n'apparaît qu'une fois tout écrit : avant, B achève l'écriture.
+  function contenuVueParchemin() {
+    const competence = registre.obtenir('skills', vueParchemin.competenceId);
+    const lignes = lignesParchemin(vueParchemin.competenceId);
+    const peripherique = input.peripheriqueActif ? input.peripheriqueActif() : 'manette';
+    let actions = [];
+    if (ecritureFinie(lignes, vueParchemin.ecritureMs)) {
+      actions = peripherique === 'tactile'
+        ? [{ glyphe: null, texte: i18n.t('parchemin.action.tactile_fermer') }]
+        : [{ glyphe: i18n.t(`glyphe.${peripherique}.skill_3`), texte: i18n.t('parchemin.action.fermer') }];
+    }
+    return {
+      id: vueParchemin.puzzleId,
+      lignes: lignesEcrites(lignes, vueParchemin.ecritureMs),
+      lignesCompletes: lignes,
+      icone: registre.obtenir('visuels', competence.icone),
+      couleur: competence.effet.couleur,
+      actions,
+      vue: vueParchemin.vue,
+      alpha: alphaVueStele(vueParchemin.vue),
+    };
+  }
+
+  // Spec 14, §4.2 : une descente commence. L'état de la précédente (les flags
+  // que déclarent les salles de la descente) est remis à zéro, en ce seul
+  // endroit, puis le héros entre au point d'arrivée de la première salle.
+  function commencerDescente(descente) {
+    const scenes = registre.tous('scenes');
+    flags.retirer(flagsDeLaDescente(scenes, descente.scene));
+    // Les leviers de la descente reprennent leur état de départ (§4.2) : leur
+    // état vit dans `save.puzzles`, que l'entrée en scène relit juste après.
+    const initial = etatInitialPuzzles(registre);
+    for (const id of interactifsDeLaDescente(scenes, descente.scene)) {
+      if (initial[id]) save.puzzles[id] = initial[id];
+      else delete save.puzzles[id];
+      basculesLeviers.delete(id);
+    }
+    entrerDansScene(descente.scene);
+    etatModifie = true;
   }
 
   // MT_hud-ligne-haute_2026-09-19 : la barre d'XP ayant quitté le HUD, la
@@ -3106,6 +3623,34 @@ export function creerOrchestrateurGrotte({
   // fiche de la Poche l'annonce déjà avant l'essai, cf. `solPleinSousHeros`).
   // Un objet équipé qu'on jette quitte sa case tout seul : c'est la
   // revalidation de chaque frame qui s'en charge (`D-92`), rien à faire ici.
+  // Spec 14, palier H : la récompense d'un levier, posée au sol à `decalage`
+  // tuiles de lui, comme un objet jeté — elle ne repousse pas, ne disparaît pas
+  // à l'aube et ne rapporte aucune XP (`D-145`) : on la voit, on la ramasse.
+  // Sans contrôle de place : c'est le jeu qui la pose, et la case est choisie
+  // en données (tenue libre par test).
+  function deposerRecompense(puzzle) {
+    const { item, quantite, decalage } = puzzle.recompense;
+    const pose = scene.poseEffectiveInteractif(puzzle.id);
+    let jetes = objetsJetesDeLaScene();
+    for (let i = 0; i < quantite; i += 1) {
+      jetes = poserObjetJete(jetes, item, pose.x + decalage.x, pose.y + decalage.y, scene.tileSize);
+    }
+    ecrireObjetsJetesDeLaScene(jetes);
+  }
+
+  // Un objet qui EST une monnaie (`monnaie` sur l'entrée, spec 14 palier H) ne
+  // va pas en poche : ramassé, il crédite la monnaie — il n'y en a qu'une
+  // (`ID_MONNAIE`, `Q-49`), le schéma refuse toute autre. Rend vrai s'il l'a
+  // fait ; l'appelant retire alors l'objet du sol.
+  function ramasserMonnaie(itemId, position) {
+    const itemDef = registre.obtenir('items', itemId);
+    if (!itemDef.monnaie) return false;
+    save.inventaire.eclats += 1;
+    signalerGainItem(itemId, 1, position.x, position.y);
+    etatModifie = true;
+    return true;
+  }
+
   function essayerJeter(itemId) {
     if (!scene || !itemId || (save.inventaire.items[itemId] || 0) <= 0) return false;
     if (solPleinSousHeros()) {
@@ -3157,6 +3702,13 @@ export function creerOrchestrateurGrotte({
   function crediterXpHeros(xpGagne, position = null) {
     if (!xpGagne) return;
     if (position) signalerGainXp(xpGagne, position.x, position.y);
+    appliquerXpHeros(xpGagne);
+  }
+
+  // L'écriture elle-même, partagée par un gain (ci-dessus) et par le
+  // rattrapage du chargement (0 XP : seuls les niveaux dus sont crédités,
+  // `xp.js#crediter`). Rend la liste des niveaux franchis.
+  function appliquerXpHeros(xpGagne) {
     const resultat = crediterXp(
       { xp: save.hero.xp, niveau: save.hero.niveau, pointsStatsLibres: save.hero.points_stats_libres },
       xpGagne,
@@ -3165,8 +3717,9 @@ export function creerOrchestrateurGrotte({
     save.hero.xp = resultat.xp;
     save.hero.niveau = resultat.niveau;
     save.hero.points_stats_libres = resultat.pointsStatsLibres;
-    for (const n of resultat.niveauxFranchis) flags.set(`flag_niveau_${n}`);
-    etatModifie = true;
+    for (const n of resultat.niveauxFranchis) flags.set(flagDeNiveau(n));
+    if (xpGagne > 0 || resultat.niveauxFranchis.length) etatModifie = true;
+    return resultat.niveauxFranchis;
   }
 
   function onMonstreMort(donneesEnnemi) {
@@ -3262,7 +3815,7 @@ export function creerOrchestrateurGrotte({
     // Pas voulu par la machine à états, puis collision : la différence entre
     // les deux est exactement ce que l'anti-blocage observe.
     const vise = approcherEnLigneDroite(monstre, decision.but.x, decision.but.y, vitesse * decision.facteurVitesse, deltaS);
-    const rayon = RAYON_MONSTRE_CHAOS_PX;
+    const rayon = RAYON_MONSTRE_PX;
     const boite = { x: monstre.x - rayon, y: monstre.y - rayon, largeur: rayon * 2, hauteur: rayon * 2 };
     const resolu = resoudreDeplacement(scene, boite, vise.x - monstre.x, vise.y - monstre.y, flags.has);
     suivant.x = resolu.x + rayon;
@@ -3271,9 +3824,396 @@ export function creerOrchestrateurGrotte({
     return suivant;
   }
 
+  // Le TIREUR (spec 14, §4.3) : `comportement_monstres.js#deciderTireur` dit
+  // où aller et s'il faut tirer ; le mouvement se fait ici avec les
+  // collisions (il recule, et ne doit pas reculer dans un mur), le tir part
+  // dans `projectiles.js`. Les dégâts du tir sont la force EFFECTIVE du
+  // monstre, celle de son corps à corps (l'aura du follet comprise) : une
+  // seule force par monstre.
+  function deplacerTireur(monstre, donneesEnnemi, force, vitesse, deltaS, deltaMs) {
+    const attaque = donneesEnnemi.attaque_distance;
+    const suivant = { ...monstre, cooldownTirMs: tickCooldown(monstre.cooldownTirMs || 0, deltaMs) };
+    const decision = deciderTireur({ monstre, hero, attaque, tileSize: scene.tileSize, cooldownTirMs: suivant.cooldownTirMs });
+    if (decision.tirer && tirerVersLeHeros(monstre, attaque, force)) suivant.cooldownTirMs = attaque.cadence_ms;
+    if (!decision.but) return suivant;
+    const vise = approcherEnLigneDroite(monstre, decision.but.x, decision.but.y, vitesse, deltaS);
+    return { ...suivant, ...pasAvecCollisions(monstre, vise) };
+  }
+
+  // Le tir d'un monstre vers le héros : un projectile, ou une SALVE en éventail
+  // si son attaque en déclare une (§4.5). Rend vrai si au moins un tir est
+  // parti — la cadence ne repart qu'alors, comme avant la salve.
+  function tirerVersLeHeros(monstre, attaque, force) {
+    let parti = false;
+    for (const visee of viseesSalve(monstre.x, monstre.y, hero.x, hero.y, attaque.salve)) {
+      parti = tirerProjectile(projectiles, {
+        x: monstre.x,
+        y: monstre.y,
+        versX: visee.x,
+        versY: visee.y,
+        vitesse: attaque.vitesse_px_s,
+        rayon: attaque.rayon_px,
+        degats: force,
+        camp: CAMP_MONSTRES,
+        visuel: attaque.visuel,
+        courseMaxPx: attaque.course_tuiles * scene.tileSize,
+      }) || parti;
+    }
+    return parti;
+  }
+
+  // Le pas VOULU d'un monstre (`vise`), rendu au mur : la boîte du monstre
+  // glisse comme celle du héros. Rend la position résolue et ce qu'il a
+  // réellement parcouru (ce que l'anti-blocage de l'errance observe).
+  function pasAvecCollisions(monstre, vise) {
+    const rayon = RAYON_MONSTRE_PX;
+    const boite = { x: monstre.x - rayon, y: monstre.y - rayon, largeur: rayon * 2, hauteur: rayon * 2 };
+    const resolu = resoudreDeplacement(scene, boite, vise.x - monstre.x, vise.y - monstre.y, flags.has);
+    const x = resolu.x + rayon;
+    const y = resolu.y + rayon;
+    return { x, y, distanceParcouruePx: Math.hypot(x - monstre.x, y - monstre.y) };
+  }
+
+  // La barre du boss (§4.5) : le premier monstre vivant de la salle dont
+  // l'entrée déclare `boss`. Son nom se lit ici, pas dans `ui/hud.js`.
+  function barreDuBoss() {
+    for (const m of monstres) {
+      if (m.mort) continue;
+      const donnees = registre.obtenir('enemies', m.enemyId);
+      if (!donnees.boss) continue;
+      return { nom: i18n.t(donnees.label_key), ratio: m.pvMax > 0 ? m.pv / m.pvMax : 0 };
+    }
+    return null;
+  }
+
+  // Le BOSS (spec 14, §4.5) : `comportement_monstres.js#deciderBoss` tire son
+  // mode au sort et dit où aller et s'il faut tirer ; le pas et le tir se font
+  // ici, par les mêmes chemins que le tireur. Son corps à corps est celui de
+  // tout monstre (plus bas, à `portee_attaque`). En mode agressif, il s'arrête
+  // au contact (`distance_contact_px`), comme Zéros. Le hasard n'a pas de
+  // graine : un boss qui rejouerait la même danse à chaque essai se réciterait.
+  function deplacerBoss(monstre, donneesEnnemi, force, vitesse, deltaS, deltaMs) {
+    const attaque = donneesEnnemi.attaque_distance;
+    const cooldownTirMs = tickCooldown(monstre.cooldownTirMs || 0, deltaMs);
+    const decision = deciderBoss(monstre.modeBoss || creerEtatBoss(), {
+      deltaMs,
+      monstre,
+      hero,
+      tileSize: scene.tileSize,
+      modes: donneesEnnemi.modes,
+      dureeModeMs: donneesEnnemi.duree_mode_ms,
+      attaque,
+      cooldownTirMs,
+      distanceParcouruePx: monstre.distanceParcouruePx || 0,
+      alea: Math.random,
+      tirerPoint: pointLibreDeLaSalle,
+    });
+    const suivant = { ...monstre, modeBoss: decision.etat, cooldownTirMs };
+    if (decision.tirer && tirerVersLeHeros(monstre, attaque, force)) suivant.cooldownTirMs = attaque.cadence_ms;
+    if (!decision.but) return { ...suivant, distanceParcouruePx: 0 };
+    const vise = approcherEnLigneDroite(
+      monstre, decision.but.x, decision.but.y, vitesse * decision.facteurVitesse, deltaS, donneesEnnemi.distance_contact_px || 0,
+    );
+    return { ...suivant, ...pasAvecCollisions(monstre, vise) };
+  }
+
+  // Un point libre de la salle, au centre d'une case qui n'est pas un mur ;
+  // null après quelques essais malheureux (l'errance réessaiera à la frame
+  // suivante). Les bords sont exclus : ce sont les murs de toute salle.
+  function pointLibreDeLaSalle() {
+    for (let essai = 0; essai < 8; essai += 1) {
+      const x = (1 + Math.floor(Math.random() * (scene.width - 2)) + 0.5) * scene.tileSize;
+      const y = (1 + Math.floor(Math.random() * (scene.height - 2)) + 0.5) * scene.tileSize;
+      if (!scene.estSolideAuPoint(x, y, flags.has)) return { x, y };
+    }
+    return null;
+  }
+
+  // Les tirs en vol avancent ; ceux qui touchent le héros lui retirent ses PV,
+  // comme un coup au corps à corps (même `hero.pv`, donc même mort plus bas).
+  // Le héros est la seule cible du camp adverse à ce palier : le tir du joueur
+  // (palier G) ajoutera les monstres à la liste, sans un second chemin.
+  function avancerTirs(deltaMs) {
+    // Palier G : les monstres vivants sont des cibles, pour les tirs du HÉROS
+    // (le camp fait le tri : un crachat traverse les monstres). Un intouchable
+    // n'en est pas une — le tir le traverse, comme l'auto-attaque l'ignore.
+    const cibles = [{ id: CIBLE_HEROS, x: hero.x, y: hero.y, rayon: hero.rayon, camp: CAMP_HEROS }];
+    for (const m of monstres) {
+      if (!m.mort && !m.intouchable) cibles.push({ id: m.id, x: m.x, y: m.y, rayon: RAYON_MONSTRE_PX, camp: CAMP_MONSTRES });
+    }
+    const touches = avancerProjectiles(projectiles, deltaMs, {
+      estSolide: (x, y) => scene.estSolideAuPoint(x, y, flags.has),
+      cibles,
+      surEclat: (eclat) => ondes.push({
+        x: eclat.x, y: eclat.y, rayon: eclat.rayon, couleur: eclat.etiquette && eclat.etiquette.couleur, ms: 0,
+      }),
+    });
+    const degatsParMonstre = new Map();
+    for (const touche of touches) {
+      if (touche.cibleId === CIBLE_HEROS) hero.pv = Math.max(0, hero.pv - touche.degats);
+      else degatsParMonstre.set(touche.cibleId, (degatsParMonstre.get(touche.cibleId) || 0) + touche.degats);
+    }
+    if (degatsParMonstre.size > 0) {
+      monstres = monstres.map((monstre) => {
+        const degats = degatsParMonstre.get(monstre.id);
+        if (!degats || monstre.mort) return monstre;
+        const suivant = infligerDegats(monstre, degats);
+        if (suivant.pv < monstre.pv) suivant.flashMs = FLASH_TOUCHE_MS;
+        if (suivant.mort) onMonstreMort(registre.obtenir('enemies', monstre.enemyId));
+        return suivant;
+      });
+    }
+    ondes = ondes.map((o) => ({ ...o, ms: o.ms + deltaMs })).filter((o) => o.ms < DUREE_ONDE_MS);
+  }
+
+  // Spec 14, §4.9 : les compétences ÉQUIPÉES, et le verbe de l'emplacement où
+  // chacune est rangée — le choix du joueur (`save.hero.competences`). Ce que
+  // la sauvegarde nomme sans que le catalogue le connaisse (une compétence ou
+  // un emplacement retiré), ou qu'on n'a pas APPRIS (son flag), ne se range
+  // nulle part : rien ne se lance qu'on n'ait appris.
+  function competencesEquipees() {
+    const equipees = [];
+    for (const [emplacement, competenceId] of Object.entries(save.hero.competences || {})) {
+      const competence = registre.obtenir('skills', competenceId);
+      const slot = registre.obtenir('action_slots', emplacement);
+      if (!competence || !estEmplacementCompetence(slot) || !flags.has(competence.flag)) continue;
+      equipees.push({ competence, emplacement, verbe: slot.verb });
+    }
+    return equipees;
+  }
+
+  // Les emplacements de compétence, dans l'ordre du catalogue : « Emplacement
+  // 1, 2, 3 » est ce rang, jamais un numéro écrit dans les données.
+  function emplacementsCompetence() {
+    return registre.tous('action_slots').filter(estEmplacementCompetence);
+  }
+
+  // Ranger une compétence (B3) : elle quitte son ancien emplacement, et celle
+  // qu'elle remplace n'est plus équipée. Sa charge la suit (l'état est tenu
+  // par compétence, pas par emplacement).
+  function equiperCompetenceDansEmplacement(competenceId, emplacementId) {
+    save.hero.competences = equiperCompetence(save.hero.competences, competenceId, emplacementId);
+    etatModifie = true;
+  }
+
+  // Une frame de jeu des compétences : la charge monte (le follet engage), la
+  // recharge descend, et l'appui sur le verbe de l'emplacement lance ce qui
+  // est prêt. Prête sans rien à viser, l'appui est REFUSÉ et le dit ; la charge
+  // est gardée. Pas prête, l'appui ne fait rien : la jauge le montre déjà.
+  function majCompetences(deltaMs, etatGameplay, statsDerivees) {
+    const ratios = {};
+    for (const { competence, verbe } of competencesEquipees()) {
+      const durees = dureesCompetence(competence, statsDerivees);
+      let etat = avancerCompetence(etatsCompetences.get(competence.id) || creerEtatCompetence(), deltaMs, {
+        active: chargeActive(competence, { follet }),
+        durees,
+      });
+      if (etatGameplay[verbe] && etatGameplay[verbe].pressed && competencePrete(etat, durees)) {
+        if (lancerCompetenceVers(competence, statsDerivees)) etat = lancerCompetence(etat, durees);
+        else signalerRefusConteneur(CLE_TEXTE_AUCUNE_CIBLE, hero.x, hero.y);
+      }
+      etatsCompetences.set(competence.id, etat);
+      ratios[verbe] = ratiosCompetence(etat, durees);
+    }
+    ratiosEmplacements = ratios;
+  }
+
+  // Le tir d'une compétence : vers sa cible (`competences.js#choisirCible`),
+  // avec les dégâts de SON point de résolution, par le seul chemin de tir du
+  // jeu. Rend vrai si le tir est parti.
+  function lancerCompetenceVers(competence, statsDerivees) {
+    const porteePx = competence.portee_tuiles * scene.tileSize;
+    const cible = choisirCible({
+      follet,
+      hero,
+      porteePx,
+      monstres: monstres.map((m) => ({ id: m.id, x: m.x, y: m.y, mort: m.mort, visable: !m.intouchable })),
+    });
+    if (!cible) return false;
+    return tirerProjectile(projectiles, {
+      x: hero.x,
+      y: hero.y,
+      versX: cible.x,
+      versY: cible.y,
+      vitesse: competence.projectile.vitesse_px_s,
+      rayon: competence.projectile.rayon_px,
+      degats: resoudreDegats(competence, statsDerivees),
+      camp: CAMP_HEROS,
+      visuel: competence.projectile.visuel,
+      courseMaxPx: porteePx,
+      zonePx: competence.effet.rayon_px,
+      etiquette: { couleur: competence.effet.couleur },
+    });
+  }
+
+  // La SALLE NETTOYÉE (spec 14, §4.3) : une scène qui déclare `nettoyage`
+  // pose son flag quand le dernier monstre de ses spawns tombe. Règle
+  // générique, lue sur les données de la scène : une Annexe 2 s'en sert
+  // sans une ligne ici.
+  function verifierNettoyage() {
+    const nettoyage = registre.obtenir('scenes', scene.id).nettoyage;
+    if (!nettoyage || flags.has(nettoyage.flag)) return;
+    if (sceneNettoyee(monstres)) flags.set(nettoyage.flag);
+  }
+
+  // Le follet de Zéros (spec 14, §4.3) : il tourne autour du monstre que son
+  // entrée nomme (`orbite.autour`), avec la loi d'orbite de notre follet
+  // (`companion.js#avancerOrbiteAutour`) et SES nombres. Il vole : aucun mur ne
+  // l'arrête, comme le nôtre. Sans centre vivant, il reste où il est.
+  function deplacerEnOrbite(monstre, donneesEnnemi, deltaS) {
+    const { autour, rayon_px: rayonPx, vitesse_rad_s: vitesseRadS } = donneesEnnemi.orbite;
+    const centre = monstres.find((m) => !m.mort && m.enemyId === autour);
+    if (!centre) return { ...monstre };
+    return avancerOrbiteAutour(monstre, centre, { rayonPx, vitesseRadS }, deltaS);
+  }
+
+  // Spec 14, palier D : la RENCONTRE de la scène, si elle en déclare une
+  // (`scenes.json > rencontre`). Ce script ne sait pas que c'est Zéros : ses
+  // monstres, sa cible, son seuil, ses dialogues et ses flags vivent dans ses
+  // données, `rencontre.js` dit où elle en est. Appelée après le combat, dans
+  // le temps de jeu : gelée sous UI, donc sous ses propres dialogues.
+  function majRencontre(deltaMs) {
+    const def = registre.obtenir('scenes', scene.id).rencontre;
+    if (!def) return;
+    const decision = deciderRencontre(def, { evaluer: (c) => flags.evaluate(c), has: flags.has, enCours: rencontre !== null });
+    // Les descentes suivantes (`Q-142`) : la rencontre a déjà eu lieu, ce
+    // qu'elle ouvrait s'ouvre tout de suite.
+    if (decision === 'raccourci') {
+      for (const f of def.flags_fin) flags.set(f);
+      return;
+    }
+    if (decision === 'demarrer') {
+      demarrerRencontre(def);
+      return;
+    }
+    if (!rencontre) return;
+    const { etat, evenement } = avancerRencontre(rencontre.etat, deltaMs, def.fondu_ms);
+    rencontre.etat = etat;
+    if (evenement === 'combat' && def.dialogue_debut) ouvrirDialogueCatalogue(def.dialogue_debut);
+    if (evenement === 'efface') terminerRencontre(def);
+    // La cible au seuil : tout se fige (le dialogue gèle le jeu), le dialogue
+    // de fin parle ; fermé, l'effacement commence.
+    if (etat.phase === 'combat' && cibleAuSeuil(monstres, def.cible)) {
+      rencontre.etat = passerALaFin(etat);
+      ouvrirDialogueCatalogue(def.dialogue, {
+        onFermer: () => {
+          if (rencontre) rencontre.etat = passerALEffacement(rencontre.etat);
+        },
+      });
+    }
+  }
+
+  // Les monstres de la rencontre naissent à leur place, marqués (`rencontre`) :
+  // `sceneNettoyee` ne les compte pas, la boucle les tient inertes hors
+  // combat, le dessin les fond. La cible reçoit son plancher de PV : elle
+  // s'arrête au seuil, elle ne meurt pas (`entities.js#infligerDegats`).
+  function demarrerRencontre(def) {
+    rencontre = { def, etat: creerEtatRencontre() };
+    const nes = def.monstres.map((m) => {
+      compteurMonstresNes += 1;
+      const monstre = creerMonstre(registre.obtenir('enemies', m.enemy), {
+        x: (m.position.x + 0.5) * scene.tileSize,
+        y: (m.position.y + 0.5) * scene.tileSize,
+        id: `${m.enemy}#${compteurMonstresNes}`,
+      });
+      monstre.rencontre = true;
+      if (m.enemy === def.cible) monstre.pvPlancher = plancherCible(monstre.pvMax, def.seuil_fin);
+      return monstre;
+    });
+    monstres = [...monstres, ...nes];
+  }
+
+  // L'effacement fini : ses monstres partent, son flag (une seule fois) et ses
+  // flags de fin (le passage) sont posés — la sauvegarde suit par `onUnlock`.
+  function terminerRencontre(def) {
+    monstres = monstres.filter((m) => !m.rencontre);
+    flags.set(def.flag_rencontre);
+    for (const f of def.flags_fin) flags.set(f);
+  }
+
+  // --- Spec 14, §4.4 : les deux mains ------------------------------------
+  // Le levier tenu allumé le plus proche du héros, à SA portée de maintien —
+  // celui sur lequel RB poserait le follet —, ou `null`.
+  function levierTenuAPortee() {
+    let meilleur = null;
+    let meilleure = Infinity;
+    for (const id of interactifsPresents()) {
+      const p = scene.puzzle(id);
+      if (p.type !== 'levier_maintenu' || !puzzlesEtat[id]?.actif) continue;
+      const centre = centreInteractif(p);
+      const d = Math.hypot(hero.x - centre.x, hero.y - centre.y);
+      if (d <= p.maintien.portee_px && d < meilleure) {
+        meilleure = d;
+        meilleur = { id, ...centre };
+      }
+    }
+    return meilleur;
+  }
+
+  function centreInteractif(puzzle) {
+    const pose = scene.poseEffectiveInteractif(puzzle.id);
+    return { x: (pose.x + 0.5) * scene.tileSize, y: (pose.y + 0.5) * scene.tileSize };
+  }
+
+  // RB, Tab ou toucher le follet (B2, « contextuel ») : un follet posé
+  // revient, n'importe où ; près d'un levier tenu allumé, il s'y pose ;
+  // sinon, la cible suivante (`D-54`), comme toujours.
+  function cibleOrdonnee(folletCourant, companion) {
+    if (folletPoste(folletCourant)) return rappelerFollet(folletCourant);
+    const levier = levierTenuAPortee();
+    if (levier) return poserFollet(folletCourant, levier);
+    return cibleSuivanteFollet(folletCourant, hero, monstres, companion);
+  }
+
+  // Une frame des leviers tenus : qui les tient (le héros à portée, ou le
+  // follet posé dessus), lesquels s'éteignent, et si une paire est complète.
+  // Le flag d'un `simultane` est un flag de descente : le passage reste
+  // ouvert même quand les leviers s'éteignent ensuite.
+  function majLeviersMaintenus(deltaMs) {
+    const eteints = [];
+    for (const id of scene.interactifs) {
+      const p = scene.puzzle(id);
+      if (p.type !== 'levier_maintenu' || !puzzlesEtat[id]?.actif) continue;
+      const centre = centreInteractif(p);
+      const tenuParHeros = Math.hypot(hero.x - centre.x, hero.y - centre.y) <= p.maintien.portee_px;
+      const tenuParFollet = folletPoste(follet) && follet.poste.id === id;
+      const { etat, eteint } = avancerLevierMaintenu(puzzlesEtat[id], tenuParHeros || tenuParFollet, deltaMs, p.maintien.extinction_ms);
+      if (etat === puzzlesEtat[id]) continue;
+      puzzlesEtat = { ...puzzlesEtat, [id]: etat };
+      save.puzzles = puzzlesEtat;
+      if (eteint) eteints.push(id);
+    }
+    for (const simultane of simultanesResolus(registre, puzzlesEtat, (f) => flags.has(f))) {
+      flags.set(simultane.flag_pose);
+      etatModifie = true;
+    }
+    if (eteints.length > 0) compterExtinctions(eteints);
+  }
+
+  // L'explication du follet (§4.4) : après `apres_extinctions` extinctions des
+  // leviers d'une même paire encore ouverte, une seule fois par partie.
+  function compterExtinctions(eteints) {
+    for (const p of registre.tous('puzzles')) {
+      if (p.type !== 'simultane' || !p.explication || flags.has(p.flag_pose) || flags.has(p.explication.flag)) continue;
+      const n = eteints.filter((id) => p.tous_allumes.includes(id)).length;
+      if (n === 0) continue;
+      const total = (extinctionsLeviers.get(p.id) || 0) + n;
+      extinctionsLeviers.set(p.id, total);
+      if (total >= p.explication.apres_extinctions && !dialogue.estOuvert()) {
+        flags.set(p.explication.flag);
+        ouvrirDialogueCatalogue(p.explication.dialogue);
+        return;
+      }
+    }
+  }
+
   function mettreAJourCombat(deltaMs, etatGameplay, statsPrimaires, statsDerivees) {
     const deltaS = deltaMs / 1000;
     anneauAttaqueMs = tickCooldown(anneauAttaqueMs, deltaMs);
+    if (changementFollet) {
+      changementFollet = { ...changementFollet, ms: changementFollet.ms + deltaMs };
+      if (changementFollet.ms >= DUREE_CHANGEMENT_FOLLET_MS) changementFollet = null;
+    }
 
     // Le compagnon est résolu AVANT la mise à jour du follet : depuis `D-37`,
     // la règle d'engagement lit l'aura (donc le catalogue), et non plus une
@@ -3286,9 +4226,7 @@ export function creerOrchestrateurGrotte({
       // AVANT le déplacement, pour que le vol amorti de cette frame-ci parte
       // déjà vers le nouveau monstre. `etatGameplay` est déjà neutralisé sous
       // UI : rien à tester de plus ici.
-      if (etatGameplay.target_next.pressed) {
-        follet = cibleSuivanteFollet(follet, hero, monstres, companionDuFollet);
-      }
+      if (etatGameplay.target_next.pressed) follet = cibleOrdonnee(follet, companionDuFollet);
       follet = avancerFollet(follet, hero, monstres, deltaS, {
         sens: sensOrbiteFollet(),
         dureeInversionMs: reglageAlignement.orbite.duree_inversion_ms,
@@ -3307,6 +4245,9 @@ export function creerOrchestrateurGrotte({
     const regimeFrame = etatAlignement();
     monstres = monstres.map((monstre) => {
       if (monstre.mort) return monstre;
+      // Spec 14, palier D : pendant les fondus et le dialogue de fin, les
+      // monstres d'une rencontre ne font rien — ni pas, ni coup.
+      if (monstre.rencontre && !rencontreAgit(rencontre && rencontre.etat)) return monstre;
       const donneesEnnemi = registre.obtenir('enemies', monstre.enemyId);
       const { force, vitesse, dot } = statsEffectivesMonstre(registre, donneesEnnemi, follet, {
         position: { x: monstre.x, y: monstre.y },
@@ -3315,9 +4256,12 @@ export function creerOrchestrateurGrotte({
 
       // Palier C : les monstres du Chaos décident (errance / poursuite /
       // désintérêt) ; ceux de la Grotte vont droit au but, comme en Phase 1.
-      let suivant = monstre.spawnId
-        ? deplacerMonstreDuChaos(monstre, vitesse, deltaS, deltaMs)
-        : approcherEnLigneDroite(monstre, hero.x, hero.y, vitesse, deltaS);
+      let suivant;
+      if (donneesEnnemi.comportement === 'distance') suivant = deplacerTireur(monstre, donneesEnnemi, force, vitesse, deltaS, deltaMs);
+      else if (donneesEnnemi.comportement === 'orbite') suivant = deplacerEnOrbite(monstre, donneesEnnemi, deltaS);
+      else if (donneesEnnemi.comportement === 'boss') suivant = deplacerBoss(monstre, donneesEnnemi, force, vitesse, deltaS, deltaMs);
+      else if (monstre.spawnId) suivant = deplacerMonstreDuChaos(monstre, vitesse, deltaS, deltaMs);
+      else suivant = approcherEnLigneDroite(monstre, hero.x, hero.y, vitesse, deltaS, donneesEnnemi.distance_contact_px || 0);
       suivant.cooldownAttaqueMs = tickCooldown(suivant.cooldownAttaqueMs, deltaMs);
       suivant.flashMs = tickCooldown(suivant.flashMs || 0, deltaMs);
 
@@ -3335,10 +4279,12 @@ export function creerOrchestrateurGrotte({
         suivant.dotAccumulateurMs += deltaMs;
         while (suivant.dotAccumulateurMs >= dot.intervalle_ms) {
           suivant.dotAccumulateurMs -= dot.intervalle_ms;
+          const pvAvantDot = suivant.pv;
           suivant = infligerDegats(suivant, dot.valeur);
           // Le tick de DoT (Feu) doit être visible sans que le joueur frappe
           // (§3.1 : "y compris sous DoT Feu sans frapper", critère manuel §7).
-          suivant.flashMs = FLASH_TOUCHE_MS;
+          // Seulement s'il a blessé : un intouchable (spec 14) ne flashe pas.
+          if (suivant.pv < pvAvantDot) suivant.flashMs = FLASH_TOUCHE_MS;
         }
       } else {
         suivant.dotAccumulateurMs = 0;
@@ -3356,6 +4302,7 @@ export function creerOrchestrateurGrotte({
       if (suivant.mort && !monstre.mort) onMonstreMort(donneesEnnemi);
       return suivant;
     });
+    avancerTirs(deltaMs);
 
     // `specs/10` §4.3 point 3 : le héros peut porter un effet à dégâts sur la
     // durée (Feu négatif). Même catalogue, même boucle d'intervalle que la
@@ -3401,6 +4348,17 @@ export function creerOrchestrateurGrotte({
         });
         cooldownAttaqueHerosMs = statsDerivees.derivee_cooldown_attaque_ms;
       }
+    }
+    majCompetences(deltaMs, etatGameplay, statsDerivees);
+
+    verifierNettoyage();
+
+    // Spec 14, §4.3 : dans une rencontre SANS DÉFAITE, tomber à 0 PV ne tue
+    // pas — le follet relève le héros, PV pleins, sans malus ni retour à la
+    // Grotte. La règle vit sur la rencontre (`sans_defaite`), jamais sur un id.
+    if (hero.pv <= 0 && !hero.mort && rencontre && rencontre.def.sans_defaite && rencontreEnCours(rencontre.etat)) {
+      hero.pv = hero.pvMax;
+      if (rencontre.def.dialogue_releve) ouvrirDialogueCatalogue(rencontre.def.dialogue_releve);
     }
 
     if (hero.pv <= 0 && !hero.mort) {
@@ -3453,7 +4411,7 @@ export function creerOrchestrateurGrotte({
     // (rectangleInteractif, §3 04_stations-proportions-collision) ; la Grotte
     // n'a que des leviers, donc "le premier interactif rencontré" (§3 de
     // 04_indices-commandes) est de fait le levier de la salle 1.
-    for (const puzzleId of scene.interactifs) {
+    for (const puzzleId of interactifsPresents()) {
       const puzzle = scene.puzzle(puzzleId);
       if (distanceAuRectangle(hero.x, hero.y, rectangleInteractif(puzzle)) <= DISTANCE_INTERACT_PX) {
         indices.declencherVerbeUtile('interact', flags);
@@ -3486,7 +4444,7 @@ export function creerOrchestrateurGrotte({
   function majBasculesLeviers(deltaMs) {
     for (const id of scene.interactifs) {
       const p = scene.puzzle(id);
-      if (p.type !== 'levier') continue;
+      if (!TYPES_LEVIER.includes(p.type)) continue;
       basculesLeviers.set(id, avancerBascule(basculesLeviers.get(id), !!puzzlesEtat[id]?.actif, deltaMs));
     }
   }
@@ -3560,11 +4518,51 @@ export function creerOrchestrateurGrotte({
     if (steleEtaitActive) {
       vueStele = avancerVueStele(vueStele, deltaMs, Math.random);
       const puzzleStele = scene.puzzle(vueStele.puzzleId);
-      const retour = etatBrut.skill_3.pressed || contactsTactiles.length > 0;
+      // Spec 14, `Q-138` : une stèle qui descend. A ou INTERACT descendent ;
+      // au doigt, un toucher SUR la gravure descend, ailleurs il ferme. Sans
+      // descente, tout toucher ferme, comme avant.
+      const peutDescendre = descenteDisponible(puzzleStele, flags.has);
+      const zone = peutDescendre ? zoneGravureStele() : null;
+      const surGravure = (p) => zone && p.x >= zone.x && p.x <= zone.x + zone.w && p.y >= zone.y && p.y <= zone.y + zone.h;
+      const descendre = peutDescendre
+        && (etatBrut.attack.pressed || etatBrut.interact.pressed || contactsTactiles.some(surGravure));
+      const retour = etatBrut.skill_3.pressed || contactsTactiles.some((p) => !surGravure(p));
       // PS1 : fermer, c'est lancer la sortie en fondu ; la vue disparaît quand
       // elle est finie, et le jeu reste gelé jusque-là.
-      if (retour && vueSteleArmee(vueStele, puzzleStele.armement_ms)) vueStele = fermerVueStele(vueStele);
-      if (vueSteleTerminee(vueStele)) vueStele = null;
+      if (vueSteleArmee(vueStele, puzzleStele.armement_ms)) {
+        if (descendre) vueStele = demanderDescente(vueStele);
+        else if (retour) vueStele = fermerVueStele(vueStele);
+      }
+      if (vueSteleTerminee(vueStele)) {
+        const { descendre: descente } = vueStele;
+        vueStele = null;
+        if (descente) commencerDescente(puzzleStele.descente);
+      }
+    }
+    // Spec 14, palier G : le parchemin. Ses lettres s'écrivent ; un appui (B, A,
+    // INTERACT ou un toucher) pendant l'écriture l'ACHÈVE, après elle il ferme la
+    // vue par le fondu de la stèle. Capturé avant, comme la stèle : la frame
+    // de la fermeture reste gelée.
+    const parcheminEtaitActif = vueParchemin !== null;
+    if (parcheminEtaitActif) {
+      const puzzleParchemin = scene.puzzle(vueParchemin.puzzleId);
+      const lignes = lignesParchemin(vueParchemin.competenceId);
+      let vue = avancerVueStele(vueParchemin.vue, deltaMs, Math.random);
+      let ecritureMs = vueParchemin.ecritureMs + deltaMs;
+      const appui = etatBrut.skill_3.pressed || etatBrut.attack.pressed || etatBrut.interact.pressed || contactsTactiles.length > 0;
+      if (appui && vueSteleArmee(vue, puzzleParchemin.armement_ms)) {
+        if (!ecritureFinie(lignes, ecritureMs)) ecritureMs = dureeEcriture(lignes);
+        else vue = fermerVueStele(vue);
+      }
+      vueParchemin = vueSteleTerminee(vue) ? null : { ...vueParchemin, vue, ecritureMs };
+    }
+    // Spec 14, palier H : le fondu d'un portail. La scène change au plus noir,
+    // une seule fois ; le jeu reste gelé jusqu'à la fin du fondu.
+    const fonduEtaitActif = fonduScene !== null;
+    if (fonduEtaitActif) {
+      const pas = avancerFondu(fonduScene, deltaMs);
+      fonduScene = pas.termine ? null : pas.fondu;
+      if (pas.changerMaintenant) entrerDansScene(pas.fondu.destination.cible, pas.fondu.destination.position);
     }
     const logoEtaitActif = ouvertureLogoMs !== null;
     if (logoEtaitActif) {
@@ -3612,7 +4610,17 @@ export function creerOrchestrateurGrotte({
     // d'OUVRIR le menu dans cette même frame — le traiter là-bas le refermerait
     // aussitôt.
     let menuFermeParVerbe = false;
-    if (etatBrut.menu.pressed && !dialogueOuvertMaintenant && !choixFolletActif() && !introEtaitActive && !departEtaitActif && !steleEtaitActive) {
+    // Spec 14, §4.1 : pendant le déchiffrement, ni B ni MENU ne ferment le
+    // carnet — ils l'ACCÉLÈRENT. Fermer marquerait l'indice comme lu sans
+    // que le joueur l'ait vu se déchiffrer. Les deux verbes sont retirés de
+    // la frame avant que le menu ne les voie.
+    const dechiffrementRetient = dechiffrement !== null && menu.estOuvert() && !!(menu.indicesAffiches && menu.indicesAffiches());
+    const accelererCarnet = dechiffrementRetient && (etatBrut.skill_3.pressed || etatBrut.menu.pressed);
+    if (dechiffrementRetient) {
+      const relire = avancerDechiffrementCarnet(deltaMs, accelererCarnet);
+      if (relire) menu.rafraichirIndices();
+    }
+    if (etatBrut.menu.pressed && !dechiffrementRetient && !dialogueOuvertMaintenant && !choixFolletActif() && !introEtaitActive && !departEtaitActif && !steleEtaitActive && !parcheminEtaitActif && !fonduEtaitActif) {
       if (constructionActif()) {
         quitterConstructionVersMenuPause();
       } else if (!menu.estOuvert()) {
@@ -3634,7 +4642,7 @@ export function creerOrchestrateurGrotte({
     // les verbes d'une frame qu'une UI a consommée, quel que soit le verbe.
     const uiOuverte = (
       menu.estOuvert() || dialogueOuvertMaintenant || choixFolletActif() || introEtaitActive || departEtaitActif ||
-      constructionActif() || menuFermeParVerbe || steleEtaitActive
+      constructionActif() || menuFermeParVerbe || steleEtaitActive || parcheminEtaitActif || fonduEtaitActif
     );
     // `D-92`/`D-93` : avant tout le reste, y compris avant l'UI — un écran
     // Coffre ouvert vide la poche, et la case d'attaque doit dire la vérité
@@ -3649,8 +4657,10 @@ export function creerOrchestrateurGrotte({
     // reste — jamais un second calcul de « le jeu a-t-il la main ».
     majDescenteAuto(deltaMs, uiOuverte);
     majBasculesLeviers(deltaMs);
-    if (menu.estOuvert()) menu.traiterInput(etatBrut);
-    else if (dialogueOuvertMaintenant) {
+    if (menu.estOuvert()) {
+      const neutre = etatNeutre(etatBrut);
+      menu.traiterInput(dechiffrementRetient ? { ...etatBrut, skill_3: neutre.skill_3, menu: neutre.menu } : etatBrut);
+    } else if (dialogueOuvertMaintenant) {
       // La frame d'ouverture reste neutre pour le doigt aussi (même défense
       // que pour les verbes : le geste qui a ouvert ne choisit pas).
       if (dialogueVientDeSOuvrir) dialogue.traiterInput(etatNeutre(etatBrut), null);
@@ -3742,6 +4752,8 @@ export function creerOrchestrateurGrotte({
       if (etatGameplay.interact.pressed) essayerInteraction();
       if (etatGameplay.consume.pressed) essayerConsommer();
       mettreAJourCombat(deltaMs, etatGameplay, statsPrimaires, statsDerivees);
+      majRencontre(deltaMs);
+      majLeviersMaintenus(deltaMs);
       verifierEntreesDeZone();
       indices.maj(deltaMs);
       verifierIndicesNiveau();
@@ -3827,10 +4839,14 @@ export function creerOrchestrateurGrotte({
 
       const portail = portailFranchi(scene, hitboxHeros(), flags);
       if (portail) {
-        entrerDansScene(portail.cible, {
+        const position = {
           x: (portail.spawn.x + 0.5) * registre.obtenir('scenes', portail.cible).tile_size,
           y: (portail.spawn.y + 0.5) * registre.obtenir('scenes', portail.cible).tile_size,
-        });
+        };
+        // Spec 14, palier H (`Q-153`) : un portail qui déclare un fondu passe
+        // par le noir ; les autres changent de scène d'une frame à l'autre.
+        if (portail.fondu_ms) fonduScene = creerFondu(portail.fondu_ms, { cible: portail.cible, position });
+        else entrerDansScene(portail.cible, position);
       }
     }
 
@@ -4109,7 +5125,11 @@ export function creerOrchestrateurGrotte({
     // plus bas pour comparer d'une frame à l'autre.
     moniteurPerf.enregistrerPositionHero(hero.x - camera.x, hero.y - camera.y);
 
-    const companionActif = follet ? registre.obtenir('companions', follet.companionId) : null;
+    // Pendant la première moitié d'un changement de follet, c'est encore
+    // l'ANCIEN qu'on voit (sa couleur, sa lumière), qui se résorbe.
+    const companionActif = follet
+      ? registre.obtenir('companions', companionAffiche())
+      : null;
     const heroVisuel = registre.obtenir('visuels', VISUEL_HEROS_ID);
 
     // `D-40` : plus d'étiquette de nom (l'ancien §4 de SD_ui-lisibilite est
@@ -4125,7 +5145,13 @@ export function creerOrchestrateurGrotte({
         visuel: registre.obtenir('visuels', donneesEnnemi.render.visuel),
         // §3.1 03_grotte-polish : barre de PV visible ssi "actif" (engagé ou
         // déjà touché) — jamais un monstre inerte à distance.
-        actif: estMonstreActif(m, follet),
+        // Un boss (§4.5) a sa barre en haut de l'écran : jamais les deux.
+        actif: !donneesEnnemi.boss && estMonstreActif(m, follet),
+        // Spec 14, palier D : Zéros est la silhouette du héros retournée
+        // (`render.miroir`), et les monstres d'une rencontre arrivent et
+        // partent en fondu.
+        miroir: donneesEnnemi.render.miroir === true,
+        alpha: m.rencontre && rencontre ? opaciteRencontre(rencontre.etat, rencontre.def.fondu_ms) : 1,
       };
     });
 
@@ -4149,7 +5175,7 @@ export function creerOrchestrateurGrotte({
     // (`render.visuel` présent), jamais une liste de `type` à maintenir en
     // double : un 5ᵉ type d'interactif positionné se dessine sans toucher
     // cette fonction, ce qui rend la classe de bug irreproductible ici.
-    const puzzlesAffiches = scene.interactifs
+    const puzzlesAffiches = interactifsPresents()
       .map((id) => scene.puzzle(id))
       .filter((p) => p.render && p.render.visuel)
       .map((p) => {
@@ -4157,7 +5183,7 @@ export function creerOrchestrateurGrotte({
         // (override validé ou défaut) — une station déplacée se dessine à sa
         // VRAIE position, jamais celle de puzzles.json.
         const pose = scene.poseEffectiveInteractif(p.id);
-        const visuel = registre.obtenir('visuels', p.render.visuel);
+        const visuel = visuelInteractif(p);
         // `D-158` : un levier se lit à son GESTE (bascule.js) — allumé quand
         // le manche a touché sa butée, pas à l'appui. Sans état de geste (la
         // toute première frame), l'état réel, posé.
@@ -4338,7 +5364,7 @@ export function creerOrchestrateurGrotte({
         y: follet.y + corpsFollet.dy,
         visuel: registre.obtenir('visuels', companionActif.render.visuel),
         couleur: companionActif.render.couleur,
-        echelle: echelleFolletAffichee(companionActif),
+        echelle: echelleFolletAffichee(companionActif) * facteurChangementFollet(),
       } : null,
       puzzles: puzzlesAffiches,
       estFlagActif: flags.has,
@@ -4416,6 +5442,19 @@ export function creerOrchestrateurGrotte({
         effetSurlignageFilet, tempsVolFolletMs, o.x, o.y, (o.x * 0.37 + o.y * 0.61) % 1,
       ).map((p) => ({ ...p, visuel: visuelParticuleFilet }))).concat(braises),
     });
+    // Spec 14, palier C : les tirs en vol, après le voile (render.js dit
+    // pourquoi). Le visuel se résout ici : render.js n'ouvre jamais
+    // `visuels.json` par id.
+    dessinerProjectiles(ctxLogique, {
+      camera,
+      projectiles: projectilesEnVol(projectiles).map((p) => ({ x: p.x, y: p.y, visuel: registre.obtenir('visuels', p.visuel) })),
+    });
+    // Palier G : l'onde d'un tir à zone, là où il a éclaté — elle s'élargit
+    // jusqu'au rayon qu'il a touché et s'efface.
+    dessinerOndes(ctxLogique, {
+      camera,
+      ondes: ondes.map((o) => ({ x: o.x, y: o.y, rayon: o.rayon, couleur: o.couleur, t: o.ms / DUREE_ONDE_MS })),
+    });
     // Signal des zones de Chaos (specs/07 palier D) : APRÈS le calque
     // d'obscurité — il se voit à travers la nuit sans percer le voile (on
     // devine une présence, on ne voit pas où l'on marche). Le calcul est pur
@@ -4488,6 +5527,9 @@ export function creerOrchestrateurGrotte({
       // `D-63` : résolu ici, comme `visuelArme` et `visuelFollet` — `hud.js`
       // ne connaît ni catalogue ni flag.
       verbesActions: verbesActionsVisibles(),
+      // Spec 14, §4.6 : la charge qui monte, puis la recharge qui se vide, sur
+      // chaque emplacement de compétence — relevées à la dernière frame de jeu.
+      jaugesSlots: ratiosEmplacements,
       // D-20 B : ce que dessine chaque case, résolu ici (main.js a le
       // registre) exactement comme visuelFollet au-dessus — ui/hud.js ne
       // reçoit que des silhouettes et ignore de quoi elles viennent.
@@ -4498,8 +5540,10 @@ export function creerOrchestrateurGrotte({
       //     écrire. Si elle se lit mal réduite à la case, le remède sera une
       //     entrée d'icône dédiée en données, comme pour l'épée : toujours
       //     pas de code (essai en cours, Xav 21/09).
-      // Un `skill_N` s'ajoutera ici, et nulle part ailleurs.
+      // Spec 14, palier G : un `skill_N` montre l'icône de la compétence qui
+      // l'occupe (`competencesEquipees`, le même point que le lancer).
       iconesSlots: {
+        ...Object.fromEntries(competencesEquipees().map(({ competence, verbe }) => [verbe, registre.obtenir('visuels', competence.icone)])),
         attack: (() => {
           // `specs/15` palier B : une torche qui brûle montre sa flamme.
           const tenu = objetTenuQuiBrule();
@@ -4563,6 +5607,7 @@ export function creerOrchestrateurGrotte({
       // `D-177` : la cible d'INTERACT, par LA fonction qui décide de l'appui.
       // Calculée seulement quand le doigt a la main : c'est là qu'elle se voit.
       iconesCibles: input.tactileActif() ? { interact: visuelCibleInteraction(cibleInteraction()) } : {},
+      boss: barreDuBoss(),
     });
     // Indices de commande (§2 : "masqué" sous UI) — résolution i18n ici (même
     // patron que les autres calques : hud_hints.js ne connaît jamais i18n).
@@ -4580,6 +5625,15 @@ export function creerOrchestrateurGrotte({
       dessinerDialogue(ctxLogique, ligneDialogue, habillageDialogue(ligneDialogue));
     }
     if (vueStele !== null) dessinerEcranStele(ctxLogique, contenuVueStele());
+    if (vueParchemin !== null) dessinerEcranParchemin(ctxLogique, contenuVueParchemin());
+    // Palier H : le voile noir du fondu, par-dessus la scène et le HUD.
+    if (fonduScene !== null) {
+      ctxLogique.save();
+      ctxLogique.globalAlpha = alphaFondu(fonduScene);
+      ctxLogique.fillStyle = '#000';
+      ctxLogique.fillRect(0, 0, RESOLUTION_LOGIQUE.largeur, RESOLUTION_LOGIQUE.hauteur);
+      ctxLogique.restore();
+    }
 
     // Paupières (§3.5 étape 1) : rideau de cinématique, dessiné en TOUT
     // DERNIER — il doit couvrir la scène, le HUD et même l'écran de choix
@@ -4646,6 +5700,15 @@ export function creerOrchestrateurGrotte({
     ouvertureLogoMs = null;
     prologue = null;
     vueStele = null;
+    vueParchemin = null;
+    fonduScene = null;
+    dechiffrement = null;
+    viderProjectiles(projectiles);
+    ondes = [];
+    changementFollet = null;
+    etatsCompetences.clear();
+    ratiosEmplacements = {};
+    rencontre = null;
     logoNiveauMs = null;
     basculesLeviers.clear();
     cooldownAttaqueHerosMs = 0;
@@ -4711,12 +5774,24 @@ export function creerOrchestrateurGrotte({
     obtenirFollet: () => follet,
     obtenirScene: () => scene,
     obtenirMonstres: () => monstres,
+    obtenirBarreBoss: () => barreDuBoss(),
+    // Spec 14, palier C : les tirs en vol (copies des emplacements actifs).
+    obtenirProjectiles: () => projectilesEnVol(projectiles).map((p) => ({ ...p })),
+    // Spec 14, palier D : la rencontre lancée dans la scène (sa phase), ou null.
+    obtenirRencontre: () => (rencontre ? { phase: rencontre.etat.phase, tMs: rencontre.etat.tMs } : null),
     obtenirChoixFollet: () => choixFollet,
     obtenirIntro: () => intro,
     obtenirOuvertureLogo: () => ouvertureLogoMs,
     obtenirPrologue: () => prologue,
     obtenirVueStele: () => vueStele,
     contenuVueStele: () => contenuVueStele(),
+    // Spec 14, palier G : le parchemin, les compétences et leurs ondes.
+    obtenirVueParchemin: () => vueParchemin,
+    obtenirFonduScene: () => fonduScene,
+    contenuVueParchemin: () => contenuVueParchemin(),
+    obtenirEtatsCompetences: () => Object.fromEntries(etatsCompetences),
+    obtenirJaugesSlots: () => ratiosEmplacements,
+    obtenirOndes: () => ondes.map((o) => ({ ...o })),
     obtenirLogoNiveau: () => logoNiveauMs,
     obtenirDepart: () => depart,
     obtenirSave: () => save,
@@ -4754,9 +5829,14 @@ export function creerOrchestrateurGrotte({
     // une fois l'orchestrateur construit (même patron que
     // reinitialiserPartie ci-dessus) — le menu Stats n'a besoin d'appeler
     // que cette seule fonction, jamais de connaître registre/save/i18n.
-    obtenirEntreesStats: () => obtenirEntreesStats(),
+    obtenirEntreesStats: (options) => obtenirEntreesStats(options),
+    obtenirEntreesFollet: () => obtenirEntreesFollet(),
+    obtenirChangementFollet: () => changementFollet,
     sousTitreStats: () => sousTitreStats(),
     obtenirEntreesIndices: () => obtenirEntreesIndices(),
+    // Spec 14 : le menu prévient qu'il ouvre le carnet (`menu.definirOuvertureIndices`).
+    ouvrirCarnet: () => ouvrirCarnet(),
+    obtenirDechiffrement: () => dechiffrement,
     // specs/05_construction-stations.md §3 : fournis à ui/menu.js via
     // menu.definirDisponibiliteConstruction()/definirEntreesConstruction()
     // (même patron que obtenirEntreesStats ci-dessus) — et exposés ici pour
@@ -4935,6 +6015,11 @@ export async function demarrerJeu() {
   // JAMAIS persisté (l'orchestrateur ne l'écrit nulle part), comme `?qualite`.
   const alignementDebug = lireAlignementForce(window.location.search, reglageAlignement.bornes);
   if (alignementDebug.avertissement) console.warn(alignementDebug.avertissement);
+  // Spec 14, palier B : `?flags=a,b` (debug) — des flags tenus pour vrais
+  // toute la session, jamais sauvegardés (portes de l'Annexe ouvertes).
+  const flagsDebug = lireFlagsForces(window.location.search, registre);
+  if (flagsDebug.avertissement) console.warn(flagsDebug.avertissement);
+  if (flagsDebug.ids.length > 0) console.info(`?flags : tenus pour vrais cette session : ${flagsDebug.ids.join(', ')}.`);
 
   // `specs/09_reglages-graphiques.md` palier B : le réglage graphique est
   // RÉSOLU au démarrage, et rien n'en dépend encore — les leviers se branchent
@@ -5268,6 +6353,7 @@ export async function demarrerJeu() {
     graphismes,
     registre, i18n, save, store, dialogue, menu, input, ctxLogique, ctxVisible, canvasLogique,
     alignementForce: alignementDebug.valeur,
+    flagsForces: flagsDebug.ids,
     onPremierGeste: armerAudioUneFois,
     moniteurPerf,
     // La PRÉSENCE de la carte « Plein écran » est une condition de
@@ -5293,11 +6379,13 @@ export async function demarrerJeu() {
   // Même patron (§3.4) : le menu Stats a besoin de l'orchestrateur pour
   // résoudre les stats/points courants.
   menu.definirEntreesStats(orchestrateur.obtenirEntreesStats, orchestrateur.sousTitreStats);
+  menu.definirEntreesFollet(orchestrateur.obtenirEntreesFollet);
   // specs/05_construction-stations.md §3 : même patron de couture différée
   // (le menu ne connaît ni la scène ni la position du héros).
   menu.definirEvaluateurCondition(orchestrateur.evaluerCondition);
   menu.definirEntreesConstruction(orchestrateur.entreesConstruction);
   menu.definirEntreesIndices(orchestrateur.obtenirEntreesIndices);
+  menu.definirOuvertureIndices(orchestrateur.ouvrirCarnet);
 
   // specs/08_menus-cartes.md §5 — le câblage, dans les DEUX sens : toute carte
   // de `menus.json` trouve sa fonction, toute fonction enregistrée a sa carte,

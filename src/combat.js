@@ -33,9 +33,10 @@ export function estDansPortee(hero, monstre, portee, tileSize) {
   return distanceTuiles >= portee.min && distanceTuiles <= portee.max;
 }
 
-// Monstres vivants touchés par l'auto-attaque courante.
+// Monstres vivants touchés par l'auto-attaque courante. Un intouchable
+// (spec 14, Zéros) n'est jamais touché : le coup part, rien ne le prend.
 export function resoudreAutoAttaque(hero, monstres, portee, tileSize) {
-  return monstres.filter((m) => !m.mort && estDansPortee(hero, m, portee, tileSize));
+  return monstres.filter((m) => !m.mort && !m.intouchable && estDansPortee(hero, m, portee, tileSize));
 }
 
 export function tickCooldown(cooldownMsRestant, deltaMs) {

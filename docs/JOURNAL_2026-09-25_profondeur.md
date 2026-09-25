@@ -3,7 +3,7 @@ projet: RPG V2
 episode/session: Hors spec — la profondeur
 type: fichier de bord
 version: 1.0.0
-statut: D-222 validée (V-161) ; D-223 et D-224 à voir en jeu ; Q-165 et Q-166 ouvertes
+statut: D-222, D-223, D-224 validées (V-161 à V-163) ; Q-166 tranchée ; Q-165 à méditer
 catégorie: Journal
 date: 2026-09-25
 genere_par: claude
@@ -24,7 +24,8 @@ Branche `profondeur`, partie de `main`. Non poussée.
 | `8aed350` | Ménage | Les deux journaux du 25/09 (palier I, torche-épilepsie-Zéros) archivés, INDEX à jour, deux renvois corrigés |
 | `65e4e35` | `D-222` | La profondeur : `src/profondeur.js`, le calque à plat, une seule liste triée par le pied |
 | `b0ca7ef` | `D-224` | `V-161` validée par Xav (« parfait, aucun ralentissement »). La hitbox des arbres de la forêt : une forme aux coins arrondis, fermée côté voisin solide (`src/formes_collision.js`) |
-| (ce commit) | `D-223` | Le fondu d'un passage : un fondu enchaîné par la position, l'élément repassé en un bloc sans son ombre |
+| `c63a827` | `D-223` | Le fondu d'un passage : un fondu enchaîné par la position, l'élément repassé en un bloc sans son ombre |
+| (ce commit) | Verdicts | `V-162`, `V-163` validées ; `Q-166` tranchée (on garde) ; `Q-165` : la réponse de Xav consignée, à méditer |
 
 **Non commité, pas à moi** : `docs/captures/v1/raw/Capture d'écran 2026-09-24 130012.png`, une capture de Xav. Un premier `git add` l'avait prise dans le commit du ménage ; retirée aussitôt (`--amend`), le fichier est intact sur le disque.
 
@@ -108,3 +109,12 @@ angles arrondis « comme les cartes du menu » (`D-224`).
 - **Contre un arbre**, le fondu ne se voit presque pas : avec la hitbox de
   `D-224`, on ne chevauche qu'environ 3 px de feuillage en longeant le tronc.
 - **À voir en jeu** : `V-163` (la durée surtout).
+
+## 6. Verdicts de Xav
+
+- « V-162 -163 ok » : la hitbox des arbres et le fondu sont validés en jeu.
+- `Q-166` : « c'est très bien tel que je viens d'essayer, on garde ». Le héros
+  peut disparaître derrière un feuillage.
+- `Q-165` (la règle « ombre = debout ») : « pas sûr, je pense qu'il faut la
+  généraliser et aussi faire du cas par cas. L'objectif à terme étant de
+  transposer le jeu en vue du dessus 3/4. À méditer. » Ouverte, rien de codé.

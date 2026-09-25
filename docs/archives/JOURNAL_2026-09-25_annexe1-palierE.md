@@ -17,7 +17,7 @@ Demande de Xav : « go palier E ». Branche `annexe-1`. Pas de push. Aucun banc 
 | Commit | Ticket | Ce qu'il faut en retenir |
 |---|---|---|
 | `81c88f4` | Ménage | Journal du palier D archivé, INDEX à jour |
-| (ce commit) | `D-211` : palier E | Le levier tenu, la paire, le follet posé, RB contextuel, l'explication qui nomme le bouton |
+| `e58a307` | `D-211` : palier E | Le levier tenu, la paire, le follet posé, RB contextuel, l'explication qui nomme le bouton |
 
 ## 1. Le palier E
 
@@ -53,3 +53,4 @@ Demande de Xav : « go palier E ». Branche `annexe-1`. Pas de push. Aucun banc 
 ## 5. Validation (25/09)
 
 - `V-153` **validée par Xav** : « V-153 validé, très bien amené encore une fois. » Session close avant le palier F.
+- `e0dcfc5` : la validation consignée.

@@ -9,6 +9,14 @@
 
 import { JOYSTICK, boutonsTactiles, boutonsTactilesVisibles } from '../ui/hud_layout.js';
 
+// `D-248` (`Q-167`, Xav : « un tap and drag de la compétence pour
+// téléphone ») : provisoire, non validé au doigt. En deçà, un doigt posé sur le
+// bouton d'une compétence qui vise est un simple TOUCHER (la visée
+// automatique) ; au-delà, un GLISSÉ, dont la direction vise. En unités
+// logiques : ~4 % de la hauteur de l'écran, assez pour qu'un pouce qui roule
+// sur le bouton ne vise pas par accident.
+export const SEUIL_GLISSE_PX = 12;
+
 function dansCercle(x, y, cercle) {
   return Math.hypot(x - cercle.cx, y - cercle.cy) <= cercle.rayon;
 }
@@ -54,11 +62,19 @@ function dansCercle(x, y, cercle) {
 // Même patron que `verbesActions` : ce module ne sait ni ce qu'est un follet
 // ni où est la caméra, il reçoit des cercles. Défaut : aucune, donc un banc
 // qui ne branche rien n'a pas de zone fantôme.
+//
+// `verbesVisants` (`D-248`) : les verbes dont le bouton VISE (une compétence
+// y est rangée), annoncés par l'orchestrateur à chaque frame — même patron.
+// Un tel bouton ne part pas au contact mais au RELÂCHEMENT : le doigt a eu le
+// temps de glisser. Le verbe est vrai une seule lecture, et la direction du
+// glissé sort par un accesseur séparé (`viseeTactile`), jamais dans l'état de
+// verbes. Défaut : aucun, donc tout bouton part au contact comme avant.
 export function creerSourceTactile(cible, {
   versLogique = (x, y) => ({ x, y }),
   surRelachement = null,
   verbesActions = () => boutonsTactiles().map((b) => b.verbe),
   zonesMonde = () => [],
+  verbesVisants = () => [],
 } = {}) {
   let actif = false;
   // Incrémenté à chaque touchstart (jamais décrémenté) : `estActif()` est un
@@ -77,6 +93,14 @@ export function creerSourceTactile(cible, {
   // bulle de dialogue le résout en option. Vidé à chaque lecture : un contact
   // n'est lu qu'une fois, et un contact que personne ne lit ne s'accumule pas.
   let contactsNouveaux = [];
+  // `D-248` : les doigts posés sur un bouton qui vise, jusqu'à leur
+  // relâchement — identifier -> { verbe, x0, y0 } (où le doigt s'est posé : le
+  // glissé se mesure depuis lui, pas depuis le centre du bouton, plus
+  // indulgent pour un pouce qui tombe au bord). Puis les relâchements pas encore
+  // lus, et ce que la dernière lecture en a tiré.
+  const doigtsVisants = new Map();
+  let relachements = [];
+  let viseesLues = new Map();
 
   function positionsLogiques(touchList) {
     return Array.from(touchList).map((t) => ({ identifier: t.identifier, ...versLogique(t.clientX, t.clientY) }));
@@ -108,21 +132,46 @@ export function creerSourceTactile(cible, {
     for (const p of points) {
       if (!doigts.has(p.identifier)) contactsNouveaux.push({ x: p.x, y: p.y });
     }
-    for (const p of points) doigts.set(p.identifier, p);
+    for (const p of points) {
+      if (!doigts.has(p.identifier)) capturerSiVisant(p);
+      doigts.set(p.identifier, p);
+    }
     attribuerJoystickSiBesoin(points);
+  }
+
+  // Un doigt qui se POSE sur un bouton visible et qui vise lui appartient
+  // jusqu'à ce qu'il se lève, où qu'il glisse. Un doigt qui y arrive en
+  // glissant d'ailleurs ne le prend pas : il n'a pas voulu viser.
+  function capturerSiVisant(p) {
+    const visants = new Set(verbesVisants());
+    if (visants.size === 0) return;
+    const bouton = boutonsTactilesVisibles(verbesActions())
+      .find((b) => visants.has(b.verbe) && dansCercle(p.x, p.y, b));
+    if (bouton) doigtsVisants.set(p.identifier, { verbe: bouton.verbe, x0: p.x, y0: p.y });
   }
   function surDeplacement(e) {
     bloquerComportementNatif(e);
     const points = positionsLogiques(e.touches);
     for (const p of points) doigts.set(p.identifier, p);
   }
-  function surFin(e) {
+  // `annule` : un contact interrompu par le système (`touchcancel`) ne lance
+  // rien — le joueur n'a pas levé le doigt.
+  function surFin(e, annule = true) {
     // Un doigt qui n'est plus dans e.touches a été relâché : `move` repasse
     // à {0,0} immédiatement, aucun état ne doit rester "collé" (§4, même
     // exigence que le hot-swap manette).
     const restants = new Set(Array.from(e.touches).map((t) => t.identifier));
     for (const id of Array.from(doigts.keys())) {
-      if (!restants.has(id)) doigts.delete(id);
+      if (restants.has(id)) continue;
+      const visant = doigtsVisants.get(id);
+      if (visant && !annule) {
+        // La DERNIÈRE position connue : `touchend` ne dit plus où était un
+        // doigt qui vient de partir (il n'est plus dans `e.touches`).
+        const p = doigts.get(id);
+        relachements.push({ verbe: visant.verbe, direction: directionGlisse(visant, p) });
+      }
+      doigtsVisants.delete(id);
+      doigts.delete(id);
     }
     if (idJoystick !== null && !restants.has(idJoystick)) idJoystick = null;
   }
@@ -135,20 +184,41 @@ export function creerSourceTactile(cible, {
   // `try/catch` de plus ici masquerait un vrai bug d'input le jour où il
   // servira à autre chose.
   function surRelachementTactile(e) {
-    surFin(e);
+    surFin(e, false);
     if (surRelachement) surRelachement();
+  }
+
+  // La direction d'un glissé, ou `null` pour un simple toucher.
+  function directionGlisse(visant, p) {
+    if (!p) return null;
+    const dx = p.x - visant.x0;
+    const dy = p.y - visant.y0;
+    return Math.hypot(dx, dy) >= SEUIL_GLISSE_PX ? { dx, dy } : null;
   }
 
   if (cible && typeof cible.addEventListener === 'function') {
     cible.addEventListener('touchstart', surDebut);
     cible.addEventListener('touchmove', surDeplacement);
     cible.addEventListener('touchend', surRelachementTactile);
-    cible.addEventListener('touchcancel', surFin);
+    cible.addEventListener('touchcancel', (e) => surFin(e, true));
   }
 
   return {
     estActif: () => actif,
     compteurContacts: () => nbContacts,
+    // `D-248` : la direction du glissé qui a lancé `verbe` à la dernière
+    // lecture (`instantane`), ou `null` (un simple toucher, ou rien).
+    viseeTactile: (verbe) => viseesLues.get(verbe) || null,
+    // Les glissés EN COURS, au-delà du seuil — ce que le rendu montre pendant
+    // que le doigt vise. `[{ verbe, dx, dy }]`.
+    glissesEnCours() {
+      const enCours = [];
+      for (const [id, visant] of doigtsVisants) {
+        const direction = directionGlisse(visant, doigts.get(id));
+        if (direction) enCours.push({ verbe: visant.verbe, ...direction });
+      }
+      return enCours;
+    },
     lireContactsNouveaux() {
       const lus = contactsNouveaux;
       contactsNouveaux = [];
@@ -175,14 +245,25 @@ export function creerSourceTactile(cible, {
       // gameplay lit `.pressed` en direct. Ce qui change, c'est qu'un bouton
       // masqué vaut toujours `false`, quoi qu'on pose dessus.
       const actifs = new Set(boutonsTactilesVisibles(verbesActions()).map((b) => b.verbe));
+      // `D-248` : un bouton qui vise ne part pas sous le doigt, mais une seule
+      // lecture après son relâchement ; ses doigts ne touchent rien d'autre.
+      const visants = new Set(verbesVisants());
+      const libresBoutons = Array.from(doigts.entries()).filter(([id]) => !doigtsVisants.has(id)).map(([, p]) => p);
       for (const bouton of boutonsTactiles()) {
-        etat[bouton.verbe] = actifs.has(bouton.verbe)
-          && points.some((p) => dansCercle(p.x, p.y, bouton));
+        etat[bouton.verbe] = actifs.has(bouton.verbe) && !visants.has(bouton.verbe)
+          && libresBoutons.some((p) => dansCercle(p.x, p.y, bouton));
       }
+      viseesLues = new Map();
+      for (const r of relachements) {
+        if (!actifs.has(r.verbe)) continue;
+        etat[r.verbe] = true;
+        if (r.direction) viseesLues.set(r.verbe, r.direction);
+      }
+      relachements = [];
       // Le doigt qui pilote le joystick n'en fait pas partie : un pouce qui
       // glisse sur le follet en se déplaçant changerait de cible à chaque
       // passage, sans l'avoir voulu. Un verbe déjà vrai par un bouton le reste.
-      const libres = Array.from(doigts.entries()).filter(([id]) => id !== idJoystick).map(([, p]) => p);
+      const libres = Array.from(doigts.entries()).filter(([id]) => id !== idJoystick && !doigtsVisants.has(id)).map(([, p]) => p);
       for (const zone of zonesMonde()) {
         etat[zone.verbe] = !!etat[zone.verbe] || libres.some((p) => dansCercle(p.x, p.y, zone));
       }

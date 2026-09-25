@@ -30,7 +30,7 @@ import {
   creerBoucle, dessinerScene, dessinerObscurite, dessinerSignalZones, dessinerPaupieres, dessinerTextesFlottants, dessinerLogo, presenter,
   RESOLUTION_LOGIQUE, calculerRectanglePresentation, versCoordonneesLogiques, AURA_TRAIT,
   definirEchelleForcee, dimensionsEcranPhysiquesActuelles, invaliderCoucheStatique,
-  dessinerSurlignages, dessinerProjectiles, dessinerOndes,
+  dessinerSurlignages, dessinerProjectiles, dessinerOndes, dessinerVisees,
 } from './render.js';
 import { creerStoreIndexedDB } from './storage_indexeddb.js';
 import {
@@ -752,11 +752,20 @@ export function creerOrchestrateurGrotte({
   // frame, au début de `maj()` ; seule la bulle de dialogue s'en sert. Vide
   // par défaut : un test headless n'a rien à fournir.
   lireContactsTactiles = () => [],
-  // `D-247` : le point d'écran que le joueur VISE, en coordonnées logiques
-  // (le curseur, s'il est tenu par le périphérique qui joue :
-  // `curseur.js#viseeDuCurseur`), ou `null`. Un point, jamais un
-  // périphérique. `null` par défaut : un test headless vise automatiquement.
+  // `D-247`, `D-248` : ce que le joueur VISE pour le verbe qu'il lance —
+  // `{ ecran: { x, y } }` (un point d'écran logique : le curseur, s'il est
+  // tenu par le périphérique qui joue, `curseur.js#viseeDuCurseur`),
+  // `{ direction: { dx, dy } }` (le glissé d'un doigt depuis le bouton), ou
+  // `null`. Jamais un périphérique. `null` par défaut : un test headless
+  // vise automatiquement.
   lireVisee = () => null,
+  // `D-248` : les glissés EN COURS (`[{ verbe, dx, dy }]`), pour montrer où
+  // le doigt vise avant qu'il se lève. Vide par défaut.
+  lireGlisses = () => [],
+  // `D-248` : les verbes dont le bouton VISE (une compétence y est rangée),
+  // annoncés à chaque frame à la source tactile. Même patron
+  // qu'`onVerbesActions` : no-op par défaut.
+  onVerbesVisants = () => {},
   // Ticket L2-L3 (journal du 23/09) : les trois calques du symbole du jeu, déjà
   // lancés en chargement par `demarrerJeu` (des `Image` DOM, que l'orchestrateur
   // ne sait pas créer). Vide par défaut : un test headless n'a rien à fournir,
@@ -4021,7 +4030,7 @@ export function creerOrchestrateurGrotte({
         durees,
       });
       if (etatGameplay[verbe] && etatGameplay[verbe].pressed && competencePrete(etat, durees)) {
-        if (lancerCompetenceVers(competence, statsDerivees)) etat = lancerCompetence(etat, durees);
+        if (lancerCompetenceVers(competence, verbe, statsDerivees)) etat = lancerCompetence(etat, durees);
         else signalerRefusConteneur(CLE_TEXTE_AUCUNE_CIBLE, hero.x, hero.y);
       }
       etatsCompetences.set(competence.id, etat);
@@ -4034,14 +4043,10 @@ export function creerOrchestrateurGrotte({
   // automatique (`competences.js#pointVise`, `D-247`), avec les dégâts de SON
   // point de résolution, par le seul chemin de tir du jeu. Rend vrai si le
   // tir est parti.
-  function lancerCompetenceVers(competence, statsDerivees) {
+  function lancerCompetenceVers(competence, verbe, statsDerivees) {
     const porteePx = competence.portee_tuiles * scene.tileSize;
-    // Le point d'écran devient un point du monde par la caméra du DESSIN :
-    // le curseur désigne ce que le joueur voit sous lui.
-    const ecran = lireVisee();
-    const camera = ecran ? cameraCourante() : null;
     const cible = pointVise({
-      visee: ecran ? { x: ecran.x + camera.x, y: ecran.y + camera.y } : null,
+      visee: viseeDansLeMonde(lireVisee(verbe), porteePx),
       follet,
       hero,
       porteePx,
@@ -4065,6 +4070,20 @@ export function creerOrchestrateurGrotte({
     // `D-229` : le héros regarde celui qu'il vise, le temps qu'on le voie.
     if (parti) orientationHeros = avancerOrientation(orientationHeros, { deltaMs: 0, vers: { dx: cible.x - hero.x, dy: cible.y - hero.y } });
     return parti;
+  }
+
+  // Ce que le joueur vise, en un point du MONDE. Un point d'écran le devient
+  // par la caméra du DESSIN (le curseur désigne ce que le joueur voit sous
+  // lui) ; une direction, par le héros et la portée.
+  function viseeDansLeMonde(visee, porteePx) {
+    if (!visee) return null;
+    if (visee.ecran) {
+      const camera = cameraCourante();
+      return { x: visee.ecran.x + camera.x, y: visee.ecran.y + camera.y };
+    }
+    const { dx, dy } = visee.direction;
+    const n = Math.hypot(dx, dy);
+    return n > 0 ? { x: hero.x + (dx / n) * porteePx, y: hero.y + (dy / n) * porteePx } : null;
   }
 
   // La SALLE NETTOYÉE (spec 14, §4.3) : une scène qui déclare `nettoyage`
@@ -4673,6 +4692,7 @@ export function creerOrchestrateurGrotte({
     // (aujourd'hui : le `preventDefault` de `Tab`, qui arrive hors frame).
     onEtatUi(uiOuverte);
     onVerbesActions(verbesActionsVisibles());
+    onVerbesVisants(competencesEquipees().map((e) => e.verbe));
     onZonesMonde(zonesTactilesMonde(uiOuverte));
     // Auto (§5.2) : lu sur la MÊME frame et le MÊME `uiOuverte` que tout le
     // reste — jamais un second calcul de « le jeu a-t-il la main ».
@@ -5469,6 +5489,17 @@ export function creerOrchestrateurGrotte({
       camera,
       projectiles: projectilesEnVol(projectiles).map((p) => ({ x: p.x, y: p.y, visuel: registre.obtenir('visuels', p.visuel) })),
     });
+    // `D-248` : là où le doigt vise, tant qu'il glisse — de la portée de la
+    // compétence, à sa couleur, après le voile comme les tirs.
+    const parVerbe = new Map(competencesEquipees().map((e) => [e.verbe, e.competence]));
+    dessinerVisees(ctxLogique, {
+      camera,
+      hero,
+      visees: lireGlisses().filter((g) => parVerbe.has(g.verbe)).map((g) => {
+        const c = parVerbe.get(g.verbe);
+        return { dx: g.dx, dy: g.dy, longueur: c.portee_tuiles * scene.tileSize, rayon: c.effet.rayon_px, couleur: c.effet.couleur };
+      }),
+    });
     // Palier G : l'onde d'un tir à zone, là où il a éclaté — elle s'élargit
     // jusqu'au rayon qu'il a touché et s'efface.
     dessinerOndes(ctxLogique, {
@@ -6132,6 +6163,8 @@ export async function demarrerJeu() {
   let verbesActionsDebloques = [];
   // `Q-40` : même patron, pour les cibles qui suivent le monde (le follet).
   let zonesMondeTactiles = [];
+  // `D-248` : même patron, pour les boutons qui visent (une compétence rangée).
+  let verbesVisantsTactiles = [];
   // Seule source de vérité pour écran -> logique (diagnostic
   // SD_ui-lisibilite §3c) : versCoordonneesLogiques() est la même fonction
   // pure, testée, dont presenter()/calculerRectanglePresentation() dessine
@@ -6145,6 +6178,7 @@ export async function demarrerJeu() {
     surRelachement: () => pleinEcran.demanderUneFois(),
     verbesActions: () => verbesActionsDebloques,
     zonesMonde: () => zonesMondeTactiles,
+    verbesVisants: () => verbesVisantsTactiles,
     versLogique: ecranVersLogique,
   });
   // `D-54` : « le jeu a-t-il la main ? », écrit par l'orchestrateur à chaque
@@ -6398,13 +6432,19 @@ export async function demarrerJeu() {
     onEtatUi: (ouverte) => { uiCapteLesVerbes = ouverte; },
     onVerbesActions: (verbes) => { verbesActionsDebloques = verbes; },
     onZonesMonde: (zones) => { zonesMondeTactiles = zones; },
+    onVerbesVisants: (verbes) => { verbesVisantsTactiles = verbes; },
     lireContactsTactiles: () => sourceTactile.lireContactsNouveaux(),
     // `D-247` : `curseur` est déclaré plus bas ; il n'est lu qu'à la première
     // frame, bien après sa création.
-    lireVisee: () => {
+    // Le doigt d'abord : un glissé qui vient de lancer ce verbe dit où il
+    // visait ; sinon le curseur, s'il est tenu par le périphérique qui joue.
+    lireVisee: (verbe) => {
+      const direction = sourceTactile.viseeTactile(verbe);
+      if (direction) return { direction };
       const point = viseeDuCurseur(curseur.position(), input.peripheriqueActif());
-      return point ? ecranVersLogique(point.x, point.y) : null;
+      return point ? { ecran: ecranVersLogique(point.x, point.y) } : null;
     },
+    lireGlisses: () => sourceTactile.glissesEnCours(),
     // Le curseur n'est pas dans la scène, mais ses étincelles sont des
     // particules cosmétiques comme les autres : les laisser derrière ferait un
     // Bas à moitié appliqué, visible à la souris. Ici, et pas derrière chaque

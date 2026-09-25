@@ -93,4 +93,5 @@ compétence qui introduit la visée »), la seule `P1` née du ménage.
 | Commit | Ticket | Ce qu'il faut en retenir |
 |---|---|---|
 | `ab5426a` | DOC | `Q-167` tranchée, `V-166` validée ; `D-247` à `D-249` ouverts |
-| (ce commit) | `D-247` | L'Onde part vers le curseur (souris au clavier, stick droit à la manette), au bout de sa portée ; sinon la cible automatique. `competences.js#pointVise`, `curseur.js#viseeDuCurseur`, `lireVisee`. Vu sous Chrome. `V-167`, `Q-168` |
+| `cdb8fb0` | `D-247` | L'Onde part vers le curseur (souris au clavier, stick droit à la manette), au bout de sa portée ; sinon la cible automatique. `competences.js#pointVise`, `curseur.js#viseeDuCurseur`, `lireVisee`. Vu sous Chrome. `V-167`, `Q-168` |
+| (ce commit) | `D-248` | Le bouton d'une compétence part au relâchement ; un glissé vise, un toucher garde la visée automatique ; le trait de visée pendant le glissé. `touch.js` (`verbesVisants`, `viseeTactile`, `glissesEnCours`), `lireVisee(verbe)` → `{ ecran }` ou `{ direction }`, `render.js#dessinerVisees`. Vu sous Chrome au profil téléphone. `V-168`, `Q-169` |

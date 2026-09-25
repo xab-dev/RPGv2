@@ -95,6 +95,7 @@ function banc(lireVisee) {
   save.hero.x = (SALLE_1.spawn.x + 0.5) * SALLE_1.tile_size;
   save.hero.y = (SALLE_1.spawn.y + 0.5) * SALLE_1.tile_size;
   let prochain = etat();
+  let visants = null;
   const menu = {
     estOuvert: () => false, indicesAffiches: () => false, rafraichirIndices() {}, rafraichirStats() {},
     traiterInput() {}, ouvrir() {}, fermer() {},
@@ -104,10 +105,13 @@ function banc(lireVisee) {
     input: { maj: () => { const e = prochain; prochain = etat(); return e; }, peripheriqueActif: () => 'clavier' },
     lireContactsTactiles: () => [],
     lireVisee,
+    onVerbesVisants: (verbes) => { visants = verbes; },
     ctxLogique: null, ctxVisible: null, canvasLogique: null,
   });
   const frame = (e = etat()) => { prochain = e; orch.maj(16); };
   frame();
+  // `D-248` : le bouton de l'emplacement où l'Onde est rangée vise.
+  assert.deepEqual(visants, [VERBE], 'l\'orchestrateur annonce les verbes qui visent');
   // Charger l'Onde collé à l'OUEST d'un cracheur : la cible automatique est à l'est.
   const hero = orch.obtenirHero();
   const vivants = () => orch.obtenirMonstres().filter((m) => !m.mort);
@@ -128,10 +132,14 @@ function banc(lireVisee) {
   const sansVisee = banc(() => null);
   assert.ok(sansVisee.tir.vx > 0, 'sans visée : vers le cracheur, à l\'est');
   // Le bord gauche de l'écran : à l'ouest du héros, quelle que soit la caméra.
-  const auCurseur = banc(() => ({ x: 0, y: 135 }));
+  const auCurseur = banc(() => ({ ecran: { x: 0, y: 135 } }));
   assert.ok(auCurseur.tir.vx < 0, 'au curseur : vers l\'ouest, à l\'opposé de la cible du follet');
   assert.equal(auCurseur.orientation, 'ouest', 'le héros regarde où il vise');
-  console.log('OK orchestrateur : le tir suit le curseur, sinon la cible automatique');
+  // `D-248` : le glissé d'un doigt donne une DIRECTION, pas un point d'écran.
+  const auDoigt = banc((verbe) => (verbe === VERBE ? { direction: { dx: -3, dy: -40 } } : null));
+  assert.ok(auDoigt.tir.vy < 0 && Math.abs(auDoigt.tir.vx) < Math.abs(auDoigt.tir.vy), 'au doigt : vers le nord, la direction du glissé');
+  assert.equal(auDoigt.orientation, 'nord');
+  console.log('OK orchestrateur : le tir suit le curseur ou le glissé, sinon la cible automatique');
 }
 
 console.log('OK test_d247_visee_curseur');

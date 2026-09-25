@@ -1756,6 +1756,41 @@ export function dessinerOndes(ctx, { ondes = [], camera }) {
   ctx.restore();
 }
 
+// --- La visée d'un doigt qui glisse (`D-248`) -----------------------------
+// Tant qu'un doigt glisse depuis le bouton d'une compétence, un trait en
+// pointillés part du héros dans sa direction, jusqu'au bout de la portée, et
+// un cercle y montre la zone : au doigt, rien d'autre ne dit où l'on vise.
+// Après le voile, comme les tirs (on vise aussi la nuit). `visees` arrive
+// résolu ({ dx, dy, longueur, rayon, couleur }) : ce fichier ne connaît pas
+// la compétence. ctx.save()/restore() : il touche au trait, au pointillé et à
+// l'alpha, jamais à la transform.
+export function dessinerVisees(ctx, { visees = [], camera, hero }) {
+  if (visees.length === 0) return;
+  ctx.save();
+  const x0 = hero.x - camera.x;
+  const y0 = hero.y - camera.y;
+  for (const v of visees) {
+    const n = Math.hypot(v.dx, v.dy);
+    if (!(n > 0)) continue;
+    const x1 = x0 + (v.dx / n) * v.longueur;
+    const y1 = y0 + (v.dy / n) * v.longueur;
+    ctx.strokeStyle = v.couleur || '#ffffff';
+    ctx.globalAlpha = 0.75;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(x0, y0);
+    ctx.lineTo(x1, y1);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 0.5;
+    ctx.beginPath();
+    ctx.arc(x1, y1, v.rayon || 4, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
 // --- Textes flottants de gain (MT_texte-flottant_2026-09-19, `D-05`) ------
 // « +1 Bois » qui monte depuis la source du gain et s'efface. Dessiné en
 // coordonnées du MONDE (comme toute entité) mais APRÈS le calque

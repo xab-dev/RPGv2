@@ -44,7 +44,10 @@ function hexVersRgba(hex, alpha = 1) {
 // Un dégradé (linéaire horizontal/vertical, ou radial pour `degrade_radial`)
 // est centré sur l'origine LOCALE (0,0) du repère déjà translaté/pivoté par
 // dessinerPrimitive — jamais recalculé en coordonnées monde ici.
-function creerDegrade(ctx, primitive) {
+// `D-256` : un palier `teinte: true` prend la teinte passée à l'appel (le
+// halo de l'œil du héros suit la couleur du follet, comme l'iris) ; sans
+// teinte, sa propre couleur. La teinte est un hex, comme toutes celles du jeu.
+function creerDegrade(ctx, primitive, teinte) {
   const { direction = 'horizontal', stops } = primitive.degrade;
   const largeur = primitive.w || 0;
   const hauteur = primitive.h || 0;
@@ -57,7 +60,7 @@ function creerDegrade(ctx, primitive) {
     degrade = ctx.createLinearGradient(-largeur / 2, 0, largeur / 2, 0);
   }
   for (const stop of stops) {
-    degrade.addColorStop(stop.offset, hexVersRgba(stop.couleur, stop.alpha ?? 1));
+    degrade.addColorStop(stop.offset, hexVersRgba(stop.teinte && teinte ? teinte : stop.couleur, stop.alpha ?? 1));
   }
   return degrade;
 }
@@ -70,7 +73,7 @@ function creerDegrade(ctx, primitive) {
 // toujours leur propre couleur d'auteur.
 function resoudreStyle(ctx, primitive, teinte) {
   const couleurBase = primitive.teinte && teinte ? teinte : primitive.couleur;
-  ctx.fillStyle = primitive.degrade ? creerDegrade(ctx, primitive) : couleurBase;
+  ctx.fillStyle = primitive.degrade ? creerDegrade(ctx, primitive, teinte) : couleurBase;
   return couleurBase;
 }
 
@@ -293,6 +296,11 @@ export function dessinerVisuel(ctx, visuel, x, y, options = {}) {
     ctx.translate(pose.dx ?? 0, (pose.dy ?? 0) + pivot);
     if (pose.cisaillement) ctx.transform(1, 0, pose.cisaillement, 1, 0, 0);
     if (pose.echelle_x !== undefined) ctx.scale(pose.echelle_x, 1);
+    // `D-256` : une échelle UNIFORME. L'œil du héros est un globe : resserré
+    // à l'horizontale, de profil, il devenait un ovale plat (Xav : « il
+    // s'aplatit en ovale ») ; un globe qui tourne reste rond, il rapetisse et
+    // glisse du côté regardé.
+    if (pose.echelle !== undefined) ctx.scale(pose.echelle, pose.echelle);
     // `D-253` : le reflet de la pièce autour de l'axe du héros. La capuche
     // dessinée de face n'est pas symétrique (sa pointe part à droite de
     // l'axe, son flanc droit est plus raide) : pliée vers l'ouest puis vers

@@ -114,7 +114,9 @@ function ordres(options) {
         return String(prop).startsWith('create') ? { addColorStop: (...a) => appels.push(['addColorStop', ...a]) } : undefined;
       };
     },
-    set(_, prop, valeur) { appels.push([`=${String(prop)}`, valeur]); return true; },
+    // Un dégradé posé en style se note par ce qu'il est, pas par son objet
+    // (ses paliers sont déjà notés à sa création).
+    set(_, prop, valeur) { appels.push([`=${String(prop)}`, typeof valeur === 'object' ? '[dégradé]' : valeur]); return true; },
   });
   dessinerVisuel(ctx, HEROS, 10, 20, options);
   return appels;
@@ -137,7 +139,9 @@ function ordres(options) {
         return String(prop).startsWith('create') ? { addColorStop: (...a) => appels.push(['addColorStop', ...a]) } : undefined;
       };
     },
-    set(_, prop, valeur) { appels.push([`=${String(prop)}`, valeur]); return true; },
+    // Un dégradé posé en style se note par ce qu'il est, pas par son objet
+    // (ses paliers sont déjà notés à sa création).
+    set(_, prop, valeur) { appels.push([`=${String(prop)}`, typeof valeur === 'object' ? '[dégradé]' : valeur]); return true; },
   });
   dessinerVisuel(ctx, avecMiroir, 0, 0, { orientation: 'est' });
   const reflets = appels.filter((a) => a[0] === 'scale' && a[1] === -1 && a[2] === 1).length;
@@ -149,7 +153,7 @@ function ordres(options) {
   avecCachee.orientations = { nord: { temoin: {} } };
   const couleurs = (orientation) => {
     const a = [];
-    const c = new Proxy({}, { get: () => () => {}, set(_, prop, v) { if (prop === 'fillStyle') a.push(v); return true; } });
+    const c = new Proxy({}, { get: () => () => ({ addColorStop() {} }), set(_, prop, v) { if (prop === 'fillStyle') a.push(v); return true; } });
     dessinerVisuel(c, avecCachee, 0, 0, { orientation });
     return a;
   };
@@ -162,7 +166,7 @@ function ordres(options) {
   avecReflet.orientations = { est: { temoin: { miroir: true } }, ouest: { temoin: {} } };
   const styles = (orientation) => {
     const a = [];
-    const c = new Proxy({}, { get: () => () => {}, set(_, prop, v) { if (prop === 'fillStyle') a.push(v); return true; } });
+    const c = new Proxy({}, { get: () => () => ({ addColorStop() {} }), set(_, prop, v) { if (prop === 'fillStyle') a.push(v); return true; } });
     dessinerVisuel(c, avecReflet, 0, 0, { orientation });
     return a;
   };

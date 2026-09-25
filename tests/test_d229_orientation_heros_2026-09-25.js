@@ -98,7 +98,7 @@ const VISAGE = HEROS.primitives.filter((p) => p.piece === 'visage');
   const centreDe = (direction) => {
     const pose = poseDePiece(HEROS, direction, 'visage');
     assert.ok(pose && typeof pose === 'object', `${direction} : une pose de profil`);
-    return (pose.dx ?? 0) + centre * (pose.echelle_x ?? 1) * (pose.miroir ? -1 : 1);
+    return (pose.dx ?? 0) + centre * (pose.echelle_x ?? 1) * (pose.echelle ?? 1) * (pose.miroir ? -1 : 1);
   };
   // (par rapport au visage de face, lui-même posé depuis `D-254`)
   for (const d of ['est', 'sud_est']) assert.ok(centreDe(d) > centreDe('sud'), `${d} : le visage glisse vers l'est`);
@@ -131,7 +131,9 @@ function ordres(options) {
         return String(prop).startsWith('create') ? { addColorStop: (...a) => appels.push(['addColorStop', ...a]) } : undefined;
       };
     },
-    set(_, prop, valeur) { appels.push([`=${String(prop)}`, valeur]); return true; },
+    // Un dégradé posé en style se note par ce qu'il est, pas par son objet
+    // (ses paliers sont déjà notés à sa création).
+    set(_, prop, valeur) { appels.push([`=${String(prop)}`, typeof valeur === 'object' ? '[dégradé]' : valeur]); return true; },
   });
   dessinerVisuel(ctx, HEROS, 10, 20, options);
   return appels;
@@ -144,8 +146,11 @@ function ordres(options) {
   // (la pointe rabattue, de dos) ; on la compte à part.
   const cacheesMontrees = (d) => HEROS.primitives.filter((p) => p.cachee && poseDePiece(HEROS, d, p.piece)).length;
   assert.equal(remplissages(ordres({ teinte: '#ff0000', orientation: 'sud' })), remplissages(reference) + cacheesMontrees('sud'), 'de face : rien ne manque');
-  assert.equal(remplissages(ordres({ teinte: '#ff0000', orientation: 'nord' })), remplissages(reference) - VISAGE.length + cacheesMontrees('nord'),
-    'de dos : toutes les primitives du visage, et elles seules, manquent');
+  // `D-256` : de dos, la cavité de la capuche disparaît avec le visage.
+  const masquees = (d) => HEROS.primitives.filter((p) => p.piece !== undefined && !p.cachee && poseDePiece(HEROS, d, p.piece) === null).length;
+  assert.ok(masquees('nord') >= VISAGE.length);
+  assert.equal(remplissages(ordres({ teinte: '#ff0000', orientation: 'nord' })), remplissages(reference) - masquees('nord') + cacheesMontrees('nord'),
+    'de dos : les primitives des pièces cachées (le visage, la cavité), et elles seules, manquent');
   assert.equal(remplissages(ordres({ teinte: '#ff0000', orientation: 'est' })), remplissages(reference) + cacheesMontrees('est'), 'de profil : rien ne manque');
   const dessins = new Set(ORIENTATIONS.map((o) => JSON.stringify(ordres({ teinte: '#ff0000', orientation: o }))));
   assert.equal(dessins.size, ORIENTATIONS.length, 'huit directions, huit dessins');

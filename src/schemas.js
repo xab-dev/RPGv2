@@ -1749,7 +1749,7 @@ function validerVisuel(entry, catalogs, path) {
 
   // `D-229` : ce qu'une direction du regard fait aux PIÈCES du visuel (le
   // visage du héros, sa capuche) —
-  // `{ <direction>: { <piece>: null | { dx?, dy?, echelle_x?, cisaillement?, pivot_y?, courbure?, longueur?, miroir?, rabat? } } }`
+  // `{ <direction>: { <piece>: null | { dx?, dy?, echelle_x?, echelle?, cisaillement?, pivot_y?, courbure?, longueur?, miroir?, rabat? } } }`
   // (la courbure, `D-252`, plie les polygones de la pièce : `visuels.js#courberPoints`).
   // Une direction inconnue ne serait jamais demandée, une pièce qu'aucune
   // primitive ne porte ne bougerait rien : les deux passeraient sans que
@@ -1775,7 +1775,7 @@ function validerVisuel(entry, catalogs, path) {
           if (pose === null) continue;
           const cles = pose && typeof pose === 'object' ? Object.keys(pose) : null;
           const nombres = ['dx', 'dy', 'cisaillement', 'pivot_y', 'courbure'];
-          const positifs = ['echelle_x', 'longueur'];
+          const positifs = ['echelle_x', 'echelle', 'longueur'];
           // `D-254` : `rabat` = { y : nombre ; longueur, hauteur : nombres > 0 }.
           const r = pose && pose.rabat;
           const rabatMalForme = r !== undefined && (!r || typeof r !== 'object'
@@ -1785,7 +1785,7 @@ function validerVisuel(entry, catalogs, path) {
             || (pose.miroir !== undefined && typeof pose.miroir !== 'boolean')
             || nombres.some((c) => pose[c] !== undefined && typeof pose[c] !== 'number')
             || positifs.some((c) => pose[c] !== undefined && (typeof pose[c] !== 'number' || pose[c] <= 0))) {
-            erreurs.push(`${cheminO} > ${piece} doit être null (cachée) ou { dx?, dy?, cisaillement?, pivot_y?, courbure? : nombres ; echelle_x?, longueur? : nombres > 0 ; miroir? : booléen ; rabat? : { y, longueur > 0, hauteur > 0 } }`);
+            erreurs.push(`${cheminO} > ${piece} doit être null (cachée) ou { dx?, dy?, cisaillement?, pivot_y?, courbure? : nombres ; echelle_x?, echelle?, longueur? : nombres > 0 ; miroir? : booléen ; rabat? : { y, longueur > 0, hauteur > 0 } }`);
           } else if (pose.courbure !== undefined && pose.longueur === undefined) {
             // `D-252` : une courbure sans longueur n'a pas de pointe où
             // atteindre son angle (`visuels.js#courberPoints`).
@@ -1816,6 +1816,11 @@ function validerVisuel(entry, catalogs, path) {
     }
     if (p.degrade !== undefined) {
       erreurs.push(...erreursDegradeVisuel(p.degrade, chemin));
+      // `D-256` : un palier teinté, comme une primitive teintée, exige un
+      // visuel qui se déclare teintable.
+      if (Array.isArray(p.degrade && p.degrade.stops) && p.degrade.stops.some((st) => st && st.teinte) && !entry.teintable) {
+        erreurs.push(`${chemin} > un palier teinte:true nécessite que le visuel déclare teintable:true`);
+      }
     } else if (p.forme === 'degrade_radial') {
       erreurs.push(`${chemin} > un "degrade_radial" nécessite un champ degrade`);
     } else if (typeof p.couleur !== 'string') {

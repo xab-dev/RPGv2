@@ -18,10 +18,13 @@
           "pivot_y": -7,
           "miroir": true
         },
+        "cavite": {
+          "dx": 0.156,
+          "echelle_x": 0.82
+        },
         "visage": {
-          "dx": 1.3,
-          "echelle_x": 0.82,
-          "miroir": true
+          "dx": 0.065,
+          "echelle": 0.95
         }
       },
       "est": {
@@ -31,10 +34,13 @@
           "pivot_y": -5.5,
           "miroir": true
         },
+        "cavite": {
+          "dx": 1.336,
+          "echelle_x": 0.62
+        },
         "visage": {
-          "dx": 2.2,
-          "echelle_x": 0.62,
-          "miroir": true
+          "dx": 1.175,
+          "echelle": 0.85
         }
       },
       "nord_est": {
@@ -44,6 +50,7 @@
           "pivot_y": -7,
           "miroir": true
         },
+        "cavite": null,
         "visage": null
       },
       "sud": {
@@ -58,6 +65,9 @@
           }
         },
         "pli_front": {},
+        "cavite": {
+          "dx": -0.7
+        },
         "visage": {
           "dx": -0.7
         }
@@ -78,6 +88,7 @@
           "cisaillement": -0.3,
           "pivot_y": -8.2
         },
+        "cavite": null,
         "visage": null
       },
       "nord_ouest": {
@@ -86,6 +97,7 @@
           "longueur": 4.5,
           "pivot_y": -7
         },
+        "cavite": null,
         "visage": null
       },
       "ouest": {
@@ -94,9 +106,13 @@
           "longueur": 5.5,
           "pivot_y": -5.5
         },
-        "visage": {
-          "dx": -2.2,
+        "cavite": {
+          "dx": -2.204,
           "echelle_x": 0.62
+        },
+        "visage": {
+          "dx": -2.365,
+          "echelle": 0.85
         }
       },
       "sud_ouest": {
@@ -105,9 +121,13 @@
           "longueur": 4.5,
           "pivot_y": -7
         },
-        "visage": {
-          "dx": -1.3,
+        "cavite": {
+          "dx": -1.304,
           "echelle_x": 0.82
+        },
+        "visage": {
+          "dx": -1.395,
+          "echelle": 0.95
         }
       }
     },
@@ -611,6 +631,37 @@
         "cachee": true
       },
       {
+        "forme": "degrade_radial",
+        "dx": 0.7,
+        "dy": 0.2,
+        "w": 10,
+        "h": 10,
+        "degrade": {
+          "stops": [
+            { "offset": 0.66, "couleur": "#030406", "alpha": 1 },
+            { "offset": 0.8, "couleur": "#2a313c", "alpha": 0.95 },
+            { "offset": 0.92, "couleur": "#05070b", "alpha": 0.9 },
+            { "offset": 1, "couleur": "#05070b", "alpha": 0 }
+          ]
+        },
+        "piece": "cavite"
+      },
+      {
+        "forme": "degrade_radial",
+        "dx": 0.7,
+        "dy": 0.35,
+        "w": 11.5,
+        "h": 11.5,
+        "degrade": {
+          "stops": [
+            { "offset": 0.55, "couleur": "#cfe6ff", "alpha": 0.42, "teinte": true },
+            { "offset": 0.75, "couleur": "#cfe6ff", "alpha": 0.14, "teinte": true },
+            { "offset": 1, "couleur": "#cfe6ff", "alpha": 0, "teinte": true }
+          ]
+        },
+        "piece": "visage"
+      },
+      {
         "forme": "ellipse",
         "dx": 0.7,
         "dy": -0.1,
@@ -632,30 +683,90 @@
       {
         "forme": "cercle",
         "dx": 0.7,
-        "dy": 0.2,
-        "w": 7.4,
+        "dy": 0.35,
+        "w": 6.5,
         "couleur": "#cfe6ff",
-        "alpha": 0.1,
         "teinte": true,
         "piece": "visage"
       },
       {
-        "forme": "cercle",
+        "forme": "degrade_radial",
         "dx": 0.7,
-        "dy": 0.2,
-        "w": 4.6,
-        "couleur": "#cfe6ff",
-        "alpha": 0.22,
-        "teinte": true,
+        "dy": 0.35,
+        "w": 6.5,
+        "h": 6.5,
+        "degrade": {
+          "stops": [
+            { "offset": 0, "couleur": "#000000", "alpha": 0 },
+            { "offset": 0.55, "couleur": "#000000", "alpha": 0.06 },
+            { "offset": 1, "couleur": "#000000", "alpha": 0.62 }
+          ]
+        },
+        "piece": "visage"
+      },
+      {
+        "forme": "degrade_radial",
+        "dx": 0.2,
+        "dy": -0.2,
+        "w": 4,
+        "h": 4,
+        "degrade": {
+          "stops": [
+            { "offset": 0, "couleur": "#ffffff", "alpha": 0.42 },
+            { "offset": 1, "couleur": "#ffffff", "alpha": 0 }
+          ]
+        },
+        "piece": "visage"
+      },
+      {
+        "forme": "degrade_radial",
+        "dx": 0.9,
+        "dy": 2.55,
+        "w": 4.4,
+        "h": 2.2,
+        "degrade": {
+          "stops": [
+            { "offset": 0, "couleur": "#ffffff", "alpha": 0.3 },
+            { "offset": 1, "couleur": "#ffffff", "alpha": 0 }
+          ]
+        },
+        "piece": "visage"
+      },
+      {
+        "forme": "ellipse",
+        "dx": 0.7,
+        "dy": 0.35,
+        "w": 6.6,
+        "h": 6.6,
+        "degrade": {
+          "direction": "vertical",
+          "stops": [
+            { "offset": 0, "couleur": "#000000", "alpha": 0.78 },
+            { "offset": 0.3, "couleur": "#000000", "alpha": 0.3 },
+            { "offset": 0.5, "couleur": "#000000", "alpha": 0 },
+            { "offset": 1, "couleur": "#000000", "alpha": 0 }
+          ]
+        },
+        "piece": "visage"
+      },
+      {
+        "forme": "ellipse",
+        "dx": -0.55,
+        "dy": -1.05,
+        "w": 1.9,
+        "h": 1.4,
+        "rotation": -35,
+        "couleur": "#ffffff",
+        "alpha": 0.88,
         "piece": "visage"
       },
       {
         "forme": "cercle",
-        "dx": 0.7,
-        "dy": 0.2,
-        "w": 3.2,
-        "couleur": "#cfe6ff",
-        "teinte": true,
+        "dx": 1.75,
+        "dy": 1.55,
+        "w": 0.7,
+        "couleur": "#ffffff",
+        "alpha": 0.55,
         "piece": "visage"
       }
     ]

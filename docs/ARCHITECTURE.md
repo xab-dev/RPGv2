@@ -85,6 +85,8 @@ rpg_v2/
 │   │                       ; `miroir` (`D-253`) : une pièce reflétée autour de l'axe (les `_est`)
 │   │                       ; `rabat` (`D-254`) : le haut d'une pièce écrasé en calotte ; une
 │   │                       primitive `cachee` ne paraît que là où sa pièce est posée
+│   │                       ; `reflet` (`D-255`) : le style d'une primitive sous un miroir ; `echelle`
+│   │                       de pose et palier de dégradé `teinte` (`D-256`, l'œil du héros)
 │   ├── intro.js            2 machines à états pures : intro (clignements+orbite, ≤8s) et départ
 │   │                       (follets non élus qui repartent) — propre à la Grotte, pas un moteur
 │   │                       de cinématiques généralisé

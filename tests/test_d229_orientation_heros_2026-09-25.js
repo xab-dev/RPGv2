@@ -105,11 +105,12 @@ const VISAGE = HEROS.primitives.filter((p) => p.piece === 'visage');
   assert.ok(CAPUCHE.length > 0, 'la capuche est une pièce');
   const pointe = CAPUCHE.flatMap((p) => p.points || []).reduce((a, b) => (b[1] < a[1] ? b : a));
   // Depuis `D-252`, une pose peut plier la pointe au lieu de la pencher : on
-  // la plie par la fonction du dessin avant le reste de la pose.
+  // la plie par la fonction du dessin avant le reste de la pose ; depuis
+  // `D-253`, la refléter autour de l'axe.
   const pointeDe = (direction) => {
     const pose = poseDePiece(HEROS, direction, 'capuche') || {};
     const [x, y] = pose.courbure ? courberPoints([pointe], pose)[0] : pointe;
-    return (pose.dx ?? 0) + x * (pose.echelle_x ?? 1) + (pose.cisaillement ?? 0) * (y - (pose.pivot_y ?? 0));
+    return (pose.dx ?? 0) + x * (pose.echelle_x ?? 1) * (pose.miroir ? -1 : 1) + (pose.cisaillement ?? 0) * (y - (pose.pivot_y ?? 0));
   };
   for (const d of ['est', 'sud_est', 'nord_est']) assert.ok(pointeDe(d) < pointeDe('sud'), `${d} : la pointe penche vers l'ouest`);
   for (const d of ['ouest', 'sud_ouest', 'nord_ouest']) assert.ok(pointeDe(d) > pointeDe('sud'), `${d} : la pointe penche vers l'est`);

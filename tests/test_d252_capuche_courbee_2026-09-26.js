@@ -14,7 +14,9 @@
 //    la plainte de Xav (le cisaillement emportait le sommet avec la pointe).
 // 3. Dessin : une pose pliée dessine deux fois exactement la même chose (les
 //    points pliés se gardent, ils ne se refont pas au hasard d'une frame).
-// 4. Démarrage : une courbure sans longueur, une longueur nulle, refusées.
+//    Le miroir (`D-253`) reflète la pièce, et elle seule.
+// 4. Démarrage : une courbure sans longueur, une longueur nulle, un miroir
+//    qui n'est pas un booléen, refusés.
 // Aucune valeur de réglage n'est épinglée : elles sont lues dans les données.
 import assert from 'node:assert/strict';
 import path from 'node:path';
@@ -61,7 +63,7 @@ const POINTE = plusHaut(CAPUCHE.flatMap((p) => p.points));
   // (celui de `dessinerVisuel`, dans le même ordre).
   const poser = (pose, [x0, y0]) => {
     const [x, y] = pose.courbure ? courberPoints([[x0, y0]], pose)[0] : [x0, y0];
-    return [(pose.dx ?? 0) + x * (pose.echelle_x ?? 1) + (pose.cisaillement ?? 0) * (y - (pose.pivot_y ?? 0)), y + (pose.dy ?? 0)];
+    return [(pose.dx ?? 0) + x * (pose.echelle_x ?? 1) * (pose.miroir ? -1 : 1) + (pose.cisaillement ?? 0) * (y - (pose.pivot_y ?? 0)), y + (pose.dy ?? 0)];
   };
   const pliees = ORIENTATIONS.filter((d) => (poseDePiece(HEROS, d, 'capuche') || {}).courbure);
   assert.ok(pliees.length > 0, 'au moins une direction plie la capuche');
@@ -90,7 +92,18 @@ function ordres(options) {
   assert.deepEqual(ordres({ orientation: pliee }), une, 'deux frames, le même dessin');
   const lignes = (a) => a.filter((x) => x[0] === 'lineTo').length;
   assert.ok(lignes(une) > lignes(ordres({})), 'le pli arrondit : plus de segments que la capuche de face');
-  console.log('OK dessin : la capuche pliée, stable d\'une frame à l\'autre');
+  // `D-253` : le miroir reflète la pièce autour de l'axe, et elle seule.
+  const avecMiroir = structuredClone(HEROS);
+  avecMiroir.orientations = { est: { capuche: { miroir: true } } };
+  const appels = [];
+  const ctx = new Proxy({}, {
+    get(_, prop) { return (...args) => appels.push([String(prop), ...args]); },
+    set(_, prop, valeur) { appels.push([`=${String(prop)}`, valeur]); return true; },
+  });
+  dessinerVisuel(ctx, avecMiroir, 0, 0, { orientation: 'est' });
+  const reflets = appels.filter((a) => a[0] === 'scale' && a[1] === -1 && a[2] === 1).length;
+  assert.equal(reflets, CAPUCHE.length, 'une primitive de la capuche, un reflet ; rien d\'autre');
+  console.log('OK dessin : la capuche pliée, stable d\'une frame à l\'autre ; le miroir sur la seule pièce');
 }
 
 // --- 4. Le démarrage --------------------------------------------------------------
@@ -103,6 +116,7 @@ function ordres(options) {
   assert.ok(erreursAvec((v) => { v.orientations.est.capuche = { courbure: 30 }; }).some((e) => e.includes('une courbure demande sa longueur')));
   assert.ok(erreursAvec((v) => { v.orientations.est.capuche = { courbure: 30, longueur: 0 }; }).some((e) => e.includes('orientations > est > capuche')));
   assert.ok(erreursAvec((v) => { v.orientations.est.capuche = { courbure: 'forte', longueur: 5 }; }).some((e) => e.includes('orientations > est > capuche')));
+  assert.ok(erreursAvec((v) => { v.orientations.est.capuche = { miroir: 'oui' }; }).some((e) => e.includes('orientations > est > capuche')));
   console.log('OK démarrage : une courbure mal déclarée refusée');
 }
 

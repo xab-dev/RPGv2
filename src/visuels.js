@@ -254,6 +254,14 @@ export function dessinerVisuel(ctx, visuel, x, y, options = {}) {
     ctx.translate(pose.dx ?? 0, (pose.dy ?? 0) + pivot);
     if (pose.cisaillement) ctx.transform(1, 0, pose.cisaillement, 1, 0, 0);
     if (pose.echelle_x !== undefined) ctx.scale(pose.echelle_x, 1);
+    // `D-253` : le reflet de la pièce autour de l'axe du héros. La capuche
+    // dessinée de face n'est pas symétrique (sa pointe part à droite de
+    // l'axe, son flanc droit est plus raide) : pliée vers l'ouest puis vers
+    // l'est, elle donnait deux silhouettes qui ne se répondaient pas, et
+    // aucun angle ne les accordait (Xav : « tous les _est […] diffèrent trop
+    // de _ouest »). Une direction de l'est se déclare donc comme le reflet de
+    // la pose de l'ouest : le pli d'abord, le miroir ensuite.
+    if (pose.miroir) ctx.scale(-1, 1);
     ctx.translate(0, -pivot);
     // `D-252` : la courbure plie les points d'un polygone (voir
     // `courberPoints`) ; une forme sans points suit le reste de la pose.

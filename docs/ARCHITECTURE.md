@@ -82,6 +82,7 @@ rpg_v2/
 │   │                       (primitives + teinte/alpha/échelle/rotation)
 │   │                       ; `courberPoints` (`D-252`) : le pli d'une pièce (la capuche de profil),
 │   │                       seule déformation hors transform du contexte, gardée par pose
+│   │                       ; `miroir` (`D-253`) : une pièce reflétée autour de l'axe (les `_est`)
 │   ├── intro.js            2 machines à états pures : intro (clignements+orbite, ≤8s) et départ
 │   │                       (follets non élus qui repartent) — propre à la Grotte, pas un moteur
 │   │                       de cinématiques généralisé

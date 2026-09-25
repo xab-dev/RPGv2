@@ -32,6 +32,12 @@ Sur `main`, partie de `9d19f44` (`v0.8.66`). Pas de push.
 2. Profil seulement : le pli remonte (pivot −5,5, longueur 5,5), le liseré avant reste droit au-dessus de l'œil, la pointe se couche à l'horizontale ; `ouest` à 50°, `est` à −68° (la pointe dessinée part d'un peu à droite de l'axe : plié du même angle, `est` la relevait en corne). Trois quarts inchangés. Xav : « parfait, sud_est mérite une itération pour coller avec les autres, la pointe est différente ».
 3. `sud_est` à −78° (même cause que `est` : plié du même angle que `sud_ouest`, il relevait sa pointe) ; sa pointe répond maintenant à celle de `sud_ouest`. `D-252` clos, `V-176` ouvert. Suite verte (222 fichiers). Commit des trois itérations.
 
+Puis Xav : « 176 : good. go même traitement sur les vues 3/4 de dos, compare avec ce que l'on vient de faire, c'est le problème de l'axe vertical et de l'angle (la 1ère itération) » → `D-253`.
+
+4. `nord_ouest` 50°, `nord_est` −78°, pivot −7, longueur 4,5 : les valeurs des trois quarts de face, le cisaillement retiré. `nord` inchangé. Le test de `D-252` couvre d'office les six directions pliées. Xav, trace à l'appui (`tracing_curve.png`) : « tous les _est ont besoin d'un ajustement au "front", ils diffèrent trop de _ouest ».
+5. Cause : la capuche de face n'est pas symétrique (pointe à droite de l'axe, flanc droit plus raide) ; aucun angle n'accorde un `_est` à son `_ouest`. Remède : `miroir` sur la pose d'une pièce (`visuels.js`, schéma) ; les trois `_est` sont le reflet exact de leur `_ouest` (courbure 50, mêmes pivot et longueur). Conséquence visible : sur les `_est`, le liseré clair de la capuche passe à droite, le corps garde le sien à gauche. Xav : « oui c'est bon, commit d'abord. puis go nord et sud ». Commit de `D-253` (deux itérations : Xav l'a demandé).
+
 | Commit | Ticket | Ce qu'il faut en retenir |
 |---|---|---|
 | `e763164` | Ménage | Journal de la limite du joystick archivé ; aucune réponse nouvelle au suivi ; `V-175` validé à l'oral par Xav (à marquer par lui dans l'outil) ; « Où on en est » à jour |
+| `1d871df` | `D-252` | La capuche se **plie** (`visuels.js#courberPoints`, `courbure` + `longueur` en données) au lieu de pencher en bloc : le sommet reste sur l'axe, la pointe se couche vers l'arrière. Profil ±50° / −68°, trois quarts 50° / −78° (l'est plie plus fort : la pointe dessinée part à droite de l'axe). Dos inchangés. `V-176` à voir (surtout `sud_est`). Suite verte, 222 fichiers |

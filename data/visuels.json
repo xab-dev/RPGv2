@@ -13,9 +13,10 @@
     "orientations": {
       "sud_est": {
         "capuche": {
-          "courbure": -78,
+          "courbure": 50,
           "longueur": 4.5,
-          "pivot_y": -7
+          "pivot_y": -7,
+          "miroir": true
         },
         "visage": {
           "dx": 1,
@@ -24,9 +25,10 @@
       },
       "est": {
         "capuche": {
-          "courbure": -68,
+          "courbure": 50,
           "longueur": 5.5,
-          "pivot_y": -5.5
+          "pivot_y": -5.5,
+          "miroir": true
         },
         "visage": {
           "dx": 2,
@@ -35,8 +37,10 @@
       },
       "nord_est": {
         "capuche": {
-          "cisaillement": 0.145,
-          "pivot_y": 5
+          "courbure": 50,
+          "longueur": 4.5,
+          "pivot_y": -7,
+          "miroir": true
         },
         "visage": null
       },
@@ -45,8 +49,9 @@
       },
       "nord_ouest": {
         "capuche": {
-          "cisaillement": -0.145,
-          "pivot_y": 5
+          "courbure": 50,
+          "longueur": 4.5,
+          "pivot_y": -7
         },
         "visage": null
       },

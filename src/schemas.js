@@ -1749,7 +1749,7 @@ function validerVisuel(entry, catalogs, path) {
 
   // `D-229` : ce qu'une direction du regard fait aux PIÈCES du visuel (le
   // visage du héros, sa capuche) —
-  // `{ <direction>: { <piece>: null | { dx?, dy?, echelle_x?, cisaillement?, pivot_y?, courbure?, longueur? } } }`
+  // `{ <direction>: { <piece>: null | { dx?, dy?, echelle_x?, cisaillement?, pivot_y?, courbure?, longueur?, miroir? } } }`
   // (la courbure, `D-252`, plie les polygones de la pièce : `visuels.js#courberPoints`).
   // Une direction inconnue ne serait jamais demandée, une pièce qu'aucune
   // primitive ne porte ne bougerait rien : les deux passeraient sans que
@@ -1776,10 +1776,11 @@ function validerVisuel(entry, catalogs, path) {
           const cles = pose && typeof pose === 'object' ? Object.keys(pose) : null;
           const nombres = ['dx', 'dy', 'cisaillement', 'pivot_y', 'courbure'];
           const positifs = ['echelle_x', 'longueur'];
-          if (!cles || cles.some((c) => !positifs.includes(c) && !nombres.includes(c))
+          if (!cles || cles.some((c) => c !== 'miroir' && !positifs.includes(c) && !nombres.includes(c))
+            || (pose.miroir !== undefined && typeof pose.miroir !== 'boolean')
             || nombres.some((c) => pose[c] !== undefined && typeof pose[c] !== 'number')
             || positifs.some((c) => pose[c] !== undefined && (typeof pose[c] !== 'number' || pose[c] <= 0))) {
-            erreurs.push(`${cheminO} > ${piece} doit être null (cachée) ou { dx?, dy?, cisaillement?, pivot_y?, courbure? : nombres ; echelle_x?, longueur? : nombres > 0 }`);
+            erreurs.push(`${cheminO} > ${piece} doit être null (cachée) ou { dx?, dy?, cisaillement?, pivot_y?, courbure? : nombres ; echelle_x?, longueur? : nombres > 0 ; miroir? : booléen }`);
           } else if (pose.courbure !== undefined && pose.longueur === undefined) {
             // `D-252` : une courbure sans longueur n'a pas de pointe où
             // atteindre son angle (`visuels.js#courberPoints`).

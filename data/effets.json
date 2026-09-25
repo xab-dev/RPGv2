@@ -176,7 +176,7 @@
     "role": "cosmetique",
     "ornement_min": 1,
     "periode_ms": 700,
-    "amplitude": 0.08
+    "amplitude": 0.06
   },
   {
     "id": "effet_flamme_braises",
@@ -184,11 +184,15 @@
     "role": "cosmetique",
     "ornement_min": 2,
     "visuel": "visuel_braise",
-    "nb_particules": 3,
-    "periode_ms": 1500,
-    "hauteur_px": 14,
-    "courbure_px": 2,
-    "derive_px": 1,
+    "nb_particules": 5,
+    "alea": 0.4,
+    "motifs": [
+      { "periode_ms": 1500, "hauteur_px": 14, "courbure_px": 2, "derive_px": 1 },
+      { "periode_ms": 1300, "hauteur_px": 7, "courbure_px": 1, "derive_px": 10 },
+      { "periode_ms": 2000, "hauteur_px": 16, "courbure_px": 0, "derive_px": 2, "boucle_px": 4, "boucles": 1 },
+      { "periode_ms": 650, "hauteur_px": 18, "courbure_px": 1, "derive_px": 0 },
+      { "periode_ms": 2800, "hauteur_px": 10, "courbure_px": 3, "derive_px": 3 }
+    ],
     "echelle": 1,
     "alpha": 0.9
   },

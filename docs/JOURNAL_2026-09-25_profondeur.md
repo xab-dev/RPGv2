@@ -23,7 +23,8 @@ Branche `profondeur`, partie de `main`. Non poussée.
 |---|---|---|
 | `8aed350` | Ménage | Les deux journaux du 25/09 (palier I, torche-épilepsie-Zéros) archivés, INDEX à jour, deux renvois corrigés |
 | `65e4e35` | `D-222` | La profondeur : `src/profondeur.js`, le calque à plat, une seule liste triée par le pied |
-| (ce commit) | `D-224` | `V-161` validée par Xav (« parfait, aucun ralentissement »). La hitbox des arbres de la forêt : une forme aux coins arrondis, fermée côté voisin solide (`src/formes_collision.js`) |
+| `b0ca7ef` | `D-224` | `V-161` validée par Xav (« parfait, aucun ralentissement »). La hitbox des arbres de la forêt : une forme aux coins arrondis, fermée côté voisin solide (`src/formes_collision.js`) |
+| (ce commit) | `D-223` | Le fondu d'un passage : un fondu enchaîné par la position, l'élément repassé en un bloc sans son ombre |
 
 **Non commité, pas à moi** : `docs/captures/v1/raw/Capture d'écran 2026-09-24 130012.png`, une capture de Xav. Un premier `git add` l'avait prise dans le commit du ménage ; retirée aussitôt (`--amend`), le fichier est intact sur le disque.
 
@@ -89,3 +90,21 @@ angles arrondis « comme les cartes du menu » (`D-224`).
   Une marge d'un millionième de pixel : poussé pile sur l'arc, le point
   restait dedans d'un cheveu.
 - **À voir en jeu** : `V-162`.
+
+## 5. Le fondu d'un passage (`D-223`)
+
+- **Fondu enchaîné, par la position** : dans une bande de 16 px autour du pied
+  du héros (`graphismes.json > profondeur > fondu_px`, provisoire), un élément
+  qui touche le héros est peint derrière lui puis repassé par-dessus à
+  l'opacité de sa part « devant ». Aux bords de la bande, l'image est celle du
+  tri : rien ne saute. Pas de temps, pas d'état : arrêté au milieu, l'élément
+  reste à moitié par-dessus.
+- **En un bloc** : le repassage d'un dessin vectoriel passe par un petit canvas
+  à part, posé d'un coup ; un objet de tuile, déjà un tampon, prend l'opacité
+  directement. Sans l'ombre portée (déjà au sol).
+- **Prouvé headless** : l'ordre, et la traversée d'un vrai caillou sud → nord
+  pas à pas, sans saut de plus d'un pas. **Vu sous Chrome** : une touffe de la
+  Maison par-dessus les jambes du héros aux 5/8, sans cadre.
+- **Contre un arbre**, le fondu ne se voit presque pas : avec la hitbox de
+  `D-224`, on ne chevauche qu'environ 3 px de feuillage en longeant le tronc.
+- **À voir en jeu** : `V-163` (la durée surtout).

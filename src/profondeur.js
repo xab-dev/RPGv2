@@ -131,3 +131,84 @@ export function objetsDeboutDeLaFenetre(scene, fenetre, estFlagActif, visuelsTui
 export function trierParPied(elements) {
   return elements.sort((a, b) => a.pied - b.pied);
 }
+
+// --- `D-223` : le FONDU d'un passage (demande de Xav, 25/09) -----------------
+// « Certains éléments, quand le joueur passe à travers (sud → nord), se font
+// sans transition. Est-il possible de rajouter un fondu ? » Le tri par le pied
+// bascule d'un coup : un pixel de plus, et la touffe que le héros traverse
+// passe de derrière lui à devant lui. Le fondu remplace ce saut par un FONDU
+// ENCHAÎNÉ entre les deux ordres, piloté par la POSITION (jamais par le temps :
+// aucun état à garder, le même pas donne la même image) :
+// - dans une BANDE autour du pied du héros (`graphismes.json > profondeur >
+//   fondu_px`), un élément dont le dessin touche le héros est peint DERRIÈRE
+//   lui, puis repeint PAR-DESSUS, en un seul bloc, avec l'opacité de sa part
+//   « devant » : 0 au bord nord de la bande, 1 au bord sud ;
+// - aux deux bords, l'image est exactement celle du tri sans fondu : rien ne
+//   saute en entrant ni en sortant de la bande ;
+// - le repassage se fait SANS l'ombre portée : elle est déjà au sol sous le
+//   héros, la peindre deux fois l'assombrirait pendant le fondu.
+// Seul le héros déclenche un fondu : c'est lui que l'œil suit. Le follet, qui
+// tourne autour de lui, en est exclu (son orbite passe devant et derrière par
+// dessin, `D-134`).
+
+// La part « devant » d'un élément dont le pied est à `ecart` px au sud de celui
+// du héros (négatif : au nord), dans une bande de `bande` px centrée sur le pied
+// du héros. `null` hors de la bande (ou sans bande) : le tri décide seul.
+export function poidsDevant(ecart, bande) {
+  if (!(bande > 0)) return null;
+  const demi = bande / 2;
+  if (ecart <= -demi || ecart >= demi) return null;
+  return (ecart + demi) / bande;
+}
+
+// Le même visuel, sans son ombre portée : le repassage d'un fondu. Gardé par
+// visuel, et d'un id distinct, pour que le cache des tampons ne le confonde
+// jamais avec le dessin complet.
+const sansOmbreParVisuel = new WeakMap();
+export function sansOmbre(visuel) {
+  if (!visuel.ombre) return visuel;
+  let copie = sansOmbreParVisuel.get(visuel);
+  if (!copie) {
+    const { ombre, ...reste } = visuel;
+    copie = { ...reste, id: `${visuel.id}|sans_ombre` };
+    sansOmbreParVisuel.set(visuel, copie);
+  }
+  return copie;
+}
+
+// L'ordre de peinture, fondus compris : une liste de `{ element, alpha,
+// repasse }`. Chaque élément y paraît une fois (`alpha` 1) ; un élément en
+// fondu y paraît une seconde fois juste après le héros (`repasse`, `alpha` =
+// sa part devant). `seTouchent(element)` dit si son dessin touche celui du
+// héros — sinon l'ordre ne se voit pas, et il n'y a rien à fondre. Un élément
+// marqué `sansFondu` n'en fait jamais.
+export function ordonnerAvecFondus(elements, heros, bande, seTouchent) {
+  const fondus = new Map();
+  if (heros && bande > 0) {
+    for (const e of elements) {
+      if (e === heros || e.sansFondu) continue;
+      const t = poidsDevant(e.pied - heros.pied, bande);
+      if (t !== null && seTouchent(e)) fondus.set(e, t);
+    }
+  }
+  if (fondus.size === 0) return trierParPied(elements).map((element) => ({ element, alpha: 1, repasse: false }));
+  // Dans la bande, l'élément est peint DERRIÈRE le héros (sa clé ne dépasse
+  // pas le pied du héros, et à égalité il passe avant lui) ; le reste garde
+  // l'ordre du tri, stable.
+  const cle = (e) => (fondus.has(e) ? Math.min(e.pied, heros.pied) : e.pied);
+  const ordre = elements.slice().sort((a, b) => {
+    const d = cle(a) - cle(b);
+    if (d !== 0) return d;
+    if (b === heros && fondus.has(a)) return -1;
+    if (a === heros && fondus.has(b)) return 1;
+    return 0;
+  });
+  const repasses = [...fondus].sort((a, b) => a[0].pied - b[0].pied)
+    .map(([element, alpha]) => ({ element, alpha, repasse: true }));
+  const liste = [];
+  for (const element of ordre) {
+    liste.push({ element, alpha: 1, repasse: false });
+    if (element === heros) liste.push(...repasses);
+  }
+  return liste;
+}

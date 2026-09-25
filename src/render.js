@@ -4,14 +4,16 @@
 // (contrainte de méthode : le rendu revient à Xav dans un vrai navigateur).
 
 import { dessinerVisuel, echelleVisuel } from './visuels.js';
-import { boiteTampon, cleTampon, creerCacheTampons } from './tampons.js';
+import { boiteTampon, cleTampon, creerCacheTampons, MARGE_ANTIALIAS_PX } from './tampons.js';
 import { couleurTuile, tuileDeSol, varianteTuile, ROTATION_MAX_DEG } from './decor.js';
 import { cellulesAPeindre, indexerDecor, motifsDesCellules, planDefilement, rayonInfluence } from './defilement.js';
 import { lisieresCase, visuelsDesLisieres } from './lisieres.js';
 import { dessinerBarre, PALETTE_JAUGES } from './ui/barre.js';
-import { boiteDansLeChamp, disqueDansLeChamp, vueDeCamera, visuelDansLeChamp } from './champ.js';
+import { boiteDansLeChamp, boiteDuVisuel, disqueDansLeChamp, vueDeCamera, visuelDansLeChamp } from './champ.js';
 import { POLICE_CALLIGRAPHIE, POLICE_CHIFFRES } from './polices.js';
-import { estDebout, objetsDeboutDeLaFenetre, piedDe, tableAPlat, trierParPied, tuilesDebout } from './profondeur.js';
+import {
+  estDebout, objetsDeboutDeLaFenetre, ordonnerAvecFondus, piedDe, sansOmbre, tableAPlat, tuilesDebout,
+} from './profondeur.js';
 
 const DELTA_MAX_MS = 100; // provisoire : une frame ne rattrape jamais plus de 100 ms
 
@@ -851,20 +853,140 @@ function dessinsDeboutStatiques(scene, decor, camera, estFlagActif, visuelsTuile
 // là, donc il glisse avec son sol au même sous-pixel près — ni tremblement
 // entre le tronc et l'herbe, ni ré-échantillonnage de plus que le sol. Sous
 // l'instrument `definirTamponsActifs(false)`, le dessin vectoriel.
-function poserObjetDeTuile(ctx, objet, camera, echelle) {
+//
+// `alpha` (`D-223`) : le repassage d'un fondu. Un tampon est déjà UN bloc : une
+// opacité sur sa pose est un vrai fondu du dessin entier.
+function poserObjetDeTuile(ctx, objet, camera, echelle, alpha = 1) {
   if (!tamponsActifs) {
-    dessinerVisuel(ctx, objet.visuel, objet.x - camera.x, objet.y - camera.y, { miroir: objet.miroir });
+    dessinerVisuel(ctx, objet.visuel, objet.x - camera.x, objet.y - camera.y, { miroir: objet.miroir, alpha });
     return;
   }
   const cle = cleTampon({ id: objet.visuel.id, nbPrimitives: objet.visuel.primitives.length, miroir: objet.miroir, rotation: 0, echelle });
   const tampon = cacheTampons.obtenir(cle, objet.visuel, echelle, objet.miroir, 0);
+  ctx.save();
+  if (alpha !== 1) ctx.globalAlpha *= alpha;
   poserTampon(
     ctx, tampon,
     Math.round(objet.x * echelle) - camera.x * echelle,
     Math.round(objet.y * echelle) - camera.y * echelle,
     echelle,
   );
+  ctx.restore();
 }
+
+// `D-223` : ce qu'un élément de la profondeur peint, et où — le visuel, sa
+// position et sa pose, lus pour savoir si son dessin touche celui du héros.
+function poseDe(element, hero, heroVisuel) {
+  switch (element.genre) {
+    case 'tuile':
+    case 'decor':
+      return { visuel: element.visuel, x: element.x, y: element.y, options: { miroir: element.miroir, rotation: element.rotation } };
+    case 'puzzle':
+      return {
+        visuel: element.levier.visuel, x: element.levier.x, y: element.levier.y,
+        options: { echelle: element.levier.echelle, rotation: element.levier.rotation },
+      };
+    case 'objet':
+      return { visuel: element.objet.visuel, x: element.objet.x, y: element.objet.y, options: {} };
+    case 'monstre':
+      return { visuel: element.monstre.visuel, x: element.monstre.x, y: element.monstre.y, options: { miroir: element.monstre.miroir === true } };
+    case 'heros':
+      return { visuel: heroVisuel, x: hero.x, y: hero.y, options: {} };
+    default:
+      return null;
+  }
+}
+
+// Le même élément, peint sans son ombre portée : le repassage d'un fondu.
+function sansOmbreElement(element) {
+  switch (element.genre) {
+    case 'tuile':
+    case 'decor':
+      return { ...element, visuel: sansOmbre(element.visuel) };
+    case 'puzzle':
+      return { ...element, levier: { ...element.levier, visuel: sansOmbre(element.levier.visuel) } };
+    case 'objet':
+      return { ...element, objet: { ...element.objet, visuel: sansOmbre(element.objet.visuel) } };
+    case 'monstre':
+      return { ...element, monstre: { ...element.monstre, visuel: sansOmbre(element.monstre.visuel) } };
+    default:
+      return element;
+  }
+}
+
+// Peint UN élément de la profondeur. `scene` porte ce que certains ont besoin
+// de connaître (la caméra, l'échelle, le héros et son follet).
+function dessinerElement(ctx, element, scene) {
+  const { camera } = scene;
+  switch (element.genre) {
+    case 'tuile':
+      poserObjetDeTuile(ctx, element, camera, scene.echelle);
+      break;
+    case 'decor':
+      dessinerVisuel(ctx, element.visuel, element.x - camera.x, element.y - camera.y, { rotation: element.rotation });
+      break;
+    case 'puzzle':
+      dessinerInteractif(ctx, element.levier, camera);
+      break;
+    case 'objet':
+      dessinerVisuel(ctx, element.objet.visuel, element.objet.x - camera.x, element.objet.y - camera.y, {});
+      break;
+    case 'monstre':
+      dessinerCorpsMonstre(ctx, element.monstre, camera);
+      break;
+    case 'heros':
+      // Héros (§3.4 03_grotte-polish) : gris neutre au spawn (avant choix
+      // du follet), teinté à la couleur du compagnon choisi ensuite —
+      // `heroTeinte` est déjà résolu par l'appelant (main.js,
+      // save.js#COULEUR_HERO_NEUTRE ou companion.render.couleur), jamais une
+      // 2ᵉ silhouette dessinée pour le cas "neutre".
+      dessinerVisuel(ctx, scene.heroVisuel, scene.hero.x - camera.x, scene.hero.y - camera.y, { teinte: scene.heroTeinte });
+      break;
+    case 'follet':
+      dessinerFollet(ctx, scene.follet, scene.sillage, scene.ornementsFollet, camera);
+      break;
+    default:
+      break;
+  }
+}
+
+// `D-223` : le repassage d'un fondu, peint en UN BLOC à l'opacité `alpha`.
+// Un dessin vectoriel est un empilement de primitives : lui donner une
+// opacité primitive par primitive laisserait voir ses propres superpositions
+// (la facette d'un caillou à travers sa base). On le peint donc d'abord, net,
+// dans un petit canvas à part, puis on pose ce canvas d'un coup. Le canvas est
+// alloué une fois et ne fait que grandir ; seule la boîte de l'élément est
+// effacée et recopiée. Un objet de tuile est déjà un tampon : il n'y passe pas.
+//
+// Fonction unique qui touche les transforms (règle née de SD_dialogues-
+// invisibles) : celle du canvas à part est posée à neuf à chaque appel, celle
+// du contexte est rendue par `restore`.
+let canvasFondu = null;
+function dessinerEnBloc(ctx, echelle, boiteEcran, alpha, dessiner) {
+  const gauche = Math.floor(boiteEcran.minX * echelle) - MARGE_ANTIALIAS_PX;
+  const haut = Math.floor(boiteEcran.minY * echelle) - MARGE_ANTIALIAS_PX;
+  const largeur = Math.ceil(boiteEcran.maxX * echelle) + MARGE_ANTIALIAS_PX - gauche;
+  const hauteur = Math.ceil(boiteEcran.maxY * echelle) + MARGE_ANTIALIAS_PX - haut;
+  if (largeur <= 0 || hauteur <= 0) return;
+  if (!canvasFondu) canvasFondu = document.createElement('canvas');
+  if (canvasFondu.width < largeur || canvasFondu.height < hauteur) {
+    canvasFondu.width = Math.max(canvasFondu.width, largeur);
+    canvasFondu.height = Math.max(canvasFondu.height, hauteur);
+  }
+  const c = canvasFondu.getContext('2d');
+  c.setTransform(1, 0, 0, 1, 0, 0);
+  c.clearRect(0, 0, largeur, hauteur);
+  c.setTransform(echelle, 0, 0, echelle, -gauche, -haut);
+  dessiner(c);
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalAlpha *= alpha;
+  ctx.drawImage(canvasFondu, 0, 0, largeur, hauteur, gauche, haut, largeur, hauteur);
+  ctx.restore();
+}
+// La pièce mobile d'un levier tourne autour d'un pivot pris dans son dessin :
+// elle peut dépasser la boîte du corps. Une marge pour elle, en px logiques.
+const MARGE_PIECE_MOBILE_PX = 8;
 
 // Un interactif (levier, station, coffre, stèle) et sa pièce mobile.
 function dessinerInteractif(ctx, levier, camera) {
@@ -975,6 +1097,10 @@ export function dessinerScene(ctx, {
   // table, toujours la même : une table neuve à chaque frame empêcherait le
   // calque de défiler.
   lisieres = AUCUNE_LISIERE,
+  // `D-223` : la largeur, en px logiques, de la bande du fondu d'un passage
+  // (`graphismes.json > profondeur > fondu_px`, lue par `main.js`). 0 ou absente :
+  // aucun fondu, le tri seul.
+  fonduProfondeurPx = 0,
   // MT_trainee-poussiere_2026-09-19 : bouffées déjà calculées par
   // src/poussiere.js (pur) et déjà résolues en visuel par l'appelant — ce
   // fichier ne connaît ni le module, ni visuels.json par id. Défaut vide :
@@ -1073,7 +1199,10 @@ export function dessinerScene(ctx, {
   aTrier.push({ genre: 'heros', pied: piedDe(heroVisuel, hero.y) });
   if (follet) {
     aTrier.push({
-      genre: 'follet', pied: piedDe(follet.visuel, follet.y, { echelle: follet.echelle === undefined ? 1 : follet.echelle }),
+      genre: 'follet',
+      pied: piedDe(follet.visuel, follet.y, { echelle: follet.echelle === undefined ? 1 : follet.echelle }),
+      // `D-223` : son orbite passe devant et derrière le héros par dessin.
+      sansFondu: true,
     });
   }
 
@@ -1093,36 +1222,36 @@ export function dessinerScene(ctx, {
   // s'effacer au sol ; sinon il est peint avec le follet, sous lui.
   if (!follet) dessinerFollet(ctx, null, sillage, null, camera);
 
-  for (const element of trierParPied(aTrier)) {
-    switch (element.genre) {
-      case 'tuile':
-        poserObjetDeTuile(ctx, element, camera, echelle);
-        break;
-      case 'decor':
-        dessinerVisuel(ctx, element.visuel, element.x - camera.x, element.y - camera.y, { rotation: element.rotation });
-        break;
-      case 'puzzle':
-        dessinerInteractif(ctx, element.levier, camera);
-        break;
-      case 'objet':
-        dessinerVisuel(ctx, element.objet.visuel, element.objet.x - camera.x, element.objet.y - camera.y, {});
-        break;
-      case 'monstre':
-        dessinerCorpsMonstre(ctx, element.monstre, camera);
-        break;
-      case 'heros':
-        // Héros (§3.4 03_grotte-polish) : gris neutre au spawn (avant choix
-        // du follet), teinté à la couleur du compagnon choisi ensuite —
-        // `heroTeinte` est déjà résolu par l'appelant (main.js,
-        // save.js#COULEUR_HERO_NEUTRE ou companion.render.couleur), jamais une
-        // 2ᵉ silhouette dessinée pour le cas "neutre".
-        dessinerVisuel(ctx, heroVisuel, hero.x - camera.x, hero.y - camera.y, { teinte: heroTeinte });
-        break;
-      case 'follet':
-        dessinerFollet(ctx, follet, sillage, ornementsFollet, camera);
-        break;
-      default:
-        break;
+  // `D-223` : le fondu d'un passage (`profondeur.js#ordonnerAvecFondus`). Un
+  // élément dont le pied est dans la bande du héros, et dont le dessin touche
+  // le sien, est peint derrière lui puis repeint par-dessus, sans son ombre, à
+  // l'opacité de sa part « devant ».
+  const elementHeros = aTrier.find((e) => e.genre === 'heros');
+  const poseHeros = poseDe(elementHeros, hero, heroVisuel);
+  const boiteHeros = boiteDuVisuel(poseHeros.visuel, poseHeros.x, poseHeros.y, poseHeros.options);
+  const boiteElement = (element) => {
+    const pose = poseDe(element, hero, heroVisuel);
+    if (!pose) return null;
+    const b = boiteDuVisuel(pose.visuel, pose.x, pose.y, pose.options);
+    if (element.genre !== 'puzzle' || !element.levier.pieceMobile) return b;
+    const m = MARGE_PIECE_MOBILE_PX;
+    return { minX: b.minX - m, maxX: b.maxX + m, minY: b.minY - m, maxY: b.maxY + m };
+  };
+  const touche = (element) => {
+    const b = boiteElement(element);
+    return !!b && b.maxX > boiteHeros.minX && b.minX < boiteHeros.maxX && b.maxY > boiteHeros.minY && b.minY < boiteHeros.maxY;
+  };
+  const scenePeinte = { camera, echelle, hero, heroVisuel, heroTeinte, follet, sillage, ornementsFollet };
+  for (const { element, alpha, repasse } of ordonnerAvecFondus(aTrier, elementHeros, fonduProfondeurPx, touche)) {
+    if (!repasse) {
+      dessinerElement(ctx, element, scenePeinte);
+    } else if (element.genre === 'tuile') {
+      poserObjetDeTuile(ctx, sansOmbreElement(element), camera, echelle, alpha);
+    } else {
+      const b = boiteElement(element);
+      const boiteEcran = { minX: b.minX - camera.x, maxX: b.maxX - camera.x, minY: b.minY - camera.y, maxY: b.maxY - camera.y };
+      const seul = sansOmbreElement(element);
+      dessinerEnBloc(ctx, echelle, boiteEcran, alpha, (c) => dessinerElement(c, seul, scenePeinte));
     }
   }
 

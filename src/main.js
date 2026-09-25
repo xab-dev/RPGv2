@@ -767,6 +767,9 @@ export function creerOrchestrateurGrotte({
   // fois. Son pourquoi est au schéma (`schemas.js#erreursBudgetCarte`), qui
   // garantit aussi sa présence au démarrage.
   const PLAFOND_ENTREE_SCENE_MS = registre.obtenir('graphismes', 'budget_carte').entree_scene_max_ms;
+  // `D-223` : la bande du fondu d'un passage, lue une fois (sa présence est
+  // garantie au démarrage par le schéma).
+  const FONDU_PROFONDEUR_PX = registre.obtenir('graphismes', 'profondeur').fondu_px;
   // Les leviers sont lus UNE fois, ici : au-delà de cette ligne, plus personne
   // ne connaît le mot « bas ». Chaque système reçoit un nombre.
   const multiplicateurParticules = valeurLevier(graphismes.config, graphismes.preset, 'particules');
@@ -5367,6 +5370,7 @@ export function creerOrchestrateurGrotte({
       anneauAttaque,
       visuelsTuiles,
       lisieres,
+      fonduProfondeurPx: FONDU_PROFONDEUR_PX,
       objetsSol: objetsSolAffiches,
       structures: structuresAffichees,
       fantome: fantomeAffiche,

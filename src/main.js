@@ -30,7 +30,7 @@ import {
   creerBoucle, dessinerScene, dessinerObscurite, dessinerSignalZones, dessinerPaupieres, dessinerTextesFlottants, dessinerLogo, presenter,
   RESOLUTION_LOGIQUE, calculerRectanglePresentation, versCoordonneesLogiques, AURA_TRAIT,
   definirEchelleForcee, dimensionsEcranPhysiquesActuelles, invaliderCoucheStatique,
-  dessinerSurlignages, dessinerProjectiles,
+  dessinerSurlignages, dessinerProjectiles, dessinerOndes,
 } from './render.js';
 import { creerStoreIndexedDB } from './storage_indexeddb.js';
 import {
@@ -119,6 +119,12 @@ import {
   creerVueStele, avancerVueStele, vueSteleArmee, fermerVueStele, vueSteleTerminee, alphaVueStele, demanderDescente,
 } from './stele.js';
 import { dessinerEcranStele, zoneGravureStele } from './ui/ecran_stele.js';
+import {
+  creerEtatCompetence, dureesCompetence, chargeActive, avancerCompetence, competencePrete, lancerCompetence,
+  ratiosCompetence, resoudreDegats, choisirCible,
+} from './competences.js';
+import { lignesEcrites, ecritureFinie, dureeEcriture } from './parchemin.js';
+import { dessinerEcranParchemin } from './ui/ecran_parchemin.js';
 import { flagsDeLaDescente, interactifsDeLaDescente, descenteDisponible } from './descente.js';
 import {
   decroitre as decroitreSurvie, consommer as consommerSurvie, appliquerMalusRespawn,
@@ -165,6 +171,12 @@ const RAYON_HERO_BASE_PX = 10;
 // mettrait hors de portée de tout.
 // *Provisoire*, à l'œil : la silhouette du rampant tient dans 16 px.
 const RAYON_MONSTRE_PX = 8;
+// Spec 14, palier G : combien de temps l'onde d'un tir à zone reste visible
+// après l'éclat. PROVISOIRE, à juger en jeu : assez pour lire la zone
+// touchée, assez court pour ne pas la confondre avec une zone qui dure.
+const DUREE_ONDE_MS = 360;
+// Le texte qui dit qu'une compétence prête n'a rien à viser.
+const CLE_TEXTE_AUCUNE_CIBLE = 'competence.aucune_cible';
 // L'id du héros parmi les cibles d'un projectile (`projectiles.js`) : les
 // monstres y entreront par leur id d'instance, qui ne peut pas le valoir
 // (`entities.js#creerMonstre` : `<enemy>#<n>`).
@@ -178,7 +190,7 @@ const DISTANCE_INTERACT_PX = 28;
 // Les types d'interactif qu'on prend « à la main » (INTERACT) ; un autre type
 // posé dans `scene.interactifs` est ignoré par le geste, qui passe au suivant.
 // Lu par `cibleInteraction` seule, qui dit ce que vise l'appui (`D-177`).
-const TYPES_INTERACTIFS_A_LA_MAIN = ['levier', 'levier_maintenu', 'station_placeholder', 'station', 'stele'];
+const TYPES_INTERACTIFS_A_LA_MAIN = ['levier', 'levier_maintenu', 'station_placeholder', 'station', 'stele', 'coffre_parchemin'];
 // Les interactifs qui ont un MANCHE (un geste de bascule, `D-158`) : le levier
 // qu'on bascule et, spec 14, celui qu'on tient.
 const TYPES_LEVIER = ['levier', 'levier_maintenu'];
@@ -1439,6 +1451,18 @@ export function creerOrchestrateurGrotte({
   // allouée une fois. État de SESSION : vidé à chaque entrée en scène, jamais
   // sauvegardé (§6).
   const projectiles = creerProjectiles();
+  // Spec 14, palier G : l'état de SESSION de chaque compétence apprise
+  // (`competences.js`), par id — sa charge et sa recharge. Jamais sauvegardé
+  // (§6) : une compétence en recharge au moment de quitter repart pleine.
+  const etatsCompetences = new Map();
+  // Ce que le HUD dessine sur chaque emplacement de compétence, `verbe →
+  // { charge, recharge, prete }`, relevé à la dernière frame de jeu : le
+  // dessin ne recalcule pas les dérivées, et sous UI la jauge reste où elle
+  // était, gelée comme la compétence.
+  let ratiosEmplacements = {};
+  // Les ondes des tirs à zone qui viennent d'éclater, `{ x, y, rayon, couleur,
+  // ms }` : un retour visuel, rien d'autre. Vidées avec les tirs.
+  let ondes = [];
   // Spec 14, palier D : la RENCONTRE lancée dans la scène (`rencontre.js`),
   // `{ def, etat }` — `def` est lue dans `scenes.json`. État de SESSION : remis
   // à null à chaque entrée en scène, jamais sauvegardé ; une rencontre
@@ -1543,6 +1567,11 @@ export function creerOrchestrateurGrotte({
   // Une UI ouverte comme les autres — le jeu gèle, MENU se tait — ouverte par
   // INTERACT, fermée par B ou un toucher, et c'est tout.
   let vueStele = null;
+  // Spec 14, palier G : la vue du PARCHEMIN, ouverte par le coffre du Gardien —
+  // `{ vue (celle de stele.js : temps, fondu, particules), puzzleId,
+  // competenceId, ecritureMs }`, ou `null`. Une UI ouverte comme la stèle :
+  // le jeu gèle, MENU se tait.
+  let vueParchemin = null;
   // Spec 14 : l'indice qui se déchiffre dans le carnet, l'état de
   // `indices.js#creerDechiffrement`, ou `null`. Il n'avance que carnet
   // ouvert ; fermé avant la fin (le « Fermer » tactile), il reprend à la
@@ -1563,7 +1592,7 @@ export function creerOrchestrateurGrotte({
   function uiOuverteMaintenant() {
     return (
       menu.estOuvert() || dialogue.estOuvert() || choixFolletActif() || intro !== null || depart !== null ||
-      ouvertureLogoMs !== null || prologue !== null || vueStele !== null || constructionActif()
+      ouvertureLogoMs !== null || prologue !== null || vueStele !== null || vueParchemin !== null || constructionActif()
     );
   }
 
@@ -1992,6 +2021,7 @@ export function creerOrchestrateurGrotte({
     // repart de la nuit en cours, plafond vide (palier B, « non persistés »).
     accumulateursSpawn = {};
     viderProjectiles(projectiles);
+    ondes = [];
     rencontre = null;
     extinctionsLeviers = new Map();
 
@@ -2080,6 +2110,21 @@ export function creerOrchestrateurGrotte({
     return scene.interactifs.filter((id) => estVisible(scene.puzzle(id), flags));
   }
 
+  // Spec 14, §4.6 : un coffre à parchemin est OUVERT quand la compétence qu'il
+  // apprend l'est — son état n'est rien d'autre que ce flag, persistant. Ouvert,
+  // il ne se prend plus à la main et se dessine vide, à toutes les descentes.
+  function coffreOuvert(puzzle) {
+    return flags.has(registre.obtenir('skills', puzzle.competence).flag);
+  }
+
+  // Le dessin d'un interactif, tel que le monde ET le bouton tactile le
+  // montrent : un seul choix, sinon le bouton montrerait un coffre fermé
+  // devant un coffre ouvert. L'empreinte, elle, reste celle du visuel de base.
+  function visuelInteractif(puzzle) {
+    const ouvert = puzzle.type === 'coffre_parchemin' && coffreOuvert(puzzle);
+    return registre.obtenir('visuels', ouvert ? puzzle.render.visuel_ouvert : puzzle.render.visuel);
+  }
+
   // 03_maison-exterieur §3.2/§3.3 étend l'interaction à 4 cibles possibles,
   // essayées dans cet ordre (le premier trouvé à portée gagne, un seul par
   // appui) : levier/station de scene.interactifs (déjà des entités
@@ -2100,6 +2145,7 @@ export function creerOrchestrateurGrotte({
       // scène peut désigner une instance CRÉÉE (un coffre fabriqué), qui
       // n'est dans aucun catalogue.
       const puzzle = scene.puzzle(puzzleId);
+      if (puzzle.type === 'coffre_parchemin' && coffreOuvert(puzzle)) continue;
       // §3 : seuil mesuré au bord de l'empreinte, pas au centre (une station
       // ×2,1 solide dépasserait sinon DISTANCE_INTERACT_PX depuis l'extérieur
       // de son propre bord) — un levier (empreinte nulle) redonne exactement
@@ -2161,7 +2207,7 @@ export function creerOrchestrateurGrotte({
   function visuelCibleInteraction(cible) {
     if (!cible) return null;
     if (cible.genre === 'interactif') {
-      const visuel = registre.obtenir('visuels', cible.puzzle.render.visuel);
+      const visuel = visuelInteractif(cible.puzzle);
       return { visuel, pieceMobile: pieceMobileDuLevier(cible.puzzle, visuel) };
     }
     let id = null;
@@ -2196,6 +2242,10 @@ export function creerOrchestrateurGrotte({
       }
       if (puzzle.type === 'station_placeholder') {
         ouvrirDialogueCatalogue(puzzle.dialogue);
+        return;
+      }
+      if (puzzle.type === 'coffre_parchemin') {
+        ouvrirCoffreParchemin(puzzle);
         return;
       }
       if (puzzle.type === 'stele') {
@@ -3073,6 +3123,11 @@ export function creerOrchestrateurGrotte({
   // Les deux lignes purement informatives de l'ancienne liste — points libres,
   // progression d'XP — ne sont plus des entrées sans action : elles sont le
   // SOUS-TITRE de l'écran (`sousTitreStats`).
+  function valeurDeriveeAffichee(derivee, valeur) {
+    if (derivee.affichage === 'pourcentage') return i18n.t('derivee.format_pourcentage', { n: Math.round(valeur * 100) });
+    return `${Math.round(valeur)}`;
+  }
+
   function obtenirEntreesStats() {
     const statsPrimaires = calculerStatsPrimaires(registre, resoudreModificateursHeros());
     const statsDerivees = calculerStatsDerivees(registre, statsPrimaires);
@@ -3084,9 +3139,12 @@ export function creerOrchestrateurGrotte({
         titre: i18n.t(s.label_key),
         icone: s.icone || null,
         quantite: statsPrimaires[s.id],
+        // Spec 14, palier G : une dérivée peut attendre un flag (`visible_si`,
+        // `D-62` : la puissance des compétences ne s'annonce pas avant la
+        // première) et s'écrire en pourcentage (`affichage`).
         lignes: registre.tous('stats_derivees')
-          .filter((d) => d.stat === s.id)
-          .map((d) => `${i18n.t(d.label_key)} : ${Math.round(statsDerivees[d.id])}`),
+          .filter((d) => d.stat === s.id && estVisible(d, flags))
+          .map((d) => `${i18n.t(d.label_key)} : ${valeurDeriveeAffichee(d, statsDerivees[d.id])}`),
         libelleAction: peutAjouter ? i18n.t('menu.stats_ajouter') : null,
         grisee: false,
         action: () => {
@@ -3189,6 +3247,57 @@ export function creerOrchestrateurGrotte({
       { glyphe: i18n.t(`glyphe.${peripherique}.${verbeDescendre}`), texte: i18n.t('stele.action.descendre') },
       { glyphe: i18n.t(`glyphe.${peripherique}.skill_3`), texte: i18n.t('stele.action.fermer') },
     ];
+  }
+
+  // Spec 14, §4.6 : ouvrir le coffre, c'est prendre le parchemin — la
+  // compétence est apprise À L'OUVERTURE (son flag, persistant), pas à la
+  // fermeture de la vue : quitter le jeu pendant la lecture ne la reprend pas.
+  // L'emplacement qu'elle occupe apparaît avec ce flag (`action_slots.json`).
+  function ouvrirCoffreParchemin(puzzle) {
+    const competence = registre.obtenir('skills', puzzle.competence);
+    flags.set(competence.flag);
+    etatModifie = true;
+    vueParchemin = { vue: creerVueStele(puzzle.id), puzzleId: puzzle.id, competenceId: competence.id, ecritureMs: 0 };
+  }
+
+  // Le texte du parchemin : le nom de la compétence, ce qu'elle fait, et le
+  // bouton qui la lance, au glyphe du périphérique ACTIF — relu à chaque
+  // frame, comme la vue de la stèle : changer de manette au clavier pendant
+  // la lecture change le bouton écrit.
+  function lignesParchemin(competenceId) {
+    const competence = registre.obtenir('skills', competenceId);
+    const verbe = registre.obtenir('action_slots', competence.emplacement).verb;
+    const peripherique = input.peripheriqueActif ? input.peripheriqueActif() : 'manette';
+    return [
+      i18n.t(competence.label_key),
+      i18n.t(competence.description_key),
+      i18n.t('parchemin.bouton', { glyphe: i18n.t(`glyphe.${peripherique}.${verbe}`) }),
+    ];
+  }
+
+  // `lignes` : ce que la plume a écrit jusqu'ici ; `lignesCompletes` : le texte
+  // entier, pour que la mise en page ne bouge pas pendant l'écriture. L'action
+  // Fermer n'apparaît qu'une fois tout écrit : avant, B achève l'écriture.
+  function contenuVueParchemin() {
+    const competence = registre.obtenir('skills', vueParchemin.competenceId);
+    const lignes = lignesParchemin(vueParchemin.competenceId);
+    const peripherique = input.peripheriqueActif ? input.peripheriqueActif() : 'manette';
+    let actions = [];
+    if (ecritureFinie(lignes, vueParchemin.ecritureMs)) {
+      actions = peripherique === 'tactile'
+        ? [{ glyphe: null, texte: i18n.t('parchemin.action.tactile_fermer') }]
+        : [{ glyphe: i18n.t(`glyphe.${peripherique}.skill_3`), texte: i18n.t('parchemin.action.fermer') }];
+    }
+    return {
+      id: vueParchemin.puzzleId,
+      lignes: lignesEcrites(lignes, vueParchemin.ecritureMs),
+      lignesCompletes: lignes,
+      icone: registre.obtenir('visuels', competence.icone),
+      couleur: competence.effet.couleur,
+      actions,
+      vue: vueParchemin.vue,
+      alpha: alphaVueStele(vueParchemin.vue),
+    };
   }
 
   // Spec 14, §4.2 : une descente commence. L'état de la précédente (les flags
@@ -3587,13 +3696,96 @@ export function creerOrchestrateurGrotte({
   // Le héros est la seule cible du camp adverse à ce palier : le tir du joueur
   // (palier G) ajoutera les monstres à la liste, sans un second chemin.
   function avancerTirs(deltaMs) {
+    // Palier G : les monstres vivants sont des cibles, pour les tirs du HÉROS
+    // (le camp fait le tri : un crachat traverse les monstres). Un intouchable
+    // n'en est pas une — le tir le traverse, comme l'auto-attaque l'ignore.
+    const cibles = [{ id: CIBLE_HEROS, x: hero.x, y: hero.y, rayon: hero.rayon, camp: CAMP_HEROS }];
+    for (const m of monstres) {
+      if (!m.mort && !m.intouchable) cibles.push({ id: m.id, x: m.x, y: m.y, rayon: RAYON_MONSTRE_PX, camp: CAMP_MONSTRES });
+    }
     const touches = avancerProjectiles(projectiles, deltaMs, {
       estSolide: (x, y) => scene.estSolideAuPoint(x, y, flags.has),
-      cibles: [{ id: CIBLE_HEROS, x: hero.x, y: hero.y, rayon: hero.rayon, camp: CAMP_HEROS }],
+      cibles,
+      surEclat: (eclat) => ondes.push({
+        x: eclat.x, y: eclat.y, rayon: eclat.rayon, couleur: eclat.etiquette && eclat.etiquette.couleur, ms: 0,
+      }),
     });
+    const degatsParMonstre = new Map();
     for (const touche of touches) {
       if (touche.cibleId === CIBLE_HEROS) hero.pv = Math.max(0, hero.pv - touche.degats);
+      else degatsParMonstre.set(touche.cibleId, (degatsParMonstre.get(touche.cibleId) || 0) + touche.degats);
     }
+    if (degatsParMonstre.size > 0) {
+      monstres = monstres.map((monstre) => {
+        const degats = degatsParMonstre.get(monstre.id);
+        if (!degats || monstre.mort) return monstre;
+        const suivant = infligerDegats(monstre, degats);
+        if (suivant.pv < monstre.pv) suivant.flashMs = FLASH_TOUCHE_MS;
+        if (suivant.mort) onMonstreMort(registre.obtenir('enemies', monstre.enemyId));
+        return suivant;
+      });
+    }
+    ondes = ondes.map((o) => ({ ...o, ms: o.ms + deltaMs })).filter((o) => o.ms < DUREE_ONDE_MS);
+  }
+
+  // Spec 14, §4.6 : les compétences APPRISES, et le verbe de l'emplacement où
+  // chacune se range. Aujourd'hui, l'emplacement par défaut de son entrée
+  // (`emplacement`) ; le palier I y mettra le choix du joueur
+  // (`save.hero.competences`) — ce point, et lui seul, changera.
+  function competencesEquipees() {
+    return registre.tous('skills')
+      .filter((c) => flags.has(c.flag))
+      .map((c) => ({ competence: c, verbe: registre.obtenir('action_slots', c.emplacement).verb }));
+  }
+
+  // Une frame de jeu des compétences : la charge monte (le follet engage), la
+  // recharge descend, et l'appui sur le verbe de l'emplacement lance ce qui
+  // est prêt. Prête sans rien à viser, l'appui est REFUSÉ et le dit ; la charge
+  // est gardée. Pas prête, l'appui ne fait rien : la jauge le montre déjà.
+  function majCompetences(deltaMs, etatGameplay, statsDerivees) {
+    const ratios = {};
+    for (const { competence, verbe } of competencesEquipees()) {
+      const durees = dureesCompetence(competence, statsDerivees);
+      let etat = avancerCompetence(etatsCompetences.get(competence.id) || creerEtatCompetence(), deltaMs, {
+        active: chargeActive(competence, { follet }),
+        durees,
+      });
+      if (etatGameplay[verbe] && etatGameplay[verbe].pressed && competencePrete(etat, durees)) {
+        if (lancerCompetenceVers(competence, statsDerivees)) etat = lancerCompetence(etat, durees);
+        else signalerRefusConteneur(CLE_TEXTE_AUCUNE_CIBLE, hero.x, hero.y);
+      }
+      etatsCompetences.set(competence.id, etat);
+      ratios[verbe] = ratiosCompetence(etat, durees);
+    }
+    ratiosEmplacements = ratios;
+  }
+
+  // Le tir d'une compétence : vers sa cible (`competences.js#choisirCible`),
+  // avec les dégâts de SON point de résolution, par le seul chemin de tir du
+  // jeu. Rend vrai si le tir est parti.
+  function lancerCompetenceVers(competence, statsDerivees) {
+    const porteePx = competence.portee_tuiles * scene.tileSize;
+    const cible = choisirCible({
+      follet,
+      hero,
+      porteePx,
+      monstres: monstres.map((m) => ({ id: m.id, x: m.x, y: m.y, mort: m.mort, visable: !m.intouchable })),
+    });
+    if (!cible) return false;
+    return tirerProjectile(projectiles, {
+      x: hero.x,
+      y: hero.y,
+      versX: cible.x,
+      versY: cible.y,
+      vitesse: competence.projectile.vitesse_px_s,
+      rayon: competence.projectile.rayon_px,
+      degats: resoudreDegats(competence, statsDerivees),
+      camp: CAMP_HEROS,
+      visuel: competence.projectile.visuel,
+      courseMaxPx: porteePx,
+      zonePx: competence.effet.rayon_px,
+      etiquette: { couleur: competence.effet.couleur },
+    });
   }
 
   // La SALLE NETTOYÉE (spec 14, §4.3) : une scène qui déclare `nettoyage`
@@ -3895,6 +4087,7 @@ export function creerOrchestrateurGrotte({
         cooldownAttaqueHerosMs = statsDerivees.derivee_cooldown_attaque_ms;
       }
     }
+    majCompetences(deltaMs, etatGameplay, statsDerivees);
 
     verifierNettoyage();
 
@@ -4084,6 +4277,23 @@ export function creerOrchestrateurGrotte({
         if (descente) commencerDescente(puzzleStele.descente);
       }
     }
+    // Spec 14, palier G : le parchemin. Ses lettres s'écrivent ; un appui (B, A,
+    // INTERACT ou un toucher) pendant l'écriture l'ACHÈVE, après elle il ferme la
+    // vue par le fondu de la stèle. Capturé avant, comme la stèle : la frame
+    // de la fermeture reste gelée.
+    const parcheminEtaitActif = vueParchemin !== null;
+    if (parcheminEtaitActif) {
+      const puzzleParchemin = scene.puzzle(vueParchemin.puzzleId);
+      const lignes = lignesParchemin(vueParchemin.competenceId);
+      let vue = avancerVueStele(vueParchemin.vue, deltaMs, Math.random);
+      let ecritureMs = vueParchemin.ecritureMs + deltaMs;
+      const appui = etatBrut.skill_3.pressed || etatBrut.attack.pressed || etatBrut.interact.pressed || contactsTactiles.length > 0;
+      if (appui && vueSteleArmee(vue, puzzleParchemin.armement_ms)) {
+        if (!ecritureFinie(lignes, ecritureMs)) ecritureMs = dureeEcriture(lignes);
+        else vue = fermerVueStele(vue);
+      }
+      vueParchemin = vueSteleTerminee(vue) ? null : { ...vueParchemin, vue, ecritureMs };
+    }
     const logoEtaitActif = ouvertureLogoMs !== null;
     if (logoEtaitActif) {
       ouvertureLogoMs += deltaMs;
@@ -4140,7 +4350,7 @@ export function creerOrchestrateurGrotte({
       const relire = avancerDechiffrementCarnet(deltaMs, accelererCarnet);
       if (relire) menu.rafraichirIndices();
     }
-    if (etatBrut.menu.pressed && !dechiffrementRetient && !dialogueOuvertMaintenant && !choixFolletActif() && !introEtaitActive && !departEtaitActif && !steleEtaitActive) {
+    if (etatBrut.menu.pressed && !dechiffrementRetient && !dialogueOuvertMaintenant && !choixFolletActif() && !introEtaitActive && !departEtaitActif && !steleEtaitActive && !parcheminEtaitActif) {
       if (constructionActif()) {
         quitterConstructionVersMenuPause();
       } else if (!menu.estOuvert()) {
@@ -4162,7 +4372,7 @@ export function creerOrchestrateurGrotte({
     // les verbes d'une frame qu'une UI a consommée, quel que soit le verbe.
     const uiOuverte = (
       menu.estOuvert() || dialogueOuvertMaintenant || choixFolletActif() || introEtaitActive || departEtaitActif ||
-      constructionActif() || menuFermeParVerbe || steleEtaitActive
+      constructionActif() || menuFermeParVerbe || steleEtaitActive || parcheminEtaitActif
     );
     // `D-92`/`D-93` : avant tout le reste, y compris avant l'UI — un écran
     // Coffre ouvert vide la poche, et la case d'attaque doit dire la vérité
@@ -4695,7 +4905,7 @@ export function creerOrchestrateurGrotte({
         // (override validé ou défaut) — une station déplacée se dessine à sa
         // VRAIE position, jamais celle de puzzles.json.
         const pose = scene.poseEffectiveInteractif(p.id);
-        const visuel = registre.obtenir('visuels', p.render.visuel);
+        const visuel = visuelInteractif(p);
         // `D-158` : un levier se lit à son GESTE (bascule.js) — allumé quand
         // le manche a touché sa butée, pas à l'appui. Sans état de geste (la
         // toute première frame), l'état réel, posé.
@@ -4961,6 +5171,12 @@ export function creerOrchestrateurGrotte({
       camera,
       projectiles: projectilesEnVol(projectiles).map((p) => ({ x: p.x, y: p.y, visuel: registre.obtenir('visuels', p.visuel) })),
     });
+    // Palier G : l'onde d'un tir à zone, là où il a éclaté — elle s'élargit
+    // jusqu'au rayon qu'il a touché et s'efface.
+    dessinerOndes(ctxLogique, {
+      camera,
+      ondes: ondes.map((o) => ({ x: o.x, y: o.y, rayon: o.rayon, couleur: o.couleur, t: o.ms / DUREE_ONDE_MS })),
+    });
     // Signal des zones de Chaos (specs/07 palier D) : APRÈS le calque
     // d'obscurité — il se voit à travers la nuit sans percer le voile (on
     // devine une présence, on ne voit pas où l'on marche). Le calcul est pur
@@ -5033,6 +5249,9 @@ export function creerOrchestrateurGrotte({
       // `D-63` : résolu ici, comme `visuelArme` et `visuelFollet` — `hud.js`
       // ne connaît ni catalogue ni flag.
       verbesActions: verbesActionsVisibles(),
+      // Spec 14, §4.6 : la charge qui monte, puis la recharge qui se vide, sur
+      // chaque emplacement de compétence — relevées à la dernière frame de jeu.
+      jaugesSlots: ratiosEmplacements,
       // D-20 B : ce que dessine chaque case, résolu ici (main.js a le
       // registre) exactement comme visuelFollet au-dessus — ui/hud.js ne
       // reçoit que des silhouettes et ignore de quoi elles viennent.
@@ -5043,8 +5262,10 @@ export function creerOrchestrateurGrotte({
       //     écrire. Si elle se lit mal réduite à la case, le remède sera une
       //     entrée d'icône dédiée en données, comme pour l'épée : toujours
       //     pas de code (essai en cours, Xav 21/09).
-      // Un `skill_N` s'ajoutera ici, et nulle part ailleurs.
+      // Spec 14, palier G : un `skill_N` montre l'icône de la compétence qui
+      // l'occupe (`competencesEquipees`, le même point que le lancer).
       iconesSlots: {
+        ...Object.fromEntries(competencesEquipees().map(({ competence, verbe }) => [verbe, registre.obtenir('visuels', competence.icone)])),
         attack: (() => {
           // `specs/15` palier B : une torche qui brûle montre sa flamme.
           const tenu = objetTenuQuiBrule();
@@ -5126,6 +5347,7 @@ export function creerOrchestrateurGrotte({
       dessinerDialogue(ctxLogique, ligneDialogue, habillageDialogue(ligneDialogue));
     }
     if (vueStele !== null) dessinerEcranStele(ctxLogique, contenuVueStele());
+    if (vueParchemin !== null) dessinerEcranParchemin(ctxLogique, contenuVueParchemin());
 
     // Paupières (§3.5 étape 1) : rideau de cinématique, dessiné en TOUT
     // DERNIER — il doit couvrir la scène, le HUD et même l'écran de choix
@@ -5192,8 +5414,12 @@ export function creerOrchestrateurGrotte({
     ouvertureLogoMs = null;
     prologue = null;
     vueStele = null;
+    vueParchemin = null;
     dechiffrement = null;
     viderProjectiles(projectiles);
+    ondes = [];
+    etatsCompetences.clear();
+    ratiosEmplacements = {};
     rencontre = null;
     logoNiveauMs = null;
     basculesLeviers.clear();
@@ -5271,6 +5497,12 @@ export function creerOrchestrateurGrotte({
     obtenirPrologue: () => prologue,
     obtenirVueStele: () => vueStele,
     contenuVueStele: () => contenuVueStele(),
+    // Spec 14, palier G : le parchemin, les compétences et leurs ondes.
+    obtenirVueParchemin: () => vueParchemin,
+    contenuVueParchemin: () => contenuVueParchemin(),
+    obtenirEtatsCompetences: () => Object.fromEntries(etatsCompetences),
+    obtenirJaugesSlots: () => ratiosEmplacements,
+    obtenirOndes: () => ondes.map((o) => ({ ...o })),
     obtenirLogoNiveau: () => logoNiveauMs,
     obtenirDepart: () => depart,
     obtenirSave: () => save,

@@ -660,7 +660,7 @@
       {"x": 400, "y": 24, "rayon": 48, "couleur": "#fff0c8", "condition": "flag_annexe_sortie"}
     ],
     "decor": {"densite": 0.04, "motifs": [{"visuel": "visuel_flaque", "poids": 0.2}, {"visuel": "visuel_flaque_grande", "poids": 0.2}, {"visuel": "visuel_flaque_claire", "poids": 0.2}, {"visuel": "visuel_flaque_sombre", "poids": 0.2}, {"visuel": "visuel_flaque_mouillee", "poids": 0.2}, {"visuel": "visuel_rocher_petit", "poids": 2}, {"visuel": "visuel_rocher_grand", "poids": 1}, {"visuel": "visuel_cristal", "poids": 2, "lumiere": {"rayon": 28, "dy": 6, "couleur": "#7cc4ff"}}]},
-    "interactifs": [],
+    "interactifs": ["puzzle_annexe_coffre"],
     "spawns": [
       {"enemy": "enemy_gardien", "position": {"x": 12, "y": 5}, "condition": {"not": "flag_gardien_vaincu"}}
     ],

@@ -101,7 +101,7 @@ export function zoneGravureStele() {
 // `actions` : [{ glyphe, texte }] — le glyphe dans une petite touche, puis le
 // texte ; alignées à droite, de bas en haut dans l'ordre inverse (la
 // première action est la plus haute).
-function dessinerActions(ctx, actions, alpha) {
+export function dessinerActions(ctx, actions, alpha) {
   if (!actions || actions.length === 0) return;
   const { largeur, hauteur } = RESOLUTION_LOGIQUE;
   ctx.save();

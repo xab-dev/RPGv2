@@ -413,5 +413,14 @@
   "dlg.zeros.fin.3": "A wisp doesn’t follow: it waits. It waits to be told where to stand. I learned what yours hasn’t told you.",
   "dlg.zeros.fin.4": "Go on. We’ll meet again, further on, where the stone answers.",
   "enemy.gardien": "The Warden",
-  "flag.gardien_vaincu": "The Warden, defeated"
+  "flag.gardien_vaincu": "The Warden, defeated",
+  "skill.onde": "The Wave",
+  "skill.onde.description": "Your wisp charges it by fighting at your side. Once cast, it bursts on whatever it hits.",
+  "derivee.puissance_competence": "Skill power",
+  "derivee.hate_competence": "Skill charge and cooldown",
+  "derivee.format_pourcentage": "{n}%",
+  "parchemin.bouton": "To cast it: {glyphe}",
+  "parchemin.action.fermer": "Close",
+  "parchemin.action.tactile_fermer": "Touch the screen: close",
+  "competence.aucune_cible": "No target"
 }

@@ -413,5 +413,14 @@
   "dlg.zeros.fin.3": "Un follet ne suit pas : il attend. Il attend qu’on lui dise où se tenir. J’ai appris ce que le tien ne t’a pas dit.",
   "dlg.zeros.fin.4": "Passe. Nous nous reverrons, plus loin, là où la pierre répond.",
   "enemy.gardien": "Le Gardien",
-  "flag.gardien_vaincu": "Le Gardien, vaincu"
+  "flag.gardien_vaincu": "Le Gardien, vaincu",
+  "skill.onde": "L’Onde",
+  "skill.onde.description": "Ton follet la charge en se battant à tes côtés. Lancée, elle éclate sur ce qu’elle touche.",
+  "derivee.puissance_competence": "Puissance des compétences",
+  "derivee.hate_competence": "Charge et recharge des compétences",
+  "derivee.format_pourcentage": "{n} %",
+  "parchemin.bouton": "Pour la lancer : {glyphe}",
+  "parchemin.action.fermer": "Fermer",
+  "parchemin.action.tactile_fermer": "Touche l’écran : fermer",
+  "competence.aucune_cible": "Aucune cible"
 }

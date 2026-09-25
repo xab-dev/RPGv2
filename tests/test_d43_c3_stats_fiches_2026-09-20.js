@@ -50,9 +50,12 @@ const orch = creerOrchestrateurGrotte({
   assert.ok(entrees.every((e) => Number.isFinite(e.quantite)), 'sa valeur en pastille');
   assert.ok(entrees.every((e) => e.libelleAction === i18n.t('menu.stats_ajouter') && e.grisee === false), 'des points à dépenser : le bouton « +1 »');
 
-  // La fiche : les dérivées qui dépendent de CETTE stat, et elles seules.
+  // La fiche : les dérivées qui dépendent de CETTE stat, et elles seules —
+  // celles qui ne sont pas encore visibles en moins (spec 14, palier G : la
+  // puissance des compétences attend la première, `D-62`). Une partie neuve
+  // n'en a aucune : toutes les lignes sont des entiers.
   for (const [i, s] of stats.entries()) {
-    const attendues = registre.tous('stats_derivees').filter((d) => d.stat === s.id).map((d) => i18n.t(d.label_key));
+    const attendues = registre.tous('stats_derivees').filter((d) => d.stat === s.id && !d.visible_si).map((d) => i18n.t(d.label_key));
     assert.deepEqual(entrees[i].lignes.map((l) => l.split(' : ')[0]), attendues, `${s.id} : ses dérivées, lues dans le catalogue`);
     assert.ok(entrees[i].lignes.every((l) => /: -?\d+$/.test(l)), `${s.id} : chaque ligne porte une valeur entière (${entrees[i].lignes.join(' · ')})`);
   }

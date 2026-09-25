@@ -1450,6 +1450,34 @@ export function dessinerProjectiles(ctx, { projectiles = [], camera }) {
   return dessines;
 }
 
+// --- L'onde d'un tir à zone (spec 14, palier G, la compétence) --------------
+// Là où le tir a éclaté, un anneau s'élargit jusqu'au rayon qu'il a touché et
+// s'efface : le joueur VOIT la zone, sans qu'elle dure. Après le voile, comme
+// les tirs. `ondes` arrive résolu ({ x, y, rayon, couleur, t }, `t` de 0 à 1) ;
+// ce fichier ne connaît pas la compétence. ctx.save()/restore() : il touche au
+// trait et à l'alpha, jamais à la transform.
+const ONDE_RAYON_DEPART = 0.35;
+export function dessinerOndes(ctx, { ondes = [], camera }) {
+  if (ondes.length === 0) return;
+  ctx.save();
+  for (const o of ondes) {
+    const t = Math.min(1, Math.max(0, o.t));
+    const rayon = o.rayon * (ONDE_RAYON_DEPART + (1 - ONDE_RAYON_DEPART) * (1 - (1 - t) * (1 - t)));
+    const x = o.x - camera.x;
+    const y = o.y - camera.y;
+    ctx.globalAlpha = 0.18 * (1 - t);
+    ctx.fillStyle = o.couleur || '#ffffff';
+    ctx.beginPath();
+    ctx.arc(x, y, rayon, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 0.9 * (1 - t);
+    ctx.strokeStyle = o.couleur || '#ffffff';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
 // --- Textes flottants de gain (MT_texte-flottant_2026-09-19, `D-05`) ------
 // « +1 Bois » qui monte depuis la source du gain et s'efface. Dessiné en
 // coordonnées du MONDE (comme toute entité) mais APRÈS le calque

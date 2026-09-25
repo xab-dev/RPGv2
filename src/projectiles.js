@@ -36,7 +36,7 @@ export function creerProjectiles(capacite = CAPACITE_PROJECTILES) {
   for (let i = 0; i < n; i += 1) {
     emplacements[i] = {
       actif: false, x: 0, y: 0, vx: 0, vy: 0, rayon: 0, degats: 0,
-      camp: CAMP_MONSTRES, visuel: null, courseRestantePx: 0,
+      camp: CAMP_MONSTRES, visuel: null, courseRestantePx: 0, zonePx: 0, etiquette: null,
     };
   }
   return { emplacements };
@@ -46,7 +46,14 @@ export function creerProjectiles(capacite = CAPACITE_PROJECTILES) {
 // `courseMaxPx`. Rend vrai si le projectile est parti. Une visée sur son
 // propre point (le héros exactement sur le tireur) n'a pas de direction : le
 // tir n'a pas lieu, plutôt que de partir dans une direction inventée.
-export function tirer(etat, { x, y, versX, versY, vitesse, rayon, degats, camp, visuel, courseMaxPx }) {
+//
+// `zonePx` (facultatif, palier G, la compétence) : le tir ÉCLATE là où il
+// s'arrête — sur une cible, sur un mur ou au bout de sa course — et touche
+// toutes les cibles de l'autre camp dans ce rayon. Absent ou 0 : un tir
+// ordinaire, qui touche une cible et s'éteint. `etiquette` (facultative) : une
+// donnée de l'appelant, que ce module ne lit pas et rend avec l'éclat (la
+// couleur de l'onde, pour la compétence).
+export function tirer(etat, { x, y, versX, versY, vitesse, rayon, degats, camp, visuel, courseMaxPx, zonePx = 0, etiquette = null }) {
   const dx = versX - x;
   const dy = versY - y;
   const norme = Math.hypot(dx, dy);
@@ -63,6 +70,8 @@ export function tirer(etat, { x, y, versX, versY, vitesse, rayon, degats, camp, 
   libre.camp = camp;
   libre.visuel = visuel;
   libre.courseRestantePx = courseMaxPx;
+  libre.zonePx = zonePx > 0 ? zonePx : 0;
+  libre.etiquette = etiquette;
   return true;
 }
 
@@ -95,7 +104,10 @@ export function viseesSalve(x, y, versX, versY, salve) {
 // `cibles` : `[{ id, x, y, rayon, camp }]`. Un projectile touche la première
 //   cible d'un AUTRE camp dont le disque rencontre le sien, puis s'éteint : un
 //   tir ne touche qu'une fois.
-export function avancerProjectiles(etat, deltaMs, { estSolide, cibles = [] }) {
+// `surEclat({ x, y, rayon, camp, etiquette })` (facultatif) : appelé quand un tir à zone
+//   éclate, pour que l'appelant en montre l'onde. Les touches de l'éclat sont
+//   dans la liste rendue, une par cible, comme celles d'un tir ordinaire.
+export function avancerProjectiles(etat, deltaMs, { estSolide, cibles = [], surEclat = null }) {
   const touches = [];
   const deltaS = deltaMs / 1000;
   for (const p of etat.emplacements) {
@@ -107,19 +119,35 @@ export function avancerProjectiles(etat, deltaMs, { estSolide, cibles = [] }) {
       p.y += (p.vy * deltaS) / pas;
       p.courseRestantePx -= distance / pas;
       if (estSolide(p.x, p.y)) {
-        p.actif = false;
+        eteindre(p, null, cibles, touches, surEclat);
         break;
       }
       const cible = cibles.find((c) => c.camp !== p.camp && Math.hypot(c.x - p.x, c.y - p.y) <= c.rayon + p.rayon);
       if (cible) {
-        touches.push({ cibleId: cible.id, degats: p.degats });
-        p.actif = false;
+        eteindre(p, cible, cibles, touches, surEclat);
         break;
       }
-      if (p.courseRestantePx <= 0) p.actif = false;
+      if (p.courseRestantePx <= 0) eteindre(p, null, cibles, touches, surEclat);
     }
   }
   return touches;
+}
+
+// Un tir s'arrête. Ordinaire : il touche la cible rencontrée, s'il y en a
+// une. À zone : il éclate là où il est, et touche chaque cible de l'autre camp
+// dont le disque entre dans le rayon — la cible rencontrée comprise, une fois.
+function eteindre(p, cible, cibles, touches, surEclat) {
+  p.actif = false;
+  if (p.zonePx <= 0) {
+    if (cible) touches.push({ cibleId: cible.id, degats: p.degats });
+    return;
+  }
+  for (const c of cibles) {
+    if (c.camp !== p.camp && Math.hypot(c.x - p.x, c.y - p.y) <= c.rayon + p.zonePx) {
+      touches.push({ cibleId: c.id, degats: p.degats });
+    }
+  }
+  if (surEclat) surEclat({ x: p.x, y: p.y, rayon: p.zonePx, camp: p.camp, etiquette: p.etiquette });
 }
 
 // Tout s'éteint : un changement de scène ne fait pas traverser un crachat.

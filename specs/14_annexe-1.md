@@ -2,11 +2,11 @@
 projet: RPG V2
 episode/session: Carte Maison — l'Annexe 1 (la stèle, Zéros, les leviers, le Gardien, la première compétence)
 type: spec par paliers
-version: 1.3.7
-statut: courante — paliers A et B livrés le 24/09 et validés (V-149, V-150) ; palier C livré le 25/09 et validé (V-151) ; palier D livré le 25/09 et validé (V-152) ; palier E livré le 25/09 et validé (V-153) ; palier F livré le 25/09 et validé (V-154) ; B1, B2, B3, Q-138 et l'équilibrage tranchés par Xav le 24/09 (§0)
+version: 1.3.8
+statut: courante — paliers A et B livrés le 24/09 et validés (V-149, V-150) ; palier C livré le 25/09 et validé (V-151) ; palier D livré le 25/09 et validé (V-152) ; palier E livré le 25/09 et validé (V-153) ; palier F livré le 25/09 et validé (V-154) ; palier G livré le 25/09 (V-155 à voir) ; B1, B2, B3, Q-138 et l'équilibrage tranchés par Xav le 24/09 (§0)
 catégorie: Spec
 date: 2026-09-24
-Ids_suivi: [Q-120, Q-13, "D-205 (A), D-207 (B), D-209 (C), D-210 (D), D-211 (E), D-212 (F), D- (à créer : un par palier)", "Q-137 à Q-148 (inscrites au suivi le 24/09)", Q-152, Q-153, Q-154, Q-155, Q-18, "V-149 (A), V-150 (B), V-151 (C), V-152 (D), V-153 (E), V- (à créer : un par palier)"]
+Ids_suivi: [Q-120, Q-13, "D-205 (A), D-207 (B), D-209 (C), D-210 (D), D-211 (E), D-212 (F), D-213 (G), D- (à créer : un par palier)", "Q-137 à Q-148 (inscrites au suivi le 24/09)", Q-152, Q-153, Q-154, Q-155, Q-18, "V-149 (A), V-150 (B), V-151 (C), V-152 (D), V-153 (E), V-154 (F), V-155 (G), V- (à créer : un par palier)"]
 genere_par: claude
 verifie_par: xav
 ---
@@ -18,6 +18,8 @@ verifie_par: xav
 **Source** : le scénario dicté par Xav le 24/09, repris fidèlement au §3. Ce que Claude a ajouté pour que ce scénario se code est marqué **[OUVERT]**, avec une valeur retenue par défaut ; ces points sont listés au §10.
 
 ## 0. Décisions de Xav (24/09, relecture de la v1.0.0)
+
+**Changelog 1.3.8** (palier G livré, `D-213`) : l'entrée de compétence déclare aussi `description_key`, `flag` (ce qui l'apprend : `flag_competence_1`, qui **est** `flag_parchemin_lu` du §4.2 — un seul flag), `portee_tuiles` (7), `effet.couleur` (l'onde de l'éclat) et `icone` ; `emplacement` est l'emplacement **par défaut**, que le palier I remplacera par le choix du joueur en un seul point (`main.js#competencesEquipees`). Le tir de l'Onde **éclate** au premier monstre, sur un mur ou au bout de sa course (`projectiles.js`, `zonePx`). Le coffre est un interactif `coffre_parchemin` (`competence`, `render.visuel_ouvert`) : son état est le flag de la compétence, posé **à l'ouverture**. Les deux dérivées d'Esprit sont cachées avant la première compétence et s'écrivent en pourcentage (`visible_si`, `affichage`). **Ordre de la nuit du 25/09** (Xav : « palier G, puis palier H, puis polish, puis banc complet ») : H passe avant I ; le dialogue de déblocage de la première sortie reste au palier I. Choix par défaut : `Q-162`.
 
 **Changelog 1.3.7** (palier F livré, `D-212`) : le comportement `boss` déclare ses **modes en liste** (`modes: [{ type, poids, facteur_vitesse?, tir }]`, `duree_mode_ms: { min, max }`), et chaque mode dit **s'il tire** (agressif non, kite et errance oui). Le kite du boss **est** le tireur : sa distance est le `recul_tuiles` de son `attaque_distance` (4). Toute `attaque_distance` peut déclarer une **salve** (`salve: { nombre, ecart_deg }`) : le Gardien tire trois tirs en éventail. `flag_gardien_vaincu` est posé par le **`nettoyage`** de la salle 3 (son seul spawn est le Gardien), sans ligne de code. Le Gardien n'a **pas de halo** (`Q-27`, décision de Xav : aucune lueur sur les monstres) : sa rune bleue est en aplats. Valeurs *provisoires* et leur raisonnement : `D-212`.
 
@@ -206,7 +208,7 @@ Une **descente** commence à chaque entrée par la stèle. L'Annexe distingue de
 | **D — Zéros** (**livré le 25/09**, `D-210`, validé : `V-152`) | Entité intouchable, follet de Zéros, combat sans défaite, relève, arrêt à 25 %, dialogue (textes provisoires), passage | La mise en scène entière ; la relève ; se lit-elle comme un combat qu'on **ne peut pas** perdre, et pas comme un bug ? |
 | **E — Les deux mains** (**livré le 25/09**, `D-211`, validé : `V-153`) | `levier_maintenu`, follet posé (**après B2**), dialogue du follet, passage | Salle 2 à la manette, au clavier **et** au doigt ; la marche dans l'ombre |
 | **F — Le Gardien** (**livré le 25/09**, `D-212`, validé : `V-154`) | Comportement `boss` (trois gestes, trois modes), barre de boss, valeurs « à la louche » avec leur raisonnement, mort → Grotte → tout refaire | Au ressenti : au Nv.16 on perd ; avec la sauvegarde Nv.30, on gagne, difficilement. Trop dur ou trop simple, pourquoi, comment : on règle |
-| **G — Le parchemin** (**après B1**) | Coffre, cinématique, `skills.json` et son schéma, `competences.js`, `slot_skill_1`, HUD de charge et de recharge | La cinématique ; la charge qui monte pendant l'engagement ; le tir, l'AoE, la recharge ; le HUD (checklist visuelle) |
+| **G — Le parchemin** (**livré le 25/09**, `D-213`, à voir : `V-155`) | Coffre, cinématique, `skills.json` et son schéma, `competences.js`, `slot_skill_1`, HUD de charge et de recharge | La cinématique ; la charge qui monte pendant l'engagement ; le tir, l'AoE, la recharge ; le HUD (checklist visuelle) |
 | **I — Choisir** (§4.9) | Dialogue de déblocage, « Tout reprendre », compétences en cartes dans Stats (la fiche affiche 1 = X, 2 = Y, 3 = B ; A choisit l'emplacement ; équiper remplace), migration v8 → v9, carte Follet | Respec puis nouvelle répartition ; équiper la compétence en 1, puis en 3 (elle quitte le 1, et le bouton B la lance en jeu) ; changer de follet dehors, de jour et de nuit ; **manette, clavier et doigt** |
 | **H — La boucle** | Levier-récompense (éclat au sol), porte de sortie (avec un **fondu** vers la stèle rouge, `Q-153`, déclaré sur le portail), descentes suivantes (sans Zéros, sans dialogue du levier, sans boss) ; album de référence | Trois descentes d'affilée : un éclat chacune, rien ne se rejoue qui ne devrait pas |
 

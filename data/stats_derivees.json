@@ -28,5 +28,29 @@
     "label_key": "derivee.reserve_esprit",
     "stat": "stat_esprit",
     "formule": { "base": 0, "coefficient": 10, "min": 0 }
+  },
+  {
+    "id": "derivee_puissance_competence",
+    "label_key": "derivee.puissance_competence",
+    "stat": "stat_esprit",
+    "formule": {
+      "base": 1,
+      "coefficient": 0.05,
+      "min": 1
+    },
+    "affichage": "pourcentage",
+    "visible_si": "flag_competence_1"
+  },
+  {
+    "id": "derivee_hate_competence",
+    "label_key": "derivee.hate_competence",
+    "stat": "stat_esprit",
+    "formule": {
+      "base": 1,
+      "coefficient": -0.015,
+      "min": 0.5
+    },
+    "affichage": "pourcentage",
+    "visible_si": "flag_competence_1"
   }
 ]

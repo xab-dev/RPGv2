@@ -150,5 +150,21 @@
       "dialogue": "dlg_follet_pose",
       "flag": "flag_follet_pose_appris"
     }
+  },
+  {
+    "id": "puzzle_annexe_coffre",
+    "type": "coffre_parchemin",
+    "position": {
+      "x": 12,
+      "y": 8
+    },
+    "render": {
+      "visuel": "visuel_coffre_parchemin",
+      "visuel_ouvert": "visuel_coffre_parchemin_ouvert"
+    },
+    "echelle": 1.6,
+    "competence": "skill_onde",
+    "armement_ms": 400,
+    "visible_si": "flag_gardien_vaincu"
   }
 ]

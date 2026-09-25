@@ -7,6 +7,7 @@ import { OPTIONS_MIN, OPTIONS_MAX, erreursGrapheConversation } from './dialogue.
 import { NOMS_COTES } from './lisieres.js';
 import { flagDeNiveau } from './xp.js';
 import { MODES_BOSS } from './comportement_monstres.js';
+import { SOURCES_CHARGE, EFFETS_COMPETENCE } from './competences.js';
 
 // `D-39` — « le corps ne sort jamais de son aura », vérifié AU CHARGEMENT.
 //
@@ -881,8 +882,15 @@ function validerStatDerivee(entry, catalogs, path) {
   } else if (f.min !== undefined && typeof f.min !== 'number') {
     erreurs.push(`${path} > formule.min doit être numérique`);
   }
+  // `affichage` (spec 14, palier G) : comment la fiche Stats écrit la valeur.
+  // Absent, un entier (PV, dégâts, ms). `pourcentage` : un facteur autour de
+  // 1 (la puissance et la hâte des compétences), qu'un entier arrondirait à 1.
+  if (entry.affichage !== undefined && !AFFICHAGES_DERIVEE.includes(entry.affichage)) {
+    erreurs.push(`${path} > affichage "${entry.affichage}" inconnu (${AFFICHAGES_DERIVEE.join(' | ')})`);
+  }
   return erreurs;
 }
+export const AFFICHAGES_DERIVEE = ['pourcentage'];
 
 const FAMILLES_STATUS = ['buff', 'dot', 'debuff', 'controle'];
 const CIBLES_STATUS = ['joueur', 'monstre'];
@@ -1239,8 +1247,31 @@ function validerPuzzle(entry, catalogs, path) {
     }
     erreurs.push(...erreursRenderVisuel(entry, catalogs, path));
     erreurs.push(...erreursGeometrieInteractif(entry, catalogs, path));
+  } else if (entry.type === 'coffre_parchemin') {
+    // Spec 14, §4.6 : un coffre qui ne contient qu'un PARCHEMIN. L'ouvrir
+    // apprend `competence` (son flag est posé) et ouvre la vue du parchemin ;
+    // ouvert, il le reste : son état EST le flag de la compétence, rien
+    // d'autre à sauvegarder. `armement_ms` : comme la stèle, le temps avant
+    // que la vue accepte d'être fermée.
+    if (!entry.position || typeof entry.position.x !== 'number' || typeof entry.position.y !== 'number') {
+      erreurs.push(`${path} > position doit être { x, y }`);
+    }
+    if (!(catalogs.skills || []).some((c) => c.id === entry.competence)) {
+      erreurs.push(`${path} > competence "${entry.competence}" introuvable dans skills.json`);
+    }
+    if (typeof entry.armement_ms !== 'number' || !(entry.armement_ms >= 0)) {
+      erreurs.push(`${path} > armement_ms doit être un nombre de ms positif ou nul`);
+    }
+    // Ouvert, il se dessine autrement ; son empreinte reste celle du visuel
+    // fermé (le coffre ne grandit pas en s'ouvrant).
+    const ouvert = entry.render && entry.render.visuel_ouvert;
+    if (!(catalogs.visuels || []).some((v) => v.id === ouvert)) {
+      erreurs.push(`${path} > render.visuel_ouvert "${ouvert}" introuvable dans visuels.json`);
+    }
+    erreurs.push(...erreursRenderVisuel(entry, catalogs, path));
+    erreurs.push(...erreursGeometrieInteractif(entry, catalogs, path));
   } else {
-    erreurs.push(`${path} > type "${entry.type}" inconnu (levier | levier_maintenu | sequence | simultane | station_placeholder | station | stele)`);
+    erreurs.push(`${path} > type "${entry.type}" inconnu (levier | levier_maintenu | sequence | simultane | station_placeholder | station | stele | coffre_parchemin)`);
   }
   return erreurs;
 }
@@ -3396,7 +3427,54 @@ SCHEMAS.alignement = {
   },
 };
 
-const CATALOGUES_MINIMAUX = ['armors', 'accessories', 'skills', 'crops', 'journal_entries'];
+// Spec 14, §4.6 : le catalogue des COMPÉTENCES, qui n'avait pas de schéma.
+// Une entrée dit ce qu'elle est (nom, description, élément — `null` : neutre),
+// ce qui l'apprend (`flag`, persistant : une descente ne la reprend pas),
+// l'emplacement où elle se range par défaut (un `slot_skill_N`), comment elle
+// se charge et se recharge, sa portée, son tir et son effet. Aucune valeur
+// n'est lue ailleurs que dans `competences.js` et le tir de `main.js`.
+function erreursCompetence(entry, catalogs, path) {
+  const erreurs = [];
+  const positif = (v) => typeof v === 'number' && Number.isFinite(v) && v > 0;
+  if (typeof entry.description_key !== 'string') erreurs.push(`${path} > description_key requise (le parchemin la lit)`);
+  if (entry.element != null && !(catalogs.elements || []).some((e) => e.id === entry.element)) {
+    erreurs.push(`${path} > element "${entry.element}" introuvable dans elements.json`);
+  }
+  const slot = (catalogs.action_slots || []).find((a) => a.id === entry.emplacement);
+  if (!slot) erreurs.push(`${path} > emplacement "${entry.emplacement}" introuvable dans action_slots.json`);
+  else if (!/^skill_\d+$/.test(slot.verb)) erreurs.push(`${path} > emplacement "${entry.emplacement}" n'est pas un emplacement de compétence (verbe ${slot.verb})`);
+  if (!(catalogs.flags || []).some((f) => f.id === entry.flag)) {
+    erreurs.push(`${path} > flag "${entry.flag}" non déclaré dans flags.json`);
+  } else if ((catalogs.scenes || []).some((sc) => sc.descente && (sc.descente.flags || []).includes(entry.flag))) {
+    erreurs.push(`${path} > flag "${entry.flag}" est un flag de descente (une compétence apprise ne se reprend pas)`);
+  }
+  const c = entry.charge;
+  if (!c || !SOURCES_CHARGE.includes(c.source)) erreurs.push(`${path} > charge.source doit être ${SOURCES_CHARGE.join(' | ')}`);
+  if (!c || !positif(c.duree_ms)) erreurs.push(`${path} > charge.duree_ms doit être un nombre de ms > 0`);
+  if (!positif(entry.cooldown_ms)) erreurs.push(`${path} > cooldown_ms doit être un nombre de ms > 0`);
+  if (!positif(entry.portee_tuiles)) erreurs.push(`${path} > portee_tuiles doit être un nombre > 0`);
+  const e = entry.effet;
+  if (!e || !EFFETS_COMPETENCE.includes(e.type)) erreurs.push(`${path} > effet.type doit être ${EFFETS_COMPETENCE.join(' | ')}`);
+  if (!e || !positif(e.rayon_px)) erreurs.push(`${path} > effet.rayon_px doit être un nombre > 0`);
+  if (!e || !positif(e.multiplicateur)) erreurs.push(`${path} > effet.multiplicateur doit être un nombre > 0`);
+  if (!e || typeof e.couleur !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(e.couleur)) erreurs.push(`${path} > effet.couleur doit être #rrggbb (l'onde de l'éclat)`);
+  const p = entry.projectile;
+  if (!p || !positif(p.vitesse_px_s)) erreurs.push(`${path} > projectile.vitesse_px_s doit être un nombre > 0`);
+  if (!p || !positif(p.rayon_px)) erreurs.push(`${path} > projectile.rayon_px doit être un nombre > 0`);
+  if (!p || !(catalogs.visuels || []).some((v) => v.id === p.visuel)) {
+    erreurs.push(`${path} > projectile.visuel "${p && p.visuel}" introuvable dans visuels.json`);
+  }
+  return erreurs;
+}
+
+SCHEMAS.skills = {
+  requiredFields: ['id', 'label_key', 'description_key', 'emplacement', 'flag', 'charge', 'cooldown_ms', 'portee_tuiles', 'effet', 'projectile', 'icone'],
+  idField: 'id',
+  refs: [{ field: 'icone', catalog: 'visuels' }],
+  custom: erreursCompetence,
+};
+
+const CATALOGUES_MINIMAUX = ['armors', 'accessories', 'crops', 'journal_entries'];
 
 for (const nom of CATALOGUES_MINIMAUX) {
   SCHEMAS[nom] = schemaMinimal();

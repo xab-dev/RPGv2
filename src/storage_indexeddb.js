@@ -8,9 +8,9 @@ const NOM_BASE = 'rpg_v2';
 const NOM_MAGASIN = 'sauvegardes';
 const VERSION_BASE = 1;
 
-function ouvrirBase() {
+function ouvrirBase(nomBase) {
   return new Promise((resolve, reject) => {
-    const requete = indexedDB.open(NOM_BASE, VERSION_BASE);
+    const requete = indexedDB.open(nomBase, VERSION_BASE);
     requete.onupgradeneeded = () => {
       requete.result.createObjectStore(NOM_MAGASIN);
     };
@@ -19,10 +19,12 @@ function ouvrirBase() {
   });
 }
 
-export function creerStoreIndexedDB() {
+// `nomBase` : la partie trichée (`triche.js#NOM_BASE_TRICHE`) vit dans une
+// base à elle, pour que `?cheat` n'écrase jamais la vraie partie.
+export function creerStoreIndexedDB(nomBase = NOM_BASE) {
   let basePromise = null;
   function base() {
-    if (!basePromise) basePromise = ouvrirBase();
+    if (!basePromise) basePromise = ouvrirBase(nomBase);
     return basePromise;
   }
 

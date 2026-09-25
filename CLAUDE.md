@@ -283,6 +283,9 @@ rpg_v2/
 │   │                       `flammesAffichees` (`D-218`) : LA liste des flammes à l'écran, graine fixe ;
 │   │                       `save.inventaire.combustion` et `save.monde.objets_plantes` sont
 │   │                       facultatifs (absents = rien), aucune migration
+│   ├── triche.js           `D-250` : `?cheat=phenom` (les tests de Xav) — le dernier niveau, les
+│   │                       recettes visibles et gratuites, les compétences connues, JAMAIS un flag
+│   │                       posé ; sauvegarde dans une base à part (`rpg_v2_triche`) — pur
 │   ├── qualite.js          `specs/09` : LE point de résolution des réglages graphiques ; les
 │   │                       systèmes reçoivent une valeur de levier, aucun ne lit graphismes.json
 │   ├── plein_ecran.js      `D-30` : plein écran au premier relâchement tactile + bascule du menu,

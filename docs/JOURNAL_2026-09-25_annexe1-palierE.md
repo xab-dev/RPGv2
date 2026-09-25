@@ -3,7 +3,7 @@ projet: RPG V2
 episode/session: Spec 14 (l'Annexe 1), palier E — les deux mains
 type: fichier de bord
 version: 1.0.0
-statut: livré, à valider (V-153)
+statut: livré et validé (V-153)
 catégorie: Journal
 date: 2026-09-25
 genere_par: claude
@@ -49,3 +49,7 @@ Demande de Xav : « go palier E ». Branche `annexe-1`. Pas de push. Aucun banc 
 ## 4. Hors de ce commit
 
 - `data/enemies.json` : les réglages de Zéros que Xav fait lui-même (force, portée, PV de son follet). Ils ne sont pas commités et sont laissés tels quels.
+
+## 5. Validation (25/09)
+
+- `V-153` **validée par Xav** : « V-153 validé, très bien amené encore une fois. » Session close avant le palier F.

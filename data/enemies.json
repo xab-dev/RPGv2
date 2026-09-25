@@ -93,8 +93,8 @@
   {
     "id": "enemy_gardien",
     "label_key": "enemy.gardien",
-    "pv": 1000,
-    "force": 8,
+    "pv": 444,
+    "force": 7,
     "vitesse": 50,
     "portee_attaque": 28,
     "distance_contact_px": 18,

@@ -17,7 +17,7 @@ import { creerSourceManette } from './input/gamepad.js';
 import { creerSourceTactile } from './input/touch.js';
 import { creerPleinEcranTactile } from './plein_ecran.js';
 import { verrouillerMenuContextuel } from './souris.js';
-import { creerCurseur } from './curseur.js';
+import { creerCurseur, viseeDuCurseur } from './curseur.js';
 import { ornementActif, etincellesOrbite, facteurRespiration, facteurVacillement, particulesFilet } from './ornements.js';
 import { brule, entamees, normaliser, consumer, prendre, rendre, flammesAffichees } from './combustion.js';
 import { creerCoucheInput, etatNeutre } from './input/input.js';
@@ -122,7 +122,7 @@ import {
 import { dessinerEcranStele, zoneGravureStele } from './ui/ecran_stele.js';
 import {
   creerEtatCompetence, dureesCompetence, chargeActive, avancerCompetence, competencePrete, lancerCompetence,
-  ratiosCompetence, resoudreDegats, choisirCible, estEmplacementCompetence, valeurCompetenceEn,
+  ratiosCompetence, resoudreDegats, pointVise, estEmplacementCompetence, valeurCompetenceEn,
   equiperCompetence, emplacementDe, rangerCompetenceApprise,
 } from './competences.js';
 import { lignesEcrites, ecritureFinie, dureeEcriture } from './parchemin.js';
@@ -752,6 +752,11 @@ export function creerOrchestrateurGrotte({
   // frame, au début de `maj()` ; seule la bulle de dialogue s'en sert. Vide
   // par défaut : un test headless n'a rien à fournir.
   lireContactsTactiles = () => [],
+  // `D-247` : le point d'écran que le joueur VISE, en coordonnées logiques
+  // (le curseur, s'il est tenu par le périphérique qui joue :
+  // `curseur.js#viseeDuCurseur`), ou `null`. Un point, jamais un
+  // périphérique. `null` par défaut : un test headless vise automatiquement.
+  lireVisee = () => null,
   // Ticket L2-L3 (journal du 23/09) : les trois calques du symbole du jeu, déjà
   // lancés en chargement par `demarrerJeu` (des `Image` DOM, que l'orchestrateur
   // ne sait pas créer). Vide par défaut : un test headless n'a rien à fournir,
@@ -4025,12 +4030,18 @@ export function creerOrchestrateurGrotte({
     ratiosEmplacements = ratios;
   }
 
-  // Le tir d'une compétence : vers sa cible (`competences.js#choisirCible`),
-  // avec les dégâts de SON point de résolution, par le seul chemin de tir du
-  // jeu. Rend vrai si le tir est parti.
+  // Le tir d'une compétence : vers ce que le joueur vise, sinon vers sa cible
+  // automatique (`competences.js#pointVise`, `D-247`), avec les dégâts de SON
+  // point de résolution, par le seul chemin de tir du jeu. Rend vrai si le
+  // tir est parti.
   function lancerCompetenceVers(competence, statsDerivees) {
     const porteePx = competence.portee_tuiles * scene.tileSize;
-    const cible = choisirCible({
+    // Le point d'écran devient un point du monde par la caméra du DESSIN :
+    // le curseur désigne ce que le joueur voit sous lui.
+    const ecran = lireVisee();
+    const camera = ecran ? cameraCourante() : null;
+    const cible = pointVise({
+      visee: ecran ? { x: ecran.x + camera.x, y: ecran.y + camera.y } : null,
       follet,
       hero,
       porteePx,
@@ -6121,18 +6132,20 @@ export async function demarrerJeu() {
   let verbesActionsDebloques = [];
   // `Q-40` : même patron, pour les cibles qui suivent le monde (le follet).
   let zonesMondeTactiles = [];
+  // Seule source de vérité pour écran -> logique (diagnostic
+  // SD_ui-lisibilite §3c) : versCoordonneesLogiques() est la même fonction
+  // pure, testée, dont presenter()/calculerRectanglePresentation() dessine
+  // la réciproque (logique -> écran) — plus de formule recopiée ici. Le doigt
+  // et, depuis `D-247`, le curseur qui vise passent par elle.
+  function ecranVersLogique(clientX, clientY) {
+    const rect = calculerRectanglePresentation(canvasVisible.width, canvasVisible.height);
+    return versCoordonneesLogiques(clientX, clientY, rect);
+  }
   const sourceTactile = creerSourceTactile(canvasVisible, {
     surRelachement: () => pleinEcran.demanderUneFois(),
     verbesActions: () => verbesActionsDebloques,
     zonesMonde: () => zonesMondeTactiles,
-    // Seule source de vérité pour écran -> logique (diagnostic
-    // SD_ui-lisibilite §3c) : versCoordonneesLogiques() est la même fonction
-    // pure, testée, dont presenter()/calculerRectanglePresentation() dessine
-    // la réciproque (logique -> écran) — plus de formule recopiée ici.
-    versLogique(clientX, clientY) {
-      const rect = calculerRectanglePresentation(canvasVisible.width, canvasVisible.height);
-      return versCoordonneesLogiques(clientX, clientY, rect);
-    },
+    versLogique: ecranVersLogique,
   });
   // `D-54` : « le jeu a-t-il la main ? », écrit par l'orchestrateur à chaque
   // frame (`onEtatUi`), lu par le clavier au moment du `keydown` pour décider
@@ -6386,6 +6399,12 @@ export async function demarrerJeu() {
     onVerbesActions: (verbes) => { verbesActionsDebloques = verbes; },
     onZonesMonde: (zones) => { zonesMondeTactiles = zones; },
     lireContactsTactiles: () => sourceTactile.lireContactsNouveaux(),
+    // `D-247` : `curseur` est déclaré plus bas ; il n'est lu qu'à la première
+    // frame, bien après sa création.
+    lireVisee: () => {
+      const point = viseeDuCurseur(curseur.position(), input.peripheriqueActif());
+      return point ? ecranVersLogique(point.x, point.y) : null;
+    },
     // Le curseur n'est pas dans la scène, mais ses étincelles sont des
     // particules cosmétiques comme les autres : les laisser derrière ferait un
     // Bas à moitié appliqué, visible à la souris. Ici, et pas derrière chaque

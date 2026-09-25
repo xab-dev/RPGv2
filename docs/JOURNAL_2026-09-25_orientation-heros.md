@@ -78,3 +78,19 @@ compétence qui introduit la visée »), la seule `P1` née du ménage.
   regard du tir, la visée qui ne dépend pas du regard, Zéros qui ne regarde
   pas encore).
 - **Rien n'est poussé.** Chaque commit se retire seul.
+
+## 5. Retour de Xav, et la file de `Q-167`
+
+- `V-166` **validée** : « OK ».
+- `Q-167` tranchée : « on continue : 4. la visée se fait avec le curseur
+  (souris ou joystick droit) ou avec un tap and drag de la compétence pour
+  téléphone. Puis 2. on prend les mêmes et on recommence : 8 positions (se
+  servir de la capuche et sa pointe pour faire varier de façon visible) ».
+- Une file de micro-tickets, dans cet ordre, un commit chacun, chacun
+  retirable seul : `D-247` (le curseur), `D-248` (le doigt), `D-249` (huit
+  directions). Une ligne ici par commit, écrite au moment du commit.
+
+| Commit | Ticket | Ce qu'il faut en retenir |
+|---|---|---|
+| `ab5426a` | DOC | `Q-167` tranchée, `V-166` validée ; `D-247` à `D-249` ouverts |
+| (ce commit) | `D-247` | L'Onde part vers le curseur (souris au clavier, stick droit à la manette), au bout de sa portée ; sinon la cible automatique. `competences.js#pointVise`, `curseur.js#viseeDuCurseur`, `lireVisee`. Vu sous Chrome. `V-167`, `Q-168` |

@@ -65,7 +65,7 @@ Test à appliquer à chaque catalogue de données : ajouter une entrée (arme, e
 - Vérification syntaxique : `node --check <fichier>.js` sur chaque fichier JS livré (aucune dépendance, `package.json` déclare `"type": "module"`).
 - Tests : `node tests/<nom>.js` pour un fichier isolé, ou `node tools/run_tests.js` (= `npm test`) pour toute la suite d'un coup. Pas de framework de test, scripts headless autonomes basés sur `node:assert/strict`.
 - Serveur local : `node serveur_local.js` (statique, sans dépendance, réponses `no-store`), sert le jeu sur `http://localhost:8080`.
-- Dettes de Xav : `npm run dettes` (`tools/dettes/`, outil de dev, port 8090, boucle locale seulement) — une ligne du suivi à la fois, les plus anciennes d'abord ; la réponse s'écrit dans `docs/DOC_suivi-dettes.md` et régénère `A_FAIRE.md` (la file, lisible sur GitHub, **générée : ne jamais l'éditer**).
+- Dettes de Xav : `npm run dettes` (`tools/dettes/`, outil de dev, port 8090, boucle locale seulement) — une ligne du suivi à la fois, les plus anciennes d'abord ; la réponse s'écrit dans `docs/DOC_suivi-dettes.md` et régénère `A_FAIRE.md` (la file, **générée : ne jamais l'éditer** ; locale, ignorée par Git tant que Xav ne la partage pas).
 
 ## Architecture (état courant)
 

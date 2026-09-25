@@ -28,3 +28,7 @@ docs/captures/sol-2026-09-22/
 docs/captures/stations-2026-09-21/
 docs/captures/diagnostic-unite-dpr/*
 !docs/captures/diagnostic-unite-dpr/LISEZ-MOI.md
+
+# `D-227` : la file de Xav, générée par `npm run dettes`. Locale tant que Xav
+# ne la partage pas (décision de Xav, 25/09 : le dépôt est public).
+A_FAIRE.md

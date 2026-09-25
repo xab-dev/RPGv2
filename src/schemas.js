@@ -1118,6 +1118,56 @@ function validerPuzzle(entry, catalogs, path) {
     if (typeof entry.reinit_si_erreur !== 'boolean') {
       erreurs.push(`${path} > reinit_si_erreur doit être un booléen`);
     }
+  } else if (entry.type === 'levier_maintenu') {
+    // Spec 14, §4.4 : un levier qu'on TIENT. `maintien` dit jusqu'où un
+    // mainteneur le tient (`portee_px`, depuis son centre) et combien de temps
+    // il reste allumé sans personne (`extinction_ms`).
+    if (!entry.position || typeof entry.position.x !== 'number' || typeof entry.position.y !== 'number') {
+      erreurs.push(`${path} > position doit être { x, y }`);
+    }
+    const m = entry.maintien;
+    if (!m || typeof m.portee_px !== 'number' || !(m.portee_px > 0)) {
+      erreurs.push(`${path} > maintien.portee_px doit être un nombre de pixels > 0`);
+    }
+    if (!m || typeof m.extinction_ms !== 'number' || !(m.extinction_ms >= 0)) {
+      erreurs.push(`${path} > maintien.extinction_ms doit être un nombre de ms positif ou nul`);
+    }
+    erreurs.push(...erreursRenderVisuel(entry, catalogs, path));
+    erreurs.push(...erreursGeometrieInteractif(entry, catalogs, path));
+  } else if (entry.type === 'simultane') {
+    // Spec 14, §4.4 : quand TOUS ces leviers tenus sont allumés à la fois,
+    // `flag_pose` est posé. `explication` (facultative) : après
+    // `apres_extinctions` extinctions, le follet ouvre `dialogue`, une seule
+    // fois par partie (`flag`, qui doit donc être persistant).
+    const parId = new Map((catalogs.puzzles || []).map((p) => [p.id, p]));
+    if (!Array.isArray(entry.tous_allumes) || entry.tous_allumes.length < 2) {
+      erreurs.push(`${path} > tous_allumes doit lister au moins deux leviers tenus`);
+    } else {
+      for (const id of entry.tous_allumes) {
+        const levier = parId.get(id);
+        if (!levier) erreurs.push(`${path} > tous_allumes[] > "${id}" introuvable dans puzzles.json`);
+        else if (levier.type !== 'levier_maintenu') erreurs.push(`${path} > tous_allumes[] > "${id}" n'est pas un levier_maintenu`);
+      }
+    }
+    if (typeof entry.flag_pose !== 'string') {
+      erreurs.push(`${path} > flag_pose est requis (c'est lui qui ouvre, pas l'état des leviers)`);
+    }
+    if (entry.explication !== undefined) {
+      const e = entry.explication;
+      if (!e || !Number.isInteger(e.apres_extinctions) || e.apres_extinctions < 1) {
+        erreurs.push(`${path} > explication.apres_extinctions doit être un entier >= 1`);
+      }
+      if (!e || !(catalogs.dialogues || []).some((d) => d.id === e.dialogue)) {
+        erreurs.push(`${path} > explication.dialogue "${e && e.dialogue}" introuvable dans dialogues.json`);
+      }
+      if (!e || !(catalogs.flags || []).some((f) => f.id === e.flag)) {
+        erreurs.push(`${path} > explication.flag "${e && e.flag}" non déclaré dans flags.json`);
+      } else if ((catalogs.scenes || []).some((sc) => sc.descente && (sc.descente.flags || []).includes(e.flag))) {
+        // Un flag de descente est retiré à chaque descente : l'explication se
+        // rejouerait à chaque fois, contre §4.4 (« sans le dialogue »).
+        erreurs.push(`${path} > explication.flag "${e.flag}" est un flag de descente (l'explication ne se rejoue pas)`);
+      }
+    }
   } else if (entry.type === 'station_placeholder') {
     // 03_maison-exterieur §3.4 : table/coffre/atelier/puits — interactif
     // stateless (aucune entrée dans puzzles.js#etatInitial), INTERACT à
@@ -1189,7 +1239,7 @@ function validerPuzzle(entry, catalogs, path) {
     erreurs.push(...erreursRenderVisuel(entry, catalogs, path));
     erreurs.push(...erreursGeometrieInteractif(entry, catalogs, path));
   } else {
-    erreurs.push(`${path} > type "${entry.type}" inconnu (levier | sequence | station_placeholder | station | stele)`);
+    erreurs.push(`${path} > type "${entry.type}" inconnu (levier | levier_maintenu | sequence | simultane | station_placeholder | station | stele)`);
   }
   return erreurs;
 }
@@ -1331,6 +1381,11 @@ function validerConversation(entry, catalogs, path) {
       erreurs.push(`${chemin} > locuteur doit être l'un de ${LOCUTEURS_DIALOGUE.join('/')}, ou un id de enemies.json`);
     }
     if (typeof noeud.text_key !== 'string') erreurs.push(`${chemin} > text_key manquant`);
+    // Spec 14, §4.4 : une réplique qui NOMME un bouton déclare son verbe ; son
+    // texte reçoit `{glyphe}`, le glyphe de ce verbe au périphérique actif.
+    if (noeud.glyphe !== undefined && !(catalogs.glyphes || []).some((g) => g.verbe === noeud.glyphe)) {
+      erreurs.push(`${chemin} > glyphe "${noeud.glyphe}" : aucun verbe de ce nom dans glyphes.json`);
+    }
     const options = noeud.options === undefined ? [] : noeud.options;
     if (!Array.isArray(options)) {
       erreurs.push(`${chemin} > options doit être un tableau`);

@@ -331,5 +331,22 @@
         "text_key": "dlg.zeros.fin.4"
       }
     }
+  },
+  {
+    "id": "dlg_follet_pose",
+    "declencheur": "levier_maintenu_explication",
+    "entree": "l1",
+    "noeuds": {
+      "l1": {
+        "locuteur": "follet",
+        "text_key": "dlg.follet_pose.1",
+        "suite": "l2"
+      },
+      "l2": {
+        "locuteur": "follet",
+        "text_key": "dlg.follet_pose.2",
+        "glyphe": "target_next"
+      }
+    }
   }
 ]

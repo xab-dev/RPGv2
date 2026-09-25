@@ -64,10 +64,12 @@ import {
   creerFollet, mettreAJourEtat as mettreAJourFollet, avancerPosition as avancerFollet, monstreEngageable,
   cibleSuivante as cibleSuivanteFollet,
   resoudreEchelleJeu as resoudreEchelleJeuFollet, echelleFolletEnTransition, resoudreRayonAuraPx,
-  avancerOrbiteAutour,
+  avancerOrbiteAutour, poserFollet, rappelerFollet, folletPoste,
 } from './companion.js';
 import { creerGenerateur, resoudreLoot } from './loot.js';
-import { etatInitial as etatInitialPuzzles, activerLevier } from './puzzles.js';
+import {
+  etatInitial as etatInitialPuzzles, activerLevier, allumerLevierMaintenu, avancerLevierMaintenu, simultanesResolus,
+} from './puzzles.js';
 import { creerDialogue, resoudreNoeud, erreursTextesDialogues } from './dialogue.js';
 import { creerEtatEffets, activer as activerEffet, tick as tickEffets, actif as effetActif } from './effets_monde.js';
 import {
@@ -176,7 +178,10 @@ const DISTANCE_INTERACT_PX = 28;
 // Les types d'interactif qu'on prend « à la main » (INTERACT) ; un autre type
 // posé dans `scene.interactifs` est ignoré par le geste, qui passe au suivant.
 // Lu par `cibleInteraction` seule, qui dit ce que vise l'appui (`D-177`).
-const TYPES_INTERACTIFS_A_LA_MAIN = ['levier', 'station_placeholder', 'station', 'stele'];
+const TYPES_INTERACTIFS_A_LA_MAIN = ['levier', 'levier_maintenu', 'station_placeholder', 'station', 'stele'];
+// Les interactifs qui ont un MANCHE (un geste de bascule, `D-158`) : le levier
+// qu'on bascule et, spec 14, celui qu'on tient.
+const TYPES_LEVIER = ['levier', 'levier_maintenu'];
 // MT_texte-flottant_2026-09-19 (`D-05`) : gabarit du texte de gain (« +{n}
 // {item} »), déclaré une seule fois ici. C'est une CLÉ de localisation, pas
 // un texte : le « + », l'ordre des morceaux et l'espace se traduisent comme
@@ -1443,6 +1448,11 @@ export function creerOrchestrateurGrotte({
   // d'AFFICHAGE, jamais sauvegardé : la vérité reste `puzzlesEtat`. Un levier
   // sans entrée ici se pose à sa place, sans rejouer son geste.
   const basculesLeviers = new Map();
+  // Spec 14, §4.4 : combien de fois un levier tenu s'est éteint, par
+  // `simultane`, depuis l'entrée en scène — ce que compte l'explication du
+  // follet (« il a vu le problème »). De session : une entrée de scène repart
+  // de zéro, et l'explication, une fois dite, ne revient pas (son flag).
+  let extinctionsLeviers = new Map();
   // Objets au sol de la scène courante (03_maison-exterieur §3.3) :
   // { [itemId]: [{x,y}, ...] }, reconstruit/complété à chaque entrée en
   // scène (ground_items.js#remplirItemsSol), persisté par scène dans
@@ -1780,7 +1790,8 @@ export function creerOrchestrateurGrotte({
     const donnees = registre.obtenir('dialogues', dialogueId);
     if (!donnees) throw new Error(`dialogue "${dialogueId}" introuvable dans dialogues.json`);
     dialogue.demarrerConversation(donnees, {
-      resoudre: (noeudId) => resoudreNoeud(donnees, noeudId, registre, i18n, companionId),
+      resoudre: (noeudId) => resoudreNoeud(donnees, noeudId, registre, i18n, companionId,
+        input.peripheriqueActif ? input.peripheriqueActif() : 'manette'),
       poids: reglageAlignement.poids_defaut,
       onResultat: appliquerResultatDialogue,
       onFermer,
@@ -1982,6 +1993,7 @@ export function creerOrchestrateurGrotte({
     accumulateursSpawn = {};
     viderProjectiles(projectiles);
     rencontre = null;
+    extinctionsLeviers = new Map();
 
     follet = save.hero.companion ? creerFollet(save.hero.companion, hero, sensOrbiteFollet()) : null;
     puzzlesEtat = { ...etatInitialPuzzles(registre), ...save.puzzles };
@@ -2124,7 +2136,7 @@ export function creerOrchestrateurGrotte({
   // manche a touché sa butée, pas à l'appui. Sans état de geste (la toute
   // première frame), l'état réel, posé. `null` pour tout autre interactif.
   function gesteDuLevier(puzzle) {
-    if (puzzle.type !== 'levier') return null;
+    if (!TYPES_LEVIER.includes(puzzle.type)) return null;
     return basculesLeviers.get(puzzle.id) || avancerBascule(null, !!puzzlesEtat[puzzle.id]?.actif, 0);
   }
 
@@ -2175,6 +2187,11 @@ export function creerOrchestrateurGrotte({
         puzzlesEtat = activerLevier(registre, puzzlesEtat, puzzleId, flags);
         save.puzzles = puzzlesEtat;
         etatModifie = true;
+        return;
+      }
+      if (puzzle.type === 'levier_maintenu') {
+        puzzlesEtat = allumerLevierMaintenu(registre, puzzlesEtat, puzzleId);
+        save.puzzles = puzzlesEtat;
         return;
       }
       if (puzzle.type === 'station_placeholder') {
@@ -3593,6 +3610,82 @@ export function creerOrchestrateurGrotte({
     for (const f of def.flags_fin) flags.set(f);
   }
 
+  // --- Spec 14, §4.4 : les deux mains ------------------------------------
+  // Le levier tenu allumé le plus proche du héros, à SA portée de maintien —
+  // celui sur lequel RB poserait le follet —, ou `null`.
+  function levierTenuAPortee() {
+    let meilleur = null;
+    let meilleure = Infinity;
+    for (const id of interactifsPresents()) {
+      const p = scene.puzzle(id);
+      if (p.type !== 'levier_maintenu' || !puzzlesEtat[id]?.actif) continue;
+      const centre = centreInteractif(p);
+      const d = Math.hypot(hero.x - centre.x, hero.y - centre.y);
+      if (d <= p.maintien.portee_px && d < meilleure) {
+        meilleure = d;
+        meilleur = { id, ...centre };
+      }
+    }
+    return meilleur;
+  }
+
+  function centreInteractif(puzzle) {
+    const pose = scene.poseEffectiveInteractif(puzzle.id);
+    return { x: (pose.x + 0.5) * scene.tileSize, y: (pose.y + 0.5) * scene.tileSize };
+  }
+
+  // RB, Tab ou toucher le follet (B2, « contextuel ») : un follet posé
+  // revient, n'importe où ; près d'un levier tenu allumé, il s'y pose ;
+  // sinon, la cible suivante (`D-54`), comme toujours.
+  function cibleOrdonnee(folletCourant, companion) {
+    if (folletPoste(folletCourant)) return rappelerFollet(folletCourant);
+    const levier = levierTenuAPortee();
+    if (levier) return poserFollet(folletCourant, levier);
+    return cibleSuivanteFollet(folletCourant, hero, monstres, companion);
+  }
+
+  // Une frame des leviers tenus : qui les tient (le héros à portée, ou le
+  // follet posé dessus), lesquels s'éteignent, et si une paire est complète.
+  // Le flag d'un `simultane` est un flag de descente : le passage reste
+  // ouvert même quand les leviers s'éteignent ensuite.
+  function majLeviersMaintenus(deltaMs) {
+    const eteints = [];
+    for (const id of scene.interactifs) {
+      const p = scene.puzzle(id);
+      if (p.type !== 'levier_maintenu' || !puzzlesEtat[id]?.actif) continue;
+      const centre = centreInteractif(p);
+      const tenuParHeros = Math.hypot(hero.x - centre.x, hero.y - centre.y) <= p.maintien.portee_px;
+      const tenuParFollet = folletPoste(follet) && follet.poste.id === id;
+      const { etat, eteint } = avancerLevierMaintenu(puzzlesEtat[id], tenuParHeros || tenuParFollet, deltaMs, p.maintien.extinction_ms);
+      if (etat === puzzlesEtat[id]) continue;
+      puzzlesEtat = { ...puzzlesEtat, [id]: etat };
+      save.puzzles = puzzlesEtat;
+      if (eteint) eteints.push(id);
+    }
+    for (const simultane of simultanesResolus(registre, puzzlesEtat, (f) => flags.has(f))) {
+      flags.set(simultane.flag_pose);
+      etatModifie = true;
+    }
+    if (eteints.length > 0) compterExtinctions(eteints);
+  }
+
+  // L'explication du follet (§4.4) : après `apres_extinctions` extinctions des
+  // leviers d'une même paire encore ouverte, une seule fois par partie.
+  function compterExtinctions(eteints) {
+    for (const p of registre.tous('puzzles')) {
+      if (p.type !== 'simultane' || !p.explication || flags.has(p.flag_pose) || flags.has(p.explication.flag)) continue;
+      const n = eteints.filter((id) => p.tous_allumes.includes(id)).length;
+      if (n === 0) continue;
+      const total = (extinctionsLeviers.get(p.id) || 0) + n;
+      extinctionsLeviers.set(p.id, total);
+      if (total >= p.explication.apres_extinctions && !dialogue.estOuvert()) {
+        flags.set(p.explication.flag);
+        ouvrirDialogueCatalogue(p.explication.dialogue);
+        return;
+      }
+    }
+  }
+
   function mettreAJourCombat(deltaMs, etatGameplay, statsPrimaires, statsDerivees) {
     const deltaS = deltaMs / 1000;
     anneauAttaqueMs = tickCooldown(anneauAttaqueMs, deltaMs);
@@ -3608,9 +3701,7 @@ export function creerOrchestrateurGrotte({
       // AVANT le déplacement, pour que le vol amorti de cette frame-ci parte
       // déjà vers le nouveau monstre. `etatGameplay` est déjà neutralisé sous
       // UI : rien à tester de plus ici.
-      if (etatGameplay.target_next.pressed) {
-        follet = cibleSuivanteFollet(follet, hero, monstres, companionDuFollet);
-      }
+      if (etatGameplay.target_next.pressed) follet = cibleOrdonnee(follet, companionDuFollet);
       follet = avancerFollet(follet, hero, monstres, deltaS, {
         sens: sensOrbiteFollet(),
         dureeInversionMs: reglageAlignement.orbite.duree_inversion_ms,
@@ -3826,7 +3917,7 @@ export function creerOrchestrateurGrotte({
   function majBasculesLeviers(deltaMs) {
     for (const id of scene.interactifs) {
       const p = scene.puzzle(id);
-      if (p.type !== 'levier') continue;
+      if (!TYPES_LEVIER.includes(p.type)) continue;
       basculesLeviers.set(id, avancerBascule(basculesLeviers.get(id), !!puzzlesEtat[id]?.actif, deltaMs));
     }
   }
@@ -4110,6 +4201,7 @@ export function creerOrchestrateurGrotte({
       if (etatGameplay.consume.pressed) essayerConsommer();
       mettreAJourCombat(deltaMs, etatGameplay, statsPrimaires, statsDerivees);
       majRencontre(deltaMs);
+      majLeviersMaintenus(deltaMs);
       verifierEntreesDeZone();
       indices.maj(deltaMs);
       verifierIndicesNiveau();

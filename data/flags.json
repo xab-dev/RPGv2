@@ -366,5 +366,9 @@
   {
     "id": "flag_zeros_rencontre",
     "label_key": "flag.zeros_rencontre"
+  },
+  {
+    "id": "flag_follet_pose_appris",
+    "label_key": "flag.follet_pose_appris"
   }
 ]

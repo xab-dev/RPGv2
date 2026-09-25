@@ -106,5 +106,49 @@
     "couleur": "#d97757",
     "armement_ms": 250,
     "flag": "flag_stele_miroir_lue"
+  },
+  {
+    "id": "puzzle_annexe_levier_gauche",
+    "type": "levier_maintenu",
+    "position": {
+      "x": 6,
+      "y": 4
+    },
+    "maintien": {
+      "portee_px": 44,
+      "extinction_ms": 600
+    },
+    "render": {
+      "visuel": "visuel_levier"
+    }
+  },
+  {
+    "id": "puzzle_annexe_levier_droite",
+    "type": "levier_maintenu",
+    "position": {
+      "x": 28,
+      "y": 4
+    },
+    "maintien": {
+      "portee_px": 44,
+      "extinction_ms": 600
+    },
+    "render": {
+      "visuel": "visuel_levier"
+    }
+  },
+  {
+    "id": "puzzle_annexe_deux_mains",
+    "type": "simultane",
+    "tous_allumes": [
+      "puzzle_annexe_levier_gauche",
+      "puzzle_annexe_levier_droite"
+    ],
+    "flag_pose": "flag_annexe_passage_2",
+    "explication": {
+      "apres_extinctions": 2,
+      "dialogue": "dlg_follet_pose",
+      "flag": "flag_follet_pose_appris"
+    }
   }
 ]

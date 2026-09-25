@@ -167,6 +167,8 @@ export function monstreEngageable(monstre, hero, follet, companion) {
 // En `suivre` — donc aussi pendant le retour en orbite —, le follet accroche
 // le candidat le PLUS PROCHE DU HÉROS parmi les engageables.
 export function mettreAJourEtat(follet, hero, monstres, companion) {
+  // Posé (spec 14, B2), le follet n'engage rien : il tient ce qu'on lui a confié.
+  if (follet.etat === 'poste') return follet;
   if (follet.etat === 'engager') {
     const cible = monstres.find((m) => m.id === follet.cibleMonstreId);
     if (!cible || cible.mort || distance(hero, cible) > distanceRelachePx(companion)) {
@@ -214,6 +216,16 @@ export function avancerPosition(follet, hero, monstres, deltaS, orbite = {}) {
   // voulue, cohérente avec `D-51` : l'aura arrive AVEC le follet, l'effet
   // commence quand le cercle touche le monstre, pas à l'instant de la
   // décision d'engager.
+  // Posé : il va à son poste par la même loi qu'une approche, et y reste.
+  if (follet.etat === 'poste' && follet.poste) {
+    return {
+      ...follet,
+      x: follet.x + (follet.poste.x - follet.x) * k,
+      y: follet.y + (follet.poste.y - follet.y) * k,
+      angleOrbite,
+      facteurOrbite,
+    };
+  }
   if (follet.etat === 'engager') {
     const cible = monstres.find((m) => m.id === follet.cibleMonstreId);
     if (cible) {
@@ -299,4 +311,27 @@ export function avancerOrbiteAutour(corps, centre, { rayonPx, vitesseRadS }, del
     y: corps.y + (cibleY - corps.y) * k,
     angleOrbite,
   };
+}
+
+// --- Le follet posé (spec 14, §4.4, B2 tranché par Xav) --------------------
+// Un ÉTAT du follet, à côté de `suivre` et `engager`, et non une exception de
+// la salle 2 : « très utile par la suite avec les mécanismes automatisés
+// (follet agentique) ». `poste` porte sa cible — `{ id, x, y }`, l'id de ce
+// qu'il tient et le point où il se tient — sans savoir ce que c'est : un
+// futur mécanisme qui confie une tâche au follet réutilisera cet état. De
+// session, jamais sauvegardé (une entrée de scène recrée le follet, donc le
+// rappelle). Pur.
+export function poserFollet(follet, poste) {
+  if (!follet || !poste) return follet;
+  return { ...follet, etat: 'poste', cibleMonstreId: null, poste: { id: poste.id, x: poste.x, y: poste.y } };
+}
+
+// Le rappel : il revient en orbite, par l'amortissement ordinaire.
+export function rappelerFollet(follet) {
+  if (!follet || follet.etat !== 'poste') return follet;
+  return { ...follet, etat: 'suivre', poste: null };
+}
+
+export function folletPoste(follet) {
+  return !!follet && follet.etat === 'poste';
 }

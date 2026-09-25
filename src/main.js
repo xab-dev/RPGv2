@@ -6202,6 +6202,10 @@ export async function demarrerJeu() {
       save.settings.musique = !(save.settings.musique !== false);
       definirMusiqueActive(save.settings.musique);
     },
+    // `D-44` : la langue est un réglage de PARTIE (`save.js#REGLAGES_APPAREIL`
+    // ne la cite pas), lue au démarrage ; rien ne l'écrivait. Même chemin que
+    // la musique : mutation directe, persistée au prochain autosave.
+    langueChoisie: (langue) => { save.settings.lang = langue; },
     // `D-64` (T7) : le volume. Même patron exactement que la musique —
     // l'état réel vit dans `save.settings`, l'effet dans `audio.js`, et le
     // menu ne connaît ni l'un ni l'autre.

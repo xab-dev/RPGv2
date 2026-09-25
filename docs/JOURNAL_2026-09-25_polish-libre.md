@@ -24,7 +24,8 @@ Branche `polish-libre-2026-09-25`, partie de `main`. Pas de push.
 | `ed24e23` | Ménage | Le journal de la profondeur archivé, INDEX à jour |
 | `027d419` | DOC | Les dates « 26/09 » ramenées au 25/09 (hors archives) ; la sentinelle et le diagnostic |
 | `9f9732e` | `D-225` | La clé morte `menu.follet_actuel` retirée des deux locales |
-| (ce commit) | `D-29` | `image-rendering: pixelated` retiré d'`index.html` (décision verrouillée du 15/09) |
+| `80261f6` | `D-29` | `image-rendering: pixelated` retiré d'`index.html` (décision verrouillée du 15/09) |
+| (ce commit) | `D-44` | La langue choisie est sauvegardée (`save.settings.lang`), comme la musique ; test neuf |
 
 ## 1. La sentinelle (`traversee_nuit.mjs`, Moyen, ×1 et ×6)
 

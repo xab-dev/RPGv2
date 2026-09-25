@@ -3,7 +3,7 @@ projet: RPG V2
 episode/session: Spec 14 (l'Annexe 1), palier I — choisir
 type: fichier de bord
 version: 1.0.0
-statut: livré — à voir par Xav : V-157 ; Q-163 tranchée (suites D-216, D-217)
+statut: livré et validé (V-157, spec 14 validée) ; Q-163 tranchée (suites D-216, D-217) ; album reporté
 catégorie: Journal
 date: 2026-09-25
 genere_par: claude
@@ -63,3 +63,8 @@ Demande de Xav : « spec 14 palier I, go ! ». Branche `annexe-1`, non poussée.
 - `Q-163` **tranchée** : « Q-163: ok pour X. ajout de Y : réinitialiser tout (les stats) . oui, il faut changer la phrase de réinitilisation, c'est des détails UX pas très important pour l'instant, prio gameplay et graphisme (puis UX/UI) ».
 - Deux suites ouvertes, **non codées** (priorité de Xav : gameplay et graphisme, puis UX/UI) : `D-216` (l'action Y, dont le partage avec X est à préciser) et `D-217` (la phrase de la confirmation).
 - Session close : `annexe-1` poussée sur `origin` pour sauvegarde. Reste l'album de clôture de la spec, pris par Xav (annexe B du suivi : les six vues, plus huit vues de l'Annexe).
+
+## 5. Clôture (Xav, 26/09)
+
+- « c'est beaucoup de travail, la où j'avais plein d'idée pour la suite du jeu. on reporte gentillement, spec 14 validé, close quand l'album sera la. je vais chercher des petites mains (collègues) pour m'aider. »
+- `V-157` **validée**, la spec 14 **validée**. Elle se **close** quand l'album de référence sera pris (annexe B du suivi : les six vues, plus `07` à `14`). Reporté, sans échéance.

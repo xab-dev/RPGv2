@@ -38,3 +38,12 @@ fusionné, rien poussé.
 |---|---|---|
 | `2638e33` | Ménage | Journal de l'ouverture de la capuche archivé ; aucune réponse nouvelle au suivi ; « Où on en est » : les trois branches de la nuit |
 | `32a86e5` | `D-262` | **Simplifier.** Les poses sortent de `visuels.js` dans `src/poses.js` : une matrice par pose, la même pour le dessin, la découpe, les tests et les bancs (les tests ne refont plus le calcul). Données : `pieces` (origine, `miroir`, `decoupe`, `cachee` déclarés une fois), l'ouverture en une pièce (au lieu de trois poses recopiées), `visage` → `oeil`, `pli` et `rabat` groupés, les trois vues de l'est déclarées `reflets` de l'ouest. 874 → 397 lignes. Banc de différence (hors dépôt, `tools/_ref/`) : identique au pixel près, sauf la lueur de côté, maintenant sur la lèvre comme de face. `V-182`. Suite verte, 224 fichiers |
+| `7b76de1` | DOC | Le journal, `D-262` |
+
+## Le polish (branche `heros-polish`, partie de `heros-simplification`)
+
+Regardé d'abord en grand (atelier hors dépôt, `tools/_ref/atelier.html` : ×28, ×12, la taille du jeu sur l'herbe, la terre, la nuit, les trois follets) et en jeu (`heros_scene.mjs`) : des aplats, un trait noir dur là où la capuche pose sur les épaules, des liserés en bandes plates. Le héros fait ~45 px de haut à l'écran en 1080p : un détail sous le pixel ne se voit qu'au téléphone (DPR 3). Plan, une couche par commit : la cape, la capuche, les jonctions, la lumière de l'œil sur la cape, les reflets de l'œil.
+
+| Commit | Ticket | Ce qu'il faut en retenir |
+|---|---|---|
+| `49b4f2b` | `D-263` | **La cape en volume** : dégradé radial centré au-dessus de l'épaule gauche (moteur : `degrade.centre`), épaules éclairées, trois plis, liserés du flanc en dégradé, l'ombre de la capuche fondue sur les épaules. Première passe trop sombre (ourlet noir) et plis trop tracés : éclaircie. 29 primitives. `V-183`. Suite verte, 225 fichiers |

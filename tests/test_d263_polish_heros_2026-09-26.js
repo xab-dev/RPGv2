@@ -53,4 +53,38 @@ const unePrimitive = (degrade, forme = 'rect') => ({ id: 'visuel_temoin', ancre:
   console.log('OK centre : le dégradé se décale dans le repère de sa primitive');
 }
 
+// --- 2. `D-264` : la lumière ne se reflète pas, même en dégradé ----------------------
+// Une pièce miroir dessinée en reflet : le canvas est retourné, donc le
+// dégradé reçoit un centre de l'autre côté (à l'écran, il reste où il était),
+// et un dégradé horizontal s'inverse. Sans reflet, rien ne change.
+{
+  const temoin = (degrade, forme = 'rect') => ({
+    id: 'visuel_temoin', ancre: 'centre',
+    pieces: { p: { miroir: true } },
+    orientations: { ouest: { p: {} } },
+    reflets: { est: 'ouest' },
+    primitives: [{ forme, dx: 0, dy: 0, w: 4, h: 2, piece: 'p', degrade: { ...degrade, stops } }],
+  });
+  const paliers = (visuel, orientation) => {
+    const notes = [];
+    const ctx = new Proxy({}, {
+      get(_, prop) {
+        if (String(prop).startsWith('create')) return (...a) => { notes.push(['cree', ...a]); return { addColorStop: (o, c) => notes.push([o, c]) }; };
+        return () => {};
+      },
+      set() { return true; },
+    });
+    dessinerVisuel(ctx, visuel, 0, 0, { orientation });
+    return notes;
+  };
+  const radial = temoin({ direction: 'radial', centre: [-1, -0.5] });
+  assert.deepEqual(paliers(radial, 'ouest')[0], ['cree', -1, -0.5, 0, -1, -0.5, 2], 'sans reflet, le centre d\'auteur');
+  assert.deepEqual(paliers(radial, 'est')[0], ['cree', 1, -0.5, 0, 1, -0.5, 2], 'en reflet, le centre de l\'autre côté');
+  const horizontal = paliers(temoin({ direction: 'horizontal' }), 'est');
+  assert.deepEqual(horizontal.slice(1), [[0, 'rgba(255, 255, 255, 1)'], [1, 'rgba(0, 0, 0, 1)']], 'en reflet, un dégradé horizontal s\'inverse');
+  const rond = paliers(temoin({}, 'degrade_radial'), 'est');
+  assert.deepEqual(rond.slice(1), [[0, 'rgba(0, 0, 0, 1)'], [1, 'rgba(255, 255, 255, 1)']], 'un dégradé rond ne s\'inverse pas');
+  console.log('OK reflet : la lumière d\'un dégradé reste du même côté de l\'écran');
+}
+
 console.log('OK test_d263_polish_heros');

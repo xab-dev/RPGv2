@@ -167,14 +167,19 @@ export function plierPoints(points, pose, ox = 0, oy = 0) {
   });
 }
 
-// La primitive telle que sa pose la dessine : ses points pliés, et son style
-// reflété si son dessin l'est (`reflet` d'une primitive : `{ couleur?,
-// alpha? }`, le liseré clair passé à l'ombre y prend le ton du sombre). Gardée
-// par pose : les pliées ne changent qu'avec elle, et la pose est une donnée.
+// La primitive telle que sa pose la dessine : ses points pliés et, si son
+// dessin est reflété, sa LUMIÈRE remise en place — la lumière du jeu vient
+// d'en haut à gauche dans toutes les vues :
+// - son style `reflet` (`{ couleur?, alpha? }`) : le liseré clair, passé à
+//   l'ombre, y prend le ton du sombre (`D-255`) ;
+// - son dégradé (`D-264`) : le reflet du dessin l'emporterait à droite ; son
+//   centre repasse de l'autre côté, un dégradé horizontal s'inverse.
+// Gardée par pose : les pliées ne changent qu'avec elle, et la pose est une
+// donnée.
 const posees = new WeakMap();
 export function primitivePosee(visuel, piece, primitive, pose) {
   const pliee = (pose.pli || pose.rabat) && primitive.points;
-  const refletee = pose.reflet && definitionPiece(visuel, piece).miroir && primitive.reflet;
+  const refletee = pose.reflet && definitionPiece(visuel, piece).miroir && (primitive.reflet || primitive.degrade);
   if (!pliee && !refletee) return primitive;
   let parPrimitive = posees.get(pose);
   if (!parPrimitive) posees.set(pose, (parPrimitive = new WeakMap()));
@@ -182,8 +187,18 @@ export function primitivePosee(visuel, piece, primitive, pose) {
   if (!posee) {
     posee = { ...primitive };
     if (pliee) posee.points = plierPoints(primitive.points, pose, primitive.dx || 0, primitive.dy || 0);
-    if (refletee) Object.assign(posee, primitive.reflet);
+    if (refletee && primitive.reflet) Object.assign(posee, primitive.reflet);
+    if (refletee && primitive.degrade) posee.degrade = degradeReflete(primitive);
     parPrimitive.set(primitive, posee);
   }
   return posee;
+}
+
+function degradeReflete({ forme, degrade }) {
+  const [cx, cy] = degrade.centre ?? [0, 0];
+  const reflete = { ...degrade, centre: [-cx, cy] };
+  if ((degrade.direction ?? 'horizontal') === 'horizontal' && forme !== 'degrade_radial') {
+    reflete.stops = degrade.stops.map((s) => ({ ...s, offset: 1 - s.offset })).reverse();
+  }
+  return reflete;
 }

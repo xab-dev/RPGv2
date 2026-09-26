@@ -1,8 +1,8 @@
 ---
 projet: RPG V2
 spec: 16 — L'animation du héros
-version: 1.1.0
-statut: paliers A à C validés par Xav (26/09, `V-188` à `V-190`) ; palier D écrit le 26/09
+version: 1.2.0
+statut: paliers A à C validés par Xav (26/09, `V-188` à `V-190`) ; paliers D et E écrits le 26/09
 date: 2026-09-26
 genere_par: claude
 verifie_par: xav
@@ -103,6 +103,9 @@ rien ne change (les bancs, les tests, tout autre visuel).
 - **D — Le pas suit la vitesse** (`D-273`, §4). Critère : à l'Agilité de
   départ, rien ne change ; ralenti, le pas ralentit ; à Agilité 49, il presse
   sans que les pieds glissent trop, et reste sous 3 Hz.
+- **E — La capuche en retard** (§5). Critère : au demi-tour, Xav voit le
+  regard partir, la capuche suivre et dépasser un peu avant de se poser, la
+  pointe traîner ; à l'arrêt, les huit poses validées, telles quelles.
 
 ## 4. Le pas qui suit la vitesse (palier D)
 
@@ -136,7 +139,44 @@ glisse sur un pas trop lent pour lui. Le palier D :
   plus dans la cadence pourrait passer dans l'ampleur (une foulée plus
   longue). Pas sans Xav.
 
-## 5. Hors de cette spec
+## 5. La capuche en retard (palier E)
+
+> Retard de la capuche. — Xav, 26/09 (choix du palier E)
+
+Le corps (la cape) ne tourne pas (`Q-170` (4)) : ce qui tourne, c'est la
+tête. Le mouvement secondaire se joue donc DANS la tête :
+
+- **le regard mène** : l'œil, sa lueur et le creux de l'ouverture prennent
+  l'angle affiché (§2.1), comme aujourd'hui ;
+- **la coque de la capuche suit** en retard, et dépasse un peu avant de se
+  poser — le tissu a du poids ;
+- **la pointe**, plus souple, traîne encore davantage.
+
+Le modèle, en données (`inertie` du visuel, une liste) : chaque entrée
+nomme ses `pieces`, qui prennent un angle à elles, tiré vers l'angle affiché
+par un ressort amorti :
+
+- `retard_ms` : le retard en rotation régulière (à 540°/s, 50 ms = 27°) ;
+- `depassement` : la part d'un demi-tour dont la pièce dépasse avant de
+  revenir (0 : aucun, elle se pose sans dépasser) ;
+- `ecart_max_deg` : l'écart au regard, borné — au-delà, la pièce est
+  entraînée. Une pose loin de celle de la tête décrocherait la pointe de sa
+  capuche : la borne l'empêche, quelle que soit la vitesse.
+
+Règles :
+
+- **aucune pièce n'oscille au-delà de 3 Hz** : la fréquence du ressort se
+  déduit de `retard_ms` et `depassement`, et le démarrage refuse un réglage
+  qui la passerait (règle de l'épilepsie) ;
+- une pièce qui en `suit` une autre prend son angle ; une pièce découpée par
+  une silhouette l'est par la silhouette telle qu'elle est dessinée, à son
+  angle à elle (`D-260`, inchangé) ;
+- à l'arrêt, le ressort se pose : les huit poses clés se retrouvent telles
+  quelles ; sans `angle` (les bancs par direction, les autres visuels),
+  rien ne change ;
+- état d'affichage, jamais sauvegardé, remis à zéro avec l'orientation.
+
+## 6. Hors de cette spec
 
 Une animation d'attaque ou de compétence, un clignement (un œil qui
 s'éteint et se rallume flirte avec le seuil de 3 Hz : à discuter), la marche

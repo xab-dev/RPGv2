@@ -70,4 +70,5 @@ branche à chaque arrêt (demandé par Xav) ; jamais `main`.
 Le palier B ne touche pas le dessin (`visuels.js`, `poses.js` inchangés). L'écart vient de `D-282` : le jeu dessine enfin l'angle, le souffle, le pas et la capuche en retard, qu'il ne dessinait pas (les pièces posées et animées passent par leurs matrices, et l'œil par son rideau entre 202 et 225°). +0,1 ms à ×1, +0,2 ms à ×6 : aucune frame perdue à ×1 ; à ×6, 3 frames > 20 ms sur 4 432 (0,07 %). Le point chaud de l'œil est `Q-180`.
 
 | `8612376` | DOC | Journal du palier B, la sentinelle. **Palier B livré, arrêt Xav** |
-| `(ce commit)` | DOC | Les remarques de Xav en jeu (bord du rideau concave, rideau en ombre, bord de l'ouverture en retard sur le globe) entrent au palier C : spec 17 §2, `D-286` à `D-288` |
+| `28b37e2` | DOC | Les remarques de Xav en jeu (bord du rideau concave, rideau en ombre, bord de l'ouverture en retard sur le globe) entrent au palier C : spec 17 §2, `D-286` à `D-288` |
+| `(ce commit)` | D-286, D-287 | **Palier C ouvert.** Le rideau de l'œil : bord concave (`bord`, `rayon`) et ombre avant l'occlusion (`ombre`, découpée par `devant`). Défauts = `D-278` à l'octet. Xav, à l'atelier : B, rayon 3,5, « 35 % → 80 % (à 215°) puis 100 % ». À voir : `V-199` |

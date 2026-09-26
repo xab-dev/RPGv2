@@ -95,11 +95,15 @@ function trace(visuel, options) {
   };
   assert.ok(rang('cavite', true) < rang('visage'), 'la cavité est derrière le globe');
   assert.ok(rang('facade') > rang('visage', true), 'la façade est devant le globe');
+  assert.ok(rang('halo') > rang('facade', true), 'le halo éclaire la lèvre de la façade, devant elle');
   const facade = HEROS.primitives.find((p) => p.piece === 'facade' && p.trou);
   assert.ok(facade, 'la façade est percée');
   assert.ok(facade.trou.w > facade.trou.h, 'l\'ouverture est plus large que haute');
   for (const d of ORIENTATIONS) {
     assert.equal(poseDePiece(HEROS, d, 'facade') === null, poseDePiece(HEROS, d, 'cavite') === null, `${d} : façade et cavité paraissent ensemble`);
+    // Le halo (sa propre pièce depuis le polish : il rapetisse de profil pour
+    // ne pas sortir de la silhouette) paraît avec elles.
+    assert.equal(poseDePiece(HEROS, d, 'halo') === null, poseDePiece(HEROS, d, 'facade') === null, `${d} : le halo paraît avec la façade`);
     // Xav : « il faut garder la même proportion que face » — de côté,
     // l'ouverture rapetisse, glisse et s'incline, jamais ne s'écrase.
     const pose = poseDePiece(HEROS, d, 'facade') || {};

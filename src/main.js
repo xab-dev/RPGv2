@@ -5436,6 +5436,8 @@ export function creerOrchestrateurGrotte({
       // (§3.4 03_grotte-polish) — jamais combinées, jamais une 2ᵉ silhouette.
       heroTeinte: companionActif ? companionActif.render.couleur : COULEUR_HERO_NEUTRE,
       heroOrientation: orientationHeros.direction,
+      // Spec 16 : l'angle affiché, qui tourne vers celui du geste.
+      heroAngle: orientationHeros.angle,
       monstres: monstresAffiches,
       follet: follet && companionActif ? {
         // `D-39` : la SILHOUETTE tourne sur la petite orbite, autour du point

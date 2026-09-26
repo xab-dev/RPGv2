@@ -66,7 +66,8 @@ import { CAMP_HEROS } from '../src/projectiles.js';
   assert.equal(orienterDepuisMouvement('est', -1, 0.3), 'ouest', 'partir à l\'opposé bascule');
 
   let o = creerOrientation();
-  assert.deepEqual(o, { direction: ORIENTATION_INITIALE, regardMs: 0 });
+  assert.equal(o.direction, ORIENTATION_INITIALE);
+  assert.equal(o.regardMs, 0);
   o = avancerOrientation(o, { deltaMs: 16, vers: { dx: -30, dy: 5 } });
   assert.equal(o.direction, 'ouest', 'le tir tourne vers la cible');
   o = avancerOrientation(o, { deltaMs: DUREE_REGARD_TIR_MS / 2, dx: 1, dy: 0 });

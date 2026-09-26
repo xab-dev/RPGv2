@@ -940,8 +940,9 @@ function dessinerElement(ctx, element, scene) {
       // `heroTeinte` est déjà résolu par l'appelant (main.js,
       // save.js#COULEUR_HERO_NEUTRE ou companion.render.couleur), jamais une
       // 2ᵉ silhouette dessinée pour le cas "neutre".
-      // `D-229` : le visage suit la direction du regard (`orientation.js`).
-      dessinerVisuel(ctx, scene.heroVisuel, scene.hero.x - camera.x, scene.hero.y - camera.y, { teinte: scene.heroTeinte, orientation: scene.heroOrientation });
+      // `D-229` : le visage suit la direction du regard (`orientation.js`) ;
+      // spec 16 : à l'angle affiché, qui tourne continûment, quand il est donné.
+      dessinerVisuel(ctx, scene.heroVisuel, scene.hero.x - camera.x, scene.hero.y - camera.y, { teinte: scene.heroTeinte, orientation: scene.heroOrientation, angle: scene.heroAngle ?? null });
       break;
     case 'follet':
       dessinerFollet(ctx, scene.follet, scene.sillage, scene.ornementsFollet, camera);

@@ -55,19 +55,53 @@ export function orienterDepuisMouvement(precedente, dx, dy) {
   return nouvelle;
 }
 
-// L'état complet, avancé d'une frame : `{ direction, regardMs }`. Un tir
+// L'état complet, avancé d'une frame : `{ direction, regardMs, angle, angleVise }`. Un tir
 // (`vers`, le vecteur héros → cible) tourne le héros et arme le regard ; tant
 // que le regard dure, la marche ne le retourne pas.
+//
+// Spec 16, palier B : à côté de la direction (le gameplay, les tests, huit
+// secteurs), l'ANGLE AFFICHÉ du héros (`angle`, en degrés à l'écran, lu par le
+// rendu) et l'angle qu'il VISE (`angleVise`) : l'angle exact du geste — le
+// stick en donne 360, le clavier huit — ou de la cible d'un tir. L'angle
+// affiché tourne vers l'angle visé par le plus court chemin, à vitesse
+// bornée : un demi-tour se voit, il ne claque pas.
 export function creerOrientation() {
-  return { direction: ORIENTATION_INITIALE, regardMs: 0 };
+  const angle = ORIENTATIONS.indexOf(ORIENTATION_INITIALE) * SECTEUR_DEG;
+  return { direction: ORIENTATION_INITIALE, regardMs: 0, angle, angleVise: angle };
+}
+
+// Provisoire, non validé en jeu. Un demi-tour en un tiers de seconde à la
+// marche ; au tir, quatre fois plus vif (le regard doit être sur la cible
+// avant qu'on se demande vers qui il tire).
+export const VITESSE_ROTATION_DEG_S = 540;
+export const VITESSE_ROTATION_TIR_DEG_S = 2160;
+// Provisoire, non validé en jeu. Un stick qui revient au centre passe par de
+// petits vecteurs aux angles de hasard : sous cette amplitude, le geste ne
+// change pas l'angle visé (la direction, elle, garde sa règle).
+export const AMPLITUDE_MIN_GESTE = 0.25;
+
+const normaliser = (deg) => ((deg % 360) + 360) % 360;
+function tourner(angle, vise, pasMax) {
+  const ecart = ((vise - angle + 540) % 360) - 180;
+  if (Math.abs(ecart) <= pasMax) return normaliser(vise);
+  return normaliser(angle + Math.sign(ecart) * pasMax);
 }
 
 export function avancerOrientation(etat, { deltaMs, dx = 0, dy = 0, vers = null }) {
+  let { direction, angleVise = etat.angle ?? 0 } = etat;
+  let regardMs;
   if (vers) {
-    const direction = directionDe(vers.dx, vers.dy) ?? etat.direction;
-    return { direction, regardMs: DUREE_REGARD_TIR_MS };
+    direction = directionDe(vers.dx, vers.dy) ?? etat.direction;
+    regardMs = DUREE_REGARD_TIR_MS;
+    if (vers.dx !== 0 || vers.dy !== 0) angleVise = normaliser(angleDe(vers.dx, vers.dy));
+  } else {
+    regardMs = Math.max(0, etat.regardMs - deltaMs);
+    if (regardMs === 0) {
+      direction = orienterDepuisMouvement(etat.direction, dx, dy);
+      if (Math.hypot(dx, dy) >= AMPLITUDE_MIN_GESTE) angleVise = normaliser(angleDe(dx, dy));
+    }
   }
-  const regardMs = Math.max(0, etat.regardMs - deltaMs);
-  if (regardMs > 0) return { direction: etat.direction, regardMs };
-  return { direction: orienterDepuisMouvement(etat.direction, dx, dy), regardMs };
+  const vitesse = regardMs > 0 ? VITESSE_ROTATION_TIR_DEG_S : VITESSE_ROTATION_DEG_S;
+  const angle = tourner(etat.angle ?? angleVise, angleVise, (vitesse * deltaMs) / 1000);
+  return { direction, regardMs, angle, angleVise };
 }

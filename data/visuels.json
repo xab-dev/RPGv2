@@ -24,14 +24,21 @@
       "ouverture": {
         "origine": [0, 0.2],
         "decoupe": "capuche",
-        "fuite": 3
+        "fuite": 3,
+        "efface": [0.6, 0.85],
+        "efface_echelle": 0.54
       },
       "oeil": {
         "origine": [0, 0.35],
         "fuite": 0.5,
         "passe_derriere": {
           "debut": 0.5,
-          "fondu": 1.5
+          "fondu": 1.5,
+          "bord": "concave",
+          "rayon": 3.5,
+          "ombre": [0.35, 1, 1],
+          "devant": "capuche",
+          "bord_de": "ouverture"
         }
       },
       "lueur": {
@@ -50,7 +57,7 @@
           "rabat": {
             "y": -8.2,
             "longueur": 3.3,
-            "hauteur": 1.8
+            "hauteur": 2.3
           }
         },
         "pli_front": {}
@@ -64,14 +71,14 @@
           }
         },
         "ouverture": {
-          "dx": -0.901,
+          "dx": -0.95,
           "dy": -0.248,
           "echelle": 1.01,
           "echelle_y": 1.01,
           "rotation": 10
         },
         "lueur": {
-          "dx": -0.901,
+          "dx": -0.95,
           "dy": -0.248,
           "echelle": 1.01,
           "echelle_y": 1.01,
@@ -86,23 +93,23 @@
       "ouest": {
         "capuche": {
           "pli": {
-            "angle": 69,
-            "longueur": 3.5,
-            "pivot_y": -6
+            "angle": 63,
+            "longueur": 3.3,
+            "pivot_y": -5
           }
         },
         "ouverture": {
-          "dx": -2.302,
+          "dx": -3.0,
           "dy": -0.396,
           "echelle": 0.989,
-          "echelle_y": 1.02,
+          "echelle_y": 1.08,
           "rotation": 15
         },
         "lueur": {
-          "dx": -2.302,
+          "dx": -3.0,
           "dy": -0.396,
           "echelle": 0.989,
-          "echelle_y": 1.02,
+          "echelle_y": 1.08,
           "rotation": 15
         },
         "oeil": {
@@ -292,6 +299,118 @@
         }
       },
       {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "h": 9,
+        "points": [[-3.37, 2.2], [-6.14, 3.08], [-8.01, 5.84], [-8.6, 8.42], [-8.9, 10.02], [-8.46, 10.1], [-8.16, 8.52], [-7.6, 6.03], [-5.86, 3.43], [-3.23, 2.62]],
+        "degrade": {
+          "direction": "vertical",
+          "stops": [
+            { "offset": 0, "couleur": "#b9c8da", "alpha": 0.34 },
+            { "offset": 1, "couleur": "#b9c8da", "alpha": 0.06 }
+          ]
+        }
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "h": 9,
+        "points": [[3.18, 2.15], [5.97, 3.04], [8.05, 5.82], [8.95, 9.99], [7.19, 10.85], [0, 11.05], [-0.02, 10.55], [7.13, 10.35], [8.46, 9.9], [7.59, 6.02], [5.67, 3.44], [3.03, 2.62]],
+        "degrade": {
+          "direction": "vertical",
+          "stops": [
+            { "offset": 0, "couleur": "#030405", "alpha": 0.15 },
+            { "offset": 1, "couleur": "#030405", "alpha": 0.6 }
+          ]
+        }
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "h": 6,
+        "points": [[-2.1, 6.4], [-2.5, 10.9], [-2.18, 10.93], [-1.78, 6.43]],
+        "degrade": {
+          "direction": "vertical",
+          "stops": [
+            { "offset": 0, "couleur": "#05070a", "alpha": 0 },
+            { "offset": 1, "couleur": "#05070a", "alpha": 0.45 }
+          ]
+        }
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "h": 6,
+        "points": [[-2.45, 6.4], [-2.9, 10.9], [-3.12, 10.88], [-2.67, 6.38]],
+        "degrade": {
+          "direction": "vertical",
+          "stops": [
+            { "offset": 0, "couleur": "#8ea0b6", "alpha": 0 },
+            { "offset": 1, "couleur": "#8ea0b6", "alpha": 0.09 }
+          ]
+        }
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "h": 6,
+        "points": [[1.8, 6.6], [2.1, 10.9], [2.42, 10.88], [2.12, 6.58]],
+        "degrade": {
+          "direction": "vertical",
+          "stops": [
+            { "offset": 0, "couleur": "#05070a", "alpha": 0 },
+            { "offset": 1, "couleur": "#05070a", "alpha": 0.4 }
+          ]
+        }
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "h": 6,
+        "points": [[1.45, 6.6], [1.7, 10.9], [1.48, 10.91], [1.23, 6.61]],
+        "degrade": {
+          "direction": "vertical",
+          "stops": [
+            { "offset": 0, "couleur": "#8ea0b6", "alpha": 0 },
+            { "offset": 1, "couleur": "#8ea0b6", "alpha": 0.09 }
+          ]
+        }
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "h": 6,
+        "points": [[6.4, 6.2], [7.2, 10.6], [7.51, 10.54], [6.71, 6.14]],
+        "degrade": {
+          "direction": "vertical",
+          "stops": [
+            { "offset": 0, "couleur": "#05070a", "alpha": 0 },
+            { "offset": 1, "couleur": "#05070a", "alpha": 0.35 }
+          ]
+        }
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "h": 6,
+        "points": [[6.05, 6.2], [6.8, 10.6], [6.58, 10.64], [5.83, 6.24]],
+        "degrade": {
+          "direction": "vertical",
+          "stops": [
+            { "offset": 0, "couleur": "#8ea0b6", "alpha": 0 },
+            { "offset": 1, "couleur": "#8ea0b6", "alpha": 0.09 }
+          ]
+        }
+      },
+      {
         "forme": "degrade_radial",
         "dx": 0,
         "dy": 4.4,
@@ -390,6 +509,15 @@
             { "offset": 1, "couleur": "#9fb2c8", "alpha": 0.25 }
           ]
         }
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0,
+        "points": [[-4.27, 2.95], [-4.55, -0.8], [-3.84, -4.78], [-0.43, -9.89], [-0.1, -10.15], [0, -10.23], [0.1, -10.15], [0.43, -9.89], [3.84, -4.78], [4.55, -0.8], [4.27, 2.95], [3.97, 2.92], [4.25, -0.79], [3.56, -4.66], [0.18, -9.71], [-0.06, -9.89], [0, -9.93], [0.06, -9.89], [-0.18, -9.71], [-3.56, -4.66], [-4.25, -0.79], [-3.97, 2.92]],
+        "couleur": "#06080b",
+        "alpha": 0.55,
+        "piece": "capuche"
       },
       {
         "forme": "polygone",

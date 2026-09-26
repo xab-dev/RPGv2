@@ -1,0 +1,113 @@
+---
+projet: RPG V2
+episode/session: Audit qualité graphique du héros, optimisation du code (spec 17)
+type: fichier de bord
+version: 1.0.0
+statut: en cours
+catégorie: Journal
+date: 2026-09-26
+genere_par: claude
+verifie_par: xav
+---
+
+# Fichier de bord : l'audit du héros (26/09, après-midi)
+
+Demande de Xav :
+
+> Audit qualité graphique de héros, optimisation du code
+>
+> Nous avons encore une fois beaucoup travaillé sur Héro et sa qualité
+> graphique. Nous avons probablement fait beaucoup d'itérations et alourdi le
+> code au fur et à mesure.
+>
+> Préface: ajouter à la carte mentale dans la vision long terme du jeu :
+> notion de 'sandbox' et 'openworld'.
+>
+> - Palier A : généraliser les outils et skills utilisés sur ces dernières
+>   sessions concernant le Héro. […]
+> - Palier B : simplifier, optimiser, alléger le code sans pour autant nuire à
+>   la qualité graphique. […]
+> - Palier C : polish général du Héro, plusieurs couches, plume d'artiste. […]
+> - Palier D : état des lieux du jeu, fournis des captures d'écran dans un
+>   dossier à part Audit_2026_09_26 […]
+>
+> arret Xav après chaque palier , commit et push sur branche dédié.
+
+Le texte entier est dans `specs/17_audit-heros.md` §0. Réponses de Xav au plan :
+palier B = la chaîne du héros seulement (`main.js` reste sous `Q-177` (5)) ;
+captures dans `docs/captures/Audit_2026_09_26/`, versionnées.
+
+Branche : `audit-heros`, depuis `main` (`53c3ef0`, `v0.9.0`). Push de la
+branche à chaque arrêt (demandé par Xav) ; jamais `main`.
+
+| Commit | Ticket | Ce qu'il faut en retenir |
+|---|---|---|
+| `fdefa25` | Ménage | Aucune réponse de Xav au suivi ; journal `heros-suite` archivé, INDEX ; « Où on en est » : branche `audit-heros` |
+| `483dfd2` | `DOC-13` | Spec 17 écrite (la demande verbatim, quatre paliers) ; « Sandbox et monde ouvert » au tableau du cap (carte mentale §00), renvoi dans `CLAUDE.md` |
+| `ddadd55` | `D-280` | Les outils pour tout visuel : `tools/mesure_visuel.mjs` (`diff` contre une référence Git, `cles`, `saut`, `fuite`, `cache` ; 0 sur `HEAD`, 138 cas contre `9f7ac9d`), `tools/atelier.html` (variantes `tools/variantes/*.js` en colonnes, marche rejouée, nuit sous voile), `commun.mjs#loupe` (fin des cinq copies), `scenarios/loupe_scene.mjs`. Mesures du héros au tour : pics de saut 215→216 (47 px) et 324→325 (43 px), médiane 8 |
+| `1944e32` | `D-281` | Skill `atelier-visuel` (outils, boucle, règles du dessin, check-list d'un chantier neuf) ; renvoi dans `CLAUDE.md` ; `D-280` et `D-281` clos |
+| — | Arrêt | **Palier A livré, arrêt Xav.** `tools/_ref/` (local, non versionné) laissé en place : à supprimer avec son exclusion de `.git/info/exclude` sur accord de Xav |
+
+**Spec 17 en pause (Xav, 26/09)** : « le personnage saute d'une position à l'autre, aucune transition même entre sud et sud_ouest […] mets la spec 17 en pause, on se concentre sur ce Hotfix avant de continuer » — puis « root fixes please, not add "pansement" ».
+
+| Commit | Ticket | Ce qu'il faut en retenir |
+|---|---|---|
+| `2196b8d` | `D-282` | **Sur la branche `heros-angle-en-jeu`, depuis `main`** (hotfix, poussée) : `render.js#dessinerScene` recopiait les options du héros champ par champ et avait perdu l'angle et l'animation depuis `D-269` — la spec 16 n'était visible qu'aux bancs. Correctif de fond : `heroOptions` résolues par `main.js`, transmises telles quelles ; test des ordres de dessin (rouge avant, vert après), tests textuels retirés. `V-198` à voir ; `V-189` et `V-190` avaient été validés sans que le jeu les montre. Sa clôture au suivi est commitée ici, sur `audit-heros` |
+| `5805b4a` | Publication | Xav : « local fonctionne comme prévu, et c'est magnifique […] push main ». Fusion de `heros-angle-en-jeu` dans `main`, `v0.9.3` (3 commits depuis `v0.9.0`), tag poussé ; branche du hotfix supprimée (fusionnée) |
+| `b046016` | Fusion | `main` (`v0.9.3`) fusionnée dans `audit-heros` : le palier B part du code corrigé. **Spec 17 reprise, palier B** |
+| `14dd8d0` | `D-283` | `mesure_visuel cout` (µs par dessin, canvas logiciel, médiane). **L'audit** : la chaîne du héros est déjà sobre (visuels 385 l., poses 388, orientation 193 ; données : `dx`/`dy` exigés par le schéma, rien à retirer sans toucher 123 visuels). Le seul point chaud : l'œil qui passe derrière (202–225°, 315–337°) coûte ~2,7 ms contre ~0,26 ailleurs (rideau × 11 primitives × 5 anneaux). Trois essais retirés faute de rendu identique (suites de pièces : 0 px mais aucun gain ; masque borné : 3/255 ; anneaux groupés : ×5 mais 28/255 sur les coutures) → `Q-180` à Xav |
+| `d226fe8` | `D-284` | `tests/aide_dessin.js` : catalogues validés et trois faux contextes partagés ; 11 tests, ≈ −100 lignes net ; mordant vérifié par mutation ; `test_16e` aveugle à un dessin qui ignore l'angle → témoin ajouté |
+| `d66181d` | `D-285` | `schemas.js` : pièces et poses validées par tables (une clé, son contrôle) ; mêmes erreurs sur 23 cas ; +14 lignes, gain de lecture |
+
+## La sentinelle, fin du palier B (`traversee_nuit`, Moyen, Chrome sans fenêtre, même machine)
+
+| | après `D-271` (nuit du héros) | `audit-heros`, fin du palier B |
+|---|---|---|
+| ×1 `dessiner()` moy / p95 | 0,65 / 1,00 ms | 0,74 / 1,30 ms |
+| ×6 `dessiner()` moy / p95 | 5,21 / 7,50 ms | 5,44 / 8,50 ms |
+| frames > 20 ms, ×1 / ×6 | 0 / 1 | 0 / 3 (sur 4 432) |
+
+Le palier B ne touche pas le dessin (`visuels.js`, `poses.js` inchangés). L'écart vient de `D-282` : le jeu dessine enfin l'angle, le souffle, le pas et la capuche en retard, qu'il ne dessinait pas (les pièces posées et animées passent par leurs matrices, et l'œil par son rideau entre 202 et 225°). +0,1 ms à ×1, +0,2 ms à ×6 : aucune frame perdue à ×1 ; à ×6, 3 frames > 20 ms sur 4 432 (0,07 %). Le point chaud de l'œil est `Q-180`.
+
+| `8612376` | DOC | Journal du palier B, la sentinelle. **Palier B livré, arrêt Xav** |
+| `28b37e2` | DOC | Les remarques de Xav en jeu (bord du rideau concave, rideau en ombre, bord de l'ouverture en retard sur le globe) entrent au palier C : spec 17 §2, `D-286` à `D-288` |
+| `ca2a70d` | D-286, D-287 | **Palier C ouvert.** Le rideau de l'œil : bord concave (`bord`, `rayon`) et ombre avant l'occlusion (`ombre`, découpée par `devant`). Défauts = `D-278` à l'octet. Xav, à l'atelier : B, rayon 3,5, « 35 % → 80 % (à 215°) puis 100 % ». À voir : `V-199` |
+| `837477c` | D-288 | L'ouverture suit le globe : la cause était la pose de profil (globe 0,9 plus loin que l'ouverture, capuche repliée à 69°), pas le ressort. Variante C de Xav, trois quarts ramené à −0,95 pour tenir `D-259`. Données seules. À voir : `V-200` |
+| `9d27685` | D-289 | Le globe se cache derrière le bord intérieur du liseré (`bord_de`, le trou de l'ouverture), l'ombre pleine vers 215°. Xav : « l'effet est très réussi, illusion d'optique de l'ombre match parfaitement ». Variante A. À voir : `V-201` |
+| `73473ce` | D-290 | L'ouverture cède la place au contour gris (`efface`, variante C : ~333° → ~322°). La cause : l'ouverture ne s'éteignait qu'à la clé cachée et recouvrait le liseré. À voir : `V-201` |
+| `9d29418` | D-291 | Le liseré coloré se resserre en s'effaçant (`efface_echelle` 0,54 = globe / liseré). Variante A de Xav. À voir : `V-201` |
+| `dd9def8` | DOC | Journal et sentinelle du palier C. **Palier C livré, arrêt Xav** |
+
+## Le palier C, en bref
+
+Xav l'a mené par ses remarques en jeu, pas par les couches du plan : le rideau
+de l'œil (`D-286`, `D-287`), l'ouverture de profil (`D-288`), le globe caché
+par le bord du liseré (`D-289`), le contour gris qui prend le relais de dos
+(`D-290`), le liseré qui se resserre (`D-291`). Chaque pas : trois variantes à
+l'atelier, son choix, les données, un test de contrat vérifié par mutation,
+`mesure_visuel diff` (seul le héros bouge) et `cles` à zéro. Xav : « l'effet
+est très réussi » ; « polish terminé si cette étape est validée » — il l'a
+validée (A). **Non faits, par sa décision** : les couches du plan
+(proportions, traits, glow et particules, l'agrafe) ; elles restent des
+pistes. À voir en jeu : `V-199` à `V-201`.
+
+Coût d'un dessin du héros (`mesure_visuel cout`, canvas logiciel, médiane),
+fin du palier B (`8612376`) → fin du palier C : sans direction 216 → 221 µs ;
+huit directions 203 → 203 ; tour immobile 506 → 395 ; tour en marche 602 → 382.
+
+## La sentinelle, fin du palier C (`traversee_nuit`, Moyen, seule sur la machine)
+
+| | fin du palier B | fin du palier C |
+|---|---|---|
+| ×1 `dessiner()` moy / p95 | 0,74 / 1,30 ms | 0,85 / 1,30 ms |
+| ×6 `dessiner()` moy / p95 | 5,44 / 8,50 ms | 5,39 / 8,70 ms |
+| frames > 20 ms, ×1 / ×6 | 0 / 3 | 0 / 1 (sur 4 424) |
+
+Aucune régression. Deux premiers passages, lancés pendant d'autres mesures
+(tests, atelier), sont écartés : ×6 à 6,3–6,4 ms, et un ×1 tombé sur une
+erreur de page du scénario. Pendant l'un d'eux, `D-272` (la sauvegarde
+refusée sous charge) s'est revu : déjà ouvert, P1.
+| `3c5e091` | D-292 | **Couche « proportions ».** `mesure_visuel proportions` : le héros mesuré au degré près (sommet, capuche, place et aire visibles de l'œil et de l'ouverture), l'écart aux angles de Xav. Tout tient à ≤ 3 % sauf le sommet de la capuche : bosse de ~0,35 px monde entre 60° et 120°, dos 0,44 plus bas |
+| `621ddf4` | D-293 | La capuche : de face, la calotte du rabat plus haute (variante C : 90° à la hauteur de 66–76°) ; de profil, le pli plus bas et plus court (I-A1 : 342° moins bombé, la pointe gardant sa longueur). Données seules, `cles` à zéro, seul le héros bouge. À voir : `V-202` |
+| `1af3caa` | D-294 | **Couche « traits ».** Variante C de Xav (cumulative) : liseré de lumière sur l'épaule, filet d'ombre bas-droit, trois plis fins, l'ourlet de la capuche ; 34 → 43 primitives, données seules. Xav sur `V-202` : « il n'y a pas un seul angle où je vois un défaut, très bien ». Sentinelle Moyen : ×1 0,85 ms, 0 frame > 20 ms ; ×6 5,68–5,97 ms, 4–5 frames > 20 ms (fin du palier C : 5,39 / 1) — dans le bruit des passages ×6, à surveiller au banc complet. À voir : `V-203` |
+| `(ce commit)` | DOC | Xav : « go pour le polish -> C puis si tous les tests passent, fusionne et push ». « Où on en est » : `v0.9.28`. Suivent la fusion dans `main` et la version (tag `v0.9.28`, poussés). Palier D reste à faire, sur `audit-heros` |

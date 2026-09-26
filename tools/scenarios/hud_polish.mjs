@@ -5,7 +5,7 @@
 //   node tools/capture_chrome.mjs tools/scenarios/hud_polish.mjs
 // Ce que ça prouve : « ça s'affiche ainsi sous Chrome ». Le verdict reste une
 // validation de Xav, en jeu.
-import { ouvrirLeJeu, saveDansLaMaison, cliquer } from './commun.mjs';
+import { ouvrirLeJeu, saveDansLaMaison, cliquer, loupe } from './commun.mjs';
 
 const DOSSIER = process.env.RPG_DOSSIER_CAPTURES || 'docs/captures/hud-2026-09-22';
 const TILE = 32;
@@ -27,31 +27,6 @@ function saveChargee() {
   save.survie = { jauge_faim: 0.42, jauge_soif: 0.66 };
   save.hero.buffs_actifs = { buff_repas: 120000, buff_force: 9000, buff_agilite: 1400 };
   return save;
-}
-
-// Une LOUPE sur une zone du canvas visible, en unités LOGIQUES (480 x 270) :
-// le bandeau fait 20 unités de haut et une case du bas 16 — à la taille de la
-// capture, on ne verrait ni un liseré ni un pouce. L'agrandissement se fait
-// au plus proche voisin, comme au banc visuel : lisser montrerait une image
-// que personne ne voit. Le calque est retiré aussitôt la capture prise.
-async function loupe(chrome, { x, y, largeur, hauteur }, sortie) {
-  await chrome.evaluer(`(() => {
-    const jeu = document.querySelector('canvas');
-    const r = jeu.getBoundingClientRect();
-    const k = jeu.width / 480; // logique -> physique, l'échelle de render.js
-    const vue = document.createElement('canvas');
-    const zoom = Math.max(1, Math.floor(innerWidth / (${largeur} * k)));
-    vue.width = ${largeur} * k * zoom; vue.height = ${hauteur} * k * zoom;
-    vue.id = 'loupe';
-    vue.style.cssText = 'position:fixed;left:0;top:0;z-index:99999;background:#101317';
-    const ctx = vue.getContext('2d');
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(jeu, ${x} * k, ${y} * k, ${largeur} * k, ${hauteur} * k, 0, 0, vue.width, vue.height);
-    document.body.append(vue);
-    return [vue.width, vue.height];
-  })()`);
-  await chrome.capture(sortie);
-  await chrome.evaluer(`(() => { document.getElementById('loupe').remove(); return true; })()`);
 }
 
 // Les deux zones qui font cette passe, en unités logiques.

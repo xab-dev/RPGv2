@@ -1714,11 +1714,48 @@ function erreursAnimationsVisuel(entry, path) {
   return erreurs;
 }
 
-// Les pièces et leurs poses (`poses.js`), validées d'un bloc.
-const CLES_DEFINITION_PIECE = ['origine', 'miroir', 'decoupe', 'cachee', 'suit', 'fuite', 'passe_derriere', 'source'];
-const CLES_POSE = ['dx', 'dy', 'rotation', 'cisaillement', 'echelle', 'echelle_y', 'pli', 'rabat'];
+// Les pièces et leurs poses (`poses.js`), validées d'un bloc. Une clé, son
+// contrôle : une clé de plus s'ajoute à la table, jamais à une condition d'une
+// ligne (spec 17, palier B — elles faisaient chacune une ligne illisible).
 const estObjet = (o) => !!o && typeof o === 'object' && !Array.isArray(o);
 const estNombre = (n) => typeof n === 'number' && Number.isFinite(n);
+const estPoint = (v) => Array.isArray(v) && v.length === 2 && v.every(estNombre);
+// Un objet qui n'a QUE ces clés, chacune à son contrôle ; `toutes` : aucune ne manque.
+const objetDe = (controles, { toutes = false } = {}) => (v) => estObjet(v)
+  && Object.entries(v).every(([c, x]) => c in controles && controles[c](x))
+  && (!toutes || Object.keys(controles).every((c) => c in v));
+// `decoupe`, `suit`, `source` nomment une pièce : vérifiées plus bas, contre
+// les pièces portées, avec leur message propre.
+const CONTROLES_DEFINITION_PIECE = {
+  origine: estPoint,
+  miroir: (v) => typeof v === 'boolean',
+  decoupe: () => true,
+  cachee: (v) => v === true,
+  suit: () => true,
+  fuite: (v) => estNombre(v) && v >= 0,
+  efface: (v) => Array.isArray(v) && v.length === 2 && v.every(estNombre) && v[0] >= 0 && v[0] < v[1] && v[1] <= 1,
+  efface_echelle: (v) => estNombre(v) && v > 0,
+  passe_derriere: (v) => v === true || objetDe({
+    debut: (x) => estNombre(x) && x >= 0 && x < 1,
+    fondu: (x) => estNombre(x) && x >= 0,
+    bord: (x) => x === 'convexe' || x === 'concave',
+    rayon: (x) => estNombre(x) && x > 0,
+    ombre: (x) => Array.isArray(x) && x.length > 0 && x.every((o) => estNombre(o) && o >= 0 && o <= 1),
+    devant: () => true,
+    bord_de: () => true,
+  })(v),
+  source: () => true,
+};
+const CONTROLES_POSE = {
+  dx: estNombre,
+  dy: estNombre,
+  rotation: estNombre,
+  cisaillement: estNombre,
+  echelle: (v) => estNombre(v) && v > 0,
+  echelle_y: (v) => estNombre(v) && v > 0,
+  pli: objetDe({ angle: estNombre, pivot_y: estNombre, longueur: (v) => v > 0 }, { toutes: true }),
+  rabat: objetDe({ y: estNombre, longueur: (v) => v > 0, hauteur: (v) => v > 0 }, { toutes: true }),
+};
 function erreursPosesVisuel(entry, path) {
   const erreurs = [];
   const portees = new Set(entry.primitives.map((p) => p && p.piece).filter((n) => n !== undefined));
@@ -1731,16 +1768,8 @@ function erreursPosesVisuel(entry, path) {
   for (const [nom, def] of Object.entries(pieces)) {
     const chemin = `${path} > pieces > ${nom}`;
     if (!portees.has(nom)) erreurs.push(`${chemin} : aucune primitive ne porte cette pièce`);
-    if (!estObjet(def) || Object.keys(def).some((c) => !CLES_DEFINITION_PIECE.includes(c))
-      || (def.origine !== undefined && !(Array.isArray(def.origine) && def.origine.length === 2 && def.origine.every(estNombre)))
-      || (def.miroir !== undefined && typeof def.miroir !== 'boolean')
-      || (def.cachee !== undefined && def.cachee !== true)
-      || (def.passe_derriere !== undefined && def.passe_derriere !== true && !(estObjet(def.passe_derriere)
-        && Object.keys(def.passe_derriere).every((c) => ['debut', 'fondu'].includes(c))
-        && (def.passe_derriere.debut === undefined || (estNombre(def.passe_derriere.debut) && def.passe_derriere.debut >= 0 && def.passe_derriere.debut < 1))
-        && (def.passe_derriere.fondu === undefined || (estNombre(def.passe_derriere.fondu) && def.passe_derriere.fondu >= 0))))
-      || (def.fuite !== undefined && !(estNombre(def.fuite) && def.fuite >= 0))) {
-      erreurs.push(`${chemin} doit être { origine?: [x, y], miroir?: booléen, decoupe?: pièce, cachee?: true, suit?: pièce, fuite?: nombre ≥ 0, passe_derriere?: true | { debut?: [0, 1[, fondu?: nombre ≥ 0 } }`);
+    if (!objetDe(CONTROLES_DEFINITION_PIECE)(def)) {
+      erreurs.push(`${chemin} doit être { origine?: [x, y], miroir?: booléen, decoupe?: pièce, cachee?: true, suit?: pièce, fuite?: nombre ≥ 0, efface?: [début, fin] (0 ≤ début < fin ≤ 1), efface_echelle?: nombre > 0, passe_derriere?: true | { debut?: [0, 1[, fondu?: nombre ≥ 0, bord?: convexe | concave, rayon?: nombre > 0, ombre?: [opacités 0 à 1], devant?: pièce, bord_de?: pièce } }`);
     } else if (def.decoupe !== undefined && (def.decoupe === nom || !silhouettes.has(def.decoupe))) {
       // `D-260` : sans silhouette à suivre, la pièce découpée disparaîtrait
       // en entier, sans que personne le voie venir.
@@ -1750,6 +1779,13 @@ function erreursPosesVisuel(entry, path) {
       // `D-266` : une pièce suit une autre pièce, qui ne suit personne, et
       // tourne autour de l'origine de celle-ci.
       erreurs.push(`${chemin} > suit doit nommer une autre pièce, qui n'en suit aucune (sans origine propre)`);
+    } else if (def.passe_derriere?.devant !== undefined && (def.passe_derriere.devant === nom || !silhouettes.has(def.passe_derriere.devant))) {
+      // Sans silhouette, l'ombre du rideau ne saurait où s'arrêter.
+      erreurs.push(`${chemin} > passe_derriere > devant doit nommer une autre pièce qui porte une primitive silhouette`);
+    } else if (def.passe_derriere?.bord_de !== undefined && (def.passe_derriere.bord_de === nom
+      || !entry.primitives.some((p) => p && p.piece === def.passe_derriere.bord_de && p.trou))) {
+      // Le bord qui cache, c'est celui d'un trou : sans trou, rien à suivre.
+      erreurs.push(`${chemin} > passe_derriere > bord_de doit nommer une autre pièce qui porte une primitive à trou`);
     } else if (def.source !== undefined && (def.source === nom || !portees.has(def.source))) {
       // `D-279` : une lumière projetée brille de ce qu'on voit de sa source.
       erreurs.push(`${chemin} > source doit nommer une autre pièce, portée par une primitive`);
@@ -1788,21 +1824,13 @@ function erreursPosesVisuel(entry, path) {
       if (!portees.has(piece)) erreurs.push(`${chemin} : aucune primitive ne porte cette pièce`);
       if (pieces[piece] && pieces[piece].suit !== undefined) erreurs.push(`${chemin} : la pièce suit "${pieces[piece].suit}", elle ne se pose pas elle-même`);
       if (pose === null) continue;
-      const pli = pose && pose.pli;
-      const rabat = pose && pose.rabat;
-      if (!estObjet(pose) || Object.keys(pose).some((c) => !CLES_POSE.includes(c))
-        || ['dx', 'dy', 'rotation', 'cisaillement'].some((c) => pose[c] !== undefined && !estNombre(pose[c]))
-        || ['echelle', 'echelle_y'].some((c) => pose[c] !== undefined && !(estNombre(pose[c]) && pose[c] > 0))
-        || (pli !== undefined && !(estObjet(pli) && Object.keys(pli).length === 3
-          && estNombre(pli.angle) && estNombre(pli.pivot_y) && pli.longueur > 0))
-        || (rabat !== undefined && !(estObjet(rabat) && Object.keys(rabat).length === 3
-          && estNombre(rabat.y) && rabat.longueur > 0 && rabat.hauteur > 0))) {
+      if (!objetDe(CONTROLES_POSE)(pose)) {
         erreurs.push(`${chemin} doit être null (cachée) ou { dx?, dy?, rotation?, cisaillement? : nombres ; echelle?, echelle_y? : nombres > 0 ; pli? : { angle, pivot_y, longueur > 0 } ; rabat? : { y, longueur > 0, hauteur > 0 } }`);
         continue;
       }
       // Un pli se fait sur les points du dessin d'auteur : reflété sans que
       // son dessin le soit, il plierait du mauvais côté (`poses.js#matricePose`).
-      if (reflechie && (pli || rabat) && !(pieces[piece] && pieces[piece].miroir)) {
+      if (reflechie && (pose.pli || pose.rabat) && !(pieces[piece] && pieces[piece].miroir)) {
         erreurs.push(`${chemin} : une pièce pliée dans une direction reflétée se déclare miroir (pieces > ${piece} > miroir)`);
       }
     }

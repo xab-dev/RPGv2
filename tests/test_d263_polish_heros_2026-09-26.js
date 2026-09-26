@@ -8,18 +8,12 @@
 //    dégradé ; sans `centre`, il reste à l'origine. Un centre mal formé est
 //    refusé au démarrage.
 import assert from 'node:assert/strict';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { dessinerVisuel } from '../src/visuels.js';
-import { chargerCataloguesDepuisDisque } from '../src/io_node.js';
-import { SCHEMAS } from '../src/schemas.js';
-import { validerCatalogues } from '../src/registry.js';
 import { VISUEL_HEROS_ID } from '../src/save.js';
+import { validerCatalogues } from '../src/registry.js';
+import { cataloguesValides } from './aide_dessin.js';
 
-const RACINE = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const { donnees, erreurs } = await chargerCataloguesDepuisDisque(path.join(RACINE, 'data'), Object.keys(SCHEMAS));
-assert.deepEqual(erreurs, []);
-assert.deepEqual(validerCatalogues(donnees), []);
+const { donnees } = await cataloguesValides();
 
 // Un faux contexte qui note les dégradés créés.
 function degrades(visuel, options = {}) {

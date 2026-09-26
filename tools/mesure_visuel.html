@@ -1,0 +1,443 @@
+<!doctype html>
+<!-- OUTIL DE DEV, jamais chargé par le jeu : l'INSTRUMENT DE PIXELS des
+     silhouettes de data/visuels.json (spec 17, palier A). Se lance d'ordinaire
+     par `node tools/mesure_visuel.mjs <commande>`, qui prépare la référence
+     Git et lit `window.resultat` ; s'ouvre aussi à la main pour voir les
+     écarts.
+     ?commande=diff|cles|saut|fuite|cache|cout|proportions  &id=visuel_heros,visuel_plume | tous
+     &ref=tools/variantes/_ref/<sha>  (diff : l'arbre de référence extrait)
+     &echelle=3 (l'échelle de rendu ; le jeu à DPR 3)
+     Ce que chaque commande prouve est écrit au-dessus de sa fonction. Rien de
+     tout ça ne dit « c'est beau » : le verdict reste à Xav, en jeu. -->
+<html lang="fr"><head><meta charset="utf-8"><title>Mesure visuel</title>
+<style>
+  body { background:#1b1f24; color:#d8d2c4; font:12px monospace; margin:0; padding:14px; }
+  figure { display:inline-block; margin:0 10px 10px 0; text-align:center; vertical-align:top; }
+  figcaption { opacity:.7; margin-top:3px; }
+  h2 { font-size:13px; font-weight:normal; margin:14px 0 6px; }
+  pre { white-space:pre-wrap; opacity:.85; }
+</style></head><body>
+<div id="planches"></div>
+<pre id="bilan">…</pre>
+<script type="module">
+  import * as visuels from '../src/visuels.js';
+  import * as orientation from '../src/orientation.js';
+  import * as poses from '../src/poses.js';
+  import { boitePrimitive } from '../src/structures.js';
+  import { cadreVisuels, rendreVisuel, agrandir, ecartRendus, rejouerMarche, figure } from './lib_visuel.js';
+
+  const params = new URLSearchParams(location.search);
+  const commande = params.get('commande') || 'cles';
+  const echelle = Number(params.get('echelle')) || 3;
+  const catalogue = await (await fetch('../data/visuels.json')).json();
+  const idsDemandes = params.get('id') || 'visuel_heros';
+  const ids = idsDemandes === 'tous' ? catalogue.map((v) => v.id) : idsDemandes.split(',');
+  const parId = (liste, id) => liste.find((v) => v.id === id) || null;
+  const TEINTE = '#ff6a3d';
+  const $planches = document.getElementById('planches');
+  const titre = (texte) => $planches.append(Object.assign(document.createElement('h2'), { textContent: texte }));
+  // La page n'affiche que ce qui cloche (ou les pics) : 123 visuels × des
+  // dizaines de cas rendraient une page que personne ne lit.
+  const montrer = (canvases, legende) => {
+    const loupe = Math.max(1, Math.min(4, Math.round(160 / canvases[0].height)));
+    const bloc = document.createElement('div');
+    bloc.append(...canvases.map((c) => agrandir(c, loupe)));
+    $planches.append(figure(bloc, legende));
+  };
+
+  // Les cas qu'un visuel sait dessiner : sans direction ; et, s'il déclare
+  // des `orientations`, chacune des huit, le tour tous les 5°, et une marche
+  // rejouée (le souffle, le pas, la capuche en retard).
+  function cas(v, mods) {
+    const teinte = v.teintable ? TEINTE : null;
+    const liste = [{ nom: 'aucune', options: { teinte } }];
+    if (!v.orientations) return liste;
+    for (const o of orientation.ORIENTATIONS) liste.push({ nom: o, options: { teinte, orientation: o } });
+    for (let a = 0; a < 360; a += 5) liste.push({ nom: `${a}°`, options: { teinte, angle: a } });
+    const film = rejouerMarche(mods, v);
+    if (film) for (const e of film) liste.push({ nom: `marche ${e.tMs} ms`, options: { teinte, angle: e.angle, animation: e.animation }, film: e.tMs });
+    return liste;
+  }
+
+  // DIFF — le rendu de l'arbre de travail contre celui d'une référence Git
+  // (code ET données de la référence). Le filet d'un allègement : 0 pixel
+  // d'écart sur tout visuel, à l'échelle du jeu et à la loupe ×9. Une marche
+  // se rejoue avec les modules de CHAQUE version : l'état d'affichage d'une
+  // référence est le sien.
+  async function diff() {
+    const ref = params.get('ref');
+    if (!ref) throw new Error('diff : &ref= manque (le lancer par tools/mesure_visuel.mjs)');
+    const ancien = {
+      visuels: await import(`/${ref}/src/visuels.js`),
+      orientation: await import(`/${ref}/src/orientation.js`).catch(() => null),
+      poses: await import(`/${ref}/src/poses.js`).catch(() => null),
+      boite: (await import(`/${ref}/src/structures.js`)).boitePrimitive,
+    };
+    const catalogueRef = await (await fetch(`/${ref}/data/visuels.json`)).json();
+    const res = { visuels: {}, total: 0, neufs: [], retires: [] };
+    for (const id of ids) {
+      const vn = parId(catalogue, id);
+      const va = parId(catalogueRef, id);
+      if (!va) { res.neufs.push(id); continue; }
+      if (!vn) { res.retires.push(id); continue; }
+      const cadre = cadreVisuels([va, vn], boitePrimitive);
+      const casNeufs = cas(vn, { orientation, poses });
+      const casAnciens = cas(va, { orientation: ancien.orientation, poses: ancien.poses });
+      const ecarts = {};
+      for (const e of [echelle, 9]) {
+        for (const c of casNeufs) {
+          const c0 = casAnciens.find((x) => x.nom === c.nom);
+          if (!c0) { ecarts[`${c.nom} ×${e}`] = 'absent de la référence'; continue; }
+          const a = rendreVisuel(ancien.visuels, va, c0.options, { cadre, echelle: e });
+          const b = rendreVisuel(visuels, vn, c.options, { cadre, echelle: e });
+          const { pixels, max, image } = ecartRendus(a, b);
+          if (pixels > 0) {
+            ecarts[`${c.nom} ×${e}`] = { pixels, max };
+            res.total += pixels;
+            if (Object.keys(ecarts).length <= 6) montrer([a, b, image], `${id} · ${c.nom} ×${e} · ${pixels} px, max ${max}`);
+          }
+        }
+      }
+      // Un résumé par visuel : combien de cas touchés, le pire, et les premiers
+      // noms. Le détail complet noierait la sortie (le tour seul fait 144 cas).
+      const touches = Object.entries(ecarts);
+      if (!touches.length) { res.visuels[id] = 0; continue; }
+      const chiffres = touches.filter(([, e]) => typeof e === 'object');
+      const pire = chiffres.sort(([, x], [, y]) => y.pixels - x.pixels)[0];
+      res.visuels[id] = {
+        cas: touches.length, pixels: chiffres.reduce((s, [, e]) => s + e.pixels, 0),
+        pire: pire ? `${pire[0]} : ${pire[1].pixels} px, max ${pire[1].max}` : null,
+        exemples: touches.slice(0, 8).map(([nom]) => nom),
+      };
+    }
+    res.touches = Object.entries(res.visuels).filter(([, e]) => e !== 0).map(([id]) => id);
+    return res;
+  }
+
+  // CLÉS — aux angles clés (0°, 45°…), le rendu à tout angle (spec 16) est la
+  // pose déclarée de la direction, au pixel près (critère du palier A de la
+  // spec 16) : le mélange ne doit rien retoucher des huit vues validées.
+  function cles() {
+    const res = {};
+    for (const id of ids) {
+      const v = parId(catalogue, id);
+      if (!v?.orientations) continue;
+      const cadre = cadreVisuels([v], boitePrimitive);
+      const teinte = v.teintable ? TEINTE : null;
+      res[id] = {};
+      orientation.ORIENTATIONS.forEach((o, i) => {
+        const a = rendreVisuel(visuels, v, { teinte, orientation: o }, { cadre, echelle });
+        const b = rendreVisuel(visuels, v, { teinte, angle: i * 45 }, { cadre, echelle });
+        const { pixels, max, image } = ecartRendus(a, b);
+        res[id][o] = pixels === 0 ? 0 : { pixels, max };
+        if (pixels) montrer([a, b, image], `${id} · ${o} contre ${i * 45}° · ${pixels} px`);
+      });
+    }
+    return res;
+  }
+
+  // SAUT — le tour au degré près : l'écart entre deux angles voisins, en
+  // pixels qui changent de plus de 10. Un dessin qui « claque » à un angle
+  // y fait un pic ; le tour sain est une ligne basse et régulière. Rend les
+  // cinq pics, la médiane et la moyenne (un pic se juge contre elles).
+  function saut() {
+    const res = {};
+    for (const id of ids) {
+      const v = parId(catalogue, id);
+      if (!v?.orientations) continue;
+      const cadre = cadreVisuels([v], boitePrimitive);
+      const teinte = v.teintable ? TEINTE : null;
+      const rendus = [];
+      for (let a = 0; a < 360; a += 1) rendus.push(rendreVisuel(visuels, v, { teinte, angle: a }, { cadre, echelle }));
+      const ecarts = rendus.map((r, a) => ({ de: a, vers: (a + 1) % 360, pixels: ecartRendus(r, rendus[(a + 1) % 360], 10).pixels }));
+      const tries = [...ecarts].sort((x, y) => y.pixels - x.pixels);
+      const valeurs = ecarts.map((e) => e.pixels).sort((x, y) => x - y);
+      res[id] = {
+        pics: tries.slice(0, 5).map((e) => `${e.de}→${e.vers} : ${e.pixels}`),
+        mediane: valeurs[180], moyenne: Math.round(valeurs.reduce((s, x) => s + x, 0) / 360),
+      };
+      titre(`${id} · les pics du tour`);
+      for (const e of tries.slice(0, 5)) montrer([rendus[e.de], rendus[e.vers], ecartRendus(rendus[e.de], rendus[e.vers], 10).image], `${e.de}° → ${e.vers}° · ${e.pixels} px`);
+    }
+    return res;
+  }
+
+  // FUITE — `dessinerVisuel` rend le contexte comme il l'a trouvé : même
+  // transform, même alpha, mêmes styles, et aucune découpe (`clip`) restée
+  // active. Une fuite ne se voit pas sur la silhouette : elle décale ou
+  // efface tout ce qui se dessine APRÈS elle dans la frame.
+  function fuite() {
+    const res = {};
+    const c = document.createElement('canvas');
+    c.width = 200; c.height = 200;
+    const ctx = c.getContext('2d', { willReadFrequently: true });
+    const etat = () => {
+      const t = ctx.getTransform();
+      return JSON.stringify([t.a, t.b, t.c, t.d, t.e, t.f, ctx.globalAlpha, ctx.fillStyle, ctx.strokeStyle, ctx.lineWidth, ctx.globalCompositeOperation]);
+    };
+    for (const id of ids) {
+      const v = parId(catalogue, id);
+      if (!v) continue;
+      const fautes = [];
+      for (const { nom, options } of cas(v, { orientation, poses })) {
+        ctx.reset();
+        ctx.setTransform(3, 0, 0, 3, 100, 100);
+        ctx.globalAlpha = 0.7; ctx.fillStyle = '#123456'; ctx.strokeStyle = '#654321'; ctx.lineWidth = 2;
+        const avant = etat();
+        visuels.dessinerVisuel(ctx, v, 0, 0, options);
+        if (etat() !== avant) fautes.push(`${nom} : état ${etat()} ≠ ${avant}`);
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, 200, 200);
+        const d = ctx.getImageData(0, 0, 200, 200).data;
+        let blancs = 0;
+        for (let i = 0; i < d.length; i += 4) if (d[i] === 255 && d[i + 1] === 255 && d[i + 2] === 255) blancs += 1;
+        if (blancs !== 200 * 200) fautes.push(`${nom} : une découpe reste active (${200 * 200 - blancs} px hors d'atteinte)`);
+      }
+      res[id] = fautes.length ? fautes : 0;
+    }
+    return res;
+  }
+
+  // CACHE — les dégradés gardés (`D-271`) : un contexte qui a déjà dessiné la
+  // silhouette ailleurs (autre transform, autre teinte) la redessine comme un
+  // contexte neuf. Un dégradé gardé avec ses coordonnées du premier dessin
+  // décalerait la lumière.
+  function cache() {
+    const res = {};
+    for (const id of ids) {
+      const v = parId(catalogue, id);
+      if (!v || !v.primitives.some((p) => p.degrade)) continue;
+      const cadre = cadreVisuels([v], boitePrimitive);
+      const fautes = [];
+      for (const { nom, options } of cas(v, { orientation, poses })) {
+        const frais = rendreVisuel(visuels, v, options, { cadre, echelle });
+        const partage = document.createElement('canvas');
+        partage.width = frais.width; partage.height = frais.height;
+        const ctx = partage.getContext('2d', { willReadFrequently: true });
+        ctx.setTransform(echelle * 2, 0, 0, echelle * 2, 7, 11);
+        visuels.dessinerVisuel(ctx, v, 0, 0, { ...options, teinte: v.teintable ? '#4fb3ff' : null });
+        visuels.dessinerVisuel(ctx, v, 0, 0, options);
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.fillStyle = '#2b3138';
+        ctx.fillRect(0, 0, partage.width, partage.height);
+        ctx.setTransform(echelle, 0, 0, echelle, partage.width / 2, -cadre.haut * echelle);
+        visuels.dessinerVisuel(ctx, v, 0, 0, options);
+        const { pixels, image } = ecartRendus(frais, partage);
+        if (pixels) { fautes.push(`${nom} : ${pixels} px`); montrer([frais, partage, image], `${id} · ${nom} · ${pixels} px`); }
+      }
+      res[id] = fautes.length ? fautes : 0;
+    }
+    return res;
+  }
+
+  // COÛT — le temps d'un `dessinerVisuel`, en microsecondes, sur un vrai
+  // canvas à l'échelle du jeu : le héros qui tourne (360 angles) en marchant
+  // (l'état d'une marche rejouée), puis immobile par direction. La médiane de
+  // cinq passes, après une passe de chauffe (les poses gardées, les dégradés
+  // gardés, le JIT). Un ORDRE DE GRANDEUR pour comparer deux versions sur la
+  // même machine, jamais un verdict de fluidité (le banc de perf le rend, en
+  // jeu : skill `banc-perf`).
+  function cout() {
+    const res = {};
+    const c = document.createElement('canvas');
+    c.width = 200; c.height = 200;
+    // Un canvas LOGICIEL (`willReadFrequently`) : un canvas accéléré renvoie
+    // le travail au GPU et le paie à un vidage imprévisible — la mesure
+    // variait du simple au quadruple. Le logiciel mesure le coût CPU, celui
+    // qui compte (le coût d'un calque est CPU, skill `banc-perf`).
+    const ctx = c.getContext('2d', { willReadFrequently: true });
+    const mesurer = (dessins) => {
+      const passes = [];
+      // L'horloge d'une page sans fenêtre est grossie (100 µs) : une passe
+      // compte au moins 400 dessins, sinon un dessin seul se lit 0 ou 100.
+      const tours = Math.ceil(400 / dessins.length);
+      for (let p = 0; p < 6; p += 1) {
+        const t0 = performance.now();
+        for (let k = 0; k < tours; k += 1) {
+          for (const options of dessins) {
+            ctx.setTransform(echelle, 0, 0, echelle, 100, 100);
+            visuels.dessinerVisuel(ctx, dessins.visuel, 0, 0, options);
+          }
+        }
+        passes.push(((performance.now() - t0) * 1000) / (dessins.length * tours));
+      }
+      const tries = passes.slice(1).sort((x, y) => x - y);
+      return Math.round(tries[2] * 10) / 10;
+    };
+    for (const id of ids) {
+      const v = parId(catalogue, id);
+      if (!v) continue;
+      const teinte = v.teintable ? TEINTE : null;
+      const statique = Object.assign([{ teinte }], { visuel: v });
+      res[id] = { 'sans direction (µs)': mesurer(statique) };
+      if (!v.orientations) continue;
+      const film = rejouerMarche({ orientation, poses }, v, { dureeMs: 1600, tous: 1 }) || [];
+      const tour = Object.assign(Array.from({ length: 360 }, (_, a) => ({ teinte, angle: a, animation: film[a % film.length]?.animation ?? null })), { visuel: v });
+      const directions = Object.assign(orientation.ORIENTATIONS.map((o) => ({ teinte, orientation: o })), { visuel: v });
+      res[id]['tour immobile (µs)'] = mesurer(Object.assign(tour.map((o) => ({ ...o, animation: null })), { visuel: v }));
+      res[id]['tour en marche (µs)'] = mesurer(tour);
+      res[id]['huit directions (µs)'] = mesurer(directions);
+    }
+    return res;
+  }
+
+  // PROPORTIONS — la silhouette mesurée sur le tour, au degré près (spec 17,
+  // palier C, la couche « proportions ») : ce que l'œil de Xav juge d'un
+  // angle à l'autre, en unités du visuel.
+  //   haut               le sommet de ce qui se voit (sans l'ombre au sol),
+  //                      depuis l'ancre (les pieds : la base ne bouge pas) ;
+  //   capuche l, part    la largeur de la capuche vue, et la part de la
+  //                      hauteur qu'elle tient ;
+  //   <pièce> x, y       le centre de ce qu'on VOIT de la pièce, depuis
+  //                      l'ancre (un y pris depuis le sommet sauterait avec
+  //                      lui d'un pixel), et son aire : la pièce rendue
+  //                      invisible (alpha 0, sa
+  //                      géométrie reste, les découpes qu'elle porte aussi),
+  //                      l'écart au rendu entier est sa part visible.
+  // Les références (`&refs=66-76,90,132`, les angles que Xav trouve justes)
+  // se replient sur le demi-tour ouest par le reflet est ← ouest (x change
+  // de signe) : entre deux références, la courbe attendue est la droite qui
+  // les joint ; l'écart à elle désigne les angles à harmoniser. Hors de
+  // toute référence (le dos), rien n'est attendu. `&variantes=x.js` trace
+  // aussi les courbes des variantes de l'atelier.
+  async function proportions() {
+    const pieces = (params.get('pieces') || 'oeil,ouverture').split(',');
+    const refs = (params.get('refs') || '66-76,90,132,241,300,342').split(',').flatMap((r) => {
+      const [a, b = a] = r.split('-').map(Number);
+      return Array.from({ length: b - a + 1 }, (_, k) => a + k);
+    });
+    const actuel = parId(catalogue, ids[0]);
+    const series = [['actuel', actuel]];
+    const fichier = params.get('variantes');
+    if (fichier) {
+      const table = (await import(`./variantes/${fichier}`)).default(structuredClone(actuel));
+      series.push(...Object.entries(table));
+    }
+    const sansOmbre = (v) => { const c = structuredClone(v); delete c.ombre; return c; };
+    const cadre = cadreVisuels(series.map(([, v]) => v), boitePrimitive);
+    const teinte = actuel.teintable ? TEINTE : null;
+    const VIDE = 'rgba(0,0,0,0)';
+    const pixels = (c) => c.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, c.width, c.height).data;
+    const mesurerTour = (v) => {
+      const plein = sansOmbre(v);
+      const caches = Object.fromEntries(['capuche', ...pieces].map((p) => {
+        const c = structuredClone(plein);
+        for (const q of c.primitives) if (q.piece === p) q.alpha = 0;
+        return [p, c];
+      }));
+      const tour = [];
+      for (let a = 0; a < 360; a += 1) {
+        const options = { teinte, angle: a };
+        const c = rendreVisuel(visuels, plein, options, { cadre, echelle, fond: VIDE });
+        const d = pixels(c);
+        const L = c.width;
+        let [x0, y0, x1, y1] = [Infinity, Infinity, -1, -1];
+        for (let i = 3; i < d.length; i += 4) {
+          if (d[i] < 40) continue;
+          const x = ((i - 3) / 4) % L; const y = Math.floor((i - 3) / 4 / L);
+          x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
+        }
+        // L'ancre du visuel dans le canvas (`rendreVisuel`), et le centre
+        // d'un pixel à +0,5 : sans lui, une forme symétrique se lit décalée
+        // d'un demi-pixel vers la gauche.
+        const [ax, ay] = [L / 2, -cadre.haut * echelle];
+        const m = { angle: a, haut: (y0 - ay) / echelle };
+        for (const [p, cache] of Object.entries(caches)) {
+          const e = pixels(rendreVisuel(visuels, cache, options, { cadre, echelle, fond: VIDE }));
+          let [n, sx, sy, h0, h1, l0, l1] = [0, 0, 0, Infinity, -1, Infinity, -1];
+          for (let i = 0; i < d.length; i += 4) {
+            if (Math.max(Math.abs(d[i] - e[i]), Math.abs(d[i + 1] - e[i + 1]), Math.abs(d[i + 2] - e[i + 2]), Math.abs(d[i + 3] - e[i + 3])) <= 12) continue;
+            const x = (i / 4) % L; const y = Math.floor(i / 4 / L);
+            n += 1; sx += x; sy += y; h0 = Math.min(h0, y); h1 = Math.max(h1, y); l0 = Math.min(l0, x); l1 = Math.max(l1, x);
+          }
+          if (p === 'capuche') { Object.assign(m, n ? { capucheL: (l1 - l0 + 1) / echelle, capuche: (h1 - h0 + 1) / (y1 - y0 + 1) } : { capucheL: null, capuche: null }); continue; }
+          m[p] = n < 3 ? null : { x: (sx / n + 0.5 - ax) / echelle, y: (sy / n + 0.5 - ay) / echelle, aire: n / (echelle * echelle) };
+        }
+        tour.push(m);
+      }
+      return tour;
+    };
+    // Les mesures tracées : un nom, comment la lire d'un relevé, et si elle
+    // change de signe au reflet (une abscisse).
+    const MESURES = [
+      ['haut', (m) => m.haut, false], ['capuche l', (m) => m.capucheL, false], ['capuche part', (m) => m.capuche, false],
+      ...pieces.flatMap((p) => [[`${p} x`, (m) => m[p]?.x, true], [`${p} y`, (m) => m[p]?.y, false], [`${p} aire`, (m) => m[p]?.aire, false]]),
+    ];
+    const replier = (a) => (a >= 90 && a <= 270 ? [a, 1] : [((180 - a) % 360 + 360) % 360, -1]);
+    const courbes = series.map(([nom, v]) => [nom, mesurerTour(v)]);
+    const [, tour] = courbes[0];
+    const res = { refs: refs.join(','), mesures: {}, ecarts: {} };
+    const COULEURS = ['#e8e2d4', '#ff8a5a', '#5ab8ff', '#9be07a'];
+    for (const [nom, lire, signe] of MESURES) {
+      // La courbe attendue : les références repliées, moyennées par angle.
+      const pts = new Map();
+      for (const r of refs) {
+        const val = lire(tour[r]);
+        if (val == null) continue;
+        const [a, s] = replier(r);
+        pts.set(a, [...(pts.get(a) || []), signe ? val * s : val]);
+      }
+      const ancres = [...pts].map(([a, l]) => [a, l.reduce((x, y) => x + y, 0) / l.length]).sort((p, q) => p[0] - q[0]);
+      const attendu = (a) => {
+        for (let k = 0; k + 1 < ancres.length; k += 1) {
+          const [[a0, v0], [a1, v1]] = [ancres[k], ancres[k + 1]];
+          if (a >= a0 && a <= a1) return v0 + ((v1 - v0) * (a - a0)) / (a1 - a0 || 1);
+        }
+        return null;
+      };
+      const vals = tour.map(lire).filter((x) => x != null);
+      const etendue = Math.max(...vals) - Math.min(...vals) || 1;
+      const ecarts = tour.map((m) => {
+        const val = lire(m);
+        const [a, s] = replier(m.angle);
+        const att = attendu(a);
+        return val == null || att == null ? null : { angle: m.angle, ecart: (signe ? val * s : val) - att };
+      }).filter(Boolean);
+      res.mesures[nom] = { min: +Math.min(...vals).toFixed(2), max: +Math.max(...vals).toFixed(2), refs: ancres.map(([a, v]) => `${a}°:${v.toFixed(2)}`).join(' ') };
+      res.ecarts[nom] = ecarts.sort((p, q) => Math.abs(q.ecart) - Math.abs(p.ecart)).slice(0, 4)
+        .map((e) => `${e.angle}° ${e.ecart > 0 ? '+' : ''}${e.ecart.toFixed(2)} (${Math.round((100 * Math.abs(e.ecart)) / etendue)} %)`);
+      // Le tracé : chaque série sur 360°, les références en bandes vertes,
+      // les directions tous les 45°.
+      const W = 720, H = 110;
+      const tout = courbes.flatMap(([, t]) => t.map(lire).filter((x) => x != null));
+      const [lo, hi] = [Math.min(...tout), Math.max(...tout)];
+      const Y = (x) => 4 + (H - 8) * (1 - (x - lo) / (hi - lo || 1));
+      const svg = [`<svg xmlns="http://www.w3.org/2000/svg" width="${W + 50}" height="${H + 16}" style="display:block;background:#101317">`];
+      for (const r of refs) svg.push(`<rect x="${40 + r * 2}" y="0" width="2" height="${H}" fill="#2f5a2f"/>`);
+      for (let a = 0; a <= 360; a += 45) svg.push(`<line x1="${40 + a * 2}" x2="${40 + a * 2}" y1="0" y2="${H}" stroke="#333"/><text x="${40 + a * 2 - 8}" y="${H + 12}" fill="#777" font-size="9">${a}</text>`);
+      courbes.forEach(([, t], k) => {
+        const traits = []; let cur = [];
+        t.forEach((m, a) => {
+          const x = lire(m);
+          if (x == null) { if (cur.length) traits.push(cur); cur = []; } else cur.push(`${40 + a * 2},${Y(x).toFixed(1)}`);
+        });
+        if (cur.length) traits.push(cur);
+        for (const tr of traits) svg.push(`<polyline fill="none" stroke="${COULEURS[k % 4]}" stroke-width="1.2" points="${tr.join(' ')}"/>`);
+      });
+      svg.push(`<text x="2" y="10" fill="#aaa" font-size="9">${hi.toFixed(1)}</text><text x="2" y="${H - 2}" fill="#aaa" font-size="9">${lo.toFixed(1)}</text></svg>`);
+      const bloc = document.createElement('div');
+      bloc.innerHTML = svg.join('');
+      $planches.append(figure(bloc, `${nom} · ${courbes.map(([n], k) => `${['blanc', 'orange', 'bleu', 'vert'][k % 4]} = ${n}`).join(' · ')}`));
+    }
+    // Le relevé tous les 6°, une ligne par angle (haut, capuche l et part, puis x/y/aire
+    // de chaque pièce) : de quoi lire un écart sans rouvrir la page.
+    const f = (x) => (x == null ? '-' : x.toFixed(2));
+    res.releve = Object.fromEntries(courbes.map(([n, t]) => [n, t.filter((m) => m.angle % 6 === 0).map((m) =>
+      `${m.angle}° h${f(m.haut)} l${f(m.capucheL)} c${f(m.capuche)} ${pieces.map((p) => `${p}(${f(m[p]?.x)},${f(m[p]?.y)},${f(m[p]?.aire)})`).join(' ')}`)]));
+    return res;
+  }
+
+  const COMMANDES = { diff, cles, saut, fuite, cache, cout, proportions };
+  try {
+    if (!COMMANDES[commande]) throw new Error(`commande inconnue : ${commande} (${Object.keys(COMMANDES).join(', ')})`);
+    const resultat = await COMMANDES[commande]();
+    // `diff` sur tout le catalogue : seuls les visuels touchés se lisent.
+    if (resultat.visuels) resultat.visuels = Object.fromEntries(Object.entries(resultat.visuels).filter(([, e]) => e !== 0));
+    document.getElementById('bilan').textContent = `${commande} · ${ids.length} visuel(s)\n${JSON.stringify(resultat, null, 1)}`;
+    window.resultat = resultat;
+  } catch (erreur) {
+    document.getElementById('bilan').textContent = String(erreur.stack || erreur);
+    window.resultat = { erreur: String(erreur.message || erreur) };
+  }
+</script></body></html>

@@ -20,21 +20,14 @@
 // Aucune valeur de réglage n'est épinglée : elles sont lues dans les données.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { ressortInertie, avancerInertie, creerAnimationHeros, avancerAnimationHeros } from '../src/orientation.js';
 import { angleDePiece, definitionPiece } from '../src/poses.js';
-import { dessinerVisuel } from '../src/visuels.js';
-import { chargerCataloguesDepuisDisque } from '../src/io_node.js';
-import { SCHEMAS } from '../src/schemas.js';
-import { validerCatalogues } from '../src/registry.js';
+import path from 'node:path';
 import { VISUEL_HEROS_ID } from '../src/save.js';
+import { validerCatalogues } from '../src/registry.js';
+import { cataloguesValides, RACINE, geometrieDessin } from './aide_dessin.js';
 
-const RACINE = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const { donnees, erreurs } = await chargerCataloguesDepuisDisque(path.join(RACINE, 'data'), Object.keys(SCHEMAS));
-assert.deepEqual(erreurs, []);
-assert.deepEqual(validerCatalogues(donnees), []);
-const HEROS = donnees.visuels.find((v) => v.id === VISUEL_HEROS_ID);
+const { donnees, HEROS } = await cataloguesValides();
 const ecart = (a, b) => ((((a - b) % 360) + 540) % 360) - 180;
 
 // Fait avancer un ressort seul, frame par frame, derrière une suite d'angles.
@@ -110,40 +103,8 @@ const enInertie = (p) => HEROS.inertie.findIndex((e) => e.pieces.includes(defini
 }
 
 // --- 4. Le dessin ---------------------------------------------------------------------
-// Un faux contexte qui tient sa transform et note, pour chaque remplissage,
-// son chemin à l'écran.
-function chemins(options) {
-  const pile = [];
-  let m = [1, 0, 0, 1, 0, 0];
-  let chemin = [];
-  const fills = [];
-  const mult = ([a, b, c, d, e, f]) => {
-    const [A, B, C, D, E, F] = m;
-    m = [A * a + C * b, B * a + D * b, A * c + C * d, B * c + D * d, A * e + C * f + E, B * e + D * f + F];
-  };
-  const pt = (x, y) => [m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5]].map((n) => Math.round(n * 1e4) / 1e4);
-  const ctx = new Proxy({}, {
-    get(_, prop) {
-      switch (prop) {
-        case 'save': return () => pile.push(m);
-        case 'restore': return () => { m = pile.pop(); };
-        case 'translate': return (x, y) => mult([1, 0, 0, 1, x, y]);
-        case 'scale': return (x, y) => mult([x, 0, 0, y, 0, 0]);
-        case 'rotate': return (r) => mult([Math.cos(r), Math.sin(r), -Math.sin(r), Math.cos(r), 0, 0]);
-        case 'transform': return (...t) => mult(t);
-        case 'getTransform': return () => { const [a, b, c, d, e, f] = m; return { a, b, c, d, e, f }; };
-        case 'setTransform': return (t, ...r) => { m = typeof t === 'object' ? [t.a, t.b, t.c, t.d, t.e, t.f] : [t, ...r]; };
-        case 'beginPath': return () => { chemin = []; };
-        case 'moveTo': case 'lineTo': return (x, y) => chemin.push(pt(x, y));
-        case 'fill': return () => fills.push(JSON.stringify(chemin));
-        default: return () => ({ addColorStop() {} });
-      }
-    },
-    set() { return true; },
-  });
-  dessinerVisuel(ctx, HEROS, 0, 0, { echelle: 3, teinte: '#ff0000', ...options });
-  return fills;
-}
+// Pour chaque remplissage, son chemin à l'écran (`aide_dessin.js#geometrieDessin`).
+const chemins = (options) => geometrieDessin(HEROS, { echelle: 3, teinte: '#ff0000', ...options }).remplissages.map((r) => r.chemin);
 {
   // Les remplissages, dans l'ordre des primitives dessinées : le même nombre
   // d'un angle à un autre voisin (aucune pièce ne s'y cache).
@@ -154,6 +115,10 @@ function chemins(options) {
   const aB = chemins({ angle: B, animation: repos });
   assert.equal(retarde.length, aA.length);
   assert.equal(aA.length, aB.length);
+  // Témoin : deux angles se dessinent différemment — sans quoi « dessinée comme
+  // à l'angle de son ressort » serait vrai d'un dessin qui ignore l'angle
+  // (`D-282` : le jeu l'a fait sans qu'aucun test le voie).
+  assert.notDeepEqual(aA, aB, 'deux angles, deux dessins');
   // Les primitives dessinées sont dans l'ordre du visuel ; l'ombre d'abord.
   const posees = HEROS.primitives.map((p) => p.piece);
   const decal = retarde.length - posees.length;

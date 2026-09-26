@@ -32,3 +32,8 @@ docs/captures/diagnostic-unite-dpr/*
 # `D-227` : la file de Xav, générée par `npm run dettes`. Locale tant que Xav
 # ne la partage pas (décision de Xav, 25/09 : le dépôt est public).
 A_FAIRE.md
+
+# Spec 17, palier A : les variantes candidates de l’atelier (`tools/atelier.html`)
+# et les références extraites de Git par `tools/mesure_visuel.mjs diff`.
+# Jetables : une variante retenue entre au catalogue, le reste se jette.
+tools/variantes/

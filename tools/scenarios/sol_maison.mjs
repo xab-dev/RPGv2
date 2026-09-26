@@ -13,7 +13,7 @@
 // du Jardin, l'intérieur de la Maison.
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ouvrirLeJeu, saveDansLaMaison } from './commun.mjs';
+import { ouvrirLeJeu, saveDansLaMaison, loupe } from './commun.mjs';
 import { SCHEMAS } from '../../src/schemas.js';
 import { construireRegistre } from '../../src/registry.js';
 import { chargerCataloguesDepuisDisque } from '../../src/io_node.js';
@@ -64,28 +64,6 @@ async function postes() {
     ['parquet', milieu(parquets)],
   ].map(([nom, [x, y]]) => ({ nom, x: (x + 0.5) * TILE, y: (y + 0.5) * TILE }))
     .concat(puits ? [{ nom: 'puits', x: puits.x - 26, y: puits.y + puits.h + 26 }] : []);
-}
-
-// Même loupe que `heros_scene.mjs` : une fenêtre en unités LOGIQUES (480 × 270)
-// agrandie au plus proche voisin, parce qu'une tuile fait 32 unités et que le
-// grain qu'on juge se compte en pixels de tuile.
-async function loupe(chrome, { x, y, largeur, hauteur }, sortie) {
-  await chrome.evaluer(`(() => {
-    const jeu = document.querySelector('canvas');
-    const k = jeu.width / 480;
-    const vue = document.createElement('canvas');
-    const zoom = Math.max(1, Math.floor(innerWidth / (${largeur} * k)));
-    vue.width = ${largeur} * k * zoom; vue.height = ${hauteur} * k * zoom;
-    vue.id = 'loupe';
-    vue.style.cssText = 'position:fixed;left:0;top:0;z-index:99999;background:#101317';
-    const ctx = vue.getContext('2d');
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(jeu, ${x} * k, ${y} * k, ${largeur} * k, ${hauteur} * k, 0, 0, vue.width, vue.height);
-    document.body.append(vue);
-    return true;
-  })()`);
-  await chrome.capture(sortie);
-  await chrome.evaluer(`(() => { document.getElementById('loupe').remove(); return true; })()`);
 }
 
 // Quatre tuiles de côté, prises à gauche du héros pour ne pas le photographier

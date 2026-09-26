@@ -18,20 +18,11 @@
 //   dans le dessin, jamais en cisaillement de la pose d'une telle clé.
 // Aucune valeur de réglage n'est épinglée : tout se lit dans les données.
 import assert from 'node:assert/strict';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { ORIENTATIONS } from '../src/orientation.js';
 import { definitionPiece, poseVisible, matricePose, primitivePosee, poserPoint } from '../src/poses.js';
-import { chargerCataloguesDepuisDisque } from '../src/io_node.js';
-import { SCHEMAS } from '../src/schemas.js';
-import { validerCatalogues } from '../src/registry.js';
-import { VISUEL_HEROS_ID } from '../src/save.js';
+import { cataloguesValides } from './aide_dessin.js';
 
-const RACINE = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const { donnees, erreurs } = await chargerCataloguesDepuisDisque(path.join(RACINE, 'data'), Object.keys(SCHEMAS));
-assert.deepEqual(erreurs, []);
-assert.deepEqual(validerCatalogues(donnees), []);
-const HEROS = donnees.visuels.find((v) => v.id === VISUEL_HEROS_ID);
+const { donnees, HEROS } = await cataloguesValides();
 
 // Les clés non reflétées dont une voisine l'est : là où le reflet commence.
 const reflechies = new Set(Object.keys(HEROS.reflets));

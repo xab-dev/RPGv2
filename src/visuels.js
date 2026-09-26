@@ -204,6 +204,28 @@ function decouperParSilhouette(ctx, visuel, poseDe, animation, piece) {
   ctx.clip();
 }
 
+// LE BORD qui cache une pièce passant derrière (`passe_derriere.bord_de`,
+// spec 17 : Xav, 26/09 : « on ne le voit pas s'il est derrière le bord du
+// liseret »). Le `trou` de la pièce nommée (l'ouverture), posé comme elle :
+// la pièce ne se voit qu'au travers. Pendant le passage, l'ouverture file vers
+// le bord plus vite que l'œil (leurs `fuite`), son bord intérieur le balaie —
+// concave, la forme vraie du liseré. Même patron que la silhouette.
+function decouperParTrou(ctx, visuel, poseDe, animation, piece) {
+  const primitive = visuel.primitives.find((p) => p.piece === piece && p.trou);
+  const pose = poseDe(piece);
+  const avant = ctx.getTransform();
+  const anime = matriceAnimation(visuel, piece, animation);
+  if (anime) ctx.transform(...anime);
+  const posee = pose ? primitivePosee(visuel, piece, primitive, pose) : primitive;
+  if (pose) ctx.transform(...matricePose(visuel, piece, pose));
+  ctx.translate(posee.dx || 0, posee.dy || 0);
+  if (posee.rotation) ctx.rotate((posee.rotation * Math.PI) / 180);
+  ctx.beginPath();
+  ctx.ellipse(0, 0, posee.trou.w / 2, posee.trou.h / 2, 0, 0, Math.PI * 2);
+  ctx.setTransform(avant);
+  ctx.clip();
+}
+
 // LE RIDEAU d'une pièce qui passe derrière (`passe_derriere`, spec 16) : en
 // quittant la vue, l'œil ne s'éteint pas, la capuche passe devant lui. Elle le
 // couvre du côté de l'axe du héros — la tête est là, entre nous et lui — vers
@@ -232,7 +254,7 @@ function avanceRideau(visuel, piece, pose) {
   return Math.max(0, (pose.rideau - debut) / (1 - debut)) ** MONTEE_RIDEAU;
 }
 
-function dessinerSousRideau(ctx, visuel, piece, pose, dessiner) {
+function dessinerSousRideau(ctx, visuel, piece, pose, dessiner, decouperDevant = null) {
   // Une pièce qui en `suit` une autre sans passer derrière elle-même (la
   // lueur de l'ouverture) reçoit son rideau : elle s'éteint comme avant.
   const reglage = definitionPiece(visuel, piece).passe_derriere;
@@ -243,30 +265,67 @@ function dessinerSousRideau(ctx, visuel, piece, pose, dessiner) {
     ctx.restore();
     return;
   }
-  const { debut = 0, fondu = 0 } = reglage === true ? {} : reglage;
+  const { debut = 0, fondu = 0, bord: forme = 'convexe', rayon = RAYON_FLANC_RIDEAU, ombre = [1] } = reglage === true ? {} : reglage;
   const avance = avanceRideau(visuel, piece, pose);
   if (avance <= 0) return dessiner();
   const [cx, cy] = poserPoint(visuel, piece, pose, definitionPiece(visuel, piece).origine ?? [0, 0]);
   const r = Math.max(...visuel.primitives.filter((p) => p.piece === piece).map((p) => Math.max(p.w ?? 0, p.h ?? 0) / 2)) * (pose.echelle ?? 1);
   const dehors = Math.sign(cx) || -1;
+  const concave = forme === 'concave';
   // Le bord du flanc : du bord intérieur de la pièce, fondu compris (rien de
-  // couvert), à son bord extérieur (tout).
-  const bord = cx - dehors * (r + fondu) + dehors * (2 * r + fondu) * avance;
-  const centre = bord - dehors * RAYON_FLANC_RIDEAU;
+  // couvert), à son bord extérieur (tout). Concave, ses cornes (au-dessus et
+  // au-dessous de l'axe) précèdent son milieu : il part d'un fondu plus loin.
+  const course = concave ? 2 * (r + fondu) : 2 * r + fondu;
+  const bord = cx - dehors * (r + fondu) + dehors * course * avance;
+  // La part COUVERTE, élargie de `e` vers la pièce (0 : la couverte ; `fondu` :
+  // jusqu'au bout du bord doux). Convexe (`D-278`) : un disque côté axe.
+  // Concave (Xav, 26/09 : « donner une forme concave à la bordure de l'ombre
+  // […] coller à la forme de l'ouverture ») : le flanc de l'ouverture vu
+  // depuis le globe, le côté axe d'un disque posé vers l'extérieur, hors du
+  // disque — un demi-plan creusé.
+  // `cadre` : tout le reste, en pair-impair (le cadre d'abord, l'ordre de `D-278`).
+  const couverte = (e, cadre = false) => {
+    ctx.beginPath();
+    if (cadre) ctx.rect(-100, -100, 200, 200);
+    if (!concave) return ctx.arc(bord - dehors * rayon, cy, rayon + e, 0, Math.PI * 2);
+    const centre = bord + dehors * rayon;
+    const rr = Math.max(0, rayon - e);
+    ctx.moveTo(centre, cy - 100);
+    ctx.lineTo(centre - dehors * 200, cy - 100);
+    ctx.lineTo(centre - dehors * 200, cy + 100);
+    ctx.lineTo(centre, cy + 100);
+    ctx.lineTo(centre, cy + rr);
+    ctx.arc(centre, cy, rr, Math.PI / 2, -Math.PI / 2, dehors < 0);
+    ctx.closePath();
+  };
+  const horsDe = (e) => { couverte(e, true); ctx.clip('evenodd'); };
+  // L'ombre (Xav, 26/09 : « c'est une ombre pas un masque ») : l'opacité de
+  // la part couverte au fil du passage, par paliers égaux de `ombre` (défaut :
+  // pleine d'un bout à l'autre, l'occlusion de `D-278`). Le bord doux passe de
+  // cette ombre au plein éclat. Provisoire, non validé en jeu.
+  const pas = (ombre.length - 1) * avance;
+  const i = Math.min(Math.floor(pas), ombre.length - 2);
+  const opacite = ombre.length === 1 ? ombre[0] : ombre[i] + (ombre[i + 1] - ombre[i]) * (pas - i);
   const n = fondu > 0 ? ANNEAUX_FONDU_RIDEAU : 0;
   for (let k = 0; k <= n; k += 1) {
-    const [dedans, dehorsAnneau] = [RAYON_FLANC_RIDEAU + (fondu * k) / (n || 1), RAYON_FLANC_RIDEAU + (fondu * (k + 1)) / (n || 1)];
     ctx.save();
-    ctx.beginPath();
-    ctx.rect(-100, -100, 200, 200);
-    ctx.arc(centre, cy, dedans, 0, Math.PI * 2);
-    ctx.clip('evenodd');
+    horsDe((fondu * k) / (n || 1));
     if (k < n) {
-      ctx.beginPath();
-      ctx.arc(centre, cy, dehorsAnneau, 0, Math.PI * 2);
+      couverte((fondu * (k + 1)) / (n || 1));
       ctx.clip();
-      ctx.globalAlpha *= (k + 1) / (n + 1);
+      ctx.globalAlpha *= 1 - opacite + (opacite * (k + 1)) / (n + 1);
     }
+    dessiner();
+    ctx.restore();
+  }
+  // Hors de la silhouette de ce qui passe devant (`devant`), rien : une ombre
+  // se pose SUR le globe, elle ne le montre pas là où la capuche le cache.
+  if (opacite < 1) {
+    ctx.save();
+    if (decouperDevant) decouperDevant();
+    couverte(0);
+    ctx.clip();
+    ctx.globalAlpha *= 1 - opacite;
     dessiner();
     ctx.restore();
   }
@@ -365,8 +424,21 @@ export function dessinerVisuel(ctx, visuel, x, y, options = {}) {
     ctx.save();
     if (eclat < 1) ctx.globalAlpha *= eclat;
     if (definition.decoupe) decouperParSilhouette(ctx, visuel, poseDe, animation, definition.decoupe);
+    // L'ombre du rideau se découpe par la silhouette de la pièce qui passe
+    // devant, dans la transform d'avant l'animation (celle de la découpe).
+    const devant = pose && pose.rideau > 0 ? definition.passe_derriere?.devant : undefined;
+    const bordDe = pose && pose.rideau > 0 ? definition.passe_derriere?.bord_de : undefined;
+    if (bordDe) decouperParTrou(ctx, visuel, poseDe, animation, bordDe);
+    const avantAnime = devant ? ctx.getTransform() : null;
     if (anime) ctx.transform(...anime);
-    if (pose && pose.rideau > 0) dessinerSousRideau(ctx, visuel, piece, pose, () => dessinerPosee(ctx, visuel, piece, primitive, pose, teinte));
+    if (pose && pose.rideau > 0) {
+      dessinerSousRideau(ctx, visuel, piece, pose, () => dessinerPosee(ctx, visuel, piece, primitive, pose, teinte), devant && (() => {
+        const t = ctx.getTransform();
+        ctx.setTransform(avantAnime);
+        decouperParSilhouette(ctx, visuel, poseDe, animation, devant);
+        ctx.setTransform(t);
+      }));
+    }
     else if (pose) dessinerPosee(ctx, visuel, piece, primitive, pose, teinte);
     else dessinerPrimitive(ctx, primitive, teinte);
     ctx.restore();

@@ -105,7 +105,13 @@ console.log(`OK dessin : l'ouverture découpée par la silhouette dessinée de l
 // --- 2. Les données du héros -------------------------------------------------------
 {
   assert.ok(definitionPiece(HEROS, 'ouverture').decoupe, 'l\'ouverture est découpée par la capuche');
-  assert.equal(definitionPiece(HEROS, 'oeil').decoupe, undefined, 'le globe, devant, ne se découpe jamais');
+  // Le globe est DEVANT l'ouverture : jamais découpé par elle. Depuis la
+  // spec 16, il l'est par le contour de la capuche (quand le héros se
+  // détourne, il passe derrière son bord) — dans les huit vues fixes, cela
+  // ne retire aucun pixel (mesuré au banc de différence, `D-268`).
+  const decoupeOeil = definitionPiece(HEROS, 'oeil').decoupe;
+  assert.ok(decoupeOeil === undefined || !['ouverture'].includes(decoupeOeil), 'le globe, devant, n\'est jamais découpé par son ouverture');
+  assert.ok(decoupeOeil === undefined || decoupeOeil === definitionPiece(HEROS, 'ouverture').decoupe, 'au plus, par le contour qui découpe l\'ouverture');
   // `D-253` : une vue de l'est est le reflet de sa vue de l'ouest — le centre
   // de chaque pièce, tel que le dessin le pose.
   const centre = (o, piece) => {

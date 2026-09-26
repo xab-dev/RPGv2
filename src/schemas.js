@@ -1682,6 +1682,11 @@ function erreursDegradeVisuel(degrade, chemin) {
       erreurs.push(`${chemin} > degrade.stops[${i}].couleur manquante`);
     }
   });
+  // `D-263` : le centre du dégradé, décalé dans le repère de la primitive.
+  if (degrade.centre !== undefined && !(Array.isArray(degrade.centre) && degrade.centre.length === 2
+    && degrade.centre.every((n) => typeof n === 'number' && Number.isFinite(n)))) {
+    erreurs.push(`${chemin} > degrade.centre doit être [x, y]`);
+  }
   return erreurs;
 }
 

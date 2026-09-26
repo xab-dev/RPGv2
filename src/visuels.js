@@ -47,21 +47,23 @@ function hexVersRgba(hex, alpha = 1) {
 // `D-256` : un palier `teinte: true` prend la teinte passée à l'appel (le
 // halo de l'œil du héros suit la couleur du follet, comme l'iris) ; sans
 // teinte, sa propre couleur. La teinte est un hex, comme toutes celles du jeu.
+// `D-263` : `centre` décale le dégradé dans ce repère — la lumière d'un
+// volume (la cape, la capuche) vient d'en haut à gauche, pas de son milieu.
 function creerDegrade(ctx, primitive, teinte) {
-  const { direction = 'horizontal', stops } = primitive.degrade;
+  const { direction = 'horizontal', stops, centre: [cx, cy] = [0, 0] } = primitive.degrade;
   const largeur = primitive.w || 0;
   const hauteur = primitive.h || 0;
   let degrade;
   if (direction === 'elliptique') {
     // `D-257` : les anneaux suivent l'ellipse — `dessinerPrimitive` a déjà
     // écrasé le repère à la hauteur, le dégradé y est un cercle de la largeur.
-    degrade = ctx.createRadialGradient(0, 0, 0, 0, 0, largeur / 2);
+    degrade = ctx.createRadialGradient(cx, cy, 0, cx, cy, largeur / 2);
   } else if (direction === 'radial' || primitive.forme === 'degrade_radial') {
-    degrade = ctx.createRadialGradient(0, 0, 0, 0, 0, Math.max(largeur, hauteur) / 2);
+    degrade = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(largeur, hauteur) / 2);
   } else if (direction === 'vertical') {
-    degrade = ctx.createLinearGradient(0, -hauteur / 2, 0, hauteur / 2);
+    degrade = ctx.createLinearGradient(cx, cy - hauteur / 2, cx, cy + hauteur / 2);
   } else {
-    degrade = ctx.createLinearGradient(-largeur / 2, 0, largeur / 2, 0);
+    degrade = ctx.createLinearGradient(cx - largeur / 2, cy, cx + largeur / 2, cy);
   }
   for (const stop of stops) {
     degrade.addColorStop(stop.offset, hexVersRgba(stop.teinte && teinte ? teinte : stop.couleur, stop.alpha ?? 1));

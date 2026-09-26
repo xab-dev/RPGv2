@@ -34,8 +34,9 @@
           "fondu": 1.5,
           "bord": "concave",
           "rayon": 3.5,
-          "ombre": [0.35, 0.775, 1],
-          "devant": "capuche"
+          "ombre": [0.35, 1, 1],
+          "devant": "capuche",
+          "bord_de": "ouverture"
         }
       },
       "lueur": {

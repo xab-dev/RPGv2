@@ -204,6 +204,28 @@ function decouperParSilhouette(ctx, visuel, poseDe, animation, piece) {
   ctx.clip();
 }
 
+// LE BORD qui cache une pièce passant derrière (`passe_derriere.bord_de`,
+// spec 17 : Xav, 26/09 : « on ne le voit pas s'il est derrière le bord du
+// liseret »). Le `trou` de la pièce nommée (l'ouverture), posé comme elle :
+// la pièce ne se voit qu'au travers. Pendant le passage, l'ouverture file vers
+// le bord plus vite que l'œil (leurs `fuite`), son bord intérieur le balaie —
+// concave, la forme vraie du liseré. Même patron que la silhouette.
+function decouperParTrou(ctx, visuel, poseDe, animation, piece) {
+  const primitive = visuel.primitives.find((p) => p.piece === piece && p.trou);
+  const pose = poseDe(piece);
+  const avant = ctx.getTransform();
+  const anime = matriceAnimation(visuel, piece, animation);
+  if (anime) ctx.transform(...anime);
+  const posee = pose ? primitivePosee(visuel, piece, primitive, pose) : primitive;
+  if (pose) ctx.transform(...matricePose(visuel, piece, pose));
+  ctx.translate(posee.dx || 0, posee.dy || 0);
+  if (posee.rotation) ctx.rotate((posee.rotation * Math.PI) / 180);
+  ctx.beginPath();
+  ctx.ellipse(0, 0, posee.trou.w / 2, posee.trou.h / 2, 0, 0, Math.PI * 2);
+  ctx.setTransform(avant);
+  ctx.clip();
+}
+
 // LE RIDEAU d'une pièce qui passe derrière (`passe_derriere`, spec 16) : en
 // quittant la vue, l'œil ne s'éteint pas, la capuche passe devant lui. Elle le
 // couvre du côté de l'axe du héros — la tête est là, entre nous et lui — vers
@@ -405,6 +427,8 @@ export function dessinerVisuel(ctx, visuel, x, y, options = {}) {
     // L'ombre du rideau se découpe par la silhouette de la pièce qui passe
     // devant, dans la transform d'avant l'animation (celle de la découpe).
     const devant = pose && pose.rideau > 0 ? definition.passe_derriere?.devant : undefined;
+    const bordDe = pose && pose.rideau > 0 ? definition.passe_derriere?.bord_de : undefined;
+    if (bordDe) decouperParTrou(ctx, visuel, poseDe, animation, bordDe);
     const avantAnime = devant ? ctx.getTransform() : null;
     if (anime) ctx.transform(...anime);
     if (pose && pose.rideau > 0) {

@@ -1740,6 +1740,7 @@ const CONTROLES_DEFINITION_PIECE = {
     rayon: (x) => estNombre(x) && x > 0,
     ombre: (x) => Array.isArray(x) && x.length > 0 && x.every((o) => estNombre(o) && o >= 0 && o <= 1),
     devant: () => true,
+    bord_de: () => true,
   })(v),
   source: () => true,
 };
@@ -1766,7 +1767,7 @@ function erreursPosesVisuel(entry, path) {
     const chemin = `${path} > pieces > ${nom}`;
     if (!portees.has(nom)) erreurs.push(`${chemin} : aucune primitive ne porte cette pièce`);
     if (!objetDe(CONTROLES_DEFINITION_PIECE)(def)) {
-      erreurs.push(`${chemin} doit être { origine?: [x, y], miroir?: booléen, decoupe?: pièce, cachee?: true, suit?: pièce, fuite?: nombre ≥ 0, passe_derriere?: true | { debut?: [0, 1[, fondu?: nombre ≥ 0, bord?: convexe | concave, rayon?: nombre > 0, ombre?: [opacités 0 à 1], devant?: pièce } }`);
+      erreurs.push(`${chemin} doit être { origine?: [x, y], miroir?: booléen, decoupe?: pièce, cachee?: true, suit?: pièce, fuite?: nombre ≥ 0, passe_derriere?: true | { debut?: [0, 1[, fondu?: nombre ≥ 0, bord?: convexe | concave, rayon?: nombre > 0, ombre?: [opacités 0 à 1], devant?: pièce, bord_de?: pièce } }`);
     } else if (def.decoupe !== undefined && (def.decoupe === nom || !silhouettes.has(def.decoupe))) {
       // `D-260` : sans silhouette à suivre, la pièce découpée disparaîtrait
       // en entier, sans que personne le voie venir.
@@ -1779,6 +1780,10 @@ function erreursPosesVisuel(entry, path) {
     } else if (def.passe_derriere?.devant !== undefined && (def.passe_derriere.devant === nom || !silhouettes.has(def.passe_derriere.devant))) {
       // Sans silhouette, l'ombre du rideau ne saurait où s'arrêter.
       erreurs.push(`${chemin} > passe_derriere > devant doit nommer une autre pièce qui porte une primitive silhouette`);
+    } else if (def.passe_derriere?.bord_de !== undefined && (def.passe_derriere.bord_de === nom
+      || !entry.primitives.some((p) => p && p.piece === def.passe_derriere.bord_de && p.trou))) {
+      // Le bord qui cache, c'est celui d'un trou : sans trou, rien à suivre.
+      erreurs.push(`${chemin} > passe_derriere > bord_de doit nommer une autre pièce qui porte une primitive à trou`);
     } else if (def.source !== undefined && (def.source === nom || !portees.has(def.source))) {
       // `D-279` : une lumière projetée brille de ce qu'on voit de sa source.
       erreurs.push(`${chemin} > source doit nommer une autre pièce, portée par une primitive`);

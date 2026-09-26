@@ -112,10 +112,11 @@ Branche `ouverture-capuche`, partie de `main` (`c3662e7`).
 |---|---|---|
 | `2ae3640` | Ménage | Journal de la capuche du héros archivé ; aucune réponse nouvelle au suivi ; branche `ouverture-capuche` |
 | `9c83a6c` | `D-260` | De côté, l'ouverture (cavité, façade, halo) découpée par le contour de la capuche (`decoupe`, primitive `silhouette`, `poser` partagé par le dessin et la découpe), le globe jamais ; de profil avancée de 1,2 ; l'œil × 1,01 / × 1,02 autour du centre de l'ouverture, le trou rouvert en hauteur d'autant (`echelle_y`). La déformation d'arc (itération 1) n'y est pas : retirée avant commit. `V-181` à voir, `D-261` ouvert. Suite verte, 224 fichiers |
-| (celui-ci) | DOC | Le journal de la session, « Où on en est » |
+| `b89c7a7` | DOC | Le journal de la session, « Où on en est » |
+| (celui-ci, tagué `v0.8.83`) | Version | Xav : « oui go push » — `ouverture-capuche` fusionnée dans `main` (avance rapide), `package.json` à `0.8.83`, « Où on en est » ; `main` et le tag poussés. `V-177` à `V-181` restent ouvertes |
 
 ## Pour Xav
 
 - **À voir en jeu** : `V-181` (l'ouverture de côté, en tournant au joystick). Toujours en attente : `V-177` à `V-180`.
 - **À reprendre** : `D-261`, le polish de profil (« ouest mérite du polish suplémentaire ») — ce qui cloche reste à dire ; tout s'y règle en données.
-- **Branche** `ouverture-capuche` (ménage, `D-260`, ce journal), non fusionnée, **non poussée**. Sur `main`, non poussés : `D-258`, `D-259`.
+- **Publié** : `v0.8.83` (`main` et le tag), avec `D-258`, `D-259`, `D-260`.

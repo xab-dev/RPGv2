@@ -4,21 +4,16 @@
 // voir vers qui il tire — Xav, 25/09 : « cette décision devient prioritaire ».
 //
 // Forme (`Q-167`, tranchée par Xav) : le « tricheur » de `Q-51`, une seule
-// silhouette dont des PIÈCES bougent — le visage dans la capuche (décalé de
-// profil, absent de dos), et depuis `D-249` la capuche elle-même, dont la
-// pointe penche à l'opposé du regard, « pour faire varier de façon visible »
-// (Xav) les huit directions. Ce module ne sait rien du dessin : il dit une DIRECTION, et
-// le visuel déclare en données ce que chaque direction fait à ses pièces
-// (`orientations`, lu par `visuels.js#dessinerVisuel`). Un état d'AFFICHAGE,
-// jamais sauvegardé : recharger une partie remet le héros de face, comme le
-// geste d'un levier (`bascule.js`). Pur.
+// silhouette dont des PIÈCES bougent (la capuche se plie, l'œil glisse dans
+// son ouverture, et disparaît de dos). Ce module ne sait rien du dessin : il
+// dit une DIRECTION ; le visuel déclare en données ce que chaque direction
+// fait à ses pièces, et `poses.js` le traduit. Un état d'AFFICHAGE, jamais
+// sauvegardé : recharger une partie remet le héros de face, comme le geste
+// d'un levier (`bascule.js`). Pur.
 
 // Les huit directions (`D-249`, Xav : « 8 positions »), rangées par angle à
 // l'écran, de 45° en 45°, en partant de l'est et en tournant vers le bas
-// (l'axe y de l'écran descend). `sud` est la pose initiale ; jusqu'à `D-254`,
-// elle montrait le dessin d'auteur tel quel. Depuis, le héros la déclare
-// comme les autres (Xav, 26/09 : la pointe et le visage sur l'axe vertical) ;
-// sans orientation, un visuel se dessine tel qu'il est écrit.
+// (l'axe y de l'écran descend). `sud` est la pose initiale.
 export const ORIENTATIONS = ['est', 'sud_est', 'sud', 'sud_ouest', 'ouest', 'nord_ouest', 'nord', 'nord_est'];
 export const ORIENTATION_INITIALE = 'sud';
 const SECTEUR_DEG = 360 / ORIENTATIONS.length;
@@ -75,20 +70,4 @@ export function avancerOrientation(etat, { deltaMs, dx = 0, dy = 0, vers = null 
   const regardMs = Math.max(0, etat.regardMs - deltaMs);
   if (regardMs > 0) return { direction: etat.direction, regardMs };
   return { direction: orienterDepuisMouvement(etat.direction, dx, dy), regardMs };
-}
-
-// Ce qu'une direction fait à une PIÈCE d'un visuel (`primitive.piece`) :
-// `undefined` = rien, la pièce se dessine telle quelle ; `null` = la pièce
-// est cachée (le visage, de dos) ; `{ dx, dy, echelle_x, cisaillement,
-// pivot_y }` = resserrée à l'horizontale, penchée (`cisaillement` : x glisse de
-// cisaillement × (y − pivot_y), et la ligne `pivot_y` ne bouge pas — la base
-// de la capuche reste posée, sa pointe penche), puis décalée ; depuis
-// `D-252`, `{ courbure, longueur }` plie la pièce au-dessus de `pivot_y` au lieu
-// de la pencher (le sommet reste sur l'axe, la pointe se couche), et depuis
-// `D-253` `miroir` la reflète autour de l'axe. Lu par le seul
-// `visuels.js#dessinerVisuel` : le dessin ne connaît aucun nom de direction.
-export function poseDePiece(visuel, direction, piece) {
-  const poses = visuel && visuel.orientations && direction ? visuel.orientations[direction] : undefined;
-  if (!poses || !(piece in poses)) return undefined;
-  return poses[piece];
 }

@@ -28,9 +28,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   ORIENTATIONS, ORIENTATION_INITIALE, MARGE_BASCULE_DEG, DUREE_REGARD_TIR_MS,
-  directionDe, orienterDepuisMouvement, creerOrientation, avancerOrientation, poseDePiece,
+  directionDe, orienterDepuisMouvement, creerOrientation, avancerOrientation,
 } from '../src/orientation.js';
-import { dessinerVisuel, courberPoints } from '../src/visuels.js';
+import { dessinerVisuel } from '../src/visuels.js';
+import { definitionPiece, poseDePiece, poserPoint } from '../src/poses.js';
 import { chargerCataloguesDepuisDisque, chargerLocalesDepuisDisque } from '../src/io_node.js';
 import { SCHEMAS } from '../src/schemas.js';
 import { validerCatalogues, construireRegistre } from '../src/registry.js';
@@ -86,19 +87,19 @@ const [dictionnaires, { donnees, erreurs }] = await Promise.all([
 assert.deepEqual(erreurs, []);
 assert.deepEqual(validerCatalogues(donnees), []);
 const HEROS = donnees.visuels.find((v) => v.id === VISUEL_HEROS_ID);
-const VISAGE = HEROS.primitives.filter((p) => p.piece === 'visage');
+const VISAGE = HEROS.primitives.filter((p) => p.piece === 'oeil');
 {
   assert.ok(VISAGE.length > 0, 'le héros a un visage qui peut bouger');
-  assert.notEqual(poseDePiece(HEROS, 'sud', 'visage'), null, 'de face, le visage est là');
+  assert.notEqual(poseDePiece(HEROS, 'sud', 'oeil'), null, 'de face, le visage est là');
   for (const dos of ['nord', 'nord_est', 'nord_ouest']) {
-    assert.equal(poseDePiece(HEROS, dos, 'visage'), null, `${dos} : de dos, le visage disparaît`);
+    assert.equal(poseDePiece(HEROS, dos, 'oeil'), null, `${dos} : de dos, le visage disparaît`);
   }
   // De profil : le centre du visage (dessiné autour de son dx) part du côté regardé.
-  const centre = VISAGE.reduce((s, p) => s + p.dx, 0) / VISAGE.length;
+  const centre = [VISAGE.reduce((s, p) => s + p.dx, 0) / VISAGE.length, VISAGE.reduce((s, p) => s + p.dy, 0) / VISAGE.length];
   const centreDe = (direction) => {
-    const pose = poseDePiece(HEROS, direction, 'visage');
-    assert.ok(pose && typeof pose === 'object', `${direction} : une pose de profil`);
-    return (pose.dx ?? 0) + centre * (pose.echelle_x ?? 1) * (pose.echelle ?? 1) * (pose.miroir ? -1 : 1);
+    const pose = poseDePiece(HEROS, direction, 'oeil') ?? {};
+    assert.ok(pose && typeof pose === 'object', `${direction} : l'œil paraît`);
+    return poserPoint(HEROS, 'oeil', pose, centre)[0];
   };
   // (par rapport au visage de face, lui-même posé depuis `D-254`)
   for (const d of ['est', 'sud_est']) assert.ok(centreDe(d) > centreDe('sud'), `${d} : le visage glisse vers l'est`);
@@ -107,14 +108,8 @@ const VISAGE = HEROS.primitives.filter((p) => p.piece === 'visage');
   const CAPUCHE = HEROS.primitives.filter((p) => p.piece === 'capuche');
   assert.ok(CAPUCHE.length > 0, 'la capuche est une pièce');
   const pointe = CAPUCHE.flatMap((p) => p.points || []).reduce((a, b) => (b[1] < a[1] ? b : a));
-  // Depuis `D-252`, une pose peut plier la pointe au lieu de la pencher : on
-  // la plie par la fonction du dessin avant le reste de la pose ; depuis
-  // `D-253`, la refléter autour de l'axe.
-  const pointeDe = (direction) => {
-    const pose = poseDePiece(HEROS, direction, 'capuche') || {};
-    const [x, y] = pose.courbure ? courberPoints([pointe], pose)[0] : pointe;
-    return (pose.dx ?? 0) + x * (pose.echelle_x ?? 1) * (pose.miroir ? -1 : 1) + (pose.cisaillement ?? 0) * (y - (pose.pivot_y ?? 0));
-  };
+  // Pliée, penchée, reflétée : la pointe telle que le dessin la pose.
+  const pointeDe = (direction) => poserPoint(HEROS, 'capuche', poseDePiece(HEROS, direction, 'capuche') ?? {}, pointe)[0];
   for (const d of ['est', 'sud_est', 'nord_est']) assert.ok(pointeDe(d) < pointeDe('sud'), `${d} : la pointe penche vers l'ouest`);
   for (const d of ['ouest', 'sud_ouest', 'nord_ouest']) assert.ok(pointeDe(d) > pointeDe('sud'), `${d} : la pointe penche vers l'est`);
   console.log('OK données : de dos sans visage, le visage du côté regardé, la pointe à l\'opposé');
@@ -144,10 +139,11 @@ function ordres(options) {
   const remplissages = (a) => a.filter((x) => x[0] === 'fill').length;
   // `D-254` : une primitive cachée ne paraît que là où sa pièce est posée
   // (la pointe rabattue, de dos) ; on la compte à part.
-  const cacheesMontrees = (d) => HEROS.primitives.filter((p) => p.cachee && poseDePiece(HEROS, d, p.piece)).length;
+  const cachee = (p) => p.piece !== undefined && definitionPiece(HEROS, p.piece).cachee;
+  const cacheesMontrees = (d) => HEROS.primitives.filter((p) => cachee(p) && poseDePiece(HEROS, d, p.piece)).length;
   assert.equal(remplissages(ordres({ teinte: '#ff0000', orientation: 'sud' })), remplissages(reference) + cacheesMontrees('sud'), 'de face : rien ne manque');
   // `D-256` : de dos, la cavité de la capuche disparaît avec le visage.
-  const masquees = (d) => HEROS.primitives.filter((p) => p.piece !== undefined && !p.cachee && poseDePiece(HEROS, d, p.piece) === null).length;
+  const masquees = (d) => HEROS.primitives.filter((p) => p.piece !== undefined && !cachee(p) && poseDePiece(HEROS, d, p.piece) === null).length;
   assert.ok(masquees('nord') >= VISAGE.length);
   assert.equal(remplissages(ordres({ teinte: '#ff0000', orientation: 'nord' })), remplissages(reference) - masquees('nord') + cacheesMontrees('nord'),
     'de dos : les primitives des pièces cachées (le visage, la cavité), et elles seules, manquent');
@@ -164,11 +160,11 @@ function ordres(options) {
     modif(copie.visuels.find((v) => v.id === VISUEL_HEROS_ID));
     return validerCatalogues(copie);
   };
-  assert.ok(erreursAvec((v) => { v.orientations.nordest = { visage: null }; }).some((e) => e.includes('direction inconnue')));
+  assert.ok(erreursAvec((v) => { v.orientations.nordest = { oeil: null }; }).some((e) => e.includes('direction inconnue')));
   assert.ok(erreursAvec((v) => { v.orientations.nord = { chapeau: null }; }).some((e) => e.includes('aucune primitive ne porte')));
-  assert.ok(erreursAvec((v) => { v.orientations.est.visage = { dx: 'loin' }; }).some((e) => e.includes('orientations > est > visage')));
-  assert.ok(erreursAvec((v) => { v.orientations.est.capuche = { cisaillement: 'fort' }; }).some((e) => e.includes('orientations > est > capuche')));
-  assert.ok(erreursAvec((v) => { v.orientations.est.visage = { echelle_x: 0 }; }).some((e) => e.includes('orientations > est > visage')));
+  assert.ok(erreursAvec((v) => { v.orientations.ouest.oeil = { dx: 'loin' }; }).some((e) => e.includes('orientations > ouest > oeil')));
+  assert.ok(erreursAvec((v) => { v.orientations.ouest.capuche = { cisaillement: 'fort' }; }).some((e) => e.includes('orientations > ouest > capuche')));
+  assert.ok(erreursAvec((v) => { v.orientations.ouest.oeil = { echelle: 0 }; }).some((e) => e.includes('orientations > ouest > oeil')));
   assert.ok(erreursAvec((v) => { v.primitives[0].piece = ''; }).some((e) => e.includes('piece doit être un nom')));
   console.log('OK démarrage : direction, pièce et pose mal déclarées refusées');
 }

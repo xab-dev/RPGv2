@@ -79,20 +79,18 @@ rpg_v2/
 │   │                       qu'une case reçoit (`lisieresCase`) ; pur. Une lisière se dessine
 │   │                       DANS la case qui la reçoit, entre son grain et son objet
 │   ├── visuels.js          dessinerVisuel() : seul point qui interprète `data/visuels.json`
-│   │                       (primitives + teinte/alpha/échelle/rotation)
-│   │                       ; `courberPoints` (`D-252`) : le pli d'une pièce (la capuche de profil),
-│   │                       seule déformation hors transform du contexte, gardée par pose
-│   │                       ; `miroir` (`D-253`) : une pièce reflétée autour de l'axe (les `_est`)
-│   │                       ; `rabat` (`D-254`) : le haut d'une pièce écrasé en calotte ; une
-│   │                       primitive `cachee` ne paraît que là où sa pièce est posée
-│   │                       ; `reflet` (`D-255`) : le style d'une primitive sous un miroir ; `echelle`
-│   │                       de pose et palier de dégradé `teinte` (`D-256`, l'œil du héros)
-│   │                       ; dégradé `elliptique`, `trou`, `rotation` de pose (`D-257`) :
-│   │                       l'ouverture de la capuche, devant l'œil
-│   │                       ; `decoupe` de pose et primitive `silhouette`, `echelle_y` (`D-260`) :
-│   │                       une pièce découpée par la silhouette posée d'une autre (l'ouverture
-│   │                       par la capuche, de côté) ; `poser` : le seul point qui traduit une
-│   │                       pose en transform, partagé par le dessin et la découpe
+│   │                       (primitives + teinte/alpha/échelle/rotation) ; palier de dégradé `teinte`
+│   │                       (`D-256`), dégradé `elliptique` et `trou` (`D-257`) ; une PIÈCE posée
+│   │                       reçoit la matrice de sa pose (`poses.js`), une pièce `decoupe` est
+│   │                       découpée par la `silhouette` posée d'une autre (`D-260`)
+│   ├── poses.js            `D-262` : les PIÈCES d'un visuel et leurs POSES (`visuels.json > pieces,
+│   │                       orientations, reflets`) — `poseDePiece` (une direction en reflet
+│   │                       d'une autre : `reflet: true`), `matricePose` (LA matrice d'une pose :
+│   │                       origine, déplacement, rotation, cisaillement, échelles ; en reflet
+│   │                       M·A·M, ou M·A pour une pièce `miroir`), `plierPoints` (le pli et le
+│   │                       rabat, `D-252`, `D-254`, seules déformations hors transform),
+│   │                       `primitivePosee` (pliée, style `reflet` sous un miroir, `D-255`),
+│   │                       `poserPoint` (pour tests et outils) — pur, gardé par pose
 │   ├── intro.js            2 machines à états pures : intro (clignements+orbite, ≤8s) et départ
 │   │                       (follets non élus qui repartent) — propre à la Grotte, pas un moteur
 │   │                       de cinématiques généralisé
@@ -216,8 +214,7 @@ rpg_v2/
 │   │                       à la butée, halo en fondu) — pur, un état d'AFFICHAGE jamais sauvegardé
 │   ├── orientation.js      `D-229`, `D-249` : OÙ REGARDE le héros — huit secteurs de 45° (marge à la
 │   │                       frontière), le tir d'une compétence qui le tourne vers sa cible un instant ;
-│   │                       `poseDePiece` : ce qu'une direction fait à une PIÈCE d'un visuel
-│   │                       (`visuels.json > orientations` : le visage, la capuche qui penche ou se plie) — pur
+│   │                       ne sait rien du dessin (`poses.js` traduit une direction) — pur
 │   ├── logo.js             le symbole du jeu (« la sagesse pour tout et pour tous », Xav) : son
 │   │                       apparition signe après signe, dans l'ordre de lecture — pur ; dessiné par
 │   │                       `render.js#dessinerLogo` (trois calques d'`images/logo/`, meilleur effort)

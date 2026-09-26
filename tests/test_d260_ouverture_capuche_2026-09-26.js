@@ -8,17 +8,17 @@
 // 1. Le dessin : une pièce découpée l'est par le chemin même que sa
 //    silhouette dessine dans cette direction (pliée, reflétée) ; le reste du
 //    dessin n'est jamais découpé.
-// 2. Les données du héros : l'ouverture (cavité, façade, halo) se découpe
-//    d'un bloc, le globe jamais ; les vues de l'est restent le reflet de
-//    celles de l'ouest.
+// 2. Les données du héros : l'ouverture se découpe, le globe jamais ; les
+//    vues de l'est restent le reflet de celles de l'ouest.
 // 3. Démarrage : une découpe sans silhouette à suivre, une silhouette
 //    ambiguë, refusées.
 // Aucune valeur de réglage n'est épinglée : elles sont lues dans les données.
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ORIENTATIONS, poseDePiece } from '../src/orientation.js';
+import { ORIENTATIONS } from '../src/orientation.js';
 import { dessinerVisuel } from '../src/visuels.js';
+import { definitionPiece, poseDePiece, poserPoint } from '../src/poses.js';
 import { chargerCataloguesDepuisDisque } from '../src/io_node.js';
 import { SCHEMAS } from '../src/schemas.js';
 import { validerCatalogues } from '../src/registry.js';
@@ -29,7 +29,6 @@ const { donnees, erreurs } = await chargerCataloguesDepuisDisque(path.join(RACIN
 assert.deepEqual(erreurs, []);
 assert.deepEqual(validerCatalogues(donnees), []);
 const HEROS = donnees.visuels.find((v) => v.id === VISUEL_HEROS_ID);
-const OUVERTURE = ['cavite', 'facade', 'halo'];
 
 // Un faux contexte qui tient sa transform comme un vrai (ce que rend
 // `getTransform`, ce que reprend `setTransform`) et note, pour chaque
@@ -72,21 +71,24 @@ function dessiner(orientation) {
 }
 
 // Les primitives dessinées dans une direction, dans l'ordre du dessin.
+
+// Les primitives dessinées dans une direction, dans l'ordre du dessin.
 const dessinees = (o) => HEROS.primitives.filter((p) => {
   if (p.piece === undefined) return true;
   const pose = poseDePiece(HEROS, o, p.piece);
-  return pose !== null && !(p.cachee && pose === undefined);
+  return pose !== null && !(definitionPiece(HEROS, p.piece).cachee && pose === undefined);
 });
+const decoupeDe = (p) => (p.piece === undefined ? undefined : definitionPiece(HEROS, p.piece).decoupe);
 
 // --- 1. Le dessin --------------------------------------------------------------
-const DECOUPEES = ORIENTATIONS.filter((o) => OUVERTURE.some((p) => poseDePiece(HEROS, o, p)?.decoupe));
+const DECOUPEES = ORIENTATIONS.filter((o) => dessinees(o).some(decoupeDe));
 assert.ok(DECOUPEES.length > 0, 'au moins une vue découpe son ouverture');
 for (const o of ORIENTATIONS) {
   const { remplissages, decoupes } = dessiner(o);
   const primitives = dessinees(o);
   assert.equal(remplissages.length, primitives.length, `${o} : une primitive, un remplissage`);
   primitives.forEach((p, i) => {
-    const piece = p.piece !== undefined ? poseDePiece(HEROS, o, p.piece)?.decoupe : undefined;
+    const piece = decoupeDe(p);
     if (!piece) {
       assert.equal(remplissages[i].decoupe, null, `${o} : primitive ${i} (${p.piece ?? 'sans pièce'}) jamais découpée`);
       return;
@@ -102,33 +104,21 @@ console.log(`OK dessin : l'ouverture découpée par la silhouette dessinée de l
 
 // --- 2. Les données du héros -------------------------------------------------------
 {
-  for (const o of ORIENTATIONS) {
-    const decoupes = OUVERTURE.map((p) => poseDePiece(HEROS, o, p)?.decoupe);
-    assert.ok(decoupes.every((d) => d === decoupes[0]), `${o} : l'ouverture (cavité, façade, halo) se découpe d'un bloc`);
-    // Rouverte en hauteur (« on triche pareil +1% […] +2% »), d'un bloc aussi :
-    // le liseré et sa lueur suivent le trou.
-    const hauteurs = OUVERTURE.map((p) => poseDePiece(HEROS, o, p)?.echelle_y);
-    assert.ok(hauteurs.every((h) => h === hauteurs[0]), `${o} : l'ouverture se rouvre en hauteur d'un bloc`);
-    assert.equal(poseDePiece(HEROS, o, 'visage')?.decoupe, undefined, `${o} : le globe, devant, ne se découpe jamais`);
-  }
-  // `D-253` : une vue de l'est est le reflet de sa vue de l'ouest — pour
-  // l'ouverture, qui ne se reflète pas (elle est symétrique), le centre de
-  // chaque pièce et sa découpe.
+  assert.ok(definitionPiece(HEROS, 'ouverture').decoupe, 'l\'ouverture est découpée par la capuche');
+  assert.equal(definitionPiece(HEROS, 'oeil').decoupe, undefined, 'le globe, devant, ne se découpe jamais');
+  // `D-253` : une vue de l'est est le reflet de sa vue de l'ouest — le centre
+  // de chaque pièce, tel que le dessin le pose.
   const centre = (o, piece) => {
-    const pose = poseDePiece(HEROS, o, piece) || {};
     const p = HEROS.primitives.find((q) => q.piece === piece);
-    const [e, a] = [pose.echelle ?? 1, ((pose.rotation ?? 0) * Math.PI) / 180];
-    return [(pose.dx ?? 0) + e * (p.dx * Math.cos(a) - p.dy * Math.sin(a)), (pose.dy ?? 0) + e * (p.dx * Math.sin(a) + p.dy * Math.cos(a))];
+    return poserPoint(HEROS, piece, poseDePiece(HEROS, o, piece) || {}, [p.dx, p.dy]);
   };
   for (const [ouest, est] of [['ouest', 'est'], ['sud_ouest', 'sud_est']]) {
-    for (const piece of [...OUVERTURE, 'visage']) {
-      if (!poseDePiece(HEROS, ouest, piece)) continue;
+    for (const piece of ['ouverture', 'oeil']) {
       const [[xo, yo], [xe, ye]] = [centre(ouest, piece), centre(est, piece)];
-      assert.ok(Math.abs(xo + xe) < 0.01 && Math.abs(yo - ye) < 0.01, `${est} : ${piece} au reflet de ${ouest} (${xo.toFixed(3)} / ${xe.toFixed(3)})`);
-      assert.equal(poseDePiece(HEROS, est, piece)?.decoupe, poseDePiece(HEROS, ouest, piece)?.decoupe, `${est} : ${piece} découpée comme dans ${ouest}`);
+      assert.ok(Math.abs(xo + xe) < 1e-9 && Math.abs(yo - ye) < 1e-9, `${est} : ${piece} au reflet de ${ouest} (${xo.toFixed(3)} / ${xe.toFixed(3)})`);
     }
   }
-  console.log('OK données : l\'ouverture découpée d\'un bloc, le globe jamais, l\'est au reflet de l\'ouest');
+  console.log('OK données : l\'ouverture découpée, le globe jamais, l\'est au reflet de l\'ouest');
 }
 
 // --- 3. Démarrage ------------------------------------------------------------------
@@ -138,12 +128,12 @@ console.log(`OK dessin : l'ouverture découpée par la silhouette dessinée de l
     modifier(copie.visuels.find((v) => v.id === VISUEL_HEROS_ID));
     assert.ok(validerCatalogues(copie).some((e) => e.includes(attendu)), message);
   };
-  const o = DECOUPEES[0];
-  refuse((v) => { v.orientations[o].facade.decoupe = 'visage'; }, 'decoupe doit nommer', 'une découpe par une pièce sans silhouette, refusée');
-  refuse((v) => { v.orientations[o].capuche.decoupe = 'capuche'; }, 'decoupe doit nommer', 'une pièce qui se découpe elle-même, refusée');
-  refuse((v) => { v.orientations[o].capuche = null; }, 'est cachée dans cette direction', 'une découpe par une pièce cachée, refusée');
+  const o = DECOUPEES.find((d) => d in HEROS.orientations);
+  refuse((v) => { v.pieces.ouverture.decoupe = 'oeil'; }, 'decoupe doit nommer', 'une découpe par une pièce sans silhouette, refusée');
+  refuse((v) => { v.pieces.capuche.decoupe = 'capuche'; }, 'decoupe doit nommer', 'une pièce qui se découpe elle-même, refusée');
+  refuse((v) => { v.orientations[o].capuche = null; }, 'cachée dans cette direction', 'une découpe par une pièce cachée, refusée');
   refuse((v) => { v.primitives.filter((p) => p.piece === 'capuche')[1].silhouette = true; }, 'silhouette vaut true', 'deux silhouettes pour une pièce, refusées');
-  refuse((v) => { v.primitives.find((p) => p.piece === 'facade').silhouette = true; }, 'silhouette vaut true', 'une silhouette qui n\'est pas un polygone, refusée');
+  refuse((v) => { v.primitives.find((p) => p.piece === 'ouverture').silhouette = true; }, 'silhouette vaut true', 'une silhouette qui n\'est pas un polygone, refusée');
   console.log('OK démarrage : une découpe sans silhouette à suivre, une silhouette ambiguë, refusées');
 }
 

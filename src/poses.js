@@ -11,7 +11,8 @@
 // - `pieces` déclare une fois ce qui ne dépend pas de la direction : l'origine
 //   autour de laquelle la pièce tourne et grandit, si son dessin se reflète
 //   (`miroir`), si elle est découpée par la silhouette d'une autre
-//   (`decoupe`), si elle n'existe que là où une direction la pose (`cachee`) ;
+//   (`decoupe`), si elle n'existe que là où une direction la pose (`cachee`),
+//   si elle suit la pose d'une autre (`suit`, autour de l'origine de celle-ci) ;
 // - `orientations` déclare, direction par direction, la pose de chaque pièce :
 //   `null` (cachée), ou un déplacement de son origine, une rotation, une
 //   échelle, un pli ;
@@ -33,6 +34,10 @@ const AUCUNE_DEFINITION = Object.freeze({});
 // - un objet : sa pose (`reflet: true` pour une direction en reflet).
 export function poseDePiece(visuel, direction, piece) {
   if (!visuel || !visuel.orientations || !direction) return undefined;
+  // `D-266` : une pièce qui en SUIT une autre prend sa pose — la lueur de
+  // l'œil sur la poitrine va où va l'ouverture, sans en partager la découpe.
+  const { suit } = definitionPiece(visuel, piece);
+  if (suit) return poseDePiece(visuel, direction, suit);
   const source = visuel.reflets && visuel.reflets[direction];
   if (source) return refleter(poseDeclaree(visuel, source, piece));
   return poseDeclaree(visuel, direction, piece);
@@ -74,7 +79,7 @@ export function matricePose(visuel, piece, pose) {
   let parPiece = matrices.get(pose);
   if (!parPiece) matrices.set(pose, (parPiece = new Map()));
   let matrice = parPiece.get(piece);
-  if (!matrice) parPiece.set(piece, (matrice = calculerMatrice(definitionPiece(visuel, piece), pose)));
+  if (!matrice) parPiece.set(piece, (matrice = calculerMatrice(definitionPiece(visuel, definitionPiece(visuel, piece).suit ?? piece), pose)));
   return matrice;
 }
 

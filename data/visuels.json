@@ -27,6 +27,9 @@
       },
       "oeil": {
         "origine": [0, 0.35]
+      },
+      "lueur": {
+        "suit": "ouverture"
       }
     },
     "orientations": {
@@ -273,6 +276,22 @@
             { "offset": 0, "couleur": "#05070a", "alpha": 0.8 },
             { "offset": 0.62, "couleur": "#05070a", "alpha": 0.45 },
             { "offset": 1, "couleur": "#05070a", "alpha": 0 }
+          ]
+        }
+      },
+      {
+        "forme": "degrade_radial",
+        "dx": 0,
+        "dy": 5.4,
+        "w": 12,
+        "h": 5.6,
+        "piece": "lueur",
+        "degrade": {
+          "direction": "elliptique",
+          "stops": [
+            { "offset": 0, "couleur": "#cfe6ff", "alpha": 0.34, "teinte": true },
+            { "offset": 0.5, "couleur": "#cfe6ff", "alpha": 0.13, "teinte": true },
+            { "offset": 1, "couleur": "#cfe6ff", "alpha": 0, "teinte": true }
           ]
         }
       },

@@ -1691,7 +1691,7 @@ function erreursDegradeVisuel(degrade, chemin) {
 }
 
 // Les pièces et leurs poses (`poses.js`), validées d'un bloc.
-const CLES_DEFINITION_PIECE = ['origine', 'miroir', 'decoupe', 'cachee'];
+const CLES_DEFINITION_PIECE = ['origine', 'miroir', 'decoupe', 'cachee', 'suit'];
 const CLES_POSE = ['dx', 'dy', 'rotation', 'cisaillement', 'echelle', 'echelle_y', 'pli', 'rabat'];
 const estObjet = (o) => !!o && typeof o === 'object' && !Array.isArray(o);
 const estNombre = (n) => typeof n === 'number' && Number.isFinite(n);
@@ -1711,11 +1711,16 @@ function erreursPosesVisuel(entry, path) {
       || (def.origine !== undefined && !(Array.isArray(def.origine) && def.origine.length === 2 && def.origine.every(estNombre)))
       || (def.miroir !== undefined && typeof def.miroir !== 'boolean')
       || (def.cachee !== undefined && def.cachee !== true)) {
-      erreurs.push(`${chemin} doit être { origine?: [x, y], miroir?: booléen, decoupe?: pièce, cachee?: true }`);
+      erreurs.push(`${chemin} doit être { origine?: [x, y], miroir?: booléen, decoupe?: pièce, cachee?: true, suit?: pièce }`);
     } else if (def.decoupe !== undefined && (def.decoupe === nom || !silhouettes.has(def.decoupe))) {
       // `D-260` : sans silhouette à suivre, la pièce découpée disparaîtrait
       // en entier, sans que personne le voie venir.
       erreurs.push(`${chemin} > decoupe doit nommer une autre pièce qui porte une primitive silhouette`);
+    } else if (def.suit !== undefined && (def.suit === nom || !portees.has(def.suit)
+      || (pieces[def.suit] && pieces[def.suit].suit !== undefined) || def.origine !== undefined)) {
+      // `D-266` : une pièce suit une autre pièce, qui ne suit personne, et
+      // tourne autour de l'origine de celle-ci.
+      erreurs.push(`${chemin} > suit doit nommer une autre pièce, qui n'en suit aucune (sans origine propre)`);
     }
   }
 
@@ -1749,6 +1754,7 @@ function erreursPosesVisuel(entry, path) {
     for (const [piece, pose] of Object.entries(poses)) {
       const chemin = `${cheminO} > ${piece}`;
       if (!portees.has(piece)) erreurs.push(`${chemin} : aucune primitive ne porte cette pièce`);
+      if (pieces[piece] && pieces[piece].suit !== undefined) erreurs.push(`${chemin} : la pièce suit "${pieces[piece].suit}", elle ne se pose pas elle-même`);
       if (pose === null) continue;
       const pli = pose && pose.pli;
       const rabat = pose && pose.rabat;

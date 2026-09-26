@@ -87,4 +87,31 @@ const unePrimitive = (degrade, forme = 'rect') => ({ id: 'visuel_temoin', ancre:
   console.log('OK reflet : la lumière d\'un dégradé reste du même côté de l\'écran');
 }
 
+// --- 3. `D-266` : une pièce qui en suit une autre ------------------------------------
+{
+  const HEROS = donnees.visuels.find((v) => v.id === VISUEL_HEROS_ID);
+  const { poseDePiece, matricePose, definitionPiece } = await import('../src/poses.js');
+  const suiveuses = Object.keys(HEROS.pieces).filter((p) => definitionPiece(HEROS, p).suit);
+  assert.ok(suiveuses.length > 0, 'le héros a une pièce qui en suit une autre (la lueur de l\'œil)');
+  for (const piece of suiveuses) {
+    const guide = definitionPiece(HEROS, piece).suit;
+    for (const d of ['sud', 'sud_ouest', 'ouest', 'est', 'nord']) {
+      const pose = poseDePiece(HEROS, d, piece);
+      assert.equal(pose, poseDePiece(HEROS, d, guide), `${d} : ${piece} prend la pose de ${guide}`);
+      if (pose) assert.deepEqual(matricePose(HEROS, piece, pose), matricePose(HEROS, guide, pose), `${d} : ${piece} tourne autour de l'origine de ${guide}`);
+    }
+  }
+  const refuse = (modif, attendu) => {
+    const copie = structuredClone(donnees);
+    modif(copie.visuels.find((v) => v.id === VISUEL_HEROS_ID));
+    assert.ok(validerCatalogues(copie).some((e) => e.includes(attendu)), attendu);
+  };
+  const [piece] = suiveuses;
+  refuse((v) => { v.pieces[piece].suit = piece; }, 'suit doit nommer');
+  refuse((v) => { v.pieces[piece].suit = 'chapeau'; }, 'suit doit nommer');
+  refuse((v) => { v.pieces[piece].origine = [0, 0]; }, 'suit doit nommer');
+  refuse((v) => { v.orientations.ouest[piece] = {}; }, 'elle ne se pose pas elle-même');
+  console.log(`OK suit : ${suiveuses.join(', ')} prend la pose de sa pièce guide`);
+}
+
 console.log('OK test_d263_polish_heros');

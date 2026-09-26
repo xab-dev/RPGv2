@@ -47,18 +47,13 @@ const contient = (grande, petite) => petite.minX >= grande.minX && petite.maxX <
   const teintees = heros.primitives.filter((p) => p.teinte);
   assert.ok(teintees.length > 0, 'au moins une primitive porte la teinte — sans quoi le choix du follet ne se verrait plus');
 
-  // L'ouverture de la capuche : la primitive la plus SOMBRE du visuel, celle
-  // qui creuse le vide où le visage se loge. On la désigne par sa fonction
-  // (la plus sombre), jamais par son index — ajouter une primitive devant ne
-  // doit pas casser le test.
-  const luminance = (c) => {
-    const n = parseInt(c.replace('#', ''), 16);
-    return ((n >> 16) & 255) + ((n >> 8) & 255) + (n & 255);
-  };
-  const ouverture = heros.primitives
-    .filter((p) => p.couleur && !p.teinte)
-    .reduce((a, b) => (luminance(a.couleur) <= luminance(b.couleur) ? a : b));
-  const creux = boite(ouverture);
+  // L'ouverture de la capuche. Jusqu'au 26/09, la primitive la plus SOMBRE
+  // du visuel (l'orbite, qui creusait le vide où le visage se loge) ; depuis
+  // `D-257`, l'ouverture est DÉCLARÉE : le trou de la façade de la capuche,
+  // devant le globe. On la désigne par sa fonction, jamais par son index.
+  const facade = heros.primitives.find((p) => p.trou);
+  assert.ok(facade, 'la capuche a une ouverture (le trou de sa façade)');
+  const creux = boite({ forme: 'ellipse', dx: facade.dx, dy: facade.dy, w: facade.trou.w, h: facade.trou.h });
 
   for (const p of teintees) {
     const b = boite(p);

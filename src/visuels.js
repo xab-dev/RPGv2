@@ -52,7 +52,11 @@ function creerDegrade(ctx, primitive, teinte) {
   const largeur = primitive.w || 0;
   const hauteur = primitive.h || 0;
   let degrade;
-  if (direction === 'radial' || primitive.forme === 'degrade_radial') {
+  if (direction === 'elliptique') {
+    // `D-257` : les anneaux suivent l'ellipse — `dessinerPrimitive` a déjà
+    // écrasé le repère à la hauteur, le dégradé y est un cercle de la largeur.
+    degrade = ctx.createRadialGradient(0, 0, 0, 0, 0, largeur / 2);
+  } else if (direction === 'radial' || primitive.forme === 'degrade_radial') {
     degrade = ctx.createRadialGradient(0, 0, 0, 0, 0, Math.max(largeur, hauteur) / 2);
   } else if (direction === 'vertical') {
     degrade = ctx.createLinearGradient(0, -hauteur / 2, 0, hauteur / 2);
@@ -99,10 +103,23 @@ function dessinerPrimitive(ctx, primitive, teinte) {
     }
     case 'ellipse':
     case 'degrade_radial': {
+      // `D-257` : un dégradé `elliptique` (l'ouverture de la capuche, plus
+      // large que haute) se peint dans un repère écrasé à la hauteur : ses
+      // anneaux suivent l'ellipse, quand un dégradé radial reste un cercle
+      // que l'ellipse coupe. Et un `trou` (une ellipse concentrique) perce la
+      // forme — la façade de la capuche, devant l'œil qu'on voit au travers.
+      const { w, h, trou } = primitive;
+      const k = primitive.degrade && primitive.degrade.direction === 'elliptique' ? h / w : 1;
+      if (k !== 1) ctx.scale(1, k);
       resoudreStyle(ctx, primitive, teinte);
       ctx.beginPath();
-      ctx.ellipse(0, 0, primitive.w / 2, primitive.h / 2, 0, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.ellipse(0, 0, w / 2, h / 2 / k, 0, 0, Math.PI * 2);
+      if (trou) {
+        ctx.ellipse(0, 0, trou.w / 2, trou.h / 2 / k, 0, 0, Math.PI * 2);
+        ctx.fill('evenodd');
+      } else {
+        ctx.fill();
+      }
       break;
     }
     case 'rect': {
@@ -294,6 +311,11 @@ export function dessinerVisuel(ctx, visuel, x, y, options = {}) {
     const pivot = pose.pivot_y ?? 0;
     ctx.save();
     ctx.translate(pose.dx ?? 0, (pose.dy ?? 0) + pivot);
+    // `D-257` : l'ouverture de la capuche, de côté, garde les proportions de
+    // face et s'incline vers l'arrière (Xav : « agrandir haut-droit pour
+    // l'effet sphérique ») — une rotation de pièce, en degrés, autour de son
+    // origine.
+    if (pose.rotation) ctx.rotate((pose.rotation * Math.PI) / 180);
     if (pose.cisaillement) ctx.transform(1, 0, pose.cisaillement, 1, 0, 0);
     if (pose.echelle_x !== undefined) ctx.scale(pose.echelle_x, 1);
     // `D-256` : une échelle UNIFORME. L'œil du héros est un globe : resserré

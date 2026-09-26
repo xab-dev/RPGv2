@@ -1774,7 +1774,7 @@ function validerVisuel(entry, catalogs, path) {
           if (!pieces.has(piece)) erreurs.push(`${cheminO} > "${piece}" : aucune primitive ne porte cette pièce`);
           if (pose === null) continue;
           const cles = pose && typeof pose === 'object' ? Object.keys(pose) : null;
-          const nombres = ['dx', 'dy', 'cisaillement', 'pivot_y', 'courbure'];
+          const nombres = ['dx', 'dy', 'cisaillement', 'pivot_y', 'courbure', 'rotation'];
           const positifs = ['echelle_x', 'echelle', 'longueur'];
           // `D-254` : `rabat` = { y : nombre ; longueur, hauteur : nombres > 0 }.
           const r = pose && pose.rabat;
@@ -1785,7 +1785,7 @@ function validerVisuel(entry, catalogs, path) {
             || (pose.miroir !== undefined && typeof pose.miroir !== 'boolean')
             || nombres.some((c) => pose[c] !== undefined && typeof pose[c] !== 'number')
             || positifs.some((c) => pose[c] !== undefined && (typeof pose[c] !== 'number' || pose[c] <= 0))) {
-            erreurs.push(`${cheminO} > ${piece} doit être null (cachée) ou { dx?, dy?, cisaillement?, pivot_y?, courbure? : nombres ; echelle_x?, echelle?, longueur? : nombres > 0 ; miroir? : booléen ; rabat? : { y, longueur > 0, hauteur > 0 } }`);
+            erreurs.push(`${cheminO} > ${piece} doit être null (cachée) ou { dx?, dy?, cisaillement?, pivot_y?, courbure?, rotation? : nombres ; echelle_x?, echelle?, longueur? : nombres > 0 ; miroir? : booléen ; rabat? : { y, longueur > 0, hauteur > 0 } }`);
           } else if (pose.courbure !== undefined && pose.longueur === undefined) {
             // `D-252` : une courbure sans longueur n'a pas de pointe où
             // atteindre son angle (`visuels.js#courberPoints`).
@@ -1854,6 +1854,16 @@ function validerVisuel(entry, catalogs, path) {
     // posent sa pièce ; sans pièce, elle ne paraîtrait jamais.
     if (p.cachee !== undefined && (p.cachee !== true || p.piece === undefined)) {
       erreurs.push(`${chemin} > cachee vaut true, et seulement sur une primitive qui porte une pièce`);
+    }
+    // `D-257` : un trou (une ellipse concentrique, plus petite) et un dégradé
+    // elliptique n'existent que sur une ellipse (`visuels.js#dessinerPrimitive`).
+    const ovale = p.forme === 'ellipse' || p.forme === 'degrade_radial';
+    if (p.trou !== undefined && (!ovale || !p.trou || !(p.trou.w > 0) || !(p.trou.h > 0)
+      || Object.keys(p.trou).some((c) => c !== 'w' && c !== 'h') || !(p.trou.w < p.w) || !(p.trou.h < p.h))) {
+      erreurs.push(`${chemin} > trou doit être { w, h } plus petit que la forme, sur une ellipse`);
+    }
+    if (p.degrade && p.degrade.direction === 'elliptique' && (!ovale || !(p.w > 0) || !(p.h > 0))) {
+      erreurs.push(`${chemin} > un dégradé elliptique se peint sur une ellipse qui déclare w et h`);
     }
     if (p.rotation !== undefined && typeof p.rotation !== 'number') {
       erreurs.push(`${chemin} > rotation doit être numérique`);

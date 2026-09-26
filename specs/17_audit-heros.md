@@ -114,6 +114,11 @@ versionnées.
 - **D — L'état des lieux.** Un scénario rejouable, des captures commentées
   (`LISEZ-MOI.md`), des constats changés en lignes proposées, jamais corrigés
   en passant.
+  **Livré le 26/09** : `tools/scenarios/audit_2026_09_26.mjs` et
+  `docs/captures/Audit_2026_09_26/` (la Maison entière dessinée par le jeu,
+  de jour et de nuit, les salles, le héros, les follets, les stations, les
+  monstres, le décor, le HUD et le menu). Constats : `D-295`, `Q-181` à
+  `Q-183`.
 
 ## 3. Hors de cette spec
 

@@ -14,58 +14,19 @@
 //    ambiguë, refusées.
 // Aucune valeur de réglage n'est épinglée : elles sont lues dans les données.
 import assert from 'node:assert/strict';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { ORIENTATIONS } from '../src/orientation.js';
-import { dessinerVisuel } from '../src/visuels.js';
 import { definitionPiece, poseDePiece, poserPoint } from '../src/poses.js';
-import { chargerCataloguesDepuisDisque } from '../src/io_node.js';
-import { SCHEMAS } from '../src/schemas.js';
-import { validerCatalogues } from '../src/registry.js';
 import { VISUEL_HEROS_ID } from '../src/save.js';
+import { validerCatalogues } from '../src/registry.js';
+import { cataloguesValides, geometrieDessin } from './aide_dessin.js';
 
-const RACINE = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const { donnees, erreurs } = await chargerCataloguesDepuisDisque(path.join(RACINE, 'data'), Object.keys(SCHEMAS));
-assert.deepEqual(erreurs, []);
-assert.deepEqual(validerCatalogues(donnees), []);
-const HEROS = donnees.visuels.find((v) => v.id === VISUEL_HEROS_ID);
+const { donnees, HEROS } = await cataloguesValides();
 
 // Un faux contexte qui tient sa transform comme un vrai (ce que rend
 // `getTransform`, ce que reprend `setTransform`) et note, pour chaque
 // remplissage, le chemin en coordonnées de l'écran et s'il est découpé.
 function dessiner(orientation) {
-  const pile = [];
-  let m = [1, 0, 0, 1, 0, 0];
-  let decoupe = null;
-  let chemin = [];
-  const remplissages = [];
-  const decoupes = [];
-  const mult = ([a, b, c, d, e, f]) => {
-    const [A, B, C, D, E, F] = m;
-    m = [A * a + C * b, B * a + D * b, A * c + C * d, B * c + D * d, A * e + C * f + E, B * e + D * f + F];
-  };
-  const point = (x, y) => [m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5]].map((n) => Math.round(n * 1e6) / 1e6);
-  const ctx = new Proxy({}, {
-    get(_, prop) {
-      switch (prop) {
-        case 'save': return () => pile.push([m, decoupe]);
-        case 'restore': return () => { [m, decoupe] = pile.pop(); };
-        case 'translate': return (x, y) => mult([1, 0, 0, 1, x, y]);
-        case 'scale': return (x, y) => mult([x, 0, 0, y, 0, 0]);
-        case 'rotate': return (r) => mult([Math.cos(r), Math.sin(r), -Math.sin(r), Math.cos(r), 0, 0]);
-        case 'transform': return (...t) => mult(t);
-        case 'getTransform': return () => { const [a, b, c, d, e, f] = m; return { a, b, c, d, e, f }; };
-        case 'setTransform': return (t, ...reste) => { m = typeof t === 'object' ? [t.a, t.b, t.c, t.d, t.e, t.f] : [t, ...reste]; };
-        case 'beginPath': return () => { chemin = []; };
-        case 'moveTo': case 'lineTo': return (x, y) => chemin.push(point(x, y));
-        case 'clip': return () => { decoupe = JSON.stringify(chemin); decoupes.push(decoupe); };
-        case 'fill': return () => remplissages.push({ chemin: JSON.stringify(chemin), decoupe });
-        default: return () => ({ addColorStop() {} });
-      }
-    },
-    set() { return true; },
-  });
-  dessinerVisuel(ctx, HEROS, 10, 20, { orientation, echelle: 3, teinte: '#ff0000' });
+  const { remplissages, decoupes } = geometrieDessin(HEROS, { orientation, echelle: 3, teinte: '#ff0000' }, { x: 10, y: 20, precision: 1e6 });
   // L'ombre portée se remplit avant les primitives.
   return { remplissages: remplissages.slice(HEROS.ombre ? 1 : 0), decoupes };
 }

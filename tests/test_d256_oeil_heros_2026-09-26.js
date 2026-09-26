@@ -17,21 +17,14 @@
 //    l'ouverture au centre du globe) va dans la direction.
 // Aucune valeur de réglage n'est épinglée : elles sont lues dans les données.
 import assert from 'node:assert/strict';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { ORIENTATIONS } from '../src/orientation.js';
 import { dessinerVisuel } from '../src/visuels.js';
 import { poseDePiece, poserPoint, matricePose } from '../src/poses.js';
-import { chargerCataloguesDepuisDisque } from '../src/io_node.js';
-import { SCHEMAS } from '../src/schemas.js';
-import { validerCatalogues } from '../src/registry.js';
 import { VISUEL_HEROS_ID } from '../src/save.js';
+import { validerCatalogues } from '../src/registry.js';
+import { cataloguesValides } from './aide_dessin.js';
 
-const RACINE = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const { donnees, erreurs } = await chargerCataloguesDepuisDisque(path.join(RACINE, 'data'), Object.keys(SCHEMAS));
-assert.deepEqual(erreurs, []);
-assert.deepEqual(validerCatalogues(donnees), []);
-const HEROS = donnees.visuels.find((v) => v.id === VISUEL_HEROS_ID);
+const { donnees, HEROS } = await cataloguesValides();
 
 // Un faux contexte qui note les paliers des dégradés et les matrices de pose
 // que reçoit le canvas.

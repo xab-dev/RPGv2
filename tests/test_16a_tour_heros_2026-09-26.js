@@ -17,37 +17,16 @@
 //    est refusée au démarrage.
 // Aucune valeur de réglage n'est épinglée : elles sont lues dans les données.
 import assert from 'node:assert/strict';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { ORIENTATIONS } from '../src/orientation.js';
-import { dessinerVisuel } from '../src/visuels.js';
 import { poseAAngle, poseVisible, poserPoint, definitionPiece } from '../src/poses.js';
-import { chargerCataloguesDepuisDisque } from '../src/io_node.js';
-import { SCHEMAS } from '../src/schemas.js';
-import { validerCatalogues } from '../src/registry.js';
 import { VISUEL_HEROS_ID } from '../src/save.js';
+import { validerCatalogues } from '../src/registry.js';
+import { cataloguesValides, ordresDessin } from './aide_dessin.js';
 
-const RACINE = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const { donnees, erreurs } = await chargerCataloguesDepuisDisque(path.join(RACINE, 'data'), Object.keys(SCHEMAS));
-assert.deepEqual(erreurs, []);
-assert.deepEqual(validerCatalogues(donnees), []);
-const HEROS = donnees.visuels.find((v) => v.id === VISUEL_HEROS_ID);
+const { donnees, HEROS } = await cataloguesValides();
 const PAS = 360 / ORIENTATIONS.length;
 
-function ordres(options) {
-  const appels = [];
-  const ctx = new Proxy({}, {
-    get(_, prop) {
-      return (...args) => {
-        appels.push([String(prop), ...args]);
-        return String(prop).startsWith('create') ? { addColorStop: (...a) => appels.push(['addColorStop', ...a]) } : undefined;
-      };
-    },
-    set(_, prop, valeur) { appels.push([`=${String(prop)}`, typeof valeur === 'object' ? '[dégradé]' : valeur]); return true; },
-  });
-  dessinerVisuel(ctx, HEROS, 10, 20, { teinte: '#ff0000', ...options });
-  return appels;
-}
+const ordres = (options) => ordresDessin(HEROS, { teinte: '#ff0000', ...options });
 
 // --- 1. Les clés ---------------------------------------------------------------------
 ORIENTATIONS.forEach((o, i) => {

@@ -26,15 +26,11 @@
 //    refusés.
 // Aucune valeur de réglage n'est épinglée : elles sont lues dans les données.
 import assert from 'node:assert/strict';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { ORIENTATIONS } from '../src/orientation.js';
-import { dessinerVisuel } from '../src/visuels.js';
 import { poseDePiece, poserPoint, plierPoints } from '../src/poses.js';
-import { chargerCataloguesDepuisDisque } from '../src/io_node.js';
-import { SCHEMAS } from '../src/schemas.js';
-import { validerCatalogues } from '../src/registry.js';
 import { VISUEL_HEROS_ID } from '../src/save.js';
+import { validerCatalogues } from '../src/registry.js';
+import { cataloguesValides, ordresDessin } from './aide_dessin.js';
 
 const proche = (a, b, msg) => assert.ok(Math.abs(a - b) < 1e-9, `${msg} (${a} ≠ ${b})`);
 
@@ -73,11 +69,7 @@ const proche = (a, b, msg) => assert.ok(Math.abs(a - b) < 1e-9, `${msg} (${a} �
 }
 
 // --- 2. Les données -----------------------------------------------------------------
-const RACINE = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const { donnees, erreurs } = await chargerCataloguesDepuisDisque(path.join(RACINE, 'data'), Object.keys(SCHEMAS));
-assert.deepEqual(erreurs, []);
-assert.deepEqual(validerCatalogues(donnees), []);
-const HEROS = donnees.visuels.find((v) => v.id === VISUEL_HEROS_ID);
+const { donnees, HEROS } = await cataloguesValides();
 const CAPUCHE = HEROS.primitives.filter((p) => p.piece === 'capuche');
 const plusHaut = (points) => points.reduce((a, b) => (b[1] < a[1] ? b : a));
 const POINTE = plusHaut(CAPUCHE.flatMap((p) => p.points));
@@ -109,22 +101,8 @@ const POINTE = plusHaut(CAPUCHE.flatMap((p) => p.points));
 }
 
 // --- 3. Le dessin -------------------------------------------------------------------
-// Un faux contexte qui note chaque appel ; un dégradé se crée, puis reçoit
-// ses paliers ; un style posé se note par ce qu'il est.
-function ordres(visuel, options) {
-  const appels = [];
-  const ctx = new Proxy({}, {
-    get(_, prop) {
-      return (...args) => {
-        appels.push([String(prop), ...args]);
-        return String(prop).startsWith('create') ? { addColorStop: (...a) => appels.push(['addColorStop', ...a]) } : undefined;
-      };
-    },
-    set(_, prop, valeur) { appels.push([`=${String(prop)}`, typeof valeur === 'object' ? '[dégradé]' : valeur]); return true; },
-  });
-  dessinerVisuel(ctx, visuel, 10, 20, options);
-  return appels;
-}
+// Le dessin, ordre pour ordre (`aide_dessin.js#ordresDessin`).
+const ordres = ordresDessin;
 const styles = (visuel, orientation) => ordres(visuel, { orientation }).filter((a) => a[0] === '=fillStyle').map((a) => a[1]);
 {
   const pliee = ORIENTATIONS.find((d) => (poseDePiece(HEROS, d, 'capuche') || {}).pli);

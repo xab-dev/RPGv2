@@ -31,6 +31,7 @@ import {
   directionDe, orienterDepuisMouvement, creerOrientation, avancerOrientation,
 } from '../src/orientation.js';
 import { dessinerVisuel } from '../src/visuels.js';
+import { ordresDessin } from './aide_dessin.js';
 import { definitionPiece, poseDePiece, poserPoint } from '../src/poses.js';
 import { chargerCataloguesDepuisDisque, chargerLocalesDepuisDisque } from '../src/io_node.js';
 import { SCHEMAS } from '../src/schemas.js';
@@ -117,23 +118,8 @@ const VISAGE = HEROS.primitives.filter((p) => p.piece === 'oeil');
 }
 
 // --- 3. Le dessin -------------------------------------------------------------------
-function ordres(options) {
-  const appels = [];
-  const ctx = new Proxy({}, {
-    // Un dégradé (`D-255`, la pointe rabattue) se crée, puis reçoit ses paliers.
-    get(_, prop) {
-      return (...args) => {
-        appels.push([String(prop), ...args]);
-        return String(prop).startsWith('create') ? { addColorStop: (...a) => appels.push(['addColorStop', ...a]) } : undefined;
-      };
-    },
-    // Un dégradé posé en style se note par ce qu'il est, pas par son objet
-    // (ses paliers sont déjà notés à sa création).
-    set(_, prop, valeur) { appels.push([`=${String(prop)}`, typeof valeur === 'object' ? '[dégradé]' : valeur]); return true; },
-  });
-  dessinerVisuel(ctx, HEROS, 10, 20, options);
-  return appels;
-}
+// Le dessin, ordre pour ordre (`aide_dessin.js#ordresDessin`).
+const ordres = (options) => ordresDessin(HEROS, options);
 {
   const reference = ordres({ teinte: '#ff0000' });
   assert.deepEqual(ordres({ teinte: '#ff0000', orientation: null }), reference, 'sans orientation : le dessin d\'auteur');

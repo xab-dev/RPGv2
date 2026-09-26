@@ -296,7 +296,9 @@ rpg_v2/
 │                           (album de référence par jalon)
 ├── prive/                  IGNORÉ par Git, jamais publié : sauvegardes/ (sauvegardes réelles
 │                           exportées par Xav, servent aux migrations — existe sur son PC seulement)
-├── tests/                  un fichier par contrat/diagnostic, headless, `node:assert/strict`
+├── tests/                  un fichier par contrat/diagnostic, headless, `node:assert/strict` ; aide_dessin.js
+│                           (pas un test : catalogues validés et trois faux contextes 2D — ordres,
+│                           géométrie à l’écran, opacité — partagés par les tests du dessin)
 └── tools/                  run_tests.js (lance tous les tests/*.js, = `npm test`) + mesure_rythme.mjs
                             (`R-19` : combien de temps de JEU pour atteindre un niveau, et d'où vient
                             l'XP — un INSTRUMENT, jamais un test : un bot « vétéran » joue une partie

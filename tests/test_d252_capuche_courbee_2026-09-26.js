@@ -13,8 +13,8 @@
 // 2. Données : toute direction qui plie la capuche garde son sommet (le point
 //    le plus haut, pose appliquée) plus près de l'axe que sa pointe — c'est
 //    la plainte de Xav (le cisaillement emportait le sommet avec la pointe) ;
-//    une direction qui redresse la pointe (`D-254`, face et dos) rapproche de
-//    l'axe la pointe et le sommet du dessin d'auteur.
+//    la face et le dos (`D-254`) n'écartent de l'axe ni la pointe ni le
+//    sommet du dessin d'auteur (depuis `D-276`, symétrique).
 // 3. Dessin : une pose pliée dessine deux fois exactement la même chose (les
 //    points pliés se gardent, ils ne se refont pas au hasard d'une frame).
 //    Une direction en reflet (`D-253`) reflète le dessin de la pièce
@@ -94,10 +94,10 @@ const POINTE = plusHaut(CAPUCHE.flatMap((p) => p.points));
     if (Math.abs(xPointe) > Math.abs(POINTE[0])) {
       assert.ok(Math.abs(sommet[0]) < Math.abs(xPointe), `${d} : le sommet (x = ${sommet[0].toFixed(2)}) plus près de l'axe que la pointe (x = ${xPointe.toFixed(2)})`);
     } else {
-      // `D-254` : la face et le dos redressent la pointe du dessin d'auteur,
-      // qui part à droite de l'axe — la pointe et le sommet s'en rapprochent.
-      assert.ok(Math.abs(xPointe) < Math.abs(POINTE[0]) && Math.abs(sommet[0]) < Math.abs(POINTE[0]),
-        `${d} : la pointe (x = ${xPointe.toFixed(2)}) et le sommet (x = ${sommet[0].toFixed(2)}) plus près de l'axe que sur le dessin d'auteur (x = ${POINTE[0]})`);
+      // La face et le dos (`D-254`) : la pointe ne part d'aucun côté. Depuis
+      // `D-276`, le dessin d'auteur l'a sur l'axe ; la pose ne l'en écarte pas.
+      assert.ok(Math.abs(xPointe) <= Math.abs(POINTE[0]) + 1e-9 && Math.abs(sommet[0]) <= Math.abs(POINTE[0]) + 1e-9,
+        `${d} : la pointe (x = ${xPointe.toFixed(2)}) et le sommet (x = ${sommet[0].toFixed(2)}) pas plus loin de l'axe que sur le dessin d'auteur (x = ${POINTE[0]})`);
     }
   }
   console.log(`OK données : ${pliees.join(', ')} — le sommet sur l'axe, la pointe à l'écart ou redressée`);

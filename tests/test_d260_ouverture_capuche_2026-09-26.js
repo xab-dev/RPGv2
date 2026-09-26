@@ -76,6 +76,9 @@ function dessiner(orientation) {
 const dessinees = (o) => HEROS.primitives.filter((p) => {
   if (p.piece === undefined) return true;
   const pose = poseDePiece(HEROS, o, p.piece);
+  // `D-279` : une lumière projetée ne se dessine pas quand sa source est cachée.
+  const { source } = definitionPiece(HEROS, p.piece);
+  if (source && poseDePiece(HEROS, o, source) === null) return false;
   return pose !== null && !(definitionPiece(HEROS, p.piece).cachee && pose === undefined);
 });
 const decoupeDe = (p) => (p.piece === undefined ? undefined : definitionPiece(HEROS, p.piece).decoupe);

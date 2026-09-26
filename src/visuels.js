@@ -219,6 +219,19 @@ function decouperParSilhouette(ctx, visuel, poseDe, animation, piece) {
 const RAYON_FLANC_RIDEAU = 6;
 const MONTEE_RIDEAU = 1;
 const ANNEAUX_FONDU_RIDEAU = 4;
+// L'éclat d'une lumière projetée, puissance de la part visible de sa source
+// (`D-279`). Xav, 26/09, au banc : à 221° l'œil n'est plus visible qu'à 18 %,
+// la lueur sur l'épaule doit y garder 28 % (0,178 ** 0,74 ≈ 0,28). À 1,
+// l'éclat suivrait la source exactement. Provisoire, non validé en jeu.
+const ECLAT_SOURCE_EXPOSANT = 0.74;
+// La part couverte d'une pièce qui passe derrière (0 à 1), son `debut` passé.
+function avanceRideau(visuel, piece, pose) {
+  if (!pose || !(pose.rideau > 0)) return 0;
+  const reglage = definitionPiece(visuel, piece).passe_derriere;
+  const debut = reglage && reglage !== true ? reglage.debut ?? 0 : 0;
+  return Math.max(0, (pose.rideau - debut) / (1 - debut)) ** MONTEE_RIDEAU;
+}
+
 function dessinerSousRideau(ctx, visuel, piece, pose, dessiner) {
   // Une pièce qui en `suit` une autre sans passer derrière elle-même (la
   // lueur de l'ouverture) reçoit son rideau : elle s'éteint comme avant.
@@ -231,7 +244,7 @@ function dessinerSousRideau(ctx, visuel, piece, pose, dessiner) {
     return;
   }
   const { debut = 0, fondu = 0 } = reglage === true ? {} : reglage;
-  const avance = Math.max(0, (pose.rideau - debut) / (1 - debut)) ** MONTEE_RIDEAU;
+  const avance = avanceRideau(visuel, piece, pose);
   if (avance <= 0) return dessiner();
   const [cx, cy] = poserPoint(visuel, piece, pose, definitionPiece(visuel, piece).origine ?? [0, 0]);
   const r = Math.max(...visuel.primitives.filter((p) => p.piece === piece).map((p) => Math.max(p.w ?? 0, p.h ?? 0) / 2)) * (pose.echelle ?? 1);
@@ -331,12 +344,26 @@ export function dessinerVisuel(ctx, visuel, x, y, options = {}) {
     const definition = definitionPiece(visuel, piece);
     const pose = poseDe(piece);
     if (pose === null) continue;
+    // Une LUMIÈRE PROJETÉE (`source` de la pièce : la lueur de l'œil sur la
+    // cape, `D-279`) brille de ce qu'on voit de sa source : pleine tant que
+    // l'œil est entier, éteinte quand la capuche l'a couvert ou qu'il est
+    // caché. Sa place, elle, est à elle (elle glisse sur l'épaule). Elle
+    // baisse un peu moins vite que sa source ne se couvre : la lumière
+    // déborde encore quand l'œil est presque caché (`ECLAT_SOURCE_EXPOSANT`).
+    let eclat = 1;
+    if (definition.source) {
+      const poseSource = poseDe(definition.source);
+      if (poseSource === null) continue;
+      eclat = (1 - avanceRideau(visuel, definition.source, poseSource)) ** ECLAT_SOURCE_EXPOSANT;
+      if (eclat <= 0) continue;
+    }
     const anime = matriceAnimation(visuel, piece, animation);
-    if (pose === undefined && !definition.decoupe && !anime) {
+    if (pose === undefined && !definition.decoupe && !anime && eclat === 1) {
       dessinerPrimitive(ctx, primitive, teinte);
       continue;
     }
     ctx.save();
+    if (eclat < 1) ctx.globalAlpha *= eclat;
     if (definition.decoupe) decouperParSilhouette(ctx, visuel, poseDe, animation, definition.decoupe);
     if (anime) ctx.transform(...anime);
     if (pose && pose.rideau > 0) dessinerSousRideau(ctx, visuel, piece, pose, () => dessinerPosee(ctx, visuel, piece, primitive, pose, teinte));

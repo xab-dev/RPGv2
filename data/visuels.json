@@ -35,7 +35,8 @@
         }
       },
       "lueur": {
-        "suit": "ouverture"
+        "origine": [0, 0.2],
+        "source": "oeil"
       }
     },
     "orientations": {
@@ -69,6 +70,13 @@
           "echelle_y": 1.01,
           "rotation": 10
         },
+        "lueur": {
+          "dx": -0.901,
+          "dy": -0.248,
+          "echelle": 1.01,
+          "echelle_y": 1.01,
+          "rotation": 10
+        },
         "oeil": {
           "dx": -1.079,
           "dy": -0.222,
@@ -90,6 +98,13 @@
           "echelle_y": 1.02,
           "rotation": 15
         },
+        "lueur": {
+          "dx": -2.302,
+          "dy": -0.396,
+          "echelle": 0.989,
+          "echelle_y": 1.02,
+          "rotation": 15
+        },
         "oeil": {
           "dx": -3.2,
           "dy": -0.55,
@@ -103,6 +118,12 @@
             "longueur": 3.5,
             "pivot_y": -6
           }
+        },
+        "lueur": {
+          "dx": -8.24,
+          "dy": -0.96,
+          "rotation": -25,
+          "echelle": 0.85
         },
         "ouverture": null,
         "oeil": null
@@ -123,6 +144,7 @@
         "pointe_rabattue": {
           "dy": 0.8
         },
+        "lueur": null,
         "ouverture": null,
         "oeil": null
       }

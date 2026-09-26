@@ -89,10 +89,16 @@ const unePrimitive = (degrade, forme = 'rect') => ({ id: 'visuel_temoin', ancre:
 
 // --- 3. `D-266` : une pièce qui en suit une autre ------------------------------------
 {
-  const HEROS = donnees.visuels.find((v) => v.id === VISUEL_HEROS_ID);
+  // Depuis `D-279`, la lueur a sa propre trajectoire : le contrat de `suit`
+  // s'éprouve sur une copie du héros où elle suit encore l'ouverture.
+  const HEROS = structuredClone(donnees.visuels.find((v) => v.id === VISUEL_HEROS_ID));
+  if (!Object.values(HEROS.pieces).some((d) => d.suit)) {
+    HEROS.pieces.lueur = { suit: 'ouverture' };
+    for (const o of Object.values(HEROS.orientations)) delete o.lueur;
+  }
   const { poseDePiece, matricePose, definitionPiece } = await import('../src/poses.js');
   const suiveuses = Object.keys(HEROS.pieces).filter((p) => definitionPiece(HEROS, p).suit);
-  assert.ok(suiveuses.length > 0, 'le héros a une pièce qui en suit une autre (la lueur de l\'œil)');
+  assert.ok(suiveuses.length > 0, 'une pièce qui en suit une autre (la lueur de l\'œil)');
   for (const piece of suiveuses) {
     const guide = definitionPiece(HEROS, piece).suit;
     for (const d of ['sud', 'sud_ouest', 'ouest', 'est', 'nord']) {
@@ -103,7 +109,9 @@ const unePrimitive = (degrade, forme = 'rect') => ({ id: 'visuel_temoin', ancre:
   }
   const refuse = (modif, attendu) => {
     const copie = structuredClone(donnees);
-    modif(copie.visuels.find((v) => v.id === VISUEL_HEROS_ID));
+    const i = copie.visuels.findIndex((v) => v.id === VISUEL_HEROS_ID);
+    copie.visuels[i] = structuredClone(HEROS);
+    modif(copie.visuels[i]);
     assert.ok(validerCatalogues(copie).some((e) => e.includes(attendu)), attendu);
   };
   const [piece] = suiveuses;

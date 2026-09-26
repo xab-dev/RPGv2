@@ -1715,7 +1715,7 @@ function erreursAnimationsVisuel(entry, path) {
 }
 
 // Les pièces et leurs poses (`poses.js`), validées d'un bloc.
-const CLES_DEFINITION_PIECE = ['origine', 'miroir', 'decoupe', 'cachee', 'suit', 'fuite', 'passe_derriere'];
+const CLES_DEFINITION_PIECE = ['origine', 'miroir', 'decoupe', 'cachee', 'suit', 'fuite', 'passe_derriere', 'source'];
 const CLES_POSE = ['dx', 'dy', 'rotation', 'cisaillement', 'echelle', 'echelle_y', 'pli', 'rabat'];
 const estObjet = (o) => !!o && typeof o === 'object' && !Array.isArray(o);
 const estNombre = (n) => typeof n === 'number' && Number.isFinite(n);
@@ -1750,6 +1750,9 @@ function erreursPosesVisuel(entry, path) {
       // `D-266` : une pièce suit une autre pièce, qui ne suit personne, et
       // tourne autour de l'origine de celle-ci.
       erreurs.push(`${chemin} > suit doit nommer une autre pièce, qui n'en suit aucune (sans origine propre)`);
+    } else if (def.source !== undefined && (def.source === nom || !portees.has(def.source))) {
+      // `D-279` : une lumière projetée brille de ce qu'on voit de sa source.
+      erreurs.push(`${chemin} > source doit nommer une autre pièce, portée par une primitive`);
     }
   }
 

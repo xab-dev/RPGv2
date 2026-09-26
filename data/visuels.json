@@ -68,14 +68,14 @@
           }
         },
         "ouverture": {
-          "dx": -0.901,
+          "dx": -0.95,
           "dy": -0.248,
           "echelle": 1.01,
           "echelle_y": 1.01,
           "rotation": 10
         },
         "lueur": {
-          "dx": -0.901,
+          "dx": -0.95,
           "dy": -0.248,
           "echelle": 1.01,
           "echelle_y": 1.01,
@@ -90,23 +90,23 @@
       "ouest": {
         "capuche": {
           "pli": {
-            "angle": 69,
+            "angle": 63,
             "longueur": 3.5,
             "pivot_y": -6
           }
         },
         "ouverture": {
-          "dx": -2.302,
+          "dx": -3.0,
           "dy": -0.396,
           "echelle": 0.989,
-          "echelle_y": 1.02,
+          "echelle_y": 1.08,
           "rotation": 15
         },
         "lueur": {
-          "dx": -2.302,
+          "dx": -3.0,
           "dy": -0.396,
           "echelle": 0.989,
-          "echelle_y": 1.02,
+          "echelle_y": 1.08,
           "rotation": 15
         },
         "oeil": {

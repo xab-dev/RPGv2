@@ -71,4 +71,5 @@ Le palier B ne touche pas le dessin (`visuels.js`, `poses.js` inchangés). L'éc
 
 | `8612376` | DOC | Journal du palier B, la sentinelle. **Palier B livré, arrêt Xav** |
 | `28b37e2` | DOC | Les remarques de Xav en jeu (bord du rideau concave, rideau en ombre, bord de l'ouverture en retard sur le globe) entrent au palier C : spec 17 §2, `D-286` à `D-288` |
-| `(ce commit)` | D-286, D-287 | **Palier C ouvert.** Le rideau de l'œil : bord concave (`bord`, `rayon`) et ombre avant l'occlusion (`ombre`, découpée par `devant`). Défauts = `D-278` à l'octet. Xav, à l'atelier : B, rayon 3,5, « 35 % → 80 % (à 215°) puis 100 % ». À voir : `V-199` |
+| `ca2a70d` | D-286, D-287 | **Palier C ouvert.** Le rideau de l'œil : bord concave (`bord`, `rayon`) et ombre avant l'occlusion (`ombre`, découpée par `devant`). Défauts = `D-278` à l'octet. Xav, à l'atelier : B, rayon 3,5, « 35 % → 80 % (à 215°) puis 100 % ». À voir : `V-199` |
+| `(ce commit)` | D-288 | L'ouverture suit le globe : la cause était la pose de profil (globe 0,9 plus loin que l'ouverture, capuche repliée à 69°), pas le ressort. Variante C de Xav, trois quarts ramené à −0,95 pour tenir `D-259`. Données seules. À voir : `V-200` |

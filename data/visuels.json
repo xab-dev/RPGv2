@@ -57,7 +57,7 @@
           "rabat": {
             "y": -8.2,
             "longueur": 3.3,
-            "hauteur": 1.8
+            "hauteur": 2.3
           }
         },
         "pli_front": {}
@@ -94,8 +94,8 @@
         "capuche": {
           "pli": {
             "angle": 63,
-            "longueur": 3.5,
-            "pivot_y": -6
+            "longueur": 3.3,
+            "pivot_y": -5
           }
         },
         "ouverture": {

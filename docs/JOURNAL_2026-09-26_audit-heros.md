@@ -107,4 +107,5 @@ Aucune régression. Deux premiers passages, lancés pendant d'autres mesures
 (tests, atelier), sont écartés : ×6 à 6,3–6,4 ms, et un ×1 tombé sur une
 erreur de page du scénario. Pendant l'un d'eux, `D-272` (la sauvegarde
 refusée sous charge) s'est revu : déjà ouvert, P1.
-| `(ce commit)` | D-292 | **Couche « proportions ».** `mesure_visuel proportions` : le héros mesuré au degré près (sommet, capuche, place et aire visibles de l'œil et de l'ouverture), l'écart aux angles de Xav. Tout tient à ≤ 3 % sauf le sommet de la capuche : bosse de ~0,35 px monde entre 60° et 120°, dos 0,44 plus bas |
+| `3c5e091` | D-292 | **Couche « proportions ».** `mesure_visuel proportions` : le héros mesuré au degré près (sommet, capuche, place et aire visibles de l'œil et de l'ouverture), l'écart aux angles de Xav. Tout tient à ≤ 3 % sauf le sommet de la capuche : bosse de ~0,35 px monde entre 60° et 120°, dos 0,44 plus bas |
+| `(ce commit)` | D-293 | La capuche : de face, la calotte du rabat plus haute (variante C : 90° à la hauteur de 66–76°) ; de profil, le pli plus bas et plus court (I-A1 : 342° moins bombé, la pointe gardant sa longueur). Données seules, `cles` à zéro, seul le héros bouge. À voir : `V-202` |

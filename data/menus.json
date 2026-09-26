@@ -112,6 +112,7 @@
         "cle_titre": "menu.carte.reinitialiser", "cle_phrase": "menu.carte.reinitialiser_phrase",
         "cle_confirmation": "menu.reset_confirmation_titre", "cle_confirmer": "menu.carte.reinitialiser_oui",
         "cle_popup": "menu.reset_popup",
+        "popup_prudence": { "cle_titre": "menu.popup_exporter", "icone": "visuel_icone_menu_exporter", "action": "action_exporter_sauvegarde" },
         "icone": "visuel_icone_menu_danger", "action": "action_reinitialiser_sauvegarde"
       }
     ]

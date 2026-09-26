@@ -2083,6 +2083,16 @@ function validerCarteMenu(carte, catalogs, chemin, flagsDeclares) {
     if (carte.danger !== true) erreurs.push(`${chemin} > "cle_popup" n'a de sens qu'avec danger: true`);
     else if (typeof carte.cle_popup !== 'string') erreurs.push(`${chemin} > cle_popup doit être une clé de texte`);
   }
+  // `D-274` : la carte de prudence de la pop-up (« Exporter d'abord »).
+  if (carte.popup_prudence !== undefined) {
+    const p = carte.popup_prudence;
+    if (carte.cle_popup === undefined) erreurs.push(`${chemin} > "popup_prudence" n'a de sens qu'avec cle_popup`);
+    else if (!p || typeof p !== 'object' || Object.keys(p).some((c) => !['cle_titre', 'icone', 'action'].includes(c))
+      || typeof p.cle_titre !== 'string' || typeof p.action !== 'string'
+      || !(catalogs.visuels || []).some((v) => v.id === p.icone)) {
+      erreurs.push(`${chemin} > popup_prudence doit être { cle_titre, icone (visuel), action }`);
+    }
+  }
   erreurs.push(...erreursCondition(carte.condition, chemin, flagsDeclares));
   // Spec 14, palier I : quand l'écran qu'ouvre la carte laisse CHOISIR (Stats :
   // tout reprendre, ranger une compétence). Une condition de flags ordinaire.

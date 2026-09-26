@@ -77,6 +77,7 @@ function clesDeTexte(ecran) {
     for (const champ of ['cle_titre', 'cle_phrase', 'cle_confirmation', 'cle_confirmer', 'cle_popup']) {
       if (carte[champ] !== undefined) cles.push({ cle: carte[champ], chemin: `menus.json > ${ecran.id} > ${carte.id} > ${champ}` });
     }
+    if (carte.popup_prudence) cles.push({ cle: carte.popup_prudence.cle_titre, chemin: `menus.json > ${ecran.id} > ${carte.id} > popup_prudence > cle_titre` });
   }
   return cles;
 }
@@ -509,6 +510,7 @@ export function construireConfirmation(carte, iconeRetour) {
         ...(carte.apres ? { apres: carte.apres } : {}),
         // `D-244` : « Oui » ouvre encore la pop-up, qui seule exécute.
         ...(carte.cle_popup ? { cle_popup: carte.cle_popup } : {}),
+        ...(carte.popup_prudence ? { popup_prudence: carte.popup_prudence } : {}),
       },
     ],
   };
@@ -526,8 +528,14 @@ export function construireConfirmation(carte, iconeRetour) {
 // `carteOui` est la carte « Oui, … » de l'écran de confirmation : elle porte
 // l'action ; la pop-up la recopie SANS `cle_popup`, sans quoi « Oui » rouvrirait
 // une pop-up au lieu d'agir.
+//
+// `D-274` (Xav, 26/09, `Q-173` (5) : « oui pour "Exporter d'abord" liseret
+// VERT ») : la carte déclare aussi sa `popup_prudence`, le geste qui protège
+// avant d'effacer. Elle passe SOUS « Non » et « Oui » (case 2, toute la
+// largeur : leur rangée ne bouge pas), porte le vert de la prudence, agit et
+// laisse la pop-up ouverte — on exporte, puis on choisit encore.
 export function construirePopup(carteOui, iconeRetour) {
-  const { cle_popup: clePopup, ...sansPopup } = carteOui;
+  const { cle_popup: clePopup, popup_prudence: prudence, ...sansPopup } = carteOui;
   return {
     id: `${carteOui.id}#popup`,
     popup: true,
@@ -542,6 +550,10 @@ export function construirePopup(carteOui, iconeRetour) {
         id: `${carteOui.id}#popup_oui`, case: 1,
         cle_titre: 'menu.popup_oui', phrase: '',
       },
+      ...(prudence ? [{
+        id: `${carteOui.id}#popup_prudence`, case: 2, type: 'action', prudence: true, apres: 'reste',
+        cle_titre: prudence.cle_titre, phrase: '', icone: prudence.icone, action: prudence.action,
+      }] : []),
     ],
   };
 }

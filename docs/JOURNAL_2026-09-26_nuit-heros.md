@@ -47,3 +47,4 @@ Regardé d'abord en grand (atelier hors dépôt, `tools/_ref/atelier.html` : ×2
 | Commit | Ticket | Ce qu'il faut en retenir |
 |---|---|---|
 | `49b4f2b` | `D-263` | **La cape en volume** : dégradé radial centré au-dessus de l'épaule gauche (moteur : `degrade.centre`), épaules éclairées, trois plis, liserés du flanc en dégradé, l'ombre de la capuche fondue sur les épaules. Première passe trop sombre (ourlet noir) et plis trop tracés : éclaircie. 29 primitives. `V-183`. Suite verte, 225 fichiers |
+| `280a18e` | `D-264` | **La capuche en volume** : fond en dégradé radial (haut gauche du dôme), liserés en dégradé vertical ; moteur : dans une pièce miroir en reflet, un dégradé garde sa lumière (centre de l'autre côté, horizontal inversé). Première passe : liserés trop éteints (la silhouette se lit par eux), rehaussés. `V-184`. Suite verte |

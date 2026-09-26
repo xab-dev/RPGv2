@@ -113,8 +113,18 @@ function melanger(visuel, degre, piece) {
   const reflet = a.reflet || b.reflet;
   if (a.pose === null && b.pose === null) return null;
   if (a.pose === undefined && b.pose === undefined && !reflet) return undefined;
-  const { fuite = 0, passe_derriere: derriere = false } = definitionPiece(visuel, piece);
+  const { fuite = 0, passe_derriere: derriere = false, efface } = definitionPiece(visuel, piece);
   const melange = interpoler(visible(a.pose, b.pose, fuite, derriere), visible(b.pose, a.pose, fuite, derriere), t);
+  // `efface` : [début, fin] de la part du chemin vers la clé cachée où la
+  // pièce cède la place à ce qu'elle couvrait (spec 17 ; Xav, 26/09 : « > 328°
+  // nous voyons encore un peu de face donc la lueur du globe. < 328° on
+  // commence à voir de dos, donc le contour du personnage »). En plus de son
+  // effacement le long du segment, jamais à sa place : les vues d'avant le
+  // début restent telles quelles.
+  if (efface && !derriere && (a.pose === null) !== (b.pose === null) && melange.alpha !== undefined) {
+    const vers = a.pose === null ? 1 - t : t;
+    melange.alpha *= 1 - Math.min(1, Math.max(0, (vers - efface[0]) / (efface[1] - efface[0])));
+  }
   return Object.freeze(reflet ? { ...melange, reflet: true } : melange);
 }
 

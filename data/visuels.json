@@ -28,8 +28,11 @@
       },
       "oeil": {
         "origine": [0, 0.35],
-        "decoupe": "capuche",
-        "fuite": 3
+        "fuite": 0.5,
+        "passe_derriere": {
+          "debut": 0.5,
+          "fondu": 1.5
+        }
       },
       "lueur": {
         "suit": "ouverture"
@@ -88,7 +91,7 @@
           "rotation": 15
         },
         "oeil": {
-          "dx": -2.555,
+          "dx": -3.2,
           "dy": -0.55,
           "echelle": 0.918
         }

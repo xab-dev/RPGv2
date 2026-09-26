@@ -113,22 +113,26 @@ function melanger(visuel, degre, piece) {
   const reflet = a.reflet || b.reflet;
   if (a.pose === null && b.pose === null) return null;
   if (a.pose === undefined && b.pose === undefined && !reflet) return undefined;
-  const fuite = definitionPiece(visuel, piece).fuite ?? 0;
-  const melange = interpoler(visible(a.pose, b.pose, fuite), visible(b.pose, a.pose, fuite), t);
+  const { fuite = 0, passe_derriere: derriere = false } = definitionPiece(visuel, piece);
+  const melange = interpoler(visible(a.pose, b.pose, fuite, derriere), visible(b.pose, a.pose, fuite, derriere), t);
   return Object.freeze(reflet ? { ...melange, reflet: true } : melange);
 }
 
 // Une clé où la pièce est cachée, vue depuis sa voisine visible : la même
 // pose, éteinte, et glissée de sa `fuite` vers le bord où elle s'en allait (le
 // côté de son déplacement) — la silhouette de la capuche la découpe en route.
-function visible(pose, voisine, fuite) {
+//
+// Une pièce `passe_derriere` (l'œil, Xav le 26/09 : « si on le voit, il
+// brille toujours ») ne s'éteint pas : elle passe derrière, un RIDEAU la couvre
+// (`rideau`, de 0 à 1, dessiné par `visuels.js`), l'éclat intact.
+function visible(pose, voisine, fuite, derriere = false) {
   if (pose !== null) return pose ?? {};
   const v = voisine ?? {};
   const dx = v.dx ?? 0;
-  return { ...v, dx: dx + Math.sign(dx) * fuite, alpha: 0 };
+  return derriere ? { ...v, dx: dx + Math.sign(dx) * fuite, rideau: 1 } : { ...v, dx: dx + Math.sign(dx) * fuite, alpha: 0 };
 }
 
-const NEUTRES = { dx: 0, dy: 0, rotation: 0, cisaillement: 0, echelle: 1, echelle_y: 1, alpha: 1 };
+const NEUTRES = { dx: 0, dy: 0, rotation: 0, cisaillement: 0, echelle: 1, echelle_y: 1, alpha: 1, rideau: 0 };
 const lerp = (x, y, t) => x + (y - x) * t;
 function interpoler(a, b, t) {
   const pose = {};

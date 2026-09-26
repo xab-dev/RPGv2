@@ -10,7 +10,9 @@
 //    d'une fraction d'unité — sauf au passage exact d'une clé qui n'est pas
 //    un reflet vers un segment en reflet (spec 16 §2.2 : `sud`, `nord`).
 // 3. Une pièce cachée à une clé s'y efface (opacité entre 0 et 1 entre
-//    deux), et glisse de sa `fuite`.
+//    deux), et glisse de sa `fuite` ; une pièce `passe_derriere` (l'œil,
+//    `D-278`) ne s'efface pas : son rideau la couvre (entre 0 et 1), l'éclat
+//    intact.
 // 4. Les poses mélangées se gardent au degré près ; une `fuite` mal formée
 //    est refusée au démarrage.
 // Aucune valeur de réglage n'est épinglée : elles sont lues dans les données.
@@ -95,7 +97,12 @@ console.log('OK clés : aux huit angles des directions, le dessin validé, ordre
       if (poseVisible(HEROS, v, 'oeil') === null) continue;
       const milieu = ((i + voisine) * PAS) / 2;
       const pose = poseAAngle(HEROS, milieu, 'oeil');
-      assert.ok(pose && pose.alpha > 0 && pose.alpha < 1, `${milieu}° (entre ${o} et ${v}) : l'œil à moitié effacé (${pose && pose.alpha})`);
+      if (definitionPiece(HEROS, 'oeil').passe_derriere) {
+        assert.ok(pose && pose.rideau > 0 && pose.rideau < 1 && (pose.alpha ?? 1) === 1,
+          `${milieu}° (entre ${o} et ${v}) : l'œil à moitié couvert, l'éclat intact (rideau ${pose && pose.rideau}, alpha ${pose && pose.alpha})`);
+      } else {
+        assert.ok(pose && pose.alpha > 0 && pose.alpha < 1, `${milieu}° (entre ${o} et ${v}) : l'œil à moitié effacé (${pose && pose.alpha})`);
+      }
       const fuite = definitionPiece(HEROS, 'oeil').fuite ?? 0;
       const sansFuite = (poseVisible(HEROS, v, 'oeil') || {}).dx ?? 0;
       if (fuite > 0 && sansFuite !== 0 && !HEROS.reflets[v]) {

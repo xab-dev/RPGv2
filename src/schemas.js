@@ -1715,7 +1715,7 @@ function erreursAnimationsVisuel(entry, path) {
 }
 
 // Les pièces et leurs poses (`poses.js`), validées d'un bloc.
-const CLES_DEFINITION_PIECE = ['origine', 'miroir', 'decoupe', 'cachee', 'suit', 'fuite'];
+const CLES_DEFINITION_PIECE = ['origine', 'miroir', 'decoupe', 'cachee', 'suit', 'fuite', 'passe_derriere'];
 const CLES_POSE = ['dx', 'dy', 'rotation', 'cisaillement', 'echelle', 'echelle_y', 'pli', 'rabat'];
 const estObjet = (o) => !!o && typeof o === 'object' && !Array.isArray(o);
 const estNombre = (n) => typeof n === 'number' && Number.isFinite(n);
@@ -1735,8 +1735,12 @@ function erreursPosesVisuel(entry, path) {
       || (def.origine !== undefined && !(Array.isArray(def.origine) && def.origine.length === 2 && def.origine.every(estNombre)))
       || (def.miroir !== undefined && typeof def.miroir !== 'boolean')
       || (def.cachee !== undefined && def.cachee !== true)
+      || (def.passe_derriere !== undefined && def.passe_derriere !== true && !(estObjet(def.passe_derriere)
+        && Object.keys(def.passe_derriere).every((c) => ['debut', 'fondu'].includes(c))
+        && (def.passe_derriere.debut === undefined || (estNombre(def.passe_derriere.debut) && def.passe_derriere.debut >= 0 && def.passe_derriere.debut < 1))
+        && (def.passe_derriere.fondu === undefined || (estNombre(def.passe_derriere.fondu) && def.passe_derriere.fondu >= 0))))
       || (def.fuite !== undefined && !(estNombre(def.fuite) && def.fuite >= 0))) {
-      erreurs.push(`${chemin} doit être { origine?: [x, y], miroir?: booléen, decoupe?: pièce, cachee?: true, suit?: pièce, fuite?: nombre ≥ 0 }`);
+      erreurs.push(`${chemin} doit être { origine?: [x, y], miroir?: booléen, decoupe?: pièce, cachee?: true, suit?: pièce, fuite?: nombre ≥ 0, passe_derriere?: true | { debut?: [0, 1[, fondu?: nombre ≥ 0 } }`);
     } else if (def.decoupe !== undefined && (def.decoupe === nom || !silhouettes.has(def.decoupe))) {
       // `D-260` : sans silhouette à suivre, la pièce découpée disparaîtrait
       // en entier, sans que personne le voie venir.

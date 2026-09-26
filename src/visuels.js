@@ -13,7 +13,7 @@
 // mobile incertains) — le volume vient de formes annexes (reflet, facette
 // éclairée) plutôt que d'un flou.
 
-import { definitionPiece, poseVisible, poseAAngle, matricePose, primitivePosee, matriceAnimation, angleDePiece } from './poses.js';
+import { definitionPiece, poseVisible, poseAAngle, matricePose, primitivePosee, matriceAnimation, angleDePiece, poserPoint } from './poses.js';
 
 // Convention de taille de référence pour les silhouettes de follet (§3.1) :
 // visuels.json les dessine à ce rayon-là ; chaque appelant (scène, HUD, écran
@@ -204,6 +204,61 @@ function decouperParSilhouette(ctx, visuel, poseDe, animation, piece) {
   ctx.clip();
 }
 
+// LE RIDEAU d'une pièce qui passe derrière (`passe_derriere`, spec 16) : en
+// quittant la vue, l'œil ne s'éteint pas, la capuche passe devant lui. Elle le
+// couvre du côté de l'axe du héros — la tête est là, entre nous et lui — vers
+// l'extérieur, où il dépasse le plus longtemps. `pose.rideau` : 0, rien de
+// couvert ; 1, tout. En données, sur la pièce : `debut` (la part du passage où
+// le rideau n'a pas encore bougé) et `fondu` (la largeur de son bord doux).
+// Le bord est un arc, le flanc de la capuche qui passe devant (une coupe
+// droite tranchait le globe en demi-disque) ; il arrive en fondu, des anneaux
+// de plus en plus effacés — disjoints, pour que les reflets du globe ne se
+// dessinent jamais deux fois l'un sur l'autre. Provisoires tant que Xav ne les
+// a pas vus en jeu : le rayon du flanc, la montée (linéaire), le nombre
+// d'anneaux (sous le pixel à la taille du jeu).
+const RAYON_FLANC_RIDEAU = 6;
+const MONTEE_RIDEAU = 1;
+const ANNEAUX_FONDU_RIDEAU = 4;
+function dessinerSousRideau(ctx, visuel, piece, pose, dessiner) {
+  // Une pièce qui en `suit` une autre sans passer derrière elle-même (la
+  // lueur de l'ouverture) reçoit son rideau : elle s'éteint comme avant.
+  const reglage = definitionPiece(visuel, piece).passe_derriere;
+  if (!reglage) {
+    ctx.save();
+    ctx.globalAlpha *= 1 - pose.rideau;
+    dessiner();
+    ctx.restore();
+    return;
+  }
+  const { debut = 0, fondu = 0 } = reglage === true ? {} : reglage;
+  const avance = Math.max(0, (pose.rideau - debut) / (1 - debut)) ** MONTEE_RIDEAU;
+  if (avance <= 0) return dessiner();
+  const [cx, cy] = poserPoint(visuel, piece, pose, definitionPiece(visuel, piece).origine ?? [0, 0]);
+  const r = Math.max(...visuel.primitives.filter((p) => p.piece === piece).map((p) => Math.max(p.w ?? 0, p.h ?? 0) / 2)) * (pose.echelle ?? 1);
+  const dehors = Math.sign(cx) || -1;
+  // Le bord du flanc : du bord intérieur de la pièce, fondu compris (rien de
+  // couvert), à son bord extérieur (tout).
+  const bord = cx - dehors * (r + fondu) + dehors * (2 * r + fondu) * avance;
+  const centre = bord - dehors * RAYON_FLANC_RIDEAU;
+  const n = fondu > 0 ? ANNEAUX_FONDU_RIDEAU : 0;
+  for (let k = 0; k <= n; k += 1) {
+    const [dedans, dehorsAnneau] = [RAYON_FLANC_RIDEAU + (fondu * k) / (n || 1), RAYON_FLANC_RIDEAU + (fondu * (k + 1)) / (n || 1)];
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(-100, -100, 200, 200);
+    ctx.arc(centre, cy, dedans, 0, Math.PI * 2);
+    ctx.clip('evenodd');
+    if (k < n) {
+      ctx.beginPath();
+      ctx.arc(centre, cy, dehorsAnneau, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.globalAlpha *= (k + 1) / (n + 1);
+    }
+    dessiner();
+    ctx.restore();
+  }
+}
+
 // Point d'entrée unique (§3.3) : dessine `visuel` (une entrée de
 // visuels.json) à la position logique (x,y). `options.teinte` (couleur CSS)
 // ne s'applique qu'aux primitives `teinte: true` ; `options.alpha` module la
@@ -284,7 +339,8 @@ export function dessinerVisuel(ctx, visuel, x, y, options = {}) {
     ctx.save();
     if (definition.decoupe) decouperParSilhouette(ctx, visuel, poseDe, animation, definition.decoupe);
     if (anime) ctx.transform(...anime);
-    if (pose) dessinerPosee(ctx, visuel, piece, primitive, pose, teinte);
+    if (pose && pose.rideau > 0) dessinerSousRideau(ctx, visuel, piece, pose, () => dessinerPosee(ctx, visuel, piece, primitive, pose, teinte));
+    else if (pose) dessinerPosee(ctx, visuel, piece, primitive, pose, teinte);
     else dessinerPrimitive(ctx, primitive, teinte);
     ctx.restore();
   }

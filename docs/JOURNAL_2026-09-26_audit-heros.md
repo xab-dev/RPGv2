@@ -55,3 +55,18 @@ branche à chaque arrêt (demandé par Xav) ; jamais `main`.
 | `2196b8d` | `D-282` | **Sur la branche `heros-angle-en-jeu`, depuis `main`** (hotfix, poussée) : `render.js#dessinerScene` recopiait les options du héros champ par champ et avait perdu l'angle et l'animation depuis `D-269` — la spec 16 n'était visible qu'aux bancs. Correctif de fond : `heroOptions` résolues par `main.js`, transmises telles quelles ; test des ordres de dessin (rouge avant, vert après), tests textuels retirés. `V-198` à voir ; `V-189` et `V-190` avaient été validés sans que le jeu les montre. Sa clôture au suivi est commitée ici, sur `audit-heros` |
 | `5805b4a` | Publication | Xav : « local fonctionne comme prévu, et c'est magnifique […] push main ». Fusion de `heros-angle-en-jeu` dans `main`, `v0.9.3` (3 commits depuis `v0.9.0`), tag poussé ; branche du hotfix supprimée (fusionnée) |
 | `b046016` | Fusion | `main` (`v0.9.3`) fusionnée dans `audit-heros` : le palier B part du code corrigé. **Spec 17 reprise, palier B** |
+| `14dd8d0` | `D-283` | `mesure_visuel cout` (µs par dessin, canvas logiciel, médiane). **L'audit** : la chaîne du héros est déjà sobre (visuels 385 l., poses 388, orientation 193 ; données : `dx`/`dy` exigés par le schéma, rien à retirer sans toucher 123 visuels). Le seul point chaud : l'œil qui passe derrière (202–225°, 315–337°) coûte ~2,7 ms contre ~0,26 ailleurs (rideau × 11 primitives × 5 anneaux). Trois essais retirés faute de rendu identique (suites de pièces : 0 px mais aucun gain ; masque borné : 3/255 ; anneaux groupés : ×5 mais 28/255 sur les coutures) → `Q-180` à Xav |
+| `d226fe8` | `D-284` | `tests/aide_dessin.js` : catalogues validés et trois faux contextes partagés ; 11 tests, ≈ −100 lignes net ; mordant vérifié par mutation ; `test_16e` aveugle à un dessin qui ignore l'angle → témoin ajouté |
+| `d66181d` | `D-285` | `schemas.js` : pièces et poses validées par tables (une clé, son contrôle) ; mêmes erreurs sur 23 cas ; +14 lignes, gain de lecture |
+
+## La sentinelle, fin du palier B (`traversee_nuit`, Moyen, Chrome sans fenêtre, même machine)
+
+| | après `D-271` (nuit du héros) | `audit-heros`, fin du palier B |
+|---|---|---|
+| ×1 `dessiner()` moy / p95 | 0,65 / 1,00 ms | 0,74 / 1,30 ms |
+| ×6 `dessiner()` moy / p95 | 5,21 / 7,50 ms | 5,44 / 8,50 ms |
+| frames > 20 ms, ×1 / ×6 | 0 / 1 | 0 / 3 (sur 4 432) |
+
+Le palier B ne touche pas le dessin (`visuels.js`, `poses.js` inchangés). L'écart vient de `D-282` : le jeu dessine enfin l'angle, le souffle, le pas et la capuche en retard, qu'il ne dessinait pas (les pièces posées et animées passent par leurs matrices, et l'œil par son rideau entre 202 et 225°). +0,1 ms à ×1, +0,2 ms à ×6 : aucune frame perdue à ×1 ; à ×6, 3 frames > 20 ms sur 4 432 (0,07 %). Le point chaud de l'œil est `Q-180`.
+
+| `(ce commit)` | DOC | Journal du palier B, la sentinelle. **Palier B livré, arrêt Xav** |

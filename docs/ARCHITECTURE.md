@@ -84,12 +84,12 @@ rpg_v2/
 │   │                       reçoit la matrice de sa pose (`poses.js`), une pièce `decoupe` est
 │   │                       découpée par la `silhouette` posée d'une autre (`D-260`)
 │   ├── poses.js            `D-262` : les PIÈCES d'un visuel et leurs POSES (`visuels.json > pieces,
-│   │                       orientations, reflets`) — `poseDePiece` (une direction en reflet
+│   │                       orientations, reflets`) — `poseDePiece` (une pièce qui `suit` une autre prend sa pose, `D-266` ; une direction en reflet
 │   │                       d'une autre : `reflet: true`), `matricePose` (LA matrice d'une pose :
 │   │                       origine, déplacement, rotation, cisaillement, échelles ; en reflet
 │   │                       M·A·M, ou M·A pour une pièce `miroir`), `plierPoints` (le pli et le
 │   │                       rabat, `D-252`, `D-254`, seules déformations hors transform),
-│   │                       `primitivePosee` (pliée, style `reflet` sous un miroir, `D-255`),
+│   │                       `primitivePosee` (pliée ; sous un miroir, style `reflet` et dégradés qui gardent leur lumière, `D-255`, `D-264`),
 │   │                       `poserPoint` (pour tests et outils) — pur, gardé par pose
 │   ├── intro.js            2 machines à états pures : intro (clignements+orbite, ≤8s) et départ
 │   │                       (follets non élus qui repartent) — propre à la Grotte, pas un moteur

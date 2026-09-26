@@ -53,3 +53,5 @@ branche à chaque arrêt (demandé par Xav) ; jamais `main`.
 | Commit | Ticket | Ce qu'il faut en retenir |
 |---|---|---|
 | `2196b8d` | `D-282` | **Sur la branche `heros-angle-en-jeu`, depuis `main`** (hotfix, poussée) : `render.js#dessinerScene` recopiait les options du héros champ par champ et avait perdu l'angle et l'animation depuis `D-269` — la spec 16 n'était visible qu'aux bancs. Correctif de fond : `heroOptions` résolues par `main.js`, transmises telles quelles ; test des ordres de dessin (rouge avant, vert après), tests textuels retirés. `V-198` à voir ; `V-189` et `V-190` avaient été validés sans que le jeu les montre. Sa clôture au suivi est commitée ici, sur `audit-heros` |
+| `5805b4a` | Publication | Xav : « local fonctionne comme prévu, et c'est magnifique […] push main ». Fusion de `heros-angle-en-jeu` dans `main`, `v0.9.3` (3 commits depuis `v0.9.0`), tag poussé ; branche du hotfix supprimée (fusionnée) |
+| `b046016` | Fusion | `main` (`v0.9.3`) fusionnée dans `audit-heros` : le palier B part du code corrigé. **Spec 17 reprise, palier B** |

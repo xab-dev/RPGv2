@@ -58,6 +58,7 @@ import {
   tickSoinsBuffsActifs, iconeBuffBandeau,
   modificateursDeriveesHeros, appliquerModificateursDerivees, dotsHeros, estDansAura, poserStatutCoup, tickStatutsCoup } from './status.js';
 import { creerOrientation, avancerOrientation, creerAnimationHeros, avancerAnimationHeros } from './orientation.js';
+import { cadencePas } from './poses.js';
 import { creerHeros, creerMonstre, approcherEnLigneDroite, infligerDegats, mourir, respawn, reconcilierPvMax } from './entities.js';
 import {
   resoudreArmeEquipee, resoudreAutoAttaque, tickCooldown, estMonstreActif, FLASH_ATTAQUE_MS, FLASH_TOUCHE_MS,
@@ -4772,7 +4773,11 @@ export function creerOrchestrateurGrotte({
     // pousser contre un mur le tourne vers lui. Sous UI, le geste est neutre :
     // il garde sa direction.
     orientationHeros = avancerOrientation(orientationHeros, { deltaMs, dx: etatGameplay.move.x, dy: etatGameplay.move.y });
-    animationHeros = avancerAnimationHeros(animationHeros, { deltaMs, dx: etatGameplay.move.x, dy: etatGameplay.move.y });
+    // Spec 16 palier D : le pas suit la vitesse que le geste DEMANDE (Agilité
+    // et statuts compris), comme le regard — contre un mur, on marche sur place.
+    const vitesseGeste = Math.hypot(etatGameplay.move.x, etatGameplay.move.y) * statsDerivees.derivee_vitesse_deplacement_px_s;
+    const cadence = cadencePas(registre.obtenir('visuels', VISUEL_HEROS_ID), vitesseGeste);
+    animationHeros = avancerAnimationHeros(animationHeros, { deltaMs, dx: etatGameplay.move.x, dy: etatGameplay.move.y, cadence });
     if (dx !== 0 || dy !== 0) {
       const resultat = resoudreDeplacement(scene, hitboxHeros(), dx, dy, flags.has);
       hero.x = resultat.x + hero.rayon;

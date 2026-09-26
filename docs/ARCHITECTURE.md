@@ -93,7 +93,7 @@ rpg_v2/
 │   │                       `poserPoint` (pour tests et outils) ; spec 16 : `poseAAngle` (une pose à tout
 │   │                       angle, mélange des deux directions voisines, fondu et `fuite` d'une pièce
 │   │                       cachée, gardée au degré près), `poseVisible`, `matriceAnimation` (palier C : le souffle et le
-│   │                       pas, `animations` du visuel pondérées par la marche) — pur, gardé par pose
+│   │                       pas, `animations` du visuel pondérées par la marche), `cadencePas` (palier D : le pas suit la vitesse, plafond 3 Hz) — pur, gardé par pose
 │   ├── intro.js            2 machines à états pures : intro (clignements+orbite, ≤8s) et départ
 │   │                       (follets non élus qui repartent) — propre à la Grotte, pas un moteur
 │   │                       de cinématiques généralisé
@@ -219,7 +219,7 @@ rpg_v2/
 │   │                       frontière), le tir d'une compétence qui le tourne vers sa cible un instant ;
 │   │                       spec 16 : l'ANGLE affiché (`angle`, vers `angleVise`, l'angle exact du geste
 │   │                       ou de la cible, à vitesse bornée), lu par le rendu (`heroAngle`) ; l'état du souffle et du pas
-│   │                       (`avancerAnimationHeros` : l'horloge, le poids de la marche, `heroAnimation`) ;
+│   │                       (`avancerAnimationHeros` : l'horloge, l'horloge du pas à la cadence, le poids de la marche, `heroAnimation`) ;
 │   │                       ne sait rien du dessin (`poses.js` traduit une direction) — pur
 │   ├── logo.js             le symbole du jeu (« la sagesse pour tout et pour tous », Xav) : son
 │   │                       apparition signe après signe, dans l'ordre de lecture — pur ; dessiné par

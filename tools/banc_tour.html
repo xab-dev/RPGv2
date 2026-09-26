@@ -4,7 +4,8 @@
      d'angle, un pavé qu'on tire comme un stick (souris ou doigt), et le tour
      automatique « comme un phare ». Rendu à la taille du jeu (×3) et agrandi
      (×10), sur le gris du banc et la terre de la Maison ; le souffle au repos,
-     le pas en marche (palier C : cocher « en marche », ou tirer le pavé).
+     le pas en marche (palier C : cocher « en marche », ou tirer le pavé) ;
+     l'Agilité (palier D) : la vitesse, et la cadence du pas qu'elle donne.
      ?id=visuel_heros (défaut) · servi en http:// (node serveur_local.js). -->
 <html lang="fr"><head><meta charset="utf-8"><title>Banc du tour</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -26,6 +27,7 @@
     <label><input id="tourne" type="checkbox"> tour automatique</label>
     <label><input id="anime" type="checkbox" checked> souffle et pas (palier C)</label>
     <label><input id="marche" type="checkbox"> en marche</label>
+    <label>Agilité <input id="agilite" type="range" min="0" max="60" value="5"> <span id="ag"></span></label>
     <label>vitesse du tour <input id="vitesse" type="range" min="10" max="720" value="120"> <span id="v">120°/s</span></label>
     <label>follet <select id="teinte"><option value="#ff6a3d">feu</option><option value="#4fb3ff">eau</option><option value="#8fd16a">terre</option><option value="#9aa3ad">aucun</option></select></label>
     <div id="pave"><div id="bouton"></div></div>
@@ -41,6 +43,23 @@
   // Palier C : l'horloge et le poids de la marche, comme en jeu.
   const { creerAnimationHeros, avancerAnimationHeros } = await import('../src/orientation.js');
   let animation = creerAnimationHeros();
+  // Palier D : la vitesse qu'une Agilité donne, par le calcul du jeu
+  // (`stats.js`), et la cadence du pas qu'elle joue (`poses.js#cadencePas`).
+  const { cadencePas } = await import('../src/poses.js');
+  const { calculerStatsDerivees } = await import('../src/stats.js');
+  const derivees = await (await fetch('../data/stats_derivees.json')).json();
+  const registre = { tous: (c) => (c === 'stats_derivees' ? derivees : []) };
+  const periodeMarche = Math.min(...(visuel.animations || []).filter((a) => a.quand === 'marche').map((a) => a.periode_ms));
+  function vitesseAgilite() {
+    return calculerStatsDerivees(registre, { stat_agilite: Number($('agilite').value) }).derivee_vitesse_deplacement_px_s;
+  }
+  function direAgilite() {
+    const v = vitesseAgilite();
+    const c = cadencePas(visuel, v);
+    $('ag').textContent = `${$('agilite').value} → ${Math.round(v)} px/s, pas ×${c.toFixed(2)} (${((1000 * c) / periodeMarche).toFixed(3)} Hz)`;
+  }
+  $('agilite').addEventListener('input', direAgilite);
+  direAgilite();
 
   function peindre(canvas, fonds, echelle) {
     const ctx = canvas.getContext('2d');
@@ -85,7 +104,7 @@
   function boucle(t) {
     if ($('tourne').checked) angle = (angle + (Number($('vitesse').value) * (t - avant)) / 1000) % 360;
     const marche = $('marche').checked || tire;
-    animation = avancerAnimationHeros(animation, { deltaMs: t - avant, dx: marche ? 1 : 0, dy: 0 });
+    animation = avancerAnimationHeros(animation, { deltaMs: t - avant, dx: marche ? 1 : 0, dy: 0, cadence: cadencePas(visuel, vitesseAgilite()) });
     rendre();
     avant = t;
     requestAnimationFrame(boucle);

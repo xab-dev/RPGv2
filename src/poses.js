@@ -307,10 +307,37 @@ function degradeReflete({ forme, degrade }) {
 // `rebond` (|sinus| : un pas qui soulève sans jamais enfoncer). Chacune joue
 // au `repos` ou à la `marche`, pondérée par `etat.marche` (0 arrêté, 1 en
 // marche, et entre deux pendant qu'on part ou s'arrête : rien ne claque).
-// `etat` : `{ tempsMs, marche }`. Rend la matrice qui s'ajoute à la pièce,
-// ou `null` si rien ne la bouge.
+// `etat` : `{ tempsMs, marche, pasMs }` — la marche lit l'horloge du PAS
+// (`pasMs`, palier D : elle avance à la cadence, `cadencePas`), le repos
+// celle du temps. Rend la matrice qui s'ajoute à la pièce, ou `null` si rien
+// ne la bouge.
 const CHAMPS_ANIMATION = ['dx', 'dy', 'echelle_y', 'rotation'];
-export { CHAMPS_ANIMATION };
+// Aucun effet ne bat au-delà de 3 Hz (règle de l'épilepsie, `D-220`) : la
+// plus courte période qu'une animation puisse jouer, À L'ÉCRAN — déclarée
+// ici, lue par le schéma (les périodes d'auteur) et par `cadencePas` (le
+// plafond de la cadence).
+const PERIODE_MIN_ANIMATION_MS = 1000 / 3;
+export { CHAMPS_ANIMATION, PERIODE_MIN_ANIMATION_MS };
+
+// Spec 16, palier D (`D-273`, Xav : « avec les 49 point en agilité on risque
+// de dépasser les 3hz ») : la cadence du pas, le facteur dont l'horloge du
+// pas avance, pour une vitesse en px/s. À la vitesse de référence du visuel
+// (`pas.vitesse_reference_px_s`, celle où l'auteur a réglé ses périodes),
+// 1. Plus lent, proportionnel (un héros ralenti marche lentement). Plus
+// vite, le rendement décroît : même pente au passage de la référence (rien
+// ne s'y voit), puis la cadence tend vers M sans l'atteindre — M étant ce qui
+// amènerait la plus courte période de marche à 3 Hz. Le plafond EST la règle
+// d'épilepsie : aucune valeur de données ne peut le passer.
+export function cadencePas(visuel, vitessePxS) {
+  const reference = visuel && visuel.pas && visuel.pas.vitesse_reference_px_s;
+  const periodes = ((visuel && visuel.animations) || []).filter((a) => a.quand === 'marche').map((a) => a.periode_ms);
+  if (!(reference > 0) || periodes.length === 0) return 1;
+  const u = Math.max(0, vitessePxS) / reference;
+  if (u <= 1) return u;
+  const reserve = Math.min(...periodes) / PERIODE_MIN_ANIMATION_MS - 1;
+  if (!(reserve > 0)) return 1;
+  return 1 + reserve * (1 - Math.exp(-(u - 1) / reserve));
+}
 
 export function matriceAnimation(visuel, piece, etat) {
   if (!etat || !visuel || !visuel.animations) return null;
@@ -319,7 +346,8 @@ export function matriceAnimation(visuel, piece, etat) {
     if (piece === null ? a.pieces !== undefined : !(a.pieces && a.pieces.includes(piece))) continue;
     const poids = a.quand === 'marche' ? etat.marche : 1 - etat.marche;
     if (!(poids > 0)) continue;
-    const phase = (2 * Math.PI * etat.tempsMs) / a.periode_ms;
+    const horloge = a.quand === 'marche' ? (etat.pasMs ?? etat.tempsMs) : etat.tempsMs;
+    const phase = (2 * Math.PI * horloge) / a.periode_ms;
     const onde = a.forme === 'rebond' ? Math.abs(Math.sin(phase / 2)) : Math.sin(phase);
     const v = a.amplitude * onde * poids;
     const [ox, oy] = a.origine ?? [0, 0];

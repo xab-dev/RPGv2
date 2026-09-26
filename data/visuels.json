@@ -629,6 +629,9 @@
         "piece": "ouverture"
       }
     ],
+    "pas": {
+      "vitesse_reference_px_s": 95
+    },
     "animations": [
       {
         "quand": "repos",

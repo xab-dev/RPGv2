@@ -112,12 +112,17 @@ export function avancerOrientation(etat, { deltaMs, dx = 0, dy = 0, vers = null 
 // souffle, rien ne claque. Lu par `poses.js#matriceAnimation`. Affichage seul.
 // Provisoire, non validé en jeu : le poids fait l'aller en un quart de seconde.
 export const VITESSE_POIDS_MARCHE_S = 4;
+// Palier D (`D-273`) : l'horloge du PAS (`pasMs`) avance à la `cadence` que
+// donne `poses.js#cadencePas` pour la vitesse demandée. Sans geste, elle
+// garde sa dernière cadence le temps que le poids s'éteigne : le pas se
+// finit au lieu de se figer à mi-hauteur.
 export function creerAnimationHeros() {
-  return { tempsMs: 0, marche: 0 };
+  return { tempsMs: 0, marche: 0, pasMs: 0, cadence: 1 };
 }
-export function avancerAnimationHeros(etat, { deltaMs, dx = 0, dy = 0 }) {
-  const but = Math.hypot(dx, dy) >= AMPLITUDE_MIN_GESTE ? 1 : 0;
+export function avancerAnimationHeros(etat, { deltaMs, dx = 0, dy = 0, cadence = 1 }) {
+  const enMarche = Math.hypot(dx, dy) >= AMPLITUDE_MIN_GESTE;
   const pas = (VITESSE_POIDS_MARCHE_S * deltaMs) / 1000;
-  const marche = but > etat.marche ? Math.min(but, etat.marche + pas) : Math.max(but, etat.marche - pas);
-  return { tempsMs: etat.tempsMs + deltaMs, marche };
+  const marche = enMarche ? Math.min(1, etat.marche + pas) : Math.max(0, etat.marche - pas);
+  const cadenceJouee = enMarche ? cadence : (etat.cadence ?? 1);
+  return { tempsMs: etat.tempsMs + deltaMs, marche, pasMs: (etat.pasMs ?? 0) + deltaMs * cadenceJouee, cadence: cadenceJouee };
 }

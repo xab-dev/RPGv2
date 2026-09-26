@@ -64,7 +64,8 @@ const HEROS = donnees.visuels.find((v) => v.id === VISUEL_HEROS_ID);
 // --- 2. L'état ---------------------------------------------------------------------
 {
   let s = creerAnimationHeros();
-  assert.deepEqual(s, { tempsMs: 0, marche: 0 });
+  assert.equal(s.tempsMs, 0);
+  assert.equal(s.marche, 0);
   s = avancerAnimationHeros(s, { deltaMs: 16, dx: 1, dy: 0 });
   assert.ok(s.marche > 0 && s.marche <= (VITESSE_POIDS_MARCHE_S * 16) / 1000 + 1e-12, 'le poids part, à vitesse bornée');
   for (let i = 0; i < 200; i += 1) s = avancerAnimationHeros(s, { deltaMs: 16, dx: 1, dy: 0 });

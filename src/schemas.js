@@ -9,7 +9,7 @@ import { flagDeNiveau } from './xp.js';
 import { MODES_BOSS } from './comportement_monstres.js';
 import { SOURCES_CHARGE, EFFETS_COMPETENCE, estEmplacementCompetence } from './competences.js';
 import { ORIENTATIONS } from './orientation.js';
-import { CHAMPS_ANIMATION } from './poses.js';
+import { CHAMPS_ANIMATION, PERIODE_MIN_ANIMATION_MS } from './poses.js';
 
 // `D-39` — « le corps ne sort jamais de son aura », vérifié AU CHARGEMENT.
 //
@@ -1692,9 +1692,8 @@ function erreursDegradeVisuel(degrade, chemin) {
 }
 
 // Spec 16, palier C : les `animations` d'un visuel (`poses.js#matriceAnimation`).
-// Une période plus courte que celle de 3 Hz est refusée : aucun effet ne bat
-// au-delà (règle de l'épilepsie, `D-220`).
-const PERIODE_MIN_ANIMATION_MS = 1000 / 3;
+// Une période plus courte que celle de 3 Hz (`poses.js#PERIODE_MIN_ANIMATION_MS`)
+// est refusée : aucun effet ne bat au-delà (règle de l'épilepsie, `D-220`).
 function erreursAnimationsVisuel(entry, path) {
   const erreurs = [];
   if (!Array.isArray(entry.animations)) return [`${path} > animations doit être une liste`];
@@ -1881,6 +1880,10 @@ function validerVisuel(entry, catalogs, path) {
     erreurs.push(...erreursPosesVisuel(entry, path));
   }
   if (entry.animations !== undefined) erreurs.push(...erreursAnimationsVisuel(entry, path));
+  // Palier D : la vitesse à laquelle les périodes de marche sont réglées.
+  if (entry.pas !== undefined && !(estObjet(entry.pas) && Object.keys(entry.pas).length === 1 && entry.pas.vitesse_reference_px_s > 0)) {
+    erreurs.push(`${path} > pas doit être { vitesse_reference_px_s: > 0 }`);
+  }
 
   entry.primitives.forEach((p, i) => {
     const chemin = `${path} > primitives[${i}]`;

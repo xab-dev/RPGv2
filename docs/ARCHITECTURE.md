@@ -79,20 +79,21 @@ rpg_v2/
 │   │                       qu'une case reçoit (`lisieresCase`) ; pur. Une lisière se dessine
 │   │                       DANS la case qui la reçoit, entre son grain et son objet
 │   ├── visuels.js          dessinerVisuel() : seul point qui interprète `data/visuels.json`
-│   │                       (primitives + teinte/alpha/échelle/rotation)
-│   │                       ; `courberPoints` (`D-252`) : le pli d'une pièce (la capuche de profil),
-│   │                       seule déformation hors transform du contexte, gardée par pose
-│   │                       ; `miroir` (`D-253`) : une pièce reflétée autour de l'axe (les `_est`)
-│   │                       ; `rabat` (`D-254`) : le haut d'une pièce écrasé en calotte ; une
-│   │                       primitive `cachee` ne paraît que là où sa pièce est posée
-│   │                       ; `reflet` (`D-255`) : le style d'une primitive sous un miroir ; `echelle`
-│   │                       de pose et palier de dégradé `teinte` (`D-256`, l'œil du héros)
-│   │                       ; dégradé `elliptique`, `trou`, `rotation` de pose (`D-257`) :
-│   │                       l'ouverture de la capuche, devant l'œil
-│   │                       ; `decoupe` de pose et primitive `silhouette`, `echelle_y` (`D-260`) :
-│   │                       une pièce découpée par la silhouette posée d'une autre (l'ouverture
-│   │                       par la capuche, de côté) ; `poser` : le seul point qui traduit une
-│   │                       pose en transform, partagé par le dessin et la découpe
+│   │                       (primitives + teinte/alpha/échelle/rotation) ; palier de dégradé `teinte`
+│   │                       (`D-256`), dégradé `elliptique` et `trou` (`D-257`) ; une PIÈCE posée
+│   │                       reçoit la matrice de sa pose (`poses.js`), une pièce `decoupe` est
+│   │                       découpée par la `silhouette` posée d'une autre (`D-260`)
+│   ├── poses.js            `D-262` : les PIÈCES d'un visuel et leurs POSES (`visuels.json > pieces,
+│   │                       orientations, reflets`) — `poseDePiece` (une pièce qui `suit` une autre prend sa pose, `D-266` ; une direction en reflet
+│   │                       d'une autre : `reflet: true`), `matricePose` (LA matrice d'une pose :
+│   │                       origine, déplacement, rotation, cisaillement, échelles ; en reflet
+│   │                       M·A·M, ou M·A pour une pièce `miroir`), `plierPoints` (le pli et le
+│   │                       rabat, `D-252`, `D-254`, seules déformations hors transform),
+│   │                       `primitivePosee` (pliée ; sous un miroir, style `reflet` et dégradés qui gardent leur lumière, `D-255`, `D-264`),
+│   │                       `poserPoint` (pour tests et outils) ; spec 16 : `poseAAngle` (une pose à tout
+│   │                       angle, mélange des deux directions voisines, fondu et `fuite` d'une pièce
+│   │                       cachée, gardée au degré près), `poseVisible`, `matriceAnimation` (palier C : le souffle et le
+│   │                       pas, `animations` du visuel pondérées par la marche), `cadencePas` (palier D : le pas suit la vitesse, plafond 3 Hz), `angleDePiece` (palier E : la capuche à l'angle de son ressort) — pur, gardé par pose
 │   ├── intro.js            2 machines à états pures : intro (clignements+orbite, ≤8s) et départ
 │   │                       (follets non élus qui repartent) — propre à la Grotte, pas un moteur
 │   │                       de cinématiques généralisé
@@ -216,8 +217,10 @@ rpg_v2/
 │   │                       à la butée, halo en fondu) — pur, un état d'AFFICHAGE jamais sauvegardé
 │   ├── orientation.js      `D-229`, `D-249` : OÙ REGARDE le héros — huit secteurs de 45° (marge à la
 │   │                       frontière), le tir d'une compétence qui le tourne vers sa cible un instant ;
-│   │                       `poseDePiece` : ce qu'une direction fait à une PIÈCE d'un visuel
-│   │                       (`visuels.json > orientations` : le visage, la capuche qui penche ou se plie) — pur
+│   │                       spec 16 : l'ANGLE affiché (`angle`, vers `angleVise`, l'angle exact du geste
+│   │                       ou de la cible, à vitesse bornée), lu par le rendu (`heroAngle`) ; l'état du souffle et du pas
+│   │                       (`avancerAnimationHeros` : les ressorts de la capuche, `avancerInertie` et `ressortInertie` ; l'horloge, l'horloge du pas à la cadence, le poids de la marche, `heroAnimation`) ;
+│   │                       ne sait rien du dessin (`poses.js` traduit une direction) — pur
 │   ├── logo.js             le symbole du jeu (« la sagesse pour tout et pour tous », Xav) : son
 │   │                       apparition signe après signe, dans l'ordre de lecture — pur ; dessiné par
 │   │                       `render.js#dessinerLogo` (trois calques d'`images/logo/`, meilleur effort)
@@ -315,7 +318,8 @@ rpg_v2/
                             épaissirait les traits avec, et ferait juger une image que personne ne
                             voit), et banc_orientations.html (`D-255`, `?id=` : les huit directions
                             du regard d'une silhouette en rose des vents, à ×3 sur le gris et sur la
-                            terre de la Maison, à ×9 avec l'axe — juger que les vues se répondent)
+                            terre de la Maison, à ×9 avec l'axe — juger que les vues se répondent, et banc_tour.html (spec 16 : le héros à
+                            tout angle — curseur, pavé tiré comme un stick, tour automatique)
 ```
 
 `registry.js`/`save.js` restent purs (aucun accès disque/réseau/DOM) : les adaptateurs (`io_node.js`/`io_navigateur.js`, `storage_indexeddb.js`/`creerStoreMemoire()`) leur fournissent des données déjà prêtes. Convention d'`id` : minuscules, `_` comme séparateur, préfixé par la catégorie au singulier (`tile_sol`, `elem_feu`). Un `id` dupliqué ou une référence croisée cassée = échec dur au boot avec le chemin exact de l'erreur.

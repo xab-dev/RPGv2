@@ -5,29 +5,32 @@
 // sens de direction juste en orientant la pointe »).
 //
 // Contrats :
-// 1. `visuels.js#courberPoints` : sous la ligne `pivot_y`, aucun point ne
-//    bouge ; un point de l'axe à `longueur` au-dessus du pivot tourne de
-//    `courbure` degrés autour du pivot, vers l'est si la courbure est
-//    positive ; l'origine de la primitive est prise en compte.
+// 1. `poses.js#plierPoints` : sous la ligne `pli.pivot_y`, aucun point ne
+//    bouge ; un point de l'axe à `pli.longueur` au-dessus du pivot tourne de
+//    `pli.angle` degrés autour du pivot, vers l'est si l'angle est positif ;
+//    l'origine de la primitive est prise en compte. Le rabat écrase le haut
+//    en calotte.
 // 2. Données : toute direction qui plie la capuche garde son sommet (le point
 //    le plus haut, pose appliquée) plus près de l'axe que sa pointe — c'est
 //    la plainte de Xav (le cisaillement emportait le sommet avec la pointe) ;
-//    une direction qui redresse la pointe (`D-254`, face et dos) rapproche de
-//    l'axe la pointe et le sommet du dessin d'auteur.
+//    la face et le dos (`D-254`) n'écartent de l'axe ni la pointe ni le
+//    sommet du dessin d'auteur (depuis `D-276`, symétrique).
 // 3. Dessin : une pose pliée dessine deux fois exactement la même chose (les
 //    points pliés se gardent, ils ne se refont pas au hasard d'une frame).
-//    Le miroir (`D-253`) reflète la pièce, et elle seule.
-//    `D-254` : le rabat écrase le haut en calotte ; une primitive cachée ne
-//    paraît que là où sa pièce est posée.
-// 4. Démarrage : une courbure sans longueur, une longueur nulle, un miroir
-//    qui n'est pas un booléen, un rabat incomplet, une primitive cachée sans
-//    pièce, refusés.
+//    Une direction en reflet (`D-253`) reflète le dessin de la pièce
+//    `miroir`, et d'elle seule ; une pièce `cachee` ne paraît que là où une
+//    direction la pose ; la lumière ne se reflète pas (`reflet` d'une
+//    primitive).
+// 4. Démarrage : un pli ou un rabat incomplet, un miroir qui n'est pas un
+//    booléen, un reflet mal déclaré, une primitive qui se dit cachée,
+//    refusés.
 // Aucune valeur de réglage n'est épinglée : elles sont lues dans les données.
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ORIENTATIONS, poseDePiece } from '../src/orientation.js';
-import { dessinerVisuel, courberPoints } from '../src/visuels.js';
+import { ORIENTATIONS } from '../src/orientation.js';
+import { dessinerVisuel } from '../src/visuels.js';
+import { poseDePiece, poserPoint, plierPoints } from '../src/poses.js';
 import { chargerCataloguesDepuisDisque } from '../src/io_node.js';
 import { SCHEMAS } from '../src/schemas.js';
 import { validerCatalogues } from '../src/registry.js';
@@ -37,33 +40,33 @@ const proche = (a, b, msg) => assert.ok(Math.abs(a - b) < 1e-9, `${msg} (${a} �
 
 // --- 1. La fonction pure -------------------------------------------------------------
 {
-  const pose = { courbure: 90, longueur: 4, pivot_y: 0 };
+  const pose = { pli: { angle: 90, longueur: 4, pivot_y: 0 } };
   const carre = [[-2, 3], [2, 3], [2, 1], [-2, 1]];
-  const plie = courberPoints(carre, pose);
+  const plie = plierPoints(carre, pose);
   for (const [x, y] of carre) {
     assert.ok(plie.some(([a, b]) => a === x && b === y), `(${x}, ${y}), sous le pivot, ne bouge pas`);
   }
-  const [[x, y]] = courberPoints([[0, -4]], pose);
+  const [[x, y]] = plierPoints([[0, -4]], pose);
   proche(x, 4, 'à la longueur, un quart de tour vers l\'est : x');
   proche(y, 0, 'à la longueur, un quart de tour vers l\'est : y');
-  const [[xo]] = courberPoints([[0, -4]], { ...pose, courbure: -90 });
-  proche(xo, -4, 'une courbure négative plie vers l\'ouest');
-  const [[xd, yd]] = courberPoints([[0, -2]], pose, 0, -2);
+  const [[xo]] = plierPoints([[0, -4]], { pli: { ...pose.pli, angle: -90 } });
+  proche(xo, -4, 'un angle négatif plie vers l\'ouest');
+  const [[xd, yd]] = plierPoints([[0, -2]], pose, 0, -2);
   proche(xd, 4, 'l\'origine de la primitive compte : x');
   proche(yd, 2, 'l\'origine de la primitive compte : y (repère de la primitive)');
-  console.log('OK courberPoints : le bas posé, la pointe tournée autour du pivot');
+  console.log('OK plierPoints : le bas posé, la pointe tournée autour du pivot');
 }
 {
   // `D-254` : le rabat. Sous la ligne, rien ne bouge ; au-dessus, tout tient
   // dans la calotte ; la pointe (à `longueur` de la ligne) en fait le sommet,
   // le reste monte avec la hauteur, sans jamais la dépasser.
   const rabat = { y: -2, longueur: 4, hauteur: 1 };
-  const [[xb, yb]] = courberPoints([[3, 0]], { rabat });
+  const [[xb, yb]] = plierPoints([[3, 0]], { rabat });
   assert.ok(xb === 3 && yb === 0, 'sous la ligne du rabat, rien ne bouge');
-  const [[xp, yp]] = courberPoints([[0.5, -6]], { rabat });
+  const [[xp, yp]] = plierPoints([[0.5, -6]], { rabat });
   proche(xp, 0.5, 'le rabat ne déplace pas un point en largeur');
   proche(yp, rabat.y - rabat.hauteur, 'la pointe devient le haut de la calotte');
-  const hauts = [-2.5, -3, -4, -5, -8].map((y) => courberPoints([[0, y]], { rabat })[0][1]);
+  const hauts = [-2.5, -3, -4, -5, -8].map((y) => plierPoints([[0, y]], { rabat })[0][1]);
   assert.ok(hauts.every((y, i) => y >= rabat.y - rabat.hauteur && y < rabat.y && (i === 0 || y <= hauts[i - 1])),
     `au-dessus de la ligne : dans la calotte, d'autant plus haut qu'on partait haut (${hauts.map((y) => y.toFixed(2))})`);
   console.log('OK rabat : le bas posé, le haut écrasé en calotte');
@@ -79,119 +82,111 @@ const CAPUCHE = HEROS.primitives.filter((p) => p.piece === 'capuche');
 const plusHaut = (points) => points.reduce((a, b) => (b[1] < a[1] ? b : a));
 const POINTE = plusHaut(CAPUCHE.flatMap((p) => p.points));
 {
-  // La pose entière appliquée à un point : le pli, puis le reste de la pose
-  // (celui de `dessinerVisuel`, dans le même ordre).
-  const poser = (pose, [x0, y0]) => {
-    const [x, y] = pose.courbure ? courberPoints([[x0, y0]], pose)[0] : [x0, y0];
-    return [(pose.dx ?? 0) + x * (pose.echelle_x ?? 1) * (pose.miroir ? -1 : 1) + (pose.cisaillement ?? 0) * (y - (pose.pivot_y ?? 0)), y + (pose.dy ?? 0)];
-  };
-  const pliees = ORIENTATIONS.filter((d) => (poseDePiece(HEROS, d, 'capuche') || {}).courbure);
+  // Les arêtes coupées comme le dessin les coupe (un pli vide ne plie rien) :
+  // le sommet d'un dôme plié peut tomber au milieu d'une arête.
+  const ARETES = CAPUCHE.flatMap((p) => plierPoints(p.points, {}, p.dx, p.dy).map(([x, y]) => [x + p.dx, y + p.dy]));
+  const pliees = ORIENTATIONS.filter((d) => (poseDePiece(HEROS, d, 'capuche') || {}).pli);
   assert.ok(pliees.length > 0, 'au moins une direction plie la capuche');
   for (const d of pliees) {
     const pose = poseDePiece(HEROS, d, 'capuche');
-    const sommet = plusHaut(CAPUCHE.flatMap((p) => courberPoints(p.points, pose, p.dx || 0, p.dy || 0)).map((pt) => poser({ ...pose, courbure: 0 }, pt)));
-    const [xPointe] = poser(pose, POINTE);
+    const sommet = plusHaut(ARETES.map((pt) => poserPoint(HEROS, 'capuche', pose, pt)));
+    const [xPointe] = poserPoint(HEROS, 'capuche', pose, POINTE);
     if (Math.abs(xPointe) > Math.abs(POINTE[0])) {
       assert.ok(Math.abs(sommet[0]) < Math.abs(xPointe), `${d} : le sommet (x = ${sommet[0].toFixed(2)}) plus près de l'axe que la pointe (x = ${xPointe.toFixed(2)})`);
     } else {
-      // `D-254` : la face et le dos redressent la pointe du dessin d'auteur,
-      // qui part à droite de l'axe — la pointe et le sommet s'en rapprochent.
-      assert.ok(Math.abs(xPointe) < Math.abs(POINTE[0]) && Math.abs(sommet[0]) < Math.abs(POINTE[0]),
-        `${d} : la pointe (x = ${xPointe.toFixed(2)}) et le sommet (x = ${sommet[0].toFixed(2)}) plus près de l'axe que sur le dessin d'auteur (x = ${POINTE[0]})`);
+      // La face et le dos (`D-254`) : la pointe ne part d'aucun côté. Depuis
+      // `D-276`, le dessin d'auteur l'a sur l'axe ; la pose ne l'en écarte pas.
+      // Le rabat aplatit le haut en calotte : son sommet est un plat, dont on
+      // juge le milieu, pas un bord pris au hasard de l'ordre des points.
+      const poses = ARETES.map((pt) => poserPoint(HEROS, 'capuche', pose, pt));
+      const plat = poses.filter(([, y]) => y - sommet[1] < 1e-6).map(([x]) => x);
+      const milieu = (Math.min(...plat) + Math.max(...plat)) / 2;
+      assert.ok(Math.abs(xPointe) <= Math.abs(POINTE[0]) + 1e-9 && Math.abs(milieu) <= Math.abs(POINTE[0]) + 0.01,
+        `${d} : la pointe (x = ${xPointe.toFixed(2)}) et le milieu du sommet (x = ${milieu.toFixed(2)}) pas plus loin de l'axe que sur le dessin d'auteur (x = ${POINTE[0]})`);
     }
   }
   console.log(`OK données : ${pliees.join(', ')} — le sommet sur l'axe, la pointe à l'écart ou redressée`);
 }
 
 // --- 3. Le dessin -------------------------------------------------------------------
-function ordres(options) {
+// Un faux contexte qui note chaque appel ; un dégradé se crée, puis reçoit
+// ses paliers ; un style posé se note par ce qu'il est.
+function ordres(visuel, options) {
   const appels = [];
   const ctx = new Proxy({}, {
-    // Un dégradé (`D-255`, la pointe rabattue) se crée, puis reçoit ses paliers.
     get(_, prop) {
       return (...args) => {
         appels.push([String(prop), ...args]);
         return String(prop).startsWith('create') ? { addColorStop: (...a) => appels.push(['addColorStop', ...a]) } : undefined;
       };
     },
-    // Un dégradé posé en style se note par ce qu'il est, pas par son objet
-    // (ses paliers sont déjà notés à sa création).
     set(_, prop, valeur) { appels.push([`=${String(prop)}`, typeof valeur === 'object' ? '[dégradé]' : valeur]); return true; },
   });
-  dessinerVisuel(ctx, HEROS, 10, 20, options);
+  dessinerVisuel(ctx, visuel, 10, 20, options);
   return appels;
 }
+const styles = (visuel, orientation) => ordres(visuel, { orientation }).filter((a) => a[0] === '=fillStyle').map((a) => a[1]);
 {
-  const pliee = ORIENTATIONS.find((d) => (poseDePiece(HEROS, d, 'capuche') || {}).courbure);
-  const une = ordres({ orientation: pliee });
-  assert.deepEqual(ordres({ orientation: pliee }), une, 'deux frames, le même dessin');
+  const pliee = ORIENTATIONS.find((d) => (poseDePiece(HEROS, d, 'capuche') || {}).pli);
+  const une = ordres(HEROS, { orientation: pliee });
+  assert.deepEqual(ordres(HEROS, { orientation: pliee }), une, 'deux frames, le même dessin');
   const lignes = (a) => a.filter((x) => x[0] === 'lineTo').length;
-  assert.ok(lignes(une) > lignes(ordres({})), 'le pli arrondit : plus de segments que la capuche de face');
-  // `D-253` : le miroir reflète la pièce autour de l'axe, et elle seule.
+  assert.ok(lignes(une) > lignes(ordres(HEROS, {})), 'le pli arrondit : plus de segments que le dessin d\'auteur');
+
+  // `D-253` : une direction en reflet reflète le dessin de la pièce miroir,
+  // et d'elle seule — les autres pièces n'y reflètent que leur place.
   const avecMiroir = structuredClone(HEROS);
-  avecMiroir.orientations = { est: { capuche: { miroir: true } } };
-  const appels = [];
-  const ctx = new Proxy({}, {
-    // Un dégradé (`D-255`, la pointe rabattue) se crée, puis reçoit ses paliers.
-    get(_, prop) {
-      return (...args) => {
-        appels.push([String(prop), ...args]);
-        return String(prop).startsWith('create') ? { addColorStop: (...a) => appels.push(['addColorStop', ...a]) } : undefined;
-      };
-    },
-    // Un dégradé posé en style se note par ce qu'il est, pas par son objet
-    // (ses paliers sont déjà notés à sa création).
-    set(_, prop, valeur) { appels.push([`=${String(prop)}`, typeof valeur === 'object' ? '[dégradé]' : valeur]); return true; },
-  });
-  dessinerVisuel(ctx, avecMiroir, 0, 0, { orientation: 'est' });
-  const reflets = appels.filter((a) => a[0] === 'scale' && a[1] === -1 && a[2] === 1).length;
-  assert.equal(reflets, CAPUCHE.length, 'une primitive de la capuche, un reflet ; rien d\'autre');
-  // `D-254` : une primitive cachée ne paraît que dans une direction qui pose
-  // sa pièce.
+  avecMiroir.pieces = { capuche: { miroir: true } };
+  avecMiroir.orientations = { ouest: { capuche: {}, oeil: { dx: -1 } } };
+  avecMiroir.reflets = { est: 'ouest' };
+  const retournes = ordres(avecMiroir, { orientation: 'est' }).filter((a) => a[0] === 'transform' && a[1] < 0).length;
+  assert.equal(retournes, CAPUCHE.length, 'une primitive de la capuche, un dessin retourné ; rien d\'autre');
+
+  // `D-254` : une pièce cachée ne paraît que là où une direction la pose.
   const avecCachee = structuredClone(HEROS);
-  avecCachee.primitives.push({ forme: 'cercle', dx: 0, dy: 0, w: 1, couleur: '#123456', piece: 'temoin', cachee: true });
+  avecCachee.primitives.push({ forme: 'cercle', dx: 0, dy: 0, w: 1, couleur: '#123456', piece: 'temoin' });
+  avecCachee.pieces = { temoin: { cachee: true } };
   avecCachee.orientations = { nord: { temoin: {} } };
-  const couleurs = (orientation) => {
-    const a = [];
-    const c = new Proxy({}, { get: () => () => ({ addColorStop() {} }), set(_, prop, v) { if (prop === 'fillStyle') a.push(v); return true; } });
-    dessinerVisuel(c, avecCachee, 0, 0, { orientation });
-    return a;
-  };
-  assert.ok(couleurs('nord').includes('#123456'), 'posée : elle paraît');
-  for (const o of [null, 'sud', 'est']) assert.ok(!couleurs(o).includes('#123456'), `${o} : sans pose, elle reste cachée`);
-  // `D-255` : la lumière ne se reflète pas — sous un miroir, une primitive
-  // prend son style `reflet` ; sans miroir, le sien.
+  avecCachee.reflets = {};
+  assert.ok(styles(avecCachee, 'nord').includes('#123456'), 'posée : elle paraît');
+  for (const o of [null, 'sud', 'est']) assert.ok(!styles(avecCachee, o).includes('#123456'), `${o} : sans pose, elle reste cachée`);
+
+  // `D-255` : la lumière ne se reflète pas — dessinée en miroir, une
+  // primitive prend son style `reflet` ; sinon, le sien.
   const avecReflet = structuredClone(HEROS);
   avecReflet.primitives.push({ forme: 'cercle', dx: 0, dy: 0, w: 1, couleur: '#aaaaaa', reflet: { couleur: '#bbbbbb' }, piece: 'temoin' });
-  avecReflet.orientations = { est: { temoin: { miroir: true } }, ouest: { temoin: {} } };
-  const styles = (orientation) => {
-    const a = [];
-    const c = new Proxy({}, { get: () => () => ({ addColorStop() {} }), set(_, prop, v) { if (prop === 'fillStyle') a.push(v); return true; } });
-    dessinerVisuel(c, avecReflet, 0, 0, { orientation });
-    return a;
-  };
-  assert.ok(styles('est').includes('#bbbbbb') && !styles('est').includes('#aaaaaa'), 'reflétée : le style du reflet');
-  assert.ok(styles('ouest').includes('#aaaaaa') && !styles('ouest').includes('#bbbbbb'), 'sans miroir : son propre style');
-  console.log('OK dessin : la capuche pliée, stable d\'une frame à l\'autre ; le miroir sur la seule pièce');
+  avecReflet.pieces = { temoin: { miroir: true } };
+  avecReflet.orientations = { ouest: { temoin: {} } };
+  avecReflet.reflets = { est: 'ouest' };
+  assert.ok(styles(avecReflet, 'est').includes('#bbbbbb') && !styles(avecReflet, 'est').includes('#aaaaaa'), 'reflétée : le style du reflet');
+  assert.ok(styles(avecReflet, 'ouest').includes('#aaaaaa') && !styles(avecReflet, 'ouest').includes('#bbbbbb'), 'sans miroir : son propre style');
+  console.log('OK dessin : la capuche pliée, stable d\'une frame à l\'autre ; le reflet sur la seule pièce miroir ; la pièce cachée ; la lumière fixe');
 }
 
 // --- 4. Le démarrage --------------------------------------------------------------
 {
-  const erreursAvec = (modif) => {
+  const refuse = (modif, attendu, message) => {
     const copie = structuredClone(donnees);
     modif(copie.visuels.find((v) => v.id === VISUEL_HEROS_ID));
-    return validerCatalogues(copie);
+    const trouvees = validerCatalogues(copie);
+    assert.ok(trouvees.some((e) => e.includes(attendu)), `${message} (${trouvees.join(' | ') || 'aucune erreur'})`);
   };
-  assert.ok(erreursAvec((v) => { v.orientations.est.capuche = { courbure: 30 }; }).some((e) => e.includes('une courbure demande sa longueur')));
-  assert.ok(erreursAvec((v) => { v.orientations.est.capuche = { courbure: 30, longueur: 0 }; }).some((e) => e.includes('orientations > est > capuche')));
-  assert.ok(erreursAvec((v) => { v.orientations.est.capuche = { courbure: 'forte', longueur: 5 }; }).some((e) => e.includes('orientations > est > capuche')));
-  assert.ok(erreursAvec((v) => { v.orientations.est.capuche = { miroir: 'oui' }; }).some((e) => e.includes('orientations > est > capuche')));
-  assert.ok(erreursAvec((v) => { v.orientations.nord.capuche = { rabat: { y: -8, longueur: 0, hauteur: 1 } }; }).some((e) => e.includes('orientations > nord > capuche')));
-  assert.ok(erreursAvec((v) => { v.orientations.nord.capuche = { rabat: { y: -8, longueur: 3 } }; }).some((e) => e.includes('orientations > nord > capuche')));
-  assert.ok(erreursAvec((v) => { v.primitives[0].cachee = true; }).some((e) => e.includes('cachee vaut true')), 'une primitive cachée sans pièce ne paraîtrait jamais');
-  assert.ok(erreursAvec((v) => { v.primitives[0].reflet = { couleur: '#000000' }; }).some((e) => e.includes('reflet doit être')), 'un reflet sans pièce ne servirait jamais');
-  assert.ok(erreursAvec((v) => { v.primitives.find((p) => p.reflet).reflet = { teinte: true }; }).some((e) => e.includes('reflet doit être')));
-  console.log('OK démarrage : une courbure, un miroir, un rabat ou une primitive cachée mal déclarés refusés');
+  const pliee = ORIENTATIONS.find((d) => HEROS.orientations[d] && (HEROS.orientations[d].capuche || {}).pli);
+  const chemin = `orientations > ${pliee} > capuche`;
+  refuse((v) => { v.orientations[pliee].capuche = { pli: { angle: 30, pivot_y: -5 } }; }, chemin, 'un pli sans longueur');
+  refuse((v) => { v.orientations[pliee].capuche = { pli: { angle: 30, pivot_y: -5, longueur: 0 } }; }, chemin, 'un pli de longueur nulle');
+  refuse((v) => { v.orientations[pliee].capuche = { pli: { angle: 'fort', pivot_y: -5, longueur: 5 } }; }, chemin, 'un angle qui n\'est pas un nombre');
+  refuse((v) => { v.orientations[pliee].capuche = { rabat: { y: -8, longueur: 3 } }; }, chemin, 'un rabat incomplet');
+  refuse((v) => { v.orientations[pliee].capuche = { courbure: 30 }; }, chemin, 'une clé de pose inconnue');
+  refuse((v) => { v.pieces.capuche.miroir = 'oui'; }, 'pieces > capuche', 'un miroir qui n\'est pas un booléen');
+  refuse((v) => { v.pieces.chapeau = {}; }, 'aucune primitive ne porte', 'une pièce que rien ne porte');
+  refuse((v) => { delete v.pieces.capuche.miroir; }, 'se déclare miroir', 'une pièce pliée, reflétée sans que son dessin le soit');
+  refuse((v) => { v.reflets = { est: 'nord_est' }; }, 'reflets > est', 'un reflet d\'une direction non déclarée');
+  refuse((v) => { v.reflets = { sud: 'nord' }; }, 'déjà déclarée', 'une direction déclarée deux fois');
+  refuse((v) => { v.primitives[0].cachee = true; }, 'cachee se déclare sur la pièce', 'une primitive qui se dit cachée');
+  refuse((v) => { v.primitives[0].reflet = { couleur: '#000000' }; }, 'reflet doit être', 'un reflet sans pièce ne servirait jamais');
+  refuse((v) => { v.primitives.find((p) => p.reflet).reflet = { teinte: true }; }, 'reflet doit être', 'un reflet qui teinte');
+  console.log('OK démarrage : un pli, un rabat, un miroir, un reflet ou une pièce cachée mal déclarés, refusés');
 }
 
 console.log('OK test_d252_capuche_courbee');

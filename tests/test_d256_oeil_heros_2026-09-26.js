@@ -6,16 +6,22 @@
 // 1. La couleur du follet atteint les dégradés : un palier `teinte: true`
 //    prend la teinte passée au dessin (le halo de l'œil), les autres gardent
 //    la leur.
-// 2. Un globe ne s'aplatit pas : aucune direction qui montre le visage ne le
-//    resserre à l'horizontale (`echelle_x`) ; il rapetisse d'un bloc
-//    (`echelle`), et la pose l'applique dans les deux sens.
+// 2. Un globe ne s'aplatit pas : aucune direction qui montre l'œil ne
+//    l'étire en hauteur ; il rapetisse d'un bloc (`echelle`), et la pose
+//    l'applique dans les deux sens.
 // 3. Démarrage : un palier teinté sur un visuel non teintable, refusé.
+// 4. `D-257` : devant, derrière — la cavité derrière le globe, la façade
+//    percée devant ; de côté, l'ouverture garde ses proportions, s'incline,
+//    se rouvre en hauteur sans jamais se refermer.
+// 5. `D-259` : dans chaque vue qui montre l'œil, le regard (du centre de
+//    l'ouverture au centre du globe) va dans la direction.
 // Aucune valeur de réglage n'est épinglée : elles sont lues dans les données.
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ORIENTATIONS, poseDePiece } from '../src/orientation.js';
+import { ORIENTATIONS } from '../src/orientation.js';
 import { dessinerVisuel } from '../src/visuels.js';
+import { poseDePiece, poserPoint, matricePose } from '../src/poses.js';
 import { chargerCataloguesDepuisDisque } from '../src/io_node.js';
 import { SCHEMAS } from '../src/schemas.js';
 import { validerCatalogues } from '../src/registry.js';
@@ -27,26 +33,24 @@ assert.deepEqual(erreurs, []);
 assert.deepEqual(validerCatalogues(donnees), []);
 const HEROS = donnees.visuels.find((v) => v.id === VISUEL_HEROS_ID);
 
-// Un faux contexte qui note les paliers des dégradés et les mises à
-// l'échelle.
+// Un faux contexte qui note les paliers des dégradés et les matrices de pose
+// que reçoit le canvas.
 function trace(visuel, options) {
   const paliers = [];
-  const echelles = [];
+  const matrices = [];
   const ctx = new Proxy({}, {
     get(_, prop) {
-      if (prop === 'scale') return (x, y) => echelles.push([x, y]);
+      if (prop === 'transform') return (...m) => matrices.push(m);
       return () => ({ addColorStop: (offset, couleur) => paliers.push(couleur) });
     },
     set() { return true; },
   });
   dessinerVisuel(ctx, visuel, 0, 0, options);
-  return { paliers, echelles };
+  return { paliers, matrices };
 }
 
 // --- 1. La teinte dans les dégradés -------------------------------------------
 {
-  // (le halo est sur la façade de la capuche depuis `D-257` : on le cherche
-  // sur tout le héros)
   const teintes = HEROS.primitives.filter((p) => p.degrade && p.degrade.stops.some((s) => s.teinte));
   assert.ok(teintes.length > 0, 'le héros a un dégradé qui suit le follet (le halo)');
   const { paliers } = trace(HEROS, { orientation: 'sud', teinte: '#00ff00' });
@@ -59,19 +63,19 @@ function trace(visuel, options) {
 
 // --- 2. Le globe reste rond ------------------------------------------------------
 {
-  const avecVisage = ORIENTATIONS.filter((d) => poseDePiece(HEROS, d, 'visage') !== null);
-  assert.ok(avecVisage.length > 1);
-  for (const d of avecVisage) {
-    const pose = poseDePiece(HEROS, d, 'visage') || {};
-    assert.ok(pose.echelle_x === undefined || pose.echelle_x === 1, `${d} : le globe n'est pas resserré à l'horizontale`);
+  const avecOeil = ORIENTATIONS.filter((d) => poseDePiece(HEROS, d, 'oeil') !== null);
+  assert.ok(avecOeil.length > 1);
+  for (const d of avecOeil) {
+    const pose = poseDePiece(HEROS, d, 'oeil') || {};
     assert.ok(pose.echelle_y === undefined || pose.echelle_y === 1, `${d} : le globe n'est pas étiré en hauteur`);
   }
-  const reduite = avecVisage.find((d) => (poseDePiece(HEROS, d, 'visage') || {}).echelle !== undefined);
+  const reduite = avecOeil.find((d) => (poseDePiece(HEROS, d, 'oeil') || {}).echelle !== undefined);
   assert.ok(reduite, 'une direction rapetisse le globe d\'un bloc');
-  const e = poseDePiece(HEROS, reduite, 'visage').echelle;
-  const { echelles } = trace(HEROS, { orientation: reduite });
-  assert.ok(echelles.some(([x, y]) => x === e && y === e), `${reduite} : l'échelle s'applique dans les deux sens`);
-  console.log(`OK globe : rond dans ${avecVisage.length} directions, rapetissé d'un bloc de côté`);
+  const e = poseDePiece(HEROS, reduite, 'oeil').echelle;
+  const { matrices } = trace(HEROS, { orientation: reduite });
+  assert.ok(matrices.some(([a, b, c, d]) => Math.abs(Math.hypot(a, b) - e) < 1e-12 && Math.abs(Math.hypot(c, d) - e) < 1e-12),
+    `${reduite} : l'échelle s'applique dans les deux sens`);
+  console.log(`OK globe : rond dans ${avecOeil.length} directions, rapetissé d'un bloc de côté`);
 }
 
 // --- 3. Le démarrage ------------------------------------------------------------
@@ -90,42 +94,33 @@ function trace(visuel, options) {
 // avec l'arbre ». Dans le visuel, l'ordre des primitives est la profondeur :
 // la cavité (le dedans de la capuche) avant le globe, la façade percée après.
 {
-  const rang = (piece, dernier = false) => {
-    const rangs = HEROS.primitives.map((p, i) => (p.piece === piece ? i : -1)).filter((i) => i >= 0);
-    return dernier ? Math.max(...rangs) : Math.min(...rangs);
-  };
-  assert.ok(rang('cavite', true) < rang('visage'), 'la cavité est derrière le globe');
-  assert.ok(rang('facade') > rang('visage', true), 'la façade est devant le globe');
-  assert.ok(rang('halo') > rang('facade', true), 'le halo éclaire la lèvre de la façade, devant elle');
-  const facade = HEROS.primitives.find((p) => p.piece === 'facade' && p.trou);
+  const rangs = (predicat) => HEROS.primitives.map((p, i) => (predicat(p) ? i : -1)).filter((i) => i >= 0);
+  const teinte = (p) => !!(p.degrade && p.degrade.stops.some((st) => st.teinte));
+  const oeil = rangs((p) => p.piece === 'oeil');
+  const cavite = rangs((p) => p.piece === 'ouverture' && !p.trou && !teinte(p));
+  const facade = HEROS.primitives.find((p) => p.piece === 'ouverture' && p.trou);
+  const iFacade = HEROS.primitives.indexOf(facade);
+  const halo = rangs((p) => p.piece === 'ouverture' && teinte(p));
+  assert.ok(cavite.length > 0 && Math.max(...cavite) < Math.min(...oeil), 'la cavité est derrière le globe');
   assert.ok(facade, 'la façade est percée');
+  assert.ok(iFacade > Math.max(...oeil), 'la façade est devant le globe');
+  assert.ok(halo.length > 0 && Math.min(...halo) > iFacade, 'le halo éclaire la lèvre de la façade, devant elle');
   assert.ok(facade.trou.w > facade.trou.h, 'l\'ouverture est plus large que haute');
   for (const d of ORIENTATIONS) {
-    assert.equal(poseDePiece(HEROS, d, 'facade') === null, poseDePiece(HEROS, d, 'cavite') === null, `${d} : façade et cavité paraissent ensemble`);
-    // Le halo (sa propre pièce depuis le polish : il rapetisse de profil pour
-    // ne pas sortir de la silhouette) paraît avec elles.
-    assert.equal(poseDePiece(HEROS, d, 'halo') === null, poseDePiece(HEROS, d, 'facade') === null, `${d} : le halo paraît avec la façade`);
     // Xav : « il faut garder la même proportion que face » — de côté,
     // l'ouverture rapetisse, glisse et s'incline, jamais ne s'écrase.
     // `D-260` : elle peut se rouvrir un peu en hauteur (« j'ai l'impression
     // qu'il se referme sur l'oeil […] du coup on triche »), jamais se refermer.
-    const pose = poseDePiece(HEROS, d, 'facade') || {};
-    assert.ok(pose.echelle_x === undefined, `${d} : l'ouverture garde les proportions de face`);
+    const pose = poseDePiece(HEROS, d, 'ouverture') || {};
     assert.ok(pose.echelle_y === undefined || pose.echelle_y >= 1, `${d} : l'ouverture ne se referme pas en hauteur`);
   }
-  const inclinee = ORIENTATIONS.find((d) => (poseDePiece(HEROS, d, 'facade') || {}).rotation);
+  const inclinee = ORIENTATIONS.find((d) => (poseDePiece(HEROS, d, 'ouverture') || {}).rotation);
   assert.ok(inclinee, 'de côté, l\'ouverture s\'incline');
-  const tours = [];
-  const tracant = new Proxy({}, {
-    get(_, prop) {
-      if (prop === 'rotate') return (a) => tours.push(a);
-      return () => ({ addColorStop() {} });
-    },
-    set() { return true; },
-  });
-  dessinerVisuel(tracant, HEROS, 0, 0, { orientation: inclinee });
-  const attendu = (poseDePiece(HEROS, inclinee, 'facade').rotation * Math.PI) / 180;
-  assert.ok(tours.some((a) => Math.abs(a - attendu) < 1e-12), `${inclinee} : la rotation de pose s'applique`);
+  const pose = poseDePiece(HEROS, inclinee, 'ouverture');
+  const matrice = matricePose(HEROS, 'ouverture', pose);
+  const angle = ((pose.reflet ? -1 : 1) * pose.rotation * Math.PI) / 180;
+  assert.ok(Math.abs(Math.atan2(matrice[1], matrice[0]) - angle) < 1e-12, `${inclinee} : la rotation de pose est dans sa matrice`);
+  assert.ok(trace(HEROS, { orientation: inclinee }).matrices.some((m) => m.every((v, i) => v === matrice[i])), `${inclinee} : le canvas reçoit cette matrice`);
 
   // Le dessin d'un trou et d'un dégradé elliptique.
   const appels = [];
@@ -167,19 +162,11 @@ function trace(visuel, options) {
   const VECTEURS = {
     est: [1, 0], sud_est: [1, 1], sud: [0, 1], sud_ouest: [-1, 1], ouest: [-1, 0],
   };
-  // Un point de la pièce, posé comme `dessinerVisuel` le pose (sans cisaillement :
-  // ni l'œil ni l'ouverture n'en portent).
-  const poser = (pose, [x, y]) => {
-    const e = pose.echelle ?? 1;
-    const a = ((pose.rotation ?? 0) * Math.PI) / 180;
-    const [px, py] = [x * e * (pose.echelle_x ?? 1) * (pose.miroir ? -1 : 1), y * e];
-    return [(pose.dx ?? 0) + px * Math.cos(a) - py * Math.sin(a), (pose.dy ?? 0) + px * Math.sin(a) + py * Math.cos(a)];
-  };
-  const IRIS = HEROS.primitives.find((p) => p.piece === 'visage' && p.teinte);
-  const TROU = HEROS.primitives.find((p) => p.piece === 'facade' && p.trou);
+  const IRIS = HEROS.primitives.find((p) => p.piece === 'oeil' && p.teinte);
+  const TROU = HEROS.primitives.find((p) => p.piece === 'ouverture' && p.trou);
   for (const [d, [vx, vy]] of Object.entries(VECTEURS)) {
-    const [gx, gy] = poser(poseDePiece(HEROS, d, 'visage') || {}, [IRIS.dx, IRIS.dy]);
-    const [ox, oy] = poser(poseDePiece(HEROS, d, 'facade') || {}, [TROU.dx, TROU.dy]);
+    const [gx, gy] = poserPoint(HEROS, 'oeil', poseDePiece(HEROS, d, 'oeil') || {}, [IRIS.dx, IRIS.dy]);
+    const [ox, oy] = poserPoint(HEROS, 'ouverture', poseDePiece(HEROS, d, 'ouverture') || {}, [TROU.dx, TROU.dy]);
     const [rx, ry] = [gx - ox, gy - oy];
     assert.ok(Math.hypot(rx, ry) > 0, `${d} : le globe n'est pas au centre de son ouverture`);
     const ecart = Math.abs(((Math.atan2(ry, rx) - Math.atan2(vy, vx)) * 180) / Math.PI);

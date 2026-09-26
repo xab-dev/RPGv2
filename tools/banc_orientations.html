@@ -22,7 +22,8 @@
 <script type="module">
   import { dessinerVisuel } from '../src/visuels.js';
   import { boitePrimitive } from '../src/structures.js';
-  import { ORIENTATIONS, poseDePiece } from '../src/orientation.js';
+  import { ORIENTATIONS } from '../src/orientation.js';
+  import { definitionPiece, poseDePiece } from '../src/poses.js';
   const params = new URLSearchParams(location.search);
   const id = params.get('id') || 'visuel_heros';
   const teinte = params.get('teinte') || '#ff6a3d';
@@ -47,7 +48,7 @@
   const dessinees = (o) => v.primitives.filter((p) => {
     if (p.piece === undefined) return true;
     const pose = poseDePiece(v, o, p.piece);
-    return pose !== null && !(p.cachee && pose === undefined);
+    return pose !== null && !(definitionPiece(v, p.piece).cachee && pose === undefined);
   }).length;
 
   // Le cadre suit la silhouette (ombre comprise), avec une marge pour une

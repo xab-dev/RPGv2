@@ -10,123 +10,131 @@
       "h": 5,
       "alpha": 0.38
     },
+    "pieces": {
+      "capuche": {
+        "miroir": true
+      },
+      "pli_front": {
+        "cachee": true
+      },
+      "pointe_rabattue": {
+        "origine": [0, -8.2],
+        "cachee": true
+      },
+      "ouverture": {
+        "origine": [0, 0.2],
+        "decoupe": "capuche",
+        "fuite": 3
+      },
+      "oeil": {
+        "origine": [0, 0.35],
+        "fuite": 0.5,
+        "passe_derriere": {
+          "debut": 0.5,
+          "fondu": 1.5
+        }
+      },
+      "lueur": {
+        "origine": [0, 0.2],
+        "source": "oeil"
+      }
+    },
     "orientations": {
-      "sud_est": {
-        "capuche": {
-          "courbure": 50,
-          "longueur": 4.5,
-          "pivot_y": -7,
-          "miroir": true
-        },
-        "cavite": {
-          "decoupe": "capuche",
-          "dx": 0.169,
-          "dy": -0.126,
-          "echelle": 1.01,
-          "echelle_y": 1.01,
-          "rotation": -10
-        },
-        "facade": {
-          "decoupe": "capuche",
-          "dx": 0.169,
-          "dy": -0.126,
-          "echelle": 1.01,
-          "echelle_y": 1.01,
-          "rotation": -10
-        },
-        "halo": {
-          "decoupe": "capuche",
-          "dx": 0.205,
-          "dy": -0.123,
-          "echelle": 0.959,
-          "echelle_y": 1.01,
-          "rotation": -10
-        },
-        "visage": {
-          "dx": 0.407,
-          "dy": -0.208,
-          "echelle": 0.959
-        }
-      },
-      "est": {
-        "capuche": {
-          "courbure": 52,
-          "longueur": 4.8,
-          "pivot_y": -6.5,
-          "miroir": true
-        },
-        "cavite": {
-          "decoupe": "capuche",
-          "dx": 1.58,
-          "dy": -0.212,
-          "echelle": 0.989,
-          "echelle_y": 1.02,
-          "rotation": -15
-        },
-        "facade": {
-          "decoupe": "capuche",
-          "dx": 1.58,
-          "dy": -0.212,
-          "echelle": 0.989,
-          "echelle_y": 1.02,
-          "rotation": -15
-        },
-        "halo": {
-          "decoupe": "capuche",
-          "dx": 1.628,
-          "dy": -0.211,
-          "echelle": 0.923,
-          "echelle_y": 1.02,
-          "rotation": -15
-        },
-        "visage": {
-          "dx": 1.912,
-          "dy": -0.521,
-          "echelle": 0.918
-        }
-      },
-      "nord_est": {
-        "capuche": {
-          "courbure": 50,
-          "longueur": 4.5,
-          "pivot_y": -7,
-          "miroir": true
-        },
-        "cavite": null,
-        "facade": null,
-        "halo": null,
-        "visage": null
-      },
       "sud": {
         "capuche": {
-          "courbure": -8,
-          "longueur": 9.5,
-          "pivot_y": -2,
+          "pli": {
+            "angle": 0,
+            "longueur": 9.5,
+            "pivot_y": -2
+          },
           "rabat": {
             "y": -8.2,
             "longueur": 3.3,
             "hauteur": 1.8
           }
         },
-        "pli_front": {},
-        "cavite": {
-          "dx": -0.7
+        "pli_front": {}
+      },
+      "sud_ouest": {
+        "capuche": {
+          "pli": {
+            "angle": 60,
+            "longueur": 3.5,
+            "pivot_y": -6
+          }
         },
-        "facade": {
-          "dx": -0.7
+        "ouverture": {
+          "dx": -0.901,
+          "dy": -0.248,
+          "echelle": 1.01,
+          "echelle_y": 1.01,
+          "rotation": 10
         },
-        "halo": {
-          "dx": -0.7
+        "lueur": {
+          "dx": -0.901,
+          "dy": -0.248,
+          "echelle": 1.01,
+          "echelle_y": 1.01,
+          "rotation": 10
         },
-        "visage": {
-          "dx": -0.7
+        "oeil": {
+          "dx": -1.079,
+          "dy": -0.222,
+          "echelle": 0.959
         }
+      },
+      "ouest": {
+        "capuche": {
+          "pli": {
+            "angle": 69,
+            "longueur": 3.5,
+            "pivot_y": -6
+          }
+        },
+        "ouverture": {
+          "dx": -2.302,
+          "dy": -0.396,
+          "echelle": 0.989,
+          "echelle_y": 1.02,
+          "rotation": 15
+        },
+        "lueur": {
+          "dx": -2.302,
+          "dy": -0.396,
+          "echelle": 0.989,
+          "echelle_y": 1.02,
+          "rotation": 15
+        },
+        "oeil": {
+          "dx": -3.2,
+          "dy": -0.55,
+          "echelle": 0.918
+        }
+      },
+      "nord_ouest": {
+        "capuche": {
+          "pli": {
+            "angle": 60,
+            "longueur": 3.5,
+            "pivot_y": -6
+          }
+        },
+        "lueur": {
+          "dx": -8.24,
+          "dy": -0.96,
+          "rotation": -25,
+          "echelle": 0.85
+        },
+        "ouverture": null,
+        "oeil": null
       },
       "nord": {
         "capuche": {
-          "courbure": -8,
-          "longueur": 9.5,
-          "pivot_y": -2,
+          "pli": {
+            "angle": 0,
+            "longueur": 9.5,
+            "pivot_y": -2
+          },
           "rabat": {
             "y": -7.4,
             "longueur": 4.1,
@@ -134,308 +142,191 @@
           }
         },
         "pointe_rabattue": {
-          "dy": 0.8,
-          "cisaillement": -0.3,
-          "pivot_y": -8.2
+          "dy": 0.8
         },
-        "cavite": null,
-        "facade": null,
-        "halo": null,
-        "visage": null
-      },
-      "nord_ouest": {
-        "capuche": {
-          "courbure": 50,
-          "longueur": 4.5,
-          "pivot_y": -7
-        },
-        "cavite": null,
-        "facade": null,
-        "halo": null,
-        "visage": null
-      },
-      "ouest": {
-        "capuche": {
-          "courbure": 52,
-          "longueur": 4.8,
-          "pivot_y": -6.5
-        },
-        "cavite": {
-          "decoupe": "capuche",
-          "dx": -2.918,
-          "dy": -0.57,
-          "echelle": 0.989,
-          "echelle_y": 1.02,
-          "rotation": 15
-        },
-        "facade": {
-          "decoupe": "capuche",
-          "dx": -2.918,
-          "dy": -0.57,
-          "echelle": 0.989,
-          "echelle_y": 1.02,
-          "rotation": 15
-        },
-        "halo": {
-          "decoupe": "capuche",
-          "dx": -2.876,
-          "dy": -0.546,
-          "echelle": 0.923,
-          "echelle_y": 1.02,
-          "rotation": 15
-        },
-        "visage": {
-          "dx": -3.198,
-          "dy": -0.521,
-          "echelle": 0.918
-        }
-      },
-      "sud_ouest": {
-        "capuche": {
-          "courbure": 50,
-          "longueur": 4.5,
-          "pivot_y": -7
-        },
-        "cavite": {
-          "decoupe": "capuche",
-          "dx": -1.562,
-          "dy": -0.372,
-          "echelle": 1.01,
-          "echelle_y": 1.01,
-          "rotation": 10
-        },
-        "facade": {
-          "decoupe": "capuche",
-          "dx": -1.562,
-          "dy": -0.372,
-          "echelle": 1.01,
-          "echelle_y": 1.01,
-          "rotation": 10
-        },
-        "halo": {
-          "decoupe": "capuche",
-          "dx": -1.528,
-          "dy": -0.356,
-          "echelle": 0.959,
-          "echelle_y": 1.01,
-          "rotation": 10
-        },
-        "visage": {
-          "dx": -1.75,
-          "dy": -0.208,
-          "echelle": 0.959
-        }
+        "lueur": null,
+        "ouverture": null,
+        "oeil": null
       }
+    },
+    "reflets": {
+      "sud_est": "sud_ouest",
+      "est": "ouest",
+      "nord_est": "nord_ouest"
     },
     "primitives": [
       {
         "forme": "polygone",
         "dx": 0,
         "dy": 0,
-        "points": [
-          [
-            -10,
-            10.4
-          ],
-          [
-            -8,
-            11.4
-          ],
-          [
-            0,
-            11.6
-          ],
-          [
-            8,
-            11.4
-          ],
-          [
-            10,
-            10.4
-          ],
-          [
-            9,
-            5.6
-          ],
-          [
-            6.6,
-            2.2
-          ],
-          [
-            3.4,
-            1.2
-          ],
-          [
-            -3.6,
-            1.2
-          ],
-          [
-            -6.8,
-            2.2
-          ],
-          [
-            -9,
-            5.6
-          ]
-        ],
+        "points": [[-10, 10.4], [-8, 11.4], [0, 11.6], [8, 11.4], [10, 10.4], [9, 5.6], [6.6, 2.2], [3.4, 1.2], [-3.6, 1.2], [-6.8, 2.2], [-9, 5.6]],
         "couleur": "#080a0e"
       },
       {
         "forme": "polygone",
         "dx": 0,
         "dy": 0,
-        "points": [
-          [
-            -9,
-            10
-          ],
-          [
-            -7.2,
-            10.9
-          ],
-          [
-            0,
-            11.1
-          ],
-          [
-            7.2,
-            10.9
-          ],
-          [
-            9,
-            10
-          ],
-          [
-            8.1,
-            5.8
-          ],
-          [
-            6,
-            3
-          ],
-          [
-            3.2,
-            2.1
-          ],
-          [
-            -3.4,
-            2.1
-          ],
-          [
-            -6.2,
-            3
-          ],
-          [
-            -8.1,
-            5.8
+        "w": 26,
+        "h": 26,
+        "points": [[-9, 10], [-7.2, 10.9], [0, 11.1], [7.2, 10.9], [9, 10], [8.1, 5.8], [6, 3], [3.2, 2.1], [-3.4, 2.1], [-6.2, 3], [-8.1, 5.8]],
+        "degrade": {
+          "direction": "radial",
+          "centre": [-5, -1],
+          "stops": [
+            { "offset": 0, "couleur": "#343d4a", "alpha": 1 },
+            { "offset": 0.5, "couleur": "#20262f", "alpha": 1 },
+            { "offset": 1, "couleur": "#13171d", "alpha": 1 }
           ]
-        ],
-        "couleur": "#1a1f27"
+        }
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 3,
+        "h": 3,
+        "points": [[-6.2, 0], [-3.4, -0.8999999999999999], [3.2, -0.8999999999999999], [6, 0], [6.8, 1.2000000000000002], [-6.9, 1.2000000000000002]],
+        "degrade": {
+          "direction": "vertical",
+          "stops": [
+            { "offset": 0, "couleur": "#6f8096", "alpha": 0.2 },
+            { "offset": 1, "couleur": "#6f8096", "alpha": 0 }
+          ]
+        }
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 8,
+        "h": 6,
+        "points": [[-4.4, -3], [-3.6, -3], [-3.2, 2.9000000000000004], [-5.6, 2.8000000000000007]],
+        "degrade": {
+          "direction": "vertical",
+          "stops": [
+            { "offset": 0, "couleur": "#07090c", "alpha": 0 },
+            { "offset": 1, "couleur": "#07090c", "alpha": 0.4 }
+          ]
+        }
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 8,
+        "h": 6,
+        "points": [[-4.6, -2.5999999999999996], [-4.4, -2.5999999999999996], [-5.6, 2.8000000000000007], [-6.1, 2.6999999999999993]],
+        "degrade": {
+          "direction": "vertical",
+          "stops": [
+            { "offset": 0, "couleur": "#8ea0b6", "alpha": 0 },
+            { "offset": 1, "couleur": "#8ea0b6", "alpha": 0.1 }
+          ]
+        }
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 8,
+        "h": 6,
+        "points": [[3.2, -2.8], [3.9, -2.8], [5.5, 2.8000000000000007], [3.1, 2.9000000000000004]],
+        "degrade": {
+          "direction": "vertical",
+          "stops": [
+            { "offset": 0, "couleur": "#07090c", "alpha": 0 },
+            { "offset": 1, "couleur": "#07090c", "alpha": 0.4 }
+          ]
+        }
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 8,
+        "h": 6,
+        "points": [[3, -2.4000000000000004], [3.2, -2.4000000000000004], [3.1, 2.9000000000000004], [2.6, 2.9000000000000004]],
+        "degrade": {
+          "direction": "vertical",
+          "stops": [
+            { "offset": 0, "couleur": "#8ea0b6", "alpha": 0 },
+            { "offset": 1, "couleur": "#8ea0b6", "alpha": 0.07 }
+          ]
+        }
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 8,
+        "h": 6,
+        "points": [[-0.4, -1], [0.4, -1], [0.9, 3], [-0.9, 3]],
+        "degrade": {
+          "direction": "vertical",
+          "stops": [
+            { "offset": 0, "couleur": "#07090c", "alpha": 0 },
+            { "offset": 1, "couleur": "#07090c", "alpha": 0.4 }
+          ]
+        }
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 8,
+        "h": 5,
+        "points": [[-9, -2.4000000000000004], [-10, 2.4000000000000004], [-8.9, 2.6999999999999993], [-8.1, -2.2]],
+        "degrade": {
+          "direction": "vertical",
+          "stops": [
+            { "offset": 0, "couleur": "#a9bace", "alpha": 0.42 },
+            { "offset": 1, "couleur": "#8ea0b6", "alpha": 0.14 }
+          ]
+        }
+      },
+      {
+        "forme": "polygone",
+        "dx": -7.5,
+        "dy": 4,
+        "w": 3,
+        "points": [[-1.5, 1.5999999999999996], [0.7000000000000002, -1.7999999999999998], [1.4000000000000004, -1.1], [-0.5999999999999996, 1.9000000000000004]],
+        "degrade": {
+          "direction": "horizontal",
+          "stops": [
+            { "offset": 0, "couleur": "#a9bace", "alpha": 0.4 },
+            { "offset": 1, "couleur": "#a9bace", "alpha": 0.22 }
+          ]
+        }
+      },
+      {
+        "forme": "degrade_radial",
+        "dx": 0,
+        "dy": 4.4,
+        "w": 16.5,
+        "h": 6.4,
+        "degrade": {
+          "direction": "elliptique",
+          "stops": [
+            { "offset": 0, "couleur": "#05070a", "alpha": 0.8 },
+            { "offset": 0.62, "couleur": "#05070a", "alpha": 0.45 },
+            { "offset": 1, "couleur": "#05070a", "alpha": 0 }
+          ]
+        }
+      },
+      {
+        "forme": "degrade_radial",
+        "dx": 0,
+        "dy": 5.6,
+        "w": 9.6,
+        "h": 5,
+        "piece": "lueur",
+        "degrade": {
+          "direction": "elliptique",
+          "stops": [
+            { "offset": 0, "couleur": "#cfe6ff", "alpha": 0.34, "teinte": true },
+            { "offset": 0.5, "couleur": "#cfe6ff", "alpha": 0.13, "teinte": true },
+            { "offset": 1, "couleur": "#cfe6ff", "alpha": 0, "teinte": true }
+          ]
+        }
       },
       {
         "forme": "polygone",
         "dx": 0,
         "dy": 0,
-        "points": [
-          [
-            -9,
-            5.6
-          ],
-          [
-            -10,
-            10.4
-          ],
-          [
-            -8.9,
-            10.7
-          ],
-          [
-            -8.1,
-            5.8
-          ]
-        ],
-        "couleur": "#8ea0b6",
-        "alpha": 0.32
-      },
-      {
-        "forme": "polygone",
-        "dx": 0,
-        "dy": 0,
-        "points": [
-          [
-            -9,
-            5.6
-          ],
-          [
-            -6.8,
-            2.2
-          ],
-          [
-            -6.1,
-            2.9
-          ],
-          [
-            -8.1,
-            5.9
-          ]
-        ],
-        "couleur": "#8ea0b6",
-        "alpha": 0.2
-      },
-      {
-        "forme": "polygone",
-        "dx": 0,
-        "dy": 0,
-        "points": [
-          [
-            0,
-            -10.95
-          ],
-          [
-            0.8,
-            -11.5
-          ],
-          [
-            1.95,
-            -11.42
-          ],
-          [
-            2.65,
-            -10.8
-          ],
-          [
-            5.6,
-            -5
-          ],
-          [
-            6.3,
-            -0.4
-          ],
-          [
-            5.4,
-            3.4
-          ],
-          [
-            3.4,
-            5.2
-          ],
-          [
-            -3.6,
-            5
-          ],
-          [
-            -5.4,
-            2.8
-          ],
-          [
-            -6.1,
-            -1.4
-          ],
-          [
-            -4.9,
-            -5.8
-          ]
-        ],
+        "points": [[-1.34, -10.97], [-0.66, -11.48], [0, -11.72], [0.66, -11.48], [1.34, -10.97], [5.28, -5.38], [6.2, -0.9], [5.4, 3.1], [3.5, 5.1], [-3.5, 5.1], [-5.4, 3.1], [-6.2, -0.9], [-5.28, -5.38]],
         "couleur": "#080a0e",
         "piece": "capuche",
         "silhouette": true
@@ -444,217 +335,77 @@
         "forme": "polygone",
         "dx": 0,
         "dy": 0,
-        "points": [
-          [
-            0.3,
-            -10.3
-          ],
-          [
-            0.95,
-            -10.75
-          ],
-          [
-            1.85,
-            -10.68
-          ],
-          [
-            2.35,
-            -10.15
-          ],
-          [
-            4.8,
-            -4.8
-          ],
-          [
-            5.4,
-            -0.4
-          ],
-          [
-            4.6,
-            3
-          ],
-          [
-            3,
-            4.4
-          ],
-          [
-            -3.2,
-            4.3
-          ],
-          [
-            -4.6,
-            2.5
-          ],
-          [
-            -5.2,
-            -1.3
-          ],
-          [
-            -4.2,
-            -5.4
+        "points": [[-1.04, -10.32], [-0.5, -10.78], [0, -10.98], [0.5, -10.78], [1.04, -10.32], [4.52, -5.09], [5.3, -0.85], [5.02, 3], [3.3, 4.79], [-3.3, 4.79], [-5.02, 3], [-5.3, -0.85], [-4.52, -5.09]],
+        "piece": "capuche",
+        "w": 20,
+        "h": 20,
+        "degrade": {
+          "direction": "radial",
+          "centre": [-2.4, -7],
+          "stops": [
+            { "offset": 0, "couleur": "#3a4452", "alpha": 1 },
+            { "offset": 0.45, "couleur": "#1f252e", "alpha": 1 },
+            { "offset": 1, "couleur": "#111419", "alpha": 1 }
           ]
-        ],
-        "couleur": "#1a1f27",
-        "piece": "capuche"
+        }
       },
       {
         "forme": "polygone",
         "dx": 0,
         "dy": 0,
-        "points": [
-          [
-            1,
-            -11.47
-          ],
-          [
-            0,
-            -10.95
-          ],
-          [
-            -4.9,
-            -5.8
-          ],
-          [
-            -6.1,
-            -1.4
-          ],
-          [
-            -5.4,
-            2.8
-          ],
-          [
-            -4.6,
-            2.7
-          ],
-          [
-            -5.25,
-            -1.3
-          ],
-          [
-            -4.15,
-            -5.5
-          ],
-          [
-            0.6,
-            -10.1
-          ],
-          [
-            1.2,
-            -10.42
-          ]
-        ],
-        "couleur": "#cdd8e6",
-        "alpha": 0.5,
+        "points": [[0, -11.72], [-0.66, -11.48], [-1.34, -10.97], [-5.28, -5.38], [-6.2, -0.9], [-5.4, 3.1], [-4.6, 3], [-5.35, -0.85], [-4.51, -5.13], [-0.49, -10.21], [0, -10.6]],
+        "alpha": 0.75,
         "reflet": {
-          "couleur": "#9fb2c8",
-          "alpha": 0.3
+          "alpha": 0.38
         },
-        "piece": "capuche"
+        "piece": "capuche",
+        "h": 14.5,
+        "degrade": {
+          "direction": "vertical",
+          "centre": [0, -4.4],
+          "stops": [
+            { "offset": 0, "couleur": "#dde6f0", "alpha": 1 },
+            { "offset": 0.55, "couleur": "#b7c6d8", "alpha": 0.75 },
+            { "offset": 1, "couleur": "#9fb2c8", "alpha": 0.25 }
+          ]
+        }
       },
       {
         "forme": "polygone",
         "dx": 0,
         "dy": 0,
-        "points": [
-          [
-            1.9,
-            -11.45
-          ],
-          [
-            2.65,
-            -10.8
-          ],
-          [
-            5.6,
-            -5
-          ],
-          [
-            6.3,
-            -0.4
-          ],
-          [
-            5.45,
-            -0.4
-          ],
-          [
-            4.8,
-            -4.8
-          ],
-          [
-            2.15,
-            -10.45
-          ]
-        ],
-        "couleur": "#9fb2c8",
-        "alpha": 0.3,
+        "points": [[0, -11.72], [0.66, -11.48], [1.34, -10.97], [5.28, -5.38], [6.2, -0.9], [5.4, 3.1], [4.6, 3], [5.35, -0.85], [4.51, -5.13], [0.49, -10.21], [0, -10.6]],
+        "alpha": 0.38,
         "reflet": {
-          "couleur": "#cdd8e6",
-          "alpha": 0.5
+          "alpha": 0.75
         },
-        "piece": "capuche"
+        "piece": "capuche",
+        "h": 14.5,
+        "degrade": {
+          "direction": "vertical",
+          "centre": [0, -4.4],
+          "stops": [
+            { "offset": 0, "couleur": "#dde6f0", "alpha": 1 },
+            { "offset": 0.55, "couleur": "#b7c6d8", "alpha": 0.75 },
+            { "offset": 1, "couleur": "#9fb2c8", "alpha": 0.25 }
+          ]
+        }
       },
       {
         "forme": "polygone",
         "dx": 0,
         "dy": 0,
-        "points": [
-          [
-            -2.2,
-            -8.3
-          ],
-          [
-            -1.2,
-            -9.3
-          ],
-          [
-            0.3,
-            -9.8
-          ],
-          [
-            1.9,
-            -9.4
-          ],
-          [
-            2.9,
-            -8.3
-          ],
-          [
-            1.5,
-            -8.7
-          ],
-          [
-            0.3,
-            -8.85
-          ],
-          [
-            -1,
-            -8.7
-          ]
-        ],
+        "points": [[-2.55, -8.3], [-1.55, -9.35], [0, -9.8], [1.55, -9.35], [2.55, -8.3], [1.25, -8.7], [0, -8.85], [-1.25, -8.7]],
         "couleur": "#0d1015",
         "alpha": 0.9,
-        "piece": "pli_front",
-        "cachee": true
+        "piece": "pli_front"
       },
       {
         "forme": "polygone",
         "dx": 0,
         "dy": -7.4,
         "h": 1.6,
-        "points": [
-          [
-            -2.3,
-            -1
-          ],
-          [
-            2.6,
-            -1
-          ],
-          [
-            0.3,
-            1.4
-          ]
-        ],
+        "points": [[-2.62, -1], [2.28, -1], [-0.74, 1.4]],
         "degrade": {
           "direction": "vertical",
           "stops": [
@@ -662,28 +413,14 @@
             { "offset": 1, "couleur": "#080a0e", "alpha": 0.25 }
           ]
         },
-        "piece": "pointe_rabattue",
-        "cachee": true
+        "piece": "pointe_rabattue"
       },
       {
         "forme": "polygone",
         "dx": 0,
         "dy": -7.4,
         "h": 1.6,
-        "points": [
-          [
-            -1.8,
-            -0.8
-          ],
-          [
-            2,
-            -0.8
-          ],
-          [
-            0.3,
-            0.8
-          ]
-        ],
+        "points": [[-2.18, -0.8], [1.62, -0.8], [-0.56, 0.8]],
         "degrade": {
           "direction": "vertical",
           "stops": [
@@ -691,32 +428,14 @@
             { "offset": 1, "couleur": "#1c222b", "alpha": 1 }
           ]
         },
-        "piece": "pointe_rabattue",
-        "cachee": true
+        "piece": "pointe_rabattue"
       },
       {
         "forme": "polygone",
         "dx": 0,
         "dy": -7.4,
         "h": 1.6,
-        "points": [
-          [
-            -1.8,
-            -0.8
-          ],
-          [
-            0.3,
-            0.8
-          ],
-          [
-            -0.2,
-            0
-          ],
-          [
-            -1,
-            -0.8
-          ]
-        ],
+        "points": [[-2.18, -0.8], [-0.56, 0.8], [-0.82, 0], [-1.38, -0.8]],
         "degrade": {
           "direction": "vertical",
           "stops": [
@@ -724,12 +443,11 @@
             { "offset": 1, "couleur": "#9fb2c8", "alpha": 0 }
           ]
         },
-        "piece": "pointe_rabattue",
-        "cachee": true
+        "piece": "pointe_rabattue"
       },
       {
         "forme": "degrade_radial",
-        "dx": 0.7,
+        "dx": 0,
         "dy": 0.2,
         "w": 10,
         "h": 8.2,
@@ -741,20 +459,20 @@
             { "offset": 1, "couleur": "#020305", "alpha": 1 }
           ]
         },
-        "piece": "cavite"
+        "piece": "ouverture"
       },
       {
         "forme": "cercle",
-        "dx": 0.7,
+        "dx": 0,
         "dy": 0.35,
         "w": 6.5,
         "couleur": "#cfe6ff",
         "teinte": true,
-        "piece": "visage"
+        "piece": "oeil"
       },
       {
         "forme": "degrade_radial",
-        "dx": 0.7,
+        "dx": 0,
         "dy": 0.35,
         "w": 6.5,
         "h": 6.5,
@@ -765,11 +483,11 @@
             { "offset": 1, "couleur": "#000000", "alpha": 0.62 }
           ]
         },
-        "piece": "visage"
+        "piece": "oeil"
       },
       {
         "forme": "degrade_radial",
-        "dx": 0.2,
+        "dx": -0.5,
         "dy": -0.2,
         "w": 4,
         "h": 4,
@@ -779,11 +497,11 @@
             { "offset": 1, "couleur": "#ffffff", "alpha": 0 }
           ]
         },
-        "piece": "visage"
+        "piece": "oeil"
       },
       {
         "forme": "degrade_radial",
-        "dx": 0.9,
+        "dx": 0.2,
         "dy": 2.55,
         "w": 4.4,
         "h": 2.2,
@@ -793,11 +511,11 @@
             { "offset": 1, "couleur": "#ffffff", "alpha": 0 }
           ]
         },
-        "piece": "visage"
+        "piece": "oeil"
       },
       {
         "forme": "ellipse",
-        "dx": 0.7,
+        "dx": 0,
         "dy": 0.35,
         "w": 6.6,
         "h": 6.6,
@@ -810,31 +528,96 @@
             { "offset": 1, "couleur": "#000000", "alpha": 0 }
           ]
         },
-        "piece": "visage"
-      },
-      {
-        "forme": "ellipse",
-        "dx": -0.55,
-        "dy": -1.05,
-        "w": 1.9,
-        "h": 1.4,
-        "rotation": -35,
-        "couleur": "#ffffff",
-        "alpha": 0.88,
-        "piece": "visage"
-      },
-      {
-        "forme": "cercle",
-        "dx": 1.75,
-        "dy": 1.55,
-        "w": 0.7,
-        "couleur": "#ffffff",
-        "alpha": 0.55,
-        "piece": "visage"
+        "piece": "oeil"
       },
       {
         "forme": "degrade_radial",
-        "dx": 0.7,
+        "dx": 0,
+        "dy": 0.35,
+        "w": 6.5,
+        "h": 6.5,
+        "piece": "oeil",
+        "degrade": {
+          "stops": [
+            { "offset": 0.5, "couleur": "#000000", "alpha": 0 },
+            { "offset": 0.62, "couleur": "#000000", "alpha": 0.16 },
+            { "offset": 0.74, "couleur": "#000000", "alpha": 0 }
+          ]
+        }
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0.35,
+        "w": 6.5,
+        "h": 6.5,
+        "points": [[3.009, 0.53], [2.897, 0.969], [2.722, 1.387], [2.487, 1.774], [2.198, 2.122], [1.86, 2.424], [1.481, 2.672], [1.07, 2.862], [0.635, 2.988], [0.187, 3.049], [-0.266, 3.043], [-0.221, 2.525], [0.155, 2.53], [0.527, 2.48], [0.888, 2.374], [1.229, 2.217], [1.543, 2.011], [1.824, 1.761], [2.064, 1.472], [2.259, 1.151], [2.404, 0.804], [2.496, 0.44]],
+        "piece": "oeil",
+        "degrade": {
+          "direction": "radial",
+          "centre": [1.4625000000000001, 2.34],
+          "stops": [
+            { "offset": 0, "couleur": "#ffffff", "alpha": 0.42 },
+            { "offset": 0.55, "couleur": "#ffffff", "alpha": 0.14 },
+            { "offset": 1, "couleur": "#ffffff", "alpha": 0 }
+          ]
+        }
+      },
+      {
+        "forme": "polygone",
+        "dx": 0,
+        "dy": 0.35,
+        "w": 6.5,
+        "h": 6.5,
+        "points": [[-2.825, -0.757], [-2.718, -1.082], [-2.573, -1.391], [-2.393, -1.682], [-2.181, -1.95], [-1.938, -2.191], [-1.669, -2.402], [-1.378, -2.58], [-1.067, -2.723], [-0.742, -2.829], [-0.407, -2.897], [-0.362, -2.575], [-0.66, -2.515], [-0.949, -2.421], [-1.225, -2.294], [-1.484, -2.135], [-1.723, -1.947], [-1.938, -1.733], [-2.127, -1.495], [-2.287, -1.237], [-2.416, -0.961], [-2.511, -0.673]],
+        "piece": "oeil",
+        "degrade": {
+          "direction": "radial",
+          "centre": [-1.7875, -2.015],
+          "stops": [
+            { "offset": 0, "couleur": "#ffffff", "alpha": 0.5 },
+            { "offset": 0.6, "couleur": "#ffffff", "alpha": 0.12 },
+            { "offset": 1, "couleur": "#ffffff", "alpha": 0 }
+          ]
+        }
+      },
+      {
+        "forme": "degrade_radial",
+        "dx": -1.25,
+        "dy": -1.05,
+        "w": 3.4,
+        "h": 3.4,
+        "piece": "oeil",
+        "degrade": {
+          "stops": [
+            { "offset": 0, "couleur": "#ffffff", "alpha": 0.38 },
+            { "offset": 1, "couleur": "#ffffff", "alpha": 0 }
+          ]
+        }
+      },
+      {
+        "forme": "ellipse",
+        "dx": -1.25,
+        "dy": -1.05,
+        "w": 1.7,
+        "h": 1.2,
+        "rotation": -35,
+        "couleur": "#ffffff",
+        "alpha": 0.95,
+        "piece": "oeil"
+      },
+      {
+        "forme": "cercle",
+        "dx": 1.05,
+        "dy": 1.55,
+        "w": 0.7,
+        "couleur": "#ffffff",
+        "alpha": 0.7,
+        "piece": "oeil"
+      },
+      {
+        "forme": "degrade_radial",
+        "dx": 0,
         "dy": 0.2,
         "w": 12,
         "h": 9.6,
@@ -851,11 +634,11 @@
             { "offset": 0.93, "couleur": "#1a1f27", "alpha": 0 }
           ]
         },
-        "piece": "facade"
+        "piece": "ouverture"
       },
       {
         "forme": "degrade_radial",
-        "dx": 0.7,
+        "dx": 0,
         "dy": 0.2,
         "w": 12,
         "h": 9.6,
@@ -867,7 +650,59 @@
             { "offset": 1, "couleur": "#cfe6ff", "alpha": 0, "teinte": true }
           ]
         },
-        "piece": "halo"
+        "piece": "ouverture"
+      }
+    ],
+    "pas": {
+      "vitesse_reference_px_s": 95
+    },
+    "inertie": [
+      { "pieces": ["capuche", "pli_front"], "retard_ms": 55, "depassement": 0.1, "ecart_max_deg": 14 },
+      { "pieces": ["pointe_rabattue"], "retard_ms": 90, "depassement": 0.15, "ecart_max_deg": 22 }
+    ],
+    "animations": [
+      {
+        "quand": "repos",
+        "champ": "echelle_y",
+        "amplitude": 0.016,
+        "periode_ms": 4200,
+        "origine": [0, 11.4]
+      },
+      {
+        "quand": "repos",
+        "champ": "dy",
+        "amplitude": -0.12,
+        "periode_ms": 4200,
+        "pieces": [
+          "capuche",
+          "pli_front",
+          "pointe_rabattue",
+          "ouverture",
+          "oeil",
+          "lueur"
+        ]
+      },
+      {
+        "quand": "marche",
+        "champ": "dy",
+        "amplitude": -0.5,
+        "periode_ms": 420,
+        "forme": "rebond"
+      },
+      {
+        "quand": "marche",
+        "champ": "rotation",
+        "amplitude": 2.4,
+        "periode_ms": 840,
+        "origine": [0, 4.6],
+        "pieces": [
+          "capuche",
+          "pli_front",
+          "pointe_rabattue",
+          "ouverture",
+          "oeil",
+          "lueur"
+        ]
       }
     ]
   },

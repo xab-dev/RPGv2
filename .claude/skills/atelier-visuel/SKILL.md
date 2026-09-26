@@ -19,6 +19,7 @@ jeu.**
 | `tools/variantes/*.js` (non versionné) | une variante = une retouche de l'entrée actuelle : `export default (actuel) => ({ nom: entrée })`, l'entrée reçue est déjà clonée |
 | `node tools/mesure_visuel.mjs diff [--ref main] [--id tous]` | l'écart au pixel contre une référence Git (huit directions, tour tous les 5°, marche rejouée, ×3 et ×9) — **le filet de tout allègement** : 0 attendu |
 | `… cles` / `… saut` | les poses clés tenues à tout angle ; les pics d'écart entre angles voisins (un « claquement ») |
+| `… proportions [--refs 66-76,90] [--variantes x.js] [--echelle 9]` | la silhouette mesurée au degré près (sommet, capuche, place et aire VISIBLES des pièces) et l'écart aux angles que Xav aime — à lancer avant la couche « proportions » d'un visuel ; la page trace les courbes |
 | `… fuite` / `… cache` | le contexte rendu comme trouvé ; les dégradés gardés justes |
 | `tools/scenarios/loupe_scene.mjs` | la silhouette EN JEU à la loupe : `RPG_CASE`, `RPG_HEURE=nuit`, `RPG_TEINTE`, `RPG_QUALITE`, `RPG_GESTES=KeyA:90,KeyA:400,-` |
 | `tools/banc_tour.html` | le héros à tout angle, animé, à la main (curseur, pavé-stick, Agilité) |

@@ -13,6 +13,10 @@
 //   cache  les dégradés gardés redessinent comme un contexte neuf.
 //   cout   le temps d'un dessin (µs, médiane) : un ordre de grandeur pour
 //          comparer deux versions sur la même machine, jamais un verdict.
+//   proportions  la silhouette sur le tour (hauteur, largeur, capuche, place
+//          de l'œil et de l'ouverture), l'écart aux angles de référence
+//          (--refs 66-76,90,132), les variantes en surimpression
+//          (--variantes x.js). Voir la page pour le détail.
 //
 // Pourquoi il existe : les sessions du héros (26/09) mesuraient tout ça avec
 // des pages jetables (`tools/_ref/`) et une COPIE à la main de `src/` et du
@@ -27,7 +31,7 @@ import { fileURLToPath } from 'node:url';
 
 const RACINE = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ORIGINE = process.env.RPG_URL || 'http://localhost:8080';
-const COMMANDES = ['diff', 'cles', 'saut', 'fuite', 'cache', 'cout'];
+const COMMANDES = ['diff', 'cles', 'saut', 'fuite', 'cache', 'cout', 'proportions'];
 
 const [commande, ...reste] = process.argv.slice(2);
 if (!COMMANDES.includes(commande)) {
@@ -62,6 +66,7 @@ async function serveurRepond() {
 
 const requete = new URLSearchParams({ commande, id: options.id || (commande === 'diff' ? 'tous' : 'visuel_heros') });
 if (options.echelle) requete.set('echelle', options.echelle);
+for (const cle of ['refs', 'variantes', 'pieces']) if (options[cle]) requete.set(cle, options[cle]);
 if (commande === 'diff') {
   const { sha, dossier } = extraireReference(options.ref || 'HEAD');
   requete.set('ref', dossier);

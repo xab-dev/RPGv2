@@ -76,7 +76,7 @@ Le palier B ne touche pas le dessin (`visuels.js`, `poses.js` inchangés). L'éc
 | `9d27685` | D-289 | Le globe se cache derrière le bord intérieur du liseré (`bord_de`, le trou de l'ouverture), l'ombre pleine vers 215°. Xav : « l'effet est très réussi, illusion d'optique de l'ombre match parfaitement ». Variante A. À voir : `V-201` |
 | `73473ce` | D-290 | L'ouverture cède la place au contour gris (`efface`, variante C : ~333° → ~322°). La cause : l'ouverture ne s'éteignait qu'à la clé cachée et recouvrait le liseré. À voir : `V-201` |
 | `9d29418` | D-291 | Le liseré coloré se resserre en s'effaçant (`efface_echelle` 0,54 = globe / liseré). Variante A de Xav. À voir : `V-201` |
-| `(ce commit)` | DOC | Journal et sentinelle du palier C. **Palier C livré, arrêt Xav** |
+| `dd9def8` | DOC | Journal et sentinelle du palier C. **Palier C livré, arrêt Xav** |
 
 ## Le palier C, en bref
 
@@ -107,3 +107,4 @@ Aucune régression. Deux premiers passages, lancés pendant d'autres mesures
 (tests, atelier), sont écartés : ×6 à 6,3–6,4 ms, et un ×1 tombé sur une
 erreur de page du scénario. Pendant l'un d'eux, `D-272` (la sauvegarde
 refusée sous charge) s'est revu : déjà ouvert, P1.
+| `(ce commit)` | D-292 | **Couche « proportions ».** `mesure_visuel proportions` : le héros mesuré au degré près (sommet, capuche, place et aire visibles de l'œil et de l'ouverture), l'écart aux angles de Xav. Tout tient à ≤ 3 % sauf le sommet de la capuche : bosse de ~0,35 px monde entre 60° et 120°, dos 0,44 plus bas |

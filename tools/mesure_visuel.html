@@ -4,7 +4,7 @@
      par `node tools/mesure_visuel.mjs <commande>`, qui prépare la référence
      Git et lit `window.resultat` ; s'ouvre aussi à la main pour voir les
      écarts.
-     ?commande=diff|cles|saut|fuite|cache|cout  &id=visuel_heros,visuel_plume | tous
+     ?commande=diff|cles|saut|fuite|cache|cout|proportions  &id=visuel_heros,visuel_plume | tous
      &ref=tools/variantes/_ref/<sha>  (diff : l'arbre de référence extrait)
      &echelle=3 (l'échelle de rendu ; le jeu à DPR 3)
      Ce que chaque commande prouve est écrit au-dessus de sa fonction. Rien de
@@ -282,7 +282,153 @@
     return res;
   }
 
-  const COMMANDES = { diff, cles, saut, fuite, cache, cout };
+  // PROPORTIONS — la silhouette mesurée sur le tour, au degré près (spec 17,
+  // palier C, la couche « proportions ») : ce que l'œil de Xav juge d'un
+  // angle à l'autre, en unités du visuel.
+  //   haut               le sommet de ce qui se voit (sans l'ombre au sol),
+  //                      depuis l'ancre (les pieds : la base ne bouge pas) ;
+  //   capuche l, part    la largeur de la capuche vue, et la part de la
+  //                      hauteur qu'elle tient ;
+  //   <pièce> x, y       le centre de ce qu'on VOIT de la pièce, depuis
+  //                      l'ancre (un y pris depuis le sommet sauterait avec
+  //                      lui d'un pixel), et son aire : la pièce rendue
+  //                      invisible (alpha 0, sa
+  //                      géométrie reste, les découpes qu'elle porte aussi),
+  //                      l'écart au rendu entier est sa part visible.
+  // Les références (`&refs=66-76,90,132`, les angles que Xav trouve justes)
+  // se replient sur le demi-tour ouest par le reflet est ← ouest (x change
+  // de signe) : entre deux références, la courbe attendue est la droite qui
+  // les joint ; l'écart à elle désigne les angles à harmoniser. Hors de
+  // toute référence (le dos), rien n'est attendu. `&variantes=x.js` trace
+  // aussi les courbes des variantes de l'atelier.
+  async function proportions() {
+    const pieces = (params.get('pieces') || 'oeil,ouverture').split(',');
+    const refs = (params.get('refs') || '66-76,90,132,241,300,342').split(',').flatMap((r) => {
+      const [a, b = a] = r.split('-').map(Number);
+      return Array.from({ length: b - a + 1 }, (_, k) => a + k);
+    });
+    const actuel = parId(catalogue, ids[0]);
+    const series = [['actuel', actuel]];
+    const fichier = params.get('variantes');
+    if (fichier) {
+      const table = (await import(`./variantes/${fichier}`)).default(structuredClone(actuel));
+      series.push(...Object.entries(table));
+    }
+    const sansOmbre = (v) => { const c = structuredClone(v); delete c.ombre; return c; };
+    const cadre = cadreVisuels(series.map(([, v]) => v), boitePrimitive);
+    const teinte = actuel.teintable ? TEINTE : null;
+    const VIDE = 'rgba(0,0,0,0)';
+    const pixels = (c) => c.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, c.width, c.height).data;
+    const mesurerTour = (v) => {
+      const plein = sansOmbre(v);
+      const caches = Object.fromEntries(['capuche', ...pieces].map((p) => {
+        const c = structuredClone(plein);
+        for (const q of c.primitives) if (q.piece === p) q.alpha = 0;
+        return [p, c];
+      }));
+      const tour = [];
+      for (let a = 0; a < 360; a += 1) {
+        const options = { teinte, angle: a };
+        const c = rendreVisuel(visuels, plein, options, { cadre, echelle, fond: VIDE });
+        const d = pixels(c);
+        const L = c.width;
+        let [x0, y0, x1, y1] = [Infinity, Infinity, -1, -1];
+        for (let i = 3; i < d.length; i += 4) {
+          if (d[i] < 40) continue;
+          const x = ((i - 3) / 4) % L; const y = Math.floor((i - 3) / 4 / L);
+          x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
+        }
+        // L'ancre du visuel dans le canvas (`rendreVisuel`), et le centre
+        // d'un pixel à +0,5 : sans lui, une forme symétrique se lit décalée
+        // d'un demi-pixel vers la gauche.
+        const [ax, ay] = [L / 2, -cadre.haut * echelle];
+        const m = { angle: a, haut: (y0 - ay) / echelle };
+        for (const [p, cache] of Object.entries(caches)) {
+          const e = pixels(rendreVisuel(visuels, cache, options, { cadre, echelle, fond: VIDE }));
+          let [n, sx, sy, h0, h1, l0, l1] = [0, 0, 0, Infinity, -1, Infinity, -1];
+          for (let i = 0; i < d.length; i += 4) {
+            if (Math.max(Math.abs(d[i] - e[i]), Math.abs(d[i + 1] - e[i + 1]), Math.abs(d[i + 2] - e[i + 2]), Math.abs(d[i + 3] - e[i + 3])) <= 12) continue;
+            const x = (i / 4) % L; const y = Math.floor(i / 4 / L);
+            n += 1; sx += x; sy += y; h0 = Math.min(h0, y); h1 = Math.max(h1, y); l0 = Math.min(l0, x); l1 = Math.max(l1, x);
+          }
+          if (p === 'capuche') { Object.assign(m, n ? { capucheL: (l1 - l0 + 1) / echelle, capuche: (h1 - h0 + 1) / (y1 - y0 + 1) } : { capucheL: null, capuche: null }); continue; }
+          m[p] = n < 3 ? null : { x: (sx / n + 0.5 - ax) / echelle, y: (sy / n + 0.5 - ay) / echelle, aire: n / (echelle * echelle) };
+        }
+        tour.push(m);
+      }
+      return tour;
+    };
+    // Les mesures tracées : un nom, comment la lire d'un relevé, et si elle
+    // change de signe au reflet (une abscisse).
+    const MESURES = [
+      ['haut', (m) => m.haut, false], ['capuche l', (m) => m.capucheL, false], ['capuche part', (m) => m.capuche, false],
+      ...pieces.flatMap((p) => [[`${p} x`, (m) => m[p]?.x, true], [`${p} y`, (m) => m[p]?.y, false], [`${p} aire`, (m) => m[p]?.aire, false]]),
+    ];
+    const replier = (a) => (a >= 90 && a <= 270 ? [a, 1] : [((180 - a) % 360 + 360) % 360, -1]);
+    const courbes = series.map(([nom, v]) => [nom, mesurerTour(v)]);
+    const [, tour] = courbes[0];
+    const res = { refs: refs.join(','), mesures: {}, ecarts: {} };
+    const COULEURS = ['#e8e2d4', '#ff8a5a', '#5ab8ff', '#9be07a'];
+    for (const [nom, lire, signe] of MESURES) {
+      // La courbe attendue : les références repliées, moyennées par angle.
+      const pts = new Map();
+      for (const r of refs) {
+        const val = lire(tour[r]);
+        if (val == null) continue;
+        const [a, s] = replier(r);
+        pts.set(a, [...(pts.get(a) || []), signe ? val * s : val]);
+      }
+      const ancres = [...pts].map(([a, l]) => [a, l.reduce((x, y) => x + y, 0) / l.length]).sort((p, q) => p[0] - q[0]);
+      const attendu = (a) => {
+        for (let k = 0; k + 1 < ancres.length; k += 1) {
+          const [[a0, v0], [a1, v1]] = [ancres[k], ancres[k + 1]];
+          if (a >= a0 && a <= a1) return v0 + ((v1 - v0) * (a - a0)) / (a1 - a0 || 1);
+        }
+        return null;
+      };
+      const vals = tour.map(lire).filter((x) => x != null);
+      const etendue = Math.max(...vals) - Math.min(...vals) || 1;
+      const ecarts = tour.map((m) => {
+        const val = lire(m);
+        const [a, s] = replier(m.angle);
+        const att = attendu(a);
+        return val == null || att == null ? null : { angle: m.angle, ecart: (signe ? val * s : val) - att };
+      }).filter(Boolean);
+      res.mesures[nom] = { min: +Math.min(...vals).toFixed(2), max: +Math.max(...vals).toFixed(2), refs: ancres.map(([a, v]) => `${a}°:${v.toFixed(2)}`).join(' ') };
+      res.ecarts[nom] = ecarts.sort((p, q) => Math.abs(q.ecart) - Math.abs(p.ecart)).slice(0, 4)
+        .map((e) => `${e.angle}° ${e.ecart > 0 ? '+' : ''}${e.ecart.toFixed(2)} (${Math.round((100 * Math.abs(e.ecart)) / etendue)} %)`);
+      // Le tracé : chaque série sur 360°, les références en bandes vertes,
+      // les directions tous les 45°.
+      const W = 720, H = 110;
+      const tout = courbes.flatMap(([, t]) => t.map(lire).filter((x) => x != null));
+      const [lo, hi] = [Math.min(...tout), Math.max(...tout)];
+      const Y = (x) => 4 + (H - 8) * (1 - (x - lo) / (hi - lo || 1));
+      const svg = [`<svg xmlns="http://www.w3.org/2000/svg" width="${W + 50}" height="${H + 16}" style="display:block;background:#101317">`];
+      for (const r of refs) svg.push(`<rect x="${40 + r * 2}" y="0" width="2" height="${H}" fill="#2f5a2f"/>`);
+      for (let a = 0; a <= 360; a += 45) svg.push(`<line x1="${40 + a * 2}" x2="${40 + a * 2}" y1="0" y2="${H}" stroke="#333"/><text x="${40 + a * 2 - 8}" y="${H + 12}" fill="#777" font-size="9">${a}</text>`);
+      courbes.forEach(([, t], k) => {
+        const traits = []; let cur = [];
+        t.forEach((m, a) => {
+          const x = lire(m);
+          if (x == null) { if (cur.length) traits.push(cur); cur = []; } else cur.push(`${40 + a * 2},${Y(x).toFixed(1)}`);
+        });
+        if (cur.length) traits.push(cur);
+        for (const tr of traits) svg.push(`<polyline fill="none" stroke="${COULEURS[k % 4]}" stroke-width="1.2" points="${tr.join(' ')}"/>`);
+      });
+      svg.push(`<text x="2" y="10" fill="#aaa" font-size="9">${hi.toFixed(1)}</text><text x="2" y="${H - 2}" fill="#aaa" font-size="9">${lo.toFixed(1)}</text></svg>`);
+      const bloc = document.createElement('div');
+      bloc.innerHTML = svg.join('');
+      $planches.append(figure(bloc, `${nom} · ${courbes.map(([n], k) => `${['blanc', 'orange', 'bleu', 'vert'][k % 4]} = ${n}`).join(' · ')}`));
+    }
+    // Le relevé tous les 6°, une ligne par angle (haut, capuche l et part, puis x/y/aire
+    // de chaque pièce) : de quoi lire un écart sans rouvrir la page.
+    const f = (x) => (x == null ? '-' : x.toFixed(2));
+    res.releve = Object.fromEntries(courbes.map(([n, t]) => [n, t.filter((m) => m.angle % 6 === 0).map((m) =>
+      `${m.angle}° h${f(m.haut)} l${f(m.capucheL)} c${f(m.capuche)} ${pieces.map((p) => `${p}(${f(m[p]?.x)},${f(m[p]?.y)},${f(m[p]?.aire)})`).join(' ')}`)]));
+    return res;
+  }
+
+  const COMMANDES = { diff, cles, saut, fuite, cache, cout, proportions };
   try {
     if (!COMMANDES[commande]) throw new Error(`commande inconnue : ${commande} (${Object.keys(COMMANDES).join(', ')})`);
     const resultat = await COMMANDES[commande]();

@@ -12,11 +12,8 @@
 //    qu'après le regard.
 // 5. La direction du gameplay garde sa règle (huit secteurs) : l'angle
 //    affiché ne la change pas.
-// 6. Le rendu reçoit l'angle (`main.js` → `render.js`).
+// 6. Le rendu reçoit l'angle : prouvé par `test_d282_heros_angle_en_jeu` (`D-282`).
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import {
   ORIENTATION_INITIALE, ORIENTATIONS, VITESSE_ROTATION_DEG_S, VITESSE_ROTATION_TIR_DEG_S,
   AMPLITUDE_MIN_GESTE, DUREE_REGARD_TIR_MS, creerOrientation, avancerOrientation,
@@ -87,13 +84,9 @@ console.log('OK départ : l\'angle de la direction initiale');
 }
 
 // --- 6. Le branchement --------------------------------------------------------------
-{
-  const RACINE = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-  const main = fs.readFileSync(path.join(RACINE, 'src/main.js'), 'utf8');
-  const render = fs.readFileSync(path.join(RACINE, 'src/render.js'), 'utf8');
-  assert.ok(/heroAngle:\s*orientationHeros\.angle/.test(main), 'main.js passe l\'angle affiché au rendu');
-  assert.ok(/angle:\s*scene\.heroAngle/.test(render), 'render.js dessine le héros à cet angle');
-  console.log('OK branchement : l\'angle va de l\'orientation au dessin');
-}
+// `D-282` : ce bloc cherchait le TEXTE de l'angle dans main.js et render.js ;
+// le texte y était, la valeur n'arrivait jamais au dessin (huit poses en jeu).
+// Le trajet se prouve désormais pour de vrai, par les ordres de dessin :
+// `test_d282_heros_angle_en_jeu_2026-09-26.js`.
 
 console.log('OK test_16b_heros_tourne');

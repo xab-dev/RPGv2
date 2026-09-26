@@ -80,6 +80,32 @@ versionnées.
   globe de l'œil, glow et particules en Moyen et Haut), chacune jugée par Xav
   sur trois variantes, aux angles de référence ci-dessus. Critère : Xav le
   prend pour référence de qualité du jeu.
+
+  **Les remarques de Xav en jeu, avant le palier C** (26/09, « dans
+  l'ensemble XAV est très satisfait du résultat actuel ! ») — les premières
+  cibles du palier, verbatim :
+
+  > - l'ombre qui arrive sur le globe à partir de ~334° devrait recevoir un
+  >   filtre d'oclusion transparent pour donner un forme concave à la bordure
+  >   de l'ombre et la suivre. ce filtre permet de coller à la forme de
+  >   l'ouverture de la capuche et ainsi représente fidèlement l'ombre projeté
+  >   sur le globe par la capuche.
+  > - de plus, l'ombre visible à 321° devrait être moins opaque (c'est une
+  >   ombre pas un masque), donc, réduire l'intensité au départ et à mi course
+  >   (la fin reste similaire: oclusion par la capuche)
+  > - entre 57° et 337°, la transition du bord gauche de l'ouverture de la
+  >   capuche, commence en retard par rapport à la rotation du globe, ce qui
+  >   entraine un élargissement de l'ouverture à gauche du globe (le plus
+  >   choquant étant 0° avec une trop large ouverture et pas assez de hauteur
+  >   (la capuche se referme sur le globe à droite), harmonise la transition
+  >   pour synchroniser le globe et le liseret (le bord de l'ouverture), on
+  >   peut garder un léger retard l'oeil tourne puis la tete tourne (léger
+  >   élargissement puis suis le mouvement).
+
+  Elles deviennent `D-286` (le bord du rideau épouse l'ouverture, concave),
+  `D-287` (le rideau est une ombre avant d'être une occlusion) et `D-288` (le
+  bord de l'ouverture suit le globe), jugées comme les autres couches : trois
+  variantes à l'atelier, aux angles cités (321°, 334°, 0°, 57°, 337°).
 - **D — L'état des lieux.** Un scénario rejouable, des captures commentées
   (`LISEZ-MOI.md`), des constats changés en lignes proposées, jamais corrigés
   en passant.

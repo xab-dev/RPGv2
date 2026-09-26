@@ -1,8 +1,8 @@
 ---
 projet: RPG V2
 spec: 16 — L'animation du héros
-version: 1.0.0
-statut: écrite (nuit du 26/09), à valider par Xav
+version: 1.1.0
+statut: paliers A à C validés par Xav (26/09, `V-188` à `V-190`) ; palier D écrit le 26/09
 date: 2026-09-26
 genere_par: claude
 verifie_par: xav
@@ -75,8 +75,8 @@ pièce prend le mélange des poses de ses deux clés voisines :
   (`sud` et `sud_est`), tout le segment se dessine en reflet. Le seul saut
   du tour est donc au passage exact de `sud` et de `nord`, là où la vue et
   son reflet sont presque les mêmes (mesuré : moins d'un pixel de contour à
-  la taille du jeu). `[OUVERT]` : si Xav le voit, rendre la vue de face
-  symétrique, ou fondre le passage.
+  la taille du jeu). Tranché de fait par Xav (`V-188`, 26/09 :
+  « excellent ») : il ne se voit pas, on n'y touche pas.
 
 ### 2.3 Le rendu
 
@@ -100,8 +100,43 @@ rien ne change (les bancs, les tests, tout autre visuel).
   un peu. En données (`animations` du visuel : une pièce, un paramètre de
   pose, une amplitude, une période), sous le seuil de 3 Hz. Critère : Xav le
   sent vivant sans le remarquer.
+- **D — Le pas suit la vitesse** (`D-273`, §4). Critère : à l'Agilité de
+  départ, rien ne change ; ralenti, le pas ralentit ; à Agilité 49, il presse
+  sans que les pieds glissent trop, et reste sous 3 Hz.
 
-## 4. Hors de cette spec
+## 4. Le pas qui suit la vitesse (palier D)
+
+> Pour le pas du héros : à voir en jeu avec les 49 point en agilité on risque
+> de dépasser les 3hz (probablement un rendement décroissement à mettre en
+> place). — Xav, 26/09 (`V-190`)
+
+Jusqu'au palier C, le pas bat à sa période quelle que soit la vitesse : il ne
+passe jamais 3 Hz, mais le héros d'Agilité 49 (227 px/s, contre 95 au départ)
+glisse sur un pas trop lent pour lui. Le palier D :
+
+- **Une horloge du pas**, à part de celle du souffle, qui avance à la
+  **cadence** : le temps × `r`. Les animations `marche` la lisent ; celles du
+  `repos` gardent l'horloge du temps.
+- **La vitesse de référence** se déclare sur le visuel (`pas.vitesse_reference_px_s`,
+  données) : la vitesse à laquelle l'auteur a réglé ses périodes de marche —
+  celle du héros au départ. À cette vitesse, `r = 1` : rien ne change.
+- **La cadence** `r(u)`, avec `u` = vitesse / référence : plus lent que la
+  référence, `r = u` (un héros ralenti marche lentement) ; plus vite, le
+  **rendement décroît** : `r = 1 + (M − 1)·(1 − e^(−(u − 1)/(M − 1)))`, qui part
+  avec la même pente (rien ne se voit au passage de la référence) et tend
+  vers `M` sans l'atteindre. `M` se déduit des données : la plus courte
+  période de marche divisée par la période de 3 Hz. **Le plafond est la
+  règle d'épilepsie elle-même**, aucun réglage ne peut la passer.
+- **La vitesse lue** est celle que le geste demande (le geste × la vitesse
+  dérivée de l'Agilité, statuts compris), comme le regard (`D-229`) :
+  pousser contre un mur, c'est marcher sur place.
+- **À l'arrêt**, l'horloge du pas garde sa dernière cadence le temps que le
+  poids de la marche s'éteigne : le pas se finit, il ne se fige pas.
+- Hors du palier, `[OUVERT]` : au-delà du plafond, la vitesse qui ne passe
+  plus dans la cadence pourrait passer dans l'ampleur (une foulée plus
+  longue). Pas sans Xav.
+
+## 5. Hors de cette spec
 
 Une animation d'attaque ou de compétence, un clignement (un œil qui
 s'éteint et se rallume flirte avec le seuil de 3 Hz : à discuter), la marche

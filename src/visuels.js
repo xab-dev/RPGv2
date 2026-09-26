@@ -79,8 +79,25 @@ function creerDegrade(ctx, primitive, teinte) {
 // toujours leur propre couleur d'auteur.
 function resoudreStyle(ctx, primitive, teinte) {
   const couleurBase = primitive.teinte && teinte ? teinte : primitive.couleur;
-  ctx.fillStyle = primitive.degrade ? creerDegrade(ctx, primitive, teinte) : couleurBase;
+  ctx.fillStyle = primitive.degrade ? degradeGarde(ctx, primitive, teinte) : couleurBase;
   return couleurBase;
+}
+
+// `D-271` : un dégradé ne dépend que de sa primitive et de la teinte ; ses
+// coordonnées se lisent dans la transform du moment où il remplit, pas de
+// celui où il est créé. Il se garde donc, par contexte, primitive et teinte,
+// au lieu d'être refait à chaque frame (le héros poli en porte une vingtaine :
+// le banc l'a vu, +18 % de `dessiner()` sous CPU bridé ×6). Une primitive
+// pliée ou reflétée est un objet gardé à part (`poses.js`) : elle a le sien.
+const degradesGardes = new WeakMap();
+function degradeGarde(ctx, primitive, teinte) {
+  let parPrimitive = degradesGardes.get(ctx);
+  if (!parPrimitive) degradesGardes.set(ctx, (parPrimitive = new WeakMap()));
+  let parTeinte = parPrimitive.get(primitive);
+  if (!parTeinte) parPrimitive.set(primitive, (parTeinte = new Map()));
+  let degrade = parTeinte.get(teinte);
+  if (!degrade) parTeinte.set(teinte, (degrade = creerDegrade(ctx, primitive, teinte)));
+  return degrade;
 }
 
 function tracerChemin(ctx, points) {

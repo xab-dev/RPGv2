@@ -114,4 +114,35 @@ const unePrimitive = (degrade, forme = 'rect') => ({ id: 'visuel_temoin', ancre:
   console.log(`OK suit : ${suiveuses.join(', ')} prend la pose de sa pièce guide`);
 }
 
+// --- 4. `D-271` : un dégradé se garde ------------------------------------------------
+// Par contexte, primitive et teinte : la deuxième frame ne le refait pas ; une
+// autre teinte, ou un autre contexte, a le sien.
+{
+  const creations = (ctx) => ctx.crees;
+  const faux = () => {
+    const ctx = new Proxy({ crees: 0 }, {
+      get(cible, prop) {
+        if (prop === 'crees') return cible.crees;
+        if (String(prop).startsWith('create')) return () => { cible.crees += 1; return { addColorStop() {} }; };
+        return () => {};
+      },
+      set() { return true; },
+    });
+    return ctx;
+  };
+  const HEROS = donnees.visuels.find((v) => v.id === VISUEL_HEROS_ID);
+  const a = faux();
+  dessinerVisuel(a, HEROS, 0, 0, { orientation: 'sud', teinte: '#ff0000' });
+  const premiere = creations(a);
+  assert.ok(premiere > 0);
+  dessinerVisuel(a, HEROS, 40, 12, { orientation: 'sud', teinte: '#ff0000' });
+  assert.equal(creations(a), premiere, 'la deuxième frame, ailleurs, ne refait aucun dégradé');
+  dessinerVisuel(a, HEROS, 0, 0, { orientation: 'sud', teinte: '#00ff00' });
+  assert.ok(creations(a) > premiere, 'une autre teinte a les siens');
+  const b = faux();
+  dessinerVisuel(b, HEROS, 0, 0, { orientation: 'sud', teinte: '#ff0000' });
+  assert.equal(creations(b), premiere, 'un autre contexte a les siens');
+  console.log('OK dégradés gardés : par contexte, primitive et teinte');
+}
+
 console.log('OK test_d263_polish_heros');

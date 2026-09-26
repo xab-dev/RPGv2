@@ -3,7 +3,7 @@ projet: RPG V2
 episode/session: La capuche du héros de profil et de trois quarts (D-252)
 type: fichier de bord
 version: 1.0.0
-statut: en cours
+statut: clos
 catégorie: Journal
 date: 2026-09-26
 genere_par: claude
@@ -75,6 +75,7 @@ Après le push de `v0.8.74`, Xav : « last multiple polish passes (harmonising p
 | `c9d775e` | `D-257` | Devant, derrière : la cavité derrière le globe, la façade de la capuche devant, percée d'une ouverture plus large que haute (dégradé `elliptique`, `trou`) ; de côté, proportions de face, l'arrière resserré, élargie vers le haut-avant (`rotation` de pose). 22 primitives. Validé par Xav : « that's it ! ». Suite verte, 223 fichiers |
 | (celui-ci, tagué `v0.8.74`) | Version | `package.json` à `0.8.74`, « Où on en est » ; poussé à la demande de Xav (« commit & push to save »), avec le tag `v0.8.66` resté local |
 | `4bce8b1` | `D-258` | Proportions harmonisées, mesurées au banc : de profil, globe et ouverture à 0,9 (26 → 28 px, face 31), le pli commence plus haut (sommet −9,94, face −10 ; 132 → 134 px), le halo en pièce à part, rapetissé de profil pour rester dans la silhouette. 22 primitives. `V-179` à voir. Suite verte, 223 fichiers |
+| `3e6e0a5` | `D-259` | De côté, le globe placé dans son ouverture du côté regardé, vers le centre (l'anneau d'ombre de la vue de face) ; l'ouverture grandie par le haut (`echelle_y`) ; une joue le long de la tangente de la capuche, relevée sur le tracé de Xav. 28 primitives. `V-180` à voir. Suite verte, 223 fichiers |
 
 ## Après la clôture
 
@@ -86,7 +87,7 @@ Xav, flèches à l'appui (`orientation-fixes.png` : en vert le regard qu'il voit
 
 ## Pour Xav
 
-- **À voir en jeu** : `V-177` (face et dos : le pli, la pointe rabattue), `V-178` (l'œil : la profondeur, **de nuit** surtout, les trois follets), `V-179` (les proportions en tournant). `V-176` validé à l'oral, à marquer dans l'outil (`npm run dettes`), comme `V-175`.
+- **À voir en jeu** : `V-177` (face et dos : le pli, la pointe rabattue), `V-178` (l'œil : la profondeur, **de nuit** surtout, les trois follets), `V-179` (les proportions en tournant), `V-180` (de côté : le regard, l'anneau d'ombre, la joue). `V-176` validé à l'oral, à marquer dans l'outil (`npm run dettes`), comme `V-175`.
 - **Toujours à trancher** : `Q-179` (la limite du joystick).
-- **Publié** : `v0.8.74` (`main` et les tags `v0.8.66`, `v0.8.74`). `D-258` et ce journal sont sur `main`, **non poussés**.
+- **Publié** : `v0.8.74` (`main` et les tags `v0.8.66`, `v0.8.74`). `D-258`, `D-259` et ce journal sont sur `main`, **non poussés**.
 - **Pour la suite** (Xav) : les animations du héros (« animatedSprite »), après le globe.

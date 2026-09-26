@@ -29,3 +29,5 @@ Branche : `heros-animation` (depuis `heros-polish`, lui-même depuis
 | Commit | Ticket | Ce qu'il faut en retenir |
 |---|---|---|
 | `5ebae09` | Ménage | Réponses de Xav consignées, `D-273` et `D-274` ouverts, journal de la nuit archivé |
+| `6eb39d5` | DOC | Spec 16 palier D écrit (le pas suit la vitesse, plafonné par la règle des 3 Hz) ; §2.2 le saut sud/nord tranché de fait par `V-188` |
+| `9ba17d5` | `D-273` | `poses.js#cadencePas` : une horloge du pas à la cadence, proportionnelle sous la vitesse de référence (95 px/s, Agilité 5), rendement décroissant au-dessus, asymptote à 3 Hz (Agilité 20 → 2,90 Hz, 49 → 2,997). Au banc du tour : le curseur d'Agilité. `V-191` à voir. `[OUVERT]` : la foulée plus ample au-delà du plafond |

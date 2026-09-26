@@ -15,6 +15,7 @@
   "menu.reset_popup": "Are you sure? Remember to export your save first.",
   "menu.popup_non": "No",
   "menu.popup_oui": "Yes",
+  "menu.popup_exporter": "Export first",
   "menu.fermer": "Close",
   "menu.volume": "Volume",
   "menu.graphismes": "Graphics",

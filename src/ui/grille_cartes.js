@@ -151,6 +151,7 @@ export function creerMenuCartes({
     return [
       'carte', `carte-${carte.type}`,
       carte.danger ? 'carte-danger' : '',
+      carte.prudence ? 'carte-prudence' : '',
       focalisee ? 'carte-focus' : '',
     ].filter(Boolean).join(' ');
   }
@@ -266,7 +267,9 @@ export function creerMenuCartes({
     // de `resoudreCases` en ajouterait deux, qu’aucun doigt ne verrait).
     const nbPopup = enPopup ? nombreCases(sommet.ecran) : 0;
     cases = enPopup ? resoudreCases(sommet.ecran, evaluerCondition).slice(0, nbPopup) : casesFond;
-    colonnes = enPopup ? nbPopup : colonnesFond;
+    // Deux colonnes au plus : « Non » et « Oui » sur leur rangée, une carte de
+    // prudence (`D-274`) dessous, sur toute la largeur.
+    colonnes = enPopup ? Math.min(nbPopup, 2) : colonnesFond;
     // Le focus mémorisé peut viser une carte qui vient de disparaître (une
     // condition devenue fausse pendant qu'un sous-écran était ouvert).
     if (sommet.focus === null || sommet.focus === undefined || !cases[sommet.focus]) {
@@ -386,6 +389,8 @@ export function creerMenuCartes({
     if (typeof carte.faire === 'function') carte.faire();
     else actions[carte.action]();
     if (carte.apres === 'retour') retour();
+    // `D-274` : exporter depuis la pop-up la laisse ouverte, focus en place.
+    else if (carte.apres === 'reste') rendre();
     else nav.fermerTout();
   }
 

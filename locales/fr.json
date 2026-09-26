@@ -15,6 +15,7 @@
   "menu.reset_popup": "Es-tu sûr ? Pense à exporter ta sauvegarde d’abord.",
   "menu.popup_non": "Non",
   "menu.popup_oui": "Oui",
+  "menu.popup_exporter": "Exporter d’abord",
   "menu.fermer": "Fermer",
   "menu.volume": "Volume",
   "menu.graphismes": "Graphismes",

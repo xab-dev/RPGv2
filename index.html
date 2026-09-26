@@ -83,6 +83,10 @@
          (vérifié au démarrage) : il doit rester reconnaissable quel que soit
          le follet. */
       --menu-danger: #c8201e;
+      /* Prudence (`D-274`, Xav 26/09 : « liseret VERT ») : le geste qui
+         protège, à côté de celui qui efface — le contraire de l'écarlate, en
+         bordure et en icône comme lui, jamais en aplat. */
+      --menu-prudence: #3fae5a;
     }
 
     html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
@@ -257,6 +261,7 @@
     }
     /* Danger : bordure et icône, JAMAIS un aplat. */
     .carte-danger { --carte-trait: var(--menu-danger); border-color: var(--menu-danger); }
+    .carte-prudence { --carte-trait: var(--menu-prudence); border-color: var(--menu-prudence); }
 
     /* Focus : jamais la couleur seule — le trait s'épaissit, un halo
        l'entoure ET la carte s'éclaircit. L'épaississement passe par une ombre
@@ -405,8 +410,11 @@
     .cartes-popup-cartes {
       display: grid; gap: calc(12 * var(--u));
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      height: calc(56 * var(--u));
+      grid-auto-rows: calc(56 * var(--u));
     }
+    /* `D-274` : la carte de prudence, sous « Non » et « Oui », sur toute la
+       largeur (budget : 120 + 12 + 56 ≈ 190 u sur 270, rien ne défile). */
+    .cartes-popup-cartes .carte-prudence { grid-column: 1 / -1; }
     .cartes-popup-cartes .carte-phrase:empty { display: none; }
 
     /* --- Écrans « maître-détail » (specs/08_menus-cartes.md, palier C) ------

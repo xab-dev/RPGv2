@@ -55,3 +55,53 @@ Regardé d'abord en grand (atelier hors dépôt, `tools/_ref/atelier.html` : ×2
 | `48b07af` | `D-268` | Le contrat du globe révisé : jamais découpé par son ouverture, au plus par le contour de la capuche. Suite verte, 226 fichiers |
 | `1b74d99` | `D-269` | **Palier B, le héros tourne en jeu** : angle affiché et angle visé dans `orientation.js` (le geste exact, la cible d'un tir ; 540°/s, 2160°/s au tir ; amplitude minimale 0,25), `heroAngle` de `main.js` à `render.js`. Vu en jeu sous Chrome sans fenêtre (marche, demi-tour). `V-189`. Suite verte, 227 fichiers |
 | `b8ddcb2` | `D-270` | **Palier C, le souffle et le pas** : `animations` du visuel en données (pièces, champ, amplitude, période, sinus ou rebond, repos ou marche ; jamais plus de 3 Hz), pondérées par le poids de la marche qui glisse ; le souffle, le rebond du pas, le balancement de la capuche ; le banc du tour les montre. Vu en jeu, aucune erreur. `V-190`. Suite verte, 228 fichiers |
+| `e8be75f` | `D-271` | **Les dégradés gardés** (par contexte, primitive et teinte) : trouvé par la sentinelle. Vérifié identique sous Chrome (40 visuels × 5 vues). `dessiner()` ×6 5,76 → 5,21 ms. Suite verte, 228 fichiers |
+| (celui-ci) | DOC | Le journal, la sentinelle, `D-272` ouvert, « Où on en est » |
+
+## L'animation (branche `heros-animation`, partie de `heros-polish`)
+
+Mesuré d'abord : les vues de l'est sont des reflets de l'ouest ; tourner d'un
+trait fait donc passer d'un dessin non reflété à un reflété, au passage exact
+de `sud` et de `nord`. `sud` contre son reflet, `nord` contre le sien : les
+mêmes à un liseré près (sous le pixel à la taille du jeu). Le tour continu est
+donc possible sur les huit poses validées, sans sprite. Spec 16 écrite
+(`specs/16_animation-heros.md`) : la réponse à « 8 ? 16 sprites ? » (aucun : le
+héros est un dessin de nombres, huit poses clés en donnent 360, pour un coût
+nul — les poses se gardent au degré près), puis trois paliers, joués cette
+nuit sur la demande de Xav (« tout ce que je peux ») au lieu d'un par session.
+
+## La sentinelle (`traversee_nuit`, Moyen, Chrome sans fenêtre, même machine)
+
+| | `main` | nuit, avant `D-271` | nuit, après `D-271` |
+|---|---|---|---|
+| ×1 `dessiner()` moy / p95 | 0,58 / 0,90 ms | 0,69 / 1,10 ms | 0,65 / 1,00 ms |
+| ×6 `dessiner()` moy / p95 | 4,89 / 6,60 ms | 5,76 / 8,60 ms | 5,21 / 7,50 ms |
+| frames > 20 ms, ×1 / ×6 | 0 / 1 | 0 / 1 | 0 / 1 |
+
+Aucune frame perdue. Le héros poli (34 primitives au lieu de 22, trois
+découpes) coûte encore ~0,3 ms sous ×6 ; `D-271` a repris 60 % de l'écart, et
+profite à tous les visuels. Vu en route, sur `main` : une sauvegarde refusée
+sous ×6 (`D-272`, ouvert).
+
+## Ce qui reste hors dépôt
+
+`tools/_ref/` (exclu par `.git/info/exclude`) : les bancs de la nuit — la
+différence au pixel contre une référence, l'atelier (×28, ×12, la taille du
+jeu), le film d'un cycle de marche, la marche en jeu. Utiles pour la suite ;
+à supprimer d'un `rm -r` sinon.
+
+## Pour Xav
+
+- **À ouvrir d'abord** : le banc du tour, `http://localhost:8080/tools/banc_tour.html`
+  (`node serveur_local.js`) — tirer le pavé comme un stick, le tour
+  automatique, « souffle et pas » et « en marche ». Puis en jeu, à la manette.
+- **Trois branches, chacune partie de la précédente, rien fusionné ni poussé** :
+  `heros-simplification` (`D-262`), `heros-polish` (`D-263` à `D-267`),
+  `heros-animation` (spec 16 : `D-268` à `D-270`, et `D-271`). Chaque commit se
+  retire seul (`git revert <hash>`), dans l'ordre inverse s'ils se suivent sur
+  le même fichier de données.
+- **À voir en jeu** : `V-182` à `V-190` (une par couche). Le seul saut du tour
+  (au passage exact de `sud` et de `nord`) est la question ouverte de la spec
+  16 §2.2.
+- **Toujours ouverts** : `D-261` (le profil, ce qui cloche reste à dire),
+  `D-272` (la sauvegarde refusée sous ×6), `V-177` à `V-181`.

@@ -43,3 +43,7 @@ branche à chaque arrêt (demandé par Xav) ; jamais `main`.
 | Commit | Ticket | Ce qu'il faut en retenir |
 |---|---|---|
 | `fdefa25` | Ménage | Aucune réponse de Xav au suivi ; journal `heros-suite` archivé, INDEX ; « Où on en est » : branche `audit-heros` |
+| `483dfd2` | `DOC-13` | Spec 17 écrite (la demande verbatim, quatre paliers) ; « Sandbox et monde ouvert » au tableau du cap (carte mentale §00), renvoi dans `CLAUDE.md` |
+| `ddadd55` | `D-280` | Les outils pour tout visuel : `tools/mesure_visuel.mjs` (`diff` contre une référence Git, `cles`, `saut`, `fuite`, `cache` ; 0 sur `HEAD`, 138 cas contre `9f7ac9d`), `tools/atelier.html` (variantes `tools/variantes/*.js` en colonnes, marche rejouée, nuit sous voile), `commun.mjs#loupe` (fin des cinq copies), `scenarios/loupe_scene.mjs`. Mesures du héros au tour : pics de saut 215→216 (47 px) et 324→325 (43 px), médiane 8 |
+| `1944e32` | `D-281` | Skill `atelier-visuel` (outils, boucle, règles du dessin, check-list d'un chantier neuf) ; renvoi dans `CLAUDE.md` ; `D-280` et `D-281` clos |
+| — | Arrêt | **Palier A livré, arrêt Xav.** `tools/_ref/` (local, non versionné) laissé en place : à supprimer avec son exclusion de `.git/info/exclude` sur accord de Xav |

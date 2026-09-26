@@ -94,9 +94,9 @@ const HEROS = donnees.visuels.find((v) => v.id === VISUEL_HEROS_ID);
 // --- 5. Le branchement --------------------------------------------------------------
 {
   const main = fs.readFileSync(path.join(RACINE, 'src/main.js'), 'utf8');
-  assert.ok(/cadencePas\(registre\.obtenir\('visuels', VISUEL_HEROS_ID\), vitesseGeste\)/.test(main));
+  assert.ok(/visuelHeros = registre\.obtenir\('visuels', VISUEL_HEROS_ID\)/.test(main) && /cadencePas\(visuelHeros, vitesseGeste\)/.test(main));
   assert.ok(/derivee_vitesse_deplacement_px_s/.test(main.slice(main.indexOf('const vitesseGeste'), main.indexOf('const vitesseGeste') + 200)));
-  assert.ok(/avancerAnimationHeros\([^)]*cadence \}\)/.test(main));
+  assert.ok(/avancerAnimationHeros\(animationHeros, \{[^}]*cadence,/.test(main));
   console.log('OK branchement');
 }
 

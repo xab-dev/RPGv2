@@ -13,7 +13,7 @@
 // mobile incertains) — le volume vient de formes annexes (reflet, facette
 // éclairée) plutôt que d'un flou.
 
-import { definitionPiece, poseVisible, poseAAngle, matricePose, primitivePosee, matriceAnimation } from './poses.js';
+import { definitionPiece, poseVisible, poseAAngle, matricePose, primitivePosee, matriceAnimation, angleDePiece } from './poses.js';
 
 // Convention de taille de référence pour les silhouettes de follet (§3.1) :
 // visuels.json les dessine à ce rayon-là ; chaque appelant (scène, HUD, écran
@@ -217,8 +217,12 @@ export function dessinerVisuel(ctx, visuel, x, y, options = {}) {
   const { teinte = null, alpha = 1, echelle = 1, rotation = 0, miroir = false, orientation = null, angle = null, animation = null } = options;
   // Spec 16 : `options.angle` (degrés, 0 = est, 90 = sud) montre les pièces à
   // tout angle, entre les directions déclarées ; sinon `options.orientation`,
-  // une direction.
-  const poseDe = angle !== null ? (piece) => poseAAngle(visuel, angle, piece) : (piece) => poseVisible(visuel, orientation, piece);
+  // une direction. Palier E : une pièce d'`inertie` se pose à son angle à
+  // elle (la capuche en retard sur le regard) ; sa découpe suit, puisqu'elle
+  // passe par ce même `poseDe`.
+  const poseDe = angle !== null
+    ? (piece) => poseAAngle(visuel, angleDePiece(visuel, animation, angle, piece), piece)
+    : (piece) => poseVisible(visuel, orientation, piece);
   // MT_heros-echelle_2026-09-19 : `visuel.echelle` est l'échelle PROPRE de la
   // silhouette (sa taille de référence en données), multipliée par l'échelle
   // d'INSTANCE passée à l'appel (une station tournée, un follet au HUD). Deux

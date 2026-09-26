@@ -27,6 +27,7 @@
     <label><input id="tourne" type="checkbox"> tour automatique</label>
     <label><input id="anime" type="checkbox" checked> souffle et pas (palier C)</label>
     <label><input id="marche" type="checkbox"> en marche</label>
+    <label><input id="inertie" type="checkbox" checked> capuche en retard (palier E)</label>
     <label>Agilité <input id="agilite" type="range" min="0" max="60" value="5"> <span id="ag"></span></label>
     <label>vitesse du tour <input id="vitesse" type="range" min="10" max="720" value="120"> <span id="v">120°/s</span></label>
     <label>follet <select id="teinte"><option value="#ff6a3d">feu</option><option value="#4fb3ff">eau</option><option value="#8fd16a">terre</option><option value="#9aa3ad">aucun</option></select></label>
@@ -104,7 +105,11 @@
   function boucle(t) {
     if ($('tourne').checked) angle = (angle + (Number($('vitesse').value) * (t - avant)) / 1000) % 360;
     const marche = $('marche').checked || tire;
-    animation = avancerAnimationHeros(animation, { deltaMs: t - avant, dx: marche ? 1 : 0, dy: 0, cadence: cadencePas(visuel, vitesseAgilite()) });
+    animation = avancerAnimationHeros(animation, {
+      deltaMs: t - avant, dx: marche ? 1 : 0, dy: 0, cadence: cadencePas(visuel, vitesseAgilite()),
+      // Palier E : la capuche suit l'angle du banc, en retard (décocher pour comparer).
+      angle, inertie: $('inertie').checked ? (visuel.inertie ?? null) : null,
+    });
     rendre();
     avant = t;
     requestAnimationFrame(boucle);

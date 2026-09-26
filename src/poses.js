@@ -368,3 +368,17 @@ export function matriceAnimation(visuel, piece, etat) {
 function multiplier([a, b, c, d, e, f], [A, B, C, D, E, F]) {
   return [a * A + c * B, b * A + d * B, a * C + c * D, b * C + d * D, a * E + c * F + e, b * E + d * F + f];
 }
+
+// --- Spec 16, palier E : la capuche en retard sur le regard --------------------
+// Les ressorts avancent dans `orientation.js#avancerInertie` (un état) ; ici,
+// l'angle où chaque pièce se dessine.
+// L'angle auquel se dessine une pièce : celui de son entrée d'`inertie` (une
+// pièce qui en `suit` une autre prend celui de sa guide), sinon l'angle
+// affiché. `animation.inertie` : les états rendus par `avancerInertie`.
+export function angleDePiece(visuel, animation, angle, piece) {
+  const etats = animation && animation.inertie;
+  if (!etats || !visuel.inertie) return angle;
+  const guide = definitionPiece(visuel, piece).suit ?? piece;
+  const i = visuel.inertie.findIndex((e) => e.pieces.includes(guide));
+  return i >= 0 && etats[i] ? etats[i].angle : angle;
+}

@@ -632,6 +632,10 @@
     "pas": {
       "vitesse_reference_px_s": 95
     },
+    "inertie": [
+      { "pieces": ["capuche", "pli_front"], "retard_ms": 55, "depassement": 0.1, "ecart_max_deg": 14 },
+      { "pieces": ["pointe_rabattue"], "retard_ms": 90, "depassement": 0.15, "ecart_max_deg": 22 }
+    ],
     "animations": [
       {
         "quand": "repos",

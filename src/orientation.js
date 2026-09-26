@@ -112,17 +112,82 @@ export function avancerOrientation(etat, { deltaMs, dx = 0, dy = 0, vers = null 
 // souffle, rien ne claque. Lu par `poses.js#matriceAnimation`. Affichage seul.
 // Provisoire, non validé en jeu : le poids fait l'aller en un quart de seconde.
 export const VITESSE_POIDS_MARCHE_S = 4;
+// Spec 16, palier E : la capuche en retard sur le regard.
+// `inertie` du visuel : chaque entrée donne à ses `pieces` un angle à elles,
+// tiré vers l'angle affiché par un ressort amorti. Ses deux réglages d'auteur
+// disent ce qu'on VOIT, le ressort s'en déduit :
+//   - `retard_ms` : le retard en rotation régulière (l'écart d'équilibre d'un
+//     ressort qui suit une cible à vitesse v vaut 2ζ/ω · v) ;
+//   - `depassement` : la part d'un saut dont la pièce dépasse avant de se
+//     poser (0 : amortissement critique, aucun dépassement).
+// Rend aussi la fréquence de l'oscillation amortie : le schéma refuse au-delà
+// de 3 Hz (règle de l'épilepsie, `D-220`).
+export function ressortInertie({ retard_ms: retardMs, depassement }) {
+  const ln = depassement > 0 ? Math.log(depassement) : -Infinity;
+  const zeta = depassement > 0 ? -ln / Math.sqrt(Math.PI * Math.PI + ln * ln) : 1;
+  const omega = (2 * zeta) / (retardMs / 1000);
+  const frequenceHz = zeta < 1 ? (omega * Math.sqrt(1 - zeta * zeta)) / (2 * Math.PI) : 0;
+  return { zeta, omega, frequenceHz };
+}
+
+// L'écart d'angle le plus court, dans ]-180 ; 180].
+function ecartAngle(a, b) {
+  const d = (((a - b) % 360) + 540) % 360 - 180;
+  return d === -180 ? 180 : d;
+}
+
+// Un pas des ressorts : `etats` (un par entrée d'`inertie`, `{ angle, vitesse }`
+// en degrés et degrés/s, ou absent au premier pas) suivent `angle`, l'angle
+// affiché, dont `angleAvant` était la valeur au pas précédent. Au-delà de
+// `ecart_max_deg`, la pièce est entraînée : son écart est borné et sa vitesse
+// prend celle du regard. Pas internes de 4 ms au plus : un ressort raide reste
+// stable quelle que soit la frame.
+const PAS_RESSORT_MS = 4;
+export function avancerInertie(inertie, etats, angle, angleAvant, deltaMs) {
+  if (!inertie || angle === null || angle === undefined) return [];
+  const n = Math.max(1, Math.ceil(deltaMs / PAS_RESSORT_MS));
+  const h = deltaMs / 1000 / n;
+  const avant = angleAvant ?? angle;
+  const vitesseRegard = deltaMs > 0 ? ecartAngle(angle, avant) / (deltaMs / 1000) : 0;
+  return inertie.map((entree, i) => {
+    const etat = etats && etats[i];
+    if (!etat) return { angle, vitesse: 0 };
+    const { zeta, omega } = ressortInertie(entree);
+    let { angle: a, vitesse: v } = etat;
+    for (let k = 1; k <= n; k += 1) {
+      // La force se lit au début du pas (la cible d'alors), la borne à sa fin :
+      // lire la cible d'après décalerait le retard d'un pas interne.
+      const cible = avant + (ecartAngle(angle, avant) * k) / n;
+      const e = ecartAngle(a, avant + (ecartAngle(angle, avant) * (k - 1)) / n);
+      v += (-omega * omega * e - 2 * zeta * omega * v) * h;
+      a += v * h;
+      const e2 = ecartAngle(a, cible);
+      if (Math.abs(e2) > entree.ecart_max_deg) {
+        a = cible + Math.sign(e2) * entree.ecart_max_deg;
+        if ((v - vitesseRegard) * Math.sign(e2) > 0) v = vitesseRegard;
+      }
+    }
+    return { angle: ((a % 360) + 360) % 360, vitesse: v };
+  });
+}
+
 // Palier D (`D-273`) : l'horloge du PAS (`pasMs`) avance à la `cadence` que
 // donne `poses.js#cadencePas` pour la vitesse demandée. Sans geste, elle
 // garde sa dernière cadence le temps que le poids s'éteigne : le pas se
 // finit au lieu de se figer à mi-hauteur.
+//
+// Palier E : `angle` (l'angle affiché, `avancerOrientation`) et `inertie` (celle
+// du visuel) font avancer les ressorts de la capuche (`avancerInertie`).
 export function creerAnimationHeros() {
-  return { tempsMs: 0, marche: 0, pasMs: 0, cadence: 1 };
+  return { tempsMs: 0, marche: 0, pasMs: 0, cadence: 1, angle: null, inertie: [] };
 }
-export function avancerAnimationHeros(etat, { deltaMs, dx = 0, dy = 0, cadence = 1 }) {
+export function avancerAnimationHeros(etat, { deltaMs, dx = 0, dy = 0, cadence = 1, angle = null, inertie = null }) {
   const enMarche = Math.hypot(dx, dy) >= AMPLITUDE_MIN_GESTE;
   const pas = (VITESSE_POIDS_MARCHE_S * deltaMs) / 1000;
   const marche = enMarche ? Math.min(1, etat.marche + pas) : Math.max(0, etat.marche - pas);
   const cadenceJouee = enMarche ? cadence : (etat.cadence ?? 1);
-  return { tempsMs: etat.tempsMs + deltaMs, marche, pasMs: (etat.pasMs ?? 0) + deltaMs * cadenceJouee, cadence: cadenceJouee };
+  return {
+    tempsMs: etat.tempsMs + deltaMs, marche, pasMs: (etat.pasMs ?? 0) + deltaMs * cadenceJouee, cadence: cadenceJouee,
+    angle, inertie: avancerInertie(inertie, etat.inertie, angle, etat.angle, deltaMs),
+  };
 }

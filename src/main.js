@@ -4776,8 +4776,13 @@ export function creerOrchestrateurGrotte({
     // Spec 16 palier D : le pas suit la vitesse que le geste DEMANDE (Agilité
     // et statuts compris), comme le regard — contre un mur, on marche sur place.
     const vitesseGeste = Math.hypot(etatGameplay.move.x, etatGameplay.move.y) * statsDerivees.derivee_vitesse_deplacement_px_s;
-    const cadence = cadencePas(registre.obtenir('visuels', VISUEL_HEROS_ID), vitesseGeste);
-    animationHeros = avancerAnimationHeros(animationHeros, { deltaMs, dx: etatGameplay.move.x, dy: etatGameplay.move.y, cadence });
+    const visuelHeros = registre.obtenir('visuels', VISUEL_HEROS_ID);
+    const cadence = cadencePas(visuelHeros, vitesseGeste);
+    // Palier E : la capuche suit l'angle affiché, en retard.
+    animationHeros = avancerAnimationHeros(animationHeros, {
+      deltaMs, dx: etatGameplay.move.x, dy: etatGameplay.move.y, cadence,
+      angle: orientationHeros.angle ?? null, inertie: visuelHeros.inertie ?? null,
+    });
     if (dx !== 0 || dy !== 0) {
       const resultat = resoudreDeplacement(scene, hitboxHeros(), dx, dy, flags.has);
       hero.x = resultat.x + hero.rayon;

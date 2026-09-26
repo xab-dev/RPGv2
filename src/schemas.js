@@ -8,7 +8,7 @@ import { NOMS_COTES } from './lisieres.js';
 import { flagDeNiveau } from './xp.js';
 import { MODES_BOSS } from './comportement_monstres.js';
 import { SOURCES_CHARGE, EFFETS_COMPETENCE, estEmplacementCompetence } from './competences.js';
-import { ORIENTATIONS } from './orientation.js';
+import { ORIENTATIONS, ressortInertie } from './orientation.js';
 import { CHAMPS_ANIMATION, PERIODE_MIN_ANIMATION_MS } from './poses.js';
 
 // `D-39` — « le corps ne sort jamais de son aura », vérifié AU CHARGEMENT.
@@ -1880,6 +1880,34 @@ function validerVisuel(entry, catalogs, path) {
     erreurs.push(...erreursPosesVisuel(entry, path));
   }
   if (entry.animations !== undefined) erreurs.push(...erreursAnimationsVisuel(entry, path));
+  // Palier E : les pièces en retard sur le regard (`orientation.js#avancerInertie`).
+  // Une pièce dans deux entrées, ou qui en suit une autre (elle prend l'angle
+  // de sa guide), serait ambiguë ; un ressort qui oscillerait au-delà de 3 Hz
+  // est refusé (règle de l'épilepsie).
+  if (entry.inertie !== undefined) {
+    const portees = new Set(entry.primitives.map((p) => p && p.piece).filter((n) => n !== undefined));
+    const vues = new Set();
+    if (!Array.isArray(entry.inertie)) erreurs.push(`${path} > inertie doit être une liste`);
+    else entry.inertie.forEach((e, i) => {
+      const chemin = `${path} > inertie[${i}]`;
+      if (!estObjet(e) || Object.keys(e).some((c) => !['pieces', 'retard_ms', 'depassement', 'ecart_max_deg'].includes(c))
+        || !(Array.isArray(e.pieces) && e.pieces.length > 0) || !(e.retard_ms > 0)
+        || !(e.depassement >= 0 && e.depassement < 1) || !(e.ecart_max_deg > 0 && e.ecart_max_deg <= 45)) {
+        erreurs.push(`${chemin} doit être { pieces: [pièces portées], retard_ms: > 0, depassement: [0 ; 1[, ecart_max_deg: ]0 ; 45] }`);
+        return;
+      }
+      for (const p of e.pieces) {
+        if (!portees.has(p) || (entry.pieces && entry.pieces[p] && entry.pieces[p].suit) || vues.has(p)) {
+          erreurs.push(`${chemin} > pièce "${p}" inconnue, déjà dans une autre entrée, ou qui en suit une autre`);
+        }
+        vues.add(p);
+      }
+      const { frequenceHz } = ressortInertie(e);
+      if (frequenceHz > 1000 / PERIODE_MIN_ANIMATION_MS) {
+        erreurs.push(`${chemin} oscille à ${frequenceHz.toFixed(2)} Hz, au-delà de 3 Hz : allonger retard_ms ou baisser depassement`);
+      }
+    });
+  }
   // Palier D : la vitesse à laquelle les périodes de marche sont réglées.
   if (entry.pas !== undefined && !(estObjet(entry.pas) && Object.keys(entry.pas).length === 1 && entry.pas.vitesse_reference_px_s > 0)) {
     erreurs.push(`${path} > pas doit être { vitesse_reference_px_s: > 0 }`);

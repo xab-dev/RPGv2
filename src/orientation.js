@@ -105,3 +105,19 @@ export function avancerOrientation(etat, { deltaMs, dx = 0, dy = 0, vers = null 
   const angle = tourner(etat.angle ?? angleVise, angleVise, (vitesse * deltaMs) / 1000);
   return { direction, regardMs, angle, angleVise };
 }
+
+// Spec 16, palier C : l'état du SOUFFLE et du PAS — une horloge, et le poids
+// de la marche (`marche`, de 0 à l'arrêt à 1 en marche), qui glisse vers son
+// but plutôt que d'y sauter : partir ou s'arrêter fond le balancement dans le
+// souffle, rien ne claque. Lu par `poses.js#matriceAnimation`. Affichage seul.
+// Provisoire, non validé en jeu : le poids fait l'aller en un quart de seconde.
+export const VITESSE_POIDS_MARCHE_S = 4;
+export function creerAnimationHeros() {
+  return { tempsMs: 0, marche: 0 };
+}
+export function avancerAnimationHeros(etat, { deltaMs, dx = 0, dy = 0 }) {
+  const but = Math.hypot(dx, dy) >= AMPLITUDE_MIN_GESTE ? 1 : 0;
+  const pas = (VITESSE_POIDS_MARCHE_S * deltaMs) / 1000;
+  const marche = but > etat.marche ? Math.min(but, etat.marche + pas) : Math.max(but, etat.marche - pas);
+  return { tempsMs: etat.tempsMs + deltaMs, marche };
+}

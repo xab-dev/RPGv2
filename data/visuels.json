@@ -628,6 +628,51 @@
         },
         "piece": "ouverture"
       }
+    ],
+    "animations": [
+      {
+        "quand": "repos",
+        "champ": "echelle_y",
+        "amplitude": 0.016,
+        "periode_ms": 4200,
+        "origine": [0, 11.4]
+      },
+      {
+        "quand": "repos",
+        "champ": "dy",
+        "amplitude": -0.12,
+        "periode_ms": 4200,
+        "pieces": [
+          "capuche",
+          "pli_front",
+          "pointe_rabattue",
+          "ouverture",
+          "oeil",
+          "lueur"
+        ]
+      },
+      {
+        "quand": "marche",
+        "champ": "dy",
+        "amplitude": -0.5,
+        "periode_ms": 420,
+        "forme": "rebond"
+      },
+      {
+        "quand": "marche",
+        "champ": "rotation",
+        "amplitude": 2.4,
+        "periode_ms": 840,
+        "origine": [0, 4.6],
+        "pieces": [
+          "capuche",
+          "pli_front",
+          "pointe_rabattue",
+          "ouverture",
+          "oeil",
+          "lueur"
+        ]
+      }
     ]
   },
   {

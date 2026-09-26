@@ -299,3 +299,44 @@ function degradeReflete({ forme, degrade }) {
   }
   return reflete;
 }
+
+// --- Spec 16, palier C : le souffle et le pas ------------------------------------
+// `animations` du visuel : chacune bouge des pièces (ou tout le visuel, sans
+// `pieces`) autour d'une `origine`, d'un `champ` (`dy`, `dx`, `echelle_y`,
+// `rotation`) qui oscille d'`amplitude` sur `periode_ms` — en sinus, ou en
+// `rebond` (|sinus| : un pas qui soulève sans jamais enfoncer). Chacune joue
+// au `repos` ou à la `marche`, pondérée par `etat.marche` (0 arrêté, 1 en
+// marche, et entre deux pendant qu'on part ou s'arrête : rien ne claque).
+// `etat` : `{ tempsMs, marche }`. Rend la matrice qui s'ajoute à la pièce,
+// ou `null` si rien ne la bouge.
+const CHAMPS_ANIMATION = ['dx', 'dy', 'echelle_y', 'rotation'];
+export { CHAMPS_ANIMATION };
+
+export function matriceAnimation(visuel, piece, etat) {
+  if (!etat || !visuel || !visuel.animations) return null;
+  let m = null;
+  for (const a of visuel.animations) {
+    if (piece === null ? a.pieces !== undefined : !(a.pieces && a.pieces.includes(piece))) continue;
+    const poids = a.quand === 'marche' ? etat.marche : 1 - etat.marche;
+    if (!(poids > 0)) continue;
+    const phase = (2 * Math.PI * etat.tempsMs) / a.periode_ms;
+    const onde = a.forme === 'rebond' ? Math.abs(Math.sin(phase / 2)) : Math.sin(phase);
+    const v = a.amplitude * onde * poids;
+    const [ox, oy] = a.origine ?? [0, 0];
+    let n;
+    if (a.champ === 'dx') n = [1, 0, 0, 1, v, 0];
+    else if (a.champ === 'dy') n = [1, 0, 0, 1, 0, v];
+    else if (a.champ === 'echelle_y') n = [1, 0, 0, 1 + v, 0, -oy * v];
+    else {
+      const r = (v * Math.PI) / 180;
+      const [c, s] = [Math.cos(r), Math.sin(r)];
+      n = [c, s, -s, c, ox - c * ox + s * oy, oy - s * ox - c * oy];
+    }
+    m = m ? multiplier(m, n) : n;
+  }
+  return m;
+}
+
+function multiplier([a, b, c, d, e, f], [A, B, C, D, E, F]) {
+  return [a * A + c * B, b * A + d * B, a * C + c * D, b * C + d * D, a * E + c * F + e, b * E + d * F + f];
+}

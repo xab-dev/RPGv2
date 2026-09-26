@@ -92,7 +92,8 @@ rpg_v2/
 │   │                       `primitivePosee` (pliée ; sous un miroir, style `reflet` et dégradés qui gardent leur lumière, `D-255`, `D-264`),
 │   │                       `poserPoint` (pour tests et outils) ; spec 16 : `poseAAngle` (une pose à tout
 │   │                       angle, mélange des deux directions voisines, fondu et `fuite` d'une pièce
-│   │                       cachée, gardée au degré près), `poseVisible` — pur, gardé par pose
+│   │                       cachée, gardée au degré près), `poseVisible`, `matriceAnimation` (palier C : le souffle et le
+│   │                       pas, `animations` du visuel pondérées par la marche) — pur, gardé par pose
 │   ├── intro.js            2 machines à états pures : intro (clignements+orbite, ≤8s) et départ
 │   │                       (follets non élus qui repartent) — propre à la Grotte, pas un moteur
 │   │                       de cinématiques généralisé
@@ -217,7 +218,8 @@ rpg_v2/
 │   ├── orientation.js      `D-229`, `D-249` : OÙ REGARDE le héros — huit secteurs de 45° (marge à la
 │   │                       frontière), le tir d'une compétence qui le tourne vers sa cible un instant ;
 │   │                       spec 16 : l'ANGLE affiché (`angle`, vers `angleVise`, l'angle exact du geste
-│   │                       ou de la cible, à vitesse bornée), lu par le rendu (`heroAngle`) ;
+│   │                       ou de la cible, à vitesse bornée), lu par le rendu (`heroAngle`) ; l'état du souffle et du pas
+│   │                       (`avancerAnimationHeros` : l'horloge, le poids de la marche, `heroAnimation`) ;
 │   │                       ne sait rien du dessin (`poses.js` traduit une direction) — pur
 │   ├── logo.js             le symbole du jeu (« la sagesse pour tout et pour tous », Xav) : son
 │   │                       apparition signe après signe, dans l'ordre de lecture — pur ; dessiné par

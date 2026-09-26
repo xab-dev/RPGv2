@@ -9,6 +9,7 @@ import { flagDeNiveau } from './xp.js';
 import { MODES_BOSS } from './comportement_monstres.js';
 import { SOURCES_CHARGE, EFFETS_COMPETENCE, estEmplacementCompetence } from './competences.js';
 import { ORIENTATIONS } from './orientation.js';
+import { CHAMPS_ANIMATION } from './poses.js';
 
 // `D-39` — « le corps ne sort jamais de son aura », vérifié AU CHARGEMENT.
 //
@@ -1690,6 +1691,30 @@ function erreursDegradeVisuel(degrade, chemin) {
   return erreurs;
 }
 
+// Spec 16, palier C : les `animations` d'un visuel (`poses.js#matriceAnimation`).
+// Une période plus courte que celle de 3 Hz est refusée : aucun effet ne bat
+// au-delà (règle de l'épilepsie, `D-220`).
+const PERIODE_MIN_ANIMATION_MS = 1000 / 3;
+function erreursAnimationsVisuel(entry, path) {
+  const erreurs = [];
+  if (!Array.isArray(entry.animations)) return [`${path} > animations doit être une liste`];
+  const portees = new Set(entry.primitives.map((p) => p && p.piece).filter((n) => n !== undefined));
+  entry.animations.forEach((a, i) => {
+    const chemin = `${path} > animations[${i}]`;
+    const cles = ['quand', 'champ', 'amplitude', 'periode_ms', 'forme', 'origine', 'pieces'];
+    if (!a || typeof a !== 'object' || Object.keys(a).some((c) => !cles.includes(c))
+      || !['repos', 'marche'].includes(a.quand) || !CHAMPS_ANIMATION.includes(a.champ)
+      || typeof a.amplitude !== 'number' || !Number.isFinite(a.amplitude)
+      || !(a.periode_ms >= PERIODE_MIN_ANIMATION_MS)
+      || (a.forme !== undefined && !['sinus', 'rebond'].includes(a.forme))
+      || (a.origine !== undefined && !(Array.isArray(a.origine) && a.origine.length === 2 && a.origine.every((n) => typeof n === 'number')))
+      || (a.pieces !== undefined && !(Array.isArray(a.pieces) && a.pieces.length > 0 && a.pieces.every((p) => portees.has(p))))) {
+      erreurs.push(`${chemin} doit être { quand: repos | marche, champ: ${CHAMPS_ANIMATION.join(' | ')}, amplitude, periode_ms ≥ ${Math.ceil(PERIODE_MIN_ANIMATION_MS)} (3 Hz au plus), forme?: sinus | rebond, origine?: [x, y], pieces?: [pièces portées] }`);
+    }
+  });
+  return erreurs;
+}
+
 // Les pièces et leurs poses (`poses.js`), validées d'un bloc.
 const CLES_DEFINITION_PIECE = ['origine', 'miroir', 'decoupe', 'cachee', 'suit', 'fuite'];
 const CLES_POSE = ['dx', 'dy', 'rotation', 'cisaillement', 'echelle', 'echelle_y', 'pli', 'rabat'];
@@ -1855,6 +1880,7 @@ function validerVisuel(entry, catalogs, path) {
   if (entry.pieces !== undefined || entry.orientations !== undefined || entry.reflets !== undefined) {
     erreurs.push(...erreursPosesVisuel(entry, path));
   }
+  if (entry.animations !== undefined) erreurs.push(...erreursAnimationsVisuel(entry, path));
 
   entry.primitives.forEach((p, i) => {
     const chemin = `${path} > primitives[${i}]`;

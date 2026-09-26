@@ -13,7 +13,7 @@
 // mobile incertains) — le volume vient de formes annexes (reflet, facette
 // éclairée) plutôt que d'un flou.
 
-import { definitionPiece, poseVisible, poseAAngle, matricePose, primitivePosee } from './poses.js';
+import { definitionPiece, poseVisible, poseAAngle, matricePose, primitivePosee, matriceAnimation } from './poses.js';
 
 // Convention de taille de référence pour les silhouettes de follet (§3.1) :
 // visuels.json les dessine à ce rayon-là ; chaque appelant (scène, HUD, écran
@@ -172,10 +172,12 @@ function dessinerPosee(ctx, visuel, piece, primitive, pose, teinte) {
 // nommée, posée comme cette pièce dans la même direction ; son chemin se trace
 // sous sa pose, la découpe s'applique dans la transform d'avant — un chemin
 // garde les coordonnées où il a été tracé.
-function decouperParSilhouette(ctx, visuel, poseDe, piece) {
+function decouperParSilhouette(ctx, visuel, poseDe, animation, piece) {
   const silhouette = visuel.primitives.find((p) => p.piece === piece && p.silhouette);
   const pose = poseDe(piece);
   const avant = ctx.getTransform();
+  const anime = matriceAnimation(visuel, piece, animation);
+  if (anime) ctx.transform(...anime);
   const posee = pose ? primitivePosee(visuel, piece, silhouette, pose) : silhouette;
   if (pose) ctx.transform(...matricePose(visuel, piece, pose));
   ctx.translate(posee.dx || 0, posee.dy || 0);
@@ -195,7 +197,7 @@ function decouperParSilhouette(ctx, visuel, poseDe, piece) {
 // d'inclinaison par graine" sur l'herbe, decor.js#genererDecor) plutôt que de
 // dupliquer une silhouette pré-tournée pour chaque instance.
 export function dessinerVisuel(ctx, visuel, x, y, options = {}) {
-  const { teinte = null, alpha = 1, echelle = 1, rotation = 0, miroir = false, orientation = null, angle = null } = options;
+  const { teinte = null, alpha = 1, echelle = 1, rotation = 0, miroir = false, orientation = null, angle = null, animation = null } = options;
   // Spec 16 : `options.angle` (degrés, 0 = est, 90 = sud) montre les pièces à
   // tout angle, entre les directions déclarées ; sinon `options.orientation`,
   // une direction.
@@ -233,6 +235,11 @@ export function dessinerVisuel(ctx, visuel, x, y, options = {}) {
     ctx.fill();
     ctx.restore();
   }
+  // Spec 16, palier C : `options.animation` (`{ tempsMs, marche }`) fait
+  // respirer et marcher le visuel (`poses.js#matriceAnimation`) — l'ombre
+  // portée reste au sol.
+  const animeTout = matriceAnimation(visuel, null, animation);
+  if (animeTout) ctx.transform(...animeTout);
 
   for (const primitive of visuel.primitives) {
     // Une primitive d'une PIÈCE (le héros : sa capuche, l'ouverture, l'œil)
@@ -248,12 +255,14 @@ export function dessinerVisuel(ctx, visuel, x, y, options = {}) {
     const definition = definitionPiece(visuel, piece);
     const pose = poseDe(piece);
     if (pose === null) continue;
-    if (pose === undefined && !definition.decoupe) {
+    const anime = matriceAnimation(visuel, piece, animation);
+    if (pose === undefined && !definition.decoupe && !anime) {
       dessinerPrimitive(ctx, primitive, teinte);
       continue;
     }
     ctx.save();
-    if (definition.decoupe) decouperParSilhouette(ctx, visuel, poseDe, definition.decoupe);
+    if (definition.decoupe) decouperParSilhouette(ctx, visuel, poseDe, animation, definition.decoupe);
+    if (anime) ctx.transform(...anime);
     if (pose) dessinerPosee(ctx, visuel, piece, primitive, pose, teinte);
     else dessinerPrimitive(ctx, primitive, teinte);
     ctx.restore();

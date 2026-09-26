@@ -57,7 +57,7 @@ import {
   modificateursHeros, statsEffectivesMonstre, tickBuffsActifs, ajouterBuffActif, modificateursBuffsActifs,
   tickSoinsBuffsActifs, iconeBuffBandeau,
   modificateursDeriveesHeros, appliquerModificateursDerivees, dotsHeros, estDansAura, poserStatutCoup, tickStatutsCoup } from './status.js';
-import { creerOrientation, avancerOrientation } from './orientation.js';
+import { creerOrientation, avancerOrientation, creerAnimationHeros, avancerAnimationHeros } from './orientation.js';
 import { creerHeros, creerMonstre, approcherEnLigneDroite, infligerDegats, mourir, respawn, reconcilierPvMax } from './entities.js';
 import {
   resoudreArmeEquipee, resoudreAutoAttaque, tickCooldown, estMonstreActif, FLASH_ATTAQUE_MS, FLASH_TOUCHE_MS,
@@ -1490,6 +1490,8 @@ export function creerOrchestrateurGrotte({
   // `D-229` : où regarde le héros — un état d'AFFICHAGE, tenu à part de
   // l'entité (qui porte le gameplay) et jamais sauvegardé (`orientation.js`).
   let orientationHeros = creerOrientation();
+  // Spec 16, palier C : le souffle et le pas (`orientation.js`), affichage seul.
+  let animationHeros = creerAnimationHeros();
   let scene, decor, monstres, follet;
   let lumieresDecor = [];
   let puzzlesEtat = {};
@@ -4770,6 +4772,7 @@ export function creerOrchestrateurGrotte({
     // pousser contre un mur le tourne vers lui. Sous UI, le geste est neutre :
     // il garde sa direction.
     orientationHeros = avancerOrientation(orientationHeros, { deltaMs, dx: etatGameplay.move.x, dy: etatGameplay.move.y });
+    animationHeros = avancerAnimationHeros(animationHeros, { deltaMs, dx: etatGameplay.move.x, dy: etatGameplay.move.y });
     if (dx !== 0 || dy !== 0) {
       const resultat = resoudreDeplacement(scene, hitboxHeros(), dx, dy, flags.has);
       hero.x = resultat.x + hero.rayon;
@@ -5438,6 +5441,7 @@ export function creerOrchestrateurGrotte({
       heroOrientation: orientationHeros.direction,
       // Spec 16 : l'angle affiché, qui tourne vers celui du geste.
       heroAngle: orientationHeros.angle,
+      heroAnimation: animationHeros,
       monstres: monstresAffiches,
       follet: follet && companionActif ? {
         // `D-39` : la SILHOUETTE tourne sur la petite orbite, autour du point
@@ -5816,6 +5820,7 @@ export function creerOrchestrateurGrotte({
     hero = creerHeros({ x: 0, y: 0, rayon: rayonHeros(), pvMax: 1 });
     hero.pv = save.hero.pv; // null : recalculé au premier calculerStatsHeros(), comme au tout premier boot
     orientationHeros = creerOrientation();
+    animationHeros = creerAnimationHeros();
     appliquerTriche();
     etatModifie = false;
     dernierAutosave = performance.now();

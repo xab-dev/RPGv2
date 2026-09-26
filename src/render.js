@@ -942,7 +942,7 @@ function dessinerElement(ctx, element, scene) {
       // 2ᵉ silhouette dessinée pour le cas "neutre".
       // `D-229` : le visage suit la direction du regard (`orientation.js`) ;
       // spec 16 : à l'angle affiché, qui tourne continûment, quand il est donné.
-      dessinerVisuel(ctx, scene.heroVisuel, scene.hero.x - camera.x, scene.hero.y - camera.y, { teinte: scene.heroTeinte, orientation: scene.heroOrientation, angle: scene.heroAngle ?? null });
+      dessinerVisuel(ctx, scene.heroVisuel, scene.hero.x - camera.x, scene.hero.y - camera.y, { teinte: scene.heroTeinte, orientation: scene.heroOrientation, angle: scene.heroAngle ?? null, animation: scene.heroAnimation ?? null });
       break;
     case 'follet':
       dessinerFollet(ctx, scene.follet, scene.sillage, scene.ornementsFollet, camera);

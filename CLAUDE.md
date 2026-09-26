@@ -51,7 +51,7 @@ Test de chaque catalogue : ajouter une entrée (arme, ennemi, recette, compagnon
 | Journal de la session en cours | `docs/JOURNAL_AAAA-MM-JJ_*.md` (un seul à la racine de `docs/`) | au ménage, et à chaque commit d'une file |
 | Ce que Xav regarde en jeu | `docs/CHECKLIST_visuelle.md` | clôture d'un ticket de rendu |
 
-**Skills du projet** (`.claude/skills/`, chargés à la demande) : `menage` (début de session, avant tout code), `cloture-ticket` (fin de chaque ticket), `banc-perf` (fin de spec, ou quand Xav part dormir).
+**Skills du projet** (`.claude/skills/`, chargés à la demande) : `menage` (début de session, avant tout code), `cloture-ticket` (fin de chaque ticket), `banc-perf` (fin de spec, ou quand Xav part dormir), `atelier-visuel` (tout chantier graphique, et la preuve au pixel d’un allègement).
 
 ## Contraintes de méthode non négociables
 

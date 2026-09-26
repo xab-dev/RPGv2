@@ -75,4 +75,35 @@ Le palier B ne touche pas le dessin (`visuels.js`, `poses.js` inchangés). L'éc
 | `837477c` | D-288 | L'ouverture suit le globe : la cause était la pose de profil (globe 0,9 plus loin que l'ouverture, capuche repliée à 69°), pas le ressort. Variante C de Xav, trois quarts ramené à −0,95 pour tenir `D-259`. Données seules. À voir : `V-200` |
 | `9d27685` | D-289 | Le globe se cache derrière le bord intérieur du liseré (`bord_de`, le trou de l'ouverture), l'ombre pleine vers 215°. Xav : « l'effet est très réussi, illusion d'optique de l'ombre match parfaitement ». Variante A. À voir : `V-201` |
 | `73473ce` | D-290 | L'ouverture cède la place au contour gris (`efface`, variante C : ~333° → ~322°). La cause : l'ouverture ne s'éteignait qu'à la clé cachée et recouvrait le liseré. À voir : `V-201` |
-| `(ce commit)` | D-291 | Le liseré coloré se resserre en s'effaçant (`efface_echelle` 0,54 = globe / liseré). Variante A de Xav. À voir : `V-201` |
+| `9d29418` | D-291 | Le liseré coloré se resserre en s'effaçant (`efface_echelle` 0,54 = globe / liseré). Variante A de Xav. À voir : `V-201` |
+| `(ce commit)` | DOC | Journal et sentinelle du palier C. **Palier C livré, arrêt Xav** |
+
+## Le palier C, en bref
+
+Xav l'a mené par ses remarques en jeu, pas par les couches du plan : le rideau
+de l'œil (`D-286`, `D-287`), l'ouverture de profil (`D-288`), le globe caché
+par le bord du liseré (`D-289`), le contour gris qui prend le relais de dos
+(`D-290`), le liseré qui se resserre (`D-291`). Chaque pas : trois variantes à
+l'atelier, son choix, les données, un test de contrat vérifié par mutation,
+`mesure_visuel diff` (seul le héros bouge) et `cles` à zéro. Xav : « l'effet
+est très réussi » ; « polish terminé si cette étape est validée » — il l'a
+validée (A). **Non faits, par sa décision** : les couches du plan
+(proportions, traits, glow et particules, l'agrafe) ; elles restent des
+pistes. À voir en jeu : `V-199` à `V-201`.
+
+Coût d'un dessin du héros (`mesure_visuel cout`, canvas logiciel, médiane),
+fin du palier B (`8612376`) → fin du palier C : sans direction 216 → 221 µs ;
+huit directions 203 → 203 ; tour immobile 506 → 395 ; tour en marche 602 → 382.
+
+## La sentinelle, fin du palier C (`traversee_nuit`, Moyen, seule sur la machine)
+
+| | fin du palier B | fin du palier C |
+|---|---|---|
+| ×1 `dessiner()` moy / p95 | 0,74 / 1,30 ms | 0,85 / 1,30 ms |
+| ×6 `dessiner()` moy / p95 | 5,44 / 8,50 ms | 5,39 / 8,70 ms |
+| frames > 20 ms, ×1 / ×6 | 0 / 3 | 0 / 1 (sur 4 424) |
+
+Aucune régression. Deux premiers passages, lancés pendant d'autres mesures
+(tests, atelier), sont écartés : ×6 à 6,3–6,4 ms, et un ×1 tombé sur une
+erreur de page du scénario. Pendant l'un d'eux, `D-272` (la sauvegarde
+refusée sous charge) s'est revu : déjà ouvert, P1.

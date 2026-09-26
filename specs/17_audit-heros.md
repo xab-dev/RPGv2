@@ -106,6 +106,11 @@ versionnées.
   `D-287` (le rideau est une ombre avant d'être une occlusion) et `D-288` (le
   bord de l'ouverture suit le globe), jugées comme les autres couches : trois
   variantes à l'atelier, aux angles cités (321°, 334°, 0°, 57°, 337°).
+
+  **Livré le 26/09** : `D-286` à `D-291` (les trois remarques, puis trois
+  autres de Xav au banc du tour : le globe caché par le bord du liseré,
+  le contour gris de dos, le liseré qui se resserre). Xav a clos le polish
+  là ; les autres couches restent des pistes.
 - **D — L'état des lieux.** Un scénario rejouable, des captures commentées
   (`LISEZ-MOI.md`), des constats changés en lignes proposées, jamais corrigés
   en passant.

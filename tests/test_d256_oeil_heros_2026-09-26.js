@@ -15,7 +15,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ORIENTATIONS, poseDePiece } from '../src/orientation.js';
-import { dessinerVisuel, courberPoints } from '../src/visuels.js';
+import { dessinerVisuel } from '../src/visuels.js';
 import { chargerCataloguesDepuisDisque } from '../src/io_node.js';
 import { SCHEMAS } from '../src/schemas.js';
 import { validerCatalogues } from '../src/registry.js';
@@ -182,60 +182,6 @@ function trace(visuel, options) {
     assert.ok(Math.min(ecart, 360 - ecart) <= 30, `${d} : le regard lu (${rx.toFixed(2)}, ${ry.toFixed(2)}) s'écarte de ${Math.min(ecart, 360 - ecart).toFixed(0)}° de sa direction`);
   }
   console.log('OK regard : dans chaque vue, le globe est décalé dans son ouverture du côté où il regarde');
-}
-
-// --- 6. `D-259` : la joue ---------------------------------------------------------
-// De côté, le bord arrière de l'ouverture (une ellipse) débordait la tangente
-// que la capuche suit en perspective (Xav : « ça dépasse et casse la
-// perspective […] il ne faut pas déplacer tout le cercle, il faut le
-// déformer »). Une joue, aux couleurs de la capuche, passe devant l'ouverture
-// le long de cette tangente. Elle n'est invisible hors de l'ouverture que si
-// elle reste DANS la capuche et hors de son liseré : contrat, dans chaque vue
-// qui la montre.
-{
-  const FOND = HEROS.primitives.find((p) => p.piece === 'capuche' && p.couleur === '#1a1f27');
-  const LISERE = HEROS.primitives.filter((p) => p.piece === 'capuche' && p.alpha !== undefined);
-  const dans = (pt, poly) => {
-    let c = false;
-    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-      const [xi, yi] = poly[i];
-      const [xj, yj] = poly[j];
-      if ((yi > pt[1]) !== (yj > pt[1]) && pt[0] < ((xj - xi) * (pt[1] - yi)) / (yj - yi) + xi) c = !c;
-    }
-    return c;
-  };
-  const JOUES = [...new Set(HEROS.primitives.filter((p) => p.piece && p.piece.startsWith('joue')).map((p) => p.piece))];
-  assert.ok(JOUES.length > 0, 'de côté, une joue borde l\'ouverture');
-  let vues = 0;
-  for (const d of ORIENTATIONS) {
-    for (const piece of JOUES) {
-      const pose = poseDePiece(HEROS, d, piece);
-      if (!pose) continue;
-      vues += 1;
-      const capuche = poseDePiece(HEROS, d, 'capuche') || {};
-      // La capuche de la vue, pliée puis reflétée comme `dessinerVisuel` la pose.
-      const reflet = (pts) => (capuche.miroir ? pts.map(([x, y]) => [-x, y]) : pts);
-      const coque = reflet(courberPoints(FOND.points, capuche));
-      const lisere = LISERE.map((p) => reflet(courberPoints(p.points, capuche)));
-      const a = ((pose.rotation ?? 0) * Math.PI) / 180;
-      const placer = ([x, y]) => {
-        const px = x * (pose.miroir ? -1 : 1);
-        return [(pose.dx ?? 0) + px * Math.cos(a) - y * Math.sin(a), (pose.dy ?? 0) + px * Math.sin(a) + y * Math.cos(a)];
-      };
-      const pan = HEROS.primitives.find((p) => p.piece === piece && p.couleur === FOND.couleur);
-      for (let i = 0; i < pan.points.length; i += 1) {
-        const [p, q] = [pan.points[i], pan.points[(i + 1) % pan.points.length]];
-        for (let k = 0; k <= 10; k += 1) {
-          const pt = placer([p[0] + ((q[0] - p[0]) * k) / 10, p[1] + ((q[1] - p[1]) * k) / 10]);
-          assert.ok(dans(pt, coque), `${d} : la joue sort de la capuche en (${pt.map((n) => n.toFixed(2))})`);
-          assert.ok(!lisere.some((l) => dans(pt, l)), `${d} : la joue couvre le liseré de la capuche en (${pt.map((n) => n.toFixed(2))})`);
-        }
-      }
-    }
-  }
-  assert.ok(vues >= 4, 'profil et trois quarts, des deux côtés');
-  for (const d of ['sud', 'nord']) assert.ok(JOUES.every((p) => !poseDePiece(HEROS, d, p)), `${d} : pas de joue, l'ouverture est de face`);
-  console.log(`OK joue : dans ${vues} vues, elle borde l'ouverture sans sortir de la capuche ni toucher son liseré`);
 }
 
 console.log('OK test_d256_oeil_heros');

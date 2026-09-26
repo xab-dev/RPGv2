@@ -87,8 +87,8 @@ rpg_v2/
 │   │                       primitive `cachee` ne paraît que là où sa pièce est posée
 │   │                       ; `reflet` (`D-255`) : le style d'une primitive sous un miroir ; `echelle`
 │   │                       de pose et palier de dégradé `teinte` (`D-256`, l'œil du héros)
-│   │                       ; dégradé `elliptique`, `trou`, `rotation` de pose (`D-257`), `echelle_y`
-│   │                       de pose (`D-259`) : l'ouverture de la capuche, devant l'œil
+│   │                       ; dégradé `elliptique`, `trou`, `rotation` de pose (`D-257`) :
+│   │                       l'ouverture de la capuche, devant l'œil
 │   ├── intro.js            2 machines à états pures : intro (clignements+orbite, ≤8s) et départ
 │   │                       (follets non élus qui repartent) — propre à la Grotte, pas un moteur
 │   │                       de cinématiques généralisé

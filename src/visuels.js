@@ -323,11 +323,6 @@ export function dessinerVisuel(ctx, visuel, x, y, options = {}) {
     // s'aplatit en ovale ») ; un globe qui tourne reste rond, il rapetisse et
     // glisse du côté regardé.
     if (pose.echelle !== undefined) ctx.scale(pose.echelle, pose.echelle);
-    // `D-259` : l'ouverture de la capuche, de côté, grandit par le haut (Xav :
-    // « agrandi légèrement par le haut, ne touche pas au bas ») — une échelle
-    // verticale, dans le repère déjà incliné de la pièce ; la pose recale le
-    // bas.
-    if (pose.echelle_y !== undefined) ctx.scale(1, pose.echelle_y);
     // `D-253` : le reflet de la pièce autour de l'axe du héros. La capuche
     // dessinée de face n'est pas symétrique (sa pointe part à droite de
     // l'axe, son flanc droit est plus raide) : pliée vers l'ouest puis vers

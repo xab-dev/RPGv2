@@ -36,3 +36,4 @@ Branche : `heros-animation` (depuis `heros-polish`, lui-même depuis
 | `0be4f7b` | DOC | `D-272` en P1 : « une dette technique assez importante avant d'agrandir le catalogue » (Xav) ; pas maintenant, on reste sur le héros |
 | `a0a7c79` | DOC | Spec 16 palier E écrit, choisi par Xav : la capuche en retard. La cape ne tourne pas : le regard mène, la coque suit, la pointe traîne |
 | `1caed00` | `D-275` | Ressorts amortis en données (`inertie`), bornés en écart, refusés au-delà de 3 Hz ; le test du retard a trouvé un décalage d'un pas interne dans l'intégration (corrigé avant commit). Banc : « capuche en retard » à cocher. `V-193` à voir |
+| `ecb8808` | `D-276` | La capuche sautait à 90° et 270° (le dessin d'auteur penché, redressé à −8° que le reflet changeait en +8°). *Révise* `D-254` : dessin symétrique, plis de face et de dos à 0°, côtés recalés (67°, 67,5°), cisaillement de la pointe rabattue retiré. Saut mesuré : 1 300 → 177 px. `V-194` à voir |

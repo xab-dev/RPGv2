@@ -96,8 +96,13 @@ const POINTE = plusHaut(CAPUCHE.flatMap((p) => p.points));
     } else {
       // La face et le dos (`D-254`) : la pointe ne part d'aucun côté. Depuis
       // `D-276`, le dessin d'auteur l'a sur l'axe ; la pose ne l'en écarte pas.
-      assert.ok(Math.abs(xPointe) <= Math.abs(POINTE[0]) + 1e-9 && Math.abs(sommet[0]) <= Math.abs(POINTE[0]) + 1e-9,
-        `${d} : la pointe (x = ${xPointe.toFixed(2)}) et le sommet (x = ${sommet[0].toFixed(2)}) pas plus loin de l'axe que sur le dessin d'auteur (x = ${POINTE[0]})`);
+      // Le rabat aplatit le haut en calotte : son sommet est un plat, dont on
+      // juge le milieu, pas un bord pris au hasard de l'ordre des points.
+      const poses = ARETES.map((pt) => poserPoint(HEROS, 'capuche', pose, pt));
+      const plat = poses.filter(([, y]) => y - sommet[1] < 1e-6).map(([x]) => x);
+      const milieu = (Math.min(...plat) + Math.max(...plat)) / 2;
+      assert.ok(Math.abs(xPointe) <= Math.abs(POINTE[0]) + 1e-9 && Math.abs(milieu) <= Math.abs(POINTE[0]) + 0.01,
+        `${d} : la pointe (x = ${xPointe.toFixed(2)}) et le milieu du sommet (x = ${milieu.toFixed(2)}) pas plus loin de l'axe que sur le dessin d'auteur (x = ${POINTE[0]})`);
     }
   }
   console.log(`OK données : ${pliees.join(', ')} — le sommet sur l'axe, la pointe à l'écart ou redressée`);

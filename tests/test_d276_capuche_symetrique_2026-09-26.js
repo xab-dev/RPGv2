@@ -12,7 +12,10 @@
 // - une pièce `miroir` (son dessin se retourne) : les mêmes points posés, au
 //   même style — le liseré clair reflété prend le ton du sombre (`reflet`),
 //   et tombe exactement sur le liseré sombre ;
-// - une autre pièce (seule sa place se reflète) : la même matrice.
+// - une autre pièce (seule sa place se reflète) : la même matrice. Son
+//   DESSIN peut pencher (la pointe rabattue du dos, `D-277`) : il ne se
+//   retourne jamais ; sa POSE, elle, se retourne — une pente s'écrit donc
+//   dans le dessin, jamais en cisaillement de la pose d'une telle clé.
 // Aucune valeur de réglage n'est épinglée : tout se lit dans les données.
 import assert from 'node:assert/strict';
 import path from 'node:path';

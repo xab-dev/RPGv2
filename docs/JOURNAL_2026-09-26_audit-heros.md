@@ -47,3 +47,9 @@ branche à chaque arrêt (demandé par Xav) ; jamais `main`.
 | `ddadd55` | `D-280` | Les outils pour tout visuel : `tools/mesure_visuel.mjs` (`diff` contre une référence Git, `cles`, `saut`, `fuite`, `cache` ; 0 sur `HEAD`, 138 cas contre `9f7ac9d`), `tools/atelier.html` (variantes `tools/variantes/*.js` en colonnes, marche rejouée, nuit sous voile), `commun.mjs#loupe` (fin des cinq copies), `scenarios/loupe_scene.mjs`. Mesures du héros au tour : pics de saut 215→216 (47 px) et 324→325 (43 px), médiane 8 |
 | `1944e32` | `D-281` | Skill `atelier-visuel` (outils, boucle, règles du dessin, check-list d'un chantier neuf) ; renvoi dans `CLAUDE.md` ; `D-280` et `D-281` clos |
 | — | Arrêt | **Palier A livré, arrêt Xav.** `tools/_ref/` (local, non versionné) laissé en place : à supprimer avec son exclusion de `.git/info/exclude` sur accord de Xav |
+
+**Spec 17 en pause (Xav, 26/09)** : « le personnage saute d'une position à l'autre, aucune transition même entre sud et sud_ouest […] mets la spec 17 en pause, on se concentre sur ce Hotfix avant de continuer » — puis « root fixes please, not add "pansement" ».
+
+| Commit | Ticket | Ce qu'il faut en retenir |
+|---|---|---|
+| `2196b8d` | `D-282` | **Sur la branche `heros-angle-en-jeu`, depuis `main`** (hotfix, poussée) : `render.js#dessinerScene` recopiait les options du héros champ par champ et avait perdu l'angle et l'animation depuis `D-269` — la spec 16 n'était visible qu'aux bancs. Correctif de fond : `heroOptions` résolues par `main.js`, transmises telles quelles ; test des ordres de dessin (rouge avant, vert après), tests textuels retirés. `V-198` à voir ; `V-189` et `V-190` avaient été validés sans que le jeu les montre. Sa clôture au suivi est commitée ici, sur `audit-heros` |

@@ -5,7 +5,7 @@
 // le héros à côté du tronc, le pied dans la bande du fondu (l'arbre à moitié
 // par-dessus lui), avec une loupe.
 //   node tools/capture_chrome.mjs tools/scenarios/profondeur.mjs
-import { ouvrirLeJeu, saveDansLaMaison } from './commun.mjs';
+import { ouvrirLeJeu, saveDansLaMaison, loupe } from './commun.mjs';
 
 const DOSSIER = process.env.RPG_DOSSIER_CAPTURES || 'docs/captures/scenarios/profondeur';
 const TILE = 32;
@@ -41,24 +41,3 @@ export default async function (chrome) {
   console.log('touffe', chrome.erreurs().length ? `ERREURS ${JSON.stringify(chrome.erreurs())}` : 'ok');
 }
 
-// Une fenêtre en unités LOGIQUES agrandie au plus proche voisin (même loupe
-// que `heros_scene.mjs`) ; la hauteur est choisie pour que l'agrandissement
-// tienne dans la capture.
-async function loupe(chrome, { x, y, largeur, hauteur }, sortie) {
-  await chrome.evaluer(`(() => {
-    const jeu = document.querySelector('canvas');
-    const k = jeu.width / 480;
-    const vue = document.createElement('canvas');
-    const zoom = Math.max(1, Math.floor(innerWidth / (${largeur} * k)));
-    vue.width = ${largeur} * k * zoom; vue.height = ${hauteur} * k * zoom;
-    vue.id = 'loupe';
-    vue.style.cssText = 'position:fixed;left:0;top:0;z-index:99999;background:#101317';
-    const ctx = vue.getContext('2d');
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(jeu, ${x} * k, ${y} * k, ${largeur} * k, ${hauteur} * k, 0, 0, vue.width, vue.height);
-    document.body.append(vue);
-    return true;
-  })()`);
-  await chrome.capture(sortie);
-  await chrome.evaluer(`(() => { document.getElementById('loupe').remove(); return true; })()`);
-}

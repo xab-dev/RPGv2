@@ -123,3 +123,35 @@ export async function positionPresDe(idInteractif, idScene = 'scene_maison_exter
   if (!e) throw new Error(`interactif introuvable : ${idInteractif}`);
   return { x: e.x - 20, y: e.y + e.h / 2 };
 }
+
+// LA LOUPE : une fenêtre du canvas du jeu, en unités LOGIQUES (480 × 270),
+// agrandie au plus proche voisin et capturée. Le héros fait 14 unités de haut,
+// une case du HUD 16, une tuile 32 : à la taille d'une capture, on ne verrait
+// ni un liseré, ni la lueur de l'œil, ni le grain qu'on juge. Lisser
+// montrerait une image que personne ne voit. Le zoom est le plus grand entier
+// qui tient dans la fenêtre (largeur ET hauteur) ; le calque se retire aussitôt
+// la capture prise. Rend la taille de la vue, en px physiques.
+// (Spec 17, palier A : elle était recopiée dans cinq scénarios.)
+export async function loupe(chrome, { x, y, largeur, hauteur }, sortie) {
+  const taille = await chrome.evaluer(`(() => {
+    const jeu = document.querySelector('canvas');
+    const k = jeu.width / 480; // logique -> physique, l'échelle de render.js
+    const vue = document.createElement('canvas');
+    const zoom = Math.max(1, Math.floor(Math.min(innerWidth / (${largeur} * k), innerHeight / (${hauteur} * k))));
+    vue.width = ${largeur} * k * zoom; vue.height = ${hauteur} * k * zoom;
+    vue.id = 'loupe';
+    vue.style.cssText = 'position:fixed;left:0;top:0;z-index:99999;background:#101317';
+    const ctx = vue.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(jeu, ${x} * k, ${y} * k, ${largeur} * k, ${hauteur} * k, 0, 0, vue.width, vue.height);
+    document.body.append(vue);
+    return [vue.width, vue.height];
+  })()`);
+  await chrome.capture(sortie);
+  await chrome.evaluer(`(() => { document.getElementById('loupe').remove(); return true; })()`);
+  return taille;
+}
+
+// Autour du héros, en unités logiques : il est au centre du viewport (240,
+// 135) tant que la caméra n'est pas bornée sur un bord de carte.
+export const AUTOUR_DU_HEROS = { x: 214, y: 124, largeur: 52, hauteur: 52 };

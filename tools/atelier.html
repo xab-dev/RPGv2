@@ -1,0 +1,115 @@
+<!doctype html>
+<!-- OUTIL DE DEV, jamais chargé par le jeu : L'ATELIER d'une silhouette de
+     data/visuels.json (spec 17, palier A) — la planche où Xav choisit entre
+     des variantes. Chaque vue est rendue À LA TAILLE DU JEU puis agrandie au
+     plus proche voisin (la leçon de banc_visuel.html : agrandir la transform
+     épaissirait les traits). Les variantes s'alignent en colonnes : la même
+     vue, l'une sous l'autre, se compare d'un coup d'œil.
+       ?id=visuel_heros
+       &angles=66,76,90,132,241,300,342   (degrés, 0 = est, 90 = sud) — ou
+       &dirs=sud,ouest,nord               (défaut : les huit, ou « aucune »)
+       &teintes=feu,eau,terre,aucun | #rrggbb   (défaut : feu si teintable)
+       &fonds=banc,jour,nuit              (défaut : les trois)
+       &echelle=3 &loupe=3                (échelle de rendu, agrandissement)
+       &marche=90,180                     (une ligne de plus : la marche
+                                           rejouée d'un angle vers l'autre)
+       &variantes=nom.js | nom.json      (dans tools/variantes/, non versionné)
+     Un fichier de variantes .js (un module ES ; le serveur local ne sert pas .mjs en JavaScript) exporte `default (actuel) => ({ nom: entrée })`
+     — une variante s'écrit comme une retouche de l'entrée actuelle (clonée),
+     jamais comme 300 lignes recopiées ; un .json donne { nom: entrée }.
+     Une variante retenue entre au catalogue par tools/remplacer_visuel.mjs ;
+     le démarrage du jeu la valide (schemas.js). Capture sans fenêtre :
+       RPG_Q="id=visuel_heros&variantes=capuche.js" node tools/capture_chrome.mjs tools/scenarios/atelier.mjs -->
+<html lang="fr"><head><meta charset="utf-8"><title>Atelier</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body { background:#15181c; color:#b8b2a4; font:11px monospace; margin:0; padding:10px; }
+  h2 { font-size:12px; font-weight:normal; color:#d8d2c4; margin:12px 0 4px; }
+  .ligne { white-space:nowrap; }
+  .fond { display:inline-block; width:44px; opacity:.6; vertical-align:middle; }
+  figure { display:inline-block; margin:0 3px 3px 0; text-align:center; vertical-align:bottom; }
+  canvas { display:block; }
+  figcaption { opacity:.55; margin-top:1px; }
+  #erreur { color:#ff8a7a; white-space:pre-wrap; }
+</style></head><body>
+<div id="erreur"></div>
+<div id="planche"></div>
+<script type="module">
+  import * as visuels from '../src/visuels.js';
+  import * as orientation from '../src/orientation.js';
+  import * as poses from '../src/poses.js';
+  import { boitePrimitive } from '../src/structures.js';
+  import { cadreVisuels, rendreVisuel, agrandir, rejouerMarche, figure } from './lib_visuel.js';
+
+  const params = new URLSearchParams(location.search);
+  const liste = (cle, defaut) => (params.get(cle) || defaut).split(',').map((s) => s.trim()).filter(Boolean);
+  const id = params.get('id') || 'visuel_heros';
+  const echelle = Number(params.get('echelle')) || 3;
+  const loupe = Number(params.get('loupe')) || 3;
+  // Les teintes des trois follets (companions.json) et le gris du héros sans
+  // follet (`save.js#COULEUR_HERO_NEUTRE`) — nommées pour l'URL.
+  const TEINTES = { feu: '#ff6a3d', eau: '#4fb3ff', terre: '#8fd16a', aucun: '#9aa3ad' };
+  // Le gris du banc ; la terre de la Maison en plein jour ; la même sous le
+  // voile de la nuit franche (une silhouette de nuit se juge SOUS le voile).
+  const FONDS = { banc: ['#2b3138', 0], jour: ['#c9b27a', 0], herbe: ['#7fa653', 0], nuit: ['#c9b27a', 0.72] };
+
+  const $planche = document.getElementById('planche');
+  try {
+    const catalogue = await (await fetch('../data/visuels.json')).json();
+    const actuel = catalogue.find((v) => v.id === id);
+    if (!actuel) throw new Error(`visuel introuvable : ${id}`);
+    const variantes = [['actuel', actuel]];
+    const fichier = params.get('variantes');
+    if (fichier) {
+      const chemin = `./variantes/${fichier}`;
+      const table = fichier.endsWith('.js')
+        ? (await import(chemin)).default(structuredClone(actuel))
+        : await (await fetch(chemin)).json();
+      for (const [nom, entree] of Object.entries(table)) variantes.push([nom, entree]);
+    }
+
+    // Les vues : des angles, sinon des directions déclarées.
+    const vues = params.get('angles')
+      ? liste('angles', '').map((a) => ({ nom: `${a}°`, options: { angle: Number(a) } }))
+      : (actuel.orientations ? liste('dirs', orientation.ORIENTATIONS.join(',')) : ['aucune'])
+        .map((o) => ({ nom: o, options: o === 'aucune' ? {} : { orientation: o } }));
+    const teintes = actuel.teintable ? liste('teintes', 'feu').map((t) => TEINTES[t] || t) : [null];
+    const fonds = liste('fonds', 'banc,jour,nuit');
+    const marche = params.get('marche') ? liste('marche', '').map(Number) : null;
+
+    // UN cadre pour toutes les variantes : une colonne se compare pixel à
+    // pixel, la silhouette ne saute pas d'une ligne à l'autre.
+    const cadre = cadreVisuels(variantes.map(([, v]) => v), boitePrimitive);
+    const cellule = (v, options, fond) => {
+      const [couleur, voile] = FONDS[fond] || [fond, 0];
+      return agrandir(rendreVisuel(visuels, v, options, { cadre, echelle, fond: couleur, voile }), loupe);
+    };
+
+    for (const [nom, v] of variantes) {
+      $planche.append(Object.assign(document.createElement('h2'), { textContent: `${nom} · ${v.primitives.length} primitives` }));
+      for (const fond of fonds) {
+        const ligne = document.createElement('div');
+        ligne.className = 'ligne';
+        ligne.append(Object.assign(document.createElement('span'), { className: 'fond', textContent: fond }));
+        for (const vue of vues) {
+          for (const teinte of teintes) {
+            const legende = teintes.length > 1 ? `${vue.nom} ${Object.keys(TEINTES).find((k) => TEINTES[k] === teinte) || teinte}` : vue.nom;
+            ligne.append(figure(cellule(v, { ...vue.options, teinte }, fond), legende));
+          }
+        }
+        $planche.append(ligne);
+      }
+      if (marche) {
+        const ligne = document.createElement('div');
+        ligne.className = 'ligne';
+        ligne.append(Object.assign(document.createElement('span'), { className: 'fond', textContent: `${marche[0]}→${marche[1]}` }));
+        const film = rejouerMarche({ orientation, poses }, v, { deAngle: marche[0], versAngle: marche[1], dureeMs: 480, tous: 3 }) || [];
+        for (const e of film) ligne.append(figure(cellule(v, { teinte: teintes[0], angle: e.angle, animation: e.animation }, fonds[0]), `${e.tMs} ms`));
+        $planche.append(ligne);
+      }
+    }
+  } catch (erreur) {
+    document.getElementById('erreur').textContent = String(erreur.stack || erreur);
+  }
+  window.pret = true;
+</script></body></html>

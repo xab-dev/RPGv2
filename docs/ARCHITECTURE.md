@@ -319,7 +319,18 @@ rpg_v2/
                             voit), et banc_orientations.html (`D-255`, `?id=` : les huit directions
                             du regard d'une silhouette en rose des vents, à ×3 sur le gris et sur la
                             terre de la Maison, à ×9 avec l'axe — juger que les vues se répondent, et banc_tour.html (spec 16 : le héros à
-                            tout angle — curseur, pavé tiré comme un stick, tour automatique)
+                            tout angle — curseur, pavé tiré comme un stick, tour automatique).
+                            Spec 17, palier A — les instruments de TOUT chantier graphique (skill
+                            `atelier-visuel`) : lib_visuel.js (rendu à taille réelle, agrandissement,
+                            écart pixel à pixel, marche rejouée avec les modules passés), atelier.html
+                            (`?id=&angles=&dirs=&teintes=&fonds=&marche=&variantes=` : la planche où
+                            Xav choisit entre des variantes, alignées en colonnes ; capture par
+                            scenarios/atelier.mjs), mesure_visuel.mjs + .html (`diff` contre une
+                            référence Git extraite par `git show`, `cles`, `saut`, `fuite`, `cache` —
+                            code de sortie 1 au moindre défaut), scenarios/loupe_scene.mjs (une
+                            silhouette en jeu, à la loupe, pendant une suite de gestes ; la loupe
+                            est `scenarios/commun.mjs#loupe`). tools/variantes/ : IGNORÉ par Git
+                            (variantes candidates et références extraites, jetables)
 ```
 
 `registry.js`/`save.js` restent purs (aucun accès disque/réseau/DOM) : les adaptateurs (`io_node.js`/`io_navigateur.js`, `storage_indexeddb.js`/`creerStoreMemoire()`) leur fournissent des données déjà prêtes. Convention d'`id` : minuscules, `_` comme séparateur, préfixé par la catégorie au singulier (`tile_sol`, `elem_feu`). Un `id` dupliqué ou une référence croisée cassée = échec dur au boot avec le chemin exact de l'erreur.

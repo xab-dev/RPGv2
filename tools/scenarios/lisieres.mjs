@@ -12,7 +12,7 @@
 // mordre dessous). `RPG_QUALITE=bas|moyen|haut` choisit le preset.
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ouvrirLeJeu, saveDansLaMaison } from './commun.mjs';
+import { ouvrirLeJeu, saveDansLaMaison, loupe } from './commun.mjs';
 import { SCHEMAS } from '../../src/schemas.js';
 import { construireRegistre } from '../../src/registry.js';
 import { chargerCataloguesDepuisDisque } from '../../src/io_node.js';
@@ -50,26 +50,6 @@ async function postes() {
     ...surLeChemin.map(([x, y], i) => [`objet_${i}_${idA(x, y)}`, [x + 2, y]]),
   ];
   return liste.map(([nom, [x, y]]) => ({ nom, x: (x + 0.5) * TILE, y: (y + 0.5) * TILE }));
-}
-
-// Loupe : une fenêtre en unités LOGIQUES agrandie au plus proche voisin.
-async function loupe(chrome, { x, y, largeur, hauteur }, sortie) {
-  await chrome.evaluer(`(() => {
-    const jeu = document.querySelector('canvas');
-    const k = jeu.width / 480;
-    const vue = document.createElement('canvas');
-    const zoom = Math.max(1, Math.floor(Math.min(innerWidth / (${largeur} * k), innerHeight / (${hauteur} * k))));
-    vue.width = ${largeur} * k * zoom; vue.height = ${hauteur} * k * zoom;
-    vue.id = 'loupe';
-    vue.style.cssText = 'position:fixed;left:0;top:0;z-index:99999;background:#101317';
-    const ctx = vue.getContext('2d');
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(jeu, ${x} * k, ${y} * k, ${largeur} * k, ${hauteur} * k, 0, 0, vue.width, vue.height);
-    document.body.append(vue);
-    return true;
-  })()`);
-  await chrome.capture(sortie);
-  await chrome.evaluer(`(() => { document.getElementById('loupe').remove(); return true; })()`);
 }
 
 // Le héros est au centre de l'écran (240, 135), au milieu du chemin : la loupe

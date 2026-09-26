@@ -11,6 +11,8 @@
 //   saut   le tour au degré près : les pics d'écart entre angles voisins.
 //   fuite  le contexte rendu comme trouvé (transform, alpha, styles, découpe).
 //   cache  les dégradés gardés redessinent comme un contexte neuf.
+//   cout   le temps d'un dessin (µs, médiane) : un ordre de grandeur pour
+//          comparer deux versions sur la même machine, jamais un verdict.
 //
 // Pourquoi il existe : les sessions du héros (26/09) mesuraient tout ça avec
 // des pages jetables (`tools/_ref/`) et une COPIE à la main de `src/` et du
@@ -25,7 +27,7 @@ import { fileURLToPath } from 'node:url';
 
 const RACINE = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ORIGINE = process.env.RPG_URL || 'http://localhost:8080';
-const COMMANDES = ['diff', 'cles', 'saut', 'fuite', 'cache'];
+const COMMANDES = ['diff', 'cles', 'saut', 'fuite', 'cache', 'cout'];
 
 const [commande, ...reste] = process.argv.slice(2);
 if (!COMMANDES.includes(commande)) {

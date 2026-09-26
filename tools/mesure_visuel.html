@@ -4,7 +4,7 @@
      par `node tools/mesure_visuel.mjs <commande>`, qui prépare la référence
      Git et lit `window.resultat` ; s'ouvre aussi à la main pour voir les
      écarts.
-     ?commande=diff|cles|saut|fuite|cache  &id=visuel_heros,visuel_plume | tous
+     ?commande=diff|cles|saut|fuite|cache|cout  &id=visuel_heros,visuel_plume | tous
      &ref=tools/variantes/_ref/<sha>  (diff : l'arbre de référence extrait)
      &echelle=3 (l'échelle de rendu ; le jeu à DPR 3)
      Ce que chaque commande prouve est écrit au-dessus de sa fonction. Rien de
@@ -231,7 +231,58 @@
     return res;
   }
 
-  const COMMANDES = { diff, cles, saut, fuite, cache };
+  // COÛT — le temps d'un `dessinerVisuel`, en microsecondes, sur un vrai
+  // canvas à l'échelle du jeu : le héros qui tourne (360 angles) en marchant
+  // (l'état d'une marche rejouée), puis immobile par direction. La médiane de
+  // cinq passes, après une passe de chauffe (les poses gardées, les dégradés
+  // gardés, le JIT). Un ORDRE DE GRANDEUR pour comparer deux versions sur la
+  // même machine, jamais un verdict de fluidité (le banc de perf le rend, en
+  // jeu : skill `banc-perf`).
+  function cout() {
+    const res = {};
+    const c = document.createElement('canvas');
+    c.width = 200; c.height = 200;
+    // Un canvas LOGICIEL (`willReadFrequently`) : un canvas accéléré renvoie
+    // le travail au GPU et le paie à un vidage imprévisible — la mesure
+    // variait du simple au quadruple. Le logiciel mesure le coût CPU, celui
+    // qui compte (le coût d'un calque est CPU, skill `banc-perf`).
+    const ctx = c.getContext('2d', { willReadFrequently: true });
+    const mesurer = (dessins) => {
+      const passes = [];
+      // L'horloge d'une page sans fenêtre est grossie (100 µs) : une passe
+      // compte au moins 400 dessins, sinon un dessin seul se lit 0 ou 100.
+      const tours = Math.ceil(400 / dessins.length);
+      for (let p = 0; p < 6; p += 1) {
+        const t0 = performance.now();
+        for (let k = 0; k < tours; k += 1) {
+          for (const options of dessins) {
+            ctx.setTransform(echelle, 0, 0, echelle, 100, 100);
+            visuels.dessinerVisuel(ctx, dessins.visuel, 0, 0, options);
+          }
+        }
+        passes.push(((performance.now() - t0) * 1000) / (dessins.length * tours));
+      }
+      const tries = passes.slice(1).sort((x, y) => x - y);
+      return Math.round(tries[2] * 10) / 10;
+    };
+    for (const id of ids) {
+      const v = parId(catalogue, id);
+      if (!v) continue;
+      const teinte = v.teintable ? TEINTE : null;
+      const statique = Object.assign([{ teinte }], { visuel: v });
+      res[id] = { 'sans direction (µs)': mesurer(statique) };
+      if (!v.orientations) continue;
+      const film = rejouerMarche({ orientation, poses }, v, { dureeMs: 1600, tous: 1 }) || [];
+      const tour = Object.assign(Array.from({ length: 360 }, (_, a) => ({ teinte, angle: a, animation: film[a % film.length]?.animation ?? null })), { visuel: v });
+      const directions = Object.assign(orientation.ORIENTATIONS.map((o) => ({ teinte, orientation: o })), { visuel: v });
+      res[id]['tour immobile (µs)'] = mesurer(Object.assign(tour.map((o) => ({ ...o, animation: null })), { visuel: v }));
+      res[id]['tour en marche (µs)'] = mesurer(tour);
+      res[id]['huit directions (µs)'] = mesurer(directions);
+    }
+    return res;
+  }
+
+  const COMMANDES = { diff, cles, saut, fuite, cache, cout };
   try {
     if (!COMMANDES[commande]) throw new Error(`commande inconnue : ${commande} (${Object.keys(COMMANDES).join(', ')})`);
     const resultat = await COMMANDES[commande]();

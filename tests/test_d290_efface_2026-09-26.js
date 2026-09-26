@@ -50,6 +50,30 @@ delete sans.pieces[piece].efface;
   console.log(`OK efface : ${segments} segments, l'éclat d'avant jusqu'au début, nul après la fin`);
 }
 
+// --- 1 bis. `D-291` : `efface_echelle`, le resserrement -----------------------------------
+// Avant le début, l'échelle d'avant ; entre les deux, entre celle d'avant et
+// celle d'avant × `efface_echelle` ; sans la clé, rien ne change.
+{
+  const cible = HEROS.pieces[piece].efface_echelle;
+  const sansEchelle = structuredClone(HEROS);
+  delete sansEchelle.pieces[piece].efface_echelle;
+  let vus = 0;
+  for (let angle = 0; angle < 360; angle += 1) {
+    const [p, p0] = [poseAAngle(HEROS, angle, piece), poseAAngle(sansEchelle, angle, piece)];
+    if (!p) continue;
+    assert.equal(p.alpha, p0.alpha, `${angle}° : l'éclat ne dépend pas de l'échelle`);
+    if (cible === undefined) { assert.deepEqual(p, p0); continue; }
+    const [e, e0] = [p.echelle ?? 1, p0.echelle ?? 1];
+    if (p.alpha === p0.alpha && e !== e0) {
+      vus += 1;
+      assert.ok((e - e0) * (e0 * cible - e0) >= 0 && Math.abs(e - e0) <= Math.abs(e0 * cible - e0) + 1e-12, `${angle}° : entre l'échelle d'avant et sa cible`);
+    }
+    if ((p0.alpha ?? 1) === (poseAAngle(sans, angle, piece).alpha ?? 1)) assert.equal(e, e0, `${angle}° : avant le début, l'échelle d'avant`);
+  }
+  assert.ok(cible === undefined || vus > 0, 'le resserrement se voit quelque part');
+  console.log(`OK efface_echelle : ${vus} angles resserrés, jamais au-delà de la cible`);
+}
+
 // --- 2. Une pièce qui passe derrière n'en est pas touchée ---------------------------------
 {
   const derriere = Object.keys(HEROS.pieces).find((p) => HEROS.pieces[p].passe_derriere);
@@ -61,6 +85,11 @@ delete sans.pieces[piece].efface;
 
 // --- 3. Démarrage ------------------------------------------------------------------
 {
+  {
+    const copie = structuredClone(donnees);
+    copie.visuels.find((e) => e.id === VISUEL_HEROS_ID).pieces[piece].efface_echelle = 0;
+    assert.ok(validerCatalogues(copie).some((e) => e.includes('efface_echelle?:')), 'efface_echelle nulle');
+  }
   for (const efface of [[0.5], [0.8, 0.2], [-0.1, 0.5], [0.2, 1.5], 'oui']) {
     const copie = structuredClone(donnees);
     copie.visuels.find((e) => e.id === VISUEL_HEROS_ID).pieces[piece].efface = efface;

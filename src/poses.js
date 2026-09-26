@@ -113,7 +113,7 @@ function melanger(visuel, degre, piece) {
   const reflet = a.reflet || b.reflet;
   if (a.pose === null && b.pose === null) return null;
   if (a.pose === undefined && b.pose === undefined && !reflet) return undefined;
-  const { fuite = 0, passe_derriere: derriere = false, efface } = definitionPiece(visuel, piece);
+  const { fuite = 0, passe_derriere: derriere = false, efface, efface_echelle: versEchelle } = definitionPiece(visuel, piece);
   const melange = interpoler(visible(a.pose, b.pose, fuite, derriere), visible(b.pose, a.pose, fuite, derriere), t);
   // `efface` : [début, fin] de la part du chemin vers la clé cachée où la
   // pièce cède la place à ce qu'elle couvrait (spec 17 ; Xav, 26/09 : « > 328°
@@ -121,9 +121,15 @@ function melanger(visuel, degre, piece) {
   // commence à voir de dos, donc le contour du personnage »). En plus de son
   // effacement le long du segment, jamais à sa place : les vues d'avant le
   // début restent telles quelles.
+  // `efface_echelle` : l'échelle qu'elle atteint à la fin, autour de son
+  // origine (Xav, 26/09 : le liseré « encore visible à 324°, quasiment de dos,
+  // et un diamètre 2 à 3 fois trop grand » — il se resserre sur ce qui reste
+  // du globe en s'effaçant).
   if (efface && !derriere && (a.pose === null) !== (b.pose === null) && melange.alpha !== undefined) {
     const vers = a.pose === null ? 1 - t : t;
-    melange.alpha *= 1 - Math.min(1, Math.max(0, (vers - efface[0]) / (efface[1] - efface[0])));
+    const part = Math.min(1, Math.max(0, (vers - efface[0]) / (efface[1] - efface[0])));
+    melange.alpha *= 1 - part;
+    if (versEchelle !== undefined) melange.echelle = (melange.echelle ?? 1) * (1 + (versEchelle - 1) * part);
   }
   return Object.freeze(reflet ? { ...melange, reflet: true } : melange);
 }

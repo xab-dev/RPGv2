@@ -25,7 +25,8 @@
         "origine": [0, 0.2],
         "decoupe": "capuche",
         "fuite": 3,
-        "efface": [0.6, 0.85]
+        "efface": [0.6, 0.85],
+        "efface_echelle": 0.54
       },
       "oeil": {
         "origine": [0, 0.35],

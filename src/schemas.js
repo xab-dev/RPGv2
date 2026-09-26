@@ -1734,6 +1734,7 @@ const CONTROLES_DEFINITION_PIECE = {
   suit: () => true,
   fuite: (v) => estNombre(v) && v >= 0,
   efface: (v) => Array.isArray(v) && v.length === 2 && v.every(estNombre) && v[0] >= 0 && v[0] < v[1] && v[1] <= 1,
+  efface_echelle: (v) => estNombre(v) && v > 0,
   passe_derriere: (v) => v === true || objetDe({
     debut: (x) => estNombre(x) && x >= 0 && x < 1,
     fondu: (x) => estNombre(x) && x >= 0,
@@ -1768,7 +1769,7 @@ function erreursPosesVisuel(entry, path) {
     const chemin = `${path} > pieces > ${nom}`;
     if (!portees.has(nom)) erreurs.push(`${chemin} : aucune primitive ne porte cette pièce`);
     if (!objetDe(CONTROLES_DEFINITION_PIECE)(def)) {
-      erreurs.push(`${chemin} doit être { origine?: [x, y], miroir?: booléen, decoupe?: pièce, cachee?: true, suit?: pièce, fuite?: nombre ≥ 0, efface?: [début, fin] (0 ≤ début < fin ≤ 1), passe_derriere?: true | { debut?: [0, 1[, fondu?: nombre ≥ 0, bord?: convexe | concave, rayon?: nombre > 0, ombre?: [opacités 0 à 1], devant?: pièce, bord_de?: pièce } }`);
+      erreurs.push(`${chemin} doit être { origine?: [x, y], miroir?: booléen, decoupe?: pièce, cachee?: true, suit?: pièce, fuite?: nombre ≥ 0, efface?: [début, fin] (0 ≤ début < fin ≤ 1), efface_echelle?: nombre > 0, passe_derriere?: true | { debut?: [0, 1[, fondu?: nombre ≥ 0, bord?: convexe | concave, rayon?: nombre > 0, ombre?: [opacités 0 à 1], devant?: pièce, bord_de?: pièce } }`);
     } else if (def.decoupe !== undefined && (def.decoupe === nom || !silhouettes.has(def.decoupe))) {
       // `D-260` : sans silhouette à suivre, la pièce découpée disparaîtrait
       // en entier, sans que personne le voie venir.

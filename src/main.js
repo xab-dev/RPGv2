@@ -5445,13 +5445,19 @@ export function creerOrchestrateurGrotte({
       camera,
       hero,
       heroVisuel,
-      // Héros neutre avant le choix du follet, teinté à sa couleur ensuite
-      // (§3.4 03_grotte-polish) — jamais combinées, jamais une 2ᵉ silhouette.
-      heroTeinte: companionActif ? companionActif.render.couleur : COULEUR_HERO_NEUTRE,
-      heroOrientation: orientationHeros.direction,
-      // Spec 16 : l'angle affiché, qui tourne vers celui du geste.
-      heroAngle: orientationHeros.angle,
-      heroAnimation: animationHeros,
+      // Les options de `dessinerVisuel` pour le héros, résolues ICI et passées
+      // telles quelles jusqu'au dessin (`D-282`) : une option de plus s'ajoute
+      // à cet objet, jamais aux paramètres de render.js.
+      heroOptions: {
+        // Neutre avant le choix du follet, teinté à sa couleur ensuite
+        // (§3.4 03_grotte-polish) — jamais combinées, jamais une 2ᵉ silhouette.
+        teinte: companionActif ? companionActif.render.couleur : COULEUR_HERO_NEUTRE,
+        orientation: orientationHeros.direction,
+        // Spec 16 : l'angle affiché, qui tourne vers celui du geste ; le
+        // souffle, le pas et la capuche en retard.
+        angle: orientationHeros.angle,
+        animation: animationHeros,
+      },
       monstres: monstresAffiches,
       follet: follet && companionActif ? {
         // `D-39` : la SILHOUETTE tourne sur la petite orbite, autour du point

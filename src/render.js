@@ -935,14 +935,14 @@ function dessinerElement(ctx, element, scene) {
       dessinerCorpsMonstre(ctx, element.monstre, camera);
       break;
     case 'heros':
-      // Héros (§3.4 03_grotte-polish) : gris neutre au spawn (avant choix
-      // du follet), teinté à la couleur du compagnon choisi ensuite —
-      // `heroTeinte` est déjà résolu par l'appelant (main.js,
-      // save.js#COULEUR_HERO_NEUTRE ou companion.render.couleur), jamais une
-      // 2ᵉ silhouette dessinée pour le cas "neutre".
-      // `D-229` : le visage suit la direction du regard (`orientation.js`) ;
-      // spec 16 : à l'angle affiché, qui tourne continûment, quand il est donné.
-      dessinerVisuel(ctx, scene.heroVisuel, scene.hero.x - camera.x, scene.hero.y - camera.y, { teinte: scene.heroTeinte, orientation: scene.heroOrientation, angle: scene.heroAngle ?? null, animation: scene.heroAnimation ?? null });
+      // Héros : `heroOptions` sont les options de `dessinerVisuel`, résolues
+      // par l'appelant (main.js : la teinte du follet ou le gris neutre,
+      // la direction du regard, l'angle affiché, le souffle et le pas) et
+      // passées TELLES QUELLES. `D-282` : recopiées champ par champ ici, deux
+      // fois, elles perdaient en route ce qu'on leur ajoutait (l'angle et
+      // l'animation de la spec 16, jamais arrivés au jeu) ; une option de plus
+      // du héros ne touche plus ce fichier.
+      dessinerVisuel(ctx, scene.heroVisuel, scene.hero.x - camera.x, scene.hero.y - camera.y, scene.heroOptions);
       break;
     case 'follet':
       dessinerFollet(ctx, scene.follet, scene.sillage, scene.ornementsFollet, camera);
@@ -1085,13 +1085,13 @@ function dessinerFollet(ctx, follet, sillage, ornementsFollet, camera) {
 // Dessine scène + décor + leviers + monstres + follet + héros sur le
 // contexte logique (480x270 en unités logiques, quel que soit le facteur
 // physique du canvas hors-écran — cf. ajusterCanvasLogiquePhysique
-// ci-dessus). Jamais appelé depuis les tests headless. `heroVisuel`,
+// ci-dessus). Jamais exercé sur un vrai canvas par les tests. `heroVisuel`,
 // `monstres[].visuel`, `follet.visuel` et `puzzles[].visuel` sont déjà
 // résolus par l'appelant (main.js, qui a le registre) — dessinerScene ne
 // connaît jamais visuels.json par id, seulement dessinerVisuel (§3.3 : une
 // seule fonction de rendu, plus aucune forme d'entité dessinée inline ici).
 export function dessinerScene(ctx, {
-  scene, decor, camera, hero, heroVisuel, heroTeinte = null, heroOrientation = null, monstres = [], follet, puzzles = [], estFlagActif, anneauAttaque,
+  scene, decor, camera, hero, heroVisuel, heroOptions = {}, monstres = [], follet, puzzles = [], estFlagActif, anneauAttaque,
   visuelsTuiles = new Map(), objetsSol = [], structures = [], fantome = null,
   // `specs/13` palier D : la table des lisières (`lisieres.js#tableLisieres`),
   // construite par `main.js` et rendue telle quelle à `lisieresCase` — ce
@@ -1243,7 +1243,7 @@ export function dessinerScene(ctx, {
     const b = boiteElement(element);
     return !!b && b.maxX > boiteHeros.minX && b.minX < boiteHeros.maxX && b.maxY > boiteHeros.minY && b.minY < boiteHeros.maxY;
   };
-  const scenePeinte = { camera, echelle, hero, heroVisuel, heroTeinte, heroOrientation, follet, sillage, ornementsFollet };
+  const scenePeinte = { camera, echelle, hero, heroVisuel, heroOptions, follet, sillage, ornementsFollet };
   for (const { element, alpha, repasse } of ordonnerAvecFondus(aTrier, elementHeros, fonduProfondeurPx, touche)) {
     if (!repasse) {
       dessinerElement(ctx, element, scenePeinte);
@@ -1331,7 +1331,7 @@ export function dessinerScene(ctx, {
     // ne se voit pas plus, il se lit mieux. Avant le choix du follet, la teinte
     // neutre du héros ; blanc si aucune.
     const a = Math.max(0, Math.min(1, alpha)) * 0.35;
-    const { r, g, b } = hexVersRgb(heroTeinte || '#ffffff');
+    const { r, g, b } = hexVersRgb(heroOptions.teinte || '#ffffff');
     const onde = ctx.createRadialGradient(cx, cy, rayonMin, cx, cy, rayonMax);
     onde.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${a.toFixed(3)})`);
     onde.addColorStop(0.35, `rgba(${r}, ${g}, ${b}, ${(a * 0.7).toFixed(3)})`);

@@ -106,12 +106,13 @@ const HEROS = donnees.visuels.find((v) => v.id === VISUEL_HEROS_ID);
 }
 
 // --- 5. Le branchement --------------------------------------------------------------
+// `D-282` : même leçon que `test_16b` §6 — l'animation se prouve par les
+// ordres de dessin (`test_d282_heros_angle_en_jeu_2026-09-26.js`), jamais par
+// le texte du code. Reste ici ce que le texte suffit à dire : main.js avance
+// l'horloge du souffle et du pas.
 {
   const main = fs.readFileSync(path.join(RACINE, 'src/main.js'), 'utf8');
-  const render = fs.readFileSync(path.join(RACINE, 'src/render.js'), 'utf8');
-  assert.ok(/heroAnimation:\s*animationHeros/.test(main) && /avancerAnimationHeros\(/.test(main));
-  assert.ok(/animation:\s*scene\.heroAnimation/.test(render));
-  console.log('OK branchement');
+  assert.ok(main.includes('avancerAnimationHeros('), 'main.js avance l\'animation du héros');
 }
 
 console.log('OK test_16c_souffle_pas');

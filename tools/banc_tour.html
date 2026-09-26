@@ -1,0 +1,87 @@
+<!doctype html>
+<!-- OUTIL DE DEV, jamais chargé par le jeu : le TOUR du héros (spec 16,
+     palier A). Le héros à tout angle, entre ses huit poses clés : un curseur
+     d'angle, un pavé qu'on tire comme un stick (souris ou doigt), et le tour
+     automatique « comme un phare ». Rendu à la taille du jeu (×3) et agrandi
+     (×10), sur le gris du banc et la terre de la Maison.
+     ?id=visuel_heros (défaut) · servi en http:// (node serveur_local.js). -->
+<html lang="fr"><head><meta charset="utf-8"><title>Banc du tour</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body { background:#1b1f24; color:#d8d2c4; font:13px monospace; margin:0; padding:14px; }
+  .ligne { display:flex; flex-wrap:wrap; gap:14px; align-items:flex-start; }
+  canvas { border-radius:4px; }
+  #pave { width:180px; height:180px; border-radius:50%; background:#2b3138; position:relative; touch-action:none; cursor:grab; }
+  #pave::after { content:''; position:absolute; left:50%; top:50%; width:6px; height:6px; margin:-3px; border-radius:50%; background:#666; }
+  #bouton { position:absolute; width:44px; height:44px; margin:-22px; border-radius:50%; background:#d8d2c4; opacity:.8; pointer-events:none; }
+  label { display:block; margin:6px 0; }
+  input[type=range] { width:320px; }
+</style></head><body>
+<div class="ligne">
+  <canvas id="grand" width="300" height="340"></canvas>
+  <div>
+    <canvas id="jeu" width="300" height="120"></canvas>
+    <label>angle <input id="angle" type="range" min="0" max="359" value="90"> <span id="valeur">90°</span></label>
+    <label><input id="tourne" type="checkbox"> tour automatique</label>
+    <label>vitesse du tour <input id="vitesse" type="range" min="10" max="720" value="120"> <span id="v">120°/s</span></label>
+    <label>follet <select id="teinte"><option value="#ff6a3d">feu</option><option value="#4fb3ff">eau</option><option value="#8fd16a">terre</option><option value="#9aa3ad">aucun</option></select></label>
+    <div id="pave"><div id="bouton"></div></div>
+    <p style="opacity:.6;max-width:320px">Le pavé : tirer depuis le centre, comme le stick — le héros regarde l'angle du geste. 0° = est, 90° = sud.</p>
+  </div>
+</div>
+<script type="module">
+  import { dessinerVisuel } from '../src/visuels.js';
+  const id = new URLSearchParams(location.search).get('id') || 'visuel_heros';
+  const visuel = (await (await fetch('../data/visuels.json')).json()).find((v) => v.id === id);
+  const $ = (s) => document.getElementById(s);
+  let angle = 90;
+
+  function peindre(canvas, fonds, echelle) {
+    const ctx = canvas.getContext('2d');
+    const largeur = canvas.width / fonds.length;
+    fonds.forEach((fond, i) => {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.fillStyle = fond;
+      ctx.fillRect(i * largeur, 0, largeur, canvas.height);
+      ctx.setTransform(echelle, 0, 0, echelle, i * largeur + largeur / 2, canvas.height / 2);
+      dessinerVisuel(ctx, visuel, 0, 0, { teinte: $('teinte').value, angle });
+    });
+  }
+  function rendre() {
+    $('angle').value = Math.round(angle);
+    $('valeur').textContent = `${Math.round(angle)}°`;
+    peindre($('grand'), ['#2b3138'], 10);
+    peindre($('jeu'), ['#2b3138', '#c9b27a', '#7fa653'], 3);
+  }
+
+  $('angle').addEventListener('input', (e) => { angle = Number(e.target.value); rendre(); });
+  $('teinte').addEventListener('change', rendre);
+  $('vitesse').addEventListener('input', (e) => { $('v').textContent = `${e.target.value}°/s`; });
+
+  // Le pavé, comme un stick : l'angle du geste depuis le centre.
+  const pave = $('pave');
+  let tire = false;
+  const suivre = (e) => {
+    const r = pave.getBoundingClientRect();
+    const [dx, dy] = [e.clientX - r.left - r.width / 2, e.clientY - r.top - r.height / 2];
+    const rayon = Math.min(Math.hypot(dx, dy), r.width / 2);
+    const a = Math.atan2(dy, dx);
+    $('bouton').style.left = `${r.width / 2 + rayon * Math.cos(a)}px`;
+    $('bouton').style.top = `${r.height / 2 + rayon * Math.sin(a)}px`;
+    if (rayon > 8) { angle = ((a * 180) / Math.PI + 360) % 360; rendre(); }
+  };
+  pave.addEventListener('pointerdown', (e) => { tire = true; pave.setPointerCapture(e.pointerId); suivre(e); });
+  pave.addEventListener('pointermove', (e) => { if (tire) suivre(e); });
+  pave.addEventListener('pointerup', () => { tire = false; $('bouton').style.left = '50%'; $('bouton').style.top = '50%'; });
+  $('bouton').style.left = '50%'; $('bouton').style.top = '50%';
+
+  let avant = performance.now();
+  function boucle(t) {
+    if ($('tourne').checked) { angle = (angle + (Number($('vitesse').value) * (t - avant)) / 1000) % 360; rendre(); }
+    avant = t;
+    requestAnimationFrame(boucle);
+  }
+  rendre();
+  requestAnimationFrame(boucle);
+</script>
+</body></html>

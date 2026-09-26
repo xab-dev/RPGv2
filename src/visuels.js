@@ -13,7 +13,7 @@
 // mobile incertains) — le volume vient de formes annexes (reflet, facette
 // éclairée) plutôt que d'un flou.
 
-import { definitionPiece, poseDePiece, matricePose, primitivePosee } from './poses.js';
+import { definitionPiece, poseVisible, poseAAngle, matricePose, primitivePosee } from './poses.js';
 
 // Convention de taille de référence pour les silhouettes de follet (§3.1) :
 // visuels.json les dessine à ce rayon-là ; chaque appelant (scène, HUD, écran
@@ -157,6 +157,8 @@ function dessinerPrimitive(ctx, primitive, teinte) {
 // Une pièce posée : la matrice de sa pose (`poses.js#matricePose`) sur le
 // canvas, puis la primitive pliée ou reflétée qu'elle dessine.
 function dessinerPosee(ctx, visuel, piece, primitive, pose, teinte) {
+  // Spec 16 : une pièce qui paraît ou s'efface entre deux clés.
+  if (pose.alpha !== undefined) ctx.globalAlpha *= pose.alpha;
   ctx.transform(...matricePose(visuel, piece, pose));
   dessinerPrimitive(ctx, primitivePosee(visuel, piece, primitive, pose), teinte);
 }
@@ -170,9 +172,9 @@ function dessinerPosee(ctx, visuel, piece, primitive, pose, teinte) {
 // nommée, posée comme cette pièce dans la même direction ; son chemin se trace
 // sous sa pose, la découpe s'applique dans la transform d'avant — un chemin
 // garde les coordonnées où il a été tracé.
-function decouperParSilhouette(ctx, visuel, orientation, piece) {
+function decouperParSilhouette(ctx, visuel, poseDe, piece) {
   const silhouette = visuel.primitives.find((p) => p.piece === piece && p.silhouette);
-  const pose = poseDePiece(visuel, orientation, piece);
+  const pose = poseDe(piece);
   const avant = ctx.getTransform();
   const posee = pose ? primitivePosee(visuel, piece, silhouette, pose) : silhouette;
   if (pose) ctx.transform(...matricePose(visuel, piece, pose));
@@ -193,7 +195,11 @@ function decouperParSilhouette(ctx, visuel, orientation, piece) {
 // d'inclinaison par graine" sur l'herbe, decor.js#genererDecor) plutôt que de
 // dupliquer une silhouette pré-tournée pour chaque instance.
 export function dessinerVisuel(ctx, visuel, x, y, options = {}) {
-  const { teinte = null, alpha = 1, echelle = 1, rotation = 0, miroir = false, orientation = null } = options;
+  const { teinte = null, alpha = 1, echelle = 1, rotation = 0, miroir = false, orientation = null, angle = null } = options;
+  // Spec 16 : `options.angle` (degrés, 0 = est, 90 = sud) montre les pièces à
+  // tout angle, entre les directions déclarées ; sinon `options.orientation`,
+  // une direction.
+  const poseDe = angle !== null ? (piece) => poseAAngle(visuel, angle, piece) : (piece) => poseVisible(visuel, orientation, piece);
   // MT_heros-echelle_2026-09-19 : `visuel.echelle` est l'échelle PROPRE de la
   // silhouette (sa taille de référence en données), multipliée par l'échelle
   // d'INSTANCE passée à l'appel (une station tournée, un follet au HUD). Deux
@@ -230,24 +236,24 @@ export function dessinerVisuel(ctx, visuel, x, y, options = {}) {
 
   for (const primitive of visuel.primitives) {
     // Une primitive d'une PIÈCE (le héros : sa capuche, l'ouverture, l'œil)
-    // suit la pose que le visuel déclare pour `options.orientation`
-    // (`poses.js`) : cachée, ou déplacée, tournée, pliée. Sans pose, elle se
-    // dessine telle qu'elle est écrite — sauf une pièce `cachee`, qui
-    // n'existe que là où une direction la pose (la pointe rabattue, de dos).
+    // suit la pose que le visuel déclare pour son orientation (`poses.js`) :
+    // cachée (`null`, et une pièce `cachee` là où rien ne la pose), ou
+    // déplacée, tournée, pliée. Sans pose, elle se dessine telle qu'elle est
+    // écrite.
     const { piece } = primitive;
     if (piece === undefined) {
       dessinerPrimitive(ctx, primitive, teinte);
       continue;
     }
     const definition = definitionPiece(visuel, piece);
-    const pose = poseDePiece(visuel, orientation, piece);
-    if (pose === null || (definition.cachee && pose === undefined)) continue;
+    const pose = poseDe(piece);
+    if (pose === null) continue;
     if (pose === undefined && !definition.decoupe) {
       dessinerPrimitive(ctx, primitive, teinte);
       continue;
     }
     ctx.save();
-    if (definition.decoupe) decouperParSilhouette(ctx, visuel, orientation, definition.decoupe);
+    if (definition.decoupe) decouperParSilhouette(ctx, visuel, poseDe, definition.decoupe);
     if (pose) dessinerPosee(ctx, visuel, piece, primitive, pose, teinte);
     else dessinerPrimitive(ctx, primitive, teinte);
     ctx.restore();

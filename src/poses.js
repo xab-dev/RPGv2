@@ -20,6 +20,8 @@
 //   celui de l'ouest) : aucune valeur recopiée à la main, en miroir, qui
 //   pourrait s'écarter de sa source.
 
+import { ORIENTATIONS } from './orientation.js';
+
 // Ce qu'une pièce déclare une fois pour toutes.
 export function definitionPiece(visuel, piece) {
   return (visuel && visuel.pieces && visuel.pieces[piece]) || AUCUNE_DEFINITION;
@@ -57,6 +59,94 @@ function refleter(pose) {
   let refletee = reflets.get(pose);
   if (!refletee) reflets.set(pose, (refletee = Object.freeze({ ...pose, reflet: true })));
   return refletee;
+}
+
+// La pose qui se DESSINE dans une direction : celle de `poseDePiece`, sauf
+// une pièce `cachee` non posée, qui y est cachée (`null`). Le seul verdict
+// « paraît / ne paraît pas » du dessin et de la découpe.
+export function poseVisible(visuel, direction, piece) {
+  const pose = poseDePiece(visuel, direction, piece);
+  return pose === undefined && definitionPiece(visuel, piece).cachee ? null : pose;
+}
+
+// --- Spec 16 : une pose à TOUT angle --------------------------------------------
+// Les directions sont des clés sur le cercle, tous les 45° (0 = est, 90 = sud :
+// l'axe y de l'écran descend) ; entre deux clés, chaque pièce prend le mélange
+// de leurs poses (§2.2). Huit poses écrites à la main en donnent 360.
+const PAS_CLES_DEG = 360 / ORIENTATIONS.length;
+
+// Les poses mélangées se gardent au degré près : la capuche pliée (~300
+// points) ne se replie qu'une fois par degré, jamais à chaque frame. Un degré
+// est sous le pixel à la taille du jeu.
+const posesParAngle = new WeakMap();
+export function poseAAngle(visuel, angle, piece) {
+  const degre = ((Math.round(angle) % 360) + 360) % 360;
+  let parAngle = posesParAngle.get(visuel);
+  if (!parAngle) posesParAngle.set(visuel, (parAngle = new Map()));
+  const cle = `${degre}|${piece}`;
+  if (!parAngle.has(cle)) parAngle.set(cle, melanger(visuel, degre, piece));
+  return parAngle.get(cle);
+}
+
+// Une clé vue par le mélange : la pose SOURCE (celle qu'on reflète, pour une
+// direction en reflet), et si elle est reflétée. Une pièce cachée : `null`.
+function cle(visuel, direction, piece) {
+  const pose = poseVisible(visuel, direction, piece);
+  if (pose == null) return { pose, reflet: false };
+  const { reflet, ...source } = pose;
+  return { pose: source, reflet: !!reflet };
+}
+
+function melanger(visuel, degre, piece) {
+  const { suit } = definitionPiece(visuel, piece);
+  if (suit) return poseAAngle(visuel, degre, suit);
+  const i = Math.floor(degre / PAS_CLES_DEG);
+  const t = (degre - i * PAS_CLES_DEG) / PAS_CLES_DEG;
+  const a = cle(visuel, ORIENTATIONS[i], piece);
+  if (t === 0) return a.pose == null ? a.pose : Object.freeze(a.reflet ? { ...a.pose, reflet: true } : a.pose);
+  const b = cle(visuel, ORIENTATIONS[(i + 1) % ORIENTATIONS.length], piece);
+  // Le reflet ne se mélange pas (le dessin ne peut pas être « à moitié
+  // retourné ») : entre une clé reflétée et une qui ne l'est pas, tout le
+  // segment se dessine en reflet, la clé non reflétée tenant lieu de sa propre
+  // source. Le saut tombe au passage exact de la clé — `sud`, `nord` —, là où
+  // la vue et son reflet sont presque les mêmes.
+  const reflet = a.reflet || b.reflet;
+  if (a.pose === null && b.pose === null) return null;
+  if (a.pose === undefined && b.pose === undefined && !reflet) return undefined;
+  const fuite = definitionPiece(visuel, piece).fuite ?? 0;
+  const melange = interpoler(visible(a.pose, b.pose, fuite), visible(b.pose, a.pose, fuite), t);
+  return Object.freeze(reflet ? { ...melange, reflet: true } : melange);
+}
+
+// Une clé où la pièce est cachée, vue depuis sa voisine visible : la même
+// pose, éteinte, et glissée de sa `fuite` vers le bord où elle s'en allait (le
+// côté de son déplacement) — la silhouette de la capuche la découpe en route.
+function visible(pose, voisine, fuite) {
+  if (pose !== null) return pose ?? {};
+  const v = voisine ?? {};
+  const dx = v.dx ?? 0;
+  return { ...v, dx: dx + Math.sign(dx) * fuite, alpha: 0 };
+}
+
+const NEUTRES = { dx: 0, dy: 0, rotation: 0, cisaillement: 0, echelle: 1, echelle_y: 1, alpha: 1 };
+const lerp = (x, y, t) => x + (y - x) * t;
+function interpoler(a, b, t) {
+  const pose = {};
+  for (const [champ, neutre] of Object.entries(NEUTRES)) {
+    if (a[champ] === undefined && b[champ] === undefined) continue;
+    pose[champ] = lerp(a[champ] ?? neutre, b[champ] ?? neutre, t);
+  }
+  // Un pli absent est un pli nul, au même endroit que celui de la voisine.
+  if (a.pli || b.pli) {
+    const [pa, pb] = [a.pli ?? { ...b.pli, angle: 0 }, b.pli ?? { ...a.pli, angle: 0 }];
+    pose.pli = { angle: lerp(pa.angle, pb.angle, t), longueur: lerp(pa.longueur, pb.longueur, t), pivot_y: lerp(pa.pivot_y, pb.pivot_y, t) };
+  }
+  // Un rabat absent est un rabat sans force (`plierPoint`).
+  if (a.rabat || b.rabat) {
+    const [ra, rb] = [a.rabat ? { force: 1, ...a.rabat } : { ...b.rabat, force: 0 }, b.rabat ? { force: 1, ...b.rabat } : { ...a.rabat, force: 0 }];
+    pose.rabat = Object.fromEntries(['y', 'longueur', 'hauteur', 'force'].map((c) => [c, lerp(ra[c], rb[c], t)]));
+  }
+  return pose;
 }
 
 // La MATRICE d'une pose : l'application affine `[a, b, c, d, e, f]` du canvas
@@ -146,7 +236,9 @@ export function plierPoint(x, y, { pli, rabat }) {
       [vx, vy] = [vx * Math.cos(a) + hauteur * Math.sin(a), pli.pivot_y + vx * Math.sin(a) - hauteur * Math.cos(a)];
     }
   }
-  if (rabat && vy < rabat.y) vy = rabattre(vy, rabat);
+  // (spec 16 : `force`, entre 0 et 1, le rabat d'une pose mélangée à une
+  // pose qui n'en a pas ; une pose déclarée l'a entier.)
+  if (rabat && vy < rabat.y) vy += (rabattre(vy, rabat) - vy) * (rabat.force ?? 1);
   return [vx, vy];
 }
 

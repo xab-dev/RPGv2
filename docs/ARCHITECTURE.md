@@ -90,7 +90,9 @@ rpg_v2/
 │   │                       M·A·M, ou M·A pour une pièce `miroir`), `plierPoints` (le pli et le
 │   │                       rabat, `D-252`, `D-254`, seules déformations hors transform),
 │   │                       `primitivePosee` (pliée ; sous un miroir, style `reflet` et dégradés qui gardent leur lumière, `D-255`, `D-264`),
-│   │                       `poserPoint` (pour tests et outils) — pur, gardé par pose
+│   │                       `poserPoint` (pour tests et outils) ; spec 16 : `poseAAngle` (une pose à tout
+│   │                       angle, mélange des deux directions voisines, fondu et `fuite` d'une pièce
+│   │                       cachée, gardée au degré près), `poseVisible` — pur, gardé par pose
 │   ├── intro.js            2 machines à états pures : intro (clignements+orbite, ≤8s) et départ
 │   │                       (follets non élus qui repartent) — propre à la Grotte, pas un moteur
 │   │                       de cinématiques généralisé
@@ -312,7 +314,8 @@ rpg_v2/
                             épaissirait les traits avec, et ferait juger une image que personne ne
                             voit), et banc_orientations.html (`D-255`, `?id=` : les huit directions
                             du regard d'une silhouette en rose des vents, à ×3 sur le gris et sur la
-                            terre de la Maison, à ×9 avec l'axe — juger que les vues se répondent)
+                            terre de la Maison, à ×9 avec l'axe — juger que les vues se répondent, et banc_tour.html (spec 16 : le héros à
+                            tout angle — curseur, pavé tiré comme un stick, tour automatique)
 ```
 
 `registry.js`/`save.js` restent purs (aucun accès disque/réseau/DOM) : les adaptateurs (`io_node.js`/`io_navigateur.js`, `storage_indexeddb.js`/`creerStoreMemoire()`) leur fournissent des données déjà prêtes. Convention d'`id` : minuscules, `_` comme séparateur, préfixé par la catégorie au singulier (`tile_sol`, `elem_feu`). Un `id` dupliqué ou une référence croisée cassée = échec dur au boot avec le chemin exact de l'erreur.

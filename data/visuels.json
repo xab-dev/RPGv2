@@ -23,10 +23,13 @@
       },
       "ouverture": {
         "origine": [0, 0.2],
-        "decoupe": "capuche"
+        "decoupe": "capuche",
+        "fuite": 3
       },
       "oeil": {
-        "origine": [0, 0.35]
+        "origine": [0, 0.35],
+        "decoupe": "capuche",
+        "fuite": 3
       },
       "lueur": {
         "suit": "ouverture"

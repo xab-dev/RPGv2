@@ -64,6 +64,7 @@ function trace(visuel, options) {
   for (const d of avecVisage) {
     const pose = poseDePiece(HEROS, d, 'visage') || {};
     assert.ok(pose.echelle_x === undefined || pose.echelle_x === 1, `${d} : le globe n'est pas resserré à l'horizontale`);
+    assert.ok(pose.echelle_y === undefined || pose.echelle_y === 1, `${d} : le globe n'est pas étiré en hauteur`);
   }
   const reduite = avecVisage.find((d) => (poseDePiece(HEROS, d, 'visage') || {}).echelle !== undefined);
   assert.ok(reduite, 'une direction rapetisse le globe d\'un bloc');
@@ -106,8 +107,11 @@ function trace(visuel, options) {
     assert.equal(poseDePiece(HEROS, d, 'halo') === null, poseDePiece(HEROS, d, 'facade') === null, `${d} : le halo paraît avec la façade`);
     // Xav : « il faut garder la même proportion que face » — de côté,
     // l'ouverture rapetisse, glisse et s'incline, jamais ne s'écrase.
+    // `D-260` : elle peut se rouvrir un peu en hauteur (« j'ai l'impression
+    // qu'il se referme sur l'oeil […] du coup on triche »), jamais se refermer.
     const pose = poseDePiece(HEROS, d, 'facade') || {};
     assert.ok(pose.echelle_x === undefined, `${d} : l'ouverture garde les proportions de face`);
+    assert.ok(pose.echelle_y === undefined || pose.echelle_y >= 1, `${d} : l'ouverture ne se referme pas en hauteur`);
   }
   const inclinee = ORIENTATIONS.find((d) => (poseDePiece(HEROS, d, 'facade') || {}).rotation);
   assert.ok(inclinee, 'de côté, l\'ouverture s\'incline');

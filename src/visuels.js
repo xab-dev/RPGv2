@@ -248,6 +248,72 @@ function primitiveReflet(primitive) {
   return refletee;
 }
 
+// La POSE d'une pièce (`D-229`), appliquée au contexte : le seul endroit qui
+// la traduit en transform — la pièce se dessine par elle, et la silhouette qui
+// en découpe une autre (`decouperParSilhouette`) aussi : les deux ne peuvent
+// pas diverger.
+function poser(ctx, pose) {
+  const pivot = pose.pivot_y ?? 0;
+  ctx.translate(pose.dx ?? 0, (pose.dy ?? 0) + pivot);
+  // `D-257` : l'ouverture de la capuche, de côté, garde les proportions de
+  // face et s'incline vers l'arrière (Xav : « agrandir haut-droit pour
+  // l'effet sphérique ») — une rotation de pièce, en degrés, autour de son
+  // origine.
+  if (pose.rotation) ctx.rotate((pose.rotation * Math.PI) / 180);
+  if (pose.cisaillement) ctx.transform(1, 0, pose.cisaillement, 1, 0, 0);
+  if (pose.echelle_x !== undefined) ctx.scale(pose.echelle_x, 1);
+  // `D-260` : l'ouverture de la capuche, de côté, se rouvre un peu en hauteur,
+  // dans son repère incliné (Xav : « j'ai l'impression qu'il se referme sur
+  // l'oeil […] du coup on triche »).
+  if (pose.echelle_y !== undefined) ctx.scale(1, pose.echelle_y);
+  // `D-256` : une échelle UNIFORME. L'œil du héros est un globe : resserré
+  // à l'horizontale, de profil, il devenait un ovale plat (Xav : « il
+  // s'aplatit en ovale ») ; un globe qui tourne reste rond, il rapetisse et
+  // glisse du côté regardé.
+  if (pose.echelle !== undefined) ctx.scale(pose.echelle, pose.echelle);
+  // `D-253` : le reflet de la pièce autour de l'axe du héros. La capuche
+  // dessinée de face n'est pas symétrique (sa pointe part à droite de
+  // l'axe, son flanc droit est plus raide) : pliée vers l'ouest puis vers
+  // l'est, elle donnait deux silhouettes qui ne se répondaient pas, et
+  // aucun angle ne les accordait (Xav : « tous les _est […] diffèrent trop
+  // de _ouest »). Une direction de l'est se déclare donc comme le reflet de
+  // la pose de l'ouest : le pli d'abord, le miroir ensuite.
+  if (pose.miroir) ctx.scale(-1, 1);
+  ctx.translate(0, -pivot);
+}
+
+// La primitive telle que sa pose la dessine. `D-252` : la courbure plie les
+// points d'un polygone (voir `courberPoints`) ; une forme sans points suit le
+// reste de la pose.
+function primitivePosee(primitive, pose) {
+  const pliee = (pose.courbure || pose.rabat) && primitive.points ? primitiveCourbee(primitive, pose) : primitive;
+  return pose.miroir && primitive.reflet ? primitiveReflet(pliee) : pliee;
+}
+
+// `D-260` : la DÉCOUPE d'une pièce par la silhouette d'une autre. De profil,
+// l'ouverture de la capuche glisse vers l'avant (Xav : « dans ouest, il
+// faudrait le décaler à gauche et la partie gauche du trou devrait donc
+// logiquement ne pas être apparente ») : ce qui passe au-delà du bord de la
+// capuche n'est plus vu — ni le trou, ni son liseré (« pas de liseret là où la
+// capuche n'est plus apparente »), ni le halo qui en « sortait ». Le globe,
+// lui, ne se découpe pas : il est DEVANT, et cache la capuche derrière lui.
+// La silhouette est la primitive `silhouette` de la pièce nommée, posée comme
+// cette pièce l'est dans la même direction (pliée, reflétée) ; son chemin se
+// trace dans la pose de la silhouette, la découpe s'applique ensuite dans la
+// transform d'avant — un chemin garde les coordonnées où il a été tracé.
+function decouperParSilhouette(ctx, visuel, orientation, piece) {
+  const silhouette = visuel.primitives.find((p) => p.piece === piece && p.silhouette);
+  const pose = poseDePiece(visuel, orientation, piece) ?? {};
+  const posee = primitivePosee(silhouette, pose);
+  const avant = ctx.getTransform();
+  poser(ctx, pose);
+  ctx.translate(posee.dx || 0, posee.dy || 0);
+  if (posee.rotation) ctx.rotate((posee.rotation * Math.PI) / 180);
+  tracerChemin(ctx, posee.points);
+  ctx.setTransform(avant);
+  ctx.clip();
+}
+
 // Point d'entrée unique (§3.3) : dessine `visuel` (une entrée de
 // visuels.json) à la position logique (x,y). `options.teinte` (couleur CSS)
 // ne s'applique qu'aux primitives `teinte: true` ; `options.alpha` module la
@@ -308,34 +374,10 @@ export function dessinerVisuel(ctx, visuel, x, y, options = {}) {
       dessinerPrimitive(ctx, primitive, teinte);
       continue;
     }
-    const pivot = pose.pivot_y ?? 0;
     ctx.save();
-    ctx.translate(pose.dx ?? 0, (pose.dy ?? 0) + pivot);
-    // `D-257` : l'ouverture de la capuche, de côté, garde les proportions de
-    // face et s'incline vers l'arrière (Xav : « agrandir haut-droit pour
-    // l'effet sphérique ») — une rotation de pièce, en degrés, autour de son
-    // origine.
-    if (pose.rotation) ctx.rotate((pose.rotation * Math.PI) / 180);
-    if (pose.cisaillement) ctx.transform(1, 0, pose.cisaillement, 1, 0, 0);
-    if (pose.echelle_x !== undefined) ctx.scale(pose.echelle_x, 1);
-    // `D-256` : une échelle UNIFORME. L'œil du héros est un globe : resserré
-    // à l'horizontale, de profil, il devenait un ovale plat (Xav : « il
-    // s'aplatit en ovale ») ; un globe qui tourne reste rond, il rapetisse et
-    // glisse du côté regardé.
-    if (pose.echelle !== undefined) ctx.scale(pose.echelle, pose.echelle);
-    // `D-253` : le reflet de la pièce autour de l'axe du héros. La capuche
-    // dessinée de face n'est pas symétrique (sa pointe part à droite de
-    // l'axe, son flanc droit est plus raide) : pliée vers l'ouest puis vers
-    // l'est, elle donnait deux silhouettes qui ne se répondaient pas, et
-    // aucun angle ne les accordait (Xav : « tous les _est […] diffèrent trop
-    // de _ouest »). Une direction de l'est se déclare donc comme le reflet de
-    // la pose de l'ouest : le pli d'abord, le miroir ensuite.
-    if (pose.miroir) ctx.scale(-1, 1);
-    ctx.translate(0, -pivot);
-    // `D-252` : la courbure plie les points d'un polygone (voir
-    // `courberPoints`) ; une forme sans points suit le reste de la pose.
-    const pliee = (pose.courbure || pose.rabat) && primitive.points ? primitiveCourbee(primitive, pose) : primitive;
-    dessinerPrimitive(ctx, pose.miroir && primitive.reflet ? primitiveReflet(pliee) : pliee, teinte);
+    if (pose.decoupe) decouperParSilhouette(ctx, visuel, orientation, pose.decoupe);
+    poser(ctx, pose);
+    dessinerPrimitive(ctx, primitivePosee(primitive, pose), teinte);
     ctx.restore();
   }
 

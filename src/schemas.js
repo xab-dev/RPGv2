@@ -1749,7 +1749,7 @@ function validerVisuel(entry, catalogs, path) {
 
   // `D-229` : ce qu'une direction du regard fait aux PIÈCES du visuel (le
   // visage du héros, sa capuche) —
-  // `{ <direction>: { <piece>: null | { dx?, dy?, echelle_x?, echelle?, cisaillement?, pivot_y?, courbure?, longueur?, miroir?, rabat? } } }`
+  // `{ <direction>: { <piece>: null | { dx?, dy?, echelle_x?, echelle_y?, echelle?, cisaillement?, pivot_y?, courbure?, longueur?, miroir?, rabat?, decoupe? } } }`
   // (la courbure, `D-252`, plie les polygones de la pièce : `visuels.js#courberPoints`).
   // Une direction inconnue ne serait jamais demandée, une pièce qu'aucune
   // primitive ne porte ne bougerait rien : les deux passeraient sans que
@@ -1775,17 +1775,29 @@ function validerVisuel(entry, catalogs, path) {
           if (pose === null) continue;
           const cles = pose && typeof pose === 'object' ? Object.keys(pose) : null;
           const nombres = ['dx', 'dy', 'cisaillement', 'pivot_y', 'courbure', 'rotation'];
-          const positifs = ['echelle_x', 'echelle', 'longueur'];
+          const positifs = ['echelle_x', 'echelle_y', 'echelle', 'longueur'];
           // `D-254` : `rabat` = { y : nombre ; longueur, hauteur : nombres > 0 }.
           const r = pose && pose.rabat;
           const rabatMalForme = r !== undefined && (!r || typeof r !== 'object'
             || Object.keys(r).some((c) => !['y', 'longueur', 'hauteur'].includes(c))
             || typeof r.y !== 'number' || !(r.longueur > 0) || !(r.hauteur > 0));
-          if (!cles || rabatMalForme || cles.some((c) => c !== 'miroir' && c !== 'rabat' && !positifs.includes(c) && !nombres.includes(c))
+          // `D-260` : `decoupe` nomme la pièce dont la silhouette découpe
+          // celle-ci (`visuels.js#decouperParSilhouette`) : sans primitive
+          // `silhouette`, ou cachée dans cette direction, il n'y aurait rien
+          // à suivre — tout disparaîtrait, sans que personne le voie venir.
+          if (pose && pose.decoupe !== undefined) {
+            if (typeof pose.decoupe !== 'string' || pose.decoupe === piece
+              || !entry.primitives.some((p) => p && p.piece === pose.decoupe && p.silhouette)) {
+              erreurs.push(`${cheminO} > ${piece} > decoupe doit nommer une autre pièce qui porte une primitive silhouette`);
+            } else if (poses[pose.decoupe] === null) {
+              erreurs.push(`${cheminO} > ${piece} > decoupe : la pièce "${pose.decoupe}" est cachée dans cette direction`);
+            }
+          }
+          if (!cles || rabatMalForme || cles.some((c) => c !== 'miroir' && c !== 'rabat' && c !== 'decoupe' && !positifs.includes(c) && !nombres.includes(c))
             || (pose.miroir !== undefined && typeof pose.miroir !== 'boolean')
             || nombres.some((c) => pose[c] !== undefined && typeof pose[c] !== 'number')
             || positifs.some((c) => pose[c] !== undefined && (typeof pose[c] !== 'number' || pose[c] <= 0))) {
-            erreurs.push(`${cheminO} > ${piece} doit être null (cachée) ou { dx?, dy?, cisaillement?, pivot_y?, courbure?, rotation? : nombres ; echelle_x?, echelle?, longueur? : nombres > 0 ; miroir? : booléen ; rabat? : { y, longueur > 0, hauteur > 0 } }`);
+            erreurs.push(`${cheminO} > ${piece} doit être null (cachée) ou { dx?, dy?, cisaillement?, pivot_y?, courbure?, rotation? : nombres ; echelle_x?, echelle_y?, echelle?, longueur? : nombres > 0 ; miroir? : booléen ; rabat? : { y, longueur > 0, hauteur > 0 } ; decoupe? : pièce }`);
           } else if (pose.courbure !== undefined && pose.longueur === undefined) {
             // `D-252` : une courbure sans longueur n'a pas de pointe où
             // atteindre son angle (`visuels.js#courberPoints`).
@@ -1854,6 +1866,12 @@ function validerVisuel(entry, catalogs, path) {
     // posent sa pièce ; sans pièce, elle ne paraîtrait jamais.
     if (p.cachee !== undefined && (p.cachee !== true || p.piece === undefined)) {
       erreurs.push(`${chemin} > cachee vaut true, et seulement sur une primitive qui porte une pièce`);
+    }
+    // `D-260` : la silhouette d'une pièce, celle qui en découpe d'autres —
+    // un polygone, un seul par pièce (deux, et laquelle suivre ?).
+    if (p.silhouette !== undefined && (p.silhouette !== true || p.piece === undefined || p.forme !== 'polygone'
+      || entry.primitives.some((q, j) => j !== i && q && q.piece === p.piece && q.silhouette))) {
+      erreurs.push(`${chemin} > silhouette vaut true, sur le seul polygone de sa pièce qui la porte`);
     }
     // `D-257` : un trou (une ellipse concentrique, plus petite) et un dégradé
     // elliptique n'existent que sur une ellipse (`visuels.js#dessinerPrimitive`).

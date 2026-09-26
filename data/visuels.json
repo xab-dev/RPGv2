@@ -19,27 +19,33 @@
           "miroir": true
         },
         "cavite": {
-          "dx": 0.176,
-          "dy": -0.125,
-          "echelle": 1.0,
+          "decoupe": "capuche",
+          "dx": 0.169,
+          "dy": -0.126,
+          "echelle": 1.01,
+          "echelle_y": 1.01,
           "rotation": -10
         },
         "facade": {
-          "dx": 0.176,
-          "dy": -0.125,
-          "echelle": 1.0,
+          "decoupe": "capuche",
+          "dx": 0.169,
+          "dy": -0.126,
+          "echelle": 1.01,
+          "echelle_y": 1.01,
           "rotation": -10
         },
         "halo": {
-          "dx": 0.212,
-          "dy": -0.122,
-          "echelle": 0.95,
+          "decoupe": "capuche",
+          "dx": 0.205,
+          "dy": -0.123,
+          "echelle": 0.959,
+          "echelle_y": 1.01,
           "rotation": -10
         },
         "visage": {
-          "dx": 0.412,
-          "dy": -0.206,
-          "echelle": 0.95
+          "dx": 0.407,
+          "dy": -0.208,
+          "echelle": 0.959
         }
       },
       "est": {
@@ -50,27 +56,33 @@
           "miroir": true
         },
         "cavite": {
-          "dx": 0.394,
+          "decoupe": "capuche",
+          "dx": 1.58,
           "dy": -0.212,
-          "echelle": 0.97,
+          "echelle": 0.989,
+          "echelle_y": 1.02,
           "rotation": -15
         },
         "facade": {
-          "dx": 0.394,
+          "decoupe": "capuche",
+          "dx": 1.58,
           "dy": -0.212,
-          "echelle": 0.97,
+          "echelle": 0.989,
+          "echelle_y": 1.02,
           "rotation": -15
         },
         "halo": {
-          "dx": 0.441,
+          "decoupe": "capuche",
+          "dx": 1.628,
           "dy": -0.211,
-          "echelle": 0.905,
+          "echelle": 0.923,
+          "echelle_y": 1.02,
           "rotation": -15
         },
         "visage": {
-          "dx": 0.72,
-          "dy": -0.515,
-          "echelle": 0.9
+          "dx": 1.912,
+          "dy": -0.521,
+          "echelle": 0.918
         }
       },
       "nord_est": {
@@ -149,27 +161,33 @@
           "pivot_y": -6.5
         },
         "cavite": {
-          "dx": -1.706,
-          "dy": -0.563,
-          "echelle": 0.97,
+          "decoupe": "capuche",
+          "dx": -2.918,
+          "dy": -0.57,
+          "echelle": 0.989,
+          "echelle_y": 1.02,
           "rotation": 15
         },
         "facade": {
-          "dx": -1.706,
-          "dy": -0.563,
-          "echelle": 0.97,
+          "decoupe": "capuche",
+          "dx": -2.918,
+          "dy": -0.57,
+          "echelle": 0.989,
+          "echelle_y": 1.02,
           "rotation": 15
         },
         "halo": {
-          "dx": -1.665,
-          "dy": -0.539,
-          "echelle": 0.905,
+          "decoupe": "capuche",
+          "dx": -2.876,
+          "dy": -0.546,
+          "echelle": 0.923,
+          "echelle_y": 1.02,
           "rotation": 15
         },
         "visage": {
-          "dx": -1.98,
-          "dy": -0.515,
-          "echelle": 0.9
+          "dx": -3.198,
+          "dy": -0.521,
+          "echelle": 0.918
         }
       },
       "sud_ouest": {
@@ -179,27 +197,33 @@
           "pivot_y": -7
         },
         "cavite": {
-          "dx": -1.555,
-          "dy": -0.369,
-          "echelle": 1.0,
+          "decoupe": "capuche",
+          "dx": -1.562,
+          "dy": -0.372,
+          "echelle": 1.01,
+          "echelle_y": 1.01,
           "rotation": 10
         },
         "facade": {
-          "dx": -1.555,
-          "dy": -0.369,
-          "echelle": 1.0,
+          "decoupe": "capuche",
+          "dx": -1.562,
+          "dy": -0.372,
+          "echelle": 1.01,
+          "echelle_y": 1.01,
           "rotation": 10
         },
         "halo": {
-          "dx": -1.522,
-          "dy": -0.353,
-          "echelle": 0.95,
+          "decoupe": "capuche",
+          "dx": -1.528,
+          "dy": -0.356,
+          "echelle": 0.959,
+          "echelle_y": 1.01,
           "rotation": 10
         },
         "visage": {
-          "dx": -1.742,
-          "dy": -0.206,
-          "echelle": 0.95
+          "dx": -1.75,
+          "dy": -0.208,
+          "echelle": 0.959
         }
       }
     },
@@ -413,7 +437,8 @@
           ]
         ],
         "couleur": "#080a0e",
-        "piece": "capuche"
+        "piece": "capuche",
+        "silhouette": true
       },
       {
         "forme": "polygone",

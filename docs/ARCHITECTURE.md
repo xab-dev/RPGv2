@@ -89,6 +89,10 @@ rpg_v2/
 │   │                       de pose et palier de dégradé `teinte` (`D-256`, l'œil du héros)
 │   │                       ; dégradé `elliptique`, `trou`, `rotation` de pose (`D-257`) :
 │   │                       l'ouverture de la capuche, devant l'œil
+│   │                       ; `decoupe` de pose et primitive `silhouette`, `echelle_y` (`D-260`) :
+│   │                       une pièce découpée par la silhouette posée d'une autre (l'ouverture
+│   │                       par la capuche, de côté) ; `poser` : le seul point qui traduit une
+│   │                       pose en transform, partagé par le dessin et la découpe
 │   ├── intro.js            2 machines à états pures : intro (clignements+orbite, ≤8s) et départ
 │   │                       (follets non élus qui repartent) — propre à la Grotte, pas un moteur
 │   │                       de cinématiques généralisé
